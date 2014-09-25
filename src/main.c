@@ -6,7 +6,8 @@ int main(void) {
 
   MacroMesh m;
 
-  ReadMacroMesh(&m,"../geo/disque.geo");
+  ReadMacroMesh(&m,"../geo/disque.msh");
+  PrintMacroMesh(&m);
 
   return 0;
 
