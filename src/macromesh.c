@@ -79,7 +79,7 @@ void ReadMacroMesh(MacroMesh* m,char* filename){
       for(int j=0;j<19;j++){
 	getdelim(&line,&linesize,(int) ' ',f);
 	//printf("%d ",atoi(line));
-	m->elem2node[countnode]=atoi(line);
+	m->elem2node[countnode]=atoi(line)-1;
 	countnode++;
       }
       getline(&line,&linesize,f);
@@ -98,7 +98,7 @@ void ReadMacroMesh(MacroMesh* m,char* filename){
 
 }
 
-// display macromesh dat on standard output
+// display macromesh data on standard output
 void PrintMacroMesh(MacroMesh* m){
   printf("nbnodes=%d\n",m->nbnodes);
   for(int i=0;i<m->nbnodes;i++){
@@ -115,4 +115,130 @@ void PrintMacroMesh(MacroMesh* m){
     }
     printf("\n");
   }
+
+  for(int i=0;i<m->nbelems;i++){
+    printf("elem %d voisins: ",i);
+    for(int j=0;j<6;j++){
+      printf("%d ",m->elem2elem[6*i+j]);
+    }
+    printf("\n");
+  }
 }
+
+// build others connectivity arrays
+void BuildConnectivity(MacroMesh* m){
+
+  printf("Build connectivity...\n");
+  printf("Build double faces...\n");
+  
+  // build a list of faces
+  // each face is made of four corners of 
+  // the hexaedron mesh
+  Face4Sort* face;
+  Face4Sort* f;
+
+  face=malloc(6*sizeof(Face4Sort)*m->nbelems);
+
+  assert(face);
+
+  int face2locnode[6][4]={
+    {0,1,2,3},
+    {4,5,6,7},
+    {0,4,5,1},
+    {2,3,7,6},
+    {1,2,6,5},
+    {0,3,7,4}};
+
+
+  for(int ie=0;ie<m->nbelems;ie++){
+    for(int ifa=0;ifa<6;ifa++){
+      f=face+ifa+6*ie;
+      for(int ino=0;ino<4;ino++){
+	f->node[ino]=m->elem2node[face2locnode[ifa][ino]+20*ie];
+      }
+      f->left=ie;
+      f->locfaceleft=ifa;
+      f->right=-1;
+      f->locfaceright=-1;
+      OrderFace4Sort(f);
+      /* printf("elem=%d ifa=%d left=%d nodes %d %d %d %d\n",ie,ifa, */
+      /* 	     f->left,f->node[0], */
+      /* 	     f->node[1],f->node[2],f->node[3]); */
+    }
+  }
+
+  // now sort the list of faces
+  qsort(face,6*m->nbelems,sizeof(Face4Sort),CompareFace4Sort);
+  // check
+  for(int ie=0;ie<m->nbelems;ie++){
+    for(int ifa=0;ifa<6;ifa++){
+      f=face+ifa+6*ie;
+      printf("left=%d right=%d, nodes %d %d %d %d\n",
+  	     f->left,f->right,f->node[0],
+  	     f->node[1],f->node[2],f->node[3]);
+    }
+  }
+
+  //assert(1==2);
+
+  // allocate element connectivity array
+  m->elem2elem=malloc(6 * m->nbelems * sizeof(int));
+  for(int i=0;i<6 * m->nbelems;i++){
+    m->elem2elem[i]=-1;
+  }
+
+  // now, two successive equal faces
+  // correspond to two neighbours in the 
+  // element list
+  for(int ifa=0;ifa<6*m->nbelems-1;ifa++){
+    Face4Sort* f1=face+ifa;
+    Face4Sort* f2=face+ifa+1;
+    if (CompareFace4Sort(f1,f2)==0){
+      int ie1=f1->left;
+      int if1=f1->locfaceleft;
+      int ie2=f2->left;
+      int if2=f2->locfaceleft;
+	m->elem2elem[if1+6*ie1]=ie2;
+	m->elem2elem[if2+6*ie2]=ie1;
+    }
+  }
+
+  free(face);
+
+  // check
+  for(int ie=0;ie<m->nbelems;ie++){
+    for(int ifa=0;ifa<6;ifa++){
+      printf("elem=%d face=%d, voisin=%d\n",
+  	     ie,ifa,m->elem2elem[ifa+6*ie]);
+    }
+  }
+
+  
+
+  
+}
+
+// compare two integers
+int CompareInt(const void* a,const void* b){
+  return(*(int*)a - *(int*)b);
+}
+
+// sort the nodes list of the face
+void OrderFace4Sort(Face4Sort* f){
+  qsort ( f->node, 4, sizeof(int), CompareInt);
+}
+
+// compare two ordered four-corner faces
+// lexicographical order
+int CompareFace4Sort(const void* a,const void* b){
+  Face4Sort* f1= (Face4Sort*)a; 
+  Face4Sort* f2= (Face4Sort*)b;
+
+  int r= f1->node[0]-f2->node[0];
+  if (r==0) r=f1->node[1]-f2->node[1];
+  if (r==0) r=f1->node[2]-f2->node[2];
+  if (r==0) r=f1->node[3]-f2->node[3];
+  return r;
+  
+};
+
