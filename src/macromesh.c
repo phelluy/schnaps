@@ -14,6 +14,8 @@ void ReadMacroMesh(MacroMesh* m,char* filename){
   size_t linesize=0;
   size_t ret;
 
+  printf("Read mesh file %s\n",filename);
+
   f=fopen(filename,"r");
   assert(f != NULL);
 
@@ -100,6 +102,7 @@ void ReadMacroMesh(MacroMesh* m,char* filename){
 
 // display macromesh data on standard output
 void PrintMacroMesh(MacroMesh* m){
+  printf("Print macromesh...\n");
   printf("nbnodes=%d\n",m->nbnodes);
   for(int i=0;i<m->nbnodes;i++){
     printf("node %d x=%f y=%f z=%f\n",i,
@@ -129,7 +132,6 @@ void PrintMacroMesh(MacroMesh* m){
 void BuildConnectivity(MacroMesh* m){
 
   printf("Build connectivity...\n");
-  printf("Build double faces...\n");
   
   // build a list of faces
   // each face is made of four corners of 
@@ -170,14 +172,14 @@ void BuildConnectivity(MacroMesh* m){
   // now sort the list of faces
   qsort(face,6*m->nbelems,sizeof(Face4Sort),CompareFace4Sort);
   // check
-  for(int ie=0;ie<m->nbelems;ie++){
-    for(int ifa=0;ifa<6;ifa++){
-      f=face+ifa+6*ie;
-      printf("left=%d right=%d, nodes %d %d %d %d\n",
-  	     f->left,f->right,f->node[0],
-  	     f->node[1],f->node[2],f->node[3]);
-    }
-  }
+  /* for(int ie=0;ie<m->nbelems;ie++){ */
+  /*   for(int ifa=0;ifa<6;ifa++){ */
+  /*     f=face+ifa+6*ie; */
+  /*     printf("left=%d right=%d, nodes %d %d %d %d\n", */
+  /* 	     f->left,f->right,f->node[0], */
+  /* 	     f->node[1],f->node[2],f->node[3]); */
+  /*   } */
+  /* } */
 
   //assert(1==2);
 
@@ -206,12 +208,12 @@ void BuildConnectivity(MacroMesh* m){
   free(face);
 
   // check
-  for(int ie=0;ie<m->nbelems;ie++){
-    for(int ifa=0;ifa<6;ifa++){
-      printf("elem=%d face=%d, voisin=%d\n",
-  	     ie,ifa,m->elem2elem[ifa+6*ie]);
-    }
-  }
+  /* for(int ie=0;ie<m->nbelems;ie++){ */
+  /*   for(int ifa=0;ifa<6;ifa++){ */
+  /*     printf("elem=%d face=%d, voisin=%d\n", */
+  /* 	     ie,ifa,m->elem2elem[ifa+6*ie]); */
+  /*   } */
+  /* } */
 
   
 
