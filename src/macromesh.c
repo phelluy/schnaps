@@ -98,6 +98,8 @@ void ReadMacroMesh(MacroMesh* m,char* filename){
   m->elem2node=realloc(m->elem2node,20 * sizeof(int) * m->nbelems);
   assert(m->elem2node);
 
+  m->elem2elem=NULL;
+
 }
 
 // display macromesh data on standard output
@@ -132,6 +134,8 @@ void PrintMacroMesh(MacroMesh* m){
 void BuildConnectivity(MacroMesh* m){
 
   printf("Build connectivity...\n");
+
+  assert(m->elem2elem==NULL);
   
   // build a list of faces
   // each face is made of four corners of 

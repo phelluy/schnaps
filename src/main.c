@@ -1,7 +1,7 @@
 #include "macromesh.h"
 #include <stdio.h>
 #include <assert.h>
-#include "h20.h"
+#include "geometry.h"
 #include "global.h"
 
 int main(void) {

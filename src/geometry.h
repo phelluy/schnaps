@@ -1,7 +1,7 @@
-#ifndef _H20_H
-#define _H20_H
+#ifndef _GEOMETRY_H
+#define _GEOMETRY_H
 
-// header of the h20 struct
+// header of the geometry struct
 // geometric transformations
 
 // mapping tau from the reference point to the physical point.
