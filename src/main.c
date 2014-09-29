@@ -1,7 +1,8 @@
 #include "macromesh.h"
 #include <stdio.h>
 #include <assert.h>
-#include <h20.h>
+#include "h20.h"
+#include "global.h"
 
 int main(void) {
 
@@ -19,7 +20,29 @@ int main(void) {
 
   // test the geometric transformation
 
-  double xref[3]={0.5_F,0.5_F,0.5_F};
+  double xref[3]={0.5,0.5,0.5};
+  double physnode[20*3];
+
+  double xphy[3],dtau[9];
+
+  for(int inoloc=0;inoloc<20;inoloc++){
+    int ino=mc.elem2node[0*20+inoloc];
+    physnode[3*inoloc+0]=mc.node[3*ino+0]; //x
+    physnode[3*inoloc+1]=mc.node[3*ino+1]; //y
+    physnode[3*inoloc+2]=mc.node[3*ino+2]; //z
+  }
+
+  Ref2Phy( physnode,
+              xref,
+              0,
+              -1,
+              xphy,
+              dtau,
+              0,
+              0,
+	   0);
+
+  printf("xphy= %f %f %f \n",xphy[0],xphy[1],xphy[2]);
 
   return 0;
 
