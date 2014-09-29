@@ -20,7 +20,7 @@ int main(void) {
 
   // test the geometric transformation
 
-  double xref[3]={0.5,0.5,0.5};
+  double xref[3]={0.1,0.3,0.7};
   double physnode[20*3];
 
   double xphy[3],dtau[9];
@@ -32,17 +32,14 @@ int main(void) {
     physnode[3*inoloc+2]=mc.node[3*ino+2]; //z
   }
 
-  Ref2Phy( physnode,
-              xref,
-              0,
-              -1,
-              xphy,
-              dtau,
-              0,
-              0,
-	   0);
+  Ref2Phy(physnode,xref,0,-1,xphy,dtau,0,0,0);
 
   printf("xphy= %f %f %f \n",xphy[0],xphy[1],xphy[2]);
+
+  Phy2Ref(physnode,xphy,xref);
+
+  printf("xref= %f %f %f \n",xref[0],xref[1],xref[2]);
+
 
   return 0;
 

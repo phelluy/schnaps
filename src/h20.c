@@ -89,15 +89,15 @@ void Ref2Phy(double* physnode,
 
 
 void Phy2Ref(double* physnode,double* xphy,double* xref){
-#define ITERNEWTON 10
+#define ITERNEWTON 3
 
   double dtau[9], codtau[9];                                              
   double dxref[3], dxphy[3];                                              
   double det;                                                             
   int ifa =- 1;                                                         
-  xref[0] = 0;                                                          
-  xref[1] = 0;                                                          
-  xref[2] = 0;                                                          
+  xref[0] = 0.5;                                                          
+  xref[1] = 0.5;                                                          
+  xref[2] = 0.5;                                                          
   for(int iter = 0;iter<ITERNEWTON;iter ++ ){                               
     Ref2Phy(physnode, xref, 0,ifa,                                      
             dxphy, dtau, codtau, 0,0);                                  
