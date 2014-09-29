@@ -95,7 +95,7 @@ void ReadMacroMesh(MacroMesh* m,char* filename){
   // check that we have reached the end of nodes
   assert(strcmp(line,"$EndElements\n") == 0);
   printf("nbelems=%d\n",m->nbelems);
-  realloc(m->elem2node,20 * sizeof(int) * m->nbelems);
+  m->elem2node=realloc(m->elem2node,20 * sizeof(int) * m->nbelems);
   assert(m->elem2node);
 
 }

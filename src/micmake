@@ -5,7 +5,7 @@ echo -e "please give executable name"
 exit 1
 fi
 
-echo -e -n "CC=gcc\nOPTIMS=\nLIBS= " > makefile
+echo -e -n "CC=gcc\nOPTIMS=-std=c99 \nLIBS=-lm " > makefile
 
 echo >> makefile
 echo -n "$1: " >> makefile
@@ -31,6 +31,6 @@ done
 
 echo -n -e ".PHONY clean: ">> makefile
 echo >> makefile
-echo -n -e "\t rm *.o rm $1 ">> makefile
+echo -n -e "\t rm *.o ;  rm $1 ">> makefile
 
 exit 0

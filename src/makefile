@@ -1,8 +1,11 @@
 CC=gcc
-OPTIMS= -g
-LIBS= -lm  
-go: macromesh.o main.o 
-	$(CC) macromesh.o main.o -o go $(OPTIMS) $(LIBS)
+OPTIMS=-std=c99 
+LIBS=-lm 
+go: h20.o macromesh.o main.o 
+	$(CC) h20.o macromesh.o main.o -o go $(OPTIMS) $(LIBS)
+
+h20.o: h20.c h20.h
+	$(CC) -c h20.c $(OPTIMS)
 
 macromesh.o: macromesh.c macromesh.h global.h
 	$(CC) -c macromesh.c $(OPTIMS)
@@ -11,4 +14,4 @@ main.o: main.c macromesh.h global.h
 	$(CC) -c main.c $(OPTIMS)
 
 .PHONY clean: 
-	 rm *.o rm go 
+	 rm *.o ;  rm go 

@@ -12,6 +12,8 @@
 #define _FP
 //#define _FP f
 
+#define NULL 0
+
 
 
 
