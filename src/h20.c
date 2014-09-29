@@ -1,5 +1,7 @@
 #include "h20.h"
 #include "global.h"
+#include<stdio.h>
+#include <math.h>
 const int h20_refnormal[6][3]={{0,-1,0},{1,0,0},
                                            {0,1,0},{-1,0,0},
                                            {0,0,1},{0,0,-1}};
@@ -107,14 +109,17 @@ void Phy2Ref(double* physnode,double* xphy,double* xref){
     det = dtau[0] * dtau[4] * dtau[8] - dtau[0] * dtau[5] * dtau[7]     
       - dtau[3] * dtau[1] * dtau[8]                                     
       + dtau[3] * dtau[2] * dtau[7] + dtau[6] * dtau[1] * dtau[5]       
-      - dtau[6] * dtau[2] * dtau[4];                                    
+      - dtau[6] * dtau[2] * dtau[4];     
     for(int ii = 0;ii<3;ii ++ ){                             
       dxref[ii] = 0;                                               
       for(int jj = 0;jj<3;jj ++ ){                                          
         dxref[ii] += codtau[3 * jj + ii] * dxphy[jj];         
-      }                                                                 
+      }      
       xref[ii] -= dxref[ii] / det;                            
-    }                                                                   
+    }
+    printf("iter=%d erreur=%f\n",iter,sqrt(dxref[0]*dxref[0]+
+				      dxref[1]*dxref[1]+
+				      dxref[2]*dxref[2]));
   }
 
 }
