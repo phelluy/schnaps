@@ -1,0 +1,3272 @@
+#LyX 2.0 created this file. For more info see http://www.lyx.org/
+\lyxformat 413
+\begin_document
+\begin_header
+\textclass article
+\begin_preamble
+\usepackage{bbold}
+\usepackage{tikz}
+\tikzstyle{every picture}+=[remember picture]
+\usetikzlibrary{decorations.pathmorphing}
+\tikzset { domaine/.style 2 args={domain=#1:#2} }
+\end_preamble
+\use_default_options true
+\maintain_unincluded_children false
+\language french
+\language_package default
+\inputencoding auto
+\fontencoding global
+\font_roman default
+\font_sans default
+\font_typewriter default
+\font_default_family default
+\use_non_tex_fonts false
+\font_sc false
+\font_osf false
+\font_sf_scale 100
+\font_tt_scale 100
+
+\graphics default
+\default_output_format default
+\output_sync 0
+\bibtex_command default
+\index_command default
+\paperfontsize 12
+\spacing onehalf
+\use_hyperref true
+\pdf_bookmarks true
+\pdf_bookmarksnumbered false
+\pdf_bookmarksopen false
+\pdf_bookmarksopenlevel 1
+\pdf_breaklinks false
+\pdf_pdfborder false
+\pdf_colorlinks false
+\pdf_backref false
+\pdf_pdfusetitle true
+\papersize a4paper
+\use_geometry true
+\use_amsmath 1
+\use_esint 1
+\use_mhchem 1
+\use_mathdots 1
+\cite_engine basic
+\use_bibtopic false
+\use_indices false
+\paperorientation portrait
+\suppress_date false
+\use_refstyle 1
+\index Index
+\shortcut idx
+\color #008000
+\end_index
+\leftmargin 3cm
+\topmargin 3cm
+\rightmargin 3cm
+\bottommargin 3cm
+\secnumdepth 3
+\tocdepth 3
+\paragraph_separation skip
+\defskip medskip
+\quotes_language english
+\papercolumns 1
+\papersides 1
+\paperpagestyle default
+\tracking_changes false
+\output_changes false
+\html_math_output 0
+\html_css_as_file 0
+\html_be_strict false
+\end_header
+
+\begin_body
+
+\begin_layout Standard
+\begin_inset FormulaMacro
+\renewcommand{\nraf}{\text{{nraf}}}
+{\mathrm{nraf}}
+\end_inset
+
+
+\end_layout
+
+\begin_layout Title
+SCHNAPS: une bibliothèque pour la résolution numérique des lois de conservation
+ sur ordinateur massivement multicoeur
+\end_layout
+
+\begin_layout Author
+IRMA Strasbourg
+\end_layout
+
+\begin_layout Standard
+\begin_inset CommandInset toc
+LatexCommand tableofcontents
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Section
+Méthode Galerkin Discontinu (GD)
+\end_layout
+
+\begin_layout Subsection
+Systèmes de lois de conservation
+\end_layout
+
+\begin_layout Standard
+SCHNAPS est un acronyme de 
+\begin_inset Quotes eld
+\end_inset
+
+Solveur Conservatif Hyperbolique Non-linéaire Appliqué aux PlasmaS
+\begin_inset Quotes erd
+\end_inset
+
+.
+ Il s'agit d'une bibliothèque de classes C pour résoudre numériquement des
+ systèmes de lois de conservation sur des ordinateurs massivement parallèles,
+ avec plusieurs niveaux de parallélisme, par exemple un gros cluster de
+ GPU.
+\end_layout
+
+\begin_layout Standard
+SCHNAPS se veut assez général.
+ Par conséquent, nous considérons un domaine ouvert borné 
+\begin_inset Formula $\Omega\subset\mathbb{R}^{3}$
+\end_inset
+
+ de frontière 
+\begin_inset Formula $\partial\Omega$
+\end_inset
+
+.
+ Sur ce domaine, nous considérons un système de lois de conservation de
+ la forme
+\begin_inset Formula 
+\begin{equation}
+\partial_{t}W+\partial_{i}F^{i}(W)=S(W).\label{eq:slc}
+\end{equation}
+
+\end_inset
+
+Dans cette équation, l'inconnue 
+\begin_inset Formula $W(x,t)$
+\end_inset
+
+ est un vecteur de 
+\begin_inset Formula $\mathbb{R}^{m}$
+\end_inset
+
+ qui dépend d'une variable d'espace 
+\begin_inset Formula $x\in\Omega$
+\end_inset
+
+, 
+\begin_inset Formula $x=(x_{1},x_{2},x_{3})$
+\end_inset
+
+ et du temps 
+\begin_inset Formula $t\in[0,T]$
+\end_inset
+
+.
+ Le vecteur 
+\begin_inset Formula $S$
+\end_inset
+
+ représente les termes sources du système.
+ Nous utilisons la convention de sommation sur les indices répétés.
+ Soit un vecteur 
+\begin_inset Formula $n=(n_{1},n_{2},n_{3})\in\mathbb{R}^{3}$
+\end_inset
+
+, nous définissons le flux du système (
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "eq:slc"
+
+\end_inset
+
+) par
+\begin_inset Formula 
+\begin{equation}
+F(W,n)=F^{i}(W)n_{i}.\label{eq:flux}
+\end{equation}
+
+\end_inset
+
+Il faut adjoindre des conditions aux limites à (
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "eq:slc"
+
+\end_inset
+
+).
+ Formellement, ces conditions aux limites sont données par un flux frontière
+ 
+\begin_inset Formula $F_{b}$
+\end_inset
+
+ et s'écrivent 
+\begin_inset Formula 
+\begin{equation}
+F(W,n)=F_{b}(W,n),\quad x\in\partial\Omega,\label{eq:fluxbord}
+\end{equation}
+
+\end_inset
+
+où 
+\begin_inset Formula $n$
+\end_inset
+
+ désigne le vecteur normal sortant à 
+\begin_inset Formula $\Omega$
+\end_inset
+
+ sur 
+\begin_inset Formula $\partial\Omega$
+\end_inset
+
+.
+ D'autre part, nous nous donnons aussi une condition initiale
+\begin_inset Formula 
+\[
+W(x,0)=W_{0}(x),\quad x\in\Omega.
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+SCHNAPS permet de résoudre ce problème d'évolution par la méthode de Galerkin
+ Discontinu (GD).
+ Comme son nom l'indique, cette méthode consiste à construire une approximation
+ de la solution au moyen d'éléments finis discontinus.
+\end_layout
+
+\begin_layout Subsection
+Flux numérique
+\end_layout
+
+\begin_layout Standard
+La méthode GD est une généralisation de la méthode des éléments finis et
+ de la méthode des volumes finis.
+ Elle nécessite la définition d'un flux numérique sur les discontinuités
+ de la solution discrète.
+ Ce flux numérique est noté
+\begin_inset Formula 
+\begin{equation}
+F(W_{L},W_{R},n_{LR}),\label{eq:fluxnum}
+\end{equation}
+
+\end_inset
+
+où 
+\begin_inset Formula $W_{L}$
+\end_inset
+
+ et 
+\begin_inset Formula $W_{R}$
+\end_inset
+
+ représentent les valeurs de 
+\begin_inset Formula $W$
+\end_inset
+
+ de part et d'autre de la discontinuité, et 
+\begin_inset Formula $n_{LR}$
+\end_inset
+
+ un vecteur normal à la discontinuité orienté du côté 
+\begin_inset Formula $L$
+\end_inset
+
+ vers le côté 
+\begin_inset Formula $R$
+\end_inset
+
+.
+ Cette notation, bien que légèrement abusive, ne peut pas être confondue
+ avec celle du flux (
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "eq:flux"
+
+\end_inset
+
+), car le flux numérique dépend de deux états, 
+\begin_inset Formula $W_{L}$
+\end_inset
+
+ et 
+\begin_inset Formula $W_{R}$
+\end_inset
+
+, au lieu d'un seul.
+ Pour que l'approximation GD soit consistante avec le système (
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "eq:slc"
+
+\end_inset
+
+), il faut que
+\begin_inset Formula 
+\begin{equation}
+\forall W,n,\quad F(W,W,n)=F(W,n).\label{eq:consistance}
+\end{equation}
+
+\end_inset
+
+Souvent, le flux numérique vérifie aussi une propriété de conservation
+\begin_inset Formula 
+\begin{equation}
+\forall W_{L},W_{R},n,\quad F(W_{L},W_{R},n)=-F(W_{R},W_{L},-n),\label{eq:consflux}
+\end{equation}
+
+\end_inset
+
+mais ce n'est pas toujours le cas, et ce n'est pas une nécessité dans SCHNAPS.
+\end_layout
+
+\begin_layout Standard
+À partir de la fonction flux, nous pouvons retrouver les composantes du
+ flux.
+ Nous introduisons le symbole de Kronecker
+\begin_inset Formula 
+\[
+\delta_{i}^{j}=\left\{ \begin{array}{ccc}
+1 & \text{if} & i=j,\\
+0 & \text{if} & i\neq j.
+\end{array}\right.
+\]
+
+\end_inset
+
+Le vecteur 
+\begin_inset Formula $\delta^{j}$
+\end_inset
+
+ est un vecteur unitaire de 
+\begin_inset Formula $\mathbb{R}^{3}$
+\end_inset
+
+ qui pointe dans la direction 
+\begin_inset Formula $x_{j}$
+\end_inset
+
+.
+ Alors
+\begin_inset Formula 
+\begin{equation}
+F^{j}(W)=F(W,\delta^{j}).\label{eq:flux2comp}
+\end{equation}
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Par exemple, les équations de Maxwell entrent dans ce formalisme.
+ Elles s'écrivent
+\begin_inset Formula 
+\begin{eqnarray}
+\partial_{t}E-\nabla\times H & = & -J,\label{eq:ampere}\\
+\partial_{t}H+\nabla\times E & = & 0,\label{eq:faraday}
+\end{eqnarray}
+
+\end_inset
+
+où 
+\begin_inset Formula $E$
+\end_inset
+
+ est le champ électrique, 
+\begin_inset Formula $H$
+\end_inset
+
+ le champ magnétique et 
+\begin_inset Formula $J$
+\end_inset
+
+ le vecteur courant électrique.
+ Nous posons
+\begin_inset Formula 
+\[
+W=(E^{T},H^{T})^{T},\quad S=(-J^{T},(0,0,0)^{T})^{T},
+\]
+
+\end_inset
+
+et
+\begin_inset Formula 
+\[
+F(W,n)=\left[\begin{array}{cc}
+0 & n\times\\
+-n\times & 0
+\end{array}\right]W=A(n)W,
+\]
+
+\end_inset
+
+de telle façon que les équations de Maxwell sont un cas particulier de (
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "eq:slc"
+
+\end_inset
+
+), avec 
+\begin_inset Formula $m=6$
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Standard
+Comme dans (
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "eq:flux2comp"
+
+\end_inset
+
+) nous pouvons définir les matrices symétriques 
+\begin_inset Formula $6\times6$
+\end_inset
+
+
+\begin_inset Formula 
+\[
+A^{i}=A(\delta^{i}),\quad i=1\cdots3.
+\]
+
+\end_inset
+
+Alors les équations de Maxwell peuvent aussi être écrites sous la forme
+ d'un système hyperbolique, aussi appelé système de Friedrichs
+\begin_inset Formula 
+\[
+\partial_{t}W+A^{i}\partial_{i}W=S.
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsection
+Formalisme GD général
+\end_layout
+
+\begin_layout Standard
+Pour définir l'approximation GD, nous devons d'abord construire un maillage
+ de 
+\begin_inset Formula $\Omega$
+\end_inset
+
+.
+ Nous considérons un maillage constitué d'un nombre fini d'ensembles ouverts
+ 
+\begin_inset Formula $L_{k}\subset\Omega$
+\end_inset
+
+, 
+\begin_inset Formula $k=1\cdots N,$
+\end_inset
+
+ appelés 
+\begin_inset Quotes eld
+\end_inset
+
+cellules
+\begin_inset Quotes erd
+\end_inset
+
+ ou 
+\begin_inset Quotes eld
+\end_inset
+
+éléments
+\begin_inset Quotes erd
+\end_inset
+
+, et satisfaisant les deux conditions:
+\end_layout
+
+\begin_layout Enumerate
+\begin_inset Formula $\forall k,l\quad k\neq l\Rightarrow L_{k}\cap L_{l}=\emptyset$
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Enumerate
+\begin_inset Formula $\overline{\cup_{k}L_{k}}=\overline{\Omega}.$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Soient 
+\begin_inset Formula $L$
+\end_inset
+
+ et 
+\begin_inset Formula $R$
+\end_inset
+
+ deux cellules voisines.
+ La face commune à 
+\begin_inset Formula $L$
+\end_inset
+
+ et 
+\begin_inset Formula $R$
+\end_inset
+
+ est notée
+\begin_inset Formula 
+\[
+L/R=\overline{L}\cap\overline{R}.
+\]
+
+\end_inset
+
+Nous notons aussi 
+\begin_inset Formula $n_{LR}$
+\end_inset
+
+ le vecteur normal unitaire sur 
+\begin_inset Formula $L/R$
+\end_inset
+
+ orienté 
+\begin_inset Formula $L$
+\end_inset
+
+ vers 
+\begin_inset Formula $R$
+\end_inset
+
+.
+ Donc, 
+\begin_inset Formula $n_{LR}=-n_{RL}.$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Dans chaque cellule 
+\begin_inset Formula $L$
+\end_inset
+
+, nous construisons une base de fonctions scalaires 
+\begin_inset Formula $\varphi_{i}^{L}$
+\end_inset
+
+, 
+\begin_inset Formula $i=1\cdots p_{L}$
+\end_inset
+
+ dont le support est dans 
+\begin_inset Formula $L$
+\end_inset
+
+.
+ Il est possible d'avoir des niveaux d'approximation différents 
+\begin_inset Formula $p_{L}$
+\end_inset
+
+ sur des cellules différentes.
+ Dans la cellule 
+\begin_inset Formula $L$
+\end_inset
+
+, la solution de 
+\begin_inset Formula $(\ref{eq:slc})$
+\end_inset
+
+ est approchée par
+\begin_inset Formula 
+\begin{equation}
+W(X,t)=W_{L}(X,t)=W_{L}^{j}(t)\varphi_{j}^{L}(X)\quad X\in L.\label{eq:approx}
+\end{equation}
+
+\end_inset
+
+La solution numérique satisfait le schéma d'approximation GD
+\begin_inset Formula 
+\begin{equation}
+\forall L,\forall i\quad\int_{L}\partial_{t}W\varphi_{i}^{L}-\int_{L}F(W,\nabla\varphi_{i}^{L})+\int_{\partial L}F(W_{L},W_{R},n_{LR})\varphi_{i}^{L}=\int_{L}S\varphi_{i}^{L}.\label{eq:DG}
+\end{equation}
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Pour plus de clarté, nous pouvons faire les remarques suivantes sur le schéma
+ GD (
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "eq:DG"
+
+\end_inset
+
+):
+\end_layout
+
+\begin_layout Enumerate
+La formulation (
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "eq:DG"
+
+\end_inset
+
+) est obtenue formellement en multipliant (
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "eq:slc"
+
+\end_inset
+
+) par une fonction de base 
+\begin_inset Formula $\varphi_{i}^{L}$
+\end_inset
+
+ et en intégrant par parties sur la cellule 
+\begin_inset Formula $L$
+\end_inset
+
+.
+ 
+\end_layout
+
+\begin_layout Enumerate
+Nous utilisons (de façon abusive) la même notation la solution exacte et
+ la solution approchée.
+ En général, à partir de maintenant 
+\begin_inset Formula $W$
+\end_inset
+
+ désignera l'approximation GD de la solution exacte.
+\end_layout
+
+\begin_layout Enumerate
+Par 
+\begin_inset Formula $R$
+\end_inset
+
+ nous désignons une cellule générique qui touche la cellule 
+\begin_inset Formula $L$
+\end_inset
+
+ le long de sa frontière 
+\begin_inset Formula $\partial L$
+\end_inset
+
+.
+ Cette notation est justifiée par le fait que, à une rotation près, on peut
+ toujours supposer que le vecteur normal 
+\begin_inset Formula $n_{LR}$
+\end_inset
+
+ est orienté de la cellule 
+\begin_inset Formula $L$
+\end_inset
+
+ à gauche (Left), vers la cellule 
+\begin_inset Formula $R$
+\end_inset
+
+ à droite (Right).
+\end_layout
+
+\begin_layout Enumerate
+Comme 
+\begin_inset Formula $W$
+\end_inset
+
+ est discontinu sur le bord de la cellule, il n'est pas possible de définir
+ 
+\begin_inset Formula $F(W,n_{LR})$
+\end_inset
+
+ sur 
+\begin_inset Formula $\partial L$
+\end_inset
+
+.
+ Par conséquent, comme dans la méthode des volumes finis, nous devons introduire
+ un flux numérique 
+\begin_inset Formula $F(W_{L},W_{R},n_{LR})$
+\end_inset
+
+.
+ Généralement, le flux numérique satisfait deux conditions
+\end_layout
+
+\begin_deeper
+\begin_layout Enumerate
+Consistance: 
+\begin_inset Formula $F(W,W,n)=F(W,n).$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Enumerate
+Conservation: 
+\begin_inset Formula $F(W_{L},W_{R},n_{LR})=-F(W_{R},W_{L},n_{RL}).$
+\end_inset
+
+
+\end_layout
+
+\end_deeper
+\begin_layout Enumerate
+Dans le cas des équations de Maxwell, nous utilisons le flux décentré standard
+\begin_inset Formula 
+\[
+F(W_{L},W_{R},n)=A(n)^{+}W_{L}+A(n)^{-}W_{R}.
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Enumerate
+Finalement, dans (
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "eq:DG"
+
+\end_inset
+
+) nous devons être plus précis lorsque la cellule 
+\begin_inset Formula $L$
+\end_inset
+
+ touche le bord du domaine de calcul.
+ En effet, sur 
+\begin_inset Formula $\partial L\cap\Omega$
+\end_inset
+
+ le champ 
+\begin_inset Formula $W_{R}$
+\end_inset
+
+ n'est pas disponible.
+ Nous remplaçons donc sur ces interfaces le flux numérique 
+\begin_inset Formula $F(W_{L},W_{R},n_{LR})$
+\end_inset
+
+ par un flux frontière
+\begin_inset Formula 
+\[
+F_{b}(W_{L},n_{LR}).
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Nous pouvons alors introduire le développement (
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "eq:approx"
+
+\end_inset
+
+) dans (
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "eq:DG"
+
+\end_inset
+
+).
+ L'approximation GD devient alors un système d'équations différentielles
+ ordinaires satisfaites par les coefficients 
+\begin_inset Formula $W_{L}^{j}(t)$
+\end_inset
+
+ sur les bases locales.
+ Nous résolvons ce système d'équations différentielles par un intégrateur
+ Runge-Kutta du second ordre.
+\end_layout
+
+\begin_layout Section
+SCHNAPS: philosophie
+\end_layout
+
+\begin_layout Standard
+Dans cette section nous tentons de donner une vue d'ensemble synthétique
+ de la conception du logiciel.
+ Pour une vue détaillée de la hiérarchie des classes nous renvoyons à la
+ documentation doxygen de SCHNAPS (voir section 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "sub:Documentation"
+
+\end_inset
+
+).
+\end_layout
+
+\begin_layout Subsection
+OpenCL
+\end_layout
+
+\begin_layout Standard
+SCHNAPS est une bibliothèque, écrite en C, qui permet de résoudre numériquement
+ un système de lois de conservation générique par la méthode GD sur un calculate
+ur disposant d'un ou plusieurs accélérateurs supportant l'environnement
+ OpenCL.
+ OpenCL permet d'écrire et d'exécuter en parallèle des programmes (appelés
+ 
+\shape italic
+kernels
+\shape default
+) sur tous les processeurs d'un accélérateur.
+ Lorsque plusieurs accélérateurs sont disponibles, SCHNAPS utilise l'environneme
+nt MPI pour les communications entre les accélérateurs.
+ Cette approche très générale permet d'utiliser SCHNAPS sur une grande variété
+ de calculateurs.
+ SCHNAPS pourra aussi bien tourner sur un PC disposant d'un seul CPU classique
+ que sur un supercalculateur avec des centaines de GPU.
+\end_layout
+
+\begin_layout Standard
+La classe 
+\family typewriter
+CLInfo
+\family default
+ contient des informations et des méthodes pour initialiser l'environnement
+ OpenCL.
+\end_layout
+
+\begin_layout Standard
+Une particularité d'OpenCL est qu'une partie du code est compilée à l'exécution.
+ Cette particularité s'explique par la nécessité d'être compatible avec
+ des accélérateurs d'architectures matérielles différentes.
+ SCHNAPS intègre donc une notion de 
+\shape italic
+fonction
+\shape default
+ enrichie (
+\family typewriter
+Function
+\family default
+).
+ Les fonctions SCHNAPS se comportent comme des fonctions C traditionnelles,
+ mais contiennent également leur propre header et code source.
+ Elles peuvent être appelées depuis le programme hôte ou depuis un kernel
+ OpenCL.
+\end_layout
+
+\begin_layout Standard
+Par ailleurs, pour calculer sur des accélérateurs de type GPU, il est nécessaire
+ de dupliquer des données entre le CPU et le GPU.
+ Pour cela, nous utilisons une classe de 
+\shape italic
+buffers OpenCL
+\shape default
+ (
+\family typewriter
+CLBuffer
+\family default
+).
+ Cette classe permet d'allouer un vecteur sur le CPU et le GPU.
+ Elle s'occupe aussi des synchronisations entre le CPU et le GPU.
+\end_layout
+
+\begin_layout Subsection
+Modèles physiques
+\end_layout
+
+\begin_layout Standard
+Dans SCHNAPS, nous utilisons une notion de 
+\shape italic
+modèle physique
+\shape default
+ générique.
+ Un modèle dans SCHNAPS (
+\family typewriter
+Model
+\family default
+) contient les informations suivantes:
+\end_layout
+
+\begin_layout Itemize
+dimension 
+\begin_inset Formula $m$
+\end_inset
+
+ du vecteur 
+\begin_inset Formula $W$
+\end_inset
+
+ des variables conservatives du système (
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "eq:slc"
+
+\end_inset
+
+),
+\end_layout
+
+\begin_layout Itemize
+flux numérique,
+\end_layout
+
+\begin_layout Itemize
+condition initiale,
+\end_layout
+
+\begin_layout Itemize
+flux ou conditions aux limites,
+\end_layout
+
+\begin_layout Itemize
+termes sources,
+\end_layout
+
+\begin_layout Itemize
+et éventuellement: solution de référence (si elle existe), caractéristiques
+ des matériaux, 
+\shape italic
+etc.
+\end_layout
+
+\begin_layout Standard
+Toutes ces informations sont données dans des fonctions SCHNAPS, car elles
+ doivent pouvoir être appelées depuis les kernels OpenCL.
+\end_layout
+
+\begin_layout Subsection
+Sous-domaines
+\end_layout
+
+\begin_layout Standard
+Afin d'atteindre de bonnes performances en calcul parallèle, SCHNAPS repose
+ sur plusieurs niveaux de parallélisme.
+ Le premier niveau est un parallélisme à gros grain, géré par la bibliothèque
+ MPI.
+ Un autre niveau de parallélisme à grain plus fin est géré à partir de l'environ
+nement OpenCL, qui permet d'exploiter la puissance de calcul des processeurs
+ multicoeurs ou d'accélérateurs, comme les GPUs.
+\end_layout
+
+\begin_layout Standard
+Les maillages de SCHNAPS sont organisés pour suivre cette hiérarchie.
+ D'abord, le domaine 
+\begin_inset Formula $\Omega$
+\end_inset
+
+ est découpé en 
+\shape italic
+sous-domaines
+\shape default
+.
+ Chaque sous-domaine est associé à un noeud MPI.
+ Un noeud MPI ne connaît que son sous-domaine.
+\end_layout
+
+\begin_layout Standard
+S'il n'y a qu'un seul sous-domaine, SCHNAPS peut fonctionner sans la bibliothèqu
+e MPI.
+\end_layout
+
+\begin_layout Subsection
+Zones
+\end_layout
+
+\begin_layout Standard
+Par ailleurs, chaque sous-domaine est lui-même découpé en 
+\shape italic
+zones
+\shape default
+.
+ Les zones sont constituées d'éléments partageant les mêmes caractéristiques
+ (modélisation physique, interpolation, forme, 
+\shape slanted
+etc.
+\shape default
+) Ce regroupement assure une meilleure parallélisation, car les calculs
+ des éléments d'une même zone sont similaires.
+ Il existe des 
+\shape italic
+zones volumiques
+\shape default
+ pour les calculs dans le volume.
+ Il existe aussi des 
+\shape italic
+zones d'interface
+\shape default
+ (ou 
+\shape italic
+zones surfaciques
+\shape default
+) constituées d'éléments surfaciques pour la modélisation de termes d'interface.
+\end_layout
+
+\begin_layout Standard
+Les échanges de données entre les zones volumiques sont assurés par les
+ zones surfaciques.
+ Les zones surfaciques au bord des sous-domaines sont également utilisées
+ pour les communications MPI.
+\end_layout
+
+\begin_layout Standard
+Nous réalisons les calculs à l'intérieur des zones à partir de kernels OpenCL.
+ Ces kernels calculent les flux, les termes sources dans les zones volumiques.
+ Les kernels calculent également les flux provenant des zones surfaciques.
+ Ils réalisent enfin les extractions de données des zones volumiques vers
+ les zones d'interfaces.
+\end_layout
+
+\begin_layout Standard
+Cette notion de zones existe dans plusieurs classes:
+\end_layout
+
+\begin_layout Itemize
+Le 
+\shape italic
+maillage de zone
+\shape default
+ (
+\family typewriter
+ZoneMesh
+\family default
+) permet de décrire le maillage géométrique, éventuellement déstructuré,
+ mais conforme, d'une zone.
+ Cette classe permet de décrire aussi bien un maillage volumique que surfacique.
+ Pour créer un maillage non conforme, il est nécessaire d'utiliser plusieurs
+ maillages volumiques reliés par un maillage surfacique.
+ Un 
+\family typewriter
+ZoneMesh
+\family default
+ contient une structure classique de maillage: noeuds géométriques, éléments,
+ tableaux de connectivité éléments vers noeuds et éléments vers éléments.
+ Si le 
+\family typewriter
+ZoneMesh
+\family default
+ est surfacique, il contient en plus deux pointeurs vers les 
+\family typewriter
+ZoneMesh
+\family default
+ volumiques voisins de gauche et de droite.
+ Dans ce cas, la connectivité éléments vers éléments permet de retrouver
+ les voisins volumiques d'un élément surfacique.
+\end_layout
+
+\begin_layout Itemize
+Le 
+\shape italic
+champ de zone
+\shape default
+ (
+\family typewriter
+ZoneField
+\family default
+) permet de décrire un champ complet de variables conservatives sur un 
+\family typewriter
+ZoneMesh
+\family default
+.
+ Le 
+\family typewriter
+ZoneField
+\family default
+ pointe vers un 
+\family typewriter
+Model
+\family default
+.
+ Il contient également une fonction SCHNAPS très importante pour les performance
+s: la fonction 
+\family typewriter
+varindex
+\family default
+.
+ Cette fonction permet de retrouver en mémoire une donnée conservative,
+ connaissant son indice, son élément et son numéro de point Gauss.
+ Le rangement effectif en mémoire de la donnée est réalisé dans cette fonction.
+ Il est important de faire attention à ce rangement afin de maximiser la
+ localité des accès mémoires.
+ La réécriture de cette fonction permet de changer l'organisation des données
+ en mémoire sans changer la plupart des algorithmes GD.
+\end_layout
+
+\begin_layout Itemize
+Les classes 
+\family typewriter
+ZoneSimulation
+\family default
+ et 
+\family typewriter
+ZoneInterface
+\family default
+ contiennent un maillage et des champs de zone.
+ Elles contiennent également les algorithmes nécessaires à l'implémentation
+ de la méthode GD.
+ La classe 
+\family typewriter
+ZoneSimulation
+\family default
+ est plus particulièrement dédiée aux algorithmes sur les zones volumiques,
+ tandis que la classe 
+\family typewriter
+ZoneInterface
+\family default
+ s'occupe plutôt des tâches surfaciques.
+ Par exemple nous trouvons dans 
+\family typewriter
+ZoneSimulation
+\family default
+ l'algorithme qui permet d'assembler les flux des faces internes d'une zone.
+ Les flux d'interface sont calculés par 
+\family typewriter
+ZoneInterface
+\family default
+.
+ Ce découpage assure un recouvrement des communications par les calculs:
+ le calcul des faces internes peut en effet commencer même si les communications
+ des interfaces ne sont pas terminées.
+\end_layout
+
+\begin_layout Subsection
+Simulation
+\end_layout
+
+\begin_layout Standard
+Une 
+\shape italic
+simulation
+\shape default
+ (
+\family typewriter
+Simulation
+\family default
+) contient toutes les zones d'un sous-domaine.
+ Cette classe est conçue pour contenir les algorithmes à appliquer sur les
+ zones.
+ En particulier, c'est cette classe qui construit un graphe des tâches pour
+ lancer les calculs OpenCL et les communications MPI de façon asynchrone.
+ Un exemple de graphe des tâches pour un calcul sur un sous-domaine avec
+ trois zones est représenté Figure 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "fig:Graphe-des-tâches"
+
+\end_inset
+
+.
+ Le graphe est exécuté de façon totalement asynchrone.
+ SCHNAPS utilise le mécanisme des événements OpenCL pour gérer les dépendances
+ entre les tâches.
+ Les communications MPI sont lancées dans des threads indépendants afin
+ de ne pas bloquer le déroulement du calcul OpenCL.
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float figure
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+\noindent
+\align center
+\begin_inset Graphics
+	filename exemple-task.png
+	width 12cm
+
+\end_inset
+
+
+\begin_inset Caption
+
+\begin_layout Plain Layout
+\begin_inset CommandInset label
+LatexCommand label
+name "fig:Graphe-des-tâches"
+
+\end_inset
+
+Graphe des tâches pour un calcul dans un sous-domaine contenant 3 zones.
+ Les tâches sont représentées par les noeuds du graphe et les flèches représente
+nt les dépendances entre les tâches (une tâche doit attendre la fin des
+ tâches dont elle dépend avant de démarrer).
+ 
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsection
+Éléments géométriques
+\begin_inset CommandInset label
+LatexCommand label
+name "sub:elem_geom"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Dans cette section, nous nous plaçons au niveau d'un élément 
+\begin_inset Formula $L$
+\end_inset
+
+.
+ Suivant la zone dans laquelle il se trouve, cet élément peut avoir des
+ caractéristiques géométriques différentes.
+ Nous utilisons le formalisme classique des éléments finis.
+ À chaque zone nous attribuons un élément de référence 
+\begin_inset Formula $\hat{L}$
+\end_inset
+
+.
+ Cet élément s'appuie sur des 
+\shape slanted
+noeuds géométriques
+\shape default
+, notés 
+\begin_inset Formula $\hat{X}_{i}$
+\end_inset
+
+ et des 
+\shape slanted
+fonctions de base géométriques
+\shape default
+, notées 
+\begin_inset Formula $\hat{\psi}_{i}$
+\end_inset
+
+ telles que
+\begin_inset Formula 
+\[
+\hat{\psi}_{i}(\hat{X}_{j})=\delta_{ij}.
+\]
+
+\end_inset
+
+Dans SCHNAPS, dans une zone donnée, le nombre de noeuds et de fonctions
+ géométriques est noté 
+\family typewriter
+nb_nodes
+\family default
+.
+ Pour un hexaèdre à huit noeuds (élément de type H8), 
+\family typewriter
+nb_nodes
+\family default
+=8.
+ Les noeuds sont donnés dans le tableau 
+\family typewriter
+ref_node
+\family default
+.
+ L'élément de référence possède également un certain nombre de faces, noté
+ 
+\family typewriter
+nb_faces
+\family default
+.
+ Le tableau 
+\family typewriter
+face2node
+\family default
+ permet de retrouver les noeuds d'une face donnée.
+ Le numéro du j-ième noeud de la face jf est donné par 
+\family typewriter
+face2node[nb_face_nodes*jf+j]
+\family default
+.
+ L'entier 
+\family typewriter
+nb_face_nodes
+\family default
+ est le nombre maximal de noeuds par face (par exemple 
+\family typewriter
+nb_face_nodes
+\family default
+=4 pour un hexaèdre à 8 noeuds).
+\end_layout
+
+\begin_layout Standard
+Nous utiliserons ce formalisme pour toutes les familles d'éléments finis
+ de SCHNAPS, qu'il s'agisse d'hexaèdres, de quadrangles, de triangles, de
+ tétraèdres, d'éléments courbes.
+ Les éléments de type surfacique (qui se trouvent dans les zones d'interface)
+ sont décrits avec ce formalisme.
+ Pour ces éléments, nous utilisons de plus un paramétrage volumique au voisinage
+ de la surface dans la direction du vecteur normal.
+ Par exemple, le quadrangle à 4 noeuds (élément de type Q4) est 
+\begin_inset Quotes eld
+\end_inset
+
+épaissi
+\begin_inset Quotes erd
+\end_inset
+
+ dans la direction de son vecteur normal en un élément de type H8.
+ Les quatre noeuds supplémentaires sont déduits des 4 noeuds initiaux.
+ 
+\end_layout
+
+\begin_layout Standard
+À titre d'exemple, nous montrons maintenant précisément comment nous pouvons
+ définir l'interpolation pour des hexaèdres à 8 noeuds (éléments de type
+ H8 dans la terminologie classique des éléments finis).
+ Dans ce cas, l'élément de référence 
+\begin_inset Formula $\hat{L}$
+\end_inset
+
+ est le cube unité
+\begin_inset Formula 
+\[
+\hat{L}=[0,1]^{3}.
+\]
+
+\end_inset
+
+Soient 
+\begin_inset Formula $\hat{X}=(\hat{x},\hat{y},\hat{z})$
+\end_inset
+
+ les coordonnées dans l'élément de référence.
+ Les noeuds de référence 
+\begin_inset Formula $\hat{X}^{i}$
+\end_inset
+
+, 
+\begin_inset Formula $i=1\cdots8$
+\end_inset
+
+ et les fonctions géométriques 
+\begin_inset Formula $\hat{\psi}_{i}$
+\end_inset
+
+ de l'élément de référence sont données par
+\begin_inset Formula 
+\[
+\begin{array}{ccc}
+i & \hat{X}^{i} & \hat{\psi}_{i}\\
+1 & (0,0,0) & (1-\hat{x})(1-\hat{y})(1-\hat{z})\\
+2 & (1,0,0) & \hat{x}(1-\hat{y})(1-\hat{z})\\
+3 & (1,1,0) & \hat{x}\hat{y}(1-\hat{z})\\
+4 & (0,1,0) & (1-\hat{x})\hat{y}(1-\hat{z})\\
+5 & (0,0,1) & (1-\hat{x})(1-\hat{y})\hat{z}\\
+6 & (1,0,1) & \hat{x}(1-\hat{y})\hat{z}\\
+7 & (1,1,1) & \hat{x}\hat{y}\hat{z}\\
+8 & (0,1,1) & (1-\hat{x})\hat{y}\hat{z}
+\end{array}
+\]
+
+\end_inset
+
+Un hexaèdre H8 arbitraire est alors défini par huit noeuds 
+\begin_inset Formula $X_{L}^{i}$
+\end_inset
+
+.
+ La transformation géométrique qui envoie 
+\begin_inset Formula $\hat{L}$
+\end_inset
+
+ sur 
+\begin_inset Formula $L$
+\end_inset
+
+ est définie par
+\begin_inset Formula 
+\[
+\tau_{L}(\hat{X})=\hat{\psi}_{i}(\hat{X})X_{L}^{i}.
+\]
+
+\end_inset
+
+Nous faisons l'hypothèse que les noeuds 
+\begin_inset Formula $X_{L}^{i}$
+\end_inset
+
+ sont choisis de telle sorte que 
+\begin_inset Formula $\tau_{L}$
+\end_inset
+
+ est une transformation directe et inversible.
+ En pratique, il faut s'assurer que le choix des noeuds ne conduit pas à
+ des éléments mal orientés ou trop déformés.
+ Comme les fonctions de base géométriques satisfont 
+\begin_inset Formula 
+\[
+\hat{\psi}_{i}(\hat{X}^{j})=\delta_{ij}
+\]
+
+\end_inset
+
+nous déduisons que la transformation géométrique envoie les noeuds de référence
+ sur les noeuds de l'élément 
+\begin_inset Formula $L$
+\end_inset
+
+
+\begin_inset Formula 
+\[
+\tau_{L}(\hat{X}^{i})=X_{L}^{i}.
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Pour la numérotation des faces, nous utilisons la convention suivante.
+ Tout d'abord, pour le cube de référence, les faces sont numérotées de 0
+ à 5 selon le modèle de la figure 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "fig:cube_ref"
+
+\end_inset
+
+ :
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float figure
+wide false
+sideways false
+status collapsed
+
+\begin_layout Plain Layout
+\noindent
+\align center
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+begin{tikzpicture}[scale=5] 
+\end_layout
+
+\begin_layout Plain Layout
+
+% face avant
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+draw[line width=.9pt] (0,0,1)--(1,0,1)--(1,1,1)--(0,1,1)--cycle;
+\end_layout
+
+\begin_layout Plain Layout
+
+% face dessus
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+draw[line width=.9pt] (0,1.2,1)--(1,1.2,1)--(1,1.2,0)--(0,1.2,0)--cycle; 
+\end_layout
+
+\begin_layout Plain Layout
+
+% face droite
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+draw[line width=.9pt] (1.1,0,0)--(1.1,1,0)--(1.1,1,1)--(1.1,0,1)--cycle; 
+\end_layout
+
+\begin_layout Plain Layout
+
+% face arrière
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+draw[dashed] (0,0,0)--(1,0,0)--(1,1,0)--(0,1,0)--cycle; % face complète
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+draw[line width=.9pt] (0.61,0,0)--(0.72,0,0); 
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+draw[line width=.9pt] (1,0.9,0)--(1,1,0)--(.8,1,0); 
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+draw[line width=.9pt] (0,.82,0)--(0,0.6,0); 
+\end_layout
+
+\begin_layout Plain Layout
+
+% face dessous
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+draw[dashed] (0,-.2,1)--(1,-.2,1)--(1,-.2,0)--(0,-.2,0)--cycle; % face complète
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+draw[line width=.9pt] (0,-.2,0.5)--(0,-.2,1)--(1,-.2,1)--(1,-.2,0)--(.9,-.2,0);
+ 
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+draw[line width=.9pt] (.72,-.2,0)--(0.61,-.2,0);
+\end_layout
+
+\begin_layout Plain Layout
+
+% face gauche
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+draw[dashed] (-.1,0,0)--(-.1,1,0)--(-.1,1,1)--(-.1,0,1)--cycle; 
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+draw[line width=.9pt] (-.1,.82,0)--(-.1,0.6,0); 
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+draw[line width=.9pt] (-.1,0,0.75)--(-.1,0,1)--(-.1,1,1)--(-.1,1,.5); 
+\end_layout
+
+\begin_layout Plain Layout
+
+% arêtes horizontales, de l'arrière vers l'avant 
+\end_layout
+
+\begin_layout Plain Layout
+
+%
+\backslash
+draw (0,0,0) -- (0,0,1); % bas gauche 
+\end_layout
+
+\begin_layout Plain Layout
+
+%
+\backslash
+draw (1,0,0) -- (1,0,1); % bas droit 
+\end_layout
+
+\begin_layout Plain Layout
+
+%
+\backslash
+draw (1,1,0) -- (1,1,1); % haut droit 
+\end_layout
+
+\begin_layout Plain Layout
+
+%
+\backslash
+draw (0,1,0) -- (0,1,1); % haut gauche
+\end_layout
+
+\begin_layout Plain Layout
+
+%
+\backslash
+draw[xshift=-2pt] (1,0) node[below] {a/b}; 
+\end_layout
+
+\begin_layout Plain Layout
+
+%
+\backslash
+draw[line width=1pt,color=red,domaine={1.25}{1.5},samples=100,dotted] plot
+ (
+\backslash
+x,1-
+\backslash
+x); 
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+end{tikzpicture}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+\noindent
+\align center
+\begin_inset Caption
+
+\begin_layout Plain Layout
+Cube de référence.
+\begin_inset CommandInset label
+LatexCommand label
+name "fig:cube_ref"
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\begin_inset Note Note
+status open
+
+\begin_layout Plain Layout
+Cube de références, n° des faces, un point de GL
+\end_layout
+
+\end_inset
+
+Nous définissons ensuite un tableau de permutation des axes des faces
+\begin_inset Formula 
+\[
+\mathrm{axis\_permut}=\left(\begin{array}{cccc}
+0 & 2 & 1 & 0\\
+1 & 2 & 0 & 1\\
+2 & 0 & 1 & 1\\
+2 & 1 & 0 & 0\\
+0 & 1 & 2 & 1\\
+1 & 0 & 2 & 0
+\end{array}\right).
+\]
+
+\end_inset
+
+Chaque ligne correspond à une face du cube.
+ Les trois premières colonnes code une permutation des axes selon la convention
+ 
+\begin_inset Formula $"0"$
+\end_inset
+
+ pour 
+\begin_inset Formula $x$
+\end_inset
+
+, 
+\begin_inset Formula $"1"$
+\end_inset
+
+ pour 
+\begin_inset Formula $y$
+\end_inset
+
+ et 
+\begin_inset Formula $"2"$
+\end_inset
+
+ pour 
+\begin_inset Formula $z$
+\end_inset
+
+, les deux premiers axes étant dans le plan de la face et le troisième orienté
+ suivant la normale sortante.
+ La dernière colonne donne la valeur de la troisième coordonnée qui est
+ constante sur la face.
+ Par exemple, la troisième ligne correspond à la face 2 qui est dans le
+ plan 
+\begin_inset Formula $("2","0")=(z,x).$
+\end_inset
+
+ La direction normale à la face est la direction 
+\begin_inset Formula $"1"=y$
+\end_inset
+
+.
+ Enfin sur cette face, on a bien 
+\begin_inset Formula $y=1$
+\end_inset
+
+.
+ 
+\end_layout
+
+\begin_layout Standard
+Pour un numéro de face 
+\begin_inset Formula $\texttt{ifa}$
+\end_inset
+
+, nous notons 
+\begin_inset Formula $\text{opposite\_face}(\texttt{ifa})$
+\end_inset
+
+ le numéro de face opposée:
+\begin_inset Formula 
+\[
+\text{opposite\_face}=\left(\begin{array}{c}
+2\\
+3\\
+0\\
+1\\
+5\\
+4
+\end{array}\right).
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+La géométrie des éléments est décrite dans la classe 
+\family typewriter
+ElementGeometry
+\family default
+.
+ Cette classe contient des fonctions SCHNAPS (qui pourront donc être appelées
+ depuis les kernel OpenCL) pour calculer la transformation géométrique 
+\begin_inset Formula $\tau$
+\end_inset
+
+ en un point de référence, son gradient, son jacobien, son inverse, le vecteur
+ normal dans le cas d'un élément surfacique, 
+\shape italic
+etc
+\shape default
+.
+ 
+\end_layout
+
+\begin_layout Subsection
+Interpolation
+\end_layout
+
+\begin_layout Standard
+Une fois définie la géométrie d'un élément, on peut définir l'interpolation
+ d'un champ scalaire.
+ Cette information est décrite dans la classe 
+\family typewriter
+ElementInterpolation
+\family default
+.
+\end_layout
+
+\begin_layout Standard
+Pour l'instant dans SCHNAPS, pour des raisons d'efficacité, nous utilisons
+ une approximation nodale adaptée à la quadrature numérique (voir 
+\begin_inset CommandInset citation
+LatexCommand cite
+key "CFP06,KWBH09"
+
+\end_inset
+
+): les champs sont définis aux points d'intégration de Gauss des éléments.
+ Ce choix permet d'accéder directement aux champs pour l'intégration numérique
+ dans le volume.
+ Ce choix assure aussi que les matrices masses locales sont diagonales.
+\end_layout
+
+\begin_layout Standard
+Nous décrivons par exemple comment nous interpolons les champs sur un élément
+ de type H8 avec des polynômes de degré 
+\begin_inset Formula $d$
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Standard
+Pour l'interpolation nous fixons d'abord dans la cellule 
+\begin_inset Formula $L$
+\end_inset
+
+ un degré 
+\begin_inset Formula $d$
+\end_inset
+
+.
+ Nous considérons les 
+\begin_inset Formula $(d+1)$
+\end_inset
+
+ zéros 
+\begin_inset Formula $(\xi_{i})_{i=0\cdots d}$
+\end_inset
+
+ du 
+\begin_inset Formula $(d+1)^{\text{ième}}$
+\end_inset
+
+ polynôme de Legendre sur 
+\begin_inset Formula $[0,1],$
+\end_inset
+
+ e
+\begin_inset Float figure
+wide false
+sideways false
+status collapsed
+
+\begin_layout Plain Layout
+\noindent
+\align center
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+begin{tikzpicture}[scale=5] 
+\end_layout
+
+\begin_layout Plain Layout
+
+% face avant
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+draw[line width=.9pt] (0,0,1)--(1,0,1)--(1,1,1)--(0,1,1)--cycle;
+\end_layout
+
+\begin_layout Plain Layout
+
+% face dessus
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+draw[line width=.9pt] (0,1.2,1)--(1,1.2,1)--(1,1.2,0)--(0,1.2,0)--cycle; 
+\end_layout
+
+\begin_layout Plain Layout
+
+% face droite
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+draw[line width=.9pt] (1.1,0,0)--(1.1,1,0)--(1.1,1,1)--(1.1,0,1)--cycle; 
+\end_layout
+
+\begin_layout Plain Layout
+
+% face arrière
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+draw[dashed] (0,0,0)--(1,0,0)--(1,1,0)--(0,1,0)--cycle; % face complète
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+draw[line width=.9pt] (0.61,0,0)--(0.72,0,0); 
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+draw[line width=.9pt] (1,0.9,0)--(1,1,0)--(.8,1,0); 
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+draw[line width=.9pt] (0,.82,0)--(0,0.6,0); 
+\end_layout
+
+\begin_layout Plain Layout
+
+% face dessous
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+draw[dashed] (0,-.2,1)--(1,-.2,1)--(1,-.2,0)--(0,-.2,0)--cycle; % face complète
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+draw[line width=.9pt] (0,-.2,0.5)--(0,-.2,1)--(1,-.2,1)--(1,-.2,0)--(.9,-.2,0);
+ 
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+draw[line width=.9pt] (.72,-.2,0)--(0.61,-.2,0);
+\end_layout
+
+\begin_layout Plain Layout
+
+% face gauche
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+draw[dashed] (-.1,0,0)--(-.1,1,0)--(-.1,1,1)--(-.1,0,1)--cycle; 
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+draw[line width=.9pt] (-.1,.82,0)--(-.1,0.6,0); 
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+draw[line width=.9pt] (-.1,0,0.75)--(-.1,0,1)--(-.1,1,1)--(-.1,1,.5); 
+\end_layout
+
+\begin_layout Plain Layout
+
+% arêtes horizontales, de l'arrière vers l'avant 
+\end_layout
+
+\begin_layout Plain Layout
+
+%
+\backslash
+draw (0,0,0) -- (0,0,1); % bas gauche 
+\end_layout
+
+\begin_layout Plain Layout
+
+%
+\backslash
+draw (1,0,0) -- (1,0,1); % bas droit 
+\end_layout
+
+\begin_layout Plain Layout
+
+%
+\backslash
+draw (1,1,0) -- (1,1,1); % haut droit 
+\end_layout
+
+\begin_layout Plain Layout
+
+%
+\backslash
+draw (0,1,0) -- (0,1,1); % haut gauche
+\end_layout
+
+\begin_layout Plain Layout
+
+%
+\backslash
+draw[xshift=-2pt] (1,0) node[below] {a/b}; 
+\end_layout
+
+\begin_layout Plain Layout
+
+%
+\backslash
+draw[line width=1pt,color=red,domaine={1.25}{1.5},samples=100,dotted] plot
+ (
+\backslash
+x,1-
+\backslash
+x); 
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+end{tikzpicture}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+\noindent
+\align center
+\begin_inset Caption
+
+\begin_layout Plain Layout
+Cube de référence.
+\begin_inset CommandInset label
+LatexCommand label
+name "fig:cube_ref-1"
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+t les poids d'intégration correspondants 
+\begin_inset Formula $\omega_{i}$
+\end_inset
+
+.
+ Nous notons aussi 
+\begin_inset Formula $I_{k}$
+\end_inset
+
+ le 
+\begin_inset Formula $k^{\text{ième}}$
+\end_inset
+
+ polynôme de Lagrange associé aux points 
+\begin_inset Formula $\xi_{i}$
+\end_inset
+
+.
+ Rappelons que 
+\begin_inset Formula $I_{k}$
+\end_inset
+
+ est un polynôme de degré 
+\begin_inset Formula $d$
+\end_inset
+
+ et que
+\begin_inset Formula 
+\[
+I_{j}(\xi_{i})=\delta_{ij}.
+\]
+
+\end_inset
+
+Nous construisons alors, sur l'élément de référence 
+\begin_inset Formula $\hat{L}$
+\end_inset
+
+, les points de Gauss 
+\begin_inset Formula $\hat{Y}_{q}$
+\end_inset
+
+, les poids 
+\begin_inset Formula $\hat{\lambda}_{q}$
+\end_inset
+
+ et les fonctions d'interpolation 
+\begin_inset Formula $\hat{\varphi}^{q}(\hat{X})$
+\end_inset
+
+ à partir de produits tensoriels de quantités monodimensionnelles.
+ Plus précisément, soient 
+\begin_inset Formula $i$
+\end_inset
+
+, 
+\begin_inset Formula $j$
+\end_inset
+
+ et 
+\begin_inset Formula $k$
+\end_inset
+
+ trois entiers dans 
+\begin_inset Formula $\{0\cdots d\}$
+\end_inset
+
+ et soit 
+\begin_inset Formula $q=(d+1)^{2}k+(d+1)j+i$
+\end_inset
+
+ alors
+\begin_inset Formula 
+\[
+\hat{Y}_{q}=(\xi_{i},\xi_{j},\xi_{k}),\quad\hat{\lambda}_{q}=\omega_{i}\omega_{j}\omega_{k},\quad\hat{\varphi}^{q}(\hat{X})=I_{i}(\hat{x})I_{j}(\hat{y})I_{k}(\hat{z}).
+\]
+
+\end_inset
+
+Finalement, nous obtenons les fonctions de base sur l'élément 
+\begin_inset Formula $L$
+\end_inset
+
+ en transportant les fonctions d'interpolation de référence avec la transformati
+on géométrique.
+\begin_inset Formula 
+\[
+\varphi_{L}^{i}(X)=\hat{\varphi}^{i}(\hat{X})\text{ with }X=\tau_{L}(\hat{X}).
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+La classe 
+\family typewriter
+ElementInterpolation
+\family default
+ contient des fonctions permettant de calculer: la position des points de
+ Gauss du volume ou des faces, les poids de Gauss, les valeurs des fonctions
+ de base et de leurs gradients.
+\end_layout
+
+\begin_layout Subsection
+Interpolation de Gauss-Lobatto avec des sous-cellules
+\end_layout
+
+\begin_layout Standard
+\begin_inset Note Comment
+status open
+
+\begin_layout Plain Layout
+Pour l'instant dans SCHNAPS, pour des raisons d'efficacité, nous utilisons
+ une approximation nodale adaptée à la quadrature numérique (voir 
+\begin_inset CommandInset citation
+LatexCommand cite
+key "CFP06,KWBH09"
+
+\end_inset
+
+): les champs sont définis aux points d'intégration de Gauss des éléments.
+ Ce choix permet d'accéder directement aux champs pour l'intégration numérique
+ dans le volume.
+ Ce choix assure aussi que les matrices masses locales sont diagonales.
+\end_layout
+
+\begin_layout Plain Layout
+Nous décrivons par exemple comment nous interpolons les champs sur un élément
+ de type H8 avec des polynômes de degré 
+\begin_inset Formula $d$
+\end_inset
+
+.
+\end_layout
+
+\end_inset
+
+Pour l'interpolation nous fixons d'abord dans la cellule 
+\begin_inset Formula $L$
+\end_inset
+
+ un degré 
+\begin_inset Formula $d(\ell)$
+\end_inset
+
+ pour chaque direction 
+\begin_inset Formula $\ell=0,1,2$
+\end_inset
+
+.
+ Dans chaque direction, nous considérons les 
+\begin_inset Formula $(d(\ell)+1)$
+\end_inset
+
+ points de Gauss-Lobatto 
+\begin_inset Formula $(\xi_{i})_{i=0\cdots d(\ell)}$
+\end_inset
+
+ sur 
+\begin_inset Formula $[0,1],$
+\end_inset
+
+ et les poids d'intégration correspondants 
+\begin_inset Formula $\omega_{i}$
+\end_inset
+
+.
+ Nous considérons de plus un raffinement 
+\begin_inset Formula $\nraf(\ell)$
+\end_inset
+
+ pour 
+\begin_inset Formula $\ell=0,1,2$
+\end_inset
+
+.
+ Nous notons aussi 
+\begin_inset Formula $I_{k}$
+\end_inset
+
+ le 
+\begin_inset Formula $k^{\text{ième}}$
+\end_inset
+
+ polynôme de Lagrange associé aux points 
+\begin_inset Formula $\xi_{i}$
+\end_inset
+
+.
+ Rappelons que 
+\begin_inset Formula $I_{k}$
+\end_inset
+
+ est un polynôme de degré 
+\begin_inset Formula $d$
+\end_inset
+
+ et que
+\begin_inset Formula 
+\[
+I_{j}(\xi_{i})=\delta_{ij}.
+\]
+
+\end_inset
+
+Sur l'élément de référence 
+\begin_inset Formula $\hat{L}$
+\end_inset
+
+, nous construisons alors les points de Gauss-Lobatto 
+\begin_inset Formula $\hat{Y}_{q}$
+\end_inset
+
+, les poids 
+\begin_inset Formula $\hat{\lambda}_{q}$
+\end_inset
+
+ et les fonctions d'interpolation 
+\begin_inset Formula $\hat{\varphi}^{q}(\hat{X})$
+\end_inset
+
+ à partir de produits tensoriels de quantités monodimensionnelles.
+ Plus précisément, soient 
+\begin_inset Formula $i(\ell)_{\ell=0,1,2}$
+\end_inset
+
+ trois entiers dans 
+\begin_inset Formula $\{0\cdots d(0)\}\times\{0\cdots d(1)\}\times\{0\cdots d(2)\}$
+\end_inset
+
+ et 
+\begin_inset Formula $r(\ell)_{\ell=0,1,2}$
+\end_inset
+
+ trois entiers dans 
+\begin_inset Formula $\{0\cdots\nraf(0)\}\times\{0\cdots\nraf(1)\}\times\{0\cdots\nraf(2)\}$
+\end_inset
+
+ et soit 
+\begin_inset Formula 
+\begin{eqnarray*}
+q & = & i(0)\\
+ & + & i(1)(d(0)+1)\\
+ & + & i(2)(d(0)+1)(d(1)+1)\\
+ & + & r(0)(d(0)+1)(d(1)+1)(d(2)+1)\\
+ & + & r(1)(d(0)+1)(d(1)+1)(d(2)+1)\nraf(0)\\
+ & + & r(2)(d(0)+1)(d(1)+1)(d(2)+1)\nraf(0)\nraf(1),
+\end{eqnarray*}
+
+\end_inset
+
+alors
+\begin_inset Formula 
+\begin{eqnarray*}
+\hat{Y}_{q} & = & (h(0)(r(0)+\xi_{i(0)}),h(1)(r(1)+\xi_{i(1)}),h(2)(r(2)+\xi_{i(2)})),\\
+\hat{\lambda}_{q} & = & h(0)\omega_{i(0)}h(1)\omega_{i(1)}h(2)\omega_{i(2)},\\
+\hat{\varphi}^{q}(\hat{X}) & = & I_{i(0)}(\frac{\hat{x}}{h(0)}-r(0))I_{i(1)}(\frac{\hat{y}}{h(1)}-r(1))I_{i(2)}(\frac{\hat{z}}{h(2)}-r(2))\,\chi^{r}(\hat{X}),
+\end{eqnarray*}
+
+\end_inset
+
+où 
+\begin_inset Formula $h(\ell)=1/\nraf(\ell)$
+\end_inset
+
+ et
+\begin_inset Formula 
+\[
+\chi^{r}(\hat{X})=\mathbb{1}_{[h(0)r(0),h(0)(r(0)+1)]}(\hat{x})\mathbb{1}_{[h(1)r(1),h(1)(r(1)+1)]}(\hat{y})\mathbb{1}_{[h(2)r(2),h(2)(r(2)+1)]}(\hat{z}).
+\]
+
+\end_inset
+
+En pratique, on calcule 
+\begin_inset Formula $q$
+\end_inset
+
+ grâce à la formule de Hörner
+\begin_inset Formula 
+\[
+q=i(0)+(d(0)+1)(i(1)+(d(1)+1)(i(2)+(d(2)+1)(r(0)+\nraf(0)(r(1)+\nraf(1)r(2)))).
+\]
+
+\end_inset
+
+Dans la suite nous utiliserons la notation 
+\begin_inset Formula $q$
+\end_inset
+
+ aussi pour le multi-indice 
+\begin_inset Formula $q=(i(0),i(1),i(2),r(0),r(1),r(2))=(i,r)$
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Standard
+Finalement, nous obtenons les fonctions de base sur l'élément 
+\begin_inset Formula $L$
+\end_inset
+
+ en transportant les fonctions d'interpolation de référence avec la transformati
+on géométrique.
+\begin_inset Formula 
+\[
+\varphi_{L}^{i}(X)=\hat{\varphi}^{i}(\hat{X})\text{ with }X=\tau_{L}(\hat{X}).
+\]
+
+\end_inset
+
+Nous définissons à présent l'indexation des points de Gauss-Lobatto sur
+ les faces.
+ Ces points sont repérés par un numéro de face 
+\begin_inset Formula $\texttt{ifa}\in\{0\cdots5\}$
+\end_inset
+
+, deux indices de points 
+\begin_inset Formula $(i'(0),i'(1))$
+\end_inset
+
+ et deux indices de sous-face 
+\begin_inset Formula $(r'(0),r'(1))$
+\end_inset
+
+.
+ 
+\begin_inset Note Note
+status open
+
+\begin_layout Plain Layout
+exemple de point GL
+\end_layout
+
+\end_inset
+
+ Nous utilisons le tableau 
+\begin_inset Formula $\mathrm{axis\_permut}$
+\end_inset
+
+ introduit à la section 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "sub:elem_geom"
+
+\end_inset
+
+ pour retrouver la position du point de Gauss-Lobatto dans le volume à l'aide
+ des formules suivantes
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+\left\{ \begin{array}{lcl}
+i(\mathrm{axis\_permut}(\texttt{ifa},0)) & = & i'(0),\\
+i(\mathrm{axis\_permut}(\texttt{ifa},1)) & = & i'(1),\\
+i(\mathrm{axis\_permut}(\texttt{ifa},2)) & = & \mathrm{axis\_permut}(\texttt{ifa},3)\, d(\mathrm{axis\_permut}(\texttt{ifa},3)).
+\end{array}\right.
+\]
+
+\end_inset
+
+Les indices de la sous-cellule sont donnés par
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+\left\{ \begin{array}{lcl}
+r(\mathrm{axis\_permut}(\texttt{ifa},0)) & = & r'(0),\\
+r(\mathrm{axis\_permut}(\texttt{ifa},1)) & = & r'(1),\\
+r(\mathrm{axis\_permut}(\texttt{ifa},2)) & = & \mathrm{axis\_permut}(\texttt{ifa},3)\,(\nraf(\mathrm{axis\_permut}(\texttt{ifa},3))-1).
+\end{array}\right.
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Les degrés d'approximation permutés sont donnés par 
+\begin_inset Formula $d'(\mathrm{axis\_permut}(\texttt{ifa},\ell))=d(\ell)$
+\end_inset
+
+ et les raffinements permutés sont donnés par 
+\begin_inset Formula $\nraf'(\mathrm{axis\_permut}(\texttt{ifa},\ell))=\nraf(\ell)$
+\end_inset
+
+.
+ 
+\end_layout
+
+\begin_layout Standard
+Dans la suite, il est nécessaire de pouvoir passer de l'indexation des points
+ de Gauss-Lobatto sur les faces à leur indexation dans les volumes.
+ Avec la convention choisie, le numéro 
+\begin_inset Formula $q'=(i',r')$
+\end_inset
+
+ du point de Gauss-Lobatto sur la face est donné par 
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\begin{eqnarray*}
+q' & = & i'(0)\\
+ & + & i'(1)(d'(0)+1)\\
+ & + & r'(0)(d'(0)+1)(d'(1)+1)\\
+ & + & r'(1)(d'(0)+1)(d'(1)+1)\nraf'(0).
+\end{eqnarray*}
+
+\end_inset
+
+Nous notons 
+\begin_inset Formula $\Pi$
+\end_inset
+
+ la transformation qui fait passer de la numérotation 
+\begin_inset Formula $q'$
+\end_inset
+
+ sur le bord 
+\begin_inset Formula $\partial L$
+\end_inset
+
+ à la numérotation 
+\begin_inset Formula $q$
+\end_inset
+
+ à l'intérieur de la cellule
+\begin_inset Formula 
+\[
+q=\Pi(\texttt{ifa},q').
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Enfin, nous avons aussi besoin d'une numérotation des points de Gauss des
+ faces des sous-cellules.
+ Soit un numéro de sous-cellule 
+\begin_inset Formula $r$
+\end_inset
+
+, un numéro de face 
+\begin_inset Formula $\texttt{ifa}$
+\end_inset
+
+ et un numéro de point de Gauss de sous-cellule 
+\begin_inset Formula $i'$
+\end_inset
+
+.
+ L'indice correspondant à 
+\begin_inset Formula $q$
+\end_inset
+
+ dans la cellule 
+\begin_inset Formula $L$
+\end_inset
+
+ est donné par la transformation
+\begin_inset Formula 
+\[
+q=\pi(r,\texttt{ifa},i').
+\]
+
+\end_inset
+
+Dans le détail, on a 
+\begin_inset Formula $q=(i(0),i(1),i(2),r(0),r(1),r(2))$
+\end_inset
+
+ avec
+\begin_inset Formula 
+\[
+\left\{ \begin{array}{lcl}
+i(\mathrm{axis\_permut}(\texttt{ifa},0)) & = & i'(0),\\
+i(\mathrm{axis\_permut}(\texttt{ifa},1)) & = & i'(1),\\
+i(\mathrm{axis\_permut}(\texttt{ifa},2)) & = & \mathrm{axis\_permut}(\texttt{ifa},3)\, d(\mathrm{axis\_permut}(\texttt{ifa},3)).
+\end{array}\right.
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsection
+Schéma GD pour l'interpolation de Gauss-Lobatto sur des sous-cellules
+\end_layout
+
+\begin_layout Standard
+Dans le cas de l'interpolation de Gauss-Lobatto sur des sous cellules, nous
+ pouvons exprimer l'algorithme de calcul GD sous une forme plus efficace,
+ direction par direction.
+ Nous commençons par remplacer les intégrales de volumes et de bord par
+ leurs quadratures de Gauss-Lobatto.
+ Pour une cellule 
+\begin_inset Formula $L$
+\end_inset
+
+ et une composante 
+\begin_inset Formula $q=(i,r)$
+\end_inset
+
+ la quadrature Gauss-Lobatto s'écrit
+\begin_inset Formula 
+\[
+\omega_{q}^{L}\frac{d}{dt}W_{L}^{q}-\mathcal{V}+\mathcal{D}+\mathcal{B}=\omega_{q}^{L}S(Y_{L}^{q}),
+\]
+
+\end_inset
+
+où 
+\begin_inset Formula $\mathcal{V}$
+\end_inset
+
+, 
+\begin_inset Formula $\mathcal{D}$
+\end_inset
+
+ et 
+\begin_inset Formula $\mathcal{B}$
+\end_inset
+
+ désignent respectivement les termes volumiques, les termes aux interfaces
+ des sous-cellules et les termes de bord de la cellule 
+\begin_inset Formula $L$
+\end_inset
+
+.
+ Pour l'integrale de volume, il faut considérer les contributions sur tous
+ les points de Gauss-Lobatto 
+\begin_inset Formula $Y_{L}^{p}$
+\end_inset
+
+ avec 
+\begin_inset Formula $p=(j(0),j(1),j(2),s(0),s(1),s(2))=(j,s)$
+\end_inset
+
+, soit
+\begin_inset Formula 
+\[
+\mathcal{V}=\sum_{p}\omega_{p}^{L}F(W_{L}^{p})\cdot\nabla\varphi_{q}^{L}(Y_{L}^{p}).
+\]
+
+\end_inset
+
+D'autre part, si 
+\begin_inset Formula $q$
+\end_inset
+
+ correspond à un point de Gauss interne à la cellule 
+\begin_inset Formula $L$
+\end_inset
+
+ on a
+\begin_inset Formula 
+\[
+\mathcal{B}=0.
+\]
+
+\end_inset
+
+Si 
+\begin_inset Formula $q$
+\end_inset
+
+ correspond à un point du bord 
+\begin_inset Formula $\partial L$
+\end_inset
+
+, il existe au moins un numéro de face 
+\begin_inset Formula $\text{ifa}$
+\end_inset
+
+ et un indice de bord 
+\begin_inset Formula $q'$
+\end_inset
+
+ tel que
+\begin_inset Formula 
+\[
+q=\Pi(\text{ifa},q')
+\]
+
+\end_inset
+
+et
+\begin_inset Formula 
+\[
+\mathcal{B}=\sum_{q=\Pi(\text{ifa},q')}\omega_{q'}^{\partial L}F(W_{L}^{q},W_{R}(Y_{L}^{q}),n_{LR}(Y_{L}^{q})).
+\]
+
+\end_inset
+
+Il reste à expliciter les termes de saut aux interfaces des sous-cellules.
+\end_layout
+
+\begin_layout Standard
+Si 
+\begin_inset Formula $q$
+\end_inset
+
+ correspond à un point de Gauss interne à une sous-cellule alors
+\begin_inset Formula 
+\[
+\mathcal{D}=0.
+\]
+
+\end_inset
+
+Si 
+\begin_inset Formula $q$
+\end_inset
+
+ correspond à un point de bord de la sous-cellule 
+\begin_inset Formula $r$
+\end_inset
+
+ alors il existe une ou plusieurs sous-faces 
+\begin_inset Formula $\texttt{ifa}$
+\end_inset
+
+ et un numéro 
+\begin_inset Formula $i'$
+\end_inset
+
+ de point de Gauss dans la sous-face tels que
+\begin_inset Formula 
+\[
+q=\pi(r,\texttt{ifa},i').
+\]
+
+\end_inset
+
+Le point 
+\begin_inset Formula $q$
+\end_inset
+
+ admet un unique vis-à-vis 
+\begin_inset Formula $\tilde{q}$
+\end_inset
+
+ sur la face 
+\begin_inset Formula $\texttt{ifa}$
+\end_inset
+
+ dans une sous-cellule voisine 
+\begin_inset Formula $\tilde{r}$
+\end_inset
+
+
+\begin_inset Formula 
+\[
+\tilde{q}=\pi(\tilde{r},\text{opposite\_face}(\texttt{ifa}),\tilde{i}'),
+\]
+
+\end_inset
+
+et les points de Gauss-Lobatto correspondants sont confondus
+\begin_inset Formula 
+\[
+Y_{L}^{\tilde{q}}=Y_{L}^{q}.
+\]
+
+\end_inset
+
+Avec ces notations, les flux d'interfaces internes s'écrivent
+\begin_inset Formula 
+\[
+\mathcal{D}=\sum_{q=\pi(r,\text{ifa},i')}\omega_{i'}^{\partial r}F(W_{L}^{q},W_{L}^{\tilde{q}},n_{r\tilde{r}}(Y_{L}^{q})),
+\]
+
+\end_inset
+
+où 
+\begin_inset Formula $\omega_{i'}^{\partial r}$
+\end_inset
+
+ désigne les poids de Gauss des point 
+\begin_inset Formula $i'$
+\end_inset
+
+ sur le bord de la sous-cellule 
+\begin_inset Formula $r$
+\end_inset
+
+.
+ La normale à l'interface entre les sous-cellules 
+\begin_inset Formula $r$
+\end_inset
+
+ et 
+\begin_inset Formula $\tilde{r}$
+\end_inset
+
+, orientée de 
+\begin_inset Formula $r$
+\end_inset
+
+ vers 
+\begin_inset Formula $\tilde{r}$
+\end_inset
+
+ est notée 
+\begin_inset Formula $n_{r\tilde{r}}$
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Subsection
+Algorithme GD avec optimisation des accès mémoire sur une macro-cellule
+\end_layout
+
+\begin_layout Standard
+to do
+\end_layout
+
+\begin_layout Subsection
+Autres classes
+\end_layout
+
+\begin_layout Standard
+Pour des raisons pratiques, nous avons dû développer d'autres utilitaires:
+\end_layout
+
+\begin_layout Itemize
+La classe 
+\family typewriter
+Mesher
+\family default
+ permet de réaliser rapidement des maillages constitués de blocs structurés
+ curvilignes.
+ Ce mailleur, indépendant de SCHNAPS, permet d'alimenter rapidement des
+ tests unitaires ou de réaliser des calculs sur des géométries simples.
+\end_layout
+
+\begin_layout Itemize
+La classe 
+\family typewriter
+GmshConverter
+\family default
+ contient des outils pour convertir des maillages issus de gmsh ou de 
+\family typewriter
+Mesher
+\family default
+ dans le format SCHNAPS.
+\end_layout
+
+\begin_layout Section
+Installation
+\end_layout
+
+\begin_layout Subsection
+Prérequis
+\end_layout
+
+\begin_layout Standard
+L'installation de SCHNAPS repose sur:
+\end_layout
+
+\begin_layout Itemize
+Système Linux ou Mac récent.
+ Windows est prévu, mais pas encore opérationnel.
+\end_layout
+
+\begin_layout Itemize
+Un compilateur C récent supportant la norme C99.
+ Testé avec gcc et clang.
+\end_layout
+
+\begin_layout Itemize
+git pour le gestionnaire de version.
+\end_layout
+
+\begin_layout Itemize
+scons comme système de compilation.
+\end_layout
+
+\begin_layout Itemize
+doxygen pour construire la documentation.
+\end_layout
+
+\begin_layout Itemize
+au moins un pilote OpenCL.
+ Testé avec les pilotes AMD (CPU ou GPU), Intel (CPU ou GPU), NVIDIA.
+\end_layout
+
+\begin_layout Itemize
+boost.
+ Nous utilisons boost-graph pour implémenter le graphe des tâches et boost-test
+ pour les tests unitaires.
+\end_layout
+
+\begin_layout Itemize
+MPI pour le parallélisme multi-gpu.
+ MPI est facultatif et peut-être désactivé.
+\end_layout
+
+\begin_layout Itemize
+gmsh pour la visualisation de certains résultats et pour construire les
+ maillages de certains tests unitaires.
+\end_layout
+
+\begin_layout Standard
+SCHNAPS utilise la bibliothèque LGPL ANN 
+\begin_inset Flex URL
+status collapsed
+
+\begin_layout Plain Layout
+
+http://www.cs.umd.edu/~mount/ANN/
+\end_layout
+
+\end_inset
+
+.
+ Les sources de cette bibliothèque sont incluses dans la distribution.
+\end_layout
+
+\begin_layout Subsection
+Téléchargement
+\end_layout
+
+\begin_layout Standard
+SCHNAPS est hébergé sur github.
+\end_layout
+
+\begin_layout Standard
+Pour pouvoir modifer SCHNAPS, il faut d'abord ouvrir un compte sur github
+ et demander à être membre du projet SCHNAPS.
+\end_layout
+
+\begin_layout Standard
+Pour télécharger la dernière version
+\end_layout
+
+\begin_layout Standard
+
+\family typewriter
+git clone https://github.com/phelluy/SCHNAPS.git
+\end_layout
+
+\begin_layout Standard
+Il est aussi possible de télécharger une archive zip à partir de l'interface
+ web de github.
+\end_layout
+
+\begin_layout Subsection
+Compilation
+\end_layout
+
+\begin_layout Standard
+Se placer dans le dossier SCHNAPS:
+\end_layout
+
+\begin_layout Standard
+
+\family typewriter
+cd SCHNAPS
+\end_layout
+
+\begin_layout Standard
+Il faut choisir où placer l'exécutable.
+ On peut par exemple créer un dossier bin dans le dossier SCHNAPS:
+\end_layout
+
+\begin_layout Standard
+
+\family typewriter
+mkdir bin
+\end_layout
+
+\begin_layout Standard
+Il faut ensuite créer une variable d'environnement pour que scons retrouve
+ ce dossier:
+\end_layout
+
+\begin_layout Standard
+
+\family typewriter
+export SCHNAPS_INSTALL_DIR=$(PWD)/bin
+\end_layout
+
+\begin_layout Standard
+Pour la compilation, il suffit de taper:
+\end_layout
+
+\begin_layout Standard
+
+\family typewriter
+scons
+\end_layout
+
+\begin_layout Standard
+Pour compiler la version MPI
+\end_layout
+
+\begin_layout Standard
+
+\family typewriter
+scons --mpi
+\end_layout
+
+\begin_layout Subsection
+Tests
+\end_layout
+
+\begin_layout Standard
+Pour l'instant, SCHNAPS est en cours de développement.
+ Nous avons implémenté des tests unitaires ainsi que quelques tests de calculs
+ GD pour des modèles et des géométries simples.
+\end_layout
+
+\begin_layout Standard
+Pour lancer tous les tests en mode debug simple précision:
+\end_layout
+
+\begin_layout Standard
+
+\family typewriter
+./bin/SCHNAPS_utest_dbg
+\end_layout
+
+\begin_layout Standard
+Pour lancer un test particulier:
+\end_layout
+
+\begin_layout Standard
+
+\family typewriter
+./bin/SCHNAPS_utest_dbg --run-test=NOM_DU_TEST
+\end_layout
+
+\begin_layout Standard
+Par exemple:
+\end_layout
+
+\begin_layout Standard
+
+\family typewriter
+./bin/SCHNAPS_utest_dbg --run_test=test_transport --report_level=detailed
+\end_layout
+
+\begin_layout Standard
+lance un test de résolution de l'équation de transport sur un cube.
+ La solution exacte est appliquée sur les frontières du cube.
+ Ce test génère plusieurs fichiers de visualisation.
+ Pour voir la solution à l'instant final, on peut par exemple faire:
+\end_layout
+
+\begin_layout Standard
+
+\family typewriter
+gmsh test_transport_fin.msh
+\end_layout
+
+\begin_layout Standard
+Autre exemple:
+\end_layout
+
+\begin_layout Standard
+
+\family typewriter
+./bin/SCHNAPS_utest_dbg --run_test=test_interface_raf_nonraf 
+\backslash
+
+\end_layout
+
+\begin_layout Standard
+
+\family typewriter
+--report_level=detailed
+\end_layout
+
+\begin_layout Standard
+lance un test de résolution de l'équation de transport sur un maillage constitué
+ de 3 zones.
+ Une des zones est maillée plus grossièrement que les deux autres.
+ Les raccords entre les trois zones sont donc conformes ou non conformes.
+ De plus, deux des zones sont constituées de cellules courbes.
+ 
+\end_layout
+
+\begin_layout Standard
+Affichage du résultat à l'instant final:
+\end_layout
+
+\begin_layout Standard
+
+\family typewriter
+gmsh end_test_interface_raf_0.msh -open 
+\backslash
+ 
+\end_layout
+
+\begin_layout Standard
+
+\family typewriter
+end_test_interface_raf_1.msh -open end_test_interface_raf_2.msh
+\end_layout
+
+\begin_layout Standard
+(il faut ajuster les échelles dans les menus gmsh pour que le post-traitement
+ des trois zones soit uniforme).
+\end_layout
+
+\begin_layout Standard
+Exemple utilisant MPI:
+\end_layout
+
+\begin_layout Standard
+mpirun -np 2 ./bin/SCHNAPS_utest_mpi_dbg --run_test=test_simulation_mpi
+\end_layout
+
+\begin_layout Standard
+Ce test exécute le même calcul que précédemment, mais sur deux devices OpenCL.
+ Si l'ordinateur sur lequel ce test est lancé dispose d'un seul GPU, une
+ partie des calculs est réalisés sur le CPU (qui est un device OpenCL comme
+ un autre...)
+\end_layout
+
+\begin_layout Subsection
+Documentation détaillée
+\begin_inset CommandInset label
+LatexCommand label
+name "sub:Documentation"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Pour construire la documentation, se placer dans le dossier doc:
+\end_layout
+
+\begin_layout Standard
+
+\family typewriter
+cd doc
+\end_layout
+
+\begin_layout Standard
+Lancer la création de la documentation avec doxygen
+\end_layout
+
+\begin_layout Standard
+
+\family typewriter
+doxygen doxySCHNAPS
+\end_layout
+
+\begin_layout Standard
+Visualiser la documentation:
+\end_layout
+
+\begin_layout Standard
+
+\family typewriter
+firefox ./html/index.html
+\end_layout
+
+\begin_layout Section
+Travaux en cours
+\end_layout
+
+\begin_layout Standard
+Nous avons prévu les étapes suivantes dans le développement de SCHNAPS:
+\end_layout
+
+\begin_layout Enumerate
+Enrichissement des modèles physiques: Maxwell, MHD, 
+\shape italic
+etc.
+\end_layout
+
+\begin_layout Enumerate
+Optimisation des kernels.
+\end_layout
+
+\begin_layout Enumerate
+Incorporation de divers outils: fentes, plaques, sorties sur fichiers, 
+\shape italic
+etc.
+\end_layout
+
+\begin_layout Enumerate
+Prise en compte des formats de fichiers AxesSim (amelet).
+\end_layout
+
+\begin_layout Enumerate
+éléments d'ordre élevé (pour la prise en compte des géométrie courbes).
+\end_layout
+
+\begin_layout Enumerate
+Interpolation de Gauss-Lobatto.
+\end_layout
+
+\begin_layout Enumerate
+Autres.
+\end_layout
+
+\begin_layout Standard
+Nous sommes arrivés à un développement de SCHNAPS qui fait que les tâches
+ 1 à 7 peuvent être réalisées dans n'importe quel ordre et en parallèle
+ par les contributeurs, en fonction de leurs priorités...
+\end_layout
+
+\begin_layout Bibliography
+
+\lang english
+\begin_inset CommandInset bibitem
+LatexCommand bibitem
+key "CFP06"
+
+\end_inset
+
+G.
+ Cohen, X.
+ Ferrières and S.
+ Pernet.
+ A spatial high order hexahedral discontinuous Galerkin method to solve
+ Maxwell’s equations in time-domain.
+ J.
+ Comput.
+ Phys., vol.
+ 217, no.
+ 2, pages 340–363, 2006.
+\end_layout
+
+\begin_layout Bibliography
+
+\lang english
+\begin_inset CommandInset bibitem
+LatexCommand bibitem
+key "KWBH09"
+
+\end_inset
+
+A.
+ Klockner, T.
+ Warburton, J.
+ Bridge, J.S.
+ Hesthaven, Nodal discontinuous Galerkin methods on graphics processors,
+ Journal of Computational Physics, Volume 228, Issue 21, 20 November 2009,
+ Pages 7863-7882
+\end_layout
+
+\end_body
+\end_document
