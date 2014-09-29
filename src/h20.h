@@ -27,6 +27,14 @@ void Ref2Phy(double* physnode,
              double* dphi,
              double* vnds);
 
+// inverse mapping tau from the physical point to the reference point.
+// input:
+// physnode[20*3] : coordinates of physical nodes
+// xphy[3] : coordinates of the mapped point in the physical frame
+// output:
+// xref[3]: coordinates of the mapped point in the reference frame
+void Phy2Ref(double* physnode,double* xphy,double* xref);
+
 
 
 #endif
