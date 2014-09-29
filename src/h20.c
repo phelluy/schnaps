@@ -41,7 +41,7 @@ void Ref2Phy(double* physnode,
       dtau[3*ii+jj]=0;
     }
     for(int i=0;i<20;i++){
-      xphy[ii]+=physnode[3*i+ii]*gradphi[i][4];
+      xphy[ii]+=physnode[3*i+ii]*gradphi[i][3];
       for(int jj=0;jj<3;jj++){
         dtau[3*ii+jj]+=physnode[3*i+ii]*gradphi[i][jj];;
       }
