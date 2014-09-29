@@ -91,7 +91,7 @@ void Ref2Phy(double* physnode,
 
 
 void Phy2Ref(double* physnode,double* xphy,double* xref){
-#define ITERNEWTON 3
+#define ITERNEWTON 10
 
   double dtau[9], codtau[9];                                              
   double dxref[3], dxphy[3];                                              
@@ -117,7 +117,7 @@ void Phy2Ref(double* physnode,double* xphy,double* xref){
       }      
       xref[ii] -= dxref[ii] / det;                            
     }
-    printf("iter=%d erreur=%f\n",iter,sqrt(dxref[0]*dxref[0]+
+    printf("iter=%d erreur=%e\n",iter,sqrt(dxref[0]*dxref[0]+
 				      dxref[1]*dxref[1]+
 				      dxref[2]*dxref[2]));
   }

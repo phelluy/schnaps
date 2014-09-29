@@ -26,10 +26,10 @@ int main(void) {
   double xphy[3],dtau[9];
 
   for(int inoloc=0;inoloc<20;inoloc++){
-    int ino=mc.elem2node[0*20+inoloc];
-    physnode[3*inoloc+0]=mc.node[3*ino+0]; //x
-    physnode[3*inoloc+1]=mc.node[3*ino+1]; //y
-    physnode[3*inoloc+2]=mc.node[3*ino+2]; //z
+    int ino=m.elem2node[0*20+inoloc];
+    physnode[3*inoloc+0]=m.node[3*ino+0]; //x
+    physnode[3*inoloc+1]=m.node[3*ino+1]; //y
+    physnode[3*inoloc+2]=m.node[3*ino+2]; //z
   }
 
   Ref2Phy(physnode,xref,0,-1,xphy,dtau,0,0,0);
