@@ -31,7 +31,6 @@ void psi_ref(int* param, int ib, double* xref, double* psi, double* dpsi);
 // function ib at GLOP ipg.
 void grad_psi_pg(int* param,int ib,int ipg,double* dpsi);
 
-#include "glop.h"
 
 
 #endif
