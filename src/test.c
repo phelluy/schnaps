@@ -28,7 +28,7 @@ int TestGeometry(void){
   int test=1;
   MacroMesh mc;
 
-  ReadMacroMesh(&mc,"../geo/cube.msh");
+  ReadMacroMesh(&mc,"../geo/disque.msh");
   BuildConnectivity(&mc);
   PrintMacroMesh(&mc);
 
