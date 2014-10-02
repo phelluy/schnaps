@@ -142,14 +142,14 @@ void dlagrange_polynomial(double dp,const double* subdiv,int deg,int i,double x)
 
 
 
-int npg(int* param){
+int NPG(int* param){
   return (param[0]+1)*(param[1]+1)*(param[2]+1) *
          (param[3])*(param[4])*(param[5]);
 }
 
 
 /// Number of interpolation points for each face
-int npgf(int* param, int ifa){
+int NPGF(int* param, int ifa){
   // For each face, give the dimension index i
   int permut[6][4] = {
     {0, 2, 1, 0},

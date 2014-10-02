@@ -2,6 +2,7 @@
 #include "global.h"
 #include<stdio.h>
 #include <math.h>
+#include <assert.h>
 const int h20_refnormal[6][3]={{0,-1,0},{1,0,0},
                                            {0,1,0},{-1,0,0},
                                            {0,0,1},{0,0,-1}};
@@ -36,6 +37,9 @@ void Ref2Phy(double* physnode,
 
   // this file fills the values of phi and gradphi
 #include "h20phi.h"
+
+  assert(xphy != NULL);
+  assert(dtau != NULL);
 
   for(int ii=0;ii<3;ii++){
     xphy[ii]=0;

@@ -7,3 +7,5 @@ int TestMacroMesh(void);
 int TestGeometry(void);
 
 int TestInterpolation(void);
+
+void AffineMap(double* x);

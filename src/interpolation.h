@@ -14,9 +14,9 @@
 //parameters (the user has to ensure that enough memory is reserved
 
 // number of Gauss-LObatto Points (GLOPs) on the macro cell
-int npg(int* param);
+int NPG(int* param);
 // number of GLOPs on the face ifa of the macrocell
-int npgf(int* param,int ifa);
+int NPGF(int* param,int ifa);
 
 // return the reference coordinates xpg[3] and weight wpg of the GLOP ipg
 void ref_pg_vol(int* param,int ipg,double* xpg,double* wpg);
