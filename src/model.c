@@ -1,5 +1,6 @@
 #include "model.h"
 #include <math.h>
+#include <stdio.h>
 
 #define ONE_OVER_SQRT_3 (double)(0.57735026918962584)
 const double transport_v[] = {

@@ -19,7 +19,8 @@ main.o: main.c macromesh.h global.h geometry.h test.h
 model.o: model.c model.h
 	$(CC) -c model.c $(OPTIMS)
 
-test.o: test.c macromesh.h global.h geometry.h interpolation.h test.h
+test.o: test.c macromesh.h global.h geometry.h interpolation.h test.h \
+  model.h
 	$(CC) -c test.c $(OPTIMS)
 
 .PHONY clean: 

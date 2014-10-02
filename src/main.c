@@ -15,5 +15,7 @@ int main(void) {
 	 
   assert(TestInterpolation());
 
+  assert(TestModel());
+
   return 0;
 } 
