@@ -17,5 +17,7 @@ int main(void) {
 
   assert(TestModel());
 
+  assert(TestField());
+
   return 0;
 } 

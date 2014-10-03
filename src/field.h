@@ -35,7 +35,7 @@ void dtField(Field* f);
 void RK2(Field* f,double tmax);
 
 // save the results in the gmsh format
-void DisplayField(char* filename);
+void DisplayField(Field* f,char* filename);
 
 
 #endif

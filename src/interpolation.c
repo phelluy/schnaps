@@ -1,7 +1,7 @@
 #include "interpolation.h"
 #include "global.h"
 /* gauss lobatto points */
-
+#include<stdio.h>
 
 
 
@@ -106,22 +106,23 @@ const double gauss_lob_dpsi[] = {
 const int gauss_lob_dpsi_offset[] = {0, 1, 5, 14, 30};
 
 
-void lagrange_polynomial(double p,const double* subdiv,int deg,int ii,double x) {
-  p = 1;                                              
-  for(int j=0;j<(deg)+1;j++){                 
+void lagrange_polynomial(double* p,const double* subdiv,int deg,int ii,double x) {
+  *p = 1;                                              
+  for(int j=0;j<deg+1;j++){                 
     if (j != ii){                                 
-      p *= ((x) - (subdiv)[j]) /                  
-	((subdiv)[ii] - (subdiv)[j]);             
+      *p *= (x - subdiv[j]) /                  
+	(subdiv[ii] - subdiv[j]);             
     }                                                 
-  }                                                   
+  }
+  
 }
 
 
 
 
-void dlagrange_polynomial(double dp,const double* subdiv,int deg,int i,double x){
+void dlagrange_polynomial(double* dp,const double* subdiv,int deg,int i,double x){
   double xj;
-  dp = 0;
+  *dp = 0;
   for(int k=0;k<((deg)+1);k++){
     if (k != (i)){
       double xk = (subdiv)[k];
@@ -132,7 +133,7 @@ void dlagrange_polynomial(double dp,const double* subdiv,int deg,int i,double x)
 	  dploc *= ((x) - xj) / ((subdiv)[i] - xj);
 	}
       }
-      dp += dploc;
+      *dp += dploc;
     }
   }
 }
@@ -349,9 +350,9 @@ void psi_ref(int* param, int ib, double* xref, double* psi, double* dpsi){
   double psiby = 0;
   double psibz = 0;
 
-  lagrange_polynomial(psibx, gauss_lob_point + offset[0], deg[0], ibx, xref[0]/hx-ncbx);
-  lagrange_polynomial(psiby, gauss_lob_point + offset[1], deg[1], iby, xref[1]/hy-ncby);
-  lagrange_polynomial(psibz, gauss_lob_point + offset[2], deg[2], ibz, xref[2]/hz-ncbz);
+  lagrange_polynomial(&psibx, gauss_lob_point + offset[0], deg[0], ibx, xref[0]/hx-ncbx);
+  lagrange_polynomial(&psiby, gauss_lob_point + offset[1], deg[1], iby, xref[1]/hy-ncby);
+  lagrange_polynomial(&psibz, gauss_lob_point + offset[2], deg[2], ibz, xref[2]/hz-ncbz);
 
   /* psibx *= (xref[0] <= (ncbx + 1) * hx)&&(xref[0] > ncbx * hx); */
   /* psiby *= (xref[1] <= (ncby + 1) * hy)&&(xref[1] > ncby * hy); */
@@ -361,9 +362,9 @@ void psi_ref(int* param, int ib, double* xref, double* psi, double* dpsi){
 
   if (dpsi != NULL){
 
-    dlagrange_polynomial(dpsibx, gauss_lob_point + offset[0], deg[0], ibx, xref[0]);
-    dlagrange_polynomial(dpsiby, gauss_lob_point + offset[1], deg[1], iby, xref[1]);
-    dlagrange_polynomial(dpsibz, gauss_lob_point + offset[2], deg[2], ibz, xref[2]);
+    dlagrange_polynomial(&dpsibx, gauss_lob_point + offset[0], deg[0], ibx, xref[0]);
+    dlagrange_polynomial(&dpsiby, gauss_lob_point + offset[1], deg[1], iby, xref[1]);
+    dlagrange_polynomial(&dpsibz, gauss_lob_point + offset[2], deg[2], ibz, xref[2]);
 
     dpsi[0] = dpsibx *  psiby *  psibz;
     dpsi[1] =  psibx * dpsiby *  psibz;

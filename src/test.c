@@ -3,6 +3,7 @@
 #include "interpolation.h"
 #include "test.h"
 #include "model.h"
+#include "field.h"
 
 #include <stdio.h>
 #include <math.h>
@@ -19,7 +20,7 @@ int TestMacroMesh(void){
   PrintMacroMesh(&m);
 
   test = (m.nbelems == 5);
-  test = (m.nbnodes == 50);
+  test =  (test && m.nbnodes == 50);
 
   return test;
 
@@ -84,15 +85,15 @@ int TestInterpolation(void){
   int deg[7];
   int nraf[3];
 
-  for(int d=1;d<2;d++){
+  for(int d=1;d<5;d++){
     printf("Degree=%d\n",d);
 
     deg[0]=d;
     deg[1]=d;
     deg[2]=d;
-    deg[3]=1;
+    deg[3]=3;
     deg[4]=1;
-    deg[5]=1;
+    deg[5]=2;
 
     nraf[0]=deg[3];
     nraf[1]=deg[4];
@@ -190,7 +191,7 @@ int TestInterpolation(void){
               xphy,dtau,codtau,NULL,NULL);
       f[ipg] = pow(xphy[1],(double) d);
       //printf("%d %f\n",ipg,f[ipg]);
-      g[ipg] = xphy[0] ;
+      g[ipg] =   pow(xphy[0],(double) d-1);//xphy[0] ;
     }
 
     // Computation of the two integrants of green's formula
@@ -208,7 +209,7 @@ int TestInterpolation(void){
       //printf(" ipg= %d \n", ipg);
       for(int l=0;l<npg;l++){
 	grad_psi_pg(deg,l,ipg,dphiref);
-	ref_pg_vol(deg, l, xref, &omega);
+	ref_pg_vol(deg, ipg, xref, &omega);
         double xphy[3];
         double dtau[9],codtau[9];
         Ref2Phy(physnode,xref,dphiref,0,
@@ -236,7 +237,7 @@ int TestInterpolation(void){
       double dphi[3],dphiref[3];
       for(int l=0;l<npg;l++){
 	grad_psi_pg(deg,l,ipg,dphiref);
-	ref_pg_vol(deg, l, xref, &omega);
+	ref_pg_vol(deg, ipg, xref, &omega);
         double xphy[3];
         double dtau[9],codtau[9];
         Ref2Phy(physnode,xref,dphiref,0,
@@ -308,7 +309,7 @@ int TestInterpolation(void){
       }
     }
 
-    test = (fabs(int_dfg+int_fdg-int_fgn)<1e-8);
+    test = (test && fabs(int_dfg+int_fdg-int_fgn)<1e-8);
 
     printf("  int_fgn = %.2e sum of ints = %.2e sum_wpg=%f \n", int_fgn,int_dfg+int_fdg-int_fgn,sum_wpg);
     
@@ -370,5 +371,29 @@ int TestModel(void){
   test=(err < 1e-8);
 
   return test;
+
+};
+
+int TestField(void){
+
+  int test = (1==1);
+
+  Field f;
+  f.model.m=1; // only one conservative variable
+  f.model.NumFlux=TransportNumFlux;
+  f.model.BoundaryFlux=TransportBoundaryFlux;
+  f.model.InitData=TransportInitData;
+  f.model.ImposedData=TransportImposedData;
+  f.varindex=GenericVarindex;
+
+  ReadMacroMesh(&(f.macromesh),"../geo/testmacromesh.msh");
+  BuildConnectivity(&(f.macromesh));
+
+  InitField(&f);
+
+  DisplayField(&f,"testvisufield.msh");
+  
+  return test;
+
 
 };

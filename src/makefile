@@ -1,8 +1,11 @@
 CC=gcc
 OPTIMS=-std=c99 
 LIBS=-lm 
-go: geometry.o interpolation.o macromesh.o main.o model.o test.o 
-	$(CC) geometry.o interpolation.o macromesh.o main.o model.o test.o -o go $(OPTIMS) $(LIBS)
+go: field.o geometry.o interpolation.o macromesh.o main.o model.o test.o 
+	$(CC) field.o geometry.o interpolation.o macromesh.o main.o model.o test.o -o go $(OPTIMS) $(LIBS)
+
+field.o: field.c field.h macromesh.h global.h model.h interpolation.h
+	$(CC) -c field.c $(OPTIMS)
 
 geometry.o: geometry.c geometry.h global.h h20phi.h
 	$(CC) -c geometry.c $(OPTIMS)

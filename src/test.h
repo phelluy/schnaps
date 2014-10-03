@@ -11,3 +11,5 @@ int TestInterpolation(void);
 void AffineMap(double* x);
 
 int TestModel(void);
+
+int TestField(void);
