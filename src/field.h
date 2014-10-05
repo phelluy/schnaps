@@ -38,7 +38,10 @@ void dtField(Field* f);
 void RK2(Field* f,double tmax);
 
 // save the results in the gmsh format
-void DisplayField(Field* f,char* filename);
+void PlotField(Field* f,char* filename);
+
+// display the field on screen
+void DisplayField(Field* f);
 
 
 #endif

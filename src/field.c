@@ -24,7 +24,7 @@ int GenericVarindex(int* param, int elem, int ipg, int iv){
 
 void InitField(Field* f){
 
-  int param[7]={f->model.m,2,2,2,1,1,1};
+  int param[8]={f->model.m,_DEGX,_DEGY,_DEGZ,_RAFX,_RAFY,_RAFZ};
   double w[f->model.m];
   double xpg[3];
   double xref[3],omega;
@@ -36,6 +36,10 @@ void InitField(Field* f){
   printf("allocate %d doubles\n",nmem);
   f->wn=malloc(nmem * sizeof(double));
   assert(f->wn);	       
+  f->wnp1=malloc(nmem * sizeof(double));
+  assert(f->wnp1);	       
+  f->dtwn=malloc(nmem * sizeof(double));
+  assert(f->dtwn);	       
 
   f->tnow=0;
 
@@ -57,8 +61,8 @@ void InitField(Field* f){
       double xref2[3];
       Phy2Ref(physnode,xpg,xref2);
       assert(sqrt((xref2[0]-xref[0])*(xref2[0]-xref[0])+
-		(xref2[0]-xref[0])*(xref2[0]-xref[0])+
-		  (xref2[0]-xref[0])*(xref2[0]-xref[0])) < 1e-8); 
+      		(xref2[0]-xref[0])*(xref2[0]-xref[0])+
+      		  (xref2[0]-xref[0])*(xref2[0]-xref[0])) < 1e-8);
       
       f->model.InitData(xpg,w);
       //printf("xpg %f %f %f w=%f\n",xpg[0],xpg[1],xpg[2],w[0]);
@@ -72,8 +76,39 @@ void InitField(Field* f){
 
 };
 
+// display the field on screen
+void DisplayField(Field* f){
+  int param[8]={f->model.m,_DEGX,_DEGY,_DEGZ,_RAFX,_RAFY,_RAFZ};
+  //int param[8]={f->model.m,2,2,2,1,1,1};
+
+  printf("Display field...\n");
+  for(int ie=0;ie<f->macromesh.nbelems;ie++){
+    printf("elem %d\n",ie);
+    for(int ipg=0;ipg<NPG(param+1);ipg++){
+    printf("Gauss point %d\n",ipg);
+    printf("w= ");
+      for(int iv=0;iv<f->model.m;iv++){
+	int imem=f->varindex(param,ie,ipg,iv);
+	printf("%f ",f->wn[imem]);
+      }
+      printf("\n");
+    printf("dtw= ");
+      for(int iv=0;iv<f->model.m;iv++){
+	int imem=f->varindex(param,ie,ipg,iv);
+	printf("%f ",f->dtwn[imem]);
+      }
+      printf("\n");
+    }
+  }
+
+
+
+};
+
+
+
 // save the results in the gmsh format
-void DisplayField(Field* f,char* filename){
+void PlotField(Field* f,char* filename){
 
   const int hexa64ref[3*64]={
     0,0,3,
@@ -98,7 +133,7 @@ void DisplayField(Field* f,char* filename){
 
   // data plots
   int mw = f->model.m;
-  int param[8]={mw,2,2,2,1,1,1};
+  int param[8]={f->model.m,_DEGX,_DEGY,_DEGZ,_RAFX,_RAFY,_RAFZ};
   int degre = param[1];
   int npgf = NPGF(param+1,0);
   int npgv = NPG(param+1);
@@ -287,7 +322,7 @@ void dtField(Field* f){
   // ugly too: the first parameter is not used by all
   // utilities. we have sometimes to jump over : pass param+1
   // instead of param...
-  int param[8]={f->model.m,2,2,2,1,1,1,0};
+  int param[8]={f->model.m,_DEGX,_DEGY,_DEGZ,_RAFX,_RAFY,_RAFZ};
 
   // init to zero the time derivative
   for(int ie=0;ie<f->macromesh.nbelems;ie++){
@@ -320,61 +355,61 @@ void dtField(Field* f){
       // if we are not at a boundary
       // get the nodes of the right elem
       if (ieR >= 0) {
-	for(int inoloc=0;inoloc<20;inoloc++){
-	  int ino=f->macromesh.elem2node[20*ieR+inoloc];
-	  physnodeR[inoloc*3+0]=f->macromesh.node[3*ino+0];
-	  physnodeR[inoloc*3+1]=f->macromesh.node[3*ino+1];
-	  physnodeR[inoloc*3+2]=f->macromesh.node[3*ino+2];
-	}
+  	for(int inoloc=0;inoloc<20;inoloc++){
+  	  int ino=f->macromesh.elem2node[20*ieR+inoloc];
+  	  physnodeR[inoloc*3+0]=f->macromesh.node[3*ino+0];
+  	  physnodeR[inoloc*3+1]=f->macromesh.node[3*ino+1];
+  	  physnodeR[inoloc*3+2]=f->macromesh.node[3*ino+2];
+  	}
       }
       
       // loop on the glops (numerical integration)
       // of the face ifa
       for(int ipgf=0;ipgf<NPGF(param+1,ifa);ipgf++){
-	double xpgref[3],wpg;
-	// get the coordinates of the Gauss point
-	ref_pg_face(param+1,ifa,ipgf,xpgref,&wpg);
+  	double xpgref[3],wpg;
+  	// get the coordinates of the Gauss point
+  	ref_pg_face(param+1,ifa,ipgf,xpgref,&wpg);
 
-	// recover the volume gauss point from 
-	// the face index
-	int ipg=param[7];
-	// get the left value of w at the gauss point
-	double wL[3],wR[3];
-	for(int iv=0;iv<f->model.m;iv++){
-	  int imem=f->varindex(param,ie,ipg,iv);
-	  wL[iv]=f->wn[imem];
-	}
-	// the basis functions is also the gauss point index
-	int ib=ipg;
-	// normal vector at gauss point ipg
-	//double dpsiref[3];dpsi[3];
-	double dtau[3*3],codtau[3*3],xpg[3];
-	double vnds[3];
-	Ref2Phy(physnode,
-		xpgref,
-		NULL,ifa, // dpsiref,ifa
-		xpg,dtau,  
-		codtau,NULL,vnds); // codtau,dpsi,vnds
-	double flux[f->model.m];
-	if (ieR >=0) {  // the right element exists
-	  // find the corresponding point in the right elem
-	  double xref[3];
-	  Phy2Ref(physnodeR,xpg,xref);
-	  int ipgR=ref_ipg(param+1,xref);
-	  for(int iv=0;iv<f->model.m;iv++){
-	    int imem=f->varindex(param,ieR,ipgR,iv);
-	    wR[iv]=f->wn[imem];
-	  }
-	  // int_dL F(wL,wR,grad phi_ib )
-	  f->model.NumFlux(wL,wR,vnds,flux);
-	}
-	else { //the right element does not exist
-	  f->model.BoundaryFlux(xpg,f->tnow,wL,vnds,flux);	  
-	}
-	for(int iv=0;iv<f->model.m;iv++){
-	  int imem=f->varindex(param,ie,ib,iv);
-	  f->dtwn[imem]+=flux[iv]*wpg;
-	}
+  	// recover the volume gauss point from
+  	// the face index
+  	int ipg=param[7];
+  	// get the left value of w at the gauss point
+  	double wL[3],wR[3];
+  	for(int iv=0;iv<f->model.m;iv++){
+  	  int imem=f->varindex(param,ie,ipg,iv);
+  	  wL[iv]=f->wn[imem];
+  	}
+  	// the basis functions is also the gauss point index
+  	int ib=ipg;
+  	// normal vector at gauss point ipg
+  	//double dpsiref[3];dpsi[3];
+  	double dtau[3*3],codtau[3*3],xpg[3];
+  	double vnds[3];
+  	Ref2Phy(physnode,
+  		xpgref,
+  		NULL,ifa, // dpsiref,ifa
+  		xpg,dtau,
+  		codtau,NULL,vnds); // codtau,dpsi,vnds
+  	double flux[f->model.m];
+  	if (ieR >=0) {  // the right element exists
+  	  // find the corresponding point in the right elem
+  	  double xref[3];
+  	  Phy2Ref(physnodeR,xpg,xref);
+  	  int ipgR=ref_ipg(param+1,xref);
+  	  for(int iv=0;iv<f->model.m;iv++){
+  	    int imem=f->varindex(param,ieR,ipgR,iv);
+  	    wR[iv]=f->wn[imem];
+  	  }
+  	  // int_dL F(wL,wR,grad phi_ib )
+  	  f->model.NumFlux(wL,wR,vnds,flux);
+  	}
+  	else { //the right element does not exist
+  	  f->model.BoundaryFlux(xpg,f->tnow,wL,vnds,flux);
+  	}
+  	for(int iv=0;iv<f->model.m;iv++){
+  	  int imem=f->varindex(param,ie,ib,iv);
+  	  f->dtwn[imem]+=flux[iv]*wpg;
+  	}
 	
       }
 

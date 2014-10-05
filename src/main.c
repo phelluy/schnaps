@@ -19,6 +19,8 @@ int main(void) {
 
   assert(TestField());
 
+  assert(TestFieldDG());
+
   printf("All tests OK !\n");
 
   return 0;

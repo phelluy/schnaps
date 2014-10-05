@@ -4,6 +4,8 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <string.h>
+#include "geometry.h"
+#include <math.h>
 
 
 void ReadMacroMesh(MacroMesh* m,char* filename){
@@ -247,6 +249,72 @@ int CompareFace4Sort(const void* a,const void* b){
   return r;
   
 };
+
+void CheckMacroMesh(MacroMesh* m){
+
+  int param[8]={_DEGX,_DEGY,_DEGZ,_RAFX,_RAFY,_RAFZ,0};
+  double dtau[9],codtau[9];
+  double physnode[20*3];
+
+  double face_centers[6][3]={
+    {0.5,0.0,0.5},
+    {1.0,0.5,0.5},
+    {0.5,1.0,0.5},
+    {0.0,0.5,0.5},
+    {0.5,0.5,1.0},
+    {0.5,0.5,0.0},
+  };
+
+  double refnormal[6][3]={{0,-1,0},{1,0,0},
+			  {0,1,0},{-1,0,0},
+			  {0,0,1},{0,0,-1}};
+
+
+  for(int ie=0;ie<m->nbelems;ie++){
+    for(int inoloc=0;inoloc<20;inoloc++){
+      int ino=m->elem2node[20*ie+inoloc];
+      physnode[inoloc*3+0]=m->node[3*ino+0];
+      physnode[inoloc*3+1]=m->node[3*ino+1];
+      physnode[inoloc*3+2]=m->node[3*ino+2];
+    }
+    // middle of the element
+    double xrefm[3]={0.5,0.5,0.5},xphym[3];
+    Ref2Phy(physnode,
+    	    xrefm,
+    	    0,0, // dphiref,ifa
+    	    xphym,NULL, // xphy dtau
+    	    NULL,NULL,NULL); // codtau,dphi,vnds
+
+    for(int ifa=0;ifa<5;ifa++){
+      // middle of the face
+      double xphyfa[3],vnds[3];
+      Ref2Phy(physnode,
+	      face_centers[ifa],
+	      0,ifa, // dphiref,ifa
+	      xphyfa,dtau,
+	      codtau,NULL,vnds); // codtau,dphi,vnds
+      double det=codtau[0]*dtau[0]+codtau[1]*dtau[1]+codtau[2]*dtau[2];
+      printf("det=%f\n",det);
+
+      // check volume  orientation
+      assert(det >0);
+      
+      double vec[3]={xphyfa[0]-xphym[0],
+		     xphyfa[1]-xphym[1],xphyfa[2]-xphym[2]};
+      
+      // check face orientation
+      assert(vnds[0]*vec[0]+vnds[1]*vec[1]+vnds[2]*vec[2] > 0);
+
+    }
+
+
+  }
+  
+
+
+
+};
+
 
 
   

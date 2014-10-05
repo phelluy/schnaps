@@ -391,7 +391,7 @@ int TestField(void){
 
   InitField(&f);
 
-  DisplayField(&f,"testvisufield.msh");
+  PlotField(&f,"testvisufield.msh");
   
   return test;
 
@@ -413,10 +413,15 @@ int TestFieldDG(void){
   ReadMacroMesh(&(f.macromesh),"../geo/testmacromesh.msh");
   BuildConnectivity(&(f.macromesh));
 
-  InitField(&f);
-  dtField(&f);
+  CheckMacroMesh(&(f.macromesh));
 
-  DisplayField(&f,"testvisufield.msh");
+  InitField(&f);
+
+  dtField(&f);
+  
+  DisplayField(&f);  
+
+  PlotField(&f,"testvisufield.msh");
   
   return test;
 
