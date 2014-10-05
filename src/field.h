@@ -9,6 +9,9 @@ typedef struct Field{
   MacroMesh macromesh;
   Model model;
   
+  // current time
+  double tnow;
+
   // fields at time steps n and n+1 
   double* wn;
   // time derivative of the field

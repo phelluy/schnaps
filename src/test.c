@@ -224,7 +224,7 @@ int TestInterpolation(void){
       double dtau[9],codtau[9];
       Ref2Phy(physnode,xref,NULL,0,
               xphy,dtau,codtau,NULL,NULL);
-      printf(" x=%f f=%f dkf= %f\n",xphy[0],f[ipg],dkf);
+      //printf(" x=%f f=%f dkf= %f\n",xphy[0],f[ipg],dkf);
       double det=dtau[0]*codtau[0]+dtau[1]*codtau[1]+dtau[2]*codtau[2];
       //printf("det=%f\n",det);
       int_dfg += dkf * g[ipg] * omega * det;
@@ -362,9 +362,9 @@ int TestModel(void){
 
   tr.InitData(x,wR);
   tr.NumFlux(wL,wR,vn,flux1);
-  printf("f %f \n",flux1[0]);
+  printf("NumFlux %f \n",flux1[0]);
   tr.BoundaryFlux(x,t,wL,vn,flux2);
-  printf("f %f \n",flux2[0]);
+  printf("BoundaryFlux %f \n",flux2[0]);
 
   double err=fabs(flux2[0]-flux1[0]);
 

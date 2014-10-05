@@ -2,7 +2,8 @@
 #include "global.h"
 /* gauss lobatto points */
 #include<stdio.h>
-
+#include <assert.h>
+#include <math.h>
 
 
 const double gauss_lob_point[] = {
@@ -164,6 +165,34 @@ int NPGF(int* param, int ifa){
   int i1 = permut[ifa][1];
   return (param[i0] + 1) * (param[i1] + 1) * param[i0+3] * param[i1+3]; 
 }
+
+// from a reference point find the nearest
+// gauss point works only with no subcell...
+int ref_ipg(int* param,double* xref){
+  int deg[3],nraf[3];
+  
+  // approximation degree in each direction
+  deg[0]=param[0];
+  deg[1]=param[1];
+  deg[2]=param[2];
+
+  // number of subcells in each direction
+  nraf[0]=param[3];
+  nraf[1]=param[4];
+  nraf[2]=param[5];
+ 
+  assert(nraf[0]==1);
+  assert(nraf[1]==1);
+  assert(nraf[2]==1);
+
+  int ix=floor(xref[0]*deg[0]+0.5); 
+  int iy=floor(xref[1]*deg[1]+0.5); 
+  int iz=floor(xref[2]*deg[2]+0.5); 
+
+  return ix+(deg[0]+1)*(iy+(deg[1]+1)*iz);
+
+};
+
 
 // return the reference coordinates xpg[3] and weight wpg of the GLOP ipg
 void ref_pg_vol(int* param,int ipg,double* xpg,double* wpg){

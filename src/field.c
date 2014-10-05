@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <assert.h>
 #include "global.h"
+#include <math.h>
 
 // param[0] = M
 // param[1] = deg x
@@ -36,6 +37,8 @@ void InitField(Field* f){
   f->wn=malloc(nmem * sizeof(double));
   assert(f->wn);	       
 
+  f->tnow=0;
+
   for(int ie=0;ie<f->macromesh.nbelems;ie++){
     for(int inoloc=0;inoloc<20;inoloc++){
       int ino=f->macromesh.elem2node[20*ie+inoloc];
@@ -50,6 +53,13 @@ void InitField(Field* f){
 	      0,0, // dphiref,ifa
               xpg,dtau,  
 	      NULL,NULL,NULL); // codtau,dphi,vnds
+      // check the reverse transform at all the GLOPS
+      double xref2[3];
+      Phy2Ref(physnode,xpg,xref2);
+      assert(sqrt((xref2[0]-xref[0])*(xref2[0]-xref[0])+
+		(xref2[0]-xref[0])*(xref2[0]-xref[0])+
+		  (xref2[0]-xref[0])*(xref2[0]-xref[0])) < 1e-8); 
+      
       f->model.InitData(xpg,w);
       //printf("xpg %f %f %f w=%f\n",xpg[0],xpg[1],xpg[2],w[0]);
       for(int iv=0;iv<f->model.m;iv++){
@@ -289,54 +299,6 @@ void dtField(Field* f){
     }
   }
 
-  // assemble the volume terms
-  // loop on the elements
-  for (int ie=0;ie<f->macromesh.nbelems;ie++){
-    // get the physical nodes of element ie
-    double physnode[20*3];
-    for(int inoloc=0;inoloc<20;inoloc++){
-      int ino=f->macromesh.elem2node[20*ie+inoloc];
-      physnode[inoloc*3+0]=f->macromesh.node[3*ino+0];
-      physnode[inoloc*3+1]=f->macromesh.node[3*ino+1];
-      physnode[inoloc*3+2]=f->macromesh.node[3*ino+2];
-    }
-
-    // loop on the glops (numerical integration)
-    for(int ipg=0;ipg<NPG(param+1);ipg++){
-      double xpgref[3],wpg;
-      // get the coordinates of the Gauss point
-      ref_pg_vol(param+1,ipg,xpgref,&wpg);
-
-      // get the value of w at the gauss point
-      double w[3];
-      for(int iv=0;iv<f->model.m;iv++){
-	int imem=f->varindex(param,ie,ipg,iv);
-	w[iv]=f->wn[imem];
-      }
-      // loop on the basis functions
-      for(int ib=0;ib<NPG(param+1);ib++){
-	// gradient of psi_ib at gauss point ipg
-	double dpsiref[3],dpsi[3];
-	double dtau[3*3],codtau[3*3],xpg[3];
-	grad_psi_pg(param+1,ib,ipg,dpsiref);
-	Ref2Phy(physnode,
-		xpgref,
-		dpsiref,NULL, // dpsiref,ifa
-		xpg,dtau,  
-		codtau,dpsi,NULL); // codtau,dpsi,vnds
-	// int_L F(w,w,grad phi_ib )
-	double flux[f->model.m];
-	f->model.NumFlux(w,w,dpsi,flux);
-	for(int iv=0;iv<f->model.m;iv++){
-	  int imem=f->varindex(param,ie,ib,iv);
-	  f->dtwn[imem]+=flux[iv]*wpg;
-	}
-      }
-
-
-    }
-  }
-
   // 
   // assembly of the surface terms
   // loop on the elements
@@ -352,6 +314,20 @@ void dtField(Field* f){
 
     // loop on the 6 faces
     for(int ifa=0;ifa<5;ifa++){
+      // get the right elem or the boundary id
+      int ieR=f->macromesh.elem2elem[6*ie+ifa];
+      double physnodeR[20*3];
+      // if we are not at a boundary
+      // get the nodes of the right elem
+      if (ieR >= 0) {
+	for(int inoloc=0;inoloc<20;inoloc++){
+	  int ino=f->macromesh.elem2node[20*ieR+inoloc];
+	  physnodeR[inoloc*3+0]=f->macromesh.node[3*ino+0];
+	  physnodeR[inoloc*3+1]=f->macromesh.node[3*ino+1];
+	  physnodeR[inoloc*3+2]=f->macromesh.node[3*ino+2];
+	}
+      }
+      
       // loop on the glops (numerical integration)
       // of the face ifa
       for(int ipgf=0;ipgf<NPGF(param+1,ifa);ipgf++){
@@ -370,28 +346,88 @@ void dtField(Field* f){
 	}
 	// the basis functions is also the gauss point index
 	int ib=ipg;
-	// gradient of psi_ib at gauss point ipg
-	double dpsiref[3],dpsi[3];
+	// normal vector at gauss point ipg
+	//double dpsiref[3];dpsi[3];
 	double dtau[3*3],codtau[3*3],xpg[3];
 	double vnds[3];
 	Ref2Phy(physnode,
 		xpgref,
-		dpsiref,ifa, // dpsiref,ifa
+		NULL,ifa, // dpsiref,ifa
 		xpg,dtau,  
-		codtau,dpsi,vnds); // codtau,dpsi,vnds
-	// int_L F(w,w,grad phi_ib )
+		codtau,NULL,vnds); // codtau,dpsi,vnds
 	double flux[f->model.m];
-	f->model.NumFlux(wL,wR,dpsi,flux);
+	if (ieR >=0) {  // the right element exists
+	  // find the corresponding point in the right elem
+	  double xref[3];
+	  Phy2Ref(physnodeR,xpg,xref);
+	  int ipgR=ref_ipg(param+1,xref);
 	  for(int iv=0;iv<f->model.m;iv++){
-	    int imem=f->varindex(param,ie,ib,iv);
-	    f->dtwn[imem]+=flux[iv]*wpg;
+	    int imem=f->varindex(param,ieR,ipgR,iv);
+	    wR[iv]=f->wn[imem];
 	  }
+	  // int_dL F(wL,wR,grad phi_ib )
+	  f->model.NumFlux(wL,wR,vnds,flux);
+	}
+	else { //the right element does not exist
+	  f->model.BoundaryFlux(xpg,f->tnow,wL,vnds,flux);	  
+	}
+	for(int iv=0;iv<f->model.m;iv++){
+	  int imem=f->varindex(param,ie,ib,iv);
+	  f->dtwn[imem]+=flux[iv]*wpg;
+	}
 	
       }
 
     }
   }
 
+  // assembly of the volume terms
+  // loop on the elements
+  for (int ie=0;ie<f->macromesh.nbelems;ie++){
+    // get the physical nodes of element ie
+    double physnode[20*3];
+    for(int inoloc=0;inoloc<20;inoloc++){
+      int ino=f->macromesh.elem2node[20*ie+inoloc];
+      physnode[inoloc*3+0]=f->macromesh.node[3*ino+0];
+      physnode[inoloc*3+1]=f->macromesh.node[3*ino+1];
+      physnode[inoloc*3+2]=f->macromesh.node[3*ino+2];
+    }
+
+    // loop on the glops (for numerical integration)
+    for(int ipg=0;ipg<NPG(param+1);ipg++){
+      double xpgref[3],wpg;
+      // get the coordinates of the Gauss point
+      ref_pg_vol(param+1,ipg,xpgref,&wpg);
+
+      // get the value of w at the gauss point
+      double w[3];
+      for(int iv=0;iv<f->model.m;iv++){
+	int imem=f->varindex(param,ie,ipg,iv);
+	w[iv]=f->wn[imem];
+      }
+      // loop on the basis functions
+      for(int ib=0;ib<NPG(param+1);ib++){
+	// gradient of psi_ib at gauss point ipg
+	double dpsiref[3],dpsi[3];
+	double dtau[3*3],codtau[3*3];//,xpg[3];
+	grad_psi_pg(param+1,ib,ipg,dpsiref);
+	Ref2Phy(physnode, // phys. nodes
+		xpgref,  // xref
+		dpsiref,NULL, // dpsiref,ifa
+		NULL,dtau,  // xphy,dtau
+		codtau,dpsi,NULL); // codtau,dpsi,vnds
+	// int_L F(w,w,grad phi_ib )
+	double flux[f->model.m];
+	f->model.NumFlux(w,w,dpsi,flux);
+	for(int iv=0;iv<f->model.m;iv++){
+	  int imem=f->varindex(param,ie,ib,iv);
+	  f->dtwn[imem]+=flux[iv]*wpg;
+	}
+      }
+
+
+    }
+  }
 
 
 };

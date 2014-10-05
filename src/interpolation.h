@@ -20,6 +20,11 @@ int NPGF(int* param,int ifa);
 
 // return the reference coordinates xpg[3] and weight wpg of the GLOP ipg
 void ref_pg_vol(int* param,int ipg,double* xpg,double* wpg);
+
+// from a reference point find the nearest
+// gauss point
+int ref_ipg(int* param,double* xref);
+
 // same function for the face 
 // param[6] contains the volume GLOP index computed from face GLOP index.
 void ref_pg_face(int* param,int ifa,int ipg,double* xpg,double* wpg);

@@ -131,9 +131,9 @@ void Phy2Ref(double* physnode,double* xphy,double* xref){
       }      
       xref[ii] -= dxref[ii] / det;                            
     }
-    printf("iter=%d erreur=%e\n",iter,sqrt(dxref[0]*dxref[0]+
-				      dxref[1]*dxref[1]+
-				      dxref[2]*dxref[2]));
+    /* printf("iter=%d erreur=%e\n",iter,sqrt(dxref[0]*dxref[0]+ */
+    /* 				      dxref[1]*dxref[1]+ */
+    /* 				      dxref[2]*dxref[2])); */
   }
 
 }
