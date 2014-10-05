@@ -19,5 +19,7 @@ int main(void) {
 
   assert(TestField());
 
+  printf("All tests OK !\n");
+
   return 0;
 } 

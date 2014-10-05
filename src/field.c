@@ -4,8 +4,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <assert.h>
-
-// param[0]=
+#include "global.h"
 
 // param[0] = M
 // param[1] = deg x
@@ -266,6 +265,137 @@ void DisplayField(Field* f,char* filename){
   
 
 }
+
+// apply the Discontinuous Galerkin approximation for computing
+// the time derivative of the field
+void dtField(Field* f){
+
+  // interpolation params
+  // warning: this is ugly, but the last
+  // parameter is used for computing the volume
+  // GLOP index from the face GLOP index...
+  // ugly too: the first parameter is not used by all
+  // utilities. we have sometimes to jump over : pass param+1
+  // instead of param...
+  int param[8]={f->model.m,2,2,2,1,1,1,0};
+
+  // init to zero the time derivative
+  for(int ie=0;ie<f->macromesh.nbelems;ie++){
+    for(int ipg=0;ipg<NPG(param+1);ipg++){
+      for(int iv=0;iv<f->model.m;iv++){
+	int imem=f->varindex(param,ie,ipg,iv);
+	f->dtwn[imem]=0;
+      }
+    }
+  }
+
+  // assemble the volume terms
+  // loop on the elements
+  for (int ie=0;ie<f->macromesh.nbelems;ie++){
+    // get the physical nodes of element ie
+    double physnode[20*3];
+    for(int inoloc=0;inoloc<20;inoloc++){
+      int ino=f->macromesh.elem2node[20*ie+inoloc];
+      physnode[inoloc*3+0]=f->macromesh.node[3*ino+0];
+      physnode[inoloc*3+1]=f->macromesh.node[3*ino+1];
+      physnode[inoloc*3+2]=f->macromesh.node[3*ino+2];
+    }
+
+    // loop on the glops (numerical integration)
+    for(int ipg=0;ipg<NPG(param+1);ipg++){
+      double xpgref[3],wpg;
+      // get the coordinates of the Gauss point
+      ref_pg_vol(param+1,ipg,xpgref,&wpg);
+
+      // get the value of w at the gauss point
+      double w[3];
+      for(int iv=0;iv<f->model.m;iv++){
+	int imem=f->varindex(param,ie,ipg,iv);
+	w[iv]=f->wn[imem];
+      }
+      // loop on the basis functions
+      for(int ib=0;ib<NPG(param+1);ib++){
+	// gradient of psi_ib at gauss point ipg
+	double dpsiref[3],dpsi[3];
+	double dtau[3*3],codtau[3*3],xpg[3];
+	grad_psi_pg(param+1,ib,ipg,dpsiref);
+	Ref2Phy(physnode,
+		xpgref,
+		dpsiref,NULL, // dpsiref,ifa
+		xpg,dtau,  
+		codtau,dpsi,NULL); // codtau,dpsi,vnds
+	// int_L F(w,w,grad phi_ib )
+	double flux[f->model.m];
+	f->model.NumFlux(w,w,dpsi,flux);
+	for(int iv=0;iv<f->model.m;iv++){
+	  int imem=f->varindex(param,ie,ib,iv);
+	  f->dtwn[imem]+=flux[iv]*wpg;
+	}
+      }
+
+
+    }
+  }
+
+  // 
+  // assembly of the surface terms
+  // loop on the elements
+  for (int ie=0;ie<f->macromesh.nbelems;ie++){
+    // get the physical nodes of element ie
+    double physnode[20*3];
+    for(int inoloc=0;inoloc<20;inoloc++){
+      int ino=f->macromesh.elem2node[20*ie+inoloc];
+      physnode[inoloc*3+0]=f->macromesh.node[3*ino+0];
+      physnode[inoloc*3+1]=f->macromesh.node[3*ino+1];
+      physnode[inoloc*3+2]=f->macromesh.node[3*ino+2];
+    }
+
+    // loop on the 6 faces
+    for(int ifa=0;ifa<5;ifa++){
+      // loop on the glops (numerical integration)
+      // of the face ifa
+      for(int ipgf=0;ipgf<NPGF(param+1,ifa);ipgf++){
+	double xpgref[3],wpg;
+	// get the coordinates of the Gauss point
+	ref_pg_face(param+1,ifa,ipgf,xpgref,&wpg);
+
+	// recover the volume gauss point from 
+	// the face index
+	int ipg=param[7];
+	// get the left value of w at the gauss point
+	double wL[3],wR[3];
+	for(int iv=0;iv<f->model.m;iv++){
+	  int imem=f->varindex(param,ie,ipg,iv);
+	  wL[iv]=f->wn[imem];
+	}
+	// the basis functions is also the gauss point index
+	int ib=ipg;
+	// gradient of psi_ib at gauss point ipg
+	double dpsiref[3],dpsi[3];
+	double dtau[3*3],codtau[3*3],xpg[3];
+	double vnds[3];
+	Ref2Phy(physnode,
+		xpgref,
+		dpsiref,ifa, // dpsiref,ifa
+		xpg,dtau,  
+		codtau,dpsi,vnds); // codtau,dpsi,vnds
+	// int_L F(w,w,grad phi_ib )
+	double flux[f->model.m];
+	f->model.NumFlux(wL,wR,dpsi,flux);
+	  for(int iv=0;iv<f->model.m;iv++){
+	    int imem=f->varindex(param,ie,ib,iv);
+	    f->dtwn[imem]+=flux[iv]*wpg;
+	  }
+	
+      }
+
+    }
+  }
+
+
+
+};
+
 
 
 

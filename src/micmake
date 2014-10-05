@@ -25,7 +25,7 @@ echo -n -e "-o $1 \$(OPTIMS) \$(LIBS)\n" >> makefile
 echo >> makefile
 for fic in *.c
 do
-g++ -MM $fic >> makefile
+gcc -MM $fic >> makefile
 echo -e "\t\$(CC) -c $fic \$(OPTIMS)\n" >> makefile
 done
 

@@ -397,3 +397,30 @@ int TestField(void){
 
 
 };
+
+int TestFieldDG(void){
+
+  int test = (1==1);
+
+  Field f;
+  f.model.m=1; // only one conservative variable
+  f.model.NumFlux=TransportNumFlux;
+  f.model.BoundaryFlux=TransportBoundaryFlux;
+  f.model.InitData=TransportInitData;
+  f.model.ImposedData=TransportImposedData;
+  f.varindex=GenericVarindex;
+
+  ReadMacroMesh(&(f.macromesh),"../geo/testmacromesh.msh");
+  BuildConnectivity(&(f.macromesh));
+
+  InitField(&f);
+  dtField(&f);
+
+  DisplayField(&f,"testvisufield.msh");
+  
+  return test;
+
+
+
+};
+

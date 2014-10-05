@@ -38,24 +38,33 @@ void Ref2Phy(double* physnode,
   // this file fills the values of phi and gradphi
 #include "h20phi.h"
 
-  assert(xphy != NULL);
-  assert(dtau != NULL);
 
-  for(int ii=0;ii<3;ii++){
-    xphy[ii]=0;
-    for(int jj=0;jj<3;jj++){
-      dtau[3*ii+jj]=0;
+  if (xphy != NULL){
+    for(int ii=0;ii<3;ii++){
+      xphy[ii]=0;
+      for(int i=0;i<20;i++){
+	xphy[ii]+=physnode[3*i+ii]*gradphi[i][3];
+      }
     }
-    for(int i=0;i<20;i++){
-      xphy[ii]+=physnode[3*i+ii]*gradphi[i][3];
+  }
+
+
+  if (dtau != NULL){
+    for(int ii=0;ii<3;ii++){
       for(int jj=0;jj<3;jj++){
-        dtau[3*ii+jj]+=physnode[3*i+ii]*gradphi[i][jj];;
-       }
+	dtau[3*ii+jj]=0;
+      }
+      for(int i=0;i<20;i++){
+	for(int jj=0;jj<3;jj++){
+	  dtau[3*ii+jj]+=physnode[3*i+ii]*gradphi[i][jj];;
+	}
+      }
     }
   }
       
 
   if (codtau != NULL) {
+    assert(dtau != NULL);
     codtau[0] =  dtau[4] * dtau[8] - dtau[5] * dtau[7];
     codtau[1] = -dtau[3] * dtau[8] + dtau[5] * dtau[6];
     codtau[2] =  dtau[3] * dtau[7] - dtau[4] * dtau[6];
@@ -68,6 +77,7 @@ void Ref2Phy(double* physnode,
   }
 
   if (dphi != NULL){
+    assert(codtau != NULL);
     int ii;
     for(ii=0;ii<3;ii++){
       int jj;
@@ -79,7 +89,7 @@ void Ref2Phy(double* physnode,
   }
 
   if (vnds !=NULL) {
-
+    assert(codtau != NULL);
     int ii;
     for(ii=0;ii<3;ii++){
       int jj;

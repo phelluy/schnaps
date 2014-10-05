@@ -13,3 +13,5 @@ void AffineMap(double* x);
 int TestModel(void);
 
 int TestField(void);
+
+int TestFieldDG(void);
