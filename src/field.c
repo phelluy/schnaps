@@ -282,7 +282,7 @@ void PlotField(Field* f,char* filename){
 	  
 	  int vi = f->varindex(param, i, ib, typplot);
 	  //printf("i=%d psi=%f w=%f\n",vi,psi,f->wn[vi]);
-	  value += psi * f->wn[vi];
+	  value += psi * f->dtwn[vi];
 
 	}
 
@@ -348,7 +348,7 @@ void dtField(Field* f){
     }
 
     // loop on the 6 faces
-    for(int ifa=0;ifa<5;ifa++){
+    for(int ifa=0;ifa<6;ifa++){
       // get the right elem or the boundary id
       int ieR=f->macromesh.elem2elem[6*ie+ifa];
       double physnodeR[20*3];
@@ -367,12 +367,17 @@ void dtField(Field* f){
       // of the face ifa
       for(int ipgf=0;ipgf<NPGF(param+1,ifa);ipgf++){
   	double xpgref[3],wpg;
+  	double xpgref2[3],wpg2;
   	// get the coordinates of the Gauss point
   	ref_pg_face(param+1,ifa,ipgf,xpgref,&wpg);
 
   	// recover the volume gauss point from
   	// the face index
   	int ipg=param[7];
+  	/* ref_pg_vol(param+1,ipg,xpgref2,&wpg2); */
+	/* assert(fabs(xpgref2[0]-xpgref[0]) */
+	/*        +fabs(xpgref2[1]-xpgref[1]) */
+	/*        +fabs(xpgref2[2]-xpgref[2])<1e-10); */
   	// get the left value of w at the gauss point
   	double wL[3],wR[3];
   	for(int iv=0;iv<f->model.m;iv++){
@@ -390,6 +395,8 @@ void dtField(Field* f){
   		NULL,ifa, // dpsiref,ifa
   		xpg,dtau,
   		codtau,NULL,vnds); // codtau,dpsi,vnds
+	//printf("ifa=%d ipg=%d vnds=%f %f %f \n",ifa,ipg,
+	// vnds[0],vnds[1],vnds[2]);
   	double flux[f->model.m];
   	if (ieR >=0) {  // the right element exists
   	  // find the corresponding point in the right elem
@@ -402,6 +409,7 @@ void dtField(Field* f){
   	  }
   	  // int_dL F(wL,wR,grad phi_ib )
   	  f->model.NumFlux(wL,wR,vnds,flux);
+	  assert(1==2);
   	}
   	else { //the right element does not exist
   	  f->model.BoundaryFlux(xpg,f->tnow,wL,vnds,flux);
@@ -428,6 +436,8 @@ void dtField(Field* f){
       physnode[inoloc*3+2]=f->macromesh.node[3*ino+2];
     }
 
+    // mass matrix
+    double masspg[NPG(param+1)];
     // loop on the glops (for numerical integration)
     for(int ipg=0;ipg<NPG(param+1);ipg++){
       double xpgref[3],wpg;
@@ -451,19 +461,30 @@ void dtField(Field* f){
 		dpsiref,NULL, // dpsiref,ifa
 		NULL,dtau,  // xphy,dtau
 		codtau,dpsi,NULL); // codtau,dpsi,vnds
+	// remember the diagonal mass term
+	if (ib == ipg){
+	  double det=dtau[0]*codtau[0]+dtau[1]*codtau[1]+dtau[2]*codtau[2];
+	  masspg[ipg]=wpg*det;
+	}
 	// int_L F(w,w,grad phi_ib )
 	double flux[f->model.m];
 	f->model.NumFlux(w,w,dpsi,flux);
 	for(int iv=0;iv<f->model.m;iv++){
 	  int imem=f->varindex(param,ie,ib,iv);
-	  f->dtwn[imem]+=flux[iv]*wpg;
+	  f->dtwn[imem]-=flux[iv]*wpg;
 	}
       }
-
-
     }
-  }
+    for(int ipg=0;ipg<NPG(param+1);ipg++){
+      // apply the inverse of the diagonal mass matrix
+      for(int iv=0;iv<f->model.m;iv++){
+	int imem=f->varindex(param,ie,ipg,iv);
+	f->dtwn[imem]/=masspg[ipg];
+	//	printf("masspg=%f\n",masspg);	
+      }
+    }
 
+  }
 
 };
 

@@ -410,7 +410,7 @@ int TestFieldDG(void){
   f.model.ImposedData=TransportImposedData;
   f.varindex=GenericVarindex;
 
-  ReadMacroMesh(&(f.macromesh),"../geo/testmacromesh.msh");
+  ReadMacroMesh(&(f.macromesh),"../geo/testcube.msh");
   BuildConnectivity(&(f.macromesh));
 
   CheckMacroMesh(&(f.macromesh));

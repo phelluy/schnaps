@@ -294,7 +294,6 @@ void CheckMacroMesh(MacroMesh* m){
 	      xphyfa,dtau,
 	      codtau,NULL,vnds); // codtau,dphi,vnds
       double det=codtau[0]*dtau[0]+codtau[1]*dtau[1]+codtau[2]*dtau[2];
-      printf("det=%f\n",det);
 
       // check volume  orientation
       assert(det >0);
