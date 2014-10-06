@@ -416,7 +416,7 @@ void dtField(Field* f){
   	}
   	for(int iv=0;iv<f->model.m;iv++){
   	  int imem=f->varindex(param,ie,ib,iv);
-  	  f->dtwn[imem]+=flux[iv]*wpg;
+  	  f->dtwn[imem]-=flux[iv]*wpg;
   	}
 	
       }
@@ -471,7 +471,7 @@ void dtField(Field* f){
 	f->model.NumFlux(w,w,dpsi,flux);
 	for(int iv=0;iv<f->model.m;iv++){
 	  int imem=f->varindex(param,ie,ib,iv);
-	  f->dtwn[imem]-=flux[iv]*wpg;
+	  f->dtwn[imem]+=flux[iv]*wpg;
 	}
       }
     }
