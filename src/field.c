@@ -24,7 +24,7 @@ int GenericVarindex(int* param, int elem, int ipg, int iv){
 
 void InitField(Field* f){
 
-  int param[8]={f->model.m,_DEGX,_DEGY,_DEGZ,_RAFX,_RAFY,_RAFZ};
+  int param[8]={f->model.m,_DEGX,_DEGY,_DEGZ,_RAFX,_RAFY,_RAFZ,0};
   double w[f->model.m];
   double xpg[3];
   double xref[3],omega;
@@ -76,7 +76,7 @@ void InitField(Field* f){
 
 // display the field on screen
 void DisplayField(Field* f){
-  int param[8]={f->model.m,_DEGX,_DEGY,_DEGZ,_RAFX,_RAFY,_RAFZ};
+  int param[8]={f->model.m,_DEGX,_DEGY,_DEGZ,_RAFX,_RAFY,_RAFZ,0};
   //int param[8]={f->model.m,2,2,2,1,1,1};
 
   printf("Display field...\n");
@@ -90,6 +90,12 @@ void DisplayField(Field* f){
 	printf("%f ",f->wn[imem]);
       }
       printf("\n");
+    }
+  }
+  for(int ie=0;ie<f->macromesh.nbelems;ie++){
+    printf("elem %d\n",ie);
+    for(int ipg=0;ipg<NPG(param+1);ipg++){
+    printf("Gauss point %d\n",ipg);
     printf("dtw= ");
       for(int iv=0;iv<f->model.m;iv++){
 	int imem=f->varindex(param,ie,ipg,iv);
@@ -131,9 +137,9 @@ void PlotField(Field* f,char* filename){
 
   // data plots
   int mw = f->model.m;
-  int param[8]={f->model.m,_DEGX,_DEGY,_DEGZ,_RAFX,_RAFY,_RAFZ};
-  int degre = param[1];
-  int npgf = NPGF(param+1,0);
+  int param[8]={f->model.m,_DEGX,_DEGY,_DEGZ,_RAFX,_RAFY,_RAFZ,0};
+  //int degre = param[1];
+  //int npgf = NPGF(param+1,0);
   int npgv = NPG(param+1);
   int nnodes = 20;
 
@@ -145,7 +151,7 @@ void PlotField(Field* f,char* filename){
   double coDX[3*3];  // comatrix of the jacobian matrix
 
 
-  int vindex_param[] = {npgv, mw};
+  //int vindex_param[] = {npgv, mw};
 
   // header
   fprintf(gmshfile,"$MeshFormat\n2.2 0 %d\n",(int) sizeof(double));
@@ -199,7 +205,7 @@ void PlotField(Field* f,char* filename){
 
 
   int elm_type=92;
-  int num_elm_follow=f->macromesh.nbelems;
+  //int num_elm_follow=f->macromesh.nbelems;
   int num_tags=0;
 
   // fwrite((char*) &elm_type,sizeof(int),1,gmshfile);
@@ -319,7 +325,7 @@ void dtField(Field* f){
   // ugly too: the first parameter is not used by all
   // utilities. we have sometimes to jump over : pass param+1
   // instead of param...
-  int param[8]={f->model.m,_DEGX,_DEGY,_DEGZ,_RAFX,_RAFY,_RAFZ};
+  int param[8]={f->model.m,_DEGX,_DEGY,_DEGZ,_RAFX,_RAFY,_RAFZ,0};
 
   // init to zero the time derivative
   for(int ie=0;ie<f->macromesh.nbelems;ie++){
@@ -349,22 +355,20 @@ void dtField(Field* f){
       // get the right elem or the boundary id
       int ieR=f->macromesh.elem2elem[6*ie+ifa];
       double physnodeR[20*3];
-      // if we are not at a boundary
-      // get the nodes of the right elem
-      if (ieR >= 0) {
-  	for(int inoloc=0;inoloc<20;inoloc++){
-  	  int ino=f->macromesh.elem2node[20*ieR+inoloc];
-  	  physnodeR[inoloc*3+0]=f->macromesh.node[3*ino+0];
-  	  physnodeR[inoloc*3+1]=f->macromesh.node[3*ino+1];
-  	  physnodeR[inoloc*3+2]=f->macromesh.node[3*ino+2];
-  	}
-      }
+      /* if (ieR >= 0) { */
+      /* 	for(int inoloc=0;inoloc<20;inoloc++){ */
+      /* 	  int ino=f->macromesh.elem2node[20*ieR+inoloc]; */
+      /* 	  physnodeR[inoloc*3+0]=f->macromesh.node[3*ino+0]; */
+      /* 	  physnodeR[inoloc*3+1]=f->macromesh.node[3*ino+1]; */
+      /* 	  physnodeR[inoloc*3+2]=f->macromesh.node[3*ino+2]; */
+      /* 	} */
+      /* } */
       
       // loop on the glops (numerical integration)
       // of the face ifa
       for(int ipgf=0;ipgf<NPGF(param+1,ifa);ipgf++){
   	double xpgref[3],wpg;
-  	double xpgref2[3],wpg2;
+  	//double xpgref2[3],wpg2;
   	// get the coordinates of the Gauss point
   	ref_pg_face(param+1,ifa,ipgf,xpgref,&wpg);
 
@@ -372,7 +376,7 @@ void dtField(Field* f){
   	// the face index
   	int ipg=param[7];
   	// get the left value of w at the gauss point
-  	double wL[3],wR[3];
+  	double wL[f->model.m],wR[f->model.m];
   	for(int iv=0;iv<f->model.m;iv++){
   	  int imem=f->varindex(param,ie,ipg,iv);
   	  wL[iv]=f->wn[imem];
@@ -392,18 +396,35 @@ void dtField(Field* f){
   	if (ieR >=0) {  // the right element exists
   	  // find the corresponding point in the right elem
   	  double xref[3];
-  	  Phy2Ref(physnodeR,xpg,xref);
+	  for(int inoloc=0;inoloc<20;inoloc++){
+	    int ino=f->macromesh.elem2node[20*ieR+inoloc];
+	    physnodeR[inoloc*3+0]=f->macromesh.node[3*ino+0];
+	    physnodeR[inoloc*3+1]=f->macromesh.node[3*ino+1];
+	    physnodeR[inoloc*3+2]=f->macromesh.node[3*ino+2];
+	  }
+	  Phy2Ref(physnodeR,xpg,xref);// !!!! does not work here !!!!
   	  int ipgR=ref_ipg(param+1,xref);
+	  double xpgR[3],xrefR[3],wpgR;
+	  ref_pg_vol(param+1, ipgR, xrefR, &wpgR);
+	  Ref2Phy(physnodeR,
+		  xrefR,
+		  NULL,NULL, // dphiref,ifa
+		  xpgR,NULL,  
+		  NULL,NULL,NULL); // codtau,dphi,vnds
+	  printf("dxpg=%f %f %f \n",xpg[0]-xpgR[0],
+		 xpg[1]-xpgR[1],xpg[2]-xpgR[2]);
+	  //printf("xpgR=%f %f %f \n",xpgR[0],xpgR[1],xpgR[2]);
   	  for(int iv=0;iv<f->model.m;iv++){
   	    int imem=f->varindex(param,ieR,ipgR,iv);
   	    wR[iv]=f->wn[imem];
+	    TransportInitData(xpg,wR);
   	  }
   	  // int_dL F(wL,wR,grad phi_ib )
   	  f->model.NumFlux(wL,wR,vnds,flux);
-	  assert(1==2);
   	}
   	else { //the right element does not exist
   	  f->model.BoundaryFlux(xpg,f->tnow,wL,vnds,flux);
+	  // printf("xpgbord=%f %f %f \n",xpg[0],xpg[1],xpg[2]);
   	}
   	for(int iv=0;iv<f->model.m;iv++){
   	  int imem=f->varindex(param,ie,ib,iv);
@@ -436,7 +457,7 @@ void dtField(Field* f){
       ref_pg_vol(param+1,ipg,xpgref,&wpg);
 
       // get the value of w at the gauss point
-      double w[3];
+      double w[f->model.m];
       for(int iv=0;iv<f->model.m;iv++){
 	int imem=f->varindex(param,ie,ipg,iv);
 	w[iv]=f->wn[imem];

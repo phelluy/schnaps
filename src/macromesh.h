@@ -35,6 +35,8 @@ int CompareFace4Sort(const void* a,const void* b);
 
 // get the mesh from a gmsh file
 void ReadMacroMesh(MacroMesh* m,char* filename);
+void AffineMap(double* x);
+void AffineMapMacroMesh(MacroMesh* m);
 // verify the validity and orientation of the mesh
 void CheckMacroMesh(MacroMesh* m);
 // list the mesh data

@@ -105,7 +105,7 @@ void Ref2Phy(double* physnode,
 
 
 void Phy2Ref(double* physnode,double* xphy,double* xref){
-#define ITERNEWTON 10
+#define ITERNEWTON 20
 
   double dtau[9], codtau[9];                                              
   double dxref[3], dxphy[3];                                              
@@ -120,10 +120,8 @@ void Phy2Ref(double* physnode,double* xphy,double* xref){
     dxphy[0] -= (xphy)[0];                                              
     dxphy[1] -= (xphy)[1];                                              
     dxphy[2] -= (xphy)[2];                                              
-    det = dtau[0] * dtau[4] * dtau[8] - dtau[0] * dtau[5] * dtau[7]     
-      - dtau[3] * dtau[1] * dtau[8]                                     
-      + dtau[3] * dtau[2] * dtau[7] + dtau[6] * dtau[1] * dtau[5]       
-      - dtau[6] * dtau[2] * dtau[4];     
+    det = dtau[0]*codtau[0]+dtau[1]*codtau[1]+dtau[2]*codtau[2];
+    assert(det>0);
     for(int ii = 0;ii<3;ii ++ ){                             
       dxref[ii] = 0;                                               
       for(int jj = 0;jj<3;jj ++ ){                                          
@@ -135,5 +133,6 @@ void Phy2Ref(double* physnode,double* xphy,double* xref){
     /* 				      dxref[1]*dxref[1]+ */
     /* 				      dxref[2]*dxref[2])); */
   }
+  assert(xref[0]<1.1);
 
 }

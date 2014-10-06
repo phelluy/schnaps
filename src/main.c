@@ -17,7 +17,7 @@ int main(void) {
 
   /* assert(TestModel()); */
 
-  assert(TestField());
+  //assert(TestField());
 
   assert(TestFieldDG());
 

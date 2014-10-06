@@ -320,26 +320,6 @@ int TestInterpolation(void){
 
 }
 
-void AffineMap(double* x){
-
-  double A[3][3]={1,2,1,0,-1,4,7,8,-5};
-  //double A[3][3]={1,0,0,0,2,0,0,0,1};
-  double x0[3]={10,0,-4};
-  //double x0[3]={0,0,0};
-
-  double newx[3];
-
-  for(int i=0;i<3;i++){
-    newx[i]=x0[i];
-    for(int j=0;j<3;j++){
-      newx[i]+=A[i][j]*x[j];
-    }
-  }
-  x[0]=newx[0];
-  x[1]=newx[1];
-  x[2]=newx[2];
-
-}
 
 int TestModel(void){
 
@@ -407,21 +387,23 @@ int TestFieldDG(void){
   f.model.NumFlux=TransportNumFlux;
   f.model.BoundaryFlux=TransportBoundaryFlux;
   f.model.InitData=TransportInitData;
-  f.model.ImposedData=TransportImposedDataLinear;
+  f.model.ImposedData=TransportImposedData;
   f.varindex=GenericVarindex;
 
-  ReadMacroMesh(&(f.macromesh),"../geo/testcube.msh");
+  ReadMacroMesh(&(f.macromesh),"../geo/cube.msh");
+  //ReadMacroMesh(&(f.macromesh),"../geo/testcube2.msh");
   BuildConnectivity(&(f.macromesh));
 
   CheckMacroMesh(&(f.macromesh));
+  //AffineMapMacroMesh(&(f.macromesh));
 
   InitField(&f);
 
   dtField(&f);
   
-  //DisplayField(&f);  
+  DisplayField(&f);  
 
-  //PlotField(&f,"testvisufield.msh");
+  PlotField(&f,"testvisufield.msh");
 
   // test the time derivative that has to be -1
   for(int i=0;i<f.model.m * f.macromesh.nbelems * 
@@ -434,4 +416,6 @@ int TestFieldDG(void){
 
 
 };
+
+
 

@@ -167,7 +167,7 @@ int NPGF(int* param, int ifa){
 }
 
 // from a reference point find the nearest
-// gauss point works only with no subcell...
+// gauss point works only with no subcell and degree 1,2 or 3
 int ref_ipg(int* param,double* xref){
   int deg[3],nraf[3];
   
@@ -189,6 +189,7 @@ int ref_ipg(int* param,double* xref){
   int iy=floor(xref[1]*deg[1]+0.5); 
   int iz=floor(xref[2]*deg[2]+0.5); 
 
+  //printf("xref=%f ix=%d\n",xref[0],ix);
   return ix+(deg[0]+1)*(iy+(deg[1]+1)*iz);
 
 };
@@ -259,7 +260,7 @@ void ref_pg_face(int* param,int ifa,int ipg,double* xpg,double* wpg){
   int deg[3],offset[2],nraf[3];
   double h[3];
   int ipgxyz[3],ncpgxyz[3];
-  int ipgf=ipg;
+  //int ipgf=ipg;
 
   // approximation degree in each direction
   deg[0]=param[axis_permut[ifa][0]];

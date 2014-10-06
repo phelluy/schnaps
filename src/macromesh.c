@@ -14,7 +14,7 @@ void ReadMacroMesh(MacroMesh* m,char* filename){
 
   char* line=NULL;
   size_t linesize=0;
-  size_t ret;
+  //size_t ret;
 
   printf("Read mesh file %s\n",filename);
 
@@ -97,12 +97,44 @@ void ReadMacroMesh(MacroMesh* m,char* filename){
   // check that we have reached the end of nodes
   assert(strcmp(line,"$EndElements\n") == 0);
   printf("nbelems=%d\n",m->nbelems);
-  m->elem2node=realloc(m->elem2node,20 * sizeof(int) * m->nbelems);
-  assert(m->elem2node);
+  //m->elem2node=realloc(m->elem2node,20 * sizeof(int) * m->nbelems);
+  //assert(m->elem2node);
 
   m->elem2elem=NULL;
 
 }
+
+
+void AffineMap(double* x){
+
+  double A[3][3]={{1,2,1},{0,-1,4},{7,8,-5}};
+  //double A[3][3]={1,0,0,0,2,0,0,0,1};
+  double x0[3]={10,0,-4};
+  //double x0[3]={0,0,0};
+
+  double newx[3];
+
+  for(int i=0;i<3;i++){
+    newx[i]=x0[i];
+    for(int j=0;j<3;j++){
+      newx[i]+=A[i][j]*x[j];
+    }
+  }
+  x[0]=newx[0];
+  x[1]=newx[1];
+  x[2]=newx[2];
+
+}
+
+
+void AffineMapMacroMesh(MacroMesh* m){
+
+    for(int ino=0;ino<m->nbnodes;ino++){
+      AffineMap(&(m->node[ino*3]));
+    }
+}
+
+
 
 // display macromesh data on standard output
 void PrintMacroMesh(MacroMesh* m){
@@ -252,7 +284,7 @@ int CompareFace4Sort(const void* a,const void* b){
 
 void CheckMacroMesh(MacroMesh* m){
 
-  int param[8]={_DEGX,_DEGY,_DEGZ,_RAFX,_RAFY,_RAFZ,0};
+  //int param[8]={_DEGX,_DEGY,_DEGZ,_RAFX,_RAFY,_RAFZ,0};
   double dtau[9],codtau[9];
   double physnode[20*3];
 
@@ -265,9 +297,9 @@ void CheckMacroMesh(MacroMesh* m){
     {0.5,0.5,0.0},
   };
 
-  double refnormal[6][3]={{0,-1,0},{1,0,0},
-			  {0,1,0},{-1,0,0},
-			  {0,0,1},{0,0,-1}};
+  /* double refnormal[6][3]={{0,-1,0},{1,0,0}, */
+  /* 			  {0,1,0},{-1,0,0}, */
+  /* 			  {0,0,1},{0,0,-1}}; */
 
 
   for(int ie=0;ie<m->nbelems;ie++){
@@ -285,7 +317,7 @@ void CheckMacroMesh(MacroMesh* m){
     	    xphym,NULL, // xphy dtau
     	    NULL,NULL,NULL); // codtau,dphi,vnds
 
-    for(int ifa=0;ifa<5;ifa++){
+    for(int ifa=0;ifa<6;ifa++){
       // middle of the face
       double xphyfa[3],vnds[3];
       Ref2Phy(physnode,
