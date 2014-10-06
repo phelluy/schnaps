@@ -20,5 +20,6 @@ typedef struct Model{
 			     double* flux);
   void TransportInitData(double* x,double* w);
   void TransportImposedData(double* x,double t,double* w);
+  void TransportImposedDataLinear(double* x,double t,double* w);
 
 #endif

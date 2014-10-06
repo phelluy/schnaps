@@ -407,7 +407,7 @@ int TestFieldDG(void){
   f.model.NumFlux=TransportNumFlux;
   f.model.BoundaryFlux=TransportBoundaryFlux;
   f.model.InitData=TransportInitData;
-  f.model.ImposedData=TransportImposedData;
+  f.model.ImposedData=TransportImposedDataLinear;
   f.varindex=GenericVarindex;
 
   ReadMacroMesh(&(f.macromesh),"../geo/testcube.msh");
@@ -419,9 +419,15 @@ int TestFieldDG(void){
 
   dtField(&f);
   
-  DisplayField(&f);  
+  //DisplayField(&f);  
 
-  PlotField(&f,"testvisufield.msh");
+  //PlotField(&f,"testvisufield.msh");
+
+  // test the time derivative that has to be -1
+  for(int i=0;i<f.model.m * f.macromesh.nbelems * 
+	(_DEGX+1)*(_DEGY+1)*(_DEGZ+1);i++){
+    test = test && fabs(1+f.dtwn[i])<1e-9;
+  }
   
   return test;
 

@@ -65,11 +65,9 @@ void InitField(Field* f){
       		  (xref2[0]-xref[0])*(xref2[0]-xref[0])) < 1e-8);
       
       f->model.InitData(xpg,w);
-      //printf("xpg %f %f %f w=%f\n",xpg[0],xpg[1],xpg[2],w[0]);
       for(int iv=0;iv<f->model.m;iv++){
 	int imem=f->varindex(param,ie,ipg,iv);
 	f->wn[imem]=w[iv];
-	//printf("imem=%d\n",imem);
       }
     }
   }
@@ -281,7 +279,6 @@ void PlotField(Field* f,char* filename){
 	  psi_ref(param+1, ib, Xr, &psi, NULL);
 	  
 	  int vi = f->varindex(param, i, ib, typplot);
-	  //printf("i=%d psi=%f w=%f\n",vi,psi,f->wn[vi]);
 	  value += psi * f->dtwn[vi];
 
 	}
@@ -374,10 +371,6 @@ void dtField(Field* f){
   	// recover the volume gauss point from
   	// the face index
   	int ipg=param[7];
-  	/* ref_pg_vol(param+1,ipg,xpgref2,&wpg2); */
-	/* assert(fabs(xpgref2[0]-xpgref[0]) */
-	/*        +fabs(xpgref2[1]-xpgref[1]) */
-	/*        +fabs(xpgref2[2]-xpgref[2])<1e-10); */
   	// get the left value of w at the gauss point
   	double wL[3],wR[3];
   	for(int iv=0;iv<f->model.m;iv++){
@@ -395,8 +388,6 @@ void dtField(Field* f){
   		NULL,ifa, // dpsiref,ifa
   		xpg,dtau,
   		codtau,NULL,vnds); // codtau,dpsi,vnds
-	//printf("ifa=%d ipg=%d vnds=%f %f %f \n",ifa,ipg,
-	// vnds[0],vnds[1],vnds[2]);
   	double flux[f->model.m];
   	if (ieR >=0) {  // the right element exists
   	  // find the corresponding point in the right elem
@@ -480,7 +471,6 @@ void dtField(Field* f){
       for(int iv=0;iv<f->model.m;iv++){
 	int imem=f->varindex(param,ie,ipg,iv);
 	f->dtwn[imem]/=masspg[ipg];
-	//	printf("masspg=%f\n",masspg);	
       }
     }
 
