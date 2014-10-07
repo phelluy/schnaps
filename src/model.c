@@ -50,7 +50,7 @@ void TransportImposedData(double* x,double t,double* w){
 
   double xx = vx - t;
 
-  w[0] = cos(xx) ;
+  //w[0] = cos(xx) ;
   w[0]=xx;
 
 };

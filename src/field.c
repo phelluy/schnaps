@@ -342,8 +342,14 @@ void PlotField(Field* f,char* filename){
 	  
 	  int vi = f->varindex(param, i, ib, typplot);
 	  value += psi * f->wn[vi];
-
 	}
+
+	// uncomment these lines for comparing with an
+	// exact solution
+	double wex[f->model.m];
+	TransportImposedData(Xphy,f->tnow,wex);
+	value -= wex[typplot];
+	  
 
 	// Exact solution
 	// clac::real* w = new clac::real[zf->model()->nb_vars()];

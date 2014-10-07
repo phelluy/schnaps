@@ -1,4 +1,4 @@
-raf =4;
+raf =2;
 h=0.7;
 Point(1) = {-h, -h, 0};
 Point(2) = {h, -h, 0};
@@ -35,7 +35,7 @@ Plane Surface(23) = {22};
 //sud
 Line Loop(24) = {17, 13, -14, -1};
 Plane Surface(25) = {24};
-Extrude {0, 0, 1} {
+Extrude {0, 0, 4} {
   Surface{21, 23, 6, 19, 25};
 }
 ll[] = Line "*";
