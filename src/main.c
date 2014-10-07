@@ -19,7 +19,7 @@ int main(void) {
 
   assert(TestField());
 
-  assert(TestFieldDG());
+  //assert(TestFieldDG());
 
   assert(TestFieldRK2());
 

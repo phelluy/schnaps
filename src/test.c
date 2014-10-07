@@ -512,20 +512,20 @@ int TestFieldRK2(void){
   f.model.ImposedData=TransportImposedData;
   f.varindex=GenericVarindex;
 
-  ReadMacroMesh(&(f.macromesh),"../geo/disque.msh");
-  //ReadMacroMesh(&(f.macromesh),"../geo/cube.msh");
+  //ReadMacroMesh(&(f.macromesh),"../geo/disque.msh");
+  ReadMacroMesh(&(f.macromesh),"../geo/cube.msh");
   //ReadMacroMesh(&(f.macromesh),"../geo/testcube2.msh");
   BuildConnectivity(&(f.macromesh));
 
+  AffineMapMacroMesh(&(f.macromesh));
   CheckMacroMesh(&(f.macromesh));
-  //AffineMapMacroMesh(&(f.macromesh));
-
+ 
   InitField(&f);
 
   printf("cfl param =%f\n",f.hmin);
 
 
-  RK2(&f,0.1);
+  RK2(&f,1);
 
   PlotField(&f,"testvisufield.msh");
 

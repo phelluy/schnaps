@@ -108,7 +108,7 @@ void ReadMacroMesh(MacroMesh* m,char* filename){
 void AffineMap(double* x){
 
   //double A[3][3]={{1,2,1},{0,-1,4},{7,8,-5}};
-  double A[3][3]={{0,-1,0},{-1,0,0},{0,0,-1}};
+  double A[3][3]={{0,-1,0},{-2,1,0},{0,0,-1}};
   //double A[3][3]={1,0,0,0,2,0,0,0,1};
   double x0[3]={10,0,-4};
   //double x0[3]={0,0,0};

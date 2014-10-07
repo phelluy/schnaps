@@ -4,12 +4,12 @@
 #include <assert.h>
 
 #define ONE_OVER_SQRT_3 (double)(0.57735026918962584)
-const double transport_v[] = {
-  -ONE_OVER_SQRT_3,
-  -ONE_OVER_SQRT_3,
-  -ONE_OVER_SQRT_3};
+/* const double transport_v[] = { */
+/*   -ONE_OVER_SQRT_3, */
+/*   -ONE_OVER_SQRT_3, */
+/*   -ONE_OVER_SQRT_3}; */
 
-//const double transport_v[] = {0,0,1};
+const double transport_v[] = {1,0,0};
 
 
 void TransportNumFlux(double* wL,double* wR,double* vnorm,double* flux){
@@ -52,7 +52,7 @@ void TransportImposedData(double* x,double t,double* w){
 
   //w[0] = cos(xx) ;
   w[0]=xx;
-
+  //w[0]=1;
 };
 
 /* void TransportImposedDataLinear(double* x,double t,double* w){ */
