@@ -327,6 +327,10 @@ void dtField(Field* f){
   // instead of param...
   int param[8]={f->model.m,_DEGX,_DEGY,_DEGZ,_RAFX,_RAFY,_RAFZ,0};
 
+  CheckMacroMesh(&(f->macromesh));
+  PrintMacroMesh(&(f->macromesh));
+  assert(1==2);
+
   // init to zero the time derivative
   for(int ie=0;ie<f->macromesh.nbelems;ie++){
     for(int ipg=0;ipg<NPG(param+1);ipg++){
@@ -402,6 +406,7 @@ void dtField(Field* f){
 	    physnodeR[inoloc*3+1]=f->macromesh.node[3*ino+1];
 	    physnodeR[inoloc*3+2]=f->macromesh.node[3*ino+2];
 	  }
+	  printf("xpg=%f %f %f \n",xpg[0],xpg[1],xpg[2]);
 	  Phy2Ref(physnodeR,xpg,xref);// !!!! does not work here !!!!
   	  int ipgR=ref_ipg(param+1,xref);
 	  double xpgR[3],xrefR[3],wpgR;

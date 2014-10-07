@@ -13,7 +13,7 @@ int main(void) {
   
   /* assert(TestGeometry()); */
 	 
-  /* assert(TestInterpolation()); */
+  /* assert(TestInterpolation());  */
 
   /* assert(TestModel()); */
 

@@ -76,34 +76,9 @@ int TestInterpolation(void){
   
   int test= (1==1);
 
-  // test green formula for Gauss-Lobatto points
-
-  // store the interpolation properties
-  // 3 orders
-  // 3 refinement parameters
-  // 1 integer for converting face pg id into a volume pg id
-  int deg[7];
-  int nraf[3];
-
-  for(int d=1;d<5;d++){
-    printf("Degree=%d\n",d);
-
-    deg[0]=d;
-    deg[1]=d;
-    deg[2]=d;
-    deg[3]=3;
-    deg[4]=1;
-    deg[5]=2;
-
-    nraf[0]=deg[3];
-    nraf[1]=deg[4];
-    nraf[2]=deg[5];
-
-    int npg;
-
-    // Reference element
-    double physnode[20*3];
-    physnode[0*3+0] = 0;
+  // reference element
+  double physnode[20*3];
+  physnode[0*3+0] = 0;
     physnode[0*3+1] = 0;
     physnode[0*3+2] = 0;
     physnode[1*3+0] = 1;
@@ -164,14 +139,77 @@ int TestInterpolation(void){
     physnode[19*3+1] = 1;
     physnode[19*3+2] = 1;
 
-
     // transform the ref element with an affine map
     // for more generality
 
     for(int i=0;i<20;i++){
       AffineMap(&(physnode[i*3]));
     }
-      
+
+
+  // store the interpolation properties
+  // 3 orders
+  // 3 refinement parameters
+  // 1 integer for converting face pg id into a volume pg id
+  int deg[7];
+  int nraf[3];
+
+
+  // test that the ref_ipg function
+  // is compatible with ref_pg_vol
+  for(int d=1;d<5;d++){
+    printf("Degree=%d\n",d);
+    
+    deg[0]=d;
+    deg[1]=d;
+    deg[2]=d;
+    deg[3]=1;
+    deg[4]=1;
+    deg[5]=1;
+    
+    nraf[0]=deg[3];
+    nraf[1]=deg[4];
+    nraf[2]=deg[5];
+
+    double xref1[3],xref2[3],xphy[3];
+
+    for(int ipg=0;ipg<NPG(deg);ipg++){
+      double wpg;
+      ref_pg_vol(deg,ipg,xref1,&wpg);
+      Ref2Phy(physnode,
+             xref1,
+             0,
+             0,
+             xphy,
+             0,
+             0,
+             0,
+             0);
+      Phy2Ref(physnode,xphy,xref2);
+      test=test &&(ipg==ref_ipg(deg,xref2));
+      printf("ipg=%d ipg2=%d\n",ipg,ref_ipg(deg,xref2));
+      assert(test);
+    }
+  }
+
+  // test green formula for Gauss-Lobatto points
+
+
+  for(int d=1;d<5;d++){
+    printf("Degree=%d\n",d);
+
+    deg[0]=d;
+    deg[1]=d;
+    deg[2]=d;
+    deg[3]=3;
+    deg[4]=1;
+    deg[5]=2;
+
+    nraf[0]=deg[3];
+    nraf[1]=deg[4];
+    nraf[2]=deg[5];
+
+    int npg;      
 
     // check that integration by parts works with
     // two arbitrary polynomials
@@ -392,10 +430,14 @@ int TestFieldDG(void){
 
   ReadMacroMesh(&(f.macromesh),"../geo/cube.msh");
   //ReadMacroMesh(&(f.macromesh),"../geo/testcube2.msh");
+  PrintMacroMesh(&(f.macromesh));
+  assert(1==2);
   BuildConnectivity(&(f.macromesh));
 
   CheckMacroMesh(&(f.macromesh));
   //AffineMapMacroMesh(&(f.macromesh));
+  PrintMacroMesh(&(f.macromesh));
+  assert(1==2);
 
   InitField(&f);
 

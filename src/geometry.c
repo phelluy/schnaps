@@ -50,6 +50,7 @@ void Ref2Phy(double* physnode,
 
 
   if (dtau != NULL){
+    //printf("dtau=\n");
     for(int ii=0;ii<3;ii++){
       for(int jj=0;jj<3;jj++){
 	dtau[3*ii+jj]=0;
@@ -59,6 +60,7 @@ void Ref2Phy(double* physnode,
 	  dtau[3*ii+jj]+=physnode[3*i+ii]*gradphi[i][jj];;
 	}
       }
+      //printf("%f %f %f \n",dtau[3*ii+0],dtau[3*ii+1],dtau[3*ii+2]);
     }
   }
       
@@ -74,7 +76,12 @@ void Ref2Phy(double* physnode,
     codtau[6] =  dtau[1] * dtau[5] - dtau[2] * dtau[4];
     codtau[7] = -dtau[0] * dtau[5] + dtau[2] * dtau[3];
     codtau[8] =  dtau[0] * dtau[4] - dtau[1] * dtau[3];
-  }
+    /* printf("codtau=\n"); */
+    /* for(int ii=0;ii<3;ii++){ */
+    /*   printf("%f %f %f \n",codtau[3*ii+0],codtau[3*ii+1],codtau[3*ii+2]); */
+    /* } */
+    /* printf("det=%f\n",dtau[0]*codtau[0]+dtau[1]*codtau[1]+dtau[2]*codtau[2]) */;
+}
 
   if (dphi != NULL){
     assert(codtau != NULL);

@@ -107,7 +107,8 @@ void ReadMacroMesh(MacroMesh* m,char* filename){
 
 void AffineMap(double* x){
 
-  double A[3][3]={{1,2,1},{0,-1,4},{7,8,-5}};
+  //double A[3][3]={{1,2,1},{0,-1,4},{7,8,-5}};
+  double A[3][3]={{0,-1,0},{-1,0,0},{0,0,-1}};
   //double A[3][3]={1,0,0,0,2,0,0,0,1};
   double x0[3]={10,0,-4};
   //double x0[3]={0,0,0};
@@ -139,9 +140,10 @@ void AffineMapMacroMesh(MacroMesh* m){
 // display macromesh data on standard output
 void PrintMacroMesh(MacroMesh* m){
   printf("Print macromesh...\n");
+  int start=1;
   printf("nbnodes=%d\n",m->nbnodes);
   for(int i=0;i<m->nbnodes;i++){
-    printf("node %d x=%f y=%f z=%f\n",i,
+    printf("node %d x=%f y=%f z=%f\n",i+start,
 	   m->node[3*i+0],
 	   m->node[3*i+1],
 	   m->node[3*i+2]);
@@ -150,7 +152,7 @@ void PrintMacroMesh(MacroMesh* m){
   for(int i=0;i<m->nbelems;i++){
     printf("elem %d -> ",i);
     for(int j=0;j<20;j++){
-      printf("%d ",m->elem2node[20*i+j]);
+      printf("%d ",m->elem2node[20*i+j]+start);
     }
     printf("\n");
   }
@@ -158,7 +160,7 @@ void PrintMacroMesh(MacroMesh* m){
   for(int i=0;i<m->nbelems;i++){
     printf("elem %d voisins: ",i);
     for(int j=0;j<6;j++){
-      printf("%d ",m->elem2elem[6*i+j]);
+      printf("%d ",m->elem2elem[6*i+j]+start);
     }
     printf("\n");
   }
