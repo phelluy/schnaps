@@ -327,9 +327,6 @@ void dtField(Field* f){
   // instead of param...
   int param[8]={f->model.m,_DEGX,_DEGY,_DEGZ,_RAFX,_RAFY,_RAFZ,0};
 
-  CheckMacroMesh(&(f->macromesh));
-  PrintMacroMesh(&(f->macromesh));
-  assert(1==2);
 
   // init to zero the time derivative
   for(int ie=0;ie<f->macromesh.nbelems;ie++){
@@ -359,14 +356,14 @@ void dtField(Field* f){
       // get the right elem or the boundary id
       int ieR=f->macromesh.elem2elem[6*ie+ifa];
       double physnodeR[20*3];
-      /* if (ieR >= 0) { */
-      /* 	for(int inoloc=0;inoloc<20;inoloc++){ */
-      /* 	  int ino=f->macromesh.elem2node[20*ieR+inoloc]; */
-      /* 	  physnodeR[inoloc*3+0]=f->macromesh.node[3*ino+0]; */
-      /* 	  physnodeR[inoloc*3+1]=f->macromesh.node[3*ino+1]; */
-      /* 	  physnodeR[inoloc*3+2]=f->macromesh.node[3*ino+2]; */
-      /* 	} */
-      /* } */
+      if (ieR >= 0) {
+      	for(int inoloc=0;inoloc<20;inoloc++){
+      	  int ino=f->macromesh.elem2node[20*ieR+inoloc];
+      	  physnodeR[inoloc*3+0]=f->macromesh.node[3*ino+0];
+      	  physnodeR[inoloc*3+1]=f->macromesh.node[3*ino+1];
+      	  physnodeR[inoloc*3+2]=f->macromesh.node[3*ino+2];
+      	}
+      }
       
       // loop on the glops (numerical integration)
       // of the face ifa
@@ -374,7 +371,7 @@ void dtField(Field* f){
   	double xpgref[3],wpg;
   	//double xpgref2[3],wpg2;
   	// get the coordinates of the Gauss point
-  	ref_pg_face(param+1,ifa,ipgf,xpgref,&wpg);
+  	ref_pg_face(&(param[1]),ifa,ipgf,xpgref,&wpg);
 
   	// recover the volume gauss point from
   	// the face index
@@ -400,13 +397,15 @@ void dtField(Field* f){
   	if (ieR >=0) {  // the right element exists
   	  // find the corresponding point in the right elem
   	  double xref[3];
-	  for(int inoloc=0;inoloc<20;inoloc++){
-	    int ino=f->macromesh.elem2node[20*ieR+inoloc];
-	    physnodeR[inoloc*3+0]=f->macromesh.node[3*ino+0];
-	    physnodeR[inoloc*3+1]=f->macromesh.node[3*ino+1];
-	    physnodeR[inoloc*3+2]=f->macromesh.node[3*ino+2];
-	  }
+	  /* for(int inoloc=0;inoloc<20;inoloc++){ */
+	  /*   int ino=f->macromesh.elem2node[20*ieR+inoloc]; */
+	  /*   physnodeR[inoloc*3+0]=f->macromesh.node[3*ino+0]; */
+	  /*   physnodeR[inoloc*3+1]=f->macromesh.node[3*ino+1]; */
+	  /*   physnodeR[inoloc*3+2]=f->macromesh.node[3*ino+2]; */
+	  /* } */
+	  printf("ie=%d ieR=%d ifa=%d ipgf=%d ipgv=%d\n",ie,ieR,ifa,ipgf,ipg);
 	  printf("xpg=%f %f %f \n",xpg[0],xpg[1],xpg[2]);
+	  assert(fabs(xpg[1]) < 1e-1);
 	  Phy2Ref(physnodeR,xpg,xref);// !!!! does not work here !!!!
   	  int ipgR=ref_ipg(param+1,xref);
 	  double xpgR[3],xrefR[3],wpgR;

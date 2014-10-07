@@ -150,7 +150,7 @@ void PrintMacroMesh(MacroMesh* m){
   }
   printf("nbelems=%d\n",m->nbelems);
   for(int i=0;i<m->nbelems;i++){
-    printf("elem %d -> ",i);
+    printf("elem %d -> ",i+start);
     for(int j=0;j<20;j++){
       printf("%d ",m->elem2node[20*i+j]+start);
     }
@@ -158,7 +158,7 @@ void PrintMacroMesh(MacroMesh* m){
   }
 
   for(int i=0;i<m->nbelems;i++){
-    printf("elem %d voisins: ",i);
+    printf("elem %d voisins: ",i+start);
     for(int j=0;j<6;j++){
       printf("%d ",m->elem2elem[6*i+j]+start);
     }
@@ -184,12 +184,13 @@ void BuildConnectivity(MacroMesh* m){
   assert(face);
 
   int face2locnode[6][4]={
+    {0,1,4,5},
+    {1,2,6,5},
+    {2,3,7,6},
+    {0,3,7,4},
     {0,1,2,3},
     {4,5,6,7},
-    {0,4,5,1},
-    {2,3,7,6},
-    {1,2,6,5},
-    {0,3,7,4}};
+};
 
 
   for(int ie=0;ie<m->nbelems;ie++){

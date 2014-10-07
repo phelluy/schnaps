@@ -192,6 +192,46 @@ int TestInterpolation(void){
     }
   }
 
+  // test that the ref_pg_face function
+  // is compatible with ref_pg_vol
+  for(int d=1;d<5;d++){
+    printf("Degree=%d\n",d);
+    
+    deg[0]=d;
+    deg[1]=d;
+    deg[2]=d;
+    deg[3]=1;
+    deg[4]=1;
+    deg[5]=1;
+    
+    nraf[0]=deg[3];
+    nraf[1]=deg[4];
+    nraf[2]=deg[5];
+
+    double xref1[3],xref2[3],xphy[3];
+    for(int ifa=0;ifa<6;ifa++){
+      for(int ipgf=0;ipgf<NPGF(deg,ifa);ipgf++){
+	double wpg;
+	ref_pg_face(deg,ifa,ipgf,xref1,&wpg);
+	int ipg=deg[6];
+	Ref2Phy(physnode,
+		xref1,
+		0,
+		0,
+		xphy,
+		0,
+		0,
+		0,
+		0);
+	Phy2Ref(physnode,xphy,xref2);
+	test=test &&(ipg==ref_ipg(deg,xref2));
+	printf("ipg=%d ipg2=%d\n",ipg,ref_ipg(deg,xref2));
+	assert(test);
+      }
+    }
+  }
+
+
   // test green formula for Gauss-Lobatto points
 
 
@@ -430,14 +470,11 @@ int TestFieldDG(void){
 
   ReadMacroMesh(&(f.macromesh),"../geo/cube.msh");
   //ReadMacroMesh(&(f.macromesh),"../geo/testcube2.msh");
-  PrintMacroMesh(&(f.macromesh));
-  assert(1==2);
   BuildConnectivity(&(f.macromesh));
 
   CheckMacroMesh(&(f.macromesh));
   //AffineMapMacroMesh(&(f.macromesh));
   PrintMacroMesh(&(f.macromesh));
-  assert(1==2);
 
   InitField(&f);
 
