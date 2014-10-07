@@ -9,15 +9,15 @@ int main(void) {
   
   // unit tests
   
-  /* assert(TestMacroMesh()); */
+  assert(TestMacroMesh());
   
-  /* assert(TestGeometry()); */
+  assert(TestGeometry());
 	 
-  /* assert(TestInterpolation());  */
+  assert(TestInterpolation());
 
-  /* assert(TestModel()); */
+  assert(TestModel());
 
-  //assert(TestField());
+  assert(TestField());
 
   assert(TestFieldDG());
 

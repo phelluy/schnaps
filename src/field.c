@@ -397,15 +397,6 @@ void dtField(Field* f){
   	if (ieR >=0) {  // the right element exists
   	  // find the corresponding point in the right elem
   	  double xref[3];
-	  /* for(int inoloc=0;inoloc<20;inoloc++){ */
-	  /*   int ino=f->macromesh.elem2node[20*ieR+inoloc]; */
-	  /*   physnodeR[inoloc*3+0]=f->macromesh.node[3*ino+0]; */
-	  /*   physnodeR[inoloc*3+1]=f->macromesh.node[3*ino+1]; */
-	  /*   physnodeR[inoloc*3+2]=f->macromesh.node[3*ino+2]; */
-	  /* } */
-	  printf("ie=%d ieR=%d ifa=%d ipgf=%d ipgv=%d\n",ie,ieR,ifa,ipgf,ipg);
-	  printf("xpg=%f %f %f \n",xpg[0],xpg[1],xpg[2]);
-	  assert(fabs(xpg[1]) < 1e-1);
 	  Phy2Ref(physnodeR,xpg,xref);// !!!! does not work here !!!!
   	  int ipgR=ref_ipg(param+1,xref);
 	  double xpgR[3],xrefR[3],wpgR;
@@ -415,9 +406,6 @@ void dtField(Field* f){
 		  NULL,NULL, // dphiref,ifa
 		  xpgR,NULL,  
 		  NULL,NULL,NULL); // codtau,dphi,vnds
-	  printf("dxpg=%f %f %f \n",xpg[0]-xpgR[0],
-		 xpg[1]-xpgR[1],xpg[2]-xpgR[2]);
-	  //printf("xpgR=%f %f %f \n",xpgR[0],xpgR[1],xpgR[2]);
   	  for(int iv=0;iv<f->model.m;iv++){
   	    int imem=f->varindex(param,ieR,ipgR,iv);
   	    wR[iv]=f->wn[imem];

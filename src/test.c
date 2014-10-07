@@ -225,7 +225,6 @@ int TestInterpolation(void){
 		0);
 	Phy2Ref(physnode,xphy,xref2);
 	test=test &&(ipg==ref_ipg(deg,xref2));
-	printf("ipg=%d ipg2=%d\n",ipg,ref_ipg(deg,xref2));
 	assert(test);
       }
     }
