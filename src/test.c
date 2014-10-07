@@ -525,7 +525,7 @@ int TestFieldRK2(void){
   printf("cfl param =%f\n",f.hmin);
 
 
-  RK2(&f,0.);
+  RK2(&f,0.1);
 
   PlotField(&f,"testvisufield.msh");
 
