@@ -14,9 +14,9 @@
 
 #define NULL 0
 
-#define _DEGX 1
-#define _DEGY 1
-#define _DEGZ 1
+#define _DEGX 4
+#define _DEGY 4
+#define _DEGZ 4
 #define _RAFX 1
 #define _RAFY 1
 #define _RAFZ 1

@@ -13,3 +13,5 @@ int TestModel(void);
 int TestField(void);
 
 int TestFieldDG(void);
+
+int TestFieldRK2(void);

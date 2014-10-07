@@ -257,8 +257,6 @@ void BuildConnectivity(MacroMesh* m){
   /* } */
 
   
-
-  
 }
 
 // compare two integers

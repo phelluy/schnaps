@@ -8,9 +8,13 @@ typedef struct Field{
   //underlying mesh and model
   MacroMesh macromesh;
   Model model;
-  
   // current time
   double tnow;
+  // cfl parameter min_i (vol_i / surf_i)
+  double hmin;
+  // time step
+  // dt has to be smaller than hmin / vmax
+  double dt;
 
   // fields at time steps n and n+1 
   double* wn;

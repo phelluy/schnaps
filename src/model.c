@@ -55,15 +55,15 @@ void TransportImposedData(double* x,double t,double* w){
 
 };
 
-void TransportImposedDataLinear(double* x,double t,double* w){
+/* void TransportImposedDataLinear(double* x,double t,double* w){ */
 
-  double vx =
-    transport_v[0] * x[0] +
-    transport_v[1] * x[1] +
-    transport_v[2] * x[2];
+/*   double vx = */
+/*     transport_v[0] * x[0] + */
+/*     transport_v[1] * x[1] + */
+/*     transport_v[2] * x[2]; */
 
-  double xx = vx - t;
+/*   double xx = vx - t; */
 
-  w[0]=xx;
+/*   w[0]=xx; */
 
-};
+/* }; */

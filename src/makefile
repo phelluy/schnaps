@@ -1,5 +1,5 @@
 CC=gcc
-OPTIMS=-std=c99 
+OPTIMS=-std=c99 -O
 LIBS=-lm 
 go: field.o geometry.o interpolation.o macromesh.o main.o model.o test.o 
 	$(CC) field.o geometry.o interpolation.o macromesh.o main.o model.o test.o -o go $(OPTIMS) $(LIBS)
