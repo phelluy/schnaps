@@ -480,7 +480,7 @@ int TestFieldDG(void){
 
   PrintMacroMesh(&(f.macromesh));
   CheckMacroMesh(&(f.macromesh));
-  //AffineMapMacroMesh(&(f.macromesh));
+  AffineMapMacroMesh(&(f.macromesh));
   PrintMacroMesh(&(f.macromesh));
 
   InitField(&f);
@@ -498,7 +498,7 @@ int TestFieldDG(void){
   // test the time derivative that has to be -1
   for(int i=0;i<f.model.m * f.macromesh.nbelems * 
 	(_DEGX+1)*(_DEGY+1)*(_DEGZ+1);i++){
-    test = test && fabs(1+f.dtwn[i])<0.01;
+    test = test && fabs(2*f.wn[i]+f.dtwn[i])<1e-2;
   }
   
   return test;
@@ -532,7 +532,7 @@ int TestFieldRK2(void){
   printf("cfl param =%f\n",f.hmin);
 
 
-  RK2(&f,0.1);
+  RK2(&f,1.);
   //printf("w=%f t=%f\n err=%f\n",f.wn[0],f.tnow,f.wn[0]-exp(f.tnow));
 
   PlotField(0,(1==0),&f,"dgvisu.msh");

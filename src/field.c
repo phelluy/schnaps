@@ -158,6 +158,12 @@ void DisplayField(Field* f){
 	printf("%f ",f->dtwn[imem]);
       }
       printf("\n");
+    printf("w= ");
+      for(int iv=0;iv<f->model.m;iv++){
+	int imem=f->varindex(param,ie,ipg,iv);
+	printf("%f ",f->wn[imem]);
+      }
+      printf("\n");
     }
   }
 

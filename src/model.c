@@ -9,7 +9,7 @@
 /*   -ONE_OVER_SQRT_3, */
 /*   -ONE_OVER_SQRT_3}; */
 
-const double transport_v[] = {1,0,0};
+const double transport_v[] = {-1,0,0};
 
 
 void TransportNumFlux(double* wL,double* wR,double* vnorm,double* flux){
@@ -51,8 +51,8 @@ void TransportImposedData(double* x,double t,double* w){
   double xx = vx - t;
 
   //w[0] = cos(2*xx) ;
-  //w[0]=xx;
-  w[0]=1;
+  w[0]=xx*xx;
+  //w[0]=1;
 };
 
 /* void TransportImposedDataLinear(double* x,double t,double* w){ */

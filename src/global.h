@@ -14,9 +14,9 @@
 
 #define NULL ((void*) 0)
 
-#define _DEGX 3
-#define _DEGY 3
-#define _DEGZ 3
+#define _DEGX 4
+#define _DEGY 4
+#define _DEGZ 4
 #define _RAFX 1
 #define _RAFY 1
 #define _RAFZ 1

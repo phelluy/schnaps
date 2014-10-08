@@ -17,11 +17,11 @@ int main(void) {
 
   assert(TestModel());
 
-  assert(TestField());
+   assert(TestField()); 
 
-  //assert(TestFieldDG());
+  assert(TestFieldDG());
 
-  assert(TestFieldRK2());
+  //assert(TestFieldRK2());
 
   printf("All tests OK !\n");
 
