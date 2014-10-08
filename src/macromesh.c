@@ -5,6 +5,7 @@
 #include <assert.h>
 #include <string.h>
 #include "geometry.h"
+#include "interpolation.h"
 #include <math.h>
 
 
@@ -108,9 +109,9 @@ void ReadMacroMesh(MacroMesh* m,char* filename){
 void AffineMap(double* x){
 
   //double A[3][3]={{1,2,1},{0,-1,4},{7,8,-5}};
-  double A[3][3]={{0,-1,0},{-2,1,0},{0,0,-1}};
+  double A[3][3]={{0,-1,0},{-1,0,0},{0,0,-1}};
   //double A[3][3]={1,0,0,0,2,0,0,0,1};
-  double x0[3]={10,0,-4};
+  double x0[3]={0,0,0};
   //double x0[3]={0,0,0};
 
   double newx[3];
@@ -184,12 +185,12 @@ void BuildConnectivity(MacroMesh* m){
   assert(face);
 
   int face2locnode[6][4]={
-    {0,1,4,5},
+    {0,1,5,4},
     {1,2,6,5},
     {2,3,7,6},
-    {0,3,7,4},
-    {0,1,2,3},
-    {4,5,6,7},
+    {0,4,7,3},
+    {5,6,7,4},
+    {0,3,2,1},
 };
 
 
@@ -285,7 +286,6 @@ int CompareFace4Sort(const void* a,const void* b){
 
 void CheckMacroMesh(MacroMesh* m){
 
-  //int param[8]={_DEGX,_DEGY,_DEGZ,_RAFX,_RAFY,_RAFZ,0};
   double dtau[9],codtau[9];
   double physnode[20*3];
 
@@ -310,11 +310,32 @@ void CheckMacroMesh(MacroMesh* m){
       physnode[inoloc*3+1]=m->node[3*ino+1];
       physnode[inoloc*3+2]=m->node[3*ino+2];
     }
+    
+    // test that the ref_ipg function
+    // is compatible with ref_pg_vol
+    int param[7]={_DEGX,_DEGY,_DEGZ,_RAFX,_RAFY,_RAFZ,0};
+    for(int ipg=0;ipg<NPG(param);ipg++){
+      double xref1[3],xref2[3],xphy[3];
+      double wpg;
+      ref_pg_vol(param,ipg,xref1,&wpg);
+      Ref2Phy(physnode,
+             xref1,
+             0,
+             -1,
+             xphy,
+             0,
+             0,
+             0,
+             0);
+      Phy2Ref(physnode,xphy,xref2);
+      assert(ipg==ref_ipg(param,xref2));
+    }
+
     // middle of the element
     double xrefm[3]={0.5,0.5,0.5},xphym[3];
     Ref2Phy(physnode,
     	    xrefm,
-    	    0,0, // dphiref,ifa
+    	    0,-1, // dphiref,ifa
     	    xphym,NULL, // xphy dtau
     	    NULL,NULL,NULL); // codtau,dphi,vnds
 
@@ -336,6 +357,22 @@ void CheckMacroMesh(MacroMesh* m){
       
       // check face orientation
       assert(vnds[0]*vec[0]+vnds[1]*vec[1]+vnds[2]*vec[2] > 0);
+
+      // check compatibility between face and volume numbering
+      //if (m->elem2elem[6*ie+ifa]>=0){
+        for(int ipgf=0;ipgf<NPGF(param,ifa);ipgf++){
+          double xpgref[3],wpg;
+          // get the coordinates of the Gauss point
+          ref_pg_face(param,ifa,ipgf,xpgref,&wpg);
+          // recover the volume gauss point from
+          // the face index
+          int ipgv=param[6];
+          double xpgref2[3],wpg2;
+          ref_pg_vol(param,ipgv,xpgref2,&wpg2);
+          assert(Dist(xpgref,xpgref2)<1e-8);
+        }
+        //}
+
 
     }
 

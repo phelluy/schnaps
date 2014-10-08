@@ -6,7 +6,15 @@
 const int h20_refnormal[6][3]={{0,-1,0},{1,0,0},
                                            {0,1,0},{-1,0,0},
                                            {0,0,1},{0,0,-1}};
+double Dist(double* x1,double* x2){
+  return sqrt((x1[0]-x2[0])*(x1[0]-x2[0])+
+              (x1[1]-x2[1])*(x1[1]-x2[1])+
+              (x1[2]-x2[2])*(x1[2]-x2[2]));
+}
 
+void PrintPoint(double* x){
+  printf("%f %f %f\n",x[0],x[1],x[2]);
+}
 
 void Ref2Phy(double* physnode,
              double* xref,
@@ -97,6 +105,7 @@ void Ref2Phy(double* physnode,
 
   if (vnds !=NULL) {
     assert(codtau != NULL);
+    assert(ifa >=0);
     int ii;
     for(ii=0;ii<3;ii++){
       int jj;
@@ -140,6 +149,9 @@ void Phy2Ref(double* physnode,double* xphy,double* xref){
     /* 				      dxref[1]*dxref[1]+ */
     /* 				      dxref[2]*dxref[2])); */
   }
-  assert(xref[0]<1.1);
+  double eps=1e-12;
+  assert(xref[0]<1+eps && xref[0]>-eps);
+  assert(xref[1]<1+eps && xref[1]>-eps);
+  assert(xref[2]<1+eps && xref[2]>-eps);
 
 }

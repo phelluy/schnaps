@@ -21,7 +21,7 @@ void TransportNumFlux(double* wL,double* wR,double* vnorm,double* flux){
 
    double vnp = vn>0 ? vn : 0;
    double vnm = vn-vnp;
-   
+
    flux[0] = vnp * wL[0] + vnm * wR[0];
 };
 
@@ -50,9 +50,9 @@ void TransportImposedData(double* x,double t,double* w){
 
   double xx = vx - t;
 
-  w[0] = cos(xx) ;
+  //w[0] = cos(2*xx) ;
   //w[0]=xx;
-  //w[0]=1;
+  w[0]=1;
 };
 
 /* void TransportImposedDataLinear(double* x,double t,double* w){ */

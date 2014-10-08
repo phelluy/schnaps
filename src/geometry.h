@@ -35,7 +35,7 @@ void Ref2Phy(double* physnode,
 // xref[3]: coordinates of the mapped point in the reference frame
 void Phy2Ref(double* physnode,double* xphy,double* xref);
 
-
-
+double Dist(double* x1,double* x2);
+void PrintPoint(double* x);
 
 #endif

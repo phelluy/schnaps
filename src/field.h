@@ -42,9 +42,11 @@ void dtField(Field* f);
 void RK2(Field* f,double tmax);
 
 // save the results in the gmsh format
-void PlotField(Field* f,char* filename);
+void PlotField(int typplot,int compare,Field* f,char* filename);
 
 // display the field on screen
+// typplot: index of the plotted variable
+// int compare == true -> compare with the exact value
 void DisplayField(Field* f);
 
 

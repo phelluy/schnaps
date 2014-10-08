@@ -183,7 +183,7 @@ int TestInterpolation(void){
       Ref2Phy(physnode,
              xref1,
              0,
-             0,
+             -1,
              xphy,
              0,
              0,
@@ -196,9 +196,11 @@ int TestInterpolation(void){
     }
   }
 
+#define _MAXDEGTEST 3
+
   // test that the ref_pg_face function
   // is compatible with ref_pg_vol
-  for(int d=1;d<5;d++){
+  for(int d=1;d<_MAXDEGTEST;d++){
     printf("Degree=%d\n",d);
     
     deg[0]=d;
@@ -221,7 +223,7 @@ int TestInterpolation(void){
 	Ref2Phy(physnode,
 		xref1,
 		0,
-		0,
+		-1,
 		xphy,
 		0,
 		0,
@@ -238,7 +240,7 @@ int TestInterpolation(void){
   // test green formula for Gauss-Lobatto points
 
 
-  for(int d=1;d<5;d++){
+  for(int d=1;d<_MAXDEGTEST;d++){
     printf("Degree=%d\n",d);
 
     deg[0]=d;
@@ -268,7 +270,7 @@ int TestInterpolation(void){
       ref_pg_vol(deg, ipg, xref, &omega);
       double xphy[3];
       double dtau[9],codtau[9];
-      Ref2Phy(physnode,xref,NULL,0,
+      Ref2Phy(physnode,xref,NULL,-1,
               xphy,dtau,codtau,NULL,NULL);
       f[ipg] = pow(xphy[1],(double) d);
       //printf("%d %f\n",ipg,f[ipg]);
@@ -293,7 +295,7 @@ int TestInterpolation(void){
 	ref_pg_vol(deg, ipg, xref, &omega);
         double xphy[3];
         double dtau[9],codtau[9];
-        Ref2Phy(physnode,xref,dphiref,0,
+        Ref2Phy(physnode,xref,dphiref,-1,
               xphy,dtau,codtau,dphi,NULL);
 	//printf("ipg= %d xphy=%f\n", l,xphy[0]);
         double det=dtau[0]*codtau[0]+dtau[1]*codtau[1]+dtau[2]*codtau[2];
@@ -303,7 +305,7 @@ int TestInterpolation(void){
       ref_pg_vol(deg, ipg, xref, &omega);
       double xphy[3];
       double dtau[9],codtau[9];
-      Ref2Phy(physnode,xref,NULL,0,
+      Ref2Phy(physnode,xref,NULL,-1,
               xphy,dtau,codtau,NULL,NULL);
       //printf(" x=%f f=%f dkf= %f\n",xphy[0],f[ipg],dkf);
       double det=dtau[0]*codtau[0]+dtau[1]*codtau[1]+dtau[2]*codtau[2];
@@ -321,7 +323,7 @@ int TestInterpolation(void){
 	ref_pg_vol(deg, ipg, xref, &omega);
         double xphy[3];
         double dtau[9],codtau[9];
-        Ref2Phy(physnode,xref,dphiref,0,
+        Ref2Phy(physnode,xref,dphiref,-1,
               xphy,dtau,codtau,dphi,NULL);
 	//printf("ipg= %d xphy=%f\n", l,xphy[0]);
         double det=dtau[0]*codtau[0]+dtau[1]*codtau[1]+dtau[2]*codtau[2];
@@ -330,7 +332,7 @@ int TestInterpolation(void){
       ref_pg_vol(deg, ipg, xref, &omega);
       double xphy[3];
       double dtau[9],codtau[9];
-      Ref2Phy(physnode,xref,NULL,0,
+      Ref2Phy(physnode,xref,NULL,-1,
               xphy,dtau,codtau,NULL,NULL);
       //printf("  dkf = %.2e dkf_ex = %.2e\n", dkf, pow(xref[0],d-1)*d);
       double det=dtau[0]*codtau[0]+dtau[1]*codtau[1]+dtau[2]*codtau[2];
@@ -452,7 +454,7 @@ int TestField(void){
 
   InitField(&f);
 
-  PlotField(&f,"testvisufield.msh");
+  PlotField(0,(1==1),&f,"testvisufield.msh");
   
   return test;
 
@@ -471,11 +473,12 @@ int TestFieldDG(void){
   f.model.ImposedData=TransportImposedData;
   f.varindex=GenericVarindex;
 
-  ReadMacroMesh(&(f.macromesh),"../geo/disque.msh");
-  //ReadMacroMesh(&(f.macromesh),"../geo/cube.msh");
+  //ReadMacroMesh(&(f.macromesh),"../geo/disque.msh");
+  ReadMacroMesh(&(f.macromesh),"../geo/cube.msh");
   //ReadMacroMesh(&(f.macromesh),"../geo/testcube2.msh");
   BuildConnectivity(&(f.macromesh));
 
+  PrintMacroMesh(&(f.macromesh));
   CheckMacroMesh(&(f.macromesh));
   //AffineMapMacroMesh(&(f.macromesh));
   PrintMacroMesh(&(f.macromesh));
@@ -484,14 +487,18 @@ int TestFieldDG(void){
 
   dtField(&f);
   
-  //DisplayField(&f);  
+  DisplayField(&f);  
 
-  //PlotField(&f,"testvisufield.msh");
+  int yes_compare = 1;
+  int no_compare = 0;
+
+  PlotField(0,no_compare,&f,"visu.msh");
+  PlotField(0,yes_compare,&f,"error.msh");
 
   // test the time derivative that has to be -1
   for(int i=0;i<f.model.m * f.macromesh.nbelems * 
 	(_DEGX+1)*(_DEGY+1)*(_DEGZ+1);i++){
-    test = test && fabs(1+f.dtwn[i])<0.3;
+    test = test && fabs(1+f.dtwn[i])<0.01;
   }
   
   return test;
@@ -525,9 +532,11 @@ int TestFieldRK2(void){
   printf("cfl param =%f\n",f.hmin);
 
 
-  RK2(&f,1);
+  RK2(&f,0.1);
+  //printf("w=%f t=%f\n err=%f\n",f.wn[0],f.tnow,f.wn[0]-exp(f.tnow));
 
-  PlotField(&f,"testvisufield.msh");
+  PlotField(0,(1==0),&f,"dgvisu.msh");
+  PlotField(0,(1==1),&f,"dgerror.msh");
 
   
   return test;

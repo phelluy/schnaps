@@ -54,7 +54,7 @@ void InitField(Field* f){
       ref_pg_vol(param+1, ipg, xref, &omega);
       Ref2Phy(physnode,
 	      xref,
-	      0,0, // dphiref,ifa
+	      0,-1, // dphiref,ifa
               xpg,dtau,  
 	      NULL,NULL,NULL); // codtau,dphi,vnds
       // check the reverse transform at all the GLOPS
@@ -93,7 +93,7 @@ void InitField(Field* f){
       ref_pg_vol(param+1,ipg,xpgref,&wpg);
       Ref2Phy(physnode, // phys. nodes
 	      xpgref,  // xref
-	      NULL,NULL, // dpsiref,ifa
+	      NULL,-1, // dpsiref,ifa
 	      NULL,dtau,  // xphy,dtau
 	      codtau,NULL,NULL); // codtau,dpsi,vnds
       double det=dtau[0]*codtau[0]+dtau[1]*codtau[1]+dtau[2]*codtau[2];
@@ -168,7 +168,9 @@ void DisplayField(Field* f){
 
 
 // save the results in the gmsh format
-void PlotField(Field* f,char* filename){
+// typplot: index of the plotted variable
+// int compare == true -> compare with the exact value
+void PlotField(int typplot,int compare,Field* f,char* filename){
 
   const int hexa64ref[3*64]={
     0,0,3,
@@ -232,12 +234,12 @@ void PlotField(Field* f,char* filename){
       Ref2Phy(Xn,
 	      Xr,
 	      NULL,
-	      0,
+	      -1,
 	      Xphy,
 	      DX,
 	      coDX,
 	      NULL,
-	      Vnds);
+	      NULL);
 
       double Xplot[3];
       Xplot[0]=Xphy[0];
@@ -289,7 +291,7 @@ void PlotField(Field* f,char* filename){
   
   
   // now display data
-  for(int typplot=0;typplot<mw;typplot++){
+  //for(int typplot=0;typplot<mw;typplot++){
     
     fprintf(gmshfile,"$NodeData\n");
     fprintf(gmshfile,"1\n");
@@ -327,7 +329,7 @@ void PlotField(Field* f,char* filename){
 	Ref2Phy(Xn,
 		Xr,
 		NULL,
-		0,
+		-1,
 		Xphy,
 		DX,
 		NULL,
@@ -346,10 +348,11 @@ void PlotField(Field* f,char* filename){
 
 	// uncomment these lines for comparing with an
 	// exact solution
-	double wex[f->model.m];
-	TransportImposedData(Xphy,f->tnow,wex);
-	value -= wex[typplot];
-	  
+        if (compare){
+          double wex[f->model.m];
+          TransportImposedData(Xphy,f->tnow,wex);
+          value -= wex[typplot];
+        }
 
 	// Exact solution
 	// clac::real* w = new clac::real[zf->model()->nb_vars()];
@@ -368,7 +371,7 @@ void PlotField(Field* f,char* filename){
 
     fprintf(gmshfile,"\n$EndNodeData\n");
 
-  }
+    //}
 
     
   fclose(gmshfile);
@@ -433,7 +436,7 @@ void dtField(Field* f){
   	double xpgref[3],wpg;
   	//double xpgref2[3],wpg2;
   	// get the coordinates of the Gauss point
-  	ref_pg_face(&(param[1]),ifa,ipgf,xpgref,&wpg);
+  	ref_pg_face(param+1,ifa,ipgf,xpgref,&wpg);
 
   	// recover the volume gauss point from
   	// the face index
@@ -465,7 +468,7 @@ void dtField(Field* f){
 	  ref_pg_vol(param+1, ipgR, xrefR, &wpgR);
 	  Ref2Phy(physnodeR,
 		  xrefR,
-		  NULL,NULL, // dphiref,ifa
+		  NULL,-1, // dphiref,ifa
 		  xpgR,NULL,  
 		  NULL,NULL,NULL); // codtau,dphi,vnds
   	  for(int iv=0;iv<f->model.m;iv++){
@@ -478,6 +481,7 @@ void dtField(Field* f){
   	}
   	else { //the right element does not exist
   	  f->model.BoundaryFlux(xpg,f->tnow,wL,vnds,flux);
+          //printf("tflux=%f\n",f->tnow);
 	  // printf("xpgbord=%f %f %f \n",xpg[0],xpg[1],xpg[2]);
   	}
   	for(int iv=0;iv<f->model.m;iv++){
@@ -524,7 +528,7 @@ void dtField(Field* f){
 	grad_psi_pg(param+1,ib,ipg,dpsiref);
 	Ref2Phy(physnode, // phys. nodes
 		xpgref,  // xref
-		dpsiref,NULL, // dpsiref,ifa
+		dpsiref,-1, // dpsiref,ifa
 		NULL,dtau,  // xphy,dtau
 		codtau,dpsi,NULL); // codtau,dpsi,vnds
 	// remember the diagonal mass term
@@ -557,19 +561,22 @@ void dtField(Field* f){
 void RK2(Field* f,double tmax){
 
   double vmax=1; // to be changed for another model !!!!!!!!!
-  double cfl=0.4;
+  double cfl=0.1;
 
   double dt = cfl * f->hmin / vmax;
 
   int param[8]={f->model.m,_DEGX,_DEGY,_DEGZ,_RAFX,_RAFY,_RAFZ,0};
   int sizew=f->macromesh.nbelems * f->model.m * NPG(param+1);
  
+  int iter=0;
+
   while(f->tnow<tmax){
-    printf("t=%f dt=%f\n",f->tnow,dt);
+    printf("t=%f iter=%d dt=%f\n",f->tnow,iter,dt);
     // predictor
     dtField(f);
     for(int iw=0;iw<sizew;iw++){
-      f->wnp1[iw]=f->wn[iw]+dt/2*f->dtwn[iw];
+      f->wnp1[iw]=f->wn[iw]+dt/2*f->dtwn[iw]; 
+      //f->wnp1[iw]=f->wn[iw]+dt/2*f->wn[iw]; // exp(t) test
     }
     //exchange the field pointers 
     double *temp;
@@ -582,8 +589,10 @@ void RK2(Field* f,double tmax){
     dtField(f);
     for(int iw=0;iw<sizew;iw++){
       f->wnp1[iw]+=dt*f->dtwn[iw];
+      //f->wnp1[iw]+=dt*f->wn[iw];   // exp(t) test
     }
     f->tnow+=dt/2;
+    iter++;
     //exchange the field pointers 
     temp=f->wnp1;
     f->wnp1=f->wn;
