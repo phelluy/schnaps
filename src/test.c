@@ -474,14 +474,14 @@ int TestFieldDG(void){
   f.varindex=GenericVarindex;
 
   //ReadMacroMesh(&(f.macromesh),"../geo/disque.msh");
-  //ReadMacroMesh(&(f.macromesh),"../geo/cube.msh");
-  ReadMacroMesh(&(f.macromesh),"../geo/testcube.msh");
+  ReadMacroMesh(&(f.macromesh),"../geo/cube.msh");
+  //ReadMacroMesh(&(f.macromesh),"../geo/unit-cube.msh");
   //ReadMacroMesh(&(f.macromesh),"../geo/testcube2.msh");
   BuildConnectivity(&(f.macromesh));
 
   PrintMacroMesh(&(f.macromesh));
   CheckMacroMesh(&(f.macromesh));
-  AffineMapMacroMesh(&(f.macromesh));
+  //AffineMapMacroMesh(&(f.macromesh));
   PrintMacroMesh(&(f.macromesh));
 
   InitField(&f);
@@ -499,7 +499,7 @@ int TestFieldDG(void){
   // test the time derivative that has to be -1
   for(int i=0;i<f.model.m * f.macromesh.nbelems * 
 	(_DEGX+1)*(_DEGY+1)*(_DEGZ+1);i++){
-    test = test && fabs(2*f.wn[i]+f.dtwn[i])<1e-2;
+    test = test && fabs(4*f.wn[i]-pow(f.dtwn[i],2))<1e-2;
   }
   
   return test;
@@ -521,11 +521,11 @@ int TestFieldRK2(void){
   f.varindex=GenericVarindex;
 
   //ReadMacroMesh(&(f.macromesh),"../geo/disque.msh");
-  ReadMacroMesh(&(f.macromesh),"../geo/cube.msh");
+  ReadMacroMesh(&(f.macromesh),"../geo/unit-cube.msh");
   //ReadMacroMesh(&(f.macromesh),"../geo/testcube2.msh");
   BuildConnectivity(&(f.macromesh));
 
-  AffineMapMacroMesh(&(f.macromesh));
+  //AffineMapMacroMesh(&(f.macromesh));
   CheckMacroMesh(&(f.macromesh));
  
   InitField(&f);
@@ -533,12 +533,13 @@ int TestFieldRK2(void){
   printf("cfl param =%f\n",f.hmin);
 
 
-  RK2(&f,1.);
+  RK2Copy(&f,1.);
   //printf("w=%f t=%f\n err=%f\n",f.wn[0],f.tnow,f.wn[0]-exp(f.tnow));
 
-  PlotField(0,(1==0),&f,"dgvisu.msh");
+  //PlotField(0,(1==0),&f,"dgvisu.msh");
   PlotField(0,(1==1),&f,"dgerror.msh");
 
+  printf("erreur L2=%f\n",L2error(&f));
   
   return test;
 

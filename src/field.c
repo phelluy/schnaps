@@ -127,6 +127,7 @@ void InitField(Field* f){
   
   f->hmin/=maxd;
 
+  printf("hmin=%f\n",f->hmin);
 
 };
 
@@ -410,15 +411,18 @@ void dtField(Field* f){
 
 
   // init to zero the time derivative
+  int sizew=0;
   for(int ie=0;ie<f->macromesh.nbelems;ie++){
     for(int ipg=0;ipg<NPG(param+1);ipg++){
       for(int iv=0;iv<f->model.m;iv++){
 	int imem=f->varindex(param,ie,ipg,iv);
 	f->dtwn[imem]=0;
+        sizew++;
       }
     }
   }
-
+  assert(sizew==f->macromesh.nbelems * f->model.m * NPG(param+1));
+  //for(int iw=0;iw<sizew;iw++) f->dtwn[iw]=0;
   // 
   // assembly of the surface terms
   // loop on the elements
@@ -509,6 +513,11 @@ void dtField(Field* f){
 
     }
   }
+  /* int ipgtest=31; */
+  /* double xtest[3],wtest; */
+  /* ref_pg_vol(param+1,ipgtest,xtest,&wtest); */
+  /* printf("ipgtest=%d x=%f %f %f dtw=%f\n",ipgtest, */
+  /*        xtest[0],xtest[1],xtest[2],f->dtwn[ipgtest]); */
 
   // assembly of the volume terms
   // loop on the elements
@@ -551,7 +560,16 @@ void dtField(Field* f){
 	if (ib == ipg){
 	  double det=dtau[0]*codtau[0]+dtau[1]*codtau[1]+dtau[2]*codtau[2];
 	  masspg[ipg]=wpg*det;
+          /* printf("dtau=%f %f %f %f %f %f %f %f %f\n",dtau[0],dtau[1],dtau[2], */
+          /*        dtau[3],dtau[4], */
+          /*        dtau[5],dtau[6],dtau[7],dtau[8]); */
 	}
+/*         if (ib==42){ */
+/* #define _S3 (double)(0.57735026918962584) */
+/*           printf("ipg=%d grad=%f %f %f wpg=%f\n",ipg,dpsiref[0],dpsiref[1],dpsiref[2],wpg); */
+/*           printf("xref=%f %f %f w=%f %f\n",xpgref[0],xpgref[1],xpgref[2],w[0], */
+/*                  pow(_S3*(xpgref[0]+xpgref[1]+xpgref[2]),2)); */
+/*         } */
 	// int_L F(w,w,grad phi_ib )
 	double flux[f->model.m];
 	f->model.NumFlux(w,w,dpsi,flux);
@@ -561,11 +579,20 @@ void dtField(Field* f){
 	}
       }
     }
+
+    /* int ipgtest=63; */
+    /* double xtest[3],wtest; */
+    /* ref_pg_vol(param+1,ipgtest,xtest,&wtest); */
+    /* printf("ipgtest=%d x=%f %f %f dtw=%f wpg=%f\n",ipgtest, */
+    /*        xtest[0],xtest[1],xtest[2],f->dtwn[ipgtest],masspg[ipgtest]); */
+    //assert(1==2);
+
+
     for(int ipg=0;ipg<NPG(param+1);ipg++){
       // apply the inverse of the diagonal mass matrix
       for(int iv=0;iv<f->model.m;iv++){
 	int imem=f->varindex(param,ie,ipg,iv);
-	f->dtwn[imem]/=masspg[ipg];
+	(f->dtwn[imem])/=masspg[ipg];
       }
     }
 
@@ -577,7 +604,7 @@ void dtField(Field* f){
 void RK2(Field* f,double tmax){
 
   double vmax=1; // to be changed for another model !!!!!!!!!
-  double cfl=0.1;
+  double cfl=0.05;
 
   double dt = cfl * f->hmin / vmax;
 
@@ -591,7 +618,7 @@ void RK2(Field* f,double tmax){
     // predictor
     dtField(f);
     for(int iw=0;iw<sizew;iw++){
-      f->wnp1[iw]=f->wn[iw]+dt/2*f->dtwn[iw]; 
+      f->wnp1[iw]=f->wn[iw]+ dt/2 * f->dtwn[iw]; 
       //f->wnp1[iw]=f->wn[iw]+dt/2*(-1); 
       //f->wnp1[iw]=f->wn[iw]+dt/2*f->wn[iw]; // exp(t) test
     }
@@ -617,11 +644,97 @@ void RK2(Field* f,double tmax){
     f->wn=temp;
 
   }
-  
+}
+// time integration by a second order Runge-Kutta algorithm
+// slow version with memory copy 
+void RK2Copy(Field* f,double tmax){
 
-  
+  double vmax=1; // to be changed for another model !!!!!!!!!
+  double cfl=0.05;
 
-};
+  double dt = cfl * f->hmin / vmax;
+
+  int param[8]={f->model.m,_DEGX,_DEGY,_DEGZ,_RAFX,_RAFY,_RAFZ,0};
+  int sizew=f->macromesh.nbelems * f->model.m * NPG(param+1);
+ 
+  int iter=0;
+
+  while(f->tnow<tmax){
+    printf("t=%f iter=%d dt=%f\n",f->tnow,iter,dt);
+    // predictor
+    dtField(f);
+    for(int iw=0;iw<sizew;iw++){
+      f->wnp1[iw]=f->wn[iw]+ dt/2 * f->dtwn[iw]; 
+    }
+    //exchange the field pointers 
+    for(int iw=0;iw<sizew;iw++){
+      double temp=f->wn[iw];
+      f->wn[iw]=f->wnp1[iw];
+      f->wnp1[iw]=temp;
+    }
+    // corrector
+    f->tnow+=dt/2;
+    dtField(f);
+    for(int iw=0;iw<sizew;iw++){
+      f->wnp1[iw]+=dt*f->dtwn[iw];
+      //f->wnp1[iw]+=dt*(-1);
+      //f->wnp1[iw]+=dt*f->wn[iw];   // exp(t) test
+    }
+    f->tnow+=dt/2;
+    iter++;
+    //exchange the field pointers 
+    for(int iw=0;iw<sizew;iw++){
+      f->wn[iw]=f->wnp1[iw];
+    }
+ 
+  }
+}
+
+// compute the normalized L2 distance with the imposed data
+double L2error(Field* f){
+
+  int param[8]={f->model.m,_DEGX,_DEGY,_DEGZ,_RAFX,_RAFY,_RAFZ,0};
+  double error=0;
+  double moy=0; // mean value
+  for (int ie=0;ie<f->macromesh.nbelems;ie++){
+    // get the physical nodes of element ie
+    double physnode[20*3];
+    for(int inoloc=0;inoloc<20;inoloc++){
+      int ino=f->macromesh.elem2node[20*ie+inoloc];
+      physnode[inoloc*3+0]=f->macromesh.node[3*ino+0];
+      physnode[inoloc*3+1]=f->macromesh.node[3*ino+1];
+      physnode[inoloc*3+2]=f->macromesh.node[3*ino+2];
+    }
+
+    // loop on the glops (for numerical integration)
+    for(int ipg=0;ipg<NPG(param+1);ipg++){
+      double xpgref[3],xphy[3],wpg;
+      double dtau[3*3],codtau[3*3];//,xpg[3];
+      // get the coordinates of the Gauss point
+      ref_pg_vol(param+1,ipg,xpgref,&wpg);
+      Ref2Phy(physnode, // phys. nodes
+		xpgref,  // xref
+		NULL,-1, // dpsiref,ifa
+		xphy,dtau,  // xphy,dtau
+		codtau,NULL,NULL); // codtau,dpsi,vnds
+      double det=dtau[0]*codtau[0]+
+        dtau[1]*codtau[1]+dtau[2]*codtau[2]; 
+      double w[f->model.m],wex[f->model.m];
+      for(int iv=0;iv<f->model.m;iv++){
+	int imem=f->varindex(param,ie,ipg,iv);
+	w[iv]=f->wn[imem];
+      }
+      // get the exact value
+      f->model.ImposedData(xphy,f->tnow,wex);
+      for(int iv=0;iv<f->model.m;iv++){
+        error+=pow(w[iv]-wex[iv],2)*wpg*det;
+        moy+=pow(w[iv],2)*wpg*det;
+      }
+    }
+  }
+  return sqrt(error)/sqrt(moy);
+  //return sqrt(error);
+}
 
 
 

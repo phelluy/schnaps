@@ -410,6 +410,7 @@ void psi_ref(int* param, int ib, double* xref, double* psi, double* dpsi){
 // function ib at GLOP ipg.
 void grad_psi_pg(int* param,int ib,int ipg,double* dpsi){
   int deg[3],offset[3],nraf[3];
+  int ibin=ib,ipgin=ipg;
   
   // approximation degree in each direction
   deg[0]=param[0];
@@ -459,6 +460,7 @@ void grad_psi_pg(int* param,int ib,int ipg,double* dpsi){
   ib/=nraf[1];
 
   int ncbz= ib;
+
 
   // Number of Gauss-Lobatto points in each direction
   offset[0]=gauss_lob_dpsi_offset[deg[0]];

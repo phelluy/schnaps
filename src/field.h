@@ -40,6 +40,9 @@ void dtField(Field* f);
 
 // time integration by a second order Runge-Kutta algorithm 
 void RK2(Field* f,double tmax);
+// time integration by a second order Runge-Kutta algorithm 
+// slow version
+void RK2Copy(Field* f,double tmax);
 
 // save the results in the gmsh format
 void PlotField(int typplot,int compare,Field* f,char* filename);
@@ -48,6 +51,9 @@ void PlotField(int typplot,int compare,Field* f,char* filename);
 // typplot: index of the plotted variable
 // int compare == true -> compare with the exact value
 void DisplayField(Field* f);
+
+// compute the normalized L2 distance with the imposed data
+double L2error(Field* f);
 
 
 #endif
