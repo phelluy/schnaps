@@ -134,8 +134,7 @@ void InitField(Field* f){
 // display the field on screen
 void DisplayField(Field* f){
   int param[8]={f->model.m,_DEGX,_DEGY,_DEGZ,_RAFX,_RAFY,_RAFZ,0};
-  //int param[8]={f->model.m,2,2,2,1,1,1};
-
+ 
   printf("Display field...\n");
   for(int ie=0;ie<f->macromesh.nbelems;ie++){
     printf("elem %d\n",ie);
@@ -154,13 +153,6 @@ void DisplayField(Field* f){
     for(int ipg=0;ipg<NPG(param+1);ipg++){
       double xref[3],xphy[3],wpg;
       ref_pg_vol(param+1,ipg,xref,&wpg);
-      /* void Ref2Phy(physnode, */
-      /* 		   xref, */
-      /* 		   NULL, */
-      /* 		   -1, */
-      /* 		   xphy, */
-      /* 		   NULL, */
-      /* 		   NULL,NULL,NULL); */
 
       printf("Gauss point %d %f %f %f \n",ipg,xref[0],xref[1],xref[2]);
     printf("dtw= ");
@@ -213,20 +205,12 @@ void PlotField(int typplot,int compare,Field* f,char* filename){
   // data plots
   int mw = f->model.m;
   int param[8]={f->model.m,_DEGX,_DEGY,_DEGZ,_RAFX,_RAFY,_RAFZ,0};
-  //int degre = param[1];
-  //int npgf = NPGF(param+1,0);
   int npgv = NPG(param+1);
   int nnodes = 20;
 
   double Xn[3*nnodes];
   double Xr[3];
   double Xphy[3];
-  /* double Vnds[3];  // normal vector times surface element dS */
-  /* double DX[3*3];  // jacobian matrix */
-  /* double coDX[3*3];  // comatrix of the jacobian matrix */
-
-
-  //int vindex_param[] = {npgv, mw};
 
   // header
   fprintf(gmshfile,"$MeshFormat\n2.2 0 %d\n",(int) sizeof(double));
@@ -308,7 +292,6 @@ void PlotField(int typplot,int compare,Field* f,char* filename){
   
   
   // now display data
-  //for(int typplot=0;typplot<mw;typplot++){
     
     fprintf(gmshfile,"$NodeData\n");
     fprintf(gmshfile,"1\n");
@@ -316,14 +299,8 @@ void PlotField(int typplot,int compare,Field* f,char* filename){
 
     double t = 0;
 
-    // f << 1 <<std::endl;
-    // f << t << std::endl;
-    // f << 3 << std::endl;
-    // f << 0 << std::endl;
-    // f << 1 << std::endl;
     fprintf(gmshfile,"1\n%f\n3\n0\n1\n",t);
 
-    //f << 64 * zf->zone_mesh()->nb_elems() <<std::endl;
     fprintf(gmshfile,"%d\n",64*f->macromesh.nbelems);
 
     
@@ -363,7 +340,7 @@ void PlotField(int typplot,int compare,Field* f,char* filename){
 	  value += psi * f->wn[vi];
 	}
 
-	// uncomment these lines for comparing with an
+	// compare with an
 	// exact solution
         if (compare){
           double wex[f->model.m];
@@ -371,13 +348,9 @@ void PlotField(int typplot,int compare,Field* f,char* filename){
           value -= wex[typplot];
         }
 
-	// Exact solution
-	// clac::real* w = new clac::real[zf->model()->nb_vars()];
-	// zf->model()->boundary_data(Xphy, 2.5, w);
-	// value = w[typplot];
-	// delete[] w;
 
-	//fwrite(const void *ptr, size_t size_of_elements, size_t number_of_elements, FILE *a_file);
+	//fwrite(const void *ptr, size_t size_of_elements,
+	// size_t number_of_elements, FILE *a_file);
 	//fwrite((char*) &nodenumber, sizeof(int),1,gmshfile);
 	//fwrite((char*) &value, sizeof(double),1,gmshfile);
 	//fprintf(gmshfile,"%d %f\n",nodenumber,value);
@@ -388,10 +361,8 @@ void PlotField(int typplot,int compare,Field* f,char* filename){
 
     fprintf(gmshfile,"\n$EndNodeData\n");
 
-    //}
-
     
-  fclose(gmshfile);
+    fclose(gmshfile);
   
 
 }
@@ -422,8 +393,7 @@ void dtField(Field* f){
     }
   }
   assert(sizew==f->macromesh.nbelems * f->model.m * NPG(param+1));
-  //for(int iw=0;iw<sizew;iw++) f->dtwn[iw]=0;
-  // 
+
   // assembly of the surface terms
   // loop on the elements
   for (int ie=0;ie<f->macromesh.nbelems;ie++){
@@ -470,7 +440,6 @@ void dtField(Field* f){
   	// the basis functions is also the gauss point index
   	int ib=ipg;
   	// normal vector at gauss point ipg
-  	//double dpsiref[3];dpsi[3];
   	double dtau[3*3],codtau[3*3],xpg[3];
   	double vnds[3];
   	Ref2Phy(physnode,
@@ -500,8 +469,6 @@ void dtField(Field* f){
   	}
   	else { //the right element does not exist
   	  f->model.BoundaryFlux(xpg,f->tnow,wL,vnds,flux);
-           //printf("tflux=%f\n",f->tnow);
-	  // printf("xpgbord=%f %f %f \n",xpg[0],xpg[1],xpg[2]);
   	}
   	for(int iv=0;iv<f->model.m;iv++){
   	  int imem=f->varindex(param,ie,ib,iv);
@@ -512,11 +479,6 @@ void dtField(Field* f){
 
     }
   }
-  /* int ipgtest=31; */
-  /* double xtest[3],wtest; */
-  /* ref_pg_vol(param+1,ipgtest,xtest,&wtest); */
-  /* printf("ipgtest=%d x=%f %f %f dtw=%f\n",ipgtest, */
-  /*        xtest[0],xtest[1],xtest[2],f->dtwn[ipgtest]); */
 
   // assembly of the volume terms
   // loop on the elements
@@ -559,16 +521,7 @@ void dtField(Field* f){
 	if (ib == ipg){
 	  double det=dtau[0]*codtau[0]+dtau[1]*codtau[1]+dtau[2]*codtau[2];
 	  masspg[ipg]=wpg*det;
-          /* printf("dtau=%f %f %f %f %f %f %f %f %f\n",dtau[0],dtau[1],dtau[2], */
-          /*        dtau[3],dtau[4], */
-          /*        dtau[5],dtau[6],dtau[7],dtau[8]); */
 	}
-/*         if (ib==42){ */
-/* #define _S3 (double)(0.57735026918962584) */
-/*           printf("ipg=%d grad=%f %f %f wpg=%f\n",ipg,dpsiref[0],dpsiref[1],dpsiref[2],wpg); */
-/*           printf("xref=%f %f %f w=%f %f\n",xpgref[0],xpgref[1],xpgref[2],w[0], */
-/*                  pow(_S3*(xpgref[0]+xpgref[1]+xpgref[2]),2)); */
-/*         } */
 	// int_L F(w,w,grad phi_ib )
 	double flux[f->model.m];
 	f->model.NumFlux(w,w,dpsi,flux);
@@ -579,14 +532,6 @@ void dtField(Field* f){
       }
     }
 
-    /* int ipgtest=63; */
-    /* double xtest[3],wtest; */
-    /* ref_pg_vol(param+1,ipgtest,xtest,&wtest); */
-    /* printf("ipgtest=%d x=%f %f %f dtw=%f wpg=%f\n",ipgtest, */
-    /*        xtest[0],xtest[1],xtest[2],f->dtwn[ipgtest],masspg[ipgtest]); */
-    //assert(1==2);
-
-
     for(int ipg=0;ipg<NPG(param+1);ipg++){
       // apply the inverse of the diagonal mass matrix
       for(int iv=0;iv<f->model.m;iv++){
@@ -596,7 +541,7 @@ void dtField(Field* f){
     }
 
   }
-
+    
 };
 
 // time integration by a second order Runge-Kutta algorithm 
@@ -606,6 +551,8 @@ void RK2(Field* f,double tmax){
   double cfl=0.05;
 
   double dt = cfl * f->hmin / vmax;
+  int itermax=tmax/dt;
+  int freq=itermax/10;
 
   int param[8]={f->model.m,_DEGX,_DEGY,_DEGZ,_RAFX,_RAFY,_RAFZ,0};
   int sizew=f->macromesh.nbelems * f->model.m * NPG(param+1);
@@ -613,13 +560,12 @@ void RK2(Field* f,double tmax){
   int iter=0;
 
   while(f->tnow<tmax){
-    printf("t=%f iter=%d dt=%f\n",f->tnow,iter,dt);
+    if (iter%freq==0)
+      printf("t=%f iter=%d/%d dt=%f\n",f->tnow,iter,itermax,dt);
     // predictor
     dtField(f);
     for(int iw=0;iw<sizew;iw++){
       f->wnp1[iw]=f->wn[iw]+ dt/2 * f->dtwn[iw]; 
-      //f->wnp1[iw]=f->wn[iw]+dt/2*(-1); 
-      //f->wnp1[iw]=f->wn[iw]+dt/2*f->wn[iw]; // exp(t) test
     }
     //exchange the field pointers 
     double *temp;
@@ -632,8 +578,6 @@ void RK2(Field* f,double tmax){
     dtField(f);
     for(int iw=0;iw<sizew;iw++){
       f->wnp1[iw]+=dt*f->dtwn[iw];
-      //f->wnp1[iw]+=dt*(-1);
-      //f->wnp1[iw]+=dt*f->wn[iw];   // exp(t) test
     }
     f->tnow+=dt/2;
     iter++;
@@ -645,7 +589,7 @@ void RK2(Field* f,double tmax){
   }
 }
 // time integration by a second order Runge-Kutta algorithm
-// slow version with memory copy 
+//  with memory copy instead of pointers exchange 
 void RK2Copy(Field* f,double tmax){
 
   double vmax=1; // to be changed for another model !!!!!!!!!
@@ -676,8 +620,6 @@ void RK2Copy(Field* f,double tmax){
     dtField(f);
     for(int iw=0;iw<sizew;iw++){
       f->wnp1[iw]+=dt*f->dtwn[iw];
-      //f->wnp1[iw]+=dt*(-1);
-      //f->wnp1[iw]+=dt*f->wn[iw];   // exp(t) test
     }
     f->tnow+=dt/2;
     iter++;
@@ -732,10 +674,4 @@ double L2error(Field* f){
     }
   }
   return sqrt(error)/sqrt(moy);
-  //return sqrt(error);
 }
-
-
-
-
-

@@ -25,7 +25,6 @@ void TransportNumFlux(double* wL,double* wR,double* vnorm,double* flux){
    flux[0] = vnp * wL[0] + vnm * wR[0];
 };
 
-
 void TransportBoundaryFlux(double* x,double t,double* wL,double* vnorm,
 			   double* flux){
   double wR[1];
@@ -50,20 +49,33 @@ void TransportImposedData(double* x,double t,double* w){
 
   double xx = vx - t;
 
-  //w[0] = cos(2*xx) ;
-  w[0]=xx*xx;
-  //w[0]=1;
+  w[0]=cos(2*xx);
 };
 
-/* void TransportImposedDataLinear(double* x,double t,double* w){ */
 
-/*   double vx = */
-/*     transport_v[0] * x[0] + */
-/*     transport_v[1] * x[1] + */
-/*     transport_v[2] * x[2]; */
+void TestTransportBoundaryFlux(double* x,double t,double* wL,double* vnorm,
+			   double* flux){
+  double wR[1];
+  TestTransportImposedData(x,t,wR);
+  TransportNumFlux(wL,wR,vnorm,flux);
+};
 
-/*   double xx = vx - t; */
 
-/*   w[0]=xx; */
+void TestTransportInitData(double* x,double* w){
 
-/* }; */
+  double t=0;
+  TestTransportImposedData(x,t,w);
+
+};
+
+void TestTransportImposedData(double* x,double t,double* w){
+
+  double vx =
+    transport_v[0] * x[0] +
+    transport_v[1] * x[1] +
+    transport_v[2] * x[2];
+
+  double xx = vx - t;
+
+  w[0]=xx*xx;
+};

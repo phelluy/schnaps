@@ -22,4 +22,12 @@ typedef struct Model{
   void TransportImposedData(double* x,double t,double* w);
   void TransportImposedDataLinear(double* x,double t,double* w);
 
+// particular functions for unit testing
+  void TestTransportBoundaryFlux(double* x,double t,double* wL,double* vn,
+			     double* flux);
+  void TestTransportInitData(double* x,double* w);
+  void TestTransportImposedData(double* x,double t,double* w);
+  void TestTransportImposedDataLinear(double* x,double t,double* w);
+
+
 #endif

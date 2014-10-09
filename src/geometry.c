@@ -27,16 +27,12 @@ void Ref2Phy(double* physnode,
              double* vnds){
 
 
-
-  //HEXAN_REF2PHY(physnode, xref, 1, xphy, dtau);
-
   // compute the mapping and its jacobian
   double x,y,z;
   x=xref[0];
   y=xref[1];
   z=xref[2];
 
-  //double phi[20];
   // gradient of the shape functions and value (4th component)
   // of the shape functions
   double gradphi[20][4];
@@ -58,7 +54,6 @@ void Ref2Phy(double* physnode,
 
 
   if (dtau != NULL){
-    //printf("dtau=\n");
     for(int ii=0;ii<3;ii++){
       for(int jj=0;jj<3;jj++){
 	dtau[3*ii+jj]=0;
@@ -68,7 +63,6 @@ void Ref2Phy(double* physnode,
 	  dtau[3*ii+jj]+=physnode[3*i+ii]*gradphi[i][jj];;
 	}
       }
-      //printf("%f %f %f \n",dtau[3*ii+0],dtau[3*ii+1],dtau[3*ii+2]);
     }
   }
       
@@ -84,11 +78,6 @@ void Ref2Phy(double* physnode,
     codtau[6] =  dtau[1] * dtau[5] - dtau[2] * dtau[4];
     codtau[7] = -dtau[0] * dtau[5] + dtau[2] * dtau[3];
     codtau[8] =  dtau[0] * dtau[4] - dtau[1] * dtau[3];
-    /* printf("codtau=\n"); */
-    /* for(int ii=0;ii<3;ii++){ */
-    /*   printf("%f %f %f \n",codtau[3*ii+0],codtau[3*ii+1],codtau[3*ii+2]); */
-    /* } */
-    /* printf("det=%f\n",dtau[0]*codtau[0]+dtau[1]*codtau[1]+dtau[2]*codtau[2]) */;
 }
 
   if (dphi != NULL){
@@ -145,11 +134,8 @@ void Phy2Ref(double* physnode,double* xphy,double* xref){
       }      
       xref[ii] -= dxref[ii] / det;                            
     }
-    /* printf("iter=%d erreur=%e\n",iter,sqrt(dxref[0]*dxref[0]+ */
-    /* 				      dxref[1]*dxref[1]+ */
-    /* 				      dxref[2]*dxref[2])); */
   }
-  double eps=1e-12;
+  double eps=1e-12;  // may be to constraining...
   assert(xref[0]<1+eps && xref[0]>-eps);
   assert(xref[1]<1+eps && xref[1]>-eps);
   assert(xref[2]<1+eps && xref[2]>-eps);

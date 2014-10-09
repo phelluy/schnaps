@@ -15,7 +15,7 @@ int TestMacroMesh(void){
   int test=1;
   MacroMesh m;
   
-  ReadMacroMesh(&m,"../geo/testmacromesh.msh");
+  ReadMacroMesh(&m,"../test/testmacromesh.msh");
   BuildConnectivity(&m);
   PrintMacroMesh(&m);
 
@@ -33,7 +33,7 @@ int TestGeometry(void){
   int test=1;
   MacroMesh mc;
 
-  ReadMacroMesh(&mc,"../geo/testgeometry.msh");
+  ReadMacroMesh(&mc,"../test/testgeometry.msh");
   BuildConnectivity(&mc);
   PrintMacroMesh(&mc);
 
@@ -196,7 +196,7 @@ int TestInterpolation(void){
     }
   }
 
-#define _MAXDEGTEST 3
+#define _MAXDEGTEST 4
 
   // test that the ref_pg_face function
   // is compatible with ref_pg_vol
@@ -354,40 +354,9 @@ int TestInterpolation(void){
       int npg_f = NPGF(deg,ifa);
       for(int ipgf=0;ipgf<npg_f;ipgf++){
 	ref_pg_face(deg,ifa,ipgf,xref,&omega);
-        //printf("ifa=%d ipgf=%d xref=%f %f %f omega=%f \n",ifa,ipgf,
-	//xref[0],xref[1],xref[2],omega);
-
-	// if (ifa == 2 && d == 1 && ipgf == 4) {
-	//   printf("ipgf=%d , ipgv=%d\n",ipgf,deg[6]);
-	//   assert(1==2);
-	// }
-	
+ 	
 	Ref2Phy(physnode,xref,NULL,ifa,
                 xphy,dtau,codtau,NULL,vnds);
-	// printf("dtau = \n");
-	// for(int ii=0;ii<3;ii++){
-	//   for(int jj=0;jj<3;jj++){
-        //     printf("%f ", dtau[3*ii+jj]);
-	//   }
-        //   printf("\n ");
-	// }
-	// double fpg = 0;
-	// double gpg = 0;
-	// double psi;
-	// for(int l=0;l<npg;l++){
-	//   hexa_subcell_elem_interp->psi_ref(deg,l,xref,&psi,NULL);
-	//   fpg += f[l] * psi;
-	//   gpg += g[l] * psi;
-	// }
-	//	fpg = pow(xref[0],d);
-	//      f[ipg] = 1;
-	//      g[ipg] = xref[1];
-	//gpg = 2 * fpg;
-	//int_fgn += fpg * gpg * vnds[k] * omega;
-	// the call to has computed the vol pg index from ifa and ipgf
-	// the result is stored in deg[6]
-	//printf("ifa=%d ipgf=%d ipgv=%d omega=%f\n",ifa,ipgf,deg[6],omega);
-	//printf("vnds=%f %f %f\n",vnds[0],vnds[1],vnds[2]);
 	int_fgn += f[deg[6]] * g[deg[6]] * vnds[k] * omega;
       }
     }
@@ -411,9 +380,9 @@ int TestModel(void){
   Model tr;
   tr.m=1; // only one conservative variable
   tr.NumFlux=TransportNumFlux;
-  tr.BoundaryFlux=TransportBoundaryFlux;
-  tr.InitData=TransportInitData;
-  tr.ImposedData=TransportImposedData;
+  tr.BoundaryFlux=TestTransportBoundaryFlux;
+  tr.InitData=TestTransportInitData;
+  tr.ImposedData=TestTransportImposedData;
 
   double wL[tr.m];
   double wR[tr.m];
@@ -444,12 +413,12 @@ int TestField(void){
   Field f;
   f.model.m=1; // only one conservative variable
   f.model.NumFlux=TransportNumFlux;
-  f.model.BoundaryFlux=TransportBoundaryFlux;
-  f.model.InitData=TransportInitData;
-  f.model.ImposedData=TransportImposedData;
+  f.model.BoundaryFlux=TestTransportBoundaryFlux;
+  f.model.InitData=TestTransportInitData;
+  f.model.ImposedData=TestTransportImposedData;
   f.varindex=GenericVarindex;
 
-  ReadMacroMesh(&(f.macromesh),"../geo/testmacromesh.msh");
+  ReadMacroMesh(&(f.macromesh),"../test/testmacromesh.msh");
   BuildConnectivity(&(f.macromesh));
 
   InitField(&f);
@@ -468,15 +437,12 @@ int TestFieldDG(void){
   Field f;
   f.model.m=1; // only one conservative variable
   f.model.NumFlux=TransportNumFlux;
-  f.model.BoundaryFlux=TransportBoundaryFlux;
-  f.model.InitData=TransportInitData;
-  f.model.ImposedData=TransportImposedData;
+  f.model.BoundaryFlux=TestTransportBoundaryFlux;
+  f.model.InitData=TestTransportInitData;
+  f.model.ImposedData=TestTransportImposedData;
   f.varindex=GenericVarindex;
 
-  //ReadMacroMesh(&(f.macromesh),"../geo/disque.msh");
-  ReadMacroMesh(&(f.macromesh),"../geo/cube.msh");
-  //ReadMacroMesh(&(f.macromesh),"../geo/unit-cube.msh");
-  //ReadMacroMesh(&(f.macromesh),"../geo/testcube2.msh");
+  ReadMacroMesh(&(f.macromesh),"../test/testcube.msh");
   BuildConnectivity(&(f.macromesh));
 
   PrintMacroMesh(&(f.macromesh));
@@ -516,14 +482,12 @@ int TestFieldRK2(void){
   Field f;
   f.model.m=1; // only one conservative variable
   f.model.NumFlux=TransportNumFlux;
-  f.model.BoundaryFlux=TransportBoundaryFlux;
-  f.model.InitData=TransportInitData;
-  f.model.ImposedData=TransportImposedData;
+  f.model.BoundaryFlux=TestTransportBoundaryFlux;
+  f.model.InitData=TestTransportInitData;
+  f.model.ImposedData=TestTransportImposedData;
   f.varindex=GenericVarindex;
 
-  ReadMacroMesh(&(f.macromesh),"../geo/disque.msh");
-  //ReadMacroMesh(&(f.macromesh),"../geo/cube.msh");
-  //ReadMacroMesh(&(f.macromesh),"../geo/testcube2.msh");
+  ReadMacroMesh(&(f.macromesh),"../test/testdisque.msh");
   BuildConnectivity(&(f.macromesh));
 
   //AffineMapMacroMesh(&(f.macromesh));
@@ -534,13 +498,16 @@ int TestFieldRK2(void){
   printf("cfl param =%f\n",f.hmin);
 
 
-  RK2Copy(&f,.5);
-  //printf("w=%f t=%f\n err=%f\n",f.wn[0],f.tnow,f.wn[0]-exp(f.tnow));
-
+  RK2(&f,.5);
+ 
   PlotField(0,(1==0),&f,"dgvisu.msh");
   PlotField(0,(1==1),&f,"dgerror.msh");
 
-  printf("erreur L2=%f\n",L2error(&f));
+  double dd=L2error(&f);
+
+  printf("erreur L2=%f\n",dd);
+
+  test=test && (dd < 0.005);
   
   return test;
 
