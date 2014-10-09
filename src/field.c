@@ -60,9 +60,7 @@ void InitField(Field* f){
       // check the reverse transform at all the GLOPS
       double xref2[3];
       Phy2Ref(physnode,xpg,xref2);
-      assert(sqrt((xref2[0]-xref[0])*(xref2[0]-xref[0])+
-      		(xref2[0]-xref[0])*(xref2[0]-xref[0])+
-      		  (xref2[0]-xref[0])*(xref2[0]-xref[0])) < 1e-8);
+      assert(Dist(xref,xref2) < 1e-8);
       
       f->model.InitData(xpg,w);
       for(int iv=0;iv<f->model.m;iv++){
