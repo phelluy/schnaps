@@ -484,6 +484,7 @@ int TestFieldDG(void){
   //AffineMapMacroMesh(&(f.macromesh));
   PrintMacroMesh(&(f.macromesh));
 
+
   InitField(&f);
 
   dtField(&f);
@@ -521,7 +522,7 @@ int TestFieldRK2(void){
   f.varindex=GenericVarindex;
 
   //ReadMacroMesh(&(f.macromesh),"../geo/disque.msh");
-  ReadMacroMesh(&(f.macromesh),"../geo/unit-cube.msh");
+  ReadMacroMesh(&(f.macromesh),"../geo/cube.msh");
   //ReadMacroMesh(&(f.macromesh),"../geo/testcube2.msh");
   BuildConnectivity(&(f.macromesh));
 
@@ -533,10 +534,10 @@ int TestFieldRK2(void){
   printf("cfl param =%f\n",f.hmin);
 
 
-  RK2Copy(&f,1.);
+  RK2Copy(&f,.5);
   //printf("w=%f t=%f\n err=%f\n",f.wn[0],f.tnow,f.wn[0]-exp(f.tnow));
 
-  //PlotField(0,(1==0),&f,"dgvisu.msh");
+  PlotField(0,(1==0),&f,"dgvisu.msh");
   PlotField(0,(1==1),&f,"dgerror.msh");
 
   printf("erreur L2=%f\n",L2error(&f));

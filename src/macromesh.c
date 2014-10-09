@@ -378,6 +378,82 @@ void CheckMacroMesh(MacroMesh* m){
 
 
   }
+
+
+  // check that the faces are defined by the same mapping
+  // with opposite normals
+   for (int ie=0;ie<m->nbelems;ie++){
+     int param[8]={1,_DEGX,_DEGY,_DEGZ,_RAFX,_RAFY,_RAFZ,0};
+    // get the physical nodes of element ie
+    double physnode[20*3];
+    for(int inoloc=0;inoloc<20;inoloc++){
+      int ino=m->elem2node[20*ie+inoloc];
+      physnode[inoloc*3+0]=m->node[3*ino+0];
+      physnode[inoloc*3+1]=m->node[3*ino+1];
+      physnode[inoloc*3+2]=m->node[3*ino+2];
+    }
+
+    // loop on the 6 faces
+    for(int ifa=0;ifa<6;ifa++){
+      // get the right elem or the boundary id
+      int ieR=m->elem2elem[6*ie+ifa];
+      double physnodeR[20*3];
+      if (ieR >= 0) {
+      	for(int inoloc=0;inoloc<20;inoloc++){
+      	  int ino=m->elem2node[20*ieR+inoloc];
+      	  physnodeR[inoloc*3+0]=m->node[3*ino+0];
+      	  physnodeR[inoloc*3+1]=m->node[3*ino+1];
+      	  physnodeR[inoloc*3+2]=m->node[3*ino+2];
+      	}
+      }
+      
+      // loop on the glops (numerical integration)
+      // of the face ifa
+      for(int ipgf=0;ipgf<NPGF(param+1,ifa);ipgf++){
+  	double xpgref[3],wpg;
+  	//double xpgref2[3],wpg2;
+  	// get the coordinates of the Gauss point
+  	ref_pg_face(param+1,ifa,ipgf,xpgref,&wpg);
+
+  	// recover the volume gauss point from
+  	// the face index
+  	int ipg=param[7];
+  	// get the left value of w at the gauss point
+  	// the basis functions is also the gauss point index
+  	int ib=ipg;
+  	// normal vector at gauss point ipg
+  	//double dpsiref[3];dpsi[3];
+  	double dtau[3*3],codtau[3*3],xpg[3];
+  	double vnds[3];
+  	Ref2Phy(physnode,
+  		xpgref,
+  		NULL,ifa, // dpsiref,ifa
+  		xpg,dtau,
+  		codtau,NULL,vnds); // codtau,dpsi,vnds
+  	if (ieR >=0) {  // the right element exists
+  	  // find the corresponding point in the right elem
+  	  double xref[3];
+	  Phy2Ref(physnodeR,xpg,xref);
+  	  int ipgR=ref_ipg(param+1,xref);
+	  double xpgR[3],xrefR[3],wpgR;
+	  ref_pg_vol(param+1, ipgR, xrefR, &wpgR);
+          double dtauR[3*3],codtauR[3*3];double vndsR[3];
+          int ifaR=0;
+          while (m->elem2elem[6*ieR+ifaR] != ie) ifaR++;
+          assert(ifaR<6);
+	  Ref2Phy(physnodeR,
+		  xrefR,
+		  NULL,ifaR, // dphiref,ifa
+		  xpgR,dtauR,  
+		  codtauR,NULL,vndsR); // codtau,dphi,vnds
+          assert(Dist(xpg,xpgR)<1e-11);
+          assert(fabs(vnds[0]+vndsR[0])<1e-11);
+          assert(fabs(vnds[1]+vndsR[1])<1e-11);
+          assert(fabs(vnds[1]+vndsR[1])<1e-11);
+        }
+      }
+    }
+   }
   
 
 

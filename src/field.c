@@ -221,9 +221,9 @@ void PlotField(int typplot,int compare,Field* f,char* filename){
   double Xn[3*nnodes];
   double Xr[3];
   double Xphy[3];
-  double Vnds[3];  // normal vector times surface element dS
-  double DX[3*3];  // jacobian matrix
-  double coDX[3*3];  // comatrix of the jacobian matrix
+  /* double Vnds[3];  // normal vector times surface element dS */
+  /* double DX[3*3];  // jacobian matrix */
+  /* double coDX[3*3];  // comatrix of the jacobian matrix */
 
 
   //int vindex_param[] = {npgv, mw};
@@ -253,8 +253,8 @@ void PlotField(int typplot,int compare,Field* f,char* filename){
 	      NULL,
 	      -1,
 	      Xphy,
-	      DX,
-	      coDX,
+	      NULL,
+	      NULL,
 	      NULL,
 	      NULL);
 
@@ -348,7 +348,7 @@ void PlotField(int typplot,int compare,Field* f,char* filename){
 		NULL,
 		-1,
 		Xphy,
-		DX,
+		NULL,
 		NULL,
 		NULL,
 		NULL);
@@ -482,7 +482,7 @@ void dtField(Field* f){
   	if (ieR >=0) {  // the right element exists
   	  // find the corresponding point in the right elem
   	  double xref[3];
-	  Phy2Ref(physnodeR,xpg,xref);// !!!! does not work here !!!!
+	  Phy2Ref(physnodeR,xpg,xref);
   	  int ipgR=ref_ipg(param+1,xref);
 	  double xpgR[3],xrefR[3],wpgR;
 	  ref_pg_vol(param+1, ipgR, xrefR, &wpgR);
@@ -494,14 +494,13 @@ void dtField(Field* f){
   	  for(int iv=0;iv<f->model.m;iv++){
   	    int imem=f->varindex(param,ieR,ipgR,iv);
   	    wR[iv]=f->wn[imem];
-	    TransportInitData(xpg,wR);
   	  }
   	  // int_dL F(wL,wR,grad phi_ib )
   	  f->model.NumFlux(wL,wR,vnds,flux);
   	}
   	else { //the right element does not exist
   	  f->model.BoundaryFlux(xpg,f->tnow,wL,vnds,flux);
-          //printf("tflux=%f\n",f->tnow);
+           //printf("tflux=%f\n",f->tnow);
 	  // printf("xpgbord=%f %f %f \n",xpg[0],xpg[1],xpg[2]);
   	}
   	for(int iv=0;iv<f->model.m;iv++){
