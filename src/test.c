@@ -521,8 +521,8 @@ int TestFieldRK2(void){
   f.model.ImposedData=TransportImposedData;
   f.varindex=GenericVarindex;
 
-  //ReadMacroMesh(&(f.macromesh),"../geo/disque.msh");
-  ReadMacroMesh(&(f.macromesh),"../geo/cube.msh");
+  ReadMacroMesh(&(f.macromesh),"../geo/disque.msh");
+  //ReadMacroMesh(&(f.macromesh),"../geo/cube.msh");
   //ReadMacroMesh(&(f.macromesh),"../geo/testcube2.msh");
   BuildConnectivity(&(f.macromesh));
 
