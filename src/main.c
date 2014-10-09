@@ -21,7 +21,7 @@ int main(void) {
 
   assert(TestFieldDG());
 
-  //assert(TestFieldRK2());
+   //assert(TestFieldRK2());
 
   printf("All tests OK !\n");
 

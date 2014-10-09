@@ -474,7 +474,8 @@ int TestFieldDG(void){
   f.varindex=GenericVarindex;
 
   //ReadMacroMesh(&(f.macromesh),"../geo/disque.msh");
-  ReadMacroMesh(&(f.macromesh),"../geo/cube.msh");
+  //ReadMacroMesh(&(f.macromesh),"../geo/cube.msh");
+  ReadMacroMesh(&(f.macromesh),"../geo/testcube.msh");
   //ReadMacroMesh(&(f.macromesh),"../geo/testcube2.msh");
   BuildConnectivity(&(f.macromesh));
 

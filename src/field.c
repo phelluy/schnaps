@@ -151,7 +151,17 @@ void DisplayField(Field* f){
   for(int ie=0;ie<f->macromesh.nbelems;ie++){
     printf("elem %d\n",ie);
     for(int ipg=0;ipg<NPG(param+1);ipg++){
-    printf("Gauss point %d\n",ipg);
+      double xref[3],xphy[3],wpg;
+      ref_pg_vol(param+1,ipg,xref,&wpg);
+      /* void Ref2Phy(physnode, */
+      /* 		   xref, */
+      /* 		   NULL, */
+      /* 		   -1, */
+      /* 		   xphy, */
+      /* 		   NULL, */
+      /* 		   NULL,NULL,NULL); */
+
+      printf("Gauss point %d %f %f %f \n",ipg,xref[0],xref[1],xref[2]);
     printf("dtw= ");
       for(int iv=0;iv<f->model.m;iv++){
 	int imem=f->varindex(param,ie,ipg,iv);
@@ -582,6 +592,7 @@ void RK2(Field* f,double tmax){
     dtField(f);
     for(int iw=0;iw<sizew;iw++){
       f->wnp1[iw]=f->wn[iw]+dt/2*f->dtwn[iw]; 
+      //f->wnp1[iw]=f->wn[iw]+dt/2*(-1); 
       //f->wnp1[iw]=f->wn[iw]+dt/2*f->wn[iw]; // exp(t) test
     }
     //exchange the field pointers 
@@ -595,6 +606,7 @@ void RK2(Field* f,double tmax){
     dtField(f);
     for(int iw=0;iw<sizew;iw++){
       f->wnp1[iw]+=dt*f->dtwn[iw];
+      //f->wnp1[iw]+=dt*(-1);
       //f->wnp1[iw]+=dt*f->wn[iw];   // exp(t) test
     }
     f->tnow+=dt/2;
