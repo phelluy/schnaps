@@ -139,18 +139,6 @@ void DisplayField(Field* f){
   for(int ie=0;ie<f->macromesh.nbelems;ie++){
     printf("elem %d\n",ie);
     for(int ipg=0;ipg<NPG(param+1);ipg++){
-    printf("Gauss point %d\n",ipg);
-    printf("w= ");
-      for(int iv=0;iv<f->model.m;iv++){
-	int imem=f->varindex(param,ie,ipg,iv);
-	printf("%f ",f->wn[imem]);
-      }
-      printf("\n");
-    }
-  }
-  for(int ie=0;ie<f->macromesh.nbelems;ie++){
-    printf("elem %d\n",ie);
-    for(int ipg=0;ipg<NPG(param+1);ipg++){
       double xref[3],xphy[3],wpg;
       ref_pg_vol(param+1,ipg,xref,&wpg);
 
@@ -255,9 +243,12 @@ void PlotField(int typplot,int compare,Field* f,char* filename){
       
     }
   }
-  // elements
 
   fprintf(gmshfile,"$EndNodes\n");
+
+
+
+  // elements
   fprintf(gmshfile,"$Elements\n");
   fprintf(gmshfile,"%d\n",f->macromesh.nbelems);
 

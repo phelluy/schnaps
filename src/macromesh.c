@@ -167,7 +167,7 @@ void PrintMacroMesh(MacroMesh* m){
   }
 }
 
-// build others connectivity arrays
+// build other connectivity arrays
 void BuildConnectivity(MacroMesh* m){
 
   printf("Build connectivity...\n");
@@ -191,7 +191,7 @@ void BuildConnectivity(MacroMesh* m){
     {0,4,7,3},
     {5,6,7,4},
     {0,3,2,1},
-};
+  };
 
 
   for(int ie=0;ie<m->nbelems;ie++){
@@ -222,8 +222,6 @@ void BuildConnectivity(MacroMesh* m){
   /* 	     f->node[1],f->node[2],f->node[3]); */
   /*   } */
   /* } */
-
-  //assert(1==2);
 
   // allocate element connectivity array
   m->elem2elem=malloc(6 * m->nbelems * sizeof(int));
@@ -359,7 +357,6 @@ void CheckMacroMesh(MacroMesh* m){
       assert(vnds[0]*vec[0]+vnds[1]*vec[1]+vnds[2]*vec[2] > 0);
 
       // check compatibility between face and volume numbering
-      //if (m->elem2elem[6*ie+ifa]>=0){
         for(int ipgf=0;ipgf<NPGF(param,ifa);ipgf++){
           double xpgref[3],wpg;
           // get the coordinates of the Gauss point
@@ -371,7 +368,6 @@ void CheckMacroMesh(MacroMesh* m){
           ref_pg_vol(param,ipgv,xpgref2,&wpg2);
           assert(Dist(xpgref,xpgref2)<1e-8);
         }
-        //}
 
 
     }
