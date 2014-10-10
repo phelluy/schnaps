@@ -1,5 +1,6 @@
 #include "macromesh.h"
 
+#define _GNU_SOURCE  // for avoiding a compiler warning
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
@@ -15,20 +16,22 @@ void ReadMacroMesh(MacroMesh* m,char* filename){
 
   char* line=NULL;
   size_t linesize=0;
-  //size_t ret;
+  size_t ret;
 
   printf("Read mesh file %s\n",filename);
 
   f=fopen(filename,"r");
   assert(f != NULL);
 
+  
+
   do {
-    getline(&line,&linesize,f);
+    ret=getline(&line,&linesize,f);
   }
   while(strcmp(line,"$Nodes\n") != 0);   
 
   // read the nodes data
-  getline(&line,&linesize,f);
+  ret=getline(&line,&linesize,f);
   m->nbnodes=atoi(line);
   printf("nbnodes=%d\n",m->nbnodes);
 
@@ -36,31 +39,31 @@ void ReadMacroMesh(MacroMesh* m,char* filename){
   assert(m->node);
 
   for(int i=0;i<m->nbnodes;i++){    
-    getdelim(&line,&linesize,(int) ' ',f); // node number
-    getdelim(&line,&linesize,(int) ' ',f); // x
+    ret=getdelim(&line,&linesize,(int) ' ',f); // node number
+    ret=getdelim(&line,&linesize,(int) ' ',f); // x
     m->node[3*i+0]=atof(line);
-    getdelim(&line,&linesize,(int) ' ',f); // y
+    ret=getdelim(&line,&linesize,(int) ' ',f); // y
     m->node[3*i+1]=atof(line);
-    getline(&line,&linesize,f); // z (end of the line)
+    ret=getline(&line,&linesize,f); // z (end of the line)
     m->node[3*i+2]=atof(line);
     /* printf("Node %d x=%f y=%f z=%f\n",i, */
     /* 	   m->node[3*i+0], */
     /* 	   m->node[3*i+1], */
     /* 	   m->node[3*i+2]); */
   }    
-  getline(&line,&linesize,f);
+  ret=getline(&line,&linesize,f);
   //printf("%s",line);
   // check that we have reached the end of nodes
   assert(strcmp(line,"$EndNodes\n") == 0);
   
   // Now read all the elements of the mesh
   do {
-    getline(&line,&linesize,f);
+    ret=getline(&line,&linesize,f);
   }
   while(strcmp(line,"$Elements\n") != 0);   
 
   // size of the gmsh elems list 
-  getline(&line,&linesize,f);
+  ret=getline(&line,&linesize,f);
   int nball=atoi(line);
   // allocate to a too big size
   m->elem2node=malloc(20 * sizeof(int) * nball);
@@ -70,30 +73,30 @@ void ReadMacroMesh(MacroMesh* m,char* filename){
   m->nbelems=0;
   int countnode=0;
   for(int i=0;i<nball;i++){
-    getdelim(&line,&linesize,(int) ' ',f); // elem number
-    getdelim(&line,&linesize,(int) ' ',f); // elem type
+    ret=getdelim(&line,&linesize,(int) ' ',f); // elem number
+    ret=getdelim(&line,&linesize,(int) ' ',f); // elem type
     int elemtype=atoi(line);
     if (elemtype != 17) {
-      getline(&line,&linesize,f);
+      ret=getline(&line,&linesize,f);
     }
     else {
       m->nbelems++;
-      getdelim(&line,&linesize,(int) ' ',f); //useless code
-      getdelim(&line,&linesize,(int) ' ',f); //useless code
-      getdelim(&line,&linesize,(int) ' ',f); //useless code
+      ret=getdelim(&line,&linesize,(int) ' ',f); //useless code
+      ret=getdelim(&line,&linesize,(int) ' ',f); //useless code
+      ret=getdelim(&line,&linesize,(int) ' ',f); //useless code
       for(int j=0;j<19;j++){
-	getdelim(&line,&linesize,(int) ' ',f);
+	ret=getdelim(&line,&linesize,(int) ' ',f);
 	//printf("%d ",atoi(line));
 	m->elem2node[countnode]=atoi(line)-1;
 	countnode++;
       }
-      getline(&line,&linesize,f);
+      ret=getline(&line,&linesize,f);
       //printf("%d\n",atoi(line));
       m->elem2node[countnode]=atoi(line)-1;
       countnode++;
     }
   }	
-  getline(&line,&linesize,f);
+  ret=getline(&line,&linesize,f);
   //printf("%s",line);
   // check that we have reached the end of nodes
   assert(strcmp(line,"$EndElements\n") == 0);
