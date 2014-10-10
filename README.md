@@ -14,13 +14,14 @@ se placer dans le dossier SCHNAPS/src
 puis:
 
 makefile
+
 ./go
 
 une série de tests démarre. Il est conseillé de faire repasser ces
 tests après toute modification du code.
 
 Le dernier test consiste à résoudre l'équation de transport à
-l'intérieur d'un disque extrudé. La visualisation  des résultats
+l'intérieur d'un cylindre. La visualisation  des résultats
 utilise gmsh
 
 gmsh dgvisu.msh
