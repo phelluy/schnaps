@@ -333,7 +333,7 @@ void PlotField(int typplot,int compare,Field* f,char* filename){
 	// exact solution
         if (compare){
           double wex[f->model.m];
-          TransportImposedData(Xphy,f->tnow,wex);
+          f->model.ImposedData(Xphy,f->tnow,wex);
           value -= wex[typplot];
         }
 
