@@ -540,7 +540,7 @@ void RK2(Field* f,double tmax){
   double cfl=0.05;
 
   double dt = cfl * f->hmin / vmax;
-  int itermax=tmax/dt;
+  int itermax=tmax/dt+1;
   int freq=itermax/10;
 
   int param[8]={f->model.m,_DEGX,_DEGY,_DEGZ,_RAFX,_RAFY,_RAFZ,0};
@@ -576,6 +576,8 @@ void RK2(Field* f,double tmax){
     f->wn=temp;
 
   }
+  printf("t=%f iter=%d/%d dt=%f\n",f->tnow,iter,itermax,dt);
+
 }
 // time integration by a second order Runge-Kutta algorithm
 //  with memory copy instead of pointers exchange 
