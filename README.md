@@ -9,13 +9,15 @@ téléchargement (nécessite git)
 
 git clone https://github.com/phelluy/SCHNAPS.git
 
-se placer dans le dossier SCHNAPS/src
+se placer dans le dossier SCHNAPS
 
 puis:
 
-makefile
+cmake .
 
-./go
+make
+
+./schnaps
 
 une série de tests démarre. Il est conseillé de faire repasser ces
 tests après toute modification du code.
@@ -38,12 +40,5 @@ faire:
 gsmh disque.geo -3
 
 Cette commande génère un fichier disque.msh lisible par SCHNAPS.
-
-Pour ajouter un fichier source au makefile, utiliser l'utilitaire
-micmake:
-
-se placer dans SCHNAPS/src  puis faire
-
-./micmake go
 
 
