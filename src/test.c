@@ -15,7 +15,7 @@ int TestMacroMesh(void){
   int test=1;
   MacroMesh m;
   
-  ReadMacroMesh(&m,"../test/testmacromesh.msh");
+  ReadMacroMesh(&m,"test/testmacromesh.msh");
   BuildConnectivity(&m);
   PrintMacroMesh(&m);
 
@@ -33,7 +33,7 @@ int TestGeometry(void){
   int test=1;
   MacroMesh mc;
 
-  ReadMacroMesh(&mc,"../test/testgeometry.msh");
+  ReadMacroMesh(&mc,"test/testgeometry.msh");
   BuildConnectivity(&mc);
   PrintMacroMesh(&mc);
 
@@ -418,7 +418,7 @@ int TestField(void){
   f.model.ImposedData=TestTransportImposedData;
   f.varindex=GenericVarindex;
 
-  ReadMacroMesh(&(f.macromesh),"../test/testmacromesh.msh");
+  ReadMacroMesh(&(f.macromesh),"test/testmacromesh.msh");
   BuildConnectivity(&(f.macromesh));
 
   InitField(&f);
@@ -442,7 +442,7 @@ int TestFieldDG(void){
   f.model.ImposedData=TestTransportImposedData;
   f.varindex=GenericVarindex;
 
-  ReadMacroMesh(&(f.macromesh),"../test/testcube.msh");
+  ReadMacroMesh(&(f.macromesh),"test/testcube.msh");
   BuildConnectivity(&(f.macromesh));
 
   PrintMacroMesh(&(f.macromesh));
@@ -487,7 +487,7 @@ int TestFieldRK2(void){
   f.model.ImposedData=TestTransportImposedData;
   f.varindex=GenericVarindex;
 
-  ReadMacroMesh(&(f.macromesh),"../test/testdisque.msh");
+  ReadMacroMesh(&(f.macromesh),"test/testdisque.msh");
   BuildConnectivity(&(f.macromesh));
 
   //AffineMapMacroMesh(&(f.macromesh));
