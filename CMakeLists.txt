@@ -23,69 +23,64 @@ src/macromesh.c
 src/model.c
 )
 
+#schnaps library
+add_library (libschnaps ${source_files})
+
 # main program schnaps
 add_executable(
   schnaps
-  ${source_files}
   src/schnaps.c
 )
-target_link_libraries(schnaps m)
+target_link_libraries(schnaps libschnaps m)
 
 # list of tests
 add_executable(
   testmacromesh
-  ${source_files}
   src/testmacromesh.c
 )
-target_link_libraries(testmacromesh m)
+target_link_libraries(testmacromesh libschnaps m)
 add_test(testmacromesh testmacromesh)
 
 add_executable(
   testgeometry
-  ${source_files}
   src/testgeometry.c
 )
-target_link_libraries(testgeometry m)
+target_link_libraries(testgeometry libschnaps m)
 add_test(testgeometry testgeometry)
 
 add_executable(
   testinterpolation
-  ${source_files}
   src/testinterpolation.c
 )
-target_link_libraries(testinterpolation m)
+target_link_libraries(testinterpolation libschnaps m)
 add_test(testinterpolation testinterpolation)
 
 add_executable(
   testmodel
-  ${source_files}
   src/testmodel.c
 )
-target_link_libraries(testmodel m)
+target_link_libraries(testmodel libschnaps m)
 
 add_test(testfield testfield)
 add_executable(
   testfield
-  ${source_files}
   src/testfield.c
 )
-target_link_libraries(testfield m)
+target_link_libraries(testfield libschnaps m)
 add_test(testfield testfield)
 
 add_test(testfielddg testfielddg)
 add_executable(
   testfielddg
-  ${source_files}
   src/testfielddg.c
 )
-target_link_libraries(testfielddg m)
+target_link_libraries(testfielddg libschnaps m)
 add_test(testfielddg testfielddg)
 
 add_test(testfieldrk2 testfieldrk2)
 add_executable(
   testfieldrk2
-  ${source_files}
   src/testfieldrk2.c
 )
-target_link_libraries(testfieldrk2 m)
+target_link_libraries(testfieldrk2 libschnaps m)
 add_test(testfieldrk2 testfieldrk2)
