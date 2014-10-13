@@ -3,11 +3,10 @@
 
 // header of the geometry struct
 // geometric transformations
-
-// mapping tau from the reference point to the physical point.
-// If an optional variable is not used it HAS to be set to NULL
-// input:
-// physnode[20*3] : coordinates of physical nodes
+//! \brief mapping tau from the reference point to the physical point.
+//!
+//! If an optional variable is not used it HAS to be set to NULL
+//! \param[in] physnode[20*3] : coordinates of physical nodes
 // xref[3] : coordinates of the mapped point in the reference frame
 // dphiref[3] : gradient of a function in the reference frame (optional)
 // ifa=0..5 : face index if computation of the normal vector (optional)
