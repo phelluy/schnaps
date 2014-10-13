@@ -1,9 +1,8 @@
-#include "interpolation.h"
-#include "geometry.h"
-#include "global.h"
-#include<stdio.h>
-#include <assert.h>
+#include <stdio.h>
 #include <math.h>
+#include <assert.h>
+
+#include "interpolation.h"
 
 /* gauss lobatto points */
 

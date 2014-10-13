@@ -1,4 +1,4 @@
-#include "field.h"
+#include "schnaps.h"
 #include <stdio.h>
 #include <assert.h>
 

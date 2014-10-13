@@ -1,10 +1,9 @@
-#include "macromesh.h"
 #include <stdio.h>
-#include <assert.h>
-#include "geometry.h"
-#include "global.h"
-#include "test.h"
 #include <math.h>
+#include <assert.h>
+
+#include "test.h"
+#include "schnaps.h"
 
 int main(void) {
   

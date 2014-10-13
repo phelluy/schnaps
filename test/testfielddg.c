@@ -1,14 +1,8 @@
-//#include "macromesh.h"
-//#include "geometry.h"
-//#include "interpolation.h"
 #include "test.h"
-//#include "model.h"
-#include "field.h"
-
-#include <stdio.h>
-#include <math.h>
+#include "schnaps.h"
+#include<stdio.h>
 #include <assert.h>
-
+#include <math.h>
 int main(void) {
   
   // unit tests
