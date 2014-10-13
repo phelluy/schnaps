@@ -287,8 +287,8 @@ int CompareFace4Sort(const void* a,const void* b){
 
 void CheckMacroMesh(MacroMesh* m){
 
-  double dtau[9],codtau[9];
-  double physnode[20*3];
+  double dtau[3][3],codtau[3][3];
+  double physnode[20][3];
 
   double face_centers[6][3]={
     {0.5,0.0,0.5},
@@ -307,9 +307,9 @@ void CheckMacroMesh(MacroMesh* m){
   for(int ie=0;ie<m->nbelems;ie++){
     for(int inoloc=0;inoloc<20;inoloc++){
       int ino=m->elem2node[20*ie+inoloc];
-      physnode[inoloc*3+0]=m->node[3*ino+0];
-      physnode[inoloc*3+1]=m->node[3*ino+1];
-      physnode[inoloc*3+2]=m->node[3*ino+2];
+      physnode[inoloc][0]=m->node[3*ino+0];
+      physnode[inoloc][1]=m->node[3*ino+1];
+      physnode[inoloc][2]=m->node[3*ino+2];
     }
     
     // test that the ref_ipg function
@@ -348,7 +348,8 @@ void CheckMacroMesh(MacroMesh* m){
 	      0,ifa, // dphiref,ifa
 	      xphyfa,dtau,
 	      codtau,NULL,vnds); // codtau,dphi,vnds
-      double det=codtau[0]*dtau[0]+codtau[1]*dtau[1]+codtau[2]*dtau[2];
+      double det=codtau[0][0]*dtau[0][0]+codtau[0][1]*dtau[0][1]+
+	codtau[0][2]*dtau[0][2];
 
       // check volume  orientation
       assert(det >0);
@@ -384,25 +385,25 @@ void CheckMacroMesh(MacroMesh* m){
    for (int ie=0;ie<m->nbelems;ie++){
      int param[8]={1,_DEGX,_DEGY,_DEGZ,_RAFX,_RAFY,_RAFZ,0};
     // get the physical nodes of element ie
-    double physnode[20*3];
+    double physnode[20][3];
     for(int inoloc=0;inoloc<20;inoloc++){
       int ino=m->elem2node[20*ie+inoloc];
-      physnode[inoloc*3+0]=m->node[3*ino+0];
-      physnode[inoloc*3+1]=m->node[3*ino+1];
-      physnode[inoloc*3+2]=m->node[3*ino+2];
+      physnode[inoloc][0]=m->node[3*ino+0];
+      physnode[inoloc][1]=m->node[3*ino+1];
+      physnode[inoloc][2]=m->node[3*ino+2];
     }
 
     // loop on the 6 faces
     for(int ifa=0;ifa<6;ifa++){
       // get the right elem or the boundary id
       int ieR=m->elem2elem[6*ie+ifa];
-      double physnodeR[20*3];
+      double physnodeR[20][3];
       if (ieR >= 0) {
       	for(int inoloc=0;inoloc<20;inoloc++){
       	  int ino=m->elem2node[20*ieR+inoloc];
-      	  physnodeR[inoloc*3+0]=m->node[3*ino+0];
-      	  physnodeR[inoloc*3+1]=m->node[3*ino+1];
-      	  physnodeR[inoloc*3+2]=m->node[3*ino+2];
+      	  physnodeR[inoloc][0]=m->node[3*ino+0];
+      	  physnodeR[inoloc][1]=m->node[3*ino+1];
+      	  physnodeR[inoloc][2]=m->node[3*ino+2];
       	}
       }
       
@@ -422,7 +423,7 @@ void CheckMacroMesh(MacroMesh* m){
   	int ib=ipg;
   	// normal vector at gauss point ipg
   	//double dpsiref[3];dpsi[3];
-  	double dtau[3*3],codtau[3*3],xpg[3];
+  	double dtau[3][3],codtau[3][3],xpg[3];
   	double vnds[3];
   	Ref2Phy(physnode,
   		xpgref,
@@ -436,7 +437,7 @@ void CheckMacroMesh(MacroMesh* m){
   	  int ipgR=ref_ipg(param+1,xref);
 	  double xpgR[3],xrefR[3],wpgR;
 	  ref_pg_vol(param+1, ipgR, xrefR, &wpgR);
-          double dtauR[3*3],codtauR[3*3];double vndsR[3];
+          double dtauR[3][3],codtauR[3][3];double vndsR[3];
           int ifaR=0;
           while (m->elem2elem[6*ieR+ifaR] != ie) ifaR++;
           assert(ifaR<6);

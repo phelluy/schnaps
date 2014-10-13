@@ -6,25 +6,25 @@
 const int h20_refnormal[6][3]={{0,-1,0},{1,0,0},
                                            {0,1,0},{-1,0,0},
                                            {0,0,1},{0,0,-1}};
-double Dist(double* x1,double* x2){
+double Dist(double x1[3],double x2[3]){
   return sqrt((x1[0]-x2[0])*(x1[0]-x2[0])+
               (x1[1]-x2[1])*(x1[1]-x2[1])+
               (x1[2]-x2[2])*(x1[2]-x2[2]));
 }
 
-void PrintPoint(double* x){
+void PrintPoint(double x[3]){
   printf("%f %f %f\n",x[0],x[1],x[2]);
 }
 
-void Ref2Phy(double* physnode,
-             double* xref,
-             double* dphiref,
+void Ref2Phy(double physnode[20][3],
+             double xref[3],
+             double dphiref[3],
              int ifa,
-             double* xphy,
-             double* dtau,
-             double* codtau,
-             double* dphi,
-             double* vnds){
+             double xphy[3],
+             double dtau[3][3],
+             double codtau[3][3],
+             double dphi[3],
+             double vnds[3]){
 
 
   // compute the mapping and its jacobian
@@ -47,7 +47,7 @@ void Ref2Phy(double* physnode,
     for(int ii=0;ii<3;ii++){
       xphy[ii]=0;
       for(int i=0;i<20;i++){
-	xphy[ii]+=physnode[3*i+ii]*gradphi[i][3];
+	xphy[ii]+=physnode[i][ii]*gradphi[i][3];
       }
     }
   }
@@ -56,11 +56,11 @@ void Ref2Phy(double* physnode,
   if (dtau != NULL){
     for(int ii=0;ii<3;ii++){
       for(int jj=0;jj<3;jj++){
-	dtau[3*ii+jj]=0;
+	dtau[ii][jj]=0;
       }
       for(int i=0;i<20;i++){
 	for(int jj=0;jj<3;jj++){
-	  dtau[3*ii+jj]+=physnode[3*i+ii]*gradphi[i][jj];;
+	  dtau[ii][jj]+=physnode[i][ii]*gradphi[i][jj];;
 	}
       }
     }
@@ -69,15 +69,25 @@ void Ref2Phy(double* physnode,
 
   if (codtau != NULL) {
     assert(dtau != NULL);
-    codtau[0] =  dtau[4] * dtau[8] - dtau[5] * dtau[7];
-    codtau[1] = -dtau[3] * dtau[8] + dtau[5] * dtau[6];
-    codtau[2] =  dtau[3] * dtau[7] - dtau[4] * dtau[6];
-    codtau[3] = -dtau[1] * dtau[8] + dtau[2] * dtau[7];
-    codtau[4] =  dtau[0] * dtau[8] - dtau[2] * dtau[6];
-    codtau[5] = -dtau[0] * dtau[7] + dtau[1] * dtau[6];
-    codtau[6] =  dtau[1] * dtau[5] - dtau[2] * dtau[4];
-    codtau[7] = -dtau[0] * dtau[5] + dtau[2] * dtau[3];
-    codtau[8] =  dtau[0] * dtau[4] - dtau[1] * dtau[3];
+    /* codtau[0] =  dtau[4] * dtau[8] - dtau[5] * dtau[7]; */
+    /* codtau[1] = -dtau[3] * dtau[8] + dtau[5] * dtau[6]; */
+    /* codtau[2] =  dtau[3] * dtau[7] - dtau[4] * dtau[6]; */
+    /* codtau[3] = -dtau[1] * dtau[8] + dtau[2] * dtau[7]; */
+    /* codtau[4] =  dtau[0] * dtau[8] - dtau[2] * dtau[6]; */
+    /* codtau[5] = -dtau[0] * dtau[7] + dtau[1] * dtau[6]; */
+    /* codtau[6] =  dtau[1] * dtau[5] - dtau[2] * dtau[4]; */
+    /* codtau[7] = -dtau[0] * dtau[5] + dtau[2] * dtau[3]; */
+    /* codtau[8] =  dtau[0] * dtau[4] - dtau[1] * dtau[3]; */
+    codtau[0][0] = dtau[1][1] * dtau[2][2] - dtau[1][2] * dtau[2][1];
+    codtau[0][1] = -dtau[1][0] * dtau[2][2] + dtau[1][2] * dtau[2][0];
+    codtau[0][2] = dtau[1][0] * dtau[2][1] - dtau[1][1] * dtau[2][0];
+    codtau[1][0] = -dtau[0][1] * dtau[2][2] + dtau[0][2] * dtau[2][1];
+    codtau[1][1] = dtau[0][0] * dtau[2][2] - dtau[0][2] * dtau[2][0];
+    codtau[1][2] = -dtau[0][0] * dtau[2][1] + dtau[0][1] * dtau[2][0];
+    codtau[2][0] = dtau[0][1] * dtau[1][2] - dtau[0][2] * dtau[1][1];
+    codtau[2][1] = -dtau[0][0] * dtau[1][2] + dtau[0][2] * dtau[1][0];
+    codtau[2][2] = dtau[0][0] * dtau[1][1] - dtau[0][1] * dtau[1][0];
+
 }
 
   if (dphi != NULL){
@@ -87,7 +97,7 @@ void Ref2Phy(double* physnode,
       int jj;
       dphi[ii]=0;
       for(jj=0;jj<3;jj++){
-        dphi[ii]+=codtau[3*ii+jj]*dphiref[jj];
+        dphi[ii]+=codtau[ii][jj]*dphiref[jj];
       }
     }
   }
@@ -100,7 +110,7 @@ void Ref2Phy(double* physnode,
       int jj;
       vnds[ii]=0;
       for(jj=0;jj<3;jj++){
-        vnds[ii]+=codtau[3*ii+jj]*h20_refnormal[ifa][jj];
+        vnds[ii]+=codtau[ii][jj]*h20_refnormal[ifa][jj];
       }
     }
 
@@ -109,10 +119,10 @@ void Ref2Phy(double* physnode,
 }
 
 
-void Phy2Ref(double* physnode,double* xphy,double* xref){
+void Phy2Ref(double physnode[20][3],double xphy[3],double xref[3]){
 #define ITERNEWTON 20
 
-  double dtau[9], codtau[9];                                              
+  double dtau[3][3], codtau[3][3];                                              
   double dxref[3], dxphy[3];                                              
   double det;                                                             
   int ifa =- 1;                                                         
@@ -125,12 +135,13 @@ void Phy2Ref(double* physnode,double* xphy,double* xref){
     dxphy[0] -= (xphy)[0];                                              
     dxphy[1] -= (xphy)[1];                                              
     dxphy[2] -= (xphy)[2];                                              
-    det = dtau[0]*codtau[0]+dtau[1]*codtau[1]+dtau[2]*codtau[2];
+    det = dtau[0][0]*codtau[0][0]+dtau[0][1]*codtau[0][1]+
+      dtau[0][2]*codtau[0][2];
     assert(det>0);
     for(int ii = 0;ii<3;ii ++ ){                             
       dxref[ii] = 0;                                               
       for(int jj = 0;jj<3;jj ++ ){                                          
-        dxref[ii] += codtau[3 * jj + ii] * dxphy[jj];         
+        dxref[ii] += codtau[jj][ii] * dxphy[jj];         
       }      
       xref[ii] -= dxref[ii] / det;                            
     }

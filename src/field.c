@@ -28,8 +28,8 @@ void InitField(Field* f){
   double w[f->model.m];
   double xpg[3];
   double xref[3],omega;
-  double dtau[9];
-  double physnode[20*3];
+  double dtau[3][3];
+  double physnode[20][3];
 
   int nmem=f->model.m * f->macromesh.nbelems * 
     NPG(param+1);
@@ -46,9 +46,9 @@ void InitField(Field* f){
   for(int ie=0;ie<f->macromesh.nbelems;ie++){
     for(int inoloc=0;inoloc<20;inoloc++){
       int ino=f->macromesh.elem2node[20*ie+inoloc];
-      physnode[inoloc*3+0]=f->macromesh.node[3*ino+0];
-      physnode[inoloc*3+1]=f->macromesh.node[3*ino+1];
-      physnode[inoloc*3+2]=f->macromesh.node[3*ino+2];
+      physnode[inoloc][0]=f->macromesh.node[3*ino+0];
+      physnode[inoloc][1]=f->macromesh.node[3*ino+1];
+      physnode[inoloc][2]=f->macromesh.node[3*ino+2];
     }
     for(int ipg=0;ipg<NPG(param+1);ipg++){
       ref_pg_vol(param+1, ipg, xref, &omega);
@@ -74,15 +74,15 @@ void InitField(Field* f){
   f->hmin=1e10;
 
   for (int ie=0;ie<f->macromesh.nbelems;ie++){
-    double codtau[9],dtau[9];
+    double codtau[3][3],dtau[3][3];
     double vol=0,surf=0;
     // get the physical nodes of element ie
-    double physnode[20*3];
+    double physnode[20][3];
     for(int inoloc=0;inoloc<20;inoloc++){
       int ino=f->macromesh.elem2node[20*ie+inoloc];
-      physnode[inoloc*3+0]=f->macromesh.node[3*ino+0];
-      physnode[inoloc*3+1]=f->macromesh.node[3*ino+1];
-      physnode[inoloc*3+2]=f->macromesh.node[3*ino+2];
+      physnode[inoloc][0]=f->macromesh.node[3*ino+0];
+      physnode[inoloc][1]=f->macromesh.node[3*ino+1];
+      physnode[inoloc][2]=f->macromesh.node[3*ino+2];
     }
     // loop on the glops (for numerical integration)
     for(int ipg=0;ipg<NPG(param+1);ipg++){
@@ -94,7 +94,8 @@ void InitField(Field* f){
 	      NULL,-1, // dpsiref,ifa
 	      NULL,dtau,  // xphy,dtau
 	      codtau,NULL,NULL); // codtau,dpsi,vnds
-      double det=dtau[0]*codtau[0]+dtau[1]*codtau[1]+dtau[2]*codtau[2];
+      double det=dtau[0][0]*codtau[0][0]+dtau[0][1]*codtau[0][1]+
+	dtau[0][2]*codtau[0][2];
       vol+=wpg*det;  
     }
     for(int ifa=0;ifa<6;ifa++){
@@ -194,7 +195,7 @@ void PlotField(int typplot,int compare,Field* f,char* filename){
   int npgv = NPG(param+1);
   int nnodes = 20;
 
-  double Xn[3*nnodes];
+  double Xn[nnodes][3];
   double Xr[3];
   double Xphy[3];
 
@@ -209,7 +210,7 @@ void PlotField(int typplot,int compare,Field* f,char* filename){
     for(int ino=0;ino<nnodes;ino++){
       int numnoe=elem2nodes[nnodes*i+ino];
       for(int ii=0;ii<3;ii++){
-        Xn[3*ino+ii]=node[3*numnoe+ii];
+        Xn[ino][ii]=node[3*numnoe+ii];
       }
     }
     for(int ino=0;ino<64;ino++){
@@ -297,7 +298,7 @@ void PlotField(int typplot,int compare,Field* f,char* filename){
       for(int ino=0;ino<20;ino++){
 	int numnoe=elem2nodes[nnodes*i+ino];
 	for(int ii=0;ii<3;ii++){
-	  Xn[3*ino+ii]=node[3*numnoe+ii];
+	  Xn[ino][ii]=node[3*numnoe+ii];
 	}
       }
       
@@ -387,25 +388,25 @@ void dtField(Field* f){
   // loop on the elements
   for (int ie=0;ie<f->macromesh.nbelems;ie++){
     // get the physical nodes of element ie
-    double physnode[20*3];
+    double physnode[20][3];
     for(int inoloc=0;inoloc<20;inoloc++){
       int ino=f->macromesh.elem2node[20*ie+inoloc];
-      physnode[inoloc*3+0]=f->macromesh.node[3*ino+0];
-      physnode[inoloc*3+1]=f->macromesh.node[3*ino+1];
-      physnode[inoloc*3+2]=f->macromesh.node[3*ino+2];
+      physnode[inoloc][0]=f->macromesh.node[3*ino+0];
+      physnode[inoloc][1]=f->macromesh.node[3*ino+1];
+      physnode[inoloc][2]=f->macromesh.node[3*ino+2];
     }
 
     // loop on the 6 faces
     for(int ifa=0;ifa<6;ifa++){
       // get the right elem or the boundary id
       int ieR=f->macromesh.elem2elem[6*ie+ifa];
-      double physnodeR[20*3];
+      double physnodeR[20][3];
       if (ieR >= 0) {
       	for(int inoloc=0;inoloc<20;inoloc++){
       	  int ino=f->macromesh.elem2node[20*ieR+inoloc];
-      	  physnodeR[inoloc*3+0]=f->macromesh.node[3*ino+0];
-      	  physnodeR[inoloc*3+1]=f->macromesh.node[3*ino+1];
-      	  physnodeR[inoloc*3+2]=f->macromesh.node[3*ino+2];
+      	  physnodeR[inoloc][0]=f->macromesh.node[3*ino+0];
+      	  physnodeR[inoloc][1]=f->macromesh.node[3*ino+1];
+      	  physnodeR[inoloc][2]=f->macromesh.node[3*ino+2];
       	}
       }
       
@@ -429,7 +430,7 @@ void dtField(Field* f){
   	// the basis functions is also the gauss point index
   	int ib=ipg;
   	// normal vector at gauss point ipg
-  	double dtau[3*3],codtau[3*3],xpg[3];
+  	double dtau[3][3],codtau[3][3],xpg[3];
   	double vnds[3];
   	Ref2Phy(physnode,
   		xpgref,
@@ -473,12 +474,12 @@ void dtField(Field* f){
   // loop on the elements
   for (int ie=0;ie<f->macromesh.nbelems;ie++){
     // get the physical nodes of element ie
-    double physnode[20*3];
+    double physnode[20][3];
     for(int inoloc=0;inoloc<20;inoloc++){
       int ino=f->macromesh.elem2node[20*ie+inoloc];
-      physnode[inoloc*3+0]=f->macromesh.node[3*ino+0];
-      physnode[inoloc*3+1]=f->macromesh.node[3*ino+1];
-      physnode[inoloc*3+2]=f->macromesh.node[3*ino+2];
+      physnode[inoloc][0]=f->macromesh.node[3*ino+0];
+      physnode[inoloc][1]=f->macromesh.node[3*ino+1];
+      physnode[inoloc][2]=f->macromesh.node[3*ino+2];
     }
 
     // mass matrix
@@ -499,7 +500,7 @@ void dtField(Field* f){
       for(int ib=0;ib<NPG(param+1);ib++){
 	// gradient of psi_ib at gauss point ipg
 	double dpsiref[3],dpsi[3];
-	double dtau[3*3],codtau[3*3];//,xpg[3];
+	double dtau[3][3],codtau[3][3];//,xpg[3];
 	grad_psi_pg(param+1,ib,ipg,dpsiref);
 	Ref2Phy(physnode, // phys. nodes
 		xpgref,  // xref
@@ -508,7 +509,8 @@ void dtField(Field* f){
 		codtau,dpsi,NULL); // codtau,dpsi,vnds
 	// remember the diagonal mass term
 	if (ib == ipg){
-	  double det=dtau[0]*codtau[0]+dtau[1]*codtau[1]+dtau[2]*codtau[2];
+	  double det=dtau[0][0]*codtau[0][0]+dtau[0][1]*codtau[0][1]+
+	    dtau[0][2]*codtau[0][2];
 	  masspg[ipg]=wpg*det;
 	}
 	// int_L F(w,w,grad phi_ib )
@@ -630,18 +632,18 @@ double L2error(Field* f){
   double moy=0; // mean value
   for (int ie=0;ie<f->macromesh.nbelems;ie++){
     // get the physical nodes of element ie
-    double physnode[20*3];
+    double physnode[20][3];
     for(int inoloc=0;inoloc<20;inoloc++){
       int ino=f->macromesh.elem2node[20*ie+inoloc];
-      physnode[inoloc*3+0]=f->macromesh.node[3*ino+0];
-      physnode[inoloc*3+1]=f->macromesh.node[3*ino+1];
-      physnode[inoloc*3+2]=f->macromesh.node[3*ino+2];
+      physnode[inoloc][0]=f->macromesh.node[3*ino+0];
+      physnode[inoloc][1]=f->macromesh.node[3*ino+1];
+      physnode[inoloc][2]=f->macromesh.node[3*ino+2];
     }
 
     // loop on the glops (for numerical integration)
     for(int ipg=0;ipg<NPG(param+1);ipg++){
       double xpgref[3],xphy[3],wpg;
-      double dtau[3*3],codtau[3*3];//,xpg[3];
+      double dtau[3][3],codtau[3][3];//,xpg[3];
       // get the coordinates of the Gauss point
       ref_pg_vol(param+1,ipg,xpgref,&wpg);
       Ref2Phy(physnode, // phys. nodes
@@ -649,8 +651,8 @@ double L2error(Field* f){
 		NULL,-1, // dpsiref,ifa
 		xphy,dtau,  // xphy,dtau
 		codtau,NULL,NULL); // codtau,dpsi,vnds
-      double det=dtau[0]*codtau[0]+
-        dtau[1]*codtau[1]+dtau[2]*codtau[2]; 
+      double det=dtau[0][0]*codtau[0][0]+
+        dtau[0][1]*codtau[0][1]+dtau[0][2]*codtau[0][2]; 
       double w[f->model.m],wex[f->model.m];
       for(int iv=0;iv<f->model.m;iv++){
 	int imem=f->varindex(param,ie,ipg,iv);

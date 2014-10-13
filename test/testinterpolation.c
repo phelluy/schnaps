@@ -40,73 +40,73 @@ int TestInterpolation(void){
   assert(_DEGZ < 5);
 
   // reference element
-  double physnode[20*3];
-  physnode[0*3+0] = 0;
-    physnode[0*3+1] = 0;
-    physnode[0*3+2] = 0;
-    physnode[1*3+0] = 1;
-    physnode[1*3+1] = 0;
-    physnode[1*3+2] = 0;
-    physnode[2*3+0] = 1;
-    physnode[2*3+1] = 1;
-    physnode[2*3+2] = 0;
-    physnode[3*3+0] = 0;
-    physnode[3*3+1] = 1;
-    physnode[3*3+2] = 0;
-    physnode[4*3+0] = 0;
-    physnode[4*3+1] = 0;
-    physnode[4*3+2] = 1;
-    physnode[5*3+0] = 1;
-    physnode[5*3+1] = 0;
-    physnode[5*3+2] = 1;
-    physnode[6*3+0] = 1;
-    physnode[6*3+1] = 1;
-    physnode[6*3+2] = 1;
-    physnode[7*3+0] = 0;
-    physnode[7*3+1] = 1;
-    physnode[7*3+2] = 1;
-    physnode[8*3+0] = 0.1e1 / 0.2e1;
-    physnode[8*3+1] = 0;
-    physnode[8*3+2] = 0;
-    physnode[9*3+0] = 0;
-    physnode[9*3+1] = 0.1e1 / 0.2e1;
-    physnode[9*3+2] = 0;
-    physnode[10*3+0] = 0;
-    physnode[10*3+1] = 0;
-    physnode[10*3+2] = 0.1e1 / 0.2e1;
-    physnode[11*3+0] = 1;
-    physnode[11*3+1] = 0.1e1 / 0.2e1;
-    physnode[11*3+2] = 0;
-    physnode[12*3+0] = 1;
-    physnode[12*3+1] = 0;
-    physnode[12*3+2] = 0.1e1 / 0.2e1;
-    physnode[13*3+0] = 0.1e1 / 0.2e1;
-    physnode[13*3+1] = 1;
-    physnode[13*3+2] = 0;
-    physnode[14*3+0] = 1;
-    physnode[14*3+1] = 1;
-    physnode[14*3+2] = 0.1e1 / 0.2e1;
-    physnode[15*3+0] = 0;
-    physnode[15*3+1] = 1;
-    physnode[15*3+2] = 0.1e1 / 0.2e1;
-    physnode[16*3+0] = 0.1e1 / 0.2e1;
-    physnode[16*3+1] = 0;
-    physnode[16*3+2] = 1;
-    physnode[17*3+0] = 0;
-    physnode[17*3+1] = 0.1e1 / 0.2e1;
-    physnode[17*3+2] = 1;
-    physnode[18*3+0] = 1;
-    physnode[18*3+1] = 0.1e1 / 0.2e1;
-    physnode[18*3+2] = 1;
-    physnode[19*3+0] = 0.1e1 / 0.2e1;
-    physnode[19*3+1] = 1;
-    physnode[19*3+2] = 1;
+  double physnode[20][3];
+  physnode[0][0] = 0;
+    physnode[0][1] = 0;
+    physnode[0][2] = 0;
+    physnode[1][0] = 1;
+    physnode[1][1] = 0;
+    physnode[1][2] = 0;
+    physnode[2][0] = 1;
+    physnode[2][1] = 1;
+    physnode[2][2] = 0;
+    physnode[3][0] = 0;
+    physnode[3][1] = 1;
+    physnode[3][2] = 0;
+    physnode[4][0] = 0;
+    physnode[4][1] = 0;
+    physnode[4][2] = 1;
+    physnode[5][0] = 1;
+    physnode[5][1] = 0;
+    physnode[5][2] = 1;
+    physnode[6][0] = 1;
+    physnode[6][1] = 1;
+    physnode[6][2] = 1;
+    physnode[7][0] = 0;
+    physnode[7][1] = 1;
+    physnode[7][2] = 1;
+    physnode[8][0] = 0.1e1 / 0.2e1;
+    physnode[8][1] = 0;
+    physnode[8][2] = 0;
+    physnode[9][0] = 0;
+    physnode[9][1] = 0.1e1 / 0.2e1;
+    physnode[9][2] = 0;
+    physnode[10][0] = 0;
+    physnode[10][1] = 0;
+    physnode[10][2] = 0.1e1 / 0.2e1;
+    physnode[11][0] = 1;
+    physnode[11][1] = 0.1e1 / 0.2e1;
+    physnode[11][2] = 0;
+    physnode[12][0] = 1;
+    physnode[12][1] = 0;
+    physnode[12][2] = 0.1e1 / 0.2e1;
+    physnode[13][0] = 0.1e1 / 0.2e1;
+    physnode[13][1] = 1;
+    physnode[13][2] = 0;
+    physnode[14][0] = 1;
+    physnode[14][1] = 1;
+    physnode[14][2] = 0.1e1 / 0.2e1;
+    physnode[15][0] = 0;
+    physnode[15][1] = 1;
+    physnode[15][2] = 0.1e1 / 0.2e1;
+    physnode[16][0] = 0.1e1 / 0.2e1;
+    physnode[16][1] = 0;
+    physnode[16][2] = 1;
+    physnode[17][0] = 0;
+    physnode[17][1] = 0.1e1 / 0.2e1;
+    physnode[17][2] = 1;
+    physnode[18][0] = 1;
+    physnode[18][1] = 0.1e1 / 0.2e1;
+    physnode[18][2] = 1;
+    physnode[19][0] = 0.1e1 / 0.2e1;
+    physnode[19][1] = 1;
+    physnode[19][2] = 1;
 
     // transform the ref element with an affine map
     // for more generality
 
     for(int i=0;i<20;i++){
-      AffineMap(&(physnode[i*3]));
+      AffineMap(&(physnode[i][0]));
     }
 
 
@@ -228,7 +228,7 @@ int TestInterpolation(void){
     for(int ipg=0;ipg<npg;ipg++){
       ref_pg_vol(deg, ipg, xref, &omega);
       double xphy[3];
-      double dtau[9],codtau[9];
+      double dtau[3][3],codtau[3][3];
       Ref2Phy(physnode,xref,NULL,-1,
               xphy,dtau,codtau,NULL,NULL);
       f[ipg] = pow(xphy[1],(double) d);
@@ -253,21 +253,23 @@ int TestInterpolation(void){
 	grad_psi_pg(deg,l,ipg,dphiref);
 	ref_pg_vol(deg, ipg, xref, &omega);
         double xphy[3];
-        double dtau[9],codtau[9];
+        double dtau[3][3],codtau[3][3];
         Ref2Phy(physnode,xref,dphiref,-1,
               xphy,dtau,codtau,dphi,NULL);
 	//printf("ipg= %d xphy=%f\n", l,xphy[0]);
-        double det=dtau[0]*codtau[0]+dtau[1]*codtau[1]+dtau[2]*codtau[2];
+        double det=dtau[0][0]*codtau[0][0]+dtau[0][1]*codtau[0][1]+
+	  dtau[0][2]*codtau[0][2];
 	dkf += f[l] * dphi[k]/det;
 		
       }
       ref_pg_vol(deg, ipg, xref, &omega);
       double xphy[3];
-      double dtau[9],codtau[9];
+      double dtau[3][3],codtau[3][3];
       Ref2Phy(physnode,xref,NULL,-1,
               xphy,dtau,codtau,NULL,NULL);
       //printf(" x=%f f=%f dkf= %f\n",xphy[0],f[ipg],dkf);
-      double det=dtau[0]*codtau[0]+dtau[1]*codtau[1]+dtau[2]*codtau[2];
+      double det=dtau[0][0]*codtau[0][0]+dtau[0][1]*codtau[0][1]+
+	dtau[0][2]*codtau[0][2];
       //printf("det=%f\n",det);
       int_dfg += dkf * g[ipg] * omega * det;
     }
@@ -281,20 +283,22 @@ int TestInterpolation(void){
 	grad_psi_pg(deg,l,ipg,dphiref);
 	ref_pg_vol(deg, ipg, xref, &omega);
         double xphy[3];
-        double dtau[9],codtau[9];
+        double dtau[3][3],codtau[3][3];
         Ref2Phy(physnode,xref,dphiref,-1,
               xphy,dtau,codtau,dphi,NULL);
 	//printf("ipg= %d xphy=%f\n", l,xphy[0]);
-        double det=dtau[0]*codtau[0]+dtau[1]*codtau[1]+dtau[2]*codtau[2];
+        double det=dtau[0][0]*codtau[0][0]+dtau[0][1]*codtau[0][1]+
+	  dtau[0][2]*codtau[0][2];
 	dkg += dphi[k] * g[l]/det;
       }
       ref_pg_vol(deg, ipg, xref, &omega);
       double xphy[3];
-      double dtau[9],codtau[9];
+      double dtau[3][3],codtau[3][3];
       Ref2Phy(physnode,xref,NULL,-1,
               xphy,dtau,codtau,NULL,NULL);
       //printf("  dkf = %.2e dkf_ex = %.2e\n", dkf, pow(xref[0],d-1)*d);
-      double det=dtau[0]*codtau[0]+dtau[1]*codtau[1]+dtau[2]*codtau[2];
+        double det=dtau[0][0]*codtau[0][0]+dtau[0][1]*codtau[0][1]+
+	  dtau[0][2]*codtau[0][2];
       int_fdg += f[ipg] * dkg * omega *det;
       sum_wpg+=omega;
     }
@@ -309,7 +313,7 @@ int TestInterpolation(void){
     // of f * g * normal  ds
     for(int ifa=0;ifa<6;ifa++){
       double xphy[3],vnds[3];
-      double dtau[9],codtau[9];
+      double dtau[3][3],codtau[3][3];
       int npg_f = NPGF(deg,ifa);
       for(int ipgf=0;ipgf<npg_f;ipgf++){
 	ref_pg_face(deg,ifa,ipgf,xref,&omega);
