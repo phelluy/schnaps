@@ -15,7 +15,7 @@ int main(void) {
   if (resu) printf("Geometry test OK !\n");
   else printf("Geometry test failed !\n");
 
-  return resu;
+  return !resu;
 } 
 
 
