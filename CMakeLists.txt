@@ -27,7 +27,7 @@ src/model.c
 add_executable(
   schnaps
   ${source_files}
-  src/main.c
+  src/schnaps.c
 )
 target_link_libraries(schnaps m)
 

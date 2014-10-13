@@ -17,12 +17,16 @@ cmake .
 
 make
 
-./schnaps
+ctest
 
 une série de tests démarre. Il est conseillé de faire repasser ces
 tests après toute modification du code.
 
-Le dernier test consiste à résoudre l'équation de transport à
+Pour lancer schnaps:
+
+./schnaps
+
+Cet exemple consiste à résoudre l'équation de transport à
 l'intérieur d'un cylindre. La visualisation  des résultats
 utilise gmsh
 
@@ -31,7 +35,7 @@ gmsh dgvisu.msh
 (puis tools -> options -> view[0] -> adapt visualization grid pour
 afficher une image plus jolie...)
 
-Adapter la fonction "TestFieldRK2" dans le fichier source "test.c"
+Adapter le fichier source "schnaps.c"
 pour traiter des cas avec d'autres maillages. Des exemples de
 maillages se trouvent dans le dossier geo.
 Pour générer un maillage à partir du fichier disque.geo par exemple,
