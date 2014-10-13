@@ -21,7 +21,6 @@ src/geometry.c
 src/interpolation.c
 src/macromesh.c
 src/model.c
-src/test.c
 )
 
 # main program schnaps
