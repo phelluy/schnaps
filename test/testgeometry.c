@@ -61,6 +61,6 @@ int TestGeometry(void){
 
   test = (d < 1e-12);
 
-  return !test;
+  return test;
 
 }
