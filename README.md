@@ -45,4 +45,9 @@ gsmh disque.geo -3
 
 Cette commande génère un fichier disque.msh lisible par SCHNAPS.
 
+Génération de la documentation (avec doxygen):
+
+cd doc/
+doxygen doxyschnaps
+
 
