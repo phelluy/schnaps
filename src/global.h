@@ -12,7 +12,7 @@
 #define _FP
 //#define _FP f
 
-#define NULL ((void*) 0)
+//#define NULL ((void*) 0)
 
 #define _DEGX 3
 #define _DEGY 3
