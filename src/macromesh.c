@@ -160,13 +160,14 @@ void PrintMacroMesh(MacroMesh* m){
     }
     printf("\n");
   }
-
-  for(int i=0;i<m->nbelems;i++){
-    printf("elem %d voisins: ",i+start);
-    for(int j=0;j<6;j++){
-      printf("%d ",m->elem2elem[6*i+j]+start);
+  if (m->elem2elem !=0) {
+    for(int i=0;i<m->nbelems;i++){
+      printf("elem %d voisins: ",i+start);
+      for(int j=0;j<6;j++){
+	printf("%d ",m->elem2elem[6*i+j]+start);
+      }
+      printf("\n");
     }
-    printf("\n");
   }
 }
 
@@ -459,6 +460,115 @@ void CheckMacroMesh(MacroMesh* m){
 
 
 };
+
+// detect if the mesh is 2D
+// and then permut the nodes so that
+// the z direction coincides in the reference
+// or physical frame
+bool Detect2DMacroMesh(MacroMesh* m){
+
+  bool is2d= true;
+
+
+  // do not permut the node if the connectivity
+  // is already built
+  if (m->elem2elem != NULL)
+    printf("Cannot permut nodes before building connectivity\n");
+  assert(m->elem2elem == 0);
+
+  for(int ie=0;ie<m->nbelems;ie++){
+    // get the physical nodes of element ie
+    double physnode[20][3];
+    for(int inoloc=0;inoloc<20;inoloc++){
+      int ino=m->elem2node[20*ie+inoloc];
+      physnode[inoloc][0]=m->node[3*ino+0];
+      physnode[inoloc][1]=m->node[3*ino+1];
+      physnode[inoloc][2]=m->node[3*ino+2];
+    }
+
+    // we decide that the mesh is 2D if the 
+    // middles of the elements have a constant z 
+    // coordinate equal to 0.5
+    double zmil=0;
+    for(int inoloc=0;inoloc<20;inoloc++){
+      zmil+=physnode[inoloc][2];
+    }
+    zmil/=20;
+    // the mesh is not 2d
+    if (fabs(zmil-0.5)>1e-3) {
+      is2d=false;
+      return is2d;
+    }
+  }
+
+  printf("Detection of a 2D mesh\n");
+  for(int ie=0;ie<m->nbelems;ie++){
+    // get the physical nodes of element ie
+    double physnode[20][3];
+    for(int inoloc=0;inoloc<20;inoloc++){
+      int ino=m->elem2node[20*ie+inoloc];
+      physnode[inoloc][0]=m->node[3*ino+0];
+      physnode[inoloc][1]=m->node[3*ino+1];
+      physnode[inoloc][2]=m->node[3*ino+2];
+    }
+    // if the mesh is 2d permut the nodes
+    // in order that the z^ and z axis are the 
+    // same
+
+    double face_centers[6][3]={
+      {0.5,0.0,0.5},
+      {1.0,0.5,0.5},
+      {0.5,1.0,0.5},
+      {0.0,0.5,0.5},
+      {0.5,0.5,1.0},
+      {0.5,0.5,0.0},
+    };
+
+    // rotation of the cube around the origin
+    // at most two rotations are needed to put the cube
+    // in a correct position
+    for(int irot=0;irot<2;irot++){
+      // compute the normal to face 4
+      double vnds[3],dtau[3][3],codtau[3][3];
+      Ref2Phy(physnode,
+	      face_centers[4],
+	      NULL,4, // dphiref,ifa
+	      NULL,dtau,
+	      codtau,NULL,vnds); // codtau,dphi,vnds
+
+      double d=sqrt(vnds[0]*vnds[0]+vnds[1]*vnds[1]+vnds[2]*vnds[2]);
+      // if the normal is not up or down
+      // we have to permut the nodes
+      if (fabs(vnds[2]/d)<0.9){
+	printf("irot=%d rotating the element %d\n",irot,ie);
+	int oldnum[20];
+	int newnum[20]={1,5,6,2,4,8,7,3,11,9,10,17,18,13,19,12,16,14,20,15};
+	for(int inoloc=0;inoloc<20;inoloc++) {
+	  newnum[inoloc]--;
+	  oldnum[inoloc]=m->elem2node[20*ie+inoloc];
+	}
+	// rotate the node numbering
+	for(int inoloc=0;inoloc<20;inoloc++) {
+	  m->elem2node[20*ie+inoloc]=oldnum[newnum[inoloc]];
+	}
+	// get the rotated nodes coordinates
+	for(int inoloc=0;inoloc<20;inoloc++){
+	  int ino=m->elem2node[20*ie+inoloc];
+	  physnode[inoloc][0]=m->node[3*ino+0];
+	  physnode[inoloc][1]=m->node[3*ino+1];
+	  physnode[inoloc][2]=m->node[3*ino+2];
+	}
+
+      }
+    }
+
+
+  }
+
+  return is2d;
+
+};
+
 
 
 

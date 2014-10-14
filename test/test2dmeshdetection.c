@@ -1,9 +1,27 @@
+#include "test.h"
 #include "schnaps.h"
-#include <stdio.h>
+#include<stdio.h>
 #include <assert.h>
+#include <math.h>
+
 
 
 int main(void) {
+  
+  // unit tests
+    
+  int resu=Test2DMeshDetection();
+	 
+  if (resu) printf("2D detect test OK !\n");
+  else printf("2D detect failed !\n");
+
+  return !resu;
+} 
+
+
+int Test2DMeshDetection(void) {
+
+  int test = (1==1);
  
   MacroMesh mm1;
   ReadMacroMesh(&mm1,"test/permutcube.msh");
@@ -27,7 +45,7 @@ int main(void) {
   BuildConnectivity(&mm2);
   CheckMacroMesh(&mm2);
   
-  return 0;
+  return test;
 
 
 

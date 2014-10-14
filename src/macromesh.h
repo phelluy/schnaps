@@ -1,6 +1,7 @@
 #ifndef _MACROMESH_H
 #define _MACROMESH_H
 
+#include <stdbool.h>
 #include "global.h"
 
 // structure for managing the mesh obtained from
@@ -35,8 +36,17 @@ int CompareFace4Sort(const void* a,const void* b);
 
 // get the mesh from a gmsh file
 void ReadMacroMesh(MacroMesh* m,char* filename);
+
+// simple transformations of the mesh
 void AffineMap(double* x);
 void AffineMapMacroMesh(MacroMesh* m);
+
+// detect if the mesh is 2D
+// and then permut the nodes so that
+// the z direction coincides in the reference
+// or physical frame
+bool Detect2DMacroMesh(MacroMesh* m);
+
 // verify the validity and orientation of the mesh
 void CheckMacroMesh(MacroMesh* m);
 // list the mesh data
