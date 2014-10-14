@@ -33,7 +33,7 @@ int TestFieldRK2(void){
   BuildConnectivity(&(f.macromesh));
 
   //AffineMapMacroMesh(&(f.macromesh));
-  CheckMacroMesh(&(f.macromesh));
+  //CheckMacroMesh(&(f.macromesh));
  
   InitField(&f);
 

@@ -4,6 +4,9 @@
 
 
 int main(void) {
+
+  //printf("%d\n",12%1);
+  //assert(1==2);
  
   MacroMesh mm1;
   ReadMacroMesh(&mm1,"test/permutcube.msh");

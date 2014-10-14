@@ -113,8 +113,7 @@ void InitField(Field* f){
 		codtau,NULL,vnds); // codtau,dpsi,vnds
 	surf+=sqrt(vnds[0]*vnds[0]+vnds[1]*vnds[1]+vnds[2]*vnds[2])*wpg;
       }
-    }
-
+    }    
     f->hmin = f->hmin < vol/surf ? f->hmin : vol/surf;
 
   }
@@ -124,7 +123,7 @@ void InitField(Field* f){
   maxd = maxd > _DEGY ? maxd : _DEGY;
   maxd = maxd > _DEGZ ? maxd : _DEGZ;
   
-  f->hmin/=maxd;
+  f->hmin/=(maxd+1);
 
   printf("hmin=%f\n",f->hmin);
 

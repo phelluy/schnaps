@@ -28,6 +28,7 @@ int TestMacroMesh(void){
   
   ReadMacroMesh(&m,"test/testmacromesh.msh");
   BuildConnectivity(&m);
+  CheckMacroMesh(&m);
   PrintMacroMesh(&m);
 
   test = (m.nbelems == 5);
