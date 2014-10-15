@@ -13,8 +13,9 @@
 // param[6..nparam]: can be used for returning
 // parameters (the user has to ensure that enough memory is reserved
 
-// number of Gauss-LObatto Points (GLOPs) on the macro cell
-int NPG(int* param);
+//! \brief number of Gauss-LObatto Points (GLOPs) on the macro cell 
+//! \param[in] param: the param list 
+int NPG(int param[]);
 // number of GLOPs on the face ifa of the macrocell
 int NPGF(int* param,int ifa);
 

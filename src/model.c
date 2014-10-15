@@ -9,10 +9,8 @@ const double transport_v[] = {
   ONE_OVER_SQRT_3,
   ONE_OVER_SQRT_3};
 
-//const double transport_v[] = {-1,0,0};
 
-
-void TransportNumFlux(double* wL,double* wR,double* vnorm,double* flux){
+void TransportNumFlux(double wL[],double wR[],double* vnorm,double* flux){
   
   double vn =
     transport_v[0] * vnorm[0] +
@@ -25,7 +23,7 @@ void TransportNumFlux(double* wL,double* wR,double* vnorm,double* flux){
    flux[0] = vnp * wL[0] + vnm * wR[0];
 };
 
-void TransportBoundaryFlux(double* x,double t,double* wL,double* vnorm,
+void TransportBoundaryFlux(double x[3],double t,double wL[],double* vnorm,
 			   double* flux){
   double wR[1];
   TransportImposedData(x,t,wR);
@@ -33,14 +31,14 @@ void TransportBoundaryFlux(double* x,double t,double* wL,double* vnorm,
 };
 
 
-void TransportInitData(double* x,double* w){
+void TransportInitData(double x[3],double w[]){
 
   double t=0;
   TransportImposedData(x,t,w);
 
 };
 
-void TransportImposedData(double* x,double t,double* w){
+void TransportImposedData(double x[3],double t,double w[]){
 
   double vx =
     transport_v[0] * x[0] +
@@ -53,7 +51,7 @@ void TransportImposedData(double* x,double t,double* w){
 };
 
 
-void TestTransportBoundaryFlux(double* x,double t,double* wL,double* vnorm,
+void TestTransportBoundaryFlux(double x[3],double t,double wL[],double* vnorm,
 			   double* flux){
   double wR[1];
   TestTransportImposedData(x,t,wR);
@@ -61,14 +59,14 @@ void TestTransportBoundaryFlux(double* x,double t,double* wL,double* vnorm,
 };
 
 
-void TestTransportInitData(double* x,double* w){
+void TestTransportInitData(double x[3],double w[]){
 
   double t=0;
   TestTransportImposedData(x,t,w);
 
 };
 
-void TestTransportImposedData(double* x,double t,double* w){
+void TestTransportImposedData(double x[3],double t,double w[]){
 
   double vx =
     transport_v[0] * x[0] +
