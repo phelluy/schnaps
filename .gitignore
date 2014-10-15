@@ -27,3 +27,16 @@
 *.i*86
 *.x86_64
 *.hex
+
+#schnaps files
+.DS_Store
+CMakeCache.txt
+CMakeFiles/
+CTestTestfile.cmake
+Makefile
+Testing/
+cmake_install.cmake
+doc/html/
+doc/latex/
+doc/toto
+toto
