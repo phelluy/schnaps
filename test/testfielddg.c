@@ -34,7 +34,7 @@ int TestFieldDG(void){
   BuildConnectivity(&(f.macromesh));
 
   PrintMacroMesh(&(f.macromesh));
-  CheckMacroMesh(&(f.macromesh));
+  //CheckMacroMesh(&(f.macromesh));
   //AffineMapMacroMesh(&(f.macromesh));
   PrintMacroMesh(&(f.macromesh));
 

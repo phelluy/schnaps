@@ -3,6 +3,46 @@
 
 // header of the geometry struct
 // geometric transformations
+
+//! \brief a struct for managing geometric mapping
+typedef struct Geom{
+  //! number of nodes in the reference element
+#define _NB_REF_NODES 20
+  //! nodes of the reference element
+  double physnode[_NB_REF_NODES][3];
+  //! position of a point on the ref elem
+  double xref[3];
+  //! gradient of a function on the ref elem
+  double dphiref[3];
+  //! position of a point on the physical elem
+  double xphy[3];
+  //! mapping jacobian, its comatrix and the determinant
+  double dtau[3][3];
+  double codtau[3][3];
+  double det;
+  //! gradient of a function on the physical elem
+  double dphi[3];
+  //! normal vector in the physical elem on face ifa
+  int ifa;
+  double vnds[3];
+
+  // some pointers to particular functions
+  void (*Ref2Phy)(double physnode[_NB_REF_NODES][3],
+                      double xref[3],
+                      double dphiref[3],
+                      int ifa,
+                      double xphy[3],
+                      double dtau[3][3],
+                      double codtau[3][3],
+                      double dphi[3],
+                      double vnds[3]);
+  
+  void (*Phy2Ref)(double physnode[_NB_REF_NODES][3],double xphy[3],double xref[3]);
+} Geom;
+
+
+
+
 //! \brief mapping tau from the reference point to the physical point.
 //!
 //! If an optional variable is not used it HAS to be set to NULL
@@ -25,12 +65,19 @@ void Ref2Phy(double physnode[20][3],
              double dphi[3],
              double vnds[3]);
 
+//! \brief same function with the data encapsulated for more simplicity
+void GeomRef2Phy(Geom* g);
+
+
 //! \brief inverse mapping tau from the physical point to the reference point.
 //!
 //! \param[in] physnode : coordinates of physical nodes
 //! \param[in] xphy : coordinates of the mapped point in the physical frame
 //! \param[out] xref: coordinates of the mapped point in the reference frame
 void Phy2Ref(double physnode[20][3],double xphy[3],double xref[3]);
+
+//! \brief same function with encapsulation
+void GeomPhy2Ref(Geom* g);
 
 //! \brief distance between two points
 //! \param[in] x1,x2 : the two points

@@ -101,8 +101,8 @@ void ReadMacroMesh(MacroMesh* m,char* filename){
   // check that we have reached the end of nodes
   assert(strcmp(line,"$EndElements\n") == 0);
   printf("nbelems=%d\n",m->nbelems);
-  //m->elem2node=realloc(m->elem2node,20 * sizeof(int) * m->nbelems);
-  //assert(m->elem2node);
+  m->elem2node=realloc(m->elem2node,20 * sizeof(int) * m->nbelems);
+  assert(m->elem2node);
 
   m->elem2elem=NULL;
 
@@ -288,8 +288,7 @@ int CompareFace4Sort(const void* a,const void* b){
 
 void CheckMacroMesh(MacroMesh* m){
 
-  double dtau[3][3],codtau[3][3];
-  double physnode[20][3];
+  Geom g;
 
   double face_centers[6][3]={
     {0.5,0.0,0.5},
@@ -308,9 +307,9 @@ void CheckMacroMesh(MacroMesh* m){
   for(int ie=0;ie<m->nbelems;ie++){
     for(int inoloc=0;inoloc<20;inoloc++){
       int ino=m->elem2node[20*ie+inoloc];
-      physnode[inoloc][0]=m->node[3*ino+0];
-      physnode[inoloc][1]=m->node[3*ino+1];
-      physnode[inoloc][2]=m->node[3*ino+2];
+      g.physnode[inoloc][0]=m->node[3*ino+0];
+      g.physnode[inoloc][1]=m->node[3*ino+1];
+      g.physnode[inoloc][2]=m->node[3*ino+2];
     }
     
     // test that the ref_ipg function
@@ -320,46 +319,45 @@ void CheckMacroMesh(MacroMesh* m){
       double xref1[3],xref2[3],xphy[3];
       double wpg;
       ref_pg_vol(param,ipg,xref1,&wpg);
-      Ref2Phy(physnode,
-             xref1,
-             0,
-             -1,
-             xphy,
-             0,
-             0,
-             0,
-             0);
-      Phy2Ref(physnode,xphy,xref2);
-      assert(ipg==ref_ipg(param,xref2));
+      memcpy(g.xref,xref1,sizeof(g.xref));
+      /* Ref2Phy(physnode, */
+      /*        xref1, */
+      /*        0, */
+      /*        -1, */
+      /*        xphy, */
+      /*        0, */
+      /*        0, */
+      /*        0, */
+      /*        0); */
+      /* Phy2Ref(physnode,xphy,xref2); */
+      GeomRef2Phy(&g);
+      GeomPhy2Ref(&g);
+
+      assert(ipg==ref_ipg(param,g.xref));
     }
 
     // middle of the element
-    double xrefm[3]={0.5,0.5,0.5},xphym[3];
-    Ref2Phy(physnode,
-    	    xrefm,
-    	    0,-1, // dphiref,ifa
-    	    xphym,NULL, // xphy dtau
-    	    NULL,NULL,NULL); // codtau,dphi,vnds
+    g.xref[0]=0.5;
+    g.xref[1]=0.5;
+    g.xref[2]=0.5;
 
+    GeomRef2Phy(&g);
+    double xphym[3];
+    memcpy(xphym,g.xphy,sizeof(xphym));
+ 
     for(int ifa=0;ifa<6;ifa++){
       // middle of the face
-      double xphyfa[3],vnds[3];
-      Ref2Phy(physnode,
-	      face_centers[ifa],
-	      0,ifa, // dphiref,ifa
-	      xphyfa,dtau,
-	      codtau,NULL,vnds); // codtau,dphi,vnds
-      double det=codtau[0][0]*dtau[0][0]+codtau[0][1]*dtau[0][1]+
-	codtau[0][2]*dtau[0][2];
-
+      memcpy(g.xref,face_centers[ifa],sizeof(g.xref));
+      g.ifa=ifa;
+      GeomRef2Phy(&g);
       // check volume  orientation
-      assert(det >0);
+      assert(g.det >0);
       
-      double vec[3]={xphyfa[0]-xphym[0],
-		     xphyfa[1]-xphym[1],xphyfa[2]-xphym[2]};
+      double vec[3]={g.xphy[0]-xphym[0],
+		     g.xphy[1]-xphym[1],g.xphy[2]-xphym[2]};
       
       // check face orientation
-      assert(vnds[0]*vec[0]+vnds[1]*vec[1]+vnds[2]*vec[2] > 0);
+      assert(g.vnds[0]*vec[0]+g.vnds[1]*vec[1]+g.vnds[2]*vec[2] > 0);
 
       // check compatibility between face and volume numbering
         for(int ipgf=0;ipgf<NPGF(param,ifa);ipgf++){

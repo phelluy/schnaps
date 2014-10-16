@@ -3,7 +3,7 @@
 #define _GLOBAL_H
 
 // precision: replace by float for single precision
-#define double double
+//#define double double
 //#define double float
 
 // suffix for floating point constant
