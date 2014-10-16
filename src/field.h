@@ -2,12 +2,14 @@
 #define _FIELD_H
 
 #include "macromesh.h"
+#include "interpolation.h"
 #include "model.h"
 
 typedef struct Field{
   //underlying mesh and model
   MacroMesh macromesh;
   Model model;
+  Interpolation interp;
   // current time
   double tnow;
   // cfl parameter min_i (vol_i / surf_i)

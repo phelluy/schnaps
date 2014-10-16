@@ -1,9 +1,46 @@
 #ifndef _INTERPOLATION_H
 #define _INTERPOLATION_H
 
+#include "geometry.h"
 
 // utilitie functions for computing interpolation
 // on a macrocell
+//! \brief a struct for managing geometric mapping
+typedef struct Interpolation{
+  //! \brief interpolation parameters
+  //! generally the convention is
+  //! param[0] = M number of variables
+  //! param[1] = deg x
+  //! param[2] = deg y
+  //! param[3] = deg z
+  //! param[4] = raf x
+  //! param[5] = raf y
+  //! param[6] = raf z
+  //! param[7..] = others param or return from interp
+  //! functions
+  int interp_param[8];
+  Geom geo;
+  // local useful variables
+  // number of Gauss points in the volume
+  // and current Gauss point index
+  int npgv,ipgv;
+  // current face id
+  int ifa;
+  // number of Gauss points on the current face
+  // and current face Gauss point index
+  int npgf,ipgf;
+  // basis function index
+  int ib;
+  // current Gauss weight
+  // volume or face
+  double wpgv,wpgf;
+  // Gauss point ref and physical location
+  double xpgref[3],xpg[3];
+  // basis function values
+  double phi,dphiref[3],dphi[3];
+
+} Interpolation;
+
 // in all these functions
 // param is an input integer array
 // param[0..2] : approximation degree in the 3 directions on 
