@@ -31,6 +31,8 @@ void InitField(Field* f){
   double dtau[3][3];
   double physnode[20][3];
 
+  f->is2d = false;
+
   // a copy for avoiding too much "->"
   for(int ip=0;ip<8;ip++){
     f->interp_param[ip]=f->interp.interp_param[ip];
