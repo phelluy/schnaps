@@ -23,19 +23,21 @@ int Test2DMeshDetection(void) {
 
   int test = (1==1);
  
+  int param[]={4,4,4,1,1,1,0};
+
   MacroMesh mm1;
   ReadMacroMesh(&mm1,"test/permutcube.msh");
   bool is2d=Detect2DMacroMesh(&mm1);
   assert(is2d);
   BuildConnectivity(&mm1);
-  CheckMacroMesh(&mm1);
+  CheckMacroMesh(&mm1,param);
  
   MacroMesh mm3;
   ReadMacroMesh(&mm3,"test/unit-cube.msh");
   is2d=Detect2DMacroMesh(&mm3);
   assert(is2d);
   BuildConnectivity(&mm3);
-  CheckMacroMesh(&mm3);
+  CheckMacroMesh(&mm3,param);
 
 
   MacroMesh mm2;
@@ -43,7 +45,7 @@ int Test2DMeshDetection(void) {
   is2d=Detect2DMacroMesh(&mm2);
   assert(is2d);
   BuildConnectivity(&mm2);
-  CheckMacroMesh(&mm2);
+  CheckMacroMesh(&mm2,param);
   
   return test;
 

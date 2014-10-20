@@ -286,7 +286,7 @@ int CompareFace4Sort(const void* a,const void* b){
   
 };
 
-void CheckMacroMesh(MacroMesh* m){
+void CheckMacroMesh(MacroMesh* m,int* param){
 
   Geom g;
 
@@ -314,7 +314,7 @@ void CheckMacroMesh(MacroMesh* m){
     
     // test that the ref_ipg function
     // is compatible with ref_pg_vol
-    int param[7]={_DEGX,_DEGY,_DEGZ,_RAFX,_RAFY,_RAFZ,0};
+    //int param[7]={_DEGX,_DEGY,_DEGZ,_RAFX,_RAFY,_RAFZ,0};
     for(int ipg=0;ipg<NPG(param);ipg++){
       double xref1[3],xref2[3],xphy[3];
       double wpg;
@@ -382,7 +382,7 @@ void CheckMacroMesh(MacroMesh* m){
   // check that the faces are defined by the same mapping
   // with opposite normals
    for (int ie=0;ie<m->nbelems;ie++){
-     int param[8]={1,_DEGX,_DEGY,_DEGZ,_RAFX,_RAFY,_RAFZ,0};
+     //int param[8]={1,_DEGX,_DEGY,_DEGZ,_RAFX,_RAFY,_RAFZ,0};
     // get the physical nodes of element ie
     double physnode[20][3];
     for(int inoloc=0;inoloc<20;inoloc++){
@@ -408,15 +408,15 @@ void CheckMacroMesh(MacroMesh* m){
       
       // loop on the glops (numerical integration)
       // of the face ifa
-      for(int ipgf=0;ipgf<NPGF(param+1,ifa);ipgf++){
+      for(int ipgf=0;ipgf<NPGF(param,ifa);ipgf++){
   	double xpgref[3],wpg;
   	//double xpgref2[3],wpg2;
   	// get the coordinates of the Gauss point
-  	ref_pg_face(param+1,ifa,ipgf,xpgref,&wpg);
+  	ref_pg_face(param,ifa,ipgf,xpgref,&wpg);
 
   	// recover the volume gauss point from
   	// the face index
-  	int ipg=param[7];
+  	int ipg=param[6];
   	// get the left value of w at the gauss point
   	// the basis functions is also the gauss point index
   	int ib=ipg;
@@ -433,9 +433,9 @@ void CheckMacroMesh(MacroMesh* m){
   	  // find the corresponding point in the right elem
   	  double xref[3];
 	  Phy2Ref(physnodeR,xpg,xref);
-  	  int ipgR=ref_ipg(param+1,xref);
+  	  int ipgR=ref_ipg(param,xref);
 	  double xpgR[3],xrefR[3],wpgR;
-	  ref_pg_vol(param+1, ipgR, xrefR, &wpgR);
+	  ref_pg_vol(param, ipgR, xrefR, &wpgR);
           double dtauR[3][3],codtauR[3][3];double vndsR[3];
           int ifaR=0;
           while (m->elem2elem[6*ieR+ifaR] != ie) ifaR++;

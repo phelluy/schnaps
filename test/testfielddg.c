@@ -30,6 +30,15 @@ int TestFieldDG(void){
   f.model.ImposedData=TestTransportImposedData;
   f.varindex=GenericVarindex;
 
+  f.interp.interp_param[0]=1;  // _M
+  f.interp.interp_param[1]=2;  // x direction degree
+  f.interp.interp_param[2]=2;  // y direction degree
+  f.interp.interp_param[3]=2;  // z direction degree
+  f.interp.interp_param[4]=1;  // x direction refinement
+  f.interp.interp_param[5]=1;  // y direction refinement
+  f.interp.interp_param[6]=1;  // z direction refinement
+
+
   ReadMacroMesh(&(f.macromesh),"test/testcube.msh");
   BuildConnectivity(&(f.macromesh));
 
@@ -53,7 +62,7 @@ int TestFieldDG(void){
 
   // test the time derivative that has to be -1
   for(int i=0;i<f.model.m * f.macromesh.nbelems * 
-	(_DEGX+1)*(_DEGY+1)*(_DEGZ+1);i++){
+	NPG(f.interp.interp_param+1);i++){
     test = test && fabs(4*f.wn[i]-pow(f.dtwn[i],2))<1e-2;
   }
   

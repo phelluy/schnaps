@@ -35,9 +35,6 @@ int TestInterpolation(void){
   
   int test= (1==1);
 
-  assert(_DEGX < 5);
-  assert(_DEGY < 5);
-  assert(_DEGZ < 5);
 
   // reference element
   double physnode[20][3];

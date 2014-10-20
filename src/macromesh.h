@@ -48,7 +48,8 @@ void AffineMapMacroMesh(MacroMesh* m);
 bool Detect2DMacroMesh(MacroMesh* m);
 
 // verify the validity and orientation of the mesh
-void CheckMacroMesh(MacroMesh* m);
+// for a given interpolation described in param[]
+void CheckMacroMesh(MacroMesh* m,int param[7]);
 // list the mesh data
 void PrintMacroMesh(MacroMesh* m);
 void BuildConnectivity(MacroMesh* m);

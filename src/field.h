@@ -10,6 +10,7 @@ typedef struct Field{
   MacroMesh macromesh;
   Model model;
   Interpolation interp;
+  int interp_param[8];
   // current time
   double tnow;
   // cfl parameter min_i (vol_i / surf_i)

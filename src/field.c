@@ -24,15 +24,20 @@ int GenericVarindex(int* param, int elem, int ipg, int iv){
 
 void InitField(Field* f){
 
-  int param[8]={f->model.m,_DEGX,_DEGY,_DEGZ,_RAFX,_RAFY,_RAFZ,0};
+  //int param[8]={f->model.m,_DEGX,_DEGY,_DEGZ,_RAFX,_RAFY,_RAFZ,0};
   double w[f->model.m];
   double xpg[3];
   double xref[3],omega;
   double dtau[3][3];
   double physnode[20][3];
 
+  // a copy for avoiding too much "->"
+  for(int ip=0;ip<8;ip++){
+    f->interp_param[ip]=f->interp.interp_param[ip];
+  }
+
   int nmem=f->model.m * f->macromesh.nbelems * 
-    NPG(param+1);
+    NPG(f->interp_param+1);
   printf("allocate %d doubles\n",nmem);
   f->wn=malloc(nmem * sizeof(double));
   assert(f->wn);	       
@@ -50,8 +55,8 @@ void InitField(Field* f){
       physnode[inoloc][1]=f->macromesh.node[3*ino+1];
       physnode[inoloc][2]=f->macromesh.node[3*ino+2];
     }
-    for(int ipg=0;ipg<NPG(param+1);ipg++){
-      ref_pg_vol(param+1, ipg, xref, &omega);
+    for(int ipg=0;ipg<NPG(f->interp_param+1);ipg++){
+      ref_pg_vol(f->interp_param+1, ipg, xref, &omega);
       Ref2Phy(physnode,
 	      xref,
 	      0,-1, // dphiref,ifa
@@ -64,7 +69,7 @@ void InitField(Field* f){
       
       f->model.InitData(xpg,w);
       for(int iv=0;iv<f->model.m;iv++){
-	int imem=f->varindex(param,ie,ipg,iv);
+	int imem=f->varindex(f->interp_param,ie,ipg,iv);
 	f->wn[imem]=w[iv];
       }
     }
@@ -85,10 +90,10 @@ void InitField(Field* f){
       physnode[inoloc][2]=f->macromesh.node[3*ino+2];
     }
     // loop on the glops (for numerical integration)
-    for(int ipg=0;ipg<NPG(param+1);ipg++){
+    for(int ipg=0;ipg<NPG(f->interp_param+1);ipg++){
       double xpgref[3],wpg;
       // get the coordinates of the Gauss point
-      ref_pg_vol(param+1,ipg,xpgref,&wpg);
+      ref_pg_vol(f->interp_param+1,ipg,xpgref,&wpg);
       Ref2Phy(physnode, // phys. nodes
 	      xpgref,  // xref
 	      NULL,-1, // dpsiref,ifa
@@ -100,11 +105,11 @@ void InitField(Field* f){
     }
     for(int ifa=0;ifa<6;ifa++){
       // loop on the faces
-      for(int ipgf=0;ipgf<NPGF(param+1,ifa);ipgf++){
+      for(int ipgf=0;ipgf<NPGF(f->interp_param+1,ifa);ipgf++){
 	double xpgref[3],wpg;
 	//double xpgref2[3],wpg2;
 	// get the coordinates of the Gauss point
-	ref_pg_face(param+1,ifa,ipgf,xpgref,&wpg);
+	ref_pg_face(f->interp_param+1,ifa,ipgf,xpgref,&wpg);
 	double vnds[3];
 	Ref2Phy(physnode,
 		xpgref,
@@ -119,9 +124,9 @@ void InitField(Field* f){
   }
 
   // now take into account the polynomial degree
-  int maxd=_DEGX;
-  maxd = maxd > _DEGY ? maxd : _DEGY;
-  maxd = maxd > _DEGZ ? maxd : _DEGZ;
+  int maxd=f->interp_param[0];
+  maxd = maxd > f->interp_param[1] ? maxd : f->interp_param[1];
+  maxd = maxd > f->interp_param[2] ? maxd : f->interp_param[2];
   
   f->hmin/=(maxd+1);
 
@@ -131,25 +136,25 @@ void InitField(Field* f){
 
 // display the field on screen
 void DisplayField(Field* f){
-  int param[8]={f->model.m,_DEGX,_DEGY,_DEGZ,_RAFX,_RAFY,_RAFZ,0};
+  //int param[8]={f->model.m,_DEGX,_DEGY,_DEGZ,_RAFX,_RAFY,_RAFZ,0};
  
   printf("Display field...\n");
   for(int ie=0;ie<f->macromesh.nbelems;ie++){
     printf("elem %d\n",ie);
-    for(int ipg=0;ipg<NPG(param+1);ipg++){
+    for(int ipg=0;ipg<NPG(f->interp_param+1);ipg++){
       double xref[3],xphy[3],wpg;
-      ref_pg_vol(param+1,ipg,xref,&wpg);
+      ref_pg_vol(f->interp_param+1,ipg,xref,&wpg);
 
       printf("Gauss point %d %f %f %f \n",ipg,xref[0],xref[1],xref[2]);
     printf("dtw= ");
       for(int iv=0;iv<f->model.m;iv++){
-	int imem=f->varindex(param,ie,ipg,iv);
+	int imem=f->varindex(f->interp_param,ie,ipg,iv);
 	printf("%f ",f->dtwn[imem]);
       }
       printf("\n");
     printf("w= ");
       for(int iv=0;iv<f->model.m;iv++){
-	int imem=f->varindex(param,ie,ipg,iv);
+	int imem=f->varindex(f->interp_param,ie,ipg,iv);
 	printf("%f ",f->wn[imem]);
       }
       printf("\n");
@@ -190,8 +195,8 @@ void PlotField(int typplot,int compare,Field* f,char* filename){
 
   // data plots
   int mw = f->model.m;
-  int param[8]={f->model.m,_DEGX,_DEGY,_DEGZ,_RAFX,_RAFY,_RAFZ,0};
-  int npgv = NPG(param+1);
+  //int param[8]={f->model.m,_DEGX,_DEGY,_DEGZ,_RAFX,_RAFY,_RAFZ,0};
+  int npgv = NPG(f->interp_param+1);
   int nnodes = 20;
 
   double Xn[nnodes][3];
@@ -323,9 +328,9 @@ void PlotField(int typplot,int compare,Field* f,char* filename){
 	double value=0;
 	for(int ib=0;ib<npgv;ib++){
 	  double psi;
-	  psi_ref(param+1, ib, Xr, &psi, NULL);
+	  psi_ref(f->interp_param+1, ib, Xr, &psi, NULL);
 	  
-	  int vi = f->varindex(param, i, ib, typplot);
+	  int vi = f->varindex(f->interp_param, i, ib, typplot);
 	  value += psi * f->wn[vi];
 	}
 
@@ -367,21 +372,21 @@ void dtField(Field* f){
   // ugly too: the first parameter is not used by all
   // utilities. we have sometimes to jump over : pass param+1
   // instead of param...
-  int param[8]={f->model.m,_DEGX,_DEGY,_DEGZ,_RAFX,_RAFY,_RAFZ,0};
+  //int param[8]={f->model.m,_DEGX,_DEGY,_DEGZ,_RAFX,_RAFY,_RAFZ,0};
 
 
   // init to zero the time derivative
   int sizew=0;
   for(int ie=0;ie<f->macromesh.nbelems;ie++){
-    for(int ipg=0;ipg<NPG(param+1);ipg++){
+    for(int ipg=0;ipg<NPG(f->interp_param+1);ipg++){
       for(int iv=0;iv<f->model.m;iv++){
-	int imem=f->varindex(param,ie,ipg,iv);
+	int imem=f->varindex(f->interp_param,ie,ipg,iv);
 	f->dtwn[imem]=0;
         sizew++;
       }
     }
   }
-  assert(sizew==f->macromesh.nbelems * f->model.m * NPG(param+1));
+  assert(sizew==f->macromesh.nbelems * f->model.m * NPG(f->interp_param+1));
 
   // assembly of the surface terms
   // loop on the elements
@@ -411,19 +416,19 @@ void dtField(Field* f){
       
       // loop on the glops (numerical integration)
       // of the face ifa
-      for(int ipgf=0;ipgf<NPGF(param+1,ifa);ipgf++){
+      for(int ipgf=0;ipgf<NPGF(f->interp_param+1,ifa);ipgf++){
   	double xpgref[3],wpg;
   	//double xpgref2[3],wpg2;
   	// get the coordinates of the Gauss point
-  	ref_pg_face(param+1,ifa,ipgf,xpgref,&wpg);
+  	ref_pg_face(f->interp_param+1,ifa,ipgf,xpgref,&wpg);
 
   	// recover the volume gauss point from
   	// the face index
-  	int ipg=param[7];
+  	int ipg=f->interp_param[7];
   	// get the left value of w at the gauss point
   	double wL[f->model.m],wR[f->model.m];
   	for(int iv=0;iv<f->model.m;iv++){
-  	  int imem=f->varindex(param,ie,ipg,iv);
+  	  int imem=f->varindex(f->interp_param,ie,ipg,iv);
   	  wL[iv]=f->wn[imem];
   	}
   	// the basis functions is also the gauss point index
@@ -441,16 +446,16 @@ void dtField(Field* f){
   	  // find the corresponding point in the right elem
   	  double xref[3];
 	  Phy2Ref(physnodeR,xpg,xref);
-  	  int ipgR=ref_ipg(param+1,xref);
+  	  int ipgR=ref_ipg(f->interp_param+1,xref);
 	  double xpgR[3],xrefR[3],wpgR;
-	  ref_pg_vol(param+1, ipgR, xrefR, &wpgR);
+	  ref_pg_vol(f->interp_param+1, ipgR, xrefR, &wpgR);
 	  Ref2Phy(physnodeR,
 		  xrefR,
 		  NULL,-1, // dphiref,ifa
 		  xpgR,NULL,  
 		  NULL,NULL,NULL); // codtau,dphi,vnds
   	  for(int iv=0;iv<f->model.m;iv++){
-  	    int imem=f->varindex(param,ieR,ipgR,iv);
+  	    int imem=f->varindex(f->interp_param,ieR,ipgR,iv);
   	    wR[iv]=f->wn[imem];
   	  }
   	  // int_dL F(wL,wR,grad phi_ib )
@@ -460,7 +465,7 @@ void dtField(Field* f){
   	  f->model.BoundaryFlux(xpg,f->tnow,wL,vnds,flux);
   	}
   	for(int iv=0;iv<f->model.m;iv++){
-  	  int imem=f->varindex(param,ie,ib,iv);
+  	  int imem=f->varindex(f->interp_param,ie,ib,iv);
   	  f->dtwn[imem]-=flux[iv]*wpg;
   	}
 	
@@ -482,25 +487,25 @@ void dtField(Field* f){
     }
 
     // mass matrix
-    double masspg[NPG(param+1)];
+    double masspg[NPG(f->interp_param+1)];
     // loop on the glops (for numerical integration)
-    for(int ipg=0;ipg<NPG(param+1);ipg++){
+    for(int ipg=0;ipg<NPG(f->interp_param+1);ipg++){
       double xpgref[3],wpg;
       // get the coordinates of the Gauss point
-      ref_pg_vol(param+1,ipg,xpgref,&wpg);
+      ref_pg_vol(f->interp_param+1,ipg,xpgref,&wpg);
 
       // get the value of w at the gauss point
       double w[f->model.m];
       for(int iv=0;iv<f->model.m;iv++){
-	int imem=f->varindex(param,ie,ipg,iv);
+	int imem=f->varindex(f->interp_param,ie,ipg,iv);
 	w[iv]=f->wn[imem];
       }
       // loop on the basis functions
-      for(int ib=0;ib<NPG(param+1);ib++){
+      for(int ib=0;ib<NPG(f->interp_param+1);ib++){
 	// gradient of psi_ib at gauss point ipg
 	double dpsiref[3],dpsi[3];
 	double dtau[3][3],codtau[3][3];//,xpg[3];
-	grad_psi_pg(param+1,ib,ipg,dpsiref);
+	grad_psi_pg(f->interp_param+1,ib,ipg,dpsiref);
 	Ref2Phy(physnode, // phys. nodes
 		xpgref,  // xref
 		dpsiref,-1, // dpsiref,ifa
@@ -516,16 +521,16 @@ void dtField(Field* f){
 	double flux[f->model.m];
 	f->model.NumFlux(w,w,dpsi,flux);
 	for(int iv=0;iv<f->model.m;iv++){
-	  int imem=f->varindex(param,ie,ib,iv);
+	  int imem=f->varindex(f->interp_param,ie,ib,iv);
 	  f->dtwn[imem]+=flux[iv]*wpg;
 	}
       }
     }
 
-    for(int ipg=0;ipg<NPG(param+1);ipg++){
+    for(int ipg=0;ipg<NPG(f->interp_param+1);ipg++){
       // apply the inverse of the diagonal mass matrix
       for(int iv=0;iv<f->model.m;iv++){
-	int imem=f->varindex(param,ie,ipg,iv);
+	int imem=f->varindex(f->interp_param,ie,ipg,iv);
 	(f->dtwn[imem])/=masspg[ipg];
       }
     }
@@ -544,8 +549,8 @@ void RK2(Field* f,double tmax){
   int itermax=tmax/dt+1;
   int freq=itermax/10;
 
-  int param[8]={f->model.m,_DEGX,_DEGY,_DEGZ,_RAFX,_RAFY,_RAFZ,0};
-  int sizew=f->macromesh.nbelems * f->model.m * NPG(param+1);
+  //int param[8]={f->model.m,_DEGX,_DEGY,_DEGZ,_RAFX,_RAFY,_RAFZ,0};
+  int sizew=f->macromesh.nbelems * f->model.m * NPG(f->interp_param+1);
  
   int iter=0;
 
@@ -589,8 +594,8 @@ void RK2Copy(Field* f,double tmax){
 
   double dt = cfl * f->hmin / vmax;
 
-  int param[8]={f->model.m,_DEGX,_DEGY,_DEGZ,_RAFX,_RAFY,_RAFZ,0};
-  int sizew=f->macromesh.nbelems * f->model.m * NPG(param+1);
+  //int param[8]={f->model.m,_DEGX,_DEGY,_DEGZ,_RAFX,_RAFY,_RAFZ,0};
+  int sizew=f->macromesh.nbelems * f->model.m * NPG(f->interp_param+1);
  
   int iter=0;
 
@@ -626,7 +631,7 @@ void RK2Copy(Field* f,double tmax){
 // compute the normalized L2 distance with the imposed data
 double L2error(Field* f){
 
-  int param[8]={f->model.m,_DEGX,_DEGY,_DEGZ,_RAFX,_RAFY,_RAFZ,0};
+  //int param[8]={f->model.m,_DEGX,_DEGY,_DEGZ,_RAFX,_RAFY,_RAFZ,0};
   double error=0;
   double moy=0; // mean value
   for (int ie=0;ie<f->macromesh.nbelems;ie++){
@@ -640,11 +645,11 @@ double L2error(Field* f){
     }
 
     // loop on the glops (for numerical integration)
-    for(int ipg=0;ipg<NPG(param+1);ipg++){
+    for(int ipg=0;ipg<NPG(f->interp_param+1);ipg++){
       double xpgref[3],xphy[3],wpg;
       double dtau[3][3],codtau[3][3];//,xpg[3];
       // get the coordinates of the Gauss point
-      ref_pg_vol(param+1,ipg,xpgref,&wpg);
+      ref_pg_vol(f->interp_param+1,ipg,xpgref,&wpg);
       Ref2Phy(physnode, // phys. nodes
 		xpgref,  // xref
 		NULL,-1, // dpsiref,ifa
@@ -654,7 +659,7 @@ double L2error(Field* f){
         dtau[0][1]*codtau[0][1]+dtau[0][2]*codtau[0][2]; 
       double w[f->model.m],wex[f->model.m];
       for(int iv=0;iv<f->model.m;iv++){
-	int imem=f->varindex(param,ie,ipg,iv);
+	int imem=f->varindex(f->interp_param,ie,ipg,iv);
 	w[iv]=f->wn[imem];
       }
       // get the exact value

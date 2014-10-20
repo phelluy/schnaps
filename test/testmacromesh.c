@@ -25,10 +25,12 @@ int TestMacroMesh(void){
 
   int test=1;
   MacroMesh m;
+
+  int param[]={4,4,4,1,1,1,0};
   
   ReadMacroMesh(&m,"test/testmacromesh.msh");
   BuildConnectivity(&m);
-  CheckMacroMesh(&m);
+  CheckMacroMesh(&m,param);
   PrintMacroMesh(&m);
 
   test = (m.nbelems == 5);
