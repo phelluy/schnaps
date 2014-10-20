@@ -15,6 +15,7 @@ typedef struct MacroMesh{
   int* elem2node;
   int* elem2elem;
   double* node;
+  bool is2d;
 } MacroMesh;
 
 // a simple struct for modelling a four

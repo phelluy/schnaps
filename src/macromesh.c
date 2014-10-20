@@ -12,6 +12,8 @@
 
 void ReadMacroMesh(MacroMesh* m,char* filename){
 
+  m->is2d=false;
+
   FILE* f=NULL;
 
   char* line=NULL;
@@ -369,7 +371,17 @@ void CheckMacroMesh(MacroMesh* m,int* param){
           int ipgv=param[6];
           double xpgref2[3],wpg2;
           ref_pg_vol(param,ipgv,xpgref2,&wpg2);
-          assert(Dist(xpgref,xpgref2)<1e-8);
+	  // in 2D do not check upper and lower face
+	  if (m->is2d){
+	    if (ifa !=4 && ifa!=5) {
+	      assert(Dist(xpgref,xpgref2)<1e-8);
+	    }
+	  }
+	  // in 3D check all faces
+	  else {
+	    assert(Dist(xpgref,xpgref2)<1e-8);
+	  }
+	  	      
         }
 
 
@@ -465,7 +477,7 @@ void CheckMacroMesh(MacroMesh* m,int* param){
 // or physical frame
 bool Detect2DMacroMesh(MacroMesh* m){
 
-  bool is2d= true;
+  m->is2d= true;
 
 
   // do not permut the node if the connectivity
@@ -494,8 +506,8 @@ bool Detect2DMacroMesh(MacroMesh* m){
     zmil/=20;
     // the mesh is not 2d
     if (fabs(zmil-0.5)>1e-3) {
-      is2d=false;
-      return is2d;
+      m->is2d=false;
+      return m->is2d;
     }
   }
 
@@ -563,7 +575,8 @@ bool Detect2DMacroMesh(MacroMesh* m){
 
   }
 
-  return is2d;
+
+  return m->is2d;
 
 };
 
