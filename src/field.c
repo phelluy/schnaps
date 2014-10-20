@@ -124,9 +124,9 @@ void InitField(Field* f){
   }
 
   // now take into account the polynomial degree
-  int maxd=f->interp_param[0];
-  maxd = maxd > f->interp_param[1] ? maxd : f->interp_param[1];
+  int maxd=f->interp_param[1];
   maxd = maxd > f->interp_param[2] ? maxd : f->interp_param[2];
+  maxd = maxd > f->interp_param[3] ? maxd : f->interp_param[3];
   
   f->hmin/=(maxd+1);
 

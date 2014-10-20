@@ -5,35 +5,45 @@
 
 int main(void) {
 
-  //printf("%d\n",12%1);
-  //assert(1==2);
- 
-  MacroMesh mm1;
-  ReadMacroMesh(&mm1,"test/permutcube.msh");
-  bool is2d=Detect2DMacroMesh(&mm1);
-  assert(is2d);
-  BuildConnectivity(&mm1);
-  int param[]={4,4,4,1,1,1,0};
-  CheckMacroMesh(&mm1,param);
- 
-  MacroMesh mm3;
-  ReadMacroMesh(&mm3,"test/unit-cube.msh");
-  is2d=Detect2DMacroMesh(&mm3);
-  assert(is2d);
-  BuildConnectivity(&mm3);
-  CheckMacroMesh(&mm3,param);
+  Field f;
+  f.model.m=1; // only one conservative variable
+  f.model.NumFlux=TransportNumFlux;
+  f.model.BoundaryFlux=TransportBoundaryFlux;
+  f.model.InitData=TransportInitData;
+  f.model.ImposedData=TransportImposedData;
+  f.varindex=GenericVarindex;
 
 
-  MacroMesh mm2;
-  ReadMacroMesh(&mm2,"test/disque2d.msh");
-  is2d=Detect2DMacroMesh(&mm2);
-  assert(is2d);
-  BuildConnectivity(&mm2);
-  CheckMacroMesh(&mm2,param);
-  
+  f.interp.interp_param[0]=1;  // _M
+  f.interp.interp_param[1]=2;  // x direction degree
+  f.interp.interp_param[2]=2;  // y direction degree
+  f.interp.interp_param[3]=2;  // z direction degree
+  f.interp.interp_param[4]=1;  // x direction refinement
+  f.interp.interp_param[5]=1;  // y direction refinement
+  f.interp.interp_param[6]=1;  // z direction refinement
+
+
+  ReadMacroMesh(&(f.macromesh),"test/testdisque.msh");
+  BuildConnectivity(&(f.macromesh));
+
+  //AffineMapMacroMesh(&(f.macromesh));
+  //CheckMacroMesh(&(f.macromesh));
+ 
+  InitField(&f);
+
+  printf("cfl param =%f\n",f.hmin);
+
+
+  RK2(&f,1);
+ 
+  PlotField(0,(1==0),&f,"dgvisu.msh");
+  PlotField(0,(1==1),&f,"dgerror.msh");
+
+  double dd=L2error(&f);
+
+  printf("erreur L2=%f\n",dd);
+
   return 0;
-
-
 
 };
 

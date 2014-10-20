@@ -43,10 +43,12 @@ int TestFieldRK2(void){
   BuildConnectivity(&(f.macromesh));
 
   //AffineMapMacroMesh(&(f.macromesh));
-  //CheckMacroMesh(&(f.macromesh));
- 
-  InitField(&f);
 
+  InitField(&f);
+ 
+
+ CheckMacroMesh(&(f.macromesh),f.interp.interp_param+1);
+ 
   printf("cfl param =%f\n",f.hmin);
 
 
