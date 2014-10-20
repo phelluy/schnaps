@@ -19,6 +19,9 @@ typedef struct Field{
   // dt has to be smaller than hmin / vmax
   double dt;
 
+  // activate or not 2D computations
+  bool is2d;
+
   // fields at time steps n and n+1 
   double* wn;
   // time derivative of the field

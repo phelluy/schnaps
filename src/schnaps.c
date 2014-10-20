@@ -17,19 +17,24 @@ int main(void) {
   f.interp.interp_param[0]=1;  // _M
   f.interp.interp_param[1]=2;  // x direction degree
   f.interp.interp_param[2]=2;  // y direction degree
-  f.interp.interp_param[3]=2;  // z direction degree
+  f.interp.interp_param[3]=1;  // z direction degree
   f.interp.interp_param[4]=1;  // x direction refinement
   f.interp.interp_param[5]=1;  // y direction refinement
   f.interp.interp_param[6]=1;  // z direction refinement
 
 
-  ReadMacroMesh(&(f.macromesh),"test/testdisque.msh");
+  ReadMacroMesh(&(f.macromesh),"geo/disque.msh");
+  f.is2d=true;
+  bool is2d=Detect2DMacroMesh(&(f.macromesh));
+  assert(is2d);
   BuildConnectivity(&(f.macromesh));
 
   //AffineMapMacroMesh(&(f.macromesh));
-  //CheckMacroMesh(&(f.macromesh));
  
   InitField(&f);
+
+
+  CheckMacroMesh(&(f.macromesh),f.interp.interp_param+1);
 
   printf("cfl param =%f\n",f.hmin);
 

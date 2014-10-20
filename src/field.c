@@ -401,7 +401,10 @@ void dtField(Field* f){
     }
 
     // loop on the 6 faces
-    for(int ifa=0;ifa<6;ifa++){
+    // or four faces for 2d computations
+    int nbfa=6;
+    if (f->is2d) nbfa=4;
+    for(int ifa=0;ifa<nbfa;ifa++){
       // get the right elem or the boundary id
       int ieR=f->macromesh.elem2elem[6*ie+ifa];
       double physnodeR[20][3];

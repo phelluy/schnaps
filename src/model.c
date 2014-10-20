@@ -3,11 +3,18 @@
 #include <stdio.h>
 #include <assert.h>
 
-#define ONE_OVER_SQRT_3 (double)(0.57735026918962584)
+#define ONE_OVER_SQRT_3 (0.57735026918962584)
+#define ONE_OVER_SQRT_2 (0.707106781186547524400844362105)
+/* const double transport_v[] = { */
+/*   ONE_OVER_SQRT_3, */
+/*   ONE_OVER_SQRT_3, */
+/*   ONE_OVER_SQRT_3}; */
+
+
 const double transport_v[] = {
-  ONE_OVER_SQRT_3,
-  ONE_OVER_SQRT_3,
-  ONE_OVER_SQRT_3};
+  ONE_OVER_SQRT_2,
+  ONE_OVER_SQRT_2,
+  0};
 
 
 void TransportNumFlux(double wL[],double wR[],double* vnorm,double* flux){
