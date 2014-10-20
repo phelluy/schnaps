@@ -5,11 +5,11 @@
  *
  * \section intro_sec Introduction
  *
- * SCHNAPS est un solveur générique Galerkin Discontinu pour les lois de conservation
- *
- * \section install_sec Installation
- *
- * git clone https://github.com/phelluy/SCHNAPS.git
+Mode d'emploi
+
+téléchargement (nécessite git)
+
+git clone https://github.com/phelluy/SCHNAPS.git
 
 se placer dans le dossier SCHNAPS
 
@@ -26,6 +26,10 @@ tests après toute modification du code.
 
 Pour lancer schnaps:
 
+générer le maillage:
+
+cd geo ; gmsh disque.geo -3 ; cd ..
+
 ./schnaps
 
 Cet exemple consiste à résoudre l'équation de transport à
@@ -40,21 +44,11 @@ afficher une image plus jolie...)
 Adapter le fichier source "schnaps.c"
 pour traiter des cas avec d'autres maillages. Des exemples de
 maillages se trouvent dans le dossier geo.
-Pour générer un maillage à partir du fichier disque.geo par exemple,
-faire:
-
-gsmh disque.geo -3
-
-Cette commande génère un fichier disque.msh lisible par SCHNAPS.
 
 Génération de la documentation (avec doxygen):
 
 cd doc/
-
-doxygen
-
-doxyschnaps
-
+doxygen doxyschnaps
  *  
  * 
  */

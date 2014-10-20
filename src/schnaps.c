@@ -5,7 +5,6 @@
 
 int main(void) {
 
-  bool test=true;
 
   Field f;
   f.model.m=1; // only one conservative variable
@@ -19,7 +18,7 @@ int main(void) {
   f.interp.interp_param[0]=1;  // _M
   f.interp.interp_param[1]=2;  // x direction degree
   f.interp.interp_param[2]=2;  // y direction degree
-  f.interp.interp_param[3]=1;  // z direction degree
+  f.interp.interp_param[3]=0;  // z direction degree
   f.interp.interp_param[4]=1;  // x direction refinement
   f.interp.interp_param[5]=1;  // y direction refinement
   f.interp.interp_param[6]=1;  // z direction refinement
@@ -50,7 +49,6 @@ int main(void) {
 
   printf("erreur L2=%f\n",dd);
 
-  test = test && (dd<0.02);
 
   return 0;
 

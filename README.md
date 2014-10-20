@@ -24,6 +24,10 @@ tests après toute modification du code.
 
 Pour lancer schnaps:
 
+générer le maillage:
+
+cd geo ; gmsh disque.geo -3 ; cd ..
+
 ./schnaps
 
 Cet exemple consiste à résoudre l'équation de transport à
@@ -38,12 +42,6 @@ afficher une image plus jolie...)
 Adapter le fichier source "schnaps.c"
 pour traiter des cas avec d'autres maillages. Des exemples de
 maillages se trouvent dans le dossier geo.
-Pour générer un maillage à partir du fichier disque.geo par exemple,
-faire:
-
-gsmh disque.geo -3
-
-Cette commande génère un fichier disque.msh lisible par SCHNAPS.
 
 Génération de la documentation (avec doxygen):
 
