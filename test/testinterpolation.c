@@ -41,7 +41,7 @@ int TestInterpolation(void){
 
   // reference element
   double physnode[20][3];
-  physnode[0][0] = 0;
+  physnode[0][0] = 0.2;
     physnode[0][1] = 0;
     physnode[0][2] = 0;
     physnode[1][0] = 1;
@@ -155,7 +155,7 @@ int TestInterpolation(void){
     }
   }
 
-#define _MAXDEGTEST 4
+#define _MAXDEGTEST 5
 
   // test that the ref_pg_face function
   // is compatible with ref_pg_vol
@@ -199,12 +199,14 @@ int TestInterpolation(void){
   // test green formula for Gauss-Lobatto points
 
 
-  for(int d=1;d<_MAXDEGTEST;d++){
-    printf("Degree=%d\n",d);
+  for(int d0=1;d0<_MAXDEGTEST;d0++){
+  for(int d1=1;d1<_MAXDEGTEST;d1++){
+  for(int d2=1;d2<_MAXDEGTEST;d2++){
+    printf("Degree=%d %d %d\n",d0,d1,d2);
 
-    deg[0]=d;
-    deg[1]=d;
-    deg[2]=d;
+    deg[0]=d0;
+    deg[1]=d1;
+    deg[2]=d2;
     deg[3]=3;
     deg[4]=1;
     deg[5]=2;
@@ -231,9 +233,9 @@ int TestInterpolation(void){
       double dtau[3][3],codtau[3][3];
       Ref2Phy(physnode,xref,NULL,-1,
               xphy,dtau,codtau,NULL,NULL);
-      f[ipg] = pow(xphy[1],(double) d);
+      f[ipg] = pow(xphy[1],(double) d1);
       //printf("%d %f\n",ipg,f[ipg]);
-      g[ipg] =   pow(xphy[0],(double) d-1);//xphy[0] ;
+      g[ipg] =   pow(xphy[0],(double) d0);//xphy[0] ;
     }
 
     // Computation of the two integrants of green's formula
@@ -328,7 +330,7 @@ int TestInterpolation(void){
 
     printf("  int_fgn = %.2e sum of ints = %.2e sum_wpg=%f \n", int_fgn,int_dfg+int_fdg-int_fgn,sum_wpg);
     
-  }
+  }}}
 
 
   return test;

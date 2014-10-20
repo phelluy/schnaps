@@ -77,7 +77,7 @@ doxyschnaps
 #define _DEGY 3
 #define _DEGZ 3
 #define _RAFX 1
-#define _RAFY 1
+#define _RAFY 2
 #define _RAFZ 1
 
 
