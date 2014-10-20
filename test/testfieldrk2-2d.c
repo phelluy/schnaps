@@ -1,9 +1,23 @@
+#include "test.h"
 #include "schnaps.h"
-#include <stdio.h>
+#include<stdio.h>
 #include <assert.h>
-
-
+#include <math.h>
 int main(void) {
+  
+  // unit tests
+    
+  int resu=TestFieldRK2_2D();
+	 
+  if (resu) printf("Field RK2 2D test OK !\n");
+  else printf("Field RK2 2D test failed !\n");
+
+  return !resu;
+} 
+
+
+
+int TestFieldRK2_2D(void) {
 
   bool test=true;
 
@@ -25,7 +39,7 @@ int main(void) {
   f.interp.interp_param[6]=1;  // z direction refinement
 
 
-  ReadMacroMesh(&(f.macromesh),"geo/disque.msh");
+  ReadMacroMesh(&(f.macromesh),"test/testdisque2d.msh");
   f.is2d=true;
   bool is2d=Detect2DMacroMesh(&(f.macromesh));
   assert(is2d);
@@ -41,7 +55,7 @@ int main(void) {
   printf("cfl param =%f\n",f.hmin);
 
 
-  RK2(&f,1);
+  RK2(&f,0.2);
  
   PlotField(0,(1==0),&f,"dgvisu.msh");
   PlotField(0,(1==1),&f,"dgerror.msh");
@@ -50,10 +64,8 @@ int main(void) {
 
   printf("erreur L2=%f\n",dd);
 
-  test = test && (dd<0.02);
+  test = test && (dd<0.01);
 
-  return 0;
+  return test;
 
 };
-
-

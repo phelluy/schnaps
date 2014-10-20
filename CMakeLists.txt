@@ -101,3 +101,12 @@ add_executable(
 )
 target_link_libraries(test2dmeshdetection libschnaps m)
 add_test(test2dmeshdetection test2dmeshdetection)
+
+add_test(testfieldrk2-2d testfieldrk2-2d)
+add_executable(
+  testfieldrk2-2d
+  test/test.h
+  test/testfieldrk2-2d.c
+)
+target_link_libraries(testfieldrk2-2d libschnaps m)
+add_test(testfieldrk2-2d testfieldrk2-2d)

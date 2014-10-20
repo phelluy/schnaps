@@ -19,5 +19,7 @@ int TestFieldRK2(void);
 
 int Test2DMeshDetection(void);
 
+int TestFieldRK2_2D(void);
+
 
 #endif
