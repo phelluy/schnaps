@@ -146,7 +146,7 @@ void Phy2Ref(double physnode[20][3],double xphy[3],double xref[3]){
     dxphy[2] -= (xphy)[2];                                              
     det = dtau[0][0]*codtau[0][0]+dtau[0][1]*codtau[0][1]+
       dtau[0][2]*codtau[0][2];
-    assert(det>0);
+    //assert(det>0);
     for(int ii = 0;ii<3;ii ++ ){                             
       dxref[ii] = 0;                                               
       for(int jj = 0;jj<3;jj ++ ){                                          
@@ -155,9 +155,9 @@ void Phy2Ref(double physnode[20][3],double xphy[3],double xref[3]){
       xref[ii] -= dxref[ii] / det;                            
     }
   }
-  double eps=1e-6;  // may be to constraining...
-  assert(xref[0]<1+eps && xref[0]>-eps);
-  assert(xref[1]<1+eps && xref[1]>-eps);
-  assert(xref[2]<1+eps && xref[2]>-eps);
+  /* double eps=1e-6;  // may be to constraining... */
+  /* assert(xref[0]<1+eps && xref[0]>-eps); */
+  /* assert(xref[1]<1+eps && xref[1]>-eps); */
+  /* assert(xref[2]<1+eps && xref[2]>-eps); */
 
 }

@@ -351,27 +351,28 @@ void ref_pg_face(int* param,int ifa,int ipg,
 
   // if xpgin exists, compute a point slightly INSIDE the opposite
   // subcell along the face.
-  if (xpgin!=0){
-    double small=0.01;
-    double vsmall=0.001;
+  if (xpgin!=NULL){
+    double small=0.0001;
+    double vsmall=0.00001;
+
+    xpgin[axis_permut[ifa][0]] =
+      h[0]*(ncx+gauss_lob_point[offset[0]]);
+    xpgin[axis_permut[ifa][1]] =
+      h[1]*(ncy+gauss_lob_point[offset[1]]);
 
     if (axis_permut[ifa][3]==0) xpgin[axis_permut[ifa][2]]= -vsmall;
     if (axis_permut[ifa][3]==1) xpgin[axis_permut[ifa][2]]= 1+vsmall;
 
-    if (ix==0) xpg[axis_permut[ifa][0]] =
-		 h[0]*(ncx+gauss_lob_point[offset[0]]+small);
-    if (ix==deg[0]) xpg[axis_permut[ifa][0]] =
-		 h[0]*(ncx+gauss_lob_point[offset[0]]-small);
-
-    if (iy==0) xpg[axis_permut[ifa][1]] =
+    if (ix==0)  xpgin[axis_permut[ifa][0]] =
+		  h[0]*(ncx+gauss_lob_point[offset[0]]+small);
+    if (ix==deg[0]) xpgin[axis_permut[ifa][0]] =
+		      h[0]*(ncx+gauss_lob_point[offset[0]]-small);
+    
+    if (iy==0) xpgin[axis_permut[ifa][1]] =
 		 h[1]*(ncy+gauss_lob_point[offset[1]]+small);
-    if (iy==deg[1]) xpg[axis_permut[ifa][1]] =
-		 h[1]*(ncy+gauss_lob_point[offset[1]]-small);
+    if (iy==deg[1]) xpgin[axis_permut[ifa][1]] =
+		      h[1]*(ncy+gauss_lob_point[offset[1]]-small);
 
-    if (iz==0) xpg[axis_permut[ifa][2]] =
-		 h[2]*(ncz+gauss_lob_point[offset[2]]+small);
-    if (iz==deg[2]) xpg[axis_permut[ifa][2]] =
-		 h[2]*(ncz+gauss_lob_point[offset[2]]-small);
   }
 
 };

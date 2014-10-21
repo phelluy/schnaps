@@ -325,7 +325,9 @@ void CheckMacroMesh(MacroMesh* m,int* param){
       GeomRef2Phy(&g);
       GeomPhy2Ref(&g);
 
-      assert(ipg==ref_ipg(param,g.xref));
+      if (param[4]==1 && param[5]==1 && param[6]==1){ 
+	assert(ipg==ref_ipg(param,g.xref));
+      }
     }
 
     // middle of the element
@@ -364,12 +366,12 @@ void CheckMacroMesh(MacroMesh* m,int* param){
 	  // in 2D do not check upper and lower face
 	  if (m->is2d){
 	    if (ifa !=4 && ifa!=5) {
-	      //assert(Dist(xpgref,xpgref2)<1e-8);
+	      assert(Dist(xpgref,xpgref2)<1e-8);
 	    }
 	  }
 	  // in 3D check all faces
 	  else {
-	    //assert(Dist(xpgref,xpgref2)<1e-8);
+	    assert(Dist(xpgref,xpgref2)<1e-8);
 	  }
 	  	      
         }
@@ -411,10 +413,11 @@ void CheckMacroMesh(MacroMesh* m,int* param){
       // loop on the glops (numerical integration)
       // of the face ifa
       for(int ipgf=0;ipgf<NPGF(param,ifa);ipgf++){
-  	double xpgref[3],wpg;
+  	double xpgref[3],xpgref_in[3],wpg;
   	//double xpgref2[3],wpg2;
   	// get the coordinates of the Gauss point
-  	ref_pg_face(param,ifa,ipgf,xpgref,&wpg,NULL);
+  	ref_pg_face(param,ifa,ipgf,xpgref,&wpg,xpgref_in);
+	printf("xref_in=%f %f %f\n",xpgref_in[0],xpgref_in[1],xpgref_in[2]);
 
   	// recover the volume gauss point from
   	// the face index
@@ -424,17 +427,29 @@ void CheckMacroMesh(MacroMesh* m,int* param){
   	int ib=ipg;
   	// normal vector at gauss point ipg
   	//double dpsiref[3];dpsi[3];
-  	double dtau[3][3],codtau[3][3],xpg[3];
+  	double dtau[3][3],codtau[3][3],xpg[3],xpg_in[3];
   	double vnds[3];
+
+	// compute the "slightly inside" position
   	Ref2Phy(physnode,
+  		xpgref_in,
+  		NULL,ifa, // dpsiref,ifa
+  		xpg_in,dtau,
+  		codtau,NULL,vnds); // codtau,dpsi,vnds
+
+	// compute the exact ref position
+ 	Ref2Phy(physnode,
   		xpgref,
   		NULL,ifa, // dpsiref,ifa
   		xpg,dtau,
   		codtau,NULL,vnds); // codtau,dpsi,vnds
+
   	if (ieR >=0) {  // the right element exists
   	  // find the corresponding point in the right elem
   	  double xref[3];
-	  Phy2Ref(physnodeR,xpg,xref);
+	  printf("xpg_in=%f %f %f\n",xpg_in[0],xpg_in[1],xpg_in[2]);
+	  Phy2Ref(physnodeR,xpg_in,xref);
+	  printf("xref=%f %f %f\n",xref[0],xref[1],xref[2]);
   	  int ipgR=ref_ipg(param,xref);
 	  double xpgR[3],xrefR[3],wpgR;
 	  ref_pg_vol(param, ipgR, xrefR, &wpgR);
@@ -447,6 +462,8 @@ void CheckMacroMesh(MacroMesh* m,int* param){
 		  NULL,ifaR, // dphiref,ifa
 		  xpgR,dtauR,  
 		  codtauR,NULL,vndsR); // codtau,dphi,vnds
+	  printf("x1=%f %f %f x2=%f %f %f\n",xpg[0],xpg[1],xpg[2],
+		 xpgR[0],xpgR[1],xpgR[2]);
           assert(Dist(xpg,xpgR)<1e-11);
           assert(fabs(vnds[0]+vndsR[0])<1e-11);
           assert(fabs(vnds[1]+vndsR[1])<1e-11);
@@ -456,7 +473,6 @@ void CheckMacroMesh(MacroMesh* m,int* param){
     }
    }
   
-
 
 
 };
