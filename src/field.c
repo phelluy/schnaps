@@ -58,7 +58,7 @@ void InitField(Field* f){
       physnode[inoloc][2]=f->macromesh.node[3*ino+2];
     }
     for(int ipg=0;ipg<NPG(f->interp_param+1);ipg++){
-      ref_pg_vol(f->interp_param+1, ipg, xref, &omega);
+      ref_pg_vol(f->interp_param+1, ipg, xref, &omega,NULL);
       Ref2Phy(physnode,
 	      xref,
 	      0,-1, // dphiref,ifa
@@ -95,7 +95,7 @@ void InitField(Field* f){
     for(int ipg=0;ipg<NPG(f->interp_param+1);ipg++){
       double xpgref[3],wpg;
       // get the coordinates of the Gauss point
-      ref_pg_vol(f->interp_param+1,ipg,xpgref,&wpg);
+      ref_pg_vol(f->interp_param+1,ipg,xpgref,&wpg,NULL);
       Ref2Phy(physnode, // phys. nodes
 	      xpgref,  // xref
 	      NULL,-1, // dpsiref,ifa
@@ -145,7 +145,7 @@ void DisplayField(Field* f){
     printf("elem %d\n",ie);
     for(int ipg=0;ipg<NPG(f->interp_param+1);ipg++){
       double xref[3],xphy[3],wpg;
-      ref_pg_vol(f->interp_param+1,ipg,xref,&wpg);
+      ref_pg_vol(f->interp_param+1,ipg,xref,&wpg,NULL);
 
       printf("Gauss point %d %f %f %f \n",ipg,xref[0],xref[1],xref[2]);
     printf("dtw= ");
@@ -453,7 +453,7 @@ void dtField(Field* f){
 	  Phy2Ref(physnodeR,xpg,xref);
   	  int ipgR=ref_ipg(f->interp_param+1,xref);
 	  double xpgR[3],xrefR[3],wpgR;
-	  ref_pg_vol(f->interp_param+1, ipgR, xrefR, &wpgR);
+	  ref_pg_vol(f->interp_param+1, ipgR, xrefR, &wpgR,NULL);
 	  Ref2Phy(physnodeR,
 		  xrefR,
 		  NULL,-1, // dphiref,ifa
@@ -497,7 +497,7 @@ void dtField(Field* f){
     for(int ipg=0;ipg<NPG(f->interp_param+1);ipg++){
       double xpgref[3],wpg;
       // get the coordinates of the Gauss point
-      ref_pg_vol(f->interp_param+1,ipg,xpgref,&wpg);
+      ref_pg_vol(f->interp_param+1,ipg,xpgref,&wpg,NULL);
 
       // get the value of w at the gauss point
       double w[f->model.m];
@@ -654,7 +654,7 @@ double L2error(Field* f){
       double xpgref[3],xphy[3],wpg;
       double dtau[3][3],codtau[3][3];//,xpg[3];
       // get the coordinates of the Gauss point
-      ref_pg_vol(f->interp_param+1,ipg,xpgref,&wpg);
+      ref_pg_vol(f->interp_param+1,ipg,xpgref,&wpg,NULL);
       Ref2Phy(physnode, // phys. nodes
 		xpgref,  // xref
 		NULL,-1, // dpsiref,ifa

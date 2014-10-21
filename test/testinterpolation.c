@@ -135,7 +135,7 @@ int TestInterpolation(void){
 
     for(int ipg=0;ipg<NPG(deg);ipg++){
       double wpg;
-      ref_pg_vol(deg,ipg,xref1,&wpg);
+      ref_pg_vol(deg,ipg,xref1,&wpg,NULL);
       Ref2Phy(physnode,
              xref1,
              0,
@@ -225,7 +225,7 @@ int TestInterpolation(void){
 
     // Define test functions f and g
     for(int ipg=0;ipg<npg;ipg++){
-      ref_pg_vol(deg, ipg, xref, &omega);
+      ref_pg_vol(deg, ipg, xref, &omega,NULL);
       double xphy[3];
       double dtau[3][3],codtau[3][3];
       Ref2Phy(physnode,xref,NULL,-1,
@@ -250,7 +250,7 @@ int TestInterpolation(void){
       //printf(" ipg= %d \n", ipg);
       for(int l=0;l<npg;l++){
 	grad_psi_pg(deg,l,ipg,dphiref);
-	ref_pg_vol(deg, ipg, xref, &omega);
+	ref_pg_vol(deg, ipg, xref, &omega,NULL);
         double xphy[3];
         double dtau[3][3],codtau[3][3];
         Ref2Phy(physnode,xref,dphiref,-1,
@@ -261,7 +261,7 @@ int TestInterpolation(void){
 	dkf += f[l] * dphi[k]/det;
 		
       }
-      ref_pg_vol(deg, ipg, xref, &omega);
+      ref_pg_vol(deg, ipg, xref, &omega,NULL);
       double xphy[3];
       double dtau[3][3],codtau[3][3];
       Ref2Phy(physnode,xref,NULL,-1,
@@ -280,7 +280,7 @@ int TestInterpolation(void){
       double dphi[3],dphiref[3];
       for(int l=0;l<npg;l++){
 	grad_psi_pg(deg,l,ipg,dphiref);
-	ref_pg_vol(deg, ipg, xref, &omega);
+	ref_pg_vol(deg, ipg, xref, &omega,NULL);
         double xphy[3];
         double dtau[3][3],codtau[3][3];
         Ref2Phy(physnode,xref,dphiref,-1,
@@ -290,7 +290,7 @@ int TestInterpolation(void){
 	  dtau[0][2]*codtau[0][2];
 	dkg += dphi[k] * g[l]/det;
       }
-      ref_pg_vol(deg, ipg, xref, &omega);
+      ref_pg_vol(deg, ipg, xref, &omega,NULL);
       double xphy[3];
       double dtau[3][3],codtau[3][3];
       Ref2Phy(physnode,xref,NULL,-1,

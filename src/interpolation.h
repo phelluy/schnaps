@@ -57,7 +57,8 @@ int NPG(int param[]);
 int NPGF(int* param,int ifa);
 
 // return the reference coordinates xpg[3] and weight wpg of the GLOP ipg
-void ref_pg_vol(int* param,int ipg,double* xpg,double* wpg);
+void ref_pg_vol(int* param,int ipg,
+		double* xpg,double* wpg,double* xpg_in);
 
 // from a reference point find the nearest
 // gauss point

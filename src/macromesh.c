@@ -320,7 +320,7 @@ void CheckMacroMesh(MacroMesh* m,int* param){
     for(int ipg=0;ipg<NPG(param);ipg++){
       double xref1[3],xref2[3],xphy[3];
       double wpg;
-      ref_pg_vol(param,ipg,xref1,&wpg);
+      ref_pg_vol(param,ipg,xref1,&wpg,NULL);
       memcpy(g.xref,xref1,sizeof(g.xref));
       GeomRef2Phy(&g);
       GeomPhy2Ref(&g);
@@ -362,7 +362,7 @@ void CheckMacroMesh(MacroMesh* m,int* param){
           // the face index
           int ipgv=param[6];
           double xpgref2[3],wpg2;
-          ref_pg_vol(param,ipgv,xpgref2,&wpg2);
+          ref_pg_vol(param,ipgv,xpgref2,&wpg2,NULL);
 	  // in 2D do not check upper and lower face
 	  if (m->is2d){
 	    if (ifa !=4 && ifa!=5) {
@@ -417,7 +417,7 @@ void CheckMacroMesh(MacroMesh* m,int* param){
   	//double xpgref2[3],wpg2;
   	// get the coordinates of the Gauss point
   	ref_pg_face(param,ifa,ipgf,xpgref,&wpg,xpgref_in);
-	printf("xref_in=%f %f %f\n",xpgref_in[0],xpgref_in[1],xpgref_in[2]);
+	//printf("xref_in=%f %f %f\n",xpgref_in[0],xpgref_in[1],xpgref_in[2]);
 
   	// recover the volume gauss point from
   	// the face index
@@ -447,12 +447,12 @@ void CheckMacroMesh(MacroMesh* m,int* param){
   	if (ieR >=0) {  // the right element exists
   	  // find the corresponding point in the right elem
   	  double xref[3];
-	  printf("xpg_in=%f %f %f\n",xpg_in[0],xpg_in[1],xpg_in[2]);
+	  //printf("xpg_in=%f %f %f\n",xpg_in[0],xpg_in[1],xpg_in[2]);
 	  Phy2Ref(physnodeR,xpg_in,xref);
-	  printf("xref=%f %f %f\n",xref[0],xref[1],xref[2]);
+	  //printf("xref=%f %f %f\n",xref[0],xref[1],xref[2]);
   	  int ipgR=ref_ipg(param,xref);
 	  double xpgR[3],xrefR[3],wpgR;
-	  ref_pg_vol(param, ipgR, xrefR, &wpgR);
+	  ref_pg_vol(param, ipgR, xrefR, &wpgR,NULL);
           double dtauR[3][3],codtauR[3][3];double vndsR[3];
           int ifaR=0;
           while (m->elem2elem[6*ieR+ifaR] != ie) ifaR++;
@@ -462,8 +462,8 @@ void CheckMacroMesh(MacroMesh* m,int* param){
 		  NULL,ifaR, // dphiref,ifa
 		  xpgR,dtauR,  
 		  codtauR,NULL,vndsR); // codtau,dphi,vnds
-	  printf("x1=%f %f %f x2=%f %f %f\n",xpg[0],xpg[1],xpg[2],
-		 xpgR[0],xpgR[1],xpgR[2]);
+	  //printf("x1=%f %f %f x2=%f %f %f\n",xpg[0],xpg[1],xpg[2],
+	  //xpgR[0],xpgR[1],xpgR[2]);
           assert(Dist(xpg,xpgR)<1e-11);
           assert(fabs(vnds[0]+vndsR[0])<1e-11);
           assert(fabs(vnds[1]+vndsR[1])<1e-11);

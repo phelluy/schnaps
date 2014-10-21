@@ -194,9 +194,9 @@ int ref_ipg(int* param,double* xref){
   int ncy=floor(xref[1]*nraf[1]);
   int ncz=floor(xref[2]*nraf[2]);
 
-  printf("x=%f ncx=%d nrafx=%d\n",xref[0], ncx,nraf[0]);
-  printf("y=%f ncy=%d nrafy=%d\n",xref[1], ncy,nraf[1]);
-  printf("z=%f ncz=%d nrafz=%d\n",xref[2], ncz,nraf[2]);
+  //printf("x=%f ncx=%d nrafx=%d\n",xref[0], ncx,nraf[0]);
+  //printf("y=%f ncy=%d nrafy=%d\n",xref[1], ncy,nraf[1]);
+  //printf("z=%f ncz=%d nrafz=%d\n",xref[2], ncz,nraf[2]);
   assert(ncx >=0 && ncx<nraf[0]);
   assert(ncy >=0 && ncy<nraf[1]);
   assert(ncz >=0 && ncz<nraf[2]);
@@ -217,7 +217,8 @@ int ref_ipg(int* param,double* xref){
 
 
 // return the reference coordinates xpg[3] and weight wpg of the GLOP ipg
-void ref_pg_vol(int* param,int ipg,double* xpg,double* wpg){
+void ref_pg_vol(int* param,int ipg,
+		double* xpg,double* wpg,double* xpg_in){
   int deg[3],offset[3],nraf[3];
   
 
@@ -264,6 +265,16 @@ void ref_pg_vol(int* param,int ipg,double* xpg,double* wpg){
   *wpg=hx*hy*hz*gauss_lob_weight[offset[0]]*
     gauss_lob_weight[offset[1]]*
     gauss_lob_weight[offset[2]];
+
+  if (xpg_in !=0){
+    double small=0.001;
+    if (ix==0) xpg[0]+=hx*small;
+    if (ix==nraf[0]) xpg[0]-=hx*small;
+    if (iy==0) xpg[1]+=hy*small;
+    if (iy==nraf[1]) xpg[1]-=hy*small;
+    if (iz==0) xpg[2]+=hz*small;
+    if (iz==nraf[2]) xpg[2]-=hz*small;
+  }
 
 };
 
