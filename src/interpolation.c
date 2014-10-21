@@ -6,22 +6,26 @@
 
 /* gauss lobatto points */
 
+// horrible trick in order to ensure
+// that the GLOPs are INSIDE the subcells...
+#define _EPS_LOB 0
+
 const double gauss_lob_point[] = {
   0.5,
-  0.,
-  1.,
-  0.,
+  _EPS_LOB,
+  1-_EPS_LOB,
+  _EPS_LOB,
   0.5,
-  1.,
-  0.,
+  1-_EPS_LOB,
+  _EPS_LOB,
   0.276393202250021030359082633127,
   0.723606797749978969640917366873,
-  1.,
-  0.,
+  1-_EPS_LOB,
+  _EPS_LOB,
   0.172673164646011428100853771877, 
   0.5, 
   0.827326835353988571899146228123,
-  1.
+  1-_EPS_LOB
 };
 
 const double gauss_lob_weight[] = {
@@ -182,17 +186,32 @@ int ref_ipg(int* param,double* xref){
   nraf[1]=param[4];
   nraf[2]=param[5];
  
-  assert(nraf[0]==1);
-  assert(nraf[1]==1);
-  assert(nraf[2]==1);
+
+  double hh[3]={1./nraf[0],1./nraf[1],1./nraf[2]};
+
+  // get the subcell id
+  int ncx=floor(xref[0]*nraf[0]);
+  int ncy=floor(xref[1]*nraf[1]);
+  int ncz=floor(xref[2]*nraf[2]);
+
+  printf("x=%f ncx=%d nrafx=%d\n",xref[0], ncx,nraf[0]);
+  printf("y=%f ncy=%d nrafy=%d\n",xref[1], ncy,nraf[1]);
+  printf("z=%f ncz=%d nrafz=%d\n",xref[2], ncz,nraf[2]);
+  assert(ncx >=0 && ncx<nraf[0]);
+  assert(ncy >=0 && ncy<nraf[1]);
+  assert(ncz >=0 && ncz<nraf[2]);
+
+  // subcell index in the macrocell
+  int nc=ncx+nraf[0]*(ncy+nraf[1]*ncz);
+  int offset=(deg[0]+1)*(deg[1]+1)*(deg[2]+1)*nc;
 
   // round to the nearest integer
-  // why 0.51 ? for ensuring the good result near to 0.5 !
-  int ix=floor(xref[0]*deg[0]+0.51); 
-  int iy=floor(xref[1]*deg[1]+0.51); 
-  int iz=floor(xref[2]*deg[2]+0.51); 
+  int ix=floor((xref[0]-ncx*hh[0])/hh[0]*deg[0]+0.5); 
+  int iy=floor((xref[1]-ncx*hh[1])/hh[1]*deg[1]+0.5); 
+  int iz=floor((xref[2]-ncx*hh[2])/hh[2]*deg[2]+0.5); 
+  //int iz=floor(xref[2]*deg[2]+0.5); 
 
-  return ix+(deg[0]+1)*(iy+(deg[1]+1)*iz);
+  return ix+(deg[0]+1)*(iy+(deg[1]+1)*iz)+offset;
 
 };
 
@@ -249,7 +268,8 @@ void ref_pg_vol(int* param,int ipg,double* xpg,double* wpg){
 };
 
 // same function for the face 
-void ref_pg_face(int* param,int ifa,int ipg,double* xpg,double* wpg){
+void ref_pg_face(int* param,int ifa,int ipg,
+		 double* xpg,double* wpg,double* xpgin){
   // For each face, give the dimension index i
   const int axis_permut[6][4] = {
     {0, 2, 1, 0},
@@ -328,6 +348,31 @@ void ref_pg_face(int* param,int ifa,int ipg,double* xpg,double* wpg){
 
   *wpg=h[0]*h[1]*gauss_lob_weight[offset[0]]*
     gauss_lob_weight[offset[1]];
+
+  // if xpgin exists, compute a point slightly INSIDE the opposite
+  // subcell along the face.
+  if (xpgin!=0){
+    double small=0.01;
+    double vsmall=0.001;
+
+    if (axis_permut[ifa][3]==0) xpgin[axis_permut[ifa][2]]= -vsmall;
+    if (axis_permut[ifa][3]==1) xpgin[axis_permut[ifa][2]]= 1+vsmall;
+
+    if (ix==0) xpg[axis_permut[ifa][0]] =
+		 h[0]*(ncx+gauss_lob_point[offset[0]]+small);
+    if (ix==deg[0]) xpg[axis_permut[ifa][0]] =
+		 h[0]*(ncx+gauss_lob_point[offset[0]]-small);
+
+    if (iy==0) xpg[axis_permut[ifa][1]] =
+		 h[1]*(ncy+gauss_lob_point[offset[1]]+small);
+    if (iy==deg[1]) xpg[axis_permut[ifa][1]] =
+		 h[1]*(ncy+gauss_lob_point[offset[1]]-small);
+
+    if (iz==0) xpg[axis_permut[ifa][2]] =
+		 h[2]*(ncz+gauss_lob_point[offset[2]]+small);
+    if (iz==deg[2]) xpg[axis_permut[ifa][2]] =
+		 h[2]*(ncz+gauss_lob_point[offset[2]]-small);
+  }
 
 };
 

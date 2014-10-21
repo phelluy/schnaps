@@ -111,7 +111,7 @@ void InitField(Field* f){
 	double xpgref[3],wpg;
 	//double xpgref2[3],wpg2;
 	// get the coordinates of the Gauss point
-	ref_pg_face(f->interp_param+1,ifa,ipgf,xpgref,&wpg);
+	ref_pg_face(f->interp_param+1,ifa,ipgf,xpgref,&wpg,NULL);
 	double vnds[3];
 	Ref2Phy(physnode,
 		xpgref,
@@ -422,10 +422,10 @@ void dtField(Field* f){
       // loop on the glops (numerical integration)
       // of the face ifa
       for(int ipgf=0;ipgf<NPGF(f->interp_param+1,ifa);ipgf++){
-  	double xpgref[3],wpg;
+  	double xpgref[3],xpgref_in[3],wpg;
   	//double xpgref2[3],wpg2;
   	// get the coordinates of the Gauss point
-  	ref_pg_face(f->interp_param+1,ifa,ipgf,xpgref,&wpg);
+  	ref_pg_face(f->interp_param+1,ifa,ipgf,xpgref,&wpg,xpgref_in);
 
   	// recover the volume gauss point from
   	// the face index

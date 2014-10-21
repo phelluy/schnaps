@@ -155,7 +155,7 @@ void Phy2Ref(double physnode[20][3],double xphy[3],double xref[3]){
       xref[ii] -= dxref[ii] / det;                            
     }
   }
-  double eps=1e-12;  // may be to constraining...
+  double eps=1e-6;  // may be to constraining...
   assert(xref[0]<1+eps && xref[0]>-eps);
   assert(xref[1]<1+eps && xref[1]>-eps);
   assert(xref[2]<1+eps && xref[2]>-eps);

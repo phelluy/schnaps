@@ -174,7 +174,7 @@ int TestInterpolation(void){
     for(int ifa=0;ifa<6;ifa++){
       for(int ipgf=0;ipgf<NPGF(deg,ifa);ipgf++){
 	double wpg;
-	ref_pg_face(deg,ifa,ipgf,xref1,&wpg);
+	ref_pg_face(deg,ifa,ipgf,xref1,&wpg,NULL);
 	int ipg=deg[6];
 	Ref2Phy(physnode,
 		xref1,
@@ -315,7 +315,7 @@ int TestInterpolation(void){
       double dtau[3][3],codtau[3][3];
       int npg_f = NPGF(deg,ifa);
       for(int ipgf=0;ipgf<npg_f;ipgf++){
-	ref_pg_face(deg,ifa,ipgf,xref,&omega);
+	ref_pg_face(deg,ifa,ipgf,xref,&omega,NULL);
  	
 	Ref2Phy(physnode,xref,NULL,ifa,
                 xphy,dtau,codtau,NULL,vnds);

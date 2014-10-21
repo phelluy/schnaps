@@ -65,7 +65,11 @@ int ref_ipg(int* param,double* xref);
 
 // same function for the face 
 // param[6] contains the volume GLOP index computed from face GLOP index.
-void ref_pg_face(int* param,int ifa,int ipg,double* xpg,double* wpg);
+//! \brief compute the position xpg of glop ipg in the local
+//! numbering on face ifa. If xpgin is not NULL also compute
+//! the position of point slightly inside the opposite subcell
+void ref_pg_face(int* param,int ifa,int ipg,double* xpg,double* wpg,
+		 double* xpgin);
 // return the value psi  and the gradient dpsi[3] of the basis 
 // function ib at point xref[3]. Warning: the value of the gradient is
 // not reliable if xref is on the boundary 

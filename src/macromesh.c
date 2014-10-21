@@ -322,16 +322,6 @@ void CheckMacroMesh(MacroMesh* m,int* param){
       double wpg;
       ref_pg_vol(param,ipg,xref1,&wpg);
       memcpy(g.xref,xref1,sizeof(g.xref));
-      /* Ref2Phy(physnode, */
-      /*        xref1, */
-      /*        0, */
-      /*        -1, */
-      /*        xphy, */
-      /*        0, */
-      /*        0, */
-      /*        0, */
-      /*        0); */
-      /* Phy2Ref(physnode,xphy,xref2); */
       GeomRef2Phy(&g);
       GeomPhy2Ref(&g);
 
@@ -365,7 +355,7 @@ void CheckMacroMesh(MacroMesh* m,int* param){
         for(int ipgf=0;ipgf<NPGF(param,ifa);ipgf++){
           double xpgref[3],wpg;
           // get the coordinates of the Gauss point
-          ref_pg_face(param,ifa,ipgf,xpgref,&wpg);
+          ref_pg_face(param,ifa,ipgf,xpgref,&wpg,NULL);
           // recover the volume gauss point from
           // the face index
           int ipgv=param[6];
@@ -374,12 +364,12 @@ void CheckMacroMesh(MacroMesh* m,int* param){
 	  // in 2D do not check upper and lower face
 	  if (m->is2d){
 	    if (ifa !=4 && ifa!=5) {
-	      assert(Dist(xpgref,xpgref2)<1e-8);
+	      //assert(Dist(xpgref,xpgref2)<1e-8);
 	    }
 	  }
 	  // in 3D check all faces
 	  else {
-	    assert(Dist(xpgref,xpgref2)<1e-8);
+	    //assert(Dist(xpgref,xpgref2)<1e-8);
 	  }
 	  	      
         }
@@ -424,7 +414,7 @@ void CheckMacroMesh(MacroMesh* m,int* param){
   	double xpgref[3],wpg;
   	//double xpgref2[3],wpg2;
   	// get the coordinates of the Gauss point
-  	ref_pg_face(param,ifa,ipgf,xpgref,&wpg);
+  	ref_pg_face(param,ifa,ipgf,xpgref,&wpg,NULL);
 
   	// recover the volume gauss point from
   	// the face index
