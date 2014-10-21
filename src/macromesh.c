@@ -322,6 +322,7 @@ void CheckMacroMesh(MacroMesh* m,int* param){
       double wpg;
       ref_pg_vol(param,ipg,xref1,&wpg,NULL);
       memcpy(g.xref,xref1,sizeof(g.xref));
+      g.ifa=0;
       GeomRef2Phy(&g);
       GeomPhy2Ref(&g);
 
