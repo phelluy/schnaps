@@ -332,6 +332,7 @@ void CheckMacroMesh(MacroMesh* m,int* param){
       /*        0, */
       /*        0); */
       /* Phy2Ref(physnode,xphy,xref2); */
+      g.ifa=0;
       GeomRef2Phy(&g);
       GeomPhy2Ref(&g);
 
