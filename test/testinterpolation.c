@@ -131,13 +131,14 @@ int TestInterpolation(void){
     nraf[1]=deg[4];
     nraf[2]=deg[5];
 
-    double xref1[3],xref2[3],xphy[3];
+    double xref1[3],xref2[3],xphy[3],xref_in[3];
 
     for(int ipg=0;ipg<NPG(deg);ipg++){
       double wpg;
-      ref_pg_vol(deg,ipg,xref1,&wpg,NULL);
+      ref_pg_vol(deg,ipg,xref1,&wpg,xref_in);
+      //printf("xref_in %f %f %f \n",xref_in[0],xref_in[1],xref_in[2]);
       Ref2Phy(physnode,
-             xref1,
+             xref_in,
              0,
              -1,
              xphy,
@@ -145,9 +146,10 @@ int TestInterpolation(void){
              0,
              0,
              0);
+   
       Phy2Ref(physnode,xphy,xref2);
       test=test &&(ipg==ref_ipg(deg,xref2));
-      printf("ipg=%d ipg2=%d\n",ipg,ref_ipg(deg,xref2));
+      //printf("ipg=%d ipg2=%d\n",ipg,ref_ipg(deg,xref2));
       assert(test);
     }
   }
@@ -170,14 +172,15 @@ int TestInterpolation(void){
     nraf[1]=deg[4];
     nraf[2]=deg[5];
 
-    double xref1[3],xref2[3],xphy[3];
+    double xref1[3],xref2[3],xphy[3],xref_in[3];
     for(int ifa=0;ifa<6;ifa++){
       for(int ipgf=0;ipgf<NPGF(deg,ifa);ipgf++){
 	double wpg;
 	ref_pg_face(deg,ifa,ipgf,xref1,&wpg,NULL);
 	int ipg=deg[6];
+	ref_pg_vol(deg,ipg,xref1,&wpg,xref_in);
 	Ref2Phy(physnode,
-		xref1,
+		xref_in,
 		0,
 		-1,
 		xphy,

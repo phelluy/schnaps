@@ -425,6 +425,8 @@ void dtField(Field* f){
   	double xpgref[3],xpgref_in[3],wpg;
   	//double xpgref2[3],wpg2;
   	// get the coordinates of the Gauss point
+	// and coordinates of a point slightly inside the
+	// opposite element in xref_in
   	ref_pg_face(f->interp_param+1,ifa,ipgf,xpgref,&wpg,xpgref_in);
 
   	// recover the volume gauss point from
@@ -449,8 +451,14 @@ void dtField(Field* f){
   	double flux[f->model.m];
   	if (ieR >=0) {  // the right element exists
   	  // find the corresponding point in the right elem
+	  double xpg_in[3];
+  	Ref2Phy(physnode,
+  		xpgref_in,
+  		NULL,ifa, // dpsiref,ifa
+  		xpg_in,dtau,
+  		codtau,NULL,vnds); // codtau,dpsi,vnds
   	  double xref[3];
-	  Phy2Ref(physnodeR,xpg,xref);
+	  Phy2Ref(physnodeR,xpg_in,xref);
   	  int ipgR=ref_ipg(f->interp_param+1,xref);
 	  double xpgR[3],xrefR[3],wpgR;
 	  ref_pg_vol(f->interp_param+1, ipgR, xrefR, &wpgR,NULL);
@@ -459,6 +467,7 @@ void dtField(Field* f){
 		  NULL,-1, // dphiref,ifa
 		  xpgR,NULL,  
 		  NULL,NULL,NULL); // codtau,dphi,vnds
+	  assert(Dist(xpgR,xpg)<1e-10);
   	  for(int iv=0;iv<f->model.m;iv++){
   	    int imem=f->varindex(f->interp_param,ieR,ipgR,iv);
   	    wR[iv]=f->wn[imem];

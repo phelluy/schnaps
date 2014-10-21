@@ -268,12 +268,21 @@ void ref_pg_vol(int* param,int ipg,
 
   if (xpg_in !=0){
     double small=0.001;
-    if (ix==0) xpg[0]+=hx*small;
-    if (ix==nraf[0]) xpg[0]-=hx*small;
-    if (iy==0) xpg[1]+=hy*small;
-    if (iy==nraf[1]) xpg[1]-=hy*small;
-    if (iz==0) xpg[2]+=hz*small;
-    if (iz==nraf[2]) xpg[2]-=hz*small;
+    xpg_in[0]=xpg[0];
+    xpg_in[1]=xpg[1];
+    xpg_in[2]=xpg[2];
+
+    if (ix==0) xpg_in[0]+=hx*small;
+    if (ix==deg[0]) xpg_in[0]-=hx*small;
+    if (iy==0) xpg_in[1]+=hy*small;
+    if (iy==deg[1]) xpg_in[1]-=hy*small;
+    if (iz==0) xpg_in[2]+=hz*small;
+    if (iz==deg[2]) xpg_in[2]-=hz*small;
+
+   /* printf("xpg %f %f %f\n",xpg[0],xpg[1],xpg[2]); */
+   /*  printf("xpg_in %f %f %f %d %d %d\n",xpg_in[0],xpg_in[1],xpg_in[2], */
+   /* 	   ix,iy,iz); */
+
   }
 
 };
