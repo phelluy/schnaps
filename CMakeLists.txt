@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 2.8)
 
 project(schnaps)
 
-set(CMAKE_C_FLAGS "-std=c99 -O -lm")
+set(CMAKE_C_FLAGS "-std=c99 -O")
 include_directories(src)
 
 enable_testing()
