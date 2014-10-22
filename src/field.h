@@ -41,8 +41,18 @@ int GenericVarindex(int* param, int elem, int ipg, int iv);
 void InitField(Field* f);
 
 // apply the Discontinuous Galerkin approximation for computing
-// the time derivative of the field
+// the time derivative of the field (one subcell version)
 void dtField(Field* f);
+// same function but works with subcells
+void dtFieldRaf(Field* f);
+// compute the Discontinuous Galerkin volume terms
+void DGVolume(Field* f);
+// compute the Discontinuous Galerkin inter-subcells terms
+void DGSubCellInterface(Field* f);
+// compute the Discontinuous Galerkin inter-macrocells boundary terms
+void DGMacroCellInterface(Field* f);
+// apply the DG mass term
+void DGMass(Field* f);
 
 // time integration by a second order Runge-Kutta algorithm 
 void RK2(Field* f,double tmax);

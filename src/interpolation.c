@@ -207,9 +207,12 @@ int ref_ipg(int* param,double* xref){
 
   // round to the nearest integer
   int ix=floor((xref[0]-ncx*hh[0])/hh[0]*deg[0]+0.5); 
-  int iy=floor((xref[1]-ncx*hh[1])/hh[1]*deg[1]+0.5); 
-  int iz=floor((xref[2]-ncx*hh[2])/hh[2]*deg[2]+0.5); 
+  int iy=floor((xref[1]-ncy*hh[1])/hh[1]*deg[1]+0.5); 
+  int iz=floor((xref[2]-ncz*hh[2])/hh[2]*deg[2]+0.5); 
   //int iz=floor(xref[2]*deg[2]+0.5); 
+
+
+  //printf("xref %f %f %f ix=%d iy=%d iz=%d\n",xref[0],xref[1],xref[2],ix,iy,iz);
 
   return ix+(deg[0]+1)*(iy+(deg[1]+1)*iz)+offset;
 

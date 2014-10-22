@@ -318,17 +318,19 @@ void CheckMacroMesh(MacroMesh* m,int* param){
     // is compatible with ref_pg_vol
     //int param[7]={_DEGX,_DEGY,_DEGZ,_RAFX,_RAFY,_RAFZ,0};
     for(int ipg=0;ipg<NPG(param);ipg++){
-      double xref1[3],xref2[3],xphy[3];
+      double xref1[3],xref2[3],xphy[3],xref_in[3];
       double wpg;
-      ref_pg_vol(param,ipg,xref1,&wpg,NULL);
+      ref_pg_vol(param,ipg,xref1,&wpg,xref_in);
       memcpy(g.xref,xref1,sizeof(g.xref));
       g.ifa=0;
       GeomRef2Phy(&g);
       GeomPhy2Ref(&g);
 
-      if (param[4]==1 && param[5]==1 && param[6]==1){ 
-	assert(ipg==ref_ipg(param,g.xref));
-      }
+      // if (param[4]==1 && param[5]==1 && param[6]==1){ 
+      //printf("ipg %d ipg2 %d xref %f %f %f\n",ipg,
+      //	     ref_ipg(param,xref_in),xref_in[0],xref_in[1],xref_in[2]);
+      assert(ipg==ref_ipg(param,xref_in));
+	//}
     }
 
     // middle of the element
@@ -423,6 +425,8 @@ void CheckMacroMesh(MacroMesh* m,int* param){
   	// recover the volume gauss point from
   	// the face index
   	int ipg=param[6];
+
+	
   	// get the left value of w at the gauss point
   	// the basis functions is also the gauss point index
   	int ib=ipg;
@@ -463,8 +467,8 @@ void CheckMacroMesh(MacroMesh* m,int* param){
 		  NULL,ifaR, // dphiref,ifa
 		  xpgR,dtauR,  
 		  codtauR,NULL,vndsR); // codtau,dphi,vnds
-	  //printf("x1=%f %f %f x2=%f %f %f\n",xpg[0],xpg[1],xpg[2],
-	  //xpgR[0],xpgR[1],xpgR[2]);
+	  printf("x1=%f %f %f x2=%f %f %f\n",xpg[0],xpg[1],xpg[2],
+	  xpgR[0],xpgR[1],xpgR[2]);
           assert(Dist(xpg,xpgR)<1e-11);
           assert(fabs(vnds[0]+vndsR[0])<1e-11);
           assert(fabs(vnds[1]+vndsR[1])<1e-11);

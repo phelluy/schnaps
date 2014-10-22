@@ -38,7 +38,7 @@ int TestInterpolation(void){
 
   // reference element
   double physnode[20][3];
-  physnode[0][0] = 0.2;
+  physnode[0][0] = 0.;
     physnode[0][1] = 0;
     physnode[0][2] = 0;
     physnode[1][0] = 1;
@@ -208,8 +208,8 @@ int TestInterpolation(void){
     deg[1]=d1;
     deg[2]=d2;
     deg[3]=3;
-    deg[4]=1;
-    deg[5]=2;
+    deg[4]=2;
+    deg[5]=1;
 
     nraf[0]=deg[3];
     nraf[1]=deg[4];
@@ -233,15 +233,16 @@ int TestInterpolation(void){
       double dtau[3][3],codtau[3][3];
       Ref2Phy(physnode,xref,NULL,-1,
               xphy,dtau,codtau,NULL,NULL);
-      f[ipg] = pow(xphy[1],(double) d1);
+      //f[ipg] = pow(xphy[1],(double) d1);
+      f[ipg] = pow(xref[1],(double) d1);
       //printf("%d %f\n",ipg,f[ipg]);
-      g[ipg] =   pow(xphy[0],(double) d0);//xphy[0] ;
+      //g[ipg] =   pow(xphy[0],(double) d0)*pow(xphy[1],(double) d1);//xphy[0] ;
+      g[ipg] =   pow(xref[0],(double) d0)*pow(xref[1],(double) 2*d1);//xphy[0] ;
     }
 
     // Computation of the two integrants of green's formula
-    // with null condition on the boundary
     // k corresponds to x, y or z
-    int k = 1;
+    int k = 2;
     double int_dfg = 0;
     double int_fdg = 0;
     // Loop on  Gauss-Lobatto points for the computation
@@ -325,6 +326,7 @@ int TestInterpolation(void){
 	int_fgn += f[deg[6]] * g[deg[6]] * vnds[k] * omega;
       }
     }
+
 
     test = (test && fabs(int_dfg+int_fdg-int_fgn)<1e-8);
 

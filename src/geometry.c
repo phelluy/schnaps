@@ -129,7 +129,7 @@ void GeomPhy2Ref(Geom* g){
   Phy2Ref(g->physnode,g->xphy,g->xref);
 }
 void Phy2Ref(double physnode[20][3],double xphy[3],double xref[3]){
-#define ITERNEWTON 20
+#define ITERNEWTON 40
 
   double dtau[3][3], codtau[3][3];                                              
   double dxref[3], dxphy[3];                                              

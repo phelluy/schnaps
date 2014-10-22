@@ -363,6 +363,250 @@ void PlotField(int typplot,int compare,Field* f,char* filename){
 
 }
 
+// inter-subcell fluxes
+void DGSubCellInterface(Field* f){
+
+  // loop on the elements
+  for (int ie=0;ie<f->macromesh.nbelems;ie++){
+    // get the physical nodes of element ie
+    double physnode[20][3];
+    for(int inoloc=0;inoloc<20;inoloc++){
+      int ino=f->macromesh.elem2node[20*ie+inoloc];
+      physnode[inoloc][0]=f->macromesh.node[3*ino+0];
+      physnode[inoloc][1]=f->macromesh.node[3*ino+1];
+      physnode[inoloc][2]=f->macromesh.node[3*ino+2];
+    }
+
+
+    int nraf[3]={f->interp_param[4],f->interp_param[5],f->interp_param[6]};
+    int deg[3]={f->interp_param[1],f->interp_param[2],f->interp_param[3]};
+
+    int icL[3];
+    for(icL[0]=0;icL[0]<nraf[0];icL[0]++){
+      for(icL[1]=0;icL[1]<nraf[1];icL[1]++){
+	for(icL[2]=0;icL[2]<nraf[2];icL[2]++){
+	  int ncL=icL[0]+nraf[0]*(icL[1]+nraf[1]*icL[2]);
+	  int offsetL=(deg[0]+1)*(deg[1]+1)*(deg[2]+1)*ncL;
+	  for(int dim0=0;dim0<3;dim0++){
+	    int iL[3],dim1=(dim0+1)%3,dim2=(dim0+2)%3;
+	    if (icL[dim0] != nraf[dim0]-1) {
+	      int icR[3]={icL[0],icL[1],icL[2]};
+	      icR[dim0]++;
+	      int ncR=icR[0]+nraf[0]*(icR[1]+nraf[1]*icR[2]);
+	      int offsetR=(deg[0]+1)*(deg[1]+1)*(deg[2]+1)*ncR;
+	      iL[dim0]=deg[dim0];
+	      for(iL[dim1]=0;iL[dim1]<deg[dim1]+1;iL[dim1]++){
+		for(iL[dim2]=0;iL[dim2]<deg[dim2]+1;iL[dim2]++){
+		  int iR[3]={iL[0],iL[1],iL[2]};
+		  iR[dim0]=0;
+		  int ipgL=offsetL+iL[0]+(deg[0]+1)*(iL[1]+(deg[1]+1)*iL[2]);
+		  int ipgR=offsetR+iR[0]+(deg[0]+1)*(iR[1]+(deg[1]+1)*iR[2]);
+		  printf("ipgL=%d ipgR=%d\n",ipgL,ipgR);
+		}
+	      }
+	    }
+	  }
+	}
+      }
+    }
+
+  }
+
+}
+
+
+
+
+// compute the Discontinuous Galerkin inter-macrocells boundary terms
+void DGMacroCellInterface(Field* f){
+
+ // init to zero the time derivative
+  int sizew=0;
+  for(int ie=0;ie<f->macromesh.nbelems;ie++){
+    for(int ipg=0;ipg<NPG(f->interp_param+1);ipg++){
+      for(int iv=0;iv<f->model.m;iv++){
+	int imem=f->varindex(f->interp_param,ie,ipg,iv);
+	f->dtwn[imem]=0;
+        sizew++;
+      }
+    }
+  }
+  assert(sizew==f->macromesh.nbelems * f->model.m * NPG(f->interp_param+1));
+
+  // assembly of the surface terms
+  // loop on the elements
+  for (int ie=0;ie<f->macromesh.nbelems;ie++){
+    // get the physical nodes of element ie
+    double physnode[20][3];
+    for(int inoloc=0;inoloc<20;inoloc++){
+      int ino=f->macromesh.elem2node[20*ie+inoloc];
+      physnode[inoloc][0]=f->macromesh.node[3*ino+0];
+      physnode[inoloc][1]=f->macromesh.node[3*ino+1];
+      physnode[inoloc][2]=f->macromesh.node[3*ino+2];
+    }
+
+    // loop on the 6 faces
+    // or four faces for 2d computations
+    int nbfa=6;
+    if (f->is2d) nbfa=4;
+    for(int ifa=0;ifa<nbfa;ifa++){
+      // get the right elem or the boundary id
+      int ieR=f->macromesh.elem2elem[6*ie+ifa];
+      double physnodeR[20][3];
+      if (ieR >= 0) {
+      	for(int inoloc=0;inoloc<20;inoloc++){
+      	  int ino=f->macromesh.elem2node[20*ieR+inoloc];
+      	  physnodeR[inoloc][0]=f->macromesh.node[3*ino+0];
+      	  physnodeR[inoloc][1]=f->macromesh.node[3*ino+1];
+      	  physnodeR[inoloc][2]=f->macromesh.node[3*ino+2];
+      	}
+      }
+      
+      // loop on the glops (numerical integration)
+      // of the face ifa
+      for(int ipgf=0;ipgf<NPGF(f->interp_param+1,ifa);ipgf++){
+  	double xpgref[3],xpgref_in[3],wpg;
+  	//double xpgref2[3],wpg2;
+  	// get the coordinates of the Gauss point
+	// and coordinates of a point slightly inside the
+	// opposite element in xref_in
+  	ref_pg_face(f->interp_param+1,ifa,ipgf,xpgref,&wpg,xpgref_in);
+
+  	// recover the volume gauss point from
+  	// the face index
+  	int ipg=f->interp_param[7];
+  	// get the left value of w at the gauss point
+  	double wL[f->model.m],wR[f->model.m];
+  	for(int iv=0;iv<f->model.m;iv++){
+  	  int imem=f->varindex(f->interp_param,ie,ipg,iv);
+  	  wL[iv]=f->wn[imem];
+  	}
+  	// the basis functions is also the gauss point index
+  	int ib=ipg;
+  	// normal vector at gauss point ipg
+  	double dtau[3][3],codtau[3][3],xpg[3];
+  	double vnds[3];
+  	Ref2Phy(physnode,
+  		xpgref,
+  		NULL,ifa, // dpsiref,ifa
+  		xpg,dtau,
+  		codtau,NULL,vnds); // codtau,dpsi,vnds
+  	double flux[f->model.m];
+  	if (ieR >=0) {  // the right element exists
+  	  // find the corresponding point in the right elem
+	  double xpg_in[3];
+  	Ref2Phy(physnode,
+  		xpgref_in,
+  		NULL,ifa, // dpsiref,ifa
+  		xpg_in,dtau,
+  		codtau,NULL,vnds); // codtau,dpsi,vnds
+  	  double xref[3];
+	  Phy2Ref(physnodeR,xpg_in,xref);
+  	  int ipgR=ref_ipg(f->interp_param+1,xref);
+	  double xpgR[3],xrefR[3],wpgR;
+	  ref_pg_vol(f->interp_param+1, ipgR, xrefR, &wpgR,NULL);
+	  Ref2Phy(physnodeR,
+		  xrefR,
+		  NULL,-1, // dphiref,ifa
+		  xpgR,NULL,  
+		  NULL,NULL,NULL); // codtau,dphi,vnds
+	  assert(Dist(xpgR,xpg)<1e-10);
+  	  for(int iv=0;iv<f->model.m;iv++){
+  	    int imem=f->varindex(f->interp_param,ieR,ipgR,iv);
+  	    wR[iv]=f->wn[imem];
+  	  }
+  	  // int_dL F(wL,wR,grad phi_ib )
+  	  f->model.NumFlux(wL,wR,vnds,flux);
+  	}
+  	else { //the right element does not exist
+  	  f->model.BoundaryFlux(xpg,f->tnow,wL,vnds,flux);
+  	}
+  	for(int iv=0;iv<f->model.m;iv++){
+  	  int imem=f->varindex(f->interp_param,ie,ib,iv);
+  	  f->dtwn[imem]-=flux[iv]*wpg;
+  	}
+	
+      }
+
+    }
+  }
+
+
+
+}
+
+
+// compute the Discontinuous Galerkin volume terms
+void DGVolume(Field* f){
+
+  // assembly of the volume terms
+  // loop on the elements
+  for (int ie=0;ie<f->macromesh.nbelems;ie++){
+    // get the physical nodes of element ie
+    double physnode[20][3];
+    for(int inoloc=0;inoloc<20;inoloc++){
+      int ino=f->macromesh.elem2node[20*ie+inoloc];
+      physnode[inoloc][0]=f->macromesh.node[3*ino+0];
+      physnode[inoloc][1]=f->macromesh.node[3*ino+1];
+      physnode[inoloc][2]=f->macromesh.node[3*ino+2];
+    }
+
+    // mass matrix
+    double masspg[NPG(f->interp_param+1)];
+    // loop on the glops (for numerical integration)
+    for(int ipg=0;ipg<NPG(f->interp_param+1);ipg++){
+      double xpgref[3],wpg;
+      // get the coordinates of the Gauss point
+      ref_pg_vol(f->interp_param+1,ipg,xpgref,&wpg,NULL);
+
+      // get the value of w at the gauss point
+      double w[f->model.m];
+      for(int iv=0;iv<f->model.m;iv++){
+	int imem=f->varindex(f->interp_param,ie,ipg,iv);
+	w[iv]=f->wn[imem];
+      }
+      // loop on the basis functions
+      for(int ib=0;ib<NPG(f->interp_param+1);ib++){
+	// gradient of psi_ib at gauss point ipg
+	double dpsiref[3],dpsi[3];
+	double dtau[3][3],codtau[3][3];//,xpg[3];
+	grad_psi_pg(f->interp_param+1,ib,ipg,dpsiref);
+	Ref2Phy(physnode, // phys. nodes
+		xpgref,  // xref
+		dpsiref,-1, // dpsiref,ifa
+		NULL,dtau,  // xphy,dtau
+		codtau,dpsi,NULL); // codtau,dpsi,vnds
+	// remember the diagonal mass term
+	if (ib == ipg){
+	  double det=dtau[0][0]*codtau[0][0]+dtau[0][1]*codtau[0][1]+
+	    dtau[0][2]*codtau[0][2];
+	  masspg[ipg]=wpg*det;
+	}
+	// int_L F(w,w,grad phi_ib )
+	double flux[f->model.m];
+	f->model.NumFlux(w,w,dpsi,flux);
+	for(int iv=0;iv<f->model.m;iv++){
+	  int imem=f->varindex(f->interp_param,ie,ib,iv);
+	  f->dtwn[imem]+=flux[iv]*wpg;
+	}
+      }
+    }
+
+    for(int ipg=0;ipg<NPG(f->interp_param+1);ipg++){
+      // apply the inverse of the diagonal mass matrix
+      for(int iv=0;iv<f->model.m;iv++){
+	int imem=f->varindex(f->interp_param,ie,ipg,iv);
+	(f->dtwn[imem])/=masspg[ipg];
+      }
+    }
+
+  }
+
+  
+
+}
+
+
 // apply the Discontinuous Galerkin approximation for computing
 // the time derivative of the field
 void dtField(Field* f){
