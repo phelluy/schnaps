@@ -422,11 +422,11 @@ void DGSubCellInterface(Field* f){
 		  f->model.NumFlux(wL,wR,vnds,flux);
 		  for(int iv=0;iv<f->model.m;iv++){
 		    int imem=f->varindex(f->interp_param,ncL,ipgL,iv);
-		    f->dtwn[imem]-=flux[iv]*wpg;
+		    f->dtwn[imem]-=flux[iv]*wpg/nraf[dim1]/nraf[dim2];
 		  }
 		  for(int iv=0;iv<f->model.m;iv++){
 		    int imem=f->varindex(f->interp_param,ncR,ipgR,iv);
-		    f->dtwn[imem]+=flux[iv]*wpg;
+		    f->dtwn[imem]+=flux[iv]*wpg/nraf[dim1]/nraf[dim2];
 		  }
 
 		  
