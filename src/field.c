@@ -16,7 +16,8 @@
 // param[6] = raf z
 int GenericVarindex(int* param, int elem, int ipg, int iv){
 
-  int npg= (param[1]+1)*(param[2]+1)*(param[3]+1);
+  int npg= (param[1]+1)*(param[2]+1)*(param[3]+1)
+    *param[4]*param[5]*param[6];
 
   return iv + param[0] * ( ipg + npg * elem);
 
@@ -415,18 +416,30 @@ void DGSubCellInterface(Field* f){
 			  NULL,  // dphi
 			  NULL);  // vnds       
 		  double vnds[3];
-		  vnds[0]=codtau[0][dim0];
-		  vnds[1]=codtau[1][dim0];
-		  vnds[2]=codtau[2][dim0];
+		  double h1h2=1./nraf[dim1]/nraf[dim2];
+		  vnds[0]=codtau[0][dim0]*h1h2;
+		  vnds[1]=codtau[1][dim0]*h1h2;
+		  vnds[2]=codtau[2][dim0]*h1h2;
 		  double wL[f->model.m],wR[f->model.m],flux[f->model.m];
-		  f->model.NumFlux(wL,wR,vnds,flux);
 		  for(int iv=0;iv<f->model.m;iv++){
 		    int imem=f->varindex(f->interp_param,ie,ipgL,iv);
-		    f->dtwn[imem]-=flux[iv]*wpg/nraf[dim1]/nraf[dim2];
+		    wL[iv]=f->wn[imem];
+		    imem=f->varindex(f->interp_param,ie,ipgR,iv);
+		    wR[iv]=f->wn[imem];
+		    assert(wR[iv]==2);
+		  }
+		  f->model.NumFlux(wL,wR,vnds,flux);
+		  printf("vnds %f %f %f flux %f wpg %f\n",
+			 vnds[0],vnds[1],vnds[2],
+			 flux[0],wpg);
+		  wpg=wglop(deg[dim1],iL[dim1])*wglop(deg[dim2],iL[dim2]);
+		  for(int iv=0;iv<f->model.m;iv++){
+		    int imem=f->varindex(f->interp_param,ie,ipgL,iv);
+		    f->dtwn[imem]-=flux[iv]*wpg;
 		  }
 		  for(int iv=0;iv<f->model.m;iv++){
 		    int imem=f->varindex(f->interp_param,ie,ipgR,iv);
-		    f->dtwn[imem]+=flux[iv]*wpg/nraf[dim1]/nraf[dim2];
+		    f->dtwn[imem]+=flux[iv]*wpg;
 		  }
 
 		  

@@ -80,7 +80,8 @@ void psi_ref(int* param, int ib, double* xref, double* psi, double* dpsiref);
 // function ib at GLOP ipg.
 void grad_psi_pg(int* param,int ib,int ipg,double* dpsiref);
 
-
+// return the 1d ith GLOP weight for degree deg
+double wglop(int deg,int i);
 
 
 

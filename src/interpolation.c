@@ -50,6 +50,12 @@ const int gauss_lob_offset[] = {
   0, 1, 3, 6, 10
 };
 
+
+// return the 1d ith GLOP weight for degree deg
+double wglop(int deg,int i){
+  return gauss_lob_weight[gauss_lob_offset[deg]+i];
+}
+
 const double gauss_lob_dpsi[] = {
   0.00000000000000000000000000000000000000000000000000000000000,
   -1.,

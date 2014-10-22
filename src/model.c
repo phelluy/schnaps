@@ -6,11 +6,12 @@
 #define ONE_OVER_SQRT_3 (0.57735026918962584)
 #define ONE_OVER_SQRT_2 (0.707106781186547524400844362105)
 
-const double transport_v[] = {
-  ONE_OVER_SQRT_3,
-  ONE_OVER_SQRT_3,
-  ONE_OVER_SQRT_3};
+/* const double transport_v[] = { */
+/*   ONE_OVER_SQRT_3, */
+/*   ONE_OVER_SQRT_3, */
+/*   ONE_OVER_SQRT_3}; */
 
+const double transport_v[] = {1,0,0};
 
 const double transport_v2d[] = {
   ONE_OVER_SQRT_2,
@@ -137,6 +138,7 @@ void TestTransportImposedData(double x[3],double t,double w[]){
 
   w[0]=xx*xx;
   w[0]=xx;
+  w[0]=2;
 };
 
 void TestTransportImposedData2d(double x[3],double t,double w[]){
