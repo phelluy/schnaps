@@ -426,12 +426,11 @@ void DGSubCellInterface(Field* f){
 		    wL[iv]=f->wn[imem];
 		    imem=f->varindex(f->interp_param,ie,ipgR,iv);
 		    wR[iv]=f->wn[imem];
-		    assert(wR[iv]==2);
 		  }
 		  f->model.NumFlux(wL,wR,vnds,flux);
-		  printf("vnds %f %f %f flux %f wpg %f\n",
-			 vnds[0],vnds[1],vnds[2],
-			 flux[0],wpg);
+		  /* printf("vnds %f %f %f flux %f wpg %f\n", */
+		  /* 	 vnds[0],vnds[1],vnds[2], */
+		  /* 	 flux[0],wpg); */
 		  wpg=wglop(deg[dim1],iL[dim1])*wglop(deg[dim2],iL[dim2]);
 		  for(int iv=0;iv<f->model.m;iv++){
 		    int imem=f->varindex(f->interp_param,ie,ipgL,iv);

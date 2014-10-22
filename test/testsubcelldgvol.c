@@ -31,9 +31,9 @@ int TestFieldSubCellDGVol(void){
   f.varindex=GenericVarindex;
 
   f.interp.interp_param[0]=1;  // _M
-  f.interp.interp_param[1]=1;  // x direction degree
-  f.interp.interp_param[2]=1;  // y direction degree
-  f.interp.interp_param[3]=1;  // z direction degree
+  f.interp.interp_param[1]=2;  // x direction degree
+  f.interp.interp_param[2]=2;  // y direction degree
+  f.interp.interp_param[3]=2;  // z direction degree
   f.interp.interp_param[4]=2;  // x direction refinement
   f.interp.interp_param[5]=2;  // y direction refinement
   f.interp.interp_param[6]=1;  // z direction refinement
