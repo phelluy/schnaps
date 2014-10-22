@@ -402,6 +402,34 @@ void DGSubCellInterface(Field* f){
 		  int ipgL=offsetL+iL[0]+(deg[0]+1)*(iL[1]+(deg[1]+1)*iL[2]);
 		  int ipgR=offsetR+iR[0]+(deg[0]+1)*(iR[1]+(deg[1]+1)*iR[2]);
 		  printf("ipgL=%d ipgR=%d\n",ipgL,ipgR);
+		  double xref[3],wpg;		  
+		  ref_pg_vol(f->interp_param+1,ipgL,xref,&wpg,NULL);
+		  double dtau[3][3],codtau[3][3];
+		  Ref2Phy(physnode,
+			  xref,
+			  NULL,  // dphiref
+			  -1,    // ifa                                 
+			  NULL,  // xphy  
+			  dtau,
+			  codtau,
+			  NULL,  // dphi
+			  NULL);  // vnds       
+		  double vnds[3];
+		  vnds[0]=codtau[0][dim0];
+		  vnds[1]=codtau[1][dim0];
+		  vnds[2]=codtau[2][dim0];
+		  double wL[f->model.m],wR[f->model.m],flux[f->model.m];
+		  f->model.NumFlux(wL,wR,vnds,flux);
+		  for(int iv=0;iv<f->model.m;iv++){
+		    int imem=f->varindex(f->interp_param,ncL,ipgL,iv);
+		    f->dtwn[imem]-=flux[iv]*wpg;
+		  }
+		  for(int iv=0;iv<f->model.m;iv++){
+		    int imem=f->varindex(f->interp_param,ncR,ipgR,iv);
+		    f->dtwn[imem]+=flux[iv]*wpg;
+		  }
+
+		  
 		}
 	      }
 	    }
