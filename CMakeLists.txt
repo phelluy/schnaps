@@ -2,7 +2,6 @@ cmake_minimum_required(VERSION 2.8)
 
 project(schnaps)
 
-set(CMAKE_C_COMPILER "clang")
 set(CMAKE_C_FLAGS "-std=c99 -Ofast")
 include_directories(src)
 
