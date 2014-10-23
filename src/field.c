@@ -199,6 +199,11 @@ void PlotField(int typplot,int compare,Field* f,char* filename){
   // data plots
   int mw = f->model.m;
   //int param[8]={f->model.m,_DEGX,_DEGY,_DEGZ,_RAFX,_RAFY,_RAFZ,0};
+  int nraf[3]={f->interp_param[4],f->interp_param[5],f->interp_param[6]};
+  int deg[3]={f->interp_param[1],f->interp_param[2],f->interp_param[3]};
+  // refinement size in each direction
+  double hh[3]={1./nraf[0],1./nraf[1],1./nraf[2]};
+
   int npgv = NPG(f->interp_param+1);
   int nnodes = 20;
 
@@ -210,7 +215,13 @@ void PlotField(int typplot,int compare,Field* f,char* filename){
   fprintf(gmshfile,"$MeshFormat\n2.2 0 %d\n",(int) sizeof(double));
   //int one=1;
   //fwrite((char*) &one,sizeof(int),1,gmshfile);
-  fprintf(gmshfile,"$EndMeshFormat\n$Nodes\n%d\n",f->macromesh.nbelems*64);
+  fprintf(gmshfile,"$EndMeshFormat\n$Nodes\n%d\n",
+	  f->macromesh.nbelems*nraf[0]*nraf[1]*nraf[2]*64);
+
+  int nb_plotnodes=f->macromesh.nbelems*nraf[0]*nraf[1]*nraf[2]*64;
+  double* value=malloc(nb_plotnodes*sizeof(double));
+  assert(value);
+  int nodecount=0;
   // nodes
   for(int i=0;i<f->macromesh.nbelems;i++){
     // get the nodes of element L
@@ -220,33 +231,70 @@ void PlotField(int typplot,int compare,Field* f,char* filename){
         Xn[ino][ii]=node[3*numnoe+ii];
       }
     }
-    for(int ino=0;ino<64;ino++){
-      int nnoe=64*i+ino+1;
-      Xr[0]=(double) (hexa64ref[3*ino+0]) / 3;
-      Xr[1]=(double) (hexa64ref[3*ino+1]) / 3;
-      Xr[2]=(double) (hexa64ref[3*ino+2]) / 3;
+    // loop on the macro elem subcells
+    int icL[3];
+    // loop on the subcells
+    for(icL[0]=0;icL[0]<nraf[0];icL[0]++){
+      for(icL[1]=0;icL[1]<nraf[1];icL[1]++){
+	for(icL[2]=0;icL[2]<nraf[2];icL[2]++){
+	  // get the left subcell id
+	  int ncL=icL[0]+nraf[0]*(icL[1]+nraf[1]*icL[2]);
+	  // first glop index in the subcell
+	  //int offsetL=(deg[0]+1)*(deg[1]+1)*(deg[2]+1)*ncL;
+	  
+	  for(int ino=0;ino<64;ino++){
+	    int nnoe=64*i+ino+1;
+	    Xr[0]=(double) (hexa64ref[3*ino+0]) / 3;
+	    Xr[1]=(double) (hexa64ref[3*ino+1]) / 3;
+	    Xr[2]=(double) (hexa64ref[3*ino+2]) / 3;
+	    
+	    Xr[0] = icL[0]*hh[0]+ Xr[0] * hh[0];
+	    Xr[1] = icL[1]*hh[1]+ Xr[1] * hh[1];
+	    Xr[2] = icL[2]*hh[2]+ Xr[2] * hh[2];
+	    
+	    Ref2Phy(Xn,
+		    Xr,
+		    NULL,
+		    -1,
+		    Xphy,
+		    NULL,
+		    NULL,
+		    NULL,
+		    NULL);
 
-      Ref2Phy(Xn,
-	      Xr,
-	      NULL,
-	      -1,
-	      Xphy,
-	      NULL,
-	      NULL,
-	      NULL,
-	      NULL);
+	    double Xplot[3];
+	    Xplot[0]=Xphy[0];
+	    Xplot[1]=Xphy[1];
+	    Xplot[2]=Xphy[2];
 
-      double Xplot[3];
-      Xplot[0]=Xphy[0];
-      Xplot[1]=Xphy[1];
-      Xplot[2]=Xphy[2];
+	    value[nodecount]=0;
+	    for(int ib=0;ib<npgv;ib++){
+	      double psi;
+	      psi_ref_subcell(f->interp_param+1,icL, ib, Xr, &psi, NULL);
+	      
+	      int vi = f->varindex(f->interp_param, i, ib, typplot);
+	      value[nodecount] += psi * f->wn[vi];
+	    }
 
-      // fwrite((char*) &nnoe,sizeof(int),1,gmshfile);
-      // fwrite((char*) &(Xplot[0]),sizeof(double),1,gmshfile);
-      // fwrite((char*) &(Xplot[1]),sizeof(double),1,gmshfile);
-      // fwrite((char*) &(Xplot[2]),sizeof(double),1,gmshfile);
-      fprintf(gmshfile,"%d %f %f %f\n",nnoe,Xplot[0],Xplot[1],Xplot[2]);
-      
+	    // compare with an
+	    // exact solution
+	    if (compare){
+	      double wex[f->model.m];
+	      f->model.ImposedData(Xphy,f->tnow,wex);
+	      value[nodecount] -= wex[typplot];
+	    }
+	    nodecount++;
+
+
+	    // fwrite((char*) &nnoe,sizeof(int),1,gmshfile);
+	    // fwrite((char*) &(Xplot[0]),sizeof(double),1,gmshfile);
+	    // fwrite((char*) &(Xplot[1]),sizeof(double),1,gmshfile);
+	    // fwrite((char*) &(Xplot[2]),sizeof(double),1,gmshfile);
+	    fprintf(gmshfile,"%d %f %f %f\n",nnoe,Xplot[0],Xplot[1],Xplot[2]);
+	    
+	  }
+	}
+      }
     }
   }
 
@@ -256,7 +304,7 @@ void PlotField(int typplot,int compare,Field* f,char* filename){
 
   // elements
   fprintf(gmshfile,"$Elements\n");
-  fprintf(gmshfile,"%d\n",f->macromesh.nbelems);
+  fprintf(gmshfile,"%d\n",f->macromesh.nbelems*nraf[0]*nraf[1]*nraf[2]);
 
 
 
@@ -269,25 +317,41 @@ void PlotField(int typplot,int compare,Field* f,char* filename){
   // fwrite((char*) &num_tags,sizeof(int),1,gmshfile);
 
   for(int i=0;i<f->macromesh.nbelems;i++){
+
+    // loop on the macro elem subcells
+    int icL[3];
+    // loop on the subcells
+    for(icL[0]=0;icL[0]<nraf[0];icL[0]++){
+      for(icL[1]=0;icL[1]<nraf[1];icL[1]++){
+	for(icL[2]=0;icL[2]<nraf[2];icL[2]++){
+	  // get the subcell id
+	  int ncL=icL[0]+nraf[0]*(icL[1]+nraf[1]*icL[2]);
+	  // first glop index in the subcell
+	  //int offsetL=(deg[0]+1)*(deg[1]+1)*(deg[2]+1)*ncL;
+
+	  // global subcell id
+	  int numelem=ncL+i*nraf[0]*nraf[1]*nraf[2]+1;
+	  //fwrite((char*) &numelem,sizeof(int),1,gmshfile);
+	  fprintf(gmshfile,"%d ",numelem);
+	  fprintf(gmshfile,"%d ",elm_type);
+	  fprintf(gmshfile,"%d ",num_tags);
     
-    int numelem=i+1;
-    //fwrite((char*) &numelem,sizeof(int),1,gmshfile);
-    fprintf(gmshfile,"%d ",numelem);
-    fprintf(gmshfile,"%d ",elm_type);
-    fprintf(gmshfile,"%d ",num_tags);
     
-    
-    for(int ii=0;ii<64;ii++){
-      int numnoe=64*i + ii +1;
-      //fwrite((char*) &numnoe,sizeof(int),1,gmshfile);
-      fprintf(gmshfile,"%d ",numnoe);
+	  for(int ii=0;ii<64;ii++){
+	    int numnoe=64*(i*nraf[0]*nraf[1]*nraf[2]+ncL) + ii +1;
+	    //fwrite((char*) &numnoe,sizeof(int),1,gmshfile);
+	    fprintf(gmshfile,"%d ",numnoe);
+	  }
+	  fprintf(gmshfile,"\n");
+	}
+      }
     }
-    fprintf(gmshfile,"\n");
   }
   
   fprintf(gmshfile,"$EndElements\n");
-  
-  
+
+  fclose(gmshfile);
+  assert(1==2);
   // now display data
     
     fprintf(gmshfile,"$NodeData\n");

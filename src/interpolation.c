@@ -463,10 +463,7 @@ void psi_ref(int* param, int ib, double* xref, double* psi, double* dpsi){
   lagrange_polynomial(&psibz, gauss_lob_point + offset[2],
                       deg[2], ibz, xref[2]/hz-ncbz);
 
-  // might be useful for the future subcell case
-  /* psibx *= (xref[0] <= (ncbx + 1) * hx)&&(xref[0] > ncbx * hx); */
-  /* psiby *= (xref[1] <= (ncby + 1) * hy)&&(xref[1] > ncby * hy); */
-  /* psibz *= (xref[2] <= (ncbz + 1) * hz)&&(xref[2] > ncbz * hz); */
+  assert(nraf[0]==1 && nraf[1]==1 && nraf[2]==1);
 
   *psi = psibx * psiby * psibz;
 
@@ -485,6 +482,93 @@ void psi_ref(int* param, int ib, double* xref, double* psi, double* dpsi){
   }
 
 };
+
+// same function but with specification of the subcell
+// indices is[3] in the three directions: now the computation
+// is reliable
+void psi_ref_subcell(int* param, int* is,int ib, double* xref, double* psi, double* dpsi){
+
+  double dpsibx;
+  double dpsiby;
+  double dpsibz;
+
+  int deg[3],offset[3],nraf[3];
+  
+  // approximation degree in each direction
+  deg[0]=param[0];
+  deg[1]=param[1];
+  deg[2]=param[2];
+  // number of subcells in each direction
+  nraf[0]=param[3];
+  nraf[1]=param[4];
+  nraf[2]=param[5];
+  // Starting Gauss-Lobatto point in each direction
+  offset[0]=gauss_lob_offset[deg[0]];
+  offset[1]=gauss_lob_offset[deg[1]];
+  offset[2]=gauss_lob_offset[deg[2]];
+
+  // basis functions indices
+  int ibx = ib % (deg[0] + 1);  
+  ib/=(deg[0] + 1);
+
+  int iby = ib % (deg[1] + 1);
+  ib/=(deg[1] + 1);
+
+  int ibz = ib % (deg[2] + 1);
+  ib/=(deg[2] + 1);
+
+  int ncbx= ib % nraf[0];
+  double hx=1/(double) nraf[0]; 
+  ib/=nraf[0];
+
+  int ncby= ib % nraf[1];
+  double hy=1/(double) nraf[1]; 
+  ib/=nraf[1];
+
+  int ncbz= ib;
+  double hz=1/(double) nraf[2]; 
+
+  int is_in_subcell= (ncbx==is[0]) && (ncby==is[1]) && (ncbz==is[2]);
+
+  double psibx = 0;
+  double psiby = 0;
+  double psibz = 0;
+
+  lagrange_polynomial(&psibx, gauss_lob_point + offset[0],
+                      deg[0], ibx, xref[0]/hx-ncbx);
+  lagrange_polynomial(&psiby, gauss_lob_point + offset[1],
+                      deg[1], iby, xref[1]/hy-ncby);
+  lagrange_polynomial(&psibz, gauss_lob_point + offset[2],
+                      deg[2], ibz, xref[2]/hz-ncbz);
+
+  // might be useful for the future subcell case
+  /* psibx *= (xref[0] <= (ncbx + 1) * hx)&&(xref[0] > ncbx * hx); */
+  /* psiby *= (xref[1] <= (ncby + 1) * hy)&&(xref[1] > ncby * hy); */
+  /* psibz *= (xref[2] <= (ncbz + 1) * hz)&&(xref[2] > ncbz * hz); */
+
+  *psi = psibx * psiby * psibz * is_in_subcell ;
+
+  if (dpsi != NULL){
+
+    dlagrange_polynomial(&dpsibx, gauss_lob_point + offset[0],
+                         deg[0], ibx, xref[0]);
+    dlagrange_polynomial(&dpsiby, gauss_lob_point + offset[1],
+                         deg[1], iby, xref[1]);
+    dlagrange_polynomial(&dpsibz, gauss_lob_point + offset[2],
+                         deg[2], ibz, xref[2]);
+
+    dpsi[0] = dpsibx *  psiby *  psibz * is_in_subcell;
+    dpsi[1] =  psibx * dpsiby *  psibz * is_in_subcell;
+    dpsi[2] =  psibx *  psiby * dpsibz * is_in_subcell;
+  }
+
+
+
+}
+
+
+
+
 
 // return the gradient dpsi[0..2] of the basis 
 // function ib at GLOP ipg.

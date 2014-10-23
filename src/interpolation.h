@@ -80,6 +80,11 @@ void psi_ref(int* param, int ib, double* xref, double* psi, double* dpsiref);
 // function ib at GLOP ipg.
 void grad_psi_pg(int* param,int ib,int ipg,double* dpsiref);
 
+// same function but with specification of the subcell
+// indices is[3] in the three directions
+void psi_ref_subcell(int* param, int* is,int ib, double* xref, double* psi, double* dpsiref);
+
+
 // return the 1d ith GLOP weight for degree deg
 double wglop(int deg,int i);
 
