@@ -443,86 +443,107 @@ void DGSubCellInterface(Field* f){
     }
 
 
-    int nraf[3]={f->interp_param[4],f->interp_param[5],f->interp_param[6]};
-    int deg[3]={f->interp_param[1],f->interp_param[2],f->interp_param[3]};
+    const int nraf[3]={f->interp_param[4],
+		       f->interp_param[5],
+		       f->interp_param[6]};
+    const int deg[3]={f->interp_param[1],
+		      f->interp_param[2],
+		      f->interp_param[3]};
+    const int npg[3] = {deg[0]+1,
+			deg[1]+1,
+			deg[2]+1};
+    const int m = f->model.m;
 
     int icL[3];
     // loop on the subcells
-    for(icL[0]=0;icL[0]<nraf[0];icL[0]++){
-      for(icL[1]=0;icL[1]<nraf[1];icL[1]++){
-	for(icL[2]=0;icL[2]<nraf[2];icL[2]++){
+    for(icL[0] = 0; icL[0] < nraf[0]; icL[0]++){
+      for(icL[1] = 0; icL[1] < nraf[1]; icL[1]++){
+	for(icL[2] = 0; icL[2] < nraf[2]; icL[2]++){
 	  // get the left subcell id
 	  int ncL=icL[0]+nraf[0]*(icL[1]+nraf[1]*icL[2]);
 	  // first glop index in the subcell
-	  int offsetL=(deg[0]+1)*(deg[1]+1)*(deg[2]+1)*ncL;
+	  int offsetL=npg[0]*npg[1]*npg[2]*ncL;
+
 	  // sweeping subcell faces in the three directions
-	  for(int dim0=0;dim0<3;dim0++){
+	  for(int dim0 = 0; dim0 < 3; dim0++){
 	    // compute the subface flux only
 	    // if we do not touch the subcell boundary
 	    // along the current direction dim0
 	    if (icL[dim0] != nraf[dim0]-1) {
 	      int icR[3]={icL[0],icL[1],icL[2]};
-	      // the right cell index corresponds to 
-	      // an increment in the dim0 direction
+	      // The right cell index corresponds to an increment in
+	      // the dim0 direction
 	      icR[dim0]++;
 	      int ncR=icR[0]+nraf[0]*(icR[1]+nraf[1]*icR[2]);
-	      int offsetR=(deg[0]+1)*(deg[1]+1)*(deg[2]+1)*ncR;
+	      int offsetR=npg[0]*npg[1]*npg[2]*ncR;
+
 	      // now loop on the left glops of the subface
-	      int iL[3],dim1=(dim0+1)%3,dim2=(dim0+2)%3;
-	      iL[dim0]=deg[dim0];
-	      for(iL[dim1]=0;iL[dim1]<deg[dim1]+1;iL[dim1]++){
-		for(iL[dim2]=0;iL[dim2]<deg[dim2]+1;iL[dim2]++){
+	      int dim1=(dim0+1)%3, dim2=(dim0+2)%3;
+	      int iL[3];
+	      iL[dim0] = deg[dim0];
+		for(iL[dim1] = 0; iL[dim1] < npg[dim1]; iL[dim1]++){
+		  for(iL[dim2] = 0; iL[dim2]< npg[dim2]; iL[dim2]++){
 		  // find the right and left glops volume indices
-		  int iR[3]={iL[0],iL[1],iL[2]};
-		  iR[dim0]=0;
+		  int iR[3] = {iL[0],iL[1],iL[2]};
+		  iR[dim0] = 0;
+
 		  int ipgL=offsetL+iL[0]+(deg[0]+1)*(iL[1]+(deg[1]+1)*iL[2]);
 		  int ipgR=offsetR+iR[0]+(deg[0]+1)*(iR[1]+(deg[1]+1)*iR[2]);
 		  //printf("ipgL=%d ipgR=%d\n",ipgL,ipgR);
-		  double xref[3],wpg;		  
-		  ref_pg_vol(f->interp_param+1,ipgL,xref,&wpg,NULL);
-		  // mapping from the ref glop to the physical glop
-		  double dtau[3][3],codtau[3][3];
-		  Ref2Phy(physnode,
-			  xref,
-			  NULL,  // dphiref
-			  -1,    // ifa                                 
-			  NULL,  // xphy  
-			  dtau,
-			  codtau,
-			  NULL,  // dphi
-			  NULL);  // vnds       
-		  // we compute ourself the normal vector because
-		  // we have to take into account the subcell surface
+
+		  // Compute the normal vector for integrating on the
+		  // face
 		  double vnds[3];
-		  double h1h2=1./nraf[dim1]/nraf[dim2];
-		  vnds[0]=codtau[0][dim0]*h1h2;
-		  vnds[1]=codtau[1][dim0]*h1h2;
-		  vnds[2]=codtau[2][dim0]*h1h2;
+		  {
+		    double xref[3], wpg3;		  
+		    ref_pg_vol(f->interp_param+1,ipgL,xref,&wpg3,NULL);
+		    // mapping from the ref glop to the physical glop
+		    double dtau[3][3],codtau[3][3];
+		    Ref2Phy(physnode,
+			    xref,
+			    NULL,  // dphiref
+			    -1,    // ifa                                 
+			    NULL,  // xphy  
+			    dtau,
+			    codtau,
+			    NULL,  // dphi
+			    NULL);  // vnds       
+		    // we compute ourself the normal vector because we
+		    // have to take into account the subcell surface
+		    
+		    double h1h2=1./nraf[dim1]/nraf[dim2];
+		    vnds[0] = codtau[0][dim0]*h1h2;
+		    vnds[1] = codtau[1][dim0]*h1h2;
+		    vnds[2] = codtau[2][dim0]*h1h2;
+		  }
+
 		  // numerical flux from the left and right state and
 		  // normal vector
-		  double wL[f->model.m],wR[f->model.m],flux[f->model.m];
-		  for(int iv=0;iv<f->model.m;iv++){
-		    int imem=f->varindex(f->interp_param,ie,ipgL,iv);
-		    wL[iv]=f->wn[imem];
-		    imem=f->varindex(f->interp_param,ie,ipgR,iv);
-		    wR[iv]=f->wn[imem];
+		  double wL[m],wR[m],flux[m];
+		  for(int iv=0; iv < m; iv++){
+		    int imemL=f->varindex(f->interp_param,ie,ipgL,iv);
+		    int imemR=f->varindex(f->interp_param,ie,ipgR,iv);
+		    wL[iv] = f->wn[imemL];
+		    wR[iv] = f->wn[imemR];
 		  }
 		  f->model.NumFlux(wL,wR,vnds,flux);
+	
+		  // subcell ref surface glop weight
+		  double wpg
+		    = wglop(deg[dim1],iL[dim1]) 
+		    * wglop(deg[dim2],iL[dim2]);
+
 		  /* printf("vnds %f %f %f flux %f wpg %f\n", */
 		  /* 	 vnds[0],vnds[1],vnds[2], */
 		  /* 	 flux[0],wpg); */
-		  // subcell ref surface glop weight
-		  wpg=wglop(deg[dim1],iL[dim1])*wglop(deg[dim2],iL[dim2]);
+		  
 		  // finally distribute the flux on the two sides
-		  for(int iv=0;iv<f->model.m;iv++){
-		    int imem=f->varindex(f->interp_param,ie,ipgL,iv);
-		    f->dtwn[imem]-=flux[iv]*wpg;
-		  }
-		  for(int iv=0;iv<f->model.m;iv++){
-		    int imem=f->varindex(f->interp_param,ie,ipgR,iv);
-		    f->dtwn[imem]+=flux[iv]*wpg;
-		  }
-
+		    for(int iv=0; iv < m; iv++){
+		      int imemL = f->varindex(f->interp_param, ie, ipgL, iv);
+		      int imemR = f->varindex(f->interp_param, ie, ipgR, iv);
+		      f->dtwn[imemL] -= flux[iv] * wpg;
+		      f->dtwn[imemR] += flux[iv] * wpg;
+		    }
 		  
 		}  // face yhat loop
 	      } // face xhat loop
