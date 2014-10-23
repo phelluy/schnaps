@@ -47,6 +47,8 @@ void TransportNumFlux2d(double wL[],double wR[],double* vnorm,double* flux){
    /* if (fabs(vnorm[2])>1e-6){ */
    /*   printf("vnds %lf %lf %lf \n",vnorm[0],vnorm[1],vnorm[2]); */
    /* } */
+   // verify that 2d computations are actually
+   // activated
    assert(fabs(vnorm[2])<1e-8);
 
 
