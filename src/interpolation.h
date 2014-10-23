@@ -87,7 +87,8 @@ void psi_ref_subcell(int* param, int* is,int ib, double* xref, double* psi, doub
 
 // return the 1d ith GLOP weight for degree deg
 double wglop(int deg,int i);
-
+// return the 1d derivative of lagrange polynomial ib at glop ipg
+double dlag(int deg,int ib,int ipg);
 
 
 

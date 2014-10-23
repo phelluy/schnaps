@@ -406,6 +406,14 @@ void ref_pg_face(int* param,int ifa,int ipg,
 
 };
 
+
+// return the 1d derivative of lagrange polynomial ib at glop ipg
+double dlag(int deg,int ib,int ipg){
+
+  return gauss_lob_dpsi[gauss_lob_dpsi_offset[deg]+ib*(deg+1)+ipg];
+
+}
+
 // return the value psi  and the gradient dpsi[3] of the basis 
 // function ib at point xref[3]. Warning: the value of the gradient is
 // not reliable if xref is on the boundary 

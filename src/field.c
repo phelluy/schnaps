@@ -693,8 +693,134 @@ void DGMacroCellInterface(Field* f){
 }
 
 
+// apply division by the mass matrix
+void DGMass(Field* f){
+
+  // loop on the elements
+  for (int ie=0;ie<f->macromesh.nbelems;ie++){
+    // get the physical nodes of element ie
+    double physnode[20][3];
+    for(int inoloc=0;inoloc<20;inoloc++){
+      int ino=f->macromesh.elem2node[20*ie+inoloc];
+      physnode[inoloc][0]=f->macromesh.node[3*ino+0];
+      physnode[inoloc][1]=f->macromesh.node[3*ino+1];
+      physnode[inoloc][2]=f->macromesh.node[3*ino+2];
+    }
+
+    const int m = f->model.m;
+
+    for(int ipg=0;ipg<NPG(f->interp_param+1);ipg++){
+      double dtau[3][3],codtau[3][3],xpgref[3],wpg;
+      ref_pg_vol(f->interp_param+1,ipg,xpgref,&wpg,NULL);
+      Ref2Phy(physnode, // phys. nodes
+	      xpgref,  // xref
+	      NULL,-1, // dpsiref,ifa
+	      NULL,dtau,  // xphy,dtau
+	      codtau,NULL,NULL); // codtau,dpsi,vnds
+      double det=dtau[0][0]*codtau[0][0]+dtau[0][1]*codtau[0][1]+
+	dtau[0][2]*codtau[0][2];
+      for(int iv=0;iv<f->model.m;iv++){
+	int imem=f->varindex(f->interp_param,ie,ipg,iv);
+	f->dtwn[imem]/=(wpg*det);
+      }
+    }
+  }
+
+
+}
+
 // compute the Discontinuous Galerkin volume terms
+// fast version
 void DGVolume(Field* f){
+
+  // loop on the elements
+  for (int ie=0;ie<f->macromesh.nbelems;ie++){
+    // get the physical nodes of element ie
+    double physnode[20][3];
+    for(int inoloc=0;inoloc<20;inoloc++){
+      int ino=f->macromesh.elem2node[20*ie+inoloc];
+      physnode[inoloc][0]=f->macromesh.node[3*ino+0];
+      physnode[inoloc][1]=f->macromesh.node[3*ino+1];
+      physnode[inoloc][2]=f->macromesh.node[3*ino+2];
+    }
+
+
+    const int nraf[3]={f->interp_param[4],
+		       f->interp_param[5],
+		       f->interp_param[6]};
+    const int deg[3]={f->interp_param[1],
+		      f->interp_param[2],
+		      f->interp_param[3]};
+    const int npg[3] = {deg[0]+1,
+			deg[1]+1,
+			deg[2]+1};
+    const int m = f->model.m;
+
+    int icL[3];
+    // loop on the subcells
+    for(icL[0] = 0; icL[0] < nraf[0]; icL[0]++){
+      for(icL[1] = 0; icL[1] < nraf[1]; icL[1]++){
+	for(icL[2] = 0; icL[2] < nraf[2]; icL[2]++){
+	  // get the L subcell id
+	  int ncL=icL[0]+nraf[0]*(icL[1]+nraf[1]*icL[2]);
+	  // first glop index in the subcell
+	  int offsetL=npg[0]*npg[1]*npg[2]*ncL;
+
+	  // loop in the "cross" in the three directions
+	  for(int dim0 = 0; dim0 < 3; dim0++){
+	    // point p at which we compute the flux
+	    int p[3];
+	    for(p[0] = 0; p[0] < npg[0]; p[0]++){
+	      for(p[1] = 0; p[1] < npg[1]; p[1]++){
+		for(p[2] = 0; p[2] < npg[2]; p[2]++){
+		  double wL[m],flux[m];
+		  int ipgL=offsetL+p[0]+npg[0]*(p[1]+npg[1]*p[2]);
+		  for(int iv=0; iv < m; iv++){
+		    int imemL=f->varindex(f->interp_param,ie,ipgL,iv);
+		    wL[iv] = f->wn[imemL];
+		  }
+		  int q[3]={p[0],p[1],p[2]};
+		  // loop on the direction dim0 on the "cross"
+		  for(int iq = 0; iq < npg[dim0]; iq++){
+		    q[dim0]=(p[dim0]+iq)%npg[dim0];
+		    double dphiref[3]={0,0,0};
+		    // compute grad phi_q at glop p
+		    dphiref[dim0]=dlag(deg[dim0],q[dim0],p[dim0])*nraf[dim0];
+		    double xref[3], wpg;		  
+		    ref_pg_vol(f->interp_param+1,ipgL,xref,&wpg,NULL);
+		    // mapping from the ref glop to the physical glop
+		    double dtau[3][3],codtau[3][3],dphi[3];
+		    Ref2Phy(physnode,
+			    xref,
+			    dphiref,  // dphiref
+			    -1,    // ifa                                 
+			    NULL,  // xphy  
+			    dtau,
+			    codtau,
+			    dphi,  // dphi
+			    NULL);  // vnds   
+    
+		    f->model.NumFlux(wL,wL,dphi,flux);
+		    int ipgR=offsetL+q[0]+npg[0]*(q[1]+npg[1]*q[2]);
+		    for(int iv=0; iv < m; iv++){
+		      int imemR=f->varindex(f->interp_param,ie,ipgR,iv);		     	       f->dtwn[imemR]+=flux[iv]*wpg;
+		    }
+		  } // iq
+		} // p2
+	      } // p1
+	    } // p0
+	  } // dim loop
+	} // icl2
+      } //icl1
+    } // icl0
+  }
+
+
+}
+
+// compute the Discontinuous Galerkin volume terms
+// slow version
+void DGVolumeSlow(Field* f){
 
   // assembly of the volume terms
   // loop on the elements

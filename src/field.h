@@ -47,6 +47,9 @@ void dtField(Field* f);
 void dtFieldRaf(Field* f);
 // compute the Discontinuous Galerkin volume terms
 void DGVolume(Field* f);
+// compute the Discontinuous Galerkin volume terms
+// slow version
+void DGVolumeSlow(Field* f);
 // compute the Discontinuous Galerkin inter-subcells terms
 void DGSubCellInterface(Field* f);
 // compute the Discontinuous Galerkin inter-macrocells boundary terms

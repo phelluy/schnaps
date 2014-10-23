@@ -137,6 +137,7 @@ void TestTransportImposedData(double x[3],double t,double w[]){
   double xx = vx - t;
 
   w[0]=xx*xx;
+  //w[0]=xx;
 };
 
 void TestTransportImposedData2d(double x[3],double t,double w[]){

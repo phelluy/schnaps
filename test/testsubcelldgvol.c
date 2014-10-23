@@ -54,6 +54,8 @@ int TestFieldSubCellDGVol(void){
   DGSubCellInterface(&f);
 
   DGVolume(&f);
+
+  DGMass(&f);
   
   DisplayField(&f);  
 
