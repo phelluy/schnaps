@@ -40,7 +40,6 @@ int TestFieldRK2_2D(void) {
 
 
   ReadMacroMesh(&(f.macromesh),"test/testdisque2d.msh");
-  f.is2d=true;
   bool is2d=Detect2DMacroMesh(&(f.macromesh));
   assert(is2d);
   BuildConnectivity(&(f.macromesh));
@@ -48,6 +47,8 @@ int TestFieldRK2_2D(void) {
   //AffineMapMacroMesh(&(f.macromesh));
  
   InitField(&f);
+  // require a 2d computation
+  f.is2d=true;
 
 
   CheckMacroMesh(&(f.macromesh),f.interp.interp_param+1);

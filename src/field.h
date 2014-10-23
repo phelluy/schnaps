@@ -42,9 +42,9 @@ void InitField(Field* f);
 
 // apply the Discontinuous Galerkin approximation for computing
 // the time derivative of the field (one subcell version)
-void dtField(Field* f);
+void dtFieldSlow(Field* f);
 // same function but works with subcells
-void dtFieldRaf(Field* f);
+void dtField(Field* f);
 // compute the Discontinuous Galerkin volume terms
 void DGVolume(Field* f);
 // compute the Discontinuous Galerkin volume terms

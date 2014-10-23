@@ -16,40 +16,48 @@ int main(void) {
 
 
   f.interp.interp_param[0]=1;  // _M
-  f.interp.interp_param[1]=2;  // x direction degree
-  f.interp.interp_param[2]=2;  // y direction degree
+  f.interp.interp_param[1]=3;  // x direction degree
+  f.interp.interp_param[2]=3;  // y direction degree
   f.interp.interp_param[3]=0;  // z direction degree
-  f.interp.interp_param[4]=1;  // x direction refinement
-  f.interp.interp_param[5]=1;  // y direction refinement
+  f.interp.interp_param[4]=8;  // x direction refinement
+  f.interp.interp_param[5]=8;  // y direction refinement
   f.interp.interp_param[6]=1;  // z direction refinement
 
 
-  ReadMacroMesh(&(f.macromesh),"geo/disque.msh");
-  f.is2d=true;
+  // read the gmsh file
+  ReadMacroMesh(&(f.macromesh),"test/testmacromesh.msh");
+  // try to detect a 2d mesh
   bool is2d=Detect2DMacroMesh(&(f.macromesh));
   assert(is2d);
+
+  // mesh preparation
   BuildConnectivity(&(f.macromesh));
 
   //AffineMapMacroMesh(&(f.macromesh));
  
+  // prepare the initial fields
   InitField(&f);
+  f.is2d=true;
 
 
+  // prudence...
   CheckMacroMesh(&(f.macromesh),f.interp.interp_param+1);
 
   printf("cfl param =%f\n",f.hmin);
 
 
-  RK2(&f,1);
+  // apply the DG scheme
+  // time integration by RK2 scheme 
+  // up to final time = 1.
+  RK2(&f,1.);
  
+  // save the results and the error
   PlotField(0,(1==0),&f,"dgvisu.msh");
   PlotField(0,(1==1),&f,"dgerror.msh");
 
   double dd=L2error(&f);
 
   printf("erreur L2=%f\n",dd);
-
-
   return 0;
 
 };

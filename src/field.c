@@ -126,12 +126,12 @@ void InitField(Field* f){
 
   }
 
-  // now take into account the polynomial degree
+  // now take into account the polynomial degree and the refinement
   int maxd=f->interp_param[1];
   maxd = maxd > f->interp_param[2] ? maxd : f->interp_param[2];
   maxd = maxd > f->interp_param[3] ? maxd : f->interp_param[3];
   
-  f->hmin/=(maxd+1);
+  f->hmin/=((maxd+1)*f->interp_param[4]);
 
   printf("hmin=%f\n",f->hmin);
 
@@ -541,7 +541,7 @@ void DGSubCellInterface(Field* f){
 		    wR[iv] = f->wn[imemR];
 		  }
 		  f->model.NumFlux(wL,wR,vnds,flux);
-	
+
 		  // subcell ref surface glop weight
 		  double wpg
 		    = wglop(deg[dim1],iL[dim1]) 
@@ -667,6 +667,7 @@ void DGMacroCellInterface(Field* f){
 		  NULL,-1, // dphiref,ifa
 		  xpgR,NULL,  
 		  NULL,NULL,NULL); // codtau,dphi,vnds
+
 	  assert(Dist(xpgR,xpg)<1e-10);
   	  for(int iv=0;iv<f->model.m;iv++){
   	    int imem=f->varindex(f->interp_param,ieR,ipgR,iv);
@@ -674,6 +675,8 @@ void DGMacroCellInterface(Field* f){
   	  }
   	  // int_dL F(wL,wR,grad phi_ib )
   	  f->model.NumFlux(wL,wR,vnds,flux);
+
+   
   	}
   	else { //the right element does not exist
   	  f->model.BoundaryFlux(xpg,f->tnow,wL,vnds,flux);
@@ -801,6 +804,7 @@ void DGVolume(Field* f){
 			    NULL);  // vnds   
     
 		    f->model.NumFlux(wL,wL,dphi,flux);
+
 		    int ipgR=offsetL+q[0]+npg[0]*(q[1]+npg[1]*q[2]);
 		    for(int iv=0; iv < m; iv++){
 		      int imemR=f->varindex(f->interp_param,ie,ipgR,iv);		     	       f->dtwn[imemR]+=flux[iv]*wpg;
@@ -868,6 +872,7 @@ void DGVolumeSlow(Field* f){
 	// int_L F(w,w,grad phi_ib )
 	double flux[f->model.m];
 	f->model.NumFlux(w,w,dpsi,flux);
+
 	for(int iv=0;iv<f->model.m;iv++){
 	  int imem=f->varindex(f->interp_param,ie,ib,iv);
 	  f->dtwn[imem]+=flux[iv]*wpg;
@@ -893,6 +898,15 @@ void DGVolumeSlow(Field* f){
 // apply the Discontinuous Galerkin approximation for computing
 // the time derivative of the field
 void dtField(Field* f){
+  DGMacroCellInterface(f);
+  DGSubCellInterface(f);
+  DGVolume(f);
+  DGMass(f);
+}
+
+// apply the Discontinuous Galerkin approximation for computing
+// the time derivative of the field
+void dtFieldSlow(Field* f){
 
   // interpolation params
   // warning: this is ugly, but the last
@@ -1001,6 +1015,7 @@ void dtField(Field* f){
   	  }
   	  // int_dL F(wL,wR,grad phi_ib )
   	  f->model.NumFlux(wL,wR,vnds,flux);
+
   	}
   	else { //the right element does not exist
   	  f->model.BoundaryFlux(xpg,f->tnow,wL,vnds,flux);
@@ -1061,6 +1076,7 @@ void dtField(Field* f){
 	// int_L F(w,w,grad phi_ib )
 	double flux[f->model.m];
 	f->model.NumFlux(w,w,dpsi,flux);
+
 	for(int iv=0;iv<f->model.m;iv++){
 	  int imem=f->varindex(f->interp_param,ie,ib,iv);
 	  f->dtwn[imem]+=flux[iv]*wpg;

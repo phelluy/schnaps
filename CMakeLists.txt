@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 2.8)
 
 project(schnaps)
 
-set(CMAKE_C_FLAGS "-std=c99 -Ofast")
+set(CMAKE_C_FLAGS "-std=c99 -O")
 include_directories(src)
 
 enable_testing()
@@ -120,3 +120,12 @@ add_executable(
 )
 target_link_libraries(testsubcelldgvol _schnaps m)
 add_test(testsubcelldgvol testsubcelldgvol)
+
+add_test(testfieldrk2-2d-subcell testfieldrk2-2d-subcell)
+add_executable(
+  testfieldrk2-2d-subcell
+  test/test.h
+  test/testfieldrk2-2d-subcell.c
+)
+target_link_libraries(testfieldrk2-2d-subcell _schnaps m)
+add_test(testfieldrk2-2d-subcell testfieldrk2-2d-subcell)
