@@ -467,8 +467,8 @@ void CheckMacroMesh(MacroMesh* m,int* param){
 		  NULL,ifaR, // dphiref,ifa
 		  xpgR,dtauR,  
 		  codtauR,NULL,vndsR); // codtau,dphi,vnds
-	  printf("x1=%f %f %f x2=%f %f %f\n",xpg[0],xpg[1],xpg[2],
-	  xpgR[0],xpgR[1],xpgR[2]);
+	  // printf("x1=%f %f %f x2=%f %f %f\n",xpg[0],xpg[1],xpg[2],
+	  //xpgR[0],xpgR[1],xpgR[2]);
           assert(Dist(xpg,xpgR)<1e-11);
           assert(fabs(vnds[0]+vndsR[0])<1e-11);
           assert(fabs(vnds[1]+vndsR[1])<1e-11);
