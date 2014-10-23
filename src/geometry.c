@@ -129,7 +129,7 @@ void GeomPhy2Ref(Geom* g){
   Phy2Ref(g->physnode,g->xphy,g->xref);
 }
 void Phy2Ref(double physnode[20][3],double xphy[3],double xref[3]){
-#define ITERNEWTON 20
+#define ITERNEWTON 40
 
   double dtau[3][3], codtau[3][3];                                              
   double dxref[3], dxphy[3];                                              
@@ -155,7 +155,7 @@ void Phy2Ref(double physnode[20][3],double xphy[3],double xref[3]){
       xref[ii] -= dxref[ii] / det;                            
     }
   }
-  double eps=1e-12;  // may be to constraining...
+  double eps=1e-2;  // may be to constraining...
   assert(xref[0]<1+eps && xref[0]>-eps);
   assert(xref[1]<1+eps && xref[1]>-eps);
   assert(xref[2]<1+eps && xref[2]>-eps);

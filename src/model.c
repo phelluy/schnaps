@@ -11,6 +11,7 @@ const double transport_v[] = {
   ONE_OVER_SQRT_3,
   ONE_OVER_SQRT_3};
 
+//const double transport_v[] = {1,0,0};
 
 const double transport_v2d[] = {
   ONE_OVER_SQRT_2,
@@ -29,6 +30,7 @@ void TransportNumFlux(double wL[],double wR[],double* vnorm,double* flux){
    double vnm = vn-vnp;
 
    flux[0] = vnp * wL[0] + vnm * wR[0];
+
 };
 
 void TransportNumFlux2d(double wL[],double wR[],double* vnorm,double* flux){
@@ -42,6 +44,12 @@ void TransportNumFlux2d(double wL[],double wR[],double* vnorm,double* flux){
    double vnm = vn-vnp;
 
    flux[0] = vnp * wL[0] + vnm * wR[0];
+   /* if (fabs(vnorm[2])>1e-6){ */
+   /*   printf("vnds %lf %lf %lf \n",vnorm[0],vnorm[1],vnorm[2]); */
+   /* } */
+   assert(fabs(vnorm[2])<1e-8);
+
+
 };
 
 void TransportBoundaryFlux(double x[3],double t,double wL[],double* vnorm,
@@ -136,6 +144,7 @@ void TestTransportImposedData(double x[3],double t,double w[]){
   double xx = vx - t;
 
   w[0]=xx*xx;
+  //w[0]=xx;
 };
 
 void TestTransportImposedData2d(double x[3],double t,double w[]){

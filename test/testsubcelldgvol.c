@@ -7,10 +7,10 @@ int main(void) {
   
   // unit tests
     
-  int resu=TestFieldDG();
+  int resu=TestFieldSubCellDGVol();
 	 
-  if (resu) printf("Field DG test OK !\n");
-  else printf("Field DG test failed !\n");
+  if (resu) printf("Field DG Subcell Vol test OK !\n");
+  else printf("Field DG Subcell Vol test failed !\n");
 
   return !resu;
 } 
@@ -18,7 +18,7 @@ int main(void) {
 
 
 
-int TestFieldDG(void){
+int TestFieldSubCellDGVol(void){
 
   int test = (1==1);
 
@@ -34,24 +34,28 @@ int TestFieldDG(void){
   f.interp.interp_param[1]=2;  // x direction degree
   f.interp.interp_param[2]=2;  // y direction degree
   f.interp.interp_param[3]=2;  // z direction degree
-  f.interp.interp_param[4]=1;  // x direction refinement
-  f.interp.interp_param[5]=1;  // y direction refinement
+  f.interp.interp_param[4]=2;  // x direction refinement
+  f.interp.interp_param[5]=2;  // y direction refinement
   f.interp.interp_param[6]=1;  // z direction refinement
 
 
   ReadMacroMesh(&(f.macromesh),"test/testcube.msh");
+  //ReadMacroMesh(&(f.macromesh),"test/testdisque.msh");
   BuildConnectivity(&(f.macromesh));
 
   PrintMacroMesh(&(f.macromesh));
   //AffineMapMacroMesh(&(f.macromesh));
   PrintMacroMesh(&(f.macromesh));
 
-
   InitField(&f);
   CheckMacroMesh(&(f.macromesh),f.interp.interp_param+1);
 
+  DGMacroCellInterface(&f);
+  DGSubCellInterface(&f);
 
-  dtField(&f);
+  DGVolume(&f);
+
+  DGMass(&f);
   
   DisplayField(&f);  
 

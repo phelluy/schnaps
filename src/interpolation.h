@@ -57,7 +57,8 @@ int NPG(int param[]);
 int NPGF(int* param,int ifa);
 
 // return the reference coordinates xpg[3] and weight wpg of the GLOP ipg
-void ref_pg_vol(int* param,int ipg,double* xpg,double* wpg);
+void ref_pg_vol(int* param,int ipg,
+		double* xpg,double* wpg,double* xpg_in);
 
 // from a reference point find the nearest
 // gauss point
@@ -65,7 +66,11 @@ int ref_ipg(int* param,double* xref);
 
 // same function for the face 
 // param[6] contains the volume GLOP index computed from face GLOP index.
-void ref_pg_face(int* param,int ifa,int ipg,double* xpg,double* wpg);
+//! \brief compute the position xpg of glop ipg in the local
+//! numbering on face ifa. If xpgin is not NULL also compute
+//! the position of point slightly inside the opposite subcell
+void ref_pg_face(int* param,int ifa,int ipg,double* xpg,double* wpg,
+		 double* xpgin);
 // return the value psi  and the gradient dpsi[3] of the basis 
 // function ib at point xref[3]. Warning: the value of the gradient is
 // not reliable if xref is on the boundary 
@@ -75,8 +80,15 @@ void psi_ref(int* param, int ib, double* xref, double* psi, double* dpsiref);
 // function ib at GLOP ipg.
 void grad_psi_pg(int* param,int ib,int ipg,double* dpsiref);
 
+// same function but with specification of the subcell
+// indices is[3] in the three directions
+void psi_ref_subcell(int* param, int* is,int ib, double* xref, double* psi, double* dpsiref);
 
 
+// return the 1d ith GLOP weight for degree deg
+double wglop(int deg,int i);
+// return the 1d derivative of lagrange polynomial ib at glop ipg
+double dlag(int deg,int ib,int ipg);
 
 
 

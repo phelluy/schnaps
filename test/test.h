@@ -21,5 +21,9 @@ int Test2DMeshDetection(void);
 
 int TestFieldRK2_2D(void);
 
+int TestFieldSubCellDGVol(void);
+
+int TestFieldRK2_2D_SubCell(void);
+
 
 #endif
