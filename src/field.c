@@ -149,13 +149,13 @@ void DisplayField(Field* f){
       ref_pg_vol(f->interp_param+1,ipg,xref,&wpg,NULL);
 
       printf("Gauss point %d %f %f %f \n",ipg,xref[0],xref[1],xref[2]);
-    printf("dtw= ");
+      printf("dtw= ");
       for(int iv=0;iv<f->model.m;iv++){
 	int imem=f->varindex(f->interp_param,ie,ipg,iv);
 	printf("%f ",f->dtwn[imem]);
       }
       printf("\n");
-    printf("w= ");
+      printf("w= ");
       for(int iv=0;iv<f->model.m;iv++){
 	int imem=f->varindex(f->interp_param,ie,ipg,iv);
 	printf("%f ",f->wn[imem]);
@@ -207,7 +207,7 @@ void PlotField(int typplot,int compare,Field* f,char* filename){
   int npgv = NPG(f->interp_param+1);
   int nnodes = 20;
 
-  double Xn[nnodes][3];
+  double physnode[nnodes][3];
   double Xr[3];
   double Xphy[3];
 
@@ -228,7 +228,7 @@ void PlotField(int typplot,int compare,Field* f,char* filename){
     for(int ino=0;ino<nnodes;ino++){
       int numnoe=elem2nodes[nnodes*i+ino];
       for(int ii=0;ii<3;ii++){
-        Xn[ino][ii]=node[3*numnoe+ii];
+        physnode[ino][ii]=node[3*numnoe+ii];
       }
     }
     // loop on the macro elem subcells
@@ -251,8 +251,12 @@ void PlotField(int typplot,int compare,Field* f,char* filename){
 	    Xr[0] = icL[0]*hh[0]+ Xr[0] * hh[0];
 	    Xr[1] = icL[1]*hh[1]+ Xr[1] * hh[1];
 	    Xr[2] = icL[2]*hh[2]+ Xr[2] * hh[2];
+
+	    for(int ii=0;ii<3;ii++){
+	      assert(Xr[ii]<1+1e-10 && Xr[ii]>-1e-10);
+	    }
 	    
-	    Ref2Phy(Xn,
+	    Ref2Phy(physnode,
 		    Xr,
 		    NULL,
 		    -1,
@@ -268,13 +272,15 @@ void PlotField(int typplot,int compare,Field* f,char* filename){
 	    Xplot[2]=Xphy[2];
 
 	    value[nodecount]=0;
+	    double testpsi=0;
 	    for(int ib=0;ib<npgv;ib++){
 	      double psi;
 	      psi_ref_subcell(f->interp_param+1,icL, ib, Xr, &psi, NULL);
-	      
+	      testpsi+=psi;
 	      int vi = f->varindex(f->interp_param, i, ib, typplot);
 	      value[nodecount] += psi * f->wn[vi];
 	    }
+	    assert(fabs(testpsi-1)<1e-10);
 
 	    // compare with an
 	    // exact solution
@@ -290,7 +296,7 @@ void PlotField(int typplot,int compare,Field* f,char* filename){
 	    // fwrite((char*) &(Xplot[0]),sizeof(double),1,gmshfile);
 	    // fwrite((char*) &(Xplot[1]),sizeof(double),1,gmshfile);
 	    // fwrite((char*) &(Xplot[2]),sizeof(double),1,gmshfile);
-	    fprintf(gmshfile,"%d %f %f %f\n",nnoe,Xplot[0],Xplot[1],Xplot[2]);
+	    fprintf(gmshfile,"%d %f %f %f\n",nodecount,Xplot[0],Xplot[1],Xplot[2]);
 	    
 	  }
 	}
@@ -299,7 +305,6 @@ void PlotField(int typplot,int compare,Field* f,char* filename){
   }
 
   fprintf(gmshfile,"$EndNodes\n");
-
 
 
   // elements
@@ -350,80 +355,89 @@ void PlotField(int typplot,int compare,Field* f,char* filename){
   
   fprintf(gmshfile,"$EndElements\n");
 
-  fclose(gmshfile);
-  assert(1==2);
   // now display data
     
-    fprintf(gmshfile,"$NodeData\n");
-    fprintf(gmshfile,"1\n");
-    fprintf(gmshfile,"\"Field %d\"\n",typplot);
+  fprintf(gmshfile,"$NodeData\n");
+  fprintf(gmshfile,"1\n");
+  fprintf(gmshfile,"\"Field %d\"\n",typplot);
+  
+  double t = 0;
 
-    double t = 0;
+  fprintf(gmshfile,"1\n%f\n3\n0\n1\n",t);
 
-    fprintf(gmshfile,"1\n%f\n3\n0\n1\n",t);
-
-    fprintf(gmshfile,"%d\n",64*f->macromesh.nbelems);
+  fprintf(gmshfile,"%d\n",nb_plotnodes);
 
     
-    for(int i=0;i<f->macromesh.nbelems;i++){
-      for(int ino=0;ino<20;ino++){
-	int numnoe=elem2nodes[nnodes*i+ino];
-	for(int ii=0;ii<3;ii++){
-	  Xn[ino][ii]=node[3*numnoe+ii];
-	}
-      }
+  for(int ino=0;ino<nb_plotnodes;ino++){
+
+    //fwrite(const void *ptr, size_t size_of_elements,
+    // size_t number_of_elements, FILE *a_file);
+    //fwrite((char*) &nodenumber, sizeof(int),1,gmshfile);
+    //fwrite((char*) &value, sizeof(double),1,gmshfile);
+    //fprintf(gmshfile,"%d %f\n",nodenumber,value);
+    fprintf(gmshfile,"%d %f\n",ino+1,value[ino]);      
+
+  }
+    
+  /* for(int i=0;i<f->macromesh.nbelems;i++){ */
+  /*   for(int ino=0;ino<20;ino++){ */
+  /* 	int numnoe=elem2nodes[nnodes*i+ino]; */
+  /* 	for(int ii=0;ii<3;ii++){ */
+  /* 	  physnode[ino][ii]=node[3*numnoe+ii]; */
+  /* 	} */
+  /*   } */
       
-      // data at the eight nodes
-      for(int ii=0;ii<64;ii++){
-	int nodenumber=64*i + ii +1;
+  /*   // data at the eight nodes */
+  /*   for(int ii=0;ii<64;ii++){ */
+  /* 	int nodenumber=64*i + ii +1; */
 	
-	Xr[0]=(double) (hexa64ref[3*ii+0]) / 3;
-	Xr[1]=(double) (hexa64ref[3*ii+1]) / 3;
-	Xr[2]=(double) (hexa64ref[3*ii+2]) / 3;
+  /* 	Xr[0]=(double) (hexa64ref[3*ii+0]) / 3; */
+  /* 	Xr[1]=(double) (hexa64ref[3*ii+1]) / 3; */
+  /* 	Xr[2]=(double) (hexa64ref[3*ii+2]) / 3; */
 	
-	Ref2Phy(Xn,
-		Xr,
-		NULL,
-		-1,
-		Xphy,
-		NULL,
-		NULL,
-		NULL,
-		NULL);
+  /* 	Ref2Phy(physnode, */
+  /* 		Xr, */
+  /* 		NULL, */
+  /* 		-1, */
+  /* 		Xphy, */
+  /* 		NULL, */
+  /* 		NULL, */
+  /* 		NULL, */
+  /* 		NULL); */
 	
 
-	double value=0;
-	for(int ib=0;ib<npgv;ib++){
-	  double psi;
-	  psi_ref(f->interp_param+1, ib, Xr, &psi, NULL);
+  /* 	double value=0; */
+  /* 	for(int ib=0;ib<npgv;ib++){ */
+  /* 	  double psi; */
+  /* 	  psi_ref(f->interp_param+1, ib, Xr, &psi, NULL); */
 	  
-	  int vi = f->varindex(f->interp_param, i, ib, typplot);
-	  value += psi * f->wn[vi];
-	}
+  /* 	  int vi = f->varindex(f->interp_param, i, ib, typplot); */
+  /* 	  value += psi * f->wn[vi]; */
+  /* 	} */
 
-	// compare with an
-	// exact solution
-        if (compare){
-          double wex[f->model.m];
-          f->model.ImposedData(Xphy,f->tnow,wex);
-          value -= wex[typplot];
-        }
+  /* 	// compare with an */
+  /* 	// exact solution */
+  /*     if (compare){ */
+  /*       double wex[f->model.m]; */
+  /*       f->model.ImposedData(Xphy,f->tnow,wex); */
+  /*       value -= wex[typplot]; */
+  /*     } */
 
 
-	//fwrite(const void *ptr, size_t size_of_elements,
-	// size_t number_of_elements, FILE *a_file);
-	//fwrite((char*) &nodenumber, sizeof(int),1,gmshfile);
-	//fwrite((char*) &value, sizeof(double),1,gmshfile);
-	//fprintf(gmshfile,"%d %f\n",nodenumber,value);
-	fprintf(gmshfile,"%d %f\n",nodenumber,value);
-      }
+  /* 	//fwrite(const void *ptr, size_t size_of_elements, */
+  /* 	// size_t number_of_elements, FILE *a_file); */
+  /* 	//fwrite((char*) &nodenumber, sizeof(int),1,gmshfile); */
+  /* 	//fwrite((char*) &value, sizeof(double),1,gmshfile); */
+  /* 	//fprintf(gmshfile,"%d %f\n",nodenumber,value); */
+  /* 	fprintf(gmshfile,"%d %f\n",nodenumber,value); */
+  /*   } */
 
-    }
+  /* } */
 
-    fprintf(gmshfile,"\n$EndNodeData\n");
+  fprintf(gmshfile,"\n$EndNodeData\n");
 
     
-    fclose(gmshfile);
+  fclose(gmshfile);
   
 
 }
@@ -481,8 +495,8 @@ void DGSubCellInterface(Field* f){
 	      int dim1=(dim0+1)%3, dim2=(dim0+2)%3;
 	      int iL[3];
 	      iL[dim0] = deg[dim0];
-		for(iL[dim1] = 0; iL[dim1] < npg[dim1]; iL[dim1]++){
-		  for(iL[dim2] = 0; iL[dim2]< npg[dim2]; iL[dim2]++){
+	      for(iL[dim1] = 0; iL[dim1] < npg[dim1]; iL[dim1]++){
+		for(iL[dim2] = 0; iL[dim2]< npg[dim2]; iL[dim2]++){
 		  // find the right and left glops volume indices
 		  int iR[3] = {iL[0],iL[1],iL[2]};
 		  iR[dim0] = 0;
@@ -538,12 +552,12 @@ void DGSubCellInterface(Field* f){
 		  /* 	 flux[0],wpg); */
 		  
 		  // finally distribute the flux on the two sides
-		    for(int iv=0; iv < m; iv++){
-		      int imemL = f->varindex(f->interp_param, ie, ipgL, iv);
-		      int imemR = f->varindex(f->interp_param, ie, ipgR, iv);
-		      f->dtwn[imemL] -= flux[iv] * wpg;
-		      f->dtwn[imemR] += flux[iv] * wpg;
-		    }
+		  for(int iv=0; iv < m; iv++){
+		    int imemL = f->varindex(f->interp_param, ie, ipgL, iv);
+		    int imemR = f->varindex(f->interp_param, ie, ipgR, iv);
+		    f->dtwn[imemL] -= flux[iv] * wpg;
+		    f->dtwn[imemR] += flux[iv] * wpg;
+		  }
 		  
 		}  // face yhat loop
 	      } // face xhat loop
@@ -563,7 +577,7 @@ void DGSubCellInterface(Field* f){
 // compute the Discontinuous Galerkin inter-macrocells boundary terms
 void DGMacroCellInterface(Field* f){
 
- // init to zero the time derivative
+  // init to zero the time derivative
   int sizew=0;
   for(int ie=0;ie<f->macromesh.nbelems;ie++){
     for(int ipg=0;ipg<NPG(f->interp_param+1);ipg++){
@@ -638,11 +652,11 @@ void DGMacroCellInterface(Field* f){
   	if (ieR >=0) {  // the right element exists
   	  // find the corresponding point in the right elem
 	  double xpg_in[3];
-  	Ref2Phy(physnode,
-  		xpgref_in,
-  		NULL,ifa, // dpsiref,ifa
-  		xpg_in,dtau,
-  		codtau,NULL,vnds); // codtau,dpsi,vnds
+	  Ref2Phy(physnode,
+		  xpgref_in,
+		  NULL,ifa, // dpsiref,ifa
+		  xpg_in,dtau,
+		  codtau,NULL,vnds); // codtau,dpsi,vnds
   	  double xref[3];
 	  Phy2Ref(physnodeR,xpg_in,xref);
   	  int ipgR=ref_ipg(f->interp_param+1,xref);
@@ -839,11 +853,11 @@ void dtField(Field* f){
   	if (ieR >=0) {  // the right element exists
   	  // find the corresponding point in the right elem
 	  double xpg_in[3];
-  	Ref2Phy(physnode,
-  		xpgref_in,
-  		NULL,ifa, // dpsiref,ifa
-  		xpg_in,dtau,
-  		codtau,NULL,vnds); // codtau,dpsi,vnds
+	  Ref2Phy(physnode,
+		  xpgref_in,
+		  NULL,ifa, // dpsiref,ifa
+		  xpg_in,dtau,
+		  codtau,NULL,vnds); // codtau,dpsi,vnds
   	  double xref[3];
 	  Phy2Ref(physnodeR,xpg_in,xref);
   	  int ipgR=ref_ipg(f->interp_param+1,xref);
@@ -1052,10 +1066,10 @@ double L2error(Field* f){
       // get the coordinates of the Gauss point
       ref_pg_vol(f->interp_param+1,ipg,xpgref,&wpg,NULL);
       Ref2Phy(physnode, // phys. nodes
-		xpgref,  // xref
-		NULL,-1, // dpsiref,ifa
-		xphy,dtau,  // xphy,dtau
-		codtau,NULL,NULL); // codtau,dpsi,vnds
+	      xpgref,  // xref
+	      NULL,-1, // dpsiref,ifa
+	      xphy,dtau,  // xphy,dtau
+	      codtau,NULL,NULL); // codtau,dpsi,vnds
       double det=dtau[0][0]*codtau[0][0]+
         dtau[0][1]*codtau[0][1]+dtau[0][2]*codtau[0][2]; 
       double w[f->model.m],wex[f->model.m];

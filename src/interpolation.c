@@ -486,7 +486,8 @@ void psi_ref(int* param, int ib, double* xref, double* psi, double* dpsi){
 // same function but with specification of the subcell
 // indices is[3] in the three directions: now the computation
 // is reliable
-void psi_ref_subcell(int* param, int* is,int ib, double* xref, double* psi, double* dpsi){
+void psi_ref_subcell(int* param, int* is,int ib, 
+		     double* xref, double* psi, double* dpsi){
 
   double dpsibx;
   double dpsiby;
