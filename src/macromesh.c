@@ -318,7 +318,7 @@ void CheckMacroMesh(MacroMesh* m,int* param){
     // is compatible with ref_pg_vol
     //int param[7]={_DEGX,_DEGY,_DEGZ,_RAFX,_RAFY,_RAFZ,0};
     for(int ipg=0;ipg<NPG(param);ipg++){
-      double xref1[3],xref2[3],xphy[3],xref_in[3];
+      double xref1[3],xref_in[3];
       double wpg;
       ref_pg_vol(param,ipg,xref1,&wpg,xref_in);
       memcpy(g.xref,xref1,sizeof(g.xref));
@@ -425,12 +425,11 @@ void CheckMacroMesh(MacroMesh* m,int* param){
 
   	// recover the volume gauss point from
   	// the face index
-  	int ipg=param[6];
+  	//int ipg=param[6];
 
 	
   	// get the left value of w at the gauss point
   	// the basis functions is also the gauss point index
-  	int ib=ipg;
   	// normal vector at gauss point ipg
   	//double dpsiref[3];dpsi[3];
   	double dtau[3][3],codtau[3][3],xpg[3],xpg_in[3];

@@ -145,7 +145,7 @@ void DisplayField(Field* f){
   for(int ie=0;ie<f->macromesh.nbelems;ie++){
     printf("elem %d\n",ie);
     for(int ipg=0;ipg<NPG(f->interp_param+1);ipg++){
-      double xref[3],xphy[3],wpg;
+      double xref[3],wpg;
       ref_pg_vol(f->interp_param+1,ipg,xref,&wpg,NULL);
 
       printf("Gauss point %d %f %f %f \n",ipg,xref[0],xref[1],xref[2]);
@@ -197,10 +197,8 @@ void PlotField(int typplot,int compare,Field* f,char* filename){
   gmshfile = fopen( filename, "w" );
 
   // data plots
-  int mw = f->model.m;
   //int param[8]={f->model.m,_DEGX,_DEGY,_DEGZ,_RAFX,_RAFY,_RAFZ,0};
   int nraf[3]={f->interp_param[4],f->interp_param[5],f->interp_param[6]};
-  int deg[3]={f->interp_param[1],f->interp_param[2],f->interp_param[3]};
   // refinement size in each direction
   double hh[3]={1./nraf[0],1./nraf[1],1./nraf[2]};
 
@@ -238,12 +236,10 @@ void PlotField(int typplot,int compare,Field* f,char* filename){
       for(icL[1]=0;icL[1]<nraf[1];icL[1]++){
 	for(icL[2]=0;icL[2]<nraf[2];icL[2]++){
 	  // get the left subcell id
-	  int ncL=icL[0]+nraf[0]*(icL[1]+nraf[1]*icL[2]);
 	  // first glop index in the subcell
 	  //int offsetL=(deg[0]+1)*(deg[1]+1)*(deg[2]+1)*ncL;
 	  
 	  for(int ino=0;ino<64;ino++){
-	    int nnoe=64*i+ino+1;
 	    Xr[0]=(double) (hexa64ref[3*ino+0]) / 3;
 	    Xr[1]=(double) (hexa64ref[3*ino+1]) / 3;
 	    Xr[2]=(double) (hexa64ref[3*ino+2]) / 3;
@@ -709,8 +705,6 @@ void DGMass(Field* f){
       physnode[inoloc][1]=f->macromesh.node[3*ino+1];
       physnode[inoloc][2]=f->macromesh.node[3*ino+2];
     }
-
-    const int m = f->model.m;
 
     for(int ipg=0;ipg<NPG(f->interp_param+1);ipg++){
       double dtau[3][3],codtau[3][3],xpgref[3],wpg;

@@ -583,7 +583,6 @@ void psi_ref_subcell(int* param, int* is,int ib,
 // function ib at GLOP ipg.
 void grad_psi_pg(int* param,int ib,int ipg,double* dpsi){
   int deg[3],offset[3],nraf[3];
-  int ibin=ib,ipgin=ipg;
   
   // approximation degree in each direction
   deg[0]=param[0];
