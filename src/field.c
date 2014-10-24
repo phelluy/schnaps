@@ -924,18 +924,29 @@ void DGVolumeSlow(Field* f){
 // the time derivative of the field
 void dtField(Field* f){
 
-  MacroCell mcell;
-  mcell.field=f;
+
+  MacroCell mcell[f->macromesh.nbelems];
 
   for(int ie=0;ie<f->macromesh.nbelems;ie++){
-    mcell.first_cell=ie;
-    mcell.last_cell_p1=ie+1;
-
-    DGMacroCellInterface((void*) &mcell);
-    DGSubCellInterface((void*) &mcell);
-    DGVolume((void*) &mcell);
-    DGMass((void*) &mcell);
+    mcell[ie].field=f;
+    mcell[ie].first_cell=ie;
+    mcell[ie].last_cell_p1=ie+1;
   }
+
+  for(int ie=0;ie<f->macromesh.nbelems;ie++){
+    DGMacroCellInterface((void*) (mcell+ie));
+  }
+  for(int ie=0;ie<f->macromesh.nbelems;ie++){
+    DGSubCellInterface((void*) (mcell+ie));
+  }
+  for(int ie=0;ie<f->macromesh.nbelems;ie++){
+    DGVolume((void*) (mcell+ie));
+  }
+  for(int ie=0;ie<f->macromesh.nbelems;ie++){
+    DGMass((void*) (mcell+ie));
+  }
+
+
 }
 
 // apply the Discontinuous Galerkin approximation for computing
