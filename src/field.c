@@ -440,7 +440,7 @@ void PlotField(int typplot,int compare,Field* f,char* filename){
 }
 
 // inter-subcell fluxes
-void DGSubCellInterface(void* mc){
+void* DGSubCellInterface(void* mc){
 
   MacroCell* mcell = (MacroCell*) mc;
 
@@ -577,28 +577,33 @@ void DGSubCellInterface(void* mc){
 
   } // macro elem loop
 
+  return NULL;
+
 }
 
 
 
 
 // compute the Discontinuous Galerkin inter-macrocells boundary terms
-void DGMacroCellInterface(void* mc){
+void* DGMacroCellInterface(void* mc){
 
   MacroCell* mcell = (MacroCell*) mc;
 
   Field* f= mcell->field;
 
+  int iparam[8];
+  for(int ip=0;ip<8;ip++) iparam[ip]=f->interp_param[ip];
+    
   // init to zero the time derivative
   for (int ie=mcell->first_cell;ie<mcell->last_cell_p1;ie++){
-    for(int ipg=0;ipg<NPG(f->interp_param+1);ipg++){
+    for(int ipg=0;ipg<NPG(iparam+1);ipg++){
       for(int iv=0;iv<f->model.m;iv++){
-	int imem=f->varindex(f->interp_param,ie,ipg,iv);
+	int imem=f->varindex(iparam,ie,ipg,iv);
 	f->dtwn[imem]=0;
       }
     }
   }
-  //assert(sizew==f->macromesh.nbelems * f->model.m * NPG(f->interp_param+1));
+  //assert(sizew==f->macromesh.nbelems * f->model.m * NPG(iparam+1));
 
   // assembly of the surface terms
   // loop on the elements
@@ -633,21 +638,21 @@ void DGMacroCellInterface(void* mc){
       // loop on the glops (numerical integration)
       // of the face ifa
       //#pragma omp parallel for
-      for(int ipgf=0;ipgf<NPGF(f->interp_param+1,ifa);ipgf++){
+      for(int ipgf=0;ipgf<NPGF(iparam+1,ifa);ipgf++){
   	double xpgref[3],xpgref_in[3],wpg;
   	//double xpgref2[3],wpg2;
   	// get the coordinates of the Gauss point
 	// and coordinates of a point slightly inside the
 	// opposite element in xref_in
-  	ref_pg_face(f->interp_param+1,ifa,ipgf,xpgref,&wpg,xpgref_in);
+  	ref_pg_face(iparam+1,ifa,ipgf,xpgref,&wpg,xpgref_in);
 
   	// recover the volume gauss point from
   	// the face index
-  	int ipg=f->interp_param[7];
+  	int ipg=iparam[7];
   	// get the left value of w at the gauss point
   	double wL[f->model.m],wR[f->model.m];
   	for(int iv=0;iv<f->model.m;iv++){
-  	  int imem=f->varindex(f->interp_param,ie,ipg,iv);
+  	  int imem=f->varindex(iparam,ie,ipg,iv);
   	  wL[iv]=f->wn[imem];
   	}
   	// the basis functions is also the gauss point index
@@ -671,9 +676,9 @@ void DGMacroCellInterface(void* mc){
 		  codtau,NULL,vnds); // codtau,dpsi,vnds
   	  double xref[3];
 	  Phy2Ref(physnodeR,xpg_in,xref);
-  	  int ipgR=ref_ipg(f->interp_param+1,xref);
+  	  int ipgR=ref_ipg(iparam+1,xref);
 	  double xpgR[3],xrefR[3],wpgR;
-	  ref_pg_vol(f->interp_param+1, ipgR, xrefR, &wpgR,NULL);
+	  ref_pg_vol(iparam+1, ipgR, xrefR, &wpgR,NULL);
 	  Ref2Phy(physnodeR,
 		  xrefR,
 		  NULL,-1, // dphiref,ifa
@@ -682,7 +687,7 @@ void DGMacroCellInterface(void* mc){
 
 	  assert(Dist(xpgR,xpg)<1e-10);
   	  for(int iv=0;iv<f->model.m;iv++){
-  	    int imem=f->varindex(f->interp_param,ieR,ipgR,iv);
+  	    int imem=f->varindex(iparam,ieR,ipgR,iv);
   	    wR[iv]=f->wn[imem];
   	  }
   	  // int_dL F(wL,wR,grad phi_ib )
@@ -694,7 +699,7 @@ void DGMacroCellInterface(void* mc){
   	  f->model.BoundaryFlux(xpg,f->tnow,wL,vnds,flux);
   	}
   	for(int iv=0;iv<f->model.m;iv++){
-  	  int imem=f->varindex(f->interp_param,ie,ib,iv);
+  	  int imem=f->varindex(iparam,ie,ib,iv);
   	  f->dtwn[imem]-=flux[iv]*wpg;
   	}
 	
@@ -703,13 +708,13 @@ void DGMacroCellInterface(void* mc){
     }
   }
 
-
+  return NULL;
 
 }
 
 
 // apply division by the mass matrix
-void DGMass(void* mc){
+void* DGMass(void* mc){
 
   MacroCell* mcell = (MacroCell*) mc;
 
@@ -745,12 +750,14 @@ void DGMass(void* mc){
     }
   }
 
+  return NULL;
+
 
 }
 
 // compute the Discontinuous Galerkin volume terms
 // fast version
-void DGVolume(void* mc){
+void* DGVolume(void* mc){
 
   MacroCell* mcell = (MacroCell*) mc;
 
@@ -843,6 +850,8 @@ void DGVolume(void* mc){
     } // icl0
   }
 
+  return NULL;
+
 
 }
 
@@ -933,17 +942,63 @@ void dtField(Field* f){
     mcell[ie].last_cell_p1=ie+1;
   }
 
+  // we will have only one flying thread per 
+  // macrocell
+  pthread_t tmcell[f->macromesh.nbelems];
+  int status;
+
+  // launch a thread for each macro cell
+  // computation of the inter subcell fluxes
   for(int ie=0;ie<f->macromesh.nbelems;ie++){
-    DGMacroCellInterface((void*) (mcell+ie));
+    status=pthread_create (&(tmcell[ie]),   // thread
+			   NULL,                   // default attributes
+			   DGMacroCellInterface,    // called function
+			   (void*) (mcell+ie));  // function params
+    assert(status==0);
+    //DGMacroCellInterface((void*) (mcell+ie));
   }
-  for(int ie=0;ie<f->macromesh.nbelems;ie++){
-    DGSubCellInterface((void*) (mcell+ie));
+  // wait the end of the threads before next step
+  for (int ie=0;ie<f->macromesh.nbelems;ie++){
+    pthread_join(tmcell[ie], NULL);
   }
+
   for(int ie=0;ie<f->macromesh.nbelems;ie++){
-    DGVolume((void*) (mcell+ie));
+    status=pthread_create (&(tmcell[ie]),   // thread
+			   NULL,                   // default attributes
+			   DGSubCellInterface,    // called function
+			   (void*) (mcell+ie));  // function params
+    assert(status==0);
+    //DGSubCellInterface((void*) (mcell+ie));
   }
+  // wait the end of the threads before next step
+  for (int ie=0;ie<f->macromesh.nbelems;ie++){
+    pthread_join(tmcell[ie], NULL);
+  }
+
   for(int ie=0;ie<f->macromesh.nbelems;ie++){
-    DGMass((void*) (mcell+ie));
+    status=pthread_create (&(tmcell[ie]),   // thread
+			   NULL,                   // default attributes
+			   DGVolume,    // called function
+			   (void*) (mcell+ie));  // function params
+    assert(status==0);
+    //DGVolume((void*) (mcell+ie));
+  }
+  // wait the end of the threads before next step
+  for (int ie=0;ie<f->macromesh.nbelems;ie++){
+    pthread_join(tmcell[ie], NULL);
+  }
+
+  for(int ie=0;ie<f->macromesh.nbelems;ie++){
+    status=pthread_create (&(tmcell[ie]),   // thread
+			   NULL,                   // default attributes
+			   DGMass,    // called function
+			   (void*) (mcell+ie));  // function params
+    assert(status==0);
+    //DGMass((void*) (mcell+ie));
+  }
+  // wait the end of the threads before next step
+  for (int ie=0;ie<f->macromesh.nbelems;ie++){
+    pthread_join(tmcell[ie], NULL);
   }
 
 

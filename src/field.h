@@ -70,13 +70,13 @@ void dtField(Field* f);
 // the argument has to be void* but it is logically a 
 // MacroCell*
 // compute the Discontinuous Galerkin inter-macrocells boundary terms
-void DGMacroCellInterface(void* mcell);
+void* DGMacroCellInterface(void* mcell);
 // compute the Discontinuous Galerkin volume terms
-void DGVolume(void* mcell);
+void* DGVolume(void* mcell);
 // compute the Discontinuous Galerkin inter-subcells terms
-void DGSubCellInterface(void* mcell);
+void* DGSubCellInterface(void* mcell);
 // apply the DG mass term
-void DGMass(void* mcell);
+void* DGMass(void* mcell);
 
 // time integration by a second order Runge-Kutta algorithm 
 void RK2(Field* f,double tmax);
