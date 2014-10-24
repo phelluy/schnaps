@@ -464,11 +464,15 @@ void DGSubCellInterface(Field* f){
 			deg[2]+1};
     const int m = f->model.m;
 
-    int icL[3];
+
     // loop on the subcells
-    for(icL[0] = 0; icL[0] < nraf[0]; icL[0]++){
-      for(icL[1] = 0; icL[1] < nraf[1]; icL[1]++){
-	for(icL[2] = 0; icL[2] < nraf[2]; icL[2]++){
+#pragma omp parallel for collapse(3)
+    for(int icL0 = 0; icL0 < nraf[0]; icL0++){
+      for(int icL1 = 0; icL1 < nraf[1]; icL1++){
+	for(int icL2 = 0; icL2 < nraf[2]; icL2++){
+
+	  int icL[3]={icL0,icL1,icL2};
+
 	  // get the left subcell id
 	  int ncL=icL[0]+nraf[0]*(icL[1]+nraf[1]*icL[2]);
 	  // first glop index in the subcell
@@ -492,8 +496,10 @@ void DGSubCellInterface(Field* f){
 	      int iL[3];
 	      iL[dim0] = deg[dim0];
 	      for(iL[dim1] = 0; iL[dim1] < npg[dim1]; iL[dim1]++){
-		for(iL[dim2] = 0; iL[dim2]< npg[dim2]; iL[dim2]++){
+		for(iL[dim2] = 0; iL[dim2] < npg[dim2]; iL[dim2]++){
 		  // find the right and left glops volume indices
+		  
+
 		  int iR[3] = {iL[0],iL[1],iL[2]};
 		  iR[dim0] = 0;
 
@@ -617,6 +623,7 @@ void DGMacroCellInterface(Field* f){
       
       // loop on the glops (numerical integration)
       // of the face ifa
+#pragma omp parallel for
       for(int ipgf=0;ipgf<NPGF(f->interp_param+1,ifa);ipgf++){
   	double xpgref[3],xpgref_in[3],wpg;
   	//double xpgref2[3],wpg2;
@@ -706,6 +713,7 @@ void DGMass(Field* f){
       physnode[inoloc][2]=f->macromesh.node[3*ino+2];
     }
 
+#pragma omp parallel for
     for(int ipg=0;ipg<NPG(f->interp_param+1);ipg++){
       double dtau[3][3],codtau[3][3],xpgref[3],wpg;
       ref_pg_vol(f->interp_param+1,ipg,xpgref,&wpg,NULL);
@@ -766,11 +774,14 @@ void DGVolume(Field* f){
 	  // loop in the "cross" in the three directions
 	  for(int dim0 = 0; dim0 < 3; dim0++){
 	    // point p at which we compute the flux
-	    int p[3];
-	    for(p[0] = 0; p[0] < npg[0]; p[0]++){
-	      for(p[1] = 0; p[1] < npg[1]; p[1]++){
-		for(p[2] = 0; p[2] < npg[2]; p[2]++){
+    
+    // NB: collapse(3) is only available in OpenMP 3.0 and later.
+#pragma omp parallel for collapse(3)
+	    for(int p0 = 0; p0 < npg[0]; p0++){
+	      for(int p1 = 0; p1 < npg[1]; p1++){
+		for(int p2 = 0; p2 < npg[2]; p2++){
 		  double wL[m],flux[m];
+		  int p[3]={p0,p1,p2};
 		  int ipgL=offsetL+p[0]+npg[0]*(p[1]+npg[1]*p[2]);
 		  for(int iv=0; iv < m; iv++){
 		    int imemL=f->varindex(f->interp_param,ie,ipgL,iv);
