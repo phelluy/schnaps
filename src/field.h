@@ -34,28 +34,49 @@ typedef struct Field{
 
 } Field;
 
+
+// a simple struct for packing a field
+// and cell index to be passed to a thread
+// as a void*
+typedef struct MacroCell{
+  int first_cell; // first cell index
+  int last_cell_p1;  // last cell index + 1
+  Field* field;
+} MacroCell;
+
 // memory location of field component iv at Gauss point ipg and
 // element elem (generic access)
 int GenericVarindex(int* param, int elem, int ipg, int iv);
 
 void InitField(Field* f);
 
-// apply the Discontinuous Galerkin approximation for computing
-// the time derivative of the field (one subcell version)
-void dtFieldSlow(Field* f);
-// same function but works with subcells
-void dtField(Field* f);
-// compute the Discontinuous Galerkin volume terms
-void DGVolume(Field* f);
 // compute the Discontinuous Galerkin volume terms
 // slow version
 void DGVolumeSlow(Field* f);
-// compute the Discontinuous Galerkin inter-subcells terms
-void DGSubCellInterface(Field* f);
+
 // compute the Discontinuous Galerkin inter-macrocells boundary terms
-void DGMacroCellInterface(Field* f);
+// slow version
+void DGMacroCellInterfaceSlow(Field* f);
+
+// apply the Discontinuous Galerkin approximation for computing
+// the time derivative of the field (one subcell version)
+void dtFieldSlow(Field* f);
+
+// same function but works with subcells
+void dtField(Field* f);
+
+// the following functions are used by dtfield
+// and launched in threads
+// the argument has to be void* but it is logically a 
+// MacroCell*
+// compute the Discontinuous Galerkin inter-macrocells boundary terms
+void DGMacroCellInterface(void* mcell);
+// compute the Discontinuous Galerkin volume terms
+void DGVolume(void* mcell);
+// compute the Discontinuous Galerkin inter-subcells terms
+void DGSubCellInterface(void* mcell);
 // apply the DG mass term
-void DGMass(Field* f);
+void DGMass(void* mcell);
 
 // time integration by a second order Runge-Kutta algorithm 
 void RK2(Field* f,double tmax);

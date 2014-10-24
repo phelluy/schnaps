@@ -6,6 +6,7 @@
 #include <assert.h>
 #include "global.h"
 #include <math.h>
+#include <pthread.h>
 
 // param[0] = M
 // param[1] = deg x
@@ -439,11 +440,15 @@ void PlotField(int typplot,int compare,Field* f,char* filename){
 }
 
 // inter-subcell fluxes
-void DGSubCellInterface(Field* f){
+void DGSubCellInterface(void* mc){
+
+  MacroCell* mcell = (MacroCell*) mc;
+
+  Field* f= mcell->field;
 
   // loop on the elements
   //#pragma omp parallel for
-  for (int ie=0;ie<f->macromesh.nbelems;ie++){
+  for (int ie=mcell->first_cell;ie<mcell->last_cell_p1;ie++){
     // get the physical nodes of element ie
     double physnode[20][3];
     for(int inoloc=0;inoloc<20;inoloc++){
@@ -578,25 +583,27 @@ void DGSubCellInterface(Field* f){
 
 
 // compute the Discontinuous Galerkin inter-macrocells boundary terms
-void DGMacroCellInterface(Field* f){
+void DGMacroCellInterface(void* mc){
+
+  MacroCell* mcell = (MacroCell*) mc;
+
+  Field* f= mcell->field;
 
   // init to zero the time derivative
-  int sizew=0;
-  for(int ie=0;ie<f->macromesh.nbelems;ie++){
+  for (int ie=mcell->first_cell;ie<mcell->last_cell_p1;ie++){
     for(int ipg=0;ipg<NPG(f->interp_param+1);ipg++){
       for(int iv=0;iv<f->model.m;iv++){
 	int imem=f->varindex(f->interp_param,ie,ipg,iv);
 	f->dtwn[imem]=0;
-        sizew++;
       }
     }
   }
-  assert(sizew==f->macromesh.nbelems * f->model.m * NPG(f->interp_param+1));
+  //assert(sizew==f->macromesh.nbelems * f->model.m * NPG(f->interp_param+1));
 
   // assembly of the surface terms
   // loop on the elements
   //#pragma omp parallel for
-  for (int ie=0;ie<f->macromesh.nbelems;ie++){
+  for (int ie=mcell->first_cell;ie<mcell->last_cell_p1;ie++){
     // get the physical nodes of element ie
     double physnode[20][3];
     for(int inoloc=0;inoloc<20;inoloc++){
@@ -702,11 +709,15 @@ void DGMacroCellInterface(Field* f){
 
 
 // apply division by the mass matrix
-void DGMass(Field* f){
+void DGMass(void* mc){
+
+  MacroCell* mcell = (MacroCell*) mc;
+
+  Field* f= mcell->field;
 
   // loop on the elements
   //#pragma omp parallel for
-  for (int ie=0;ie<f->macromesh.nbelems;ie++){
+  for (int ie=mcell->first_cell;ie<mcell->last_cell_p1;ie++){
     // get the physical nodes of element ie
     double physnode[20][3];
     for(int inoloc=0;inoloc<20;inoloc++){
@@ -739,11 +750,15 @@ void DGMass(Field* f){
 
 // compute the Discontinuous Galerkin volume terms
 // fast version
-void DGVolume(Field* f){
+void DGVolume(void* mc){
+
+  MacroCell* mcell = (MacroCell*) mc;
+
+  Field* f= mcell->field;
 
   // loop on the elements
   //#pragma omp parallel for
-  for (int ie=0;ie<f->macromesh.nbelems;ie++){
+  for (int ie=mcell->first_cell;ie<mcell->last_cell_p1;ie++){
     // get the physical nodes of element ie
     double physnode[20][3];
     for(int inoloc=0;inoloc<20;inoloc++){
@@ -908,10 +923,19 @@ void DGVolumeSlow(Field* f){
 // apply the Discontinuous Galerkin approximation for computing
 // the time derivative of the field
 void dtField(Field* f){
-  DGMacroCellInterface(f);
-  DGSubCellInterface(f);
-  DGVolume(f);
-  DGMass(f);
+
+  MacroCell mcell;
+  mcell.field=f;
+
+  for(int ie=0;ie<f->macromesh.nbelems;ie++){
+    mcell.first_cell=ie;
+    mcell.last_cell_p1=ie+1;
+
+    DGMacroCellInterface((void*) &mcell);
+    DGSubCellInterface((void*) &mcell);
+    DGVolume((void*) &mcell);
+    DGMass((void*) &mcell);
+  }
 }
 
 // apply the Discontinuous Galerkin approximation for computing
