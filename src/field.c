@@ -442,7 +442,7 @@ void PlotField(int typplot,int compare,Field* f,char* filename){
 void DGSubCellInterface(Field* f){
 
   // loop on the elements
-#pragma omp parallel for
+  //#pragma omp parallel for
   for (int ie=0;ie<f->macromesh.nbelems;ie++){
     // get the physical nodes of element ie
     double physnode[20][3];
@@ -595,7 +595,7 @@ void DGMacroCellInterface(Field* f){
 
   // assembly of the surface terms
   // loop on the elements
-#pragma omp parallel for
+  //#pragma omp parallel for
   for (int ie=0;ie<f->macromesh.nbelems;ie++){
     // get the physical nodes of element ie
     double physnode[20][3];
@@ -705,7 +705,7 @@ void DGMacroCellInterface(Field* f){
 void DGMass(Field* f){
 
   // loop on the elements
-#pragma omp parallel for
+  //#pragma omp parallel for
   for (int ie=0;ie<f->macromesh.nbelems;ie++){
     // get the physical nodes of element ie
     double physnode[20][3];
@@ -742,7 +742,7 @@ void DGMass(Field* f){
 void DGVolume(Field* f){
 
   // loop on the elements
-#pragma omp parallel for
+  //#pragma omp parallel for
   for (int ie=0;ie<f->macromesh.nbelems;ie++){
     // get the physical nodes of element ie
     double physnode[20][3];
@@ -837,7 +837,7 @@ void DGVolumeSlow(Field* f){
 
   // assembly of the volume terms
   // loop on the elements
-#pragma omp parallel for
+  //#pragma omp parallel for
   for (int ie=0;ie<f->macromesh.nbelems;ie++){
     // get the physical nodes of element ie
     double physnode[20][3];
@@ -930,7 +930,7 @@ void dtFieldSlow(Field* f){
 
   // init to zero the time derivative
   int sizew=0;
-#pragma omp parallel for
+  //#pragma omp parallel for
   for(int ie=0;ie<f->macromesh.nbelems;ie++){
     for(int ipg=0;ipg<NPG(f->interp_param+1);ipg++){
       for(int iv=0;iv<f->model.m;iv++){
@@ -944,7 +944,7 @@ void dtFieldSlow(Field* f){
 
   // assembly of the surface terms
   // loop on the elements
-#pragma omp parallel for
+  //#pragma omp parallel for
   for (int ie=0;ie<f->macromesh.nbelems;ie++){
     // get the physical nodes of element ie
     double physnode[20][3];
@@ -1044,7 +1044,7 @@ void dtFieldSlow(Field* f){
 
   // assembly of the volume terms
   // loop on the elements
-#pragma omp parallel for
+  //#pragma omp parallel for
   for (int ie=0;ie<f->macromesh.nbelems;ie++){
     // get the physical nodes of element ie
     double physnode[20][3];

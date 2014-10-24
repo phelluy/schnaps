@@ -2,7 +2,8 @@ cmake_minimum_required(VERSION 2.8)
 
 project(schnaps)
 
-set(CMAKE_C_FLAGS "-std=c99 -O -fopenmp")
+#set(CMAKE_C_COMPILER "/opt/local/bin/gcc-mp-4.8")
+set(CMAKE_C_FLAGS "-std=c99 -O")
 include_directories(src)
 
 enable_testing()
