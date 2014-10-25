@@ -441,6 +441,7 @@ void CheckMacroMesh(MacroMesh* m,int* param){
   		NULL,ifa, // dpsiref,ifa
   		xpg_in,dtau,
   		codtau,NULL,vnds); // codtau,dpsi,vnds
+	printf("ie=%d ifa=%d xrefL=%f %f %f\n",ie,ifa,xpgref_in[0],xpgref_in[1],xpgref_in[2]);
 
 	// compute the exact ref position
  	Ref2Phy(physnode,
@@ -454,14 +455,15 @@ void CheckMacroMesh(MacroMesh* m,int* param){
   	  double xref[3];
 	  //printf("xpg_in=%f %f %f\n",xpg_in[0],xpg_in[1],xpg_in[2]);
 	  Phy2Ref(physnodeR,xpg_in,xref);
-	  //printf("xref=%f %f %f\n",xref[0],xref[1],xref[2]);
-  	  int ipgR=ref_ipg(param,xref);
-	  double xpgR[3],xrefR[3],wpgR;
-	  ref_pg_vol(param, ipgR, xrefR, &wpgR,NULL);
-          double dtauR[3][3],codtauR[3][3];double vndsR[3];
           int ifaR=0;
           while (m->elem2elem[6*ieR+ifaR] != ie) ifaR++;
           assert(ifaR<6);
+	  printf("ieR=%d ifaR=%d xref=%f %f %f\n",ieR,ifaR,xref[0],xref[1],xref[2]);
+  	  int ipgR=ref_ipg(param,xref);
+	  printf("ok\n");
+	  double xpgR[3],xrefR[3],wpgR;
+	  ref_pg_vol(param, ipgR, xrefR, &wpgR,NULL);
+          double dtauR[3][3],codtauR[3][3];double vndsR[3];
 	  Ref2Phy(physnodeR,
 		  xrefR,
 		  NULL,ifaR, // dphiref,ifa
