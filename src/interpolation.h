@@ -8,16 +8,15 @@
 //! \brief a struct for managing geometric mapping
 typedef struct Interpolation{
   //! \brief interpolation parameters
-  //! generally the convention is
-  //! param[0] = M number of variables
-  //! param[1] = deg x
-  //! param[2] = deg y
-  //! param[3] = deg z
-  //! param[4] = raf x
-  //! param[5] = raf y
-  //! param[6] = raf z
+  //! \details generally the convention is <BR>
+  //! param[0] = M number of variables <BR>
+  //! param[1] = deg x <BR>
+  //! param[2] = deg y <BR>
+  //! param[3] = deg z <BR>
+  //! param[4] = raf x <BR>
+  //! param[5] = raf y <BR>
+  //! param[6] = raf z <BR>
   //! param[7..] = others param or return from interp
-  //! functions
   int interp_param[8];
 
   //! \brief underlying geometry mapping
@@ -63,23 +62,40 @@ typedef struct Interpolation{
 //! \brief number of Gauss-LObatto Points (GLOPs) on the macro cell 
 //! \param[in] param: the param list 
 int NPG(int param[]);
-// number of GLOPs on the face ifa of the macrocell
+
+//! \brief number of GLOPs on the face ifa of the macrocell
+//! \param[in] param the param list
+//! \param[in] ifa face index
 int NPGF(int* param,int ifa);
 
-// return the reference coordinates xpg[3] and weight wpg of the GLOP ipg
+//! \brief return the reference coordinates xpg[3] and weight wpg of the GLOP ipg
+//! \param[in] param interp. params list
+//! \param[in] ipg Gauss point index
+//! \param[out] xpg  reference Gauss point coordinates
+//! \param[out] wpg reference Gauss weight
+//! \param[in] xpg_in same as xpg but slightly moved such
+//! that the resulting point is in the interior of the ref. element
 void ref_pg_vol(int* param,int ipg,
 		double* xpg,double* wpg,double* xpg_in);
 
-// from a reference point find the nearest
-// gauss point
+//! \brief from a reference point find the nearest
+//! gauss point
+//! \param[in] param interp. params list
+//! \param[in] xref  reference Gauss point coordinates
+//! \return Gauss point index
 int ref_ipg(int* param,double* xref);
 
-// same function for the face 
-// param[6] contains the volume GLOP index computed from face GLOP index.
 //! \brief compute the position xpg of glop ipg in the local
 //! numbering on face ifa. If xpgin is not NULL also compute
-//! the position of point slightly inside the opposite subcell
-void ref_pg_face(int* param,int ifa,int ipg,double* xpg,double* wpg,
+//! the position of point slightly inside the opposite subcell.
+//! \param[inout] param interp. params list. param[6] also contains the volume Gauss point index
+//! \param[in] ifa local face index (0..5)
+//! \param[in] ipgf local 2d Gauss point index on the face ifa
+//! \param[out] xpg Gauss point coordinates
+//! \param[out] wpg Gauss point weight.
+//! \param[out] xpgin same as xpg but slightly moved such
+//! that the resulting point is in the interior of the ref. element
+void ref_pg_face(int* param,int ifa,int ipgf,double* xpg,double* wpg,
 		 double* xpgin);
 // return the value psi  and the gradient dpsi[3] of the basis 
 // function ib at point xref[3]. Warning: the value of the gradient is
@@ -95,9 +111,16 @@ void grad_psi_pg(int* param,int ib,int ipg,double* dpsiref);
 void psi_ref_subcell(int* param, int* is,int ib, double* xref, double* psi, double* dpsiref);
 
 
-// return the 1d ith GLOP weight for degree deg
+//! \brief return the 1d ith GLOP weight for degree deg
+//! \param[in] deg degree
+//! \param[in] i GLOP 1D index
+//! \returns the weight
 double wglop(int deg,int i);
-// return the 1d derivative of lagrange polynomial ib at glop ipg
+//! \brief return the 1d derivative of lagrange polynomial ib at glop ipg
+//! \param[in] deg degree
+//! \param[in] ib basis function index
+//! \param[in] ipg index of the Gauss point where the derivative is computed
+//! \returns the value of the derivative
 double dlag(int deg,int ib,int ipg);
 
 
