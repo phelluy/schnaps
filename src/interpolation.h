@@ -60,13 +60,13 @@ typedef struct Interpolation{
 // parameters (the user has to ensure that enough memory is reserved
 
 //! \brief number of Gauss-LObatto Points (GLOPs) on the macro cell 
-//! \param[in] param: the param list 
+//! \param[in] param the param list 
 int NPG(int param[]);
 
 //! \brief number of GLOPs on the face ifa of the macrocell
 //! \param[in] param the param list
 //! \param[in] ifa face index
-int NPGF(int* param,int ifa);
+int NPGF(int param[],int ifa);
 
 //! \brief return the reference coordinates xpg[3] and weight wpg of the GLOP ipg
 //! \param[in] param interp. params list
@@ -138,6 +138,25 @@ double wglop(int deg,int i);
 //! \returns the value of the derivative
 double dlag(int deg,int ib,int ipg);
 
+
+//! \brief return the value of a 1D lagrange polynomial
+//! \param[in] p value of the Lagrange polynomial
+//! \param[in] subdiv the list of interpolation points (of size deg+1)
+//! \param[in] deg polynomial degree
+//! \param[in] ii index of the Lagrange polynomial
+//! \param[in] x position where to compute p
+void lagrange_polynomial(double* p,const double* subdiv,
+			 int deg,int ii,double x);
+
+
+//! \brief return the derivative of a 1D lagrange polynomial
+//! \param[in] dp value of the derivative of the Lagrange polynomial
+//! \param[in] subdiv the list of interpolation points (of size deg+1)
+//! \param[in] deg polynomial degree
+//! \param[in] ii index of the Lagrange polynomial
+//! \param[in] x position where to compute dp
+void dlagrange_polynomial(double* dp,const double* subdiv,
+			  int deg,int ii,double x);
 
 
 
