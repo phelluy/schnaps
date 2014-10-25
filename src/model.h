@@ -34,29 +34,36 @@ typedef struct Model{
 
 //! \brief particular flux for the transport model
 void TransportNumFlux(double wL[],double wR[],double vn[3],double* flux);
+//! \brief particular flux for the 2d transport model
 void TransportNumFlux2d(double wL[],double wR[],double vn[3],double* flux);
 //! \brief particular boundary flux for the transport model
 void TransportBoundaryFlux(double* x,double t,double* wL,double* vn,
 			     double* flux);
+//! \brief particular boundary flux for the 2d transport model
 void TransportBoundaryFlux2d(double* x,double t,double* wL,double* vn,
 			     double* flux);
 //! \brief particular init data for the transport model
 void TransportInitData(double* x,double* w);
+//! \brief particular init data for the 2d transport model
 void TransportInitData2d(double* x,double* w);
 //! \brief particular imposed data for the transport model
 void TransportImposedData(double* x,double t,double* w);
+//! \brief particular imposed data for the 2d transport model
 void TransportImposedData2d(double* x,double t,double* w);
 
 //! \brief particular flux for testing the transport model
 void TestTransportBoundaryFlux(double* x,double t,double* wL,double* vn,
 			       double* flux);
+//! \brief particular flux for testing the 2d transport model
 void TestTransportBoundaryFlux2d(double* x,double t,double* wL,double* vn,
 			       double* flux);
 //! \brief particular init data for the transport model
 void TestTransportInitData(double* x,double* w);
+//! \brief particular init data for the 2d transport model
 void TestTransportInitData2d(double* x,double* w);
 //! \brief particular imposed data for the transport model
 void TestTransportImposedData(double* x,double t,double* w);
+//! \brief particular imposed data for the 2d transport model
 void TestTransportImposedData2d(double* x,double t,double* w);
 
 

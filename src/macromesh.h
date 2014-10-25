@@ -4,38 +4,41 @@
 #include <stdbool.h>
 #include "global.h"
 
-// structure for managing the mesh obtained from
-// gmsh. It is called a macromesh, because it will be refined
-// afterward
+//! \brief structure for managing the mesh obtained from gmsh.
+//! It is called a macromesh, because it will be refined
+//! afterward
 typedef struct MacroMesh{
-  //sizes
-  int nbelems;
-  int nbnodes;
+  int nbelems; //!< number of macro elems
+  int nbnodes; //!< number of nodes in the macromesh
   // connectivity
-  int* elem2node;
-  int* elem2elem;
-  double* node;
-  bool is2d;
+  int* elem2node; //!< elems to nodes connectivity (20 nodes/elem) 
+  int* elem2elem; //!< elems to elems connectivity (along 6 faces)
+  double* node; //!< nodes coordintes array
+  bool is2d; //!< 2d computation detection
 } MacroMesh;
 
-// a simple struct for modelling a four
-// corner face with a left and a right element
+//! \brief a simple struct for modelling a four
+//! corner face with a left and a right element
+//! used only by the connectivity builder
 typedef struct Face4Sort{
   int node[4];
   int left,right;
   int locfaceleft,locfaceright;
 } Face4Sort;
 
-// sort the node list of the face
+//!\brief  sort the node list of the face
+//! used only by the connectivity builder
 void OrderFace4Sort(Face4Sort* f);
 
-// compare two integers
+//! \brief compare two integers
 int CompareInt(const void* a,const void* b);
 
-// compare two ordered four-corner faces
+//! \brief compare two ordered four-corner faces
 int CompareFace4Sort(const void* a,const void* b);
 
-// get the mesh from a gmsh file
+//! \brief get the mesh from a gmsh file
+//! \param[inout] m pointer to a macromesh
+//! \param[in] filename location of the gmsh file 
 void ReadMacroMesh(MacroMesh* m,char* filename);
 
 // simple transformations of the mesh

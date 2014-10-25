@@ -28,7 +28,7 @@ Pour lancer schnaps:
 
 générer le maillage:
 
-cd geo ; gmsh disque.geo -3 ; cd ..
+gmsh disque.geo -3
 
 ./schnaps
 
@@ -56,6 +56,6 @@ doxygen doxyschnaps
 #define _GLOBAL_H
 
 //! brief global variables and defs
-
+//! none for the moment
 
 #endif
