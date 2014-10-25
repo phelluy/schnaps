@@ -370,12 +370,12 @@ void CheckMacroMesh(MacroMesh* m,int* param){
 	  // in 2D do not check upper and lower face
 	  if (m->is2d){
 	    if (ifa !=4 && ifa!=5) {
-	      assert(Dist(xpgref,xpgref2)<1e-8);
+	      assert(Dist(xpgref,xpgref2)<1e-11);
 	    }
 	  }
 	  // in 3D check all faces
 	  else {
-	    assert(Dist(xpgref,xpgref2)<1e-8);
+	    assert(Dist(xpgref,xpgref2)<1e-11);
 	  }
 	  	      
         }
@@ -441,7 +441,8 @@ void CheckMacroMesh(MacroMesh* m,int* param){
   		NULL,ifa, // dpsiref,ifa
   		xpg_in,dtau,
   		codtau,NULL,vnds); // codtau,dpsi,vnds
-	printf("ie=%d ifa=%d xrefL=%f %f %f\n",ie,ifa,xpgref_in[0],xpgref_in[1],xpgref_in[2]);
+	//printf("ie=%d ifa=%d xrefL=%f %f %f\n",ie,
+	//     ifa,xpgref_in[0],xpgref_in[1],xpgref_in[2]);
 
 	// compute the exact ref position
  	Ref2Phy(physnode,
@@ -458,9 +459,10 @@ void CheckMacroMesh(MacroMesh* m,int* param){
           int ifaR=0;
           while (m->elem2elem[6*ieR+ifaR] != ie) ifaR++;
           assert(ifaR<6);
-	  printf("ieR=%d ifaR=%d xref=%f %f %f\n",ieR,ifaR,xref[0],xref[1],xref[2]);
+	  //printf("ieR=%d ifaR=%d xref=%f %f %f\n",ieR,
+	  //	 ifaR,xref[0],xref[1],xref[2]);
   	  int ipgR=ref_ipg(param,xref);
-	  printf("ok\n");
+	  //printf("ok\n");
 	  double xpgR[3],xrefR[3],wpgR;
 	  ref_pg_vol(param, ipgR, xrefR, &wpgR,NULL);
           double dtauR[3][3],codtauR[3][3];double vndsR[3];
@@ -518,7 +520,7 @@ bool Detect2DMacroMesh(MacroMesh* m){
     }
     zmil/=20;
     // the mesh is not 2d
-    if (fabs(zmil-0.5)>1e-3) {
+    if (fabs(zmil-0.5)>1e-6) {
       m->is2d=false;
       return m->is2d;
     }

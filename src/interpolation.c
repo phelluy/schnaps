@@ -200,9 +200,9 @@ int ref_ipg(int* param,double* xref){
   int ncy=floor(xref[1]*nraf[1]);
   int ncz=floor(xref[2]*nraf[2]);
 
-  printf("x=%f ncx=%d nrafx=%d\n",xref[0], ncx,nraf[0]);
-  printf("y=%f ncy=%d nrafy=%d\n",xref[1], ncy,nraf[1]);
-  printf("z=%f ncz=%d nrafz=%d\n",xref[2], ncz,nraf[2]);
+  //printf("x=%f ncx=%d nrafx=%d\n",xref[0], ncx,nraf[0]);
+  //printf("y=%f ncy=%d nrafy=%d\n",xref[1], ncy,nraf[1]);
+  //printf("z=%f ncz=%d nrafz=%d\n",xref[2], ncz,nraf[2]);
   assert(ncx >=0 && ncx<nraf[0]);
   assert(ncy >=0 && ncy<nraf[1]);
   assert(ncz >=0 && ncz<nraf[2]);
@@ -218,7 +218,8 @@ int ref_ipg(int* param,double* xref){
   //int iz=floor(xref[2]*deg[2]+0.5); 
 
 
-  printf("xref %f %f %f ix=%d iy=%d iz=%d\n",xref[0],xref[1],xref[2],ix,iy,iz);
+  //printf("xref %f %f %f ix=%d iy=%d iz=%d\n",
+  //	 xref[0],xref[1],xref[2],ix,iy,iz);
 
   return ix+(deg[0]+1)*(iy+(deg[1]+1)*iz)+offset;
 
@@ -276,7 +277,7 @@ void ref_pg_vol(int* param,int ipg,
     gauss_lob_weight[offset[2]];
 
   if (xpg_in !=0){
-    double small=0.001;
+    double small=1e-3;
     xpg_in[0]=xpg[0];
     xpg_in[1]=xpg[1];
     xpg_in[2]=xpg[2];
@@ -381,8 +382,8 @@ void ref_pg_face(int* param,int ifa,int ipg,
   // if xpgin exists, compute a point slightly INSIDE the opposite
   // subcell along the face.
   if (xpgin!=NULL){
-    double small=0.001;
-    double vsmall=0.000001;
+    double small=1e-3;//0.001
+    double vsmall=1e-6;//0.000001;
 
     xpgin[axis_permut[ifa][0]] =
       h[0]*(ncx+gauss_lob_point[offset[0]]);
