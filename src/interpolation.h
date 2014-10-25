@@ -19,25 +19,35 @@ typedef struct Interpolation{
   //! param[7..] = others param or return from interp
   //! functions
   int interp_param[8];
+
+  //! \brief underlying geometry mapping
   Geom geo;
-  // local useful variables
-  // number of Gauss points in the volume
-  // and current Gauss point index
-  int npgv,ipgv;
-  // current face id
+  //! \brief number of Gauss points in the volume
+  int npgv;
+  //! \brief current Gauss point index
+  int ipgv;
+  //! \brief current face id
   int ifa;
-  // number of Gauss points on the current face
-  // and current face Gauss point index
-  int npgf,ipgf;
-  // basis function index
+  //! \brief number of Gauss points on the current face
+  int npgf;
+  //! \brief current face Gauss point index
+  int ipgf;
+  //! \brief basis function index
   int ib;
-  // current Gauss weight
-  // volume or face
-  double wpgv,wpgf;
-  // Gauss point ref and physical location
-  double xpgref[3],xpg[3];
-  // basis function values
-  double phi,dphiref[3],dphi[3];
+  //! \brief current volume Gauss weight
+  double wpgv;
+  //! \brief  current face Gauss weight
+  double wpgf;
+  //! \brief Gauss point ref location
+  double xpgref[3];
+  //! \brief Gauss point physical location
+  double xpg[3];
+  //! \brief basis function values
+  double phi;
+  //! \brief basis function reference gradient
+  double dphiref[3];
+  //! \brief basis function physical gradient
+  double dphi[3];
 
 } Interpolation;
 

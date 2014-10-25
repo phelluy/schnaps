@@ -27,6 +27,7 @@ typedef struct Geom{
   double vnds[3];
 
   // some pointers to particular functions
+  //! \brief pointer to particular Ref2Phy mapping
   void (*Ref2Phy)(double physnode[_NB_REF_NODES][3],
                       double xref[3],
                       double dphiref[3],
@@ -37,6 +38,7 @@ typedef struct Geom{
                       double dphi[3],
                       double vnds[3]);
   
+  //! \brief pointer to a particular Phy2Ref inverse mapping
   void (*Phy2Ref)(double physnode[_NB_REF_NODES][3],double xphy[3],double xref[3]);
 } Geom;
 
@@ -44,7 +46,6 @@ typedef struct Geom{
 
 
 //! \brief mapping tau from the reference point to the physical point.
-//!
 //! If an optional variable is not used it HAS to be set to NULL
 //! \param[in] physnode : coordinates of the physical nodes
 //! \param[in] xref : coordinates of the mapped point in the reference frame
@@ -65,7 +66,9 @@ void Ref2Phy(double physnode[20][3],
              double dphi[3],
              double vnds[3]);
 
-//! \brief same function with the data encapsulated for more simplicity
+//! \brief mapping tau from the reference point to the physical point. 
+//! Data encapsulation for more simplicity
+//! \param[inout] g a Geom data structure
 void GeomRef2Phy(Geom* g);
 
 
@@ -76,7 +79,9 @@ void GeomRef2Phy(Geom* g);
 //! \param[out] xref: coordinates of the mapped point in the reference frame
 void Phy2Ref(double physnode[20][3],double xphy[3],double xref[3]);
 
-//! \brief same function with encapsulation
+//! \brief inverse mapping tau from the physical point to the reference point.
+//! Function with encapsulation
+//! \param[inout] g a Geom data structure
 void GeomPhy2Ref(Geom* g);
 
 //! \brief distance between two points

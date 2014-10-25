@@ -117,6 +117,7 @@ double t141 = 4 * t38 * t9;
 double t145 = 4 * t75 * t1;
 double t158 = 4 * t67 * t9;
 double t162 = 4 * t75 * t2;
+
 gradphi[0][0] = t3 * (t4 + t5 - 3 + t6);
 gradphi[0][1] = t10 * (t11 + t5 - 3 + t12);
 gradphi[0][2] = t15 * (t11 + t4 - 3 + t16);

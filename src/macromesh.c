@@ -9,9 +9,6 @@
 #include "interpolation.h"
 #include <math.h>
 
-//! \brief get the mesh from a gmsh file
-//! \param[inout] m pointer to a macromesh
-//! \param[in] filename location of the gmsh file 
 void ReadMacroMesh(MacroMesh* m,char* filename){
 
   m->is2d=false;
