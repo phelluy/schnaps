@@ -435,7 +435,8 @@ void PlotField(int typplot,int compare,Field* f,char* filename){
 
     
   fclose(gmshfile);
-  
+ 
+  free(value);
 
 }
 
