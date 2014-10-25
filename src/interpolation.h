@@ -97,17 +97,32 @@ int ref_ipg(int* param,double* xref);
 //! that the resulting point is in the interior of the ref. element
 void ref_pg_face(int* param,int ifa,int ipgf,double* xpg,double* wpg,
 		 double* xpgin);
-// return the value psi  and the gradient dpsi[3] of the basis 
-// function ib at point xref[3]. Warning: the value of the gradient is
-// not reliable if xref is on the boundary 
-//of a subcell (because the gradient is discontinuous)
+//! \brief return the value and the gradient of the basis 
+//! functions.
+//! Warning: the value of the gradient is
+//! not reliable if xref is on the boundary 
+//! of a subcell (because the gradient is discontinuous)
+//! \param[in] param interpolation parammeters (degrees and refinements)
+//! \param[in] ib basis function index
+//! \param[in] xref position of a point in the reference element
+//! \param[out] psi value of the basis function
+//! \param[out] dpsiref gradient of the basis function in the reference element
 void psi_ref(int* param, int ib, double* xref, double* psi, double* dpsiref);
-// return the gradient dpsi[3] of the basis 
-// function ib at GLOP ipg.
+
+//! \brief  gradient of a basis function at a given glop (case of one subcell)
+//! \param[in]  param interpolation parammeters (degrees and refinements)
+//! \param[in] ib basis function index
+//! \param[in] ipg glop index
+//! \param[out] dpsiref gradient of the basis function in the reference element
 void grad_psi_pg(int* param,int ib,int ipg,double* dpsiref);
 
-// same function but with specification of the subcell
-// indices is[3] in the three directions
+//! \brief  gradient of a basis function at a given glop in a given subcell
+//! \param[in]  param interpolation parammeters (degrees and refinements)
+//! \param[in] is a vector of three integer indices locating the subcell
+//! \param[in] ib basis function index
+//! \param[in] xref position of a point in the reference element
+//! \param[out] psi value of the basis function
+//! \param[out] dpsiref gradient of the basis function in the reference element
 void psi_ref_subcell(int* param, int* is,int ib, double* xref, double* psi, double* dpsiref);
 
 
