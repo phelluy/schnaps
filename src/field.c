@@ -502,7 +502,6 @@ void DGSubCellInterface(Field* f){
 		for(iL[dim2] = 0; iL[dim2] < npg[dim2]; iL[dim2]++){
 		  // find the right and left glops volume indices
 		  
-
 		  int iR[3] = {iL[0],iL[1],iL[2]};
 		  iR[dim0] = 0;
 
@@ -597,6 +596,7 @@ void DGMacroCellInterface(Field* f){
 
   // assembly of the surface terms
   // loop on the elements
+#pragma ompo parallel for
   for (int ie=0;ie<f->macromesh.nbelems;ie++){
     // get the physical nodes of element ie
     double physnode[20][3];
