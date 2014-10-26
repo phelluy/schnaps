@@ -596,6 +596,7 @@ void DGMacroCellInterface(Field* f){
 
   // assembly of the surface terms
   // loop on the elements
+
 #pragma ompo parallel for
   for (int ie=0;ie<f->macromesh.nbelems;ie++){
     // get the physical nodes of element ie
@@ -623,7 +624,8 @@ void DGMacroCellInterface(Field* f){
       	  physnodeR[inoloc][2]=f->macromesh.node[3*ino+2];
       	}
       }
-      
+
+
       // loop on the glops (numerical integration)
       // of the face ifa
       for(int ipgf=0;ipgf<NPGF(f->interp_param+1,ifa);ipgf++){
@@ -702,6 +704,7 @@ void DGMacroCellInterface(Field* f){
 void DGMass(Field* f){
 
   // loop on the elements
+#pragma omp parallel for
   for (int ie = 0; ie < f->macromesh.nbelems; ie++) {
     // get the physical nodes of element ie
     double physnode[20][3];
@@ -712,7 +715,7 @@ void DGMass(Field* f){
       physnode[inoloc][2]=f->macromesh.node[3*ino+2];
     }
 
-#pragma omp parallel for
+
     for(int ipg=0; ipg < NPG(f->interp_param+1); ipg++){
       double dtau[3][3],codtau[3][3],xpgref[3],wpg;
       ref_pg_vol(f->interp_param+1,ipg,xpgref,&wpg,NULL);
@@ -738,6 +741,7 @@ void DGMass(Field* f){
 void DGVolume(Field* f){
 
   // loop on the elements
+#pragma omp parallel for
   for (int ie=0;ie<f->macromesh.nbelems;ie++){
     // get the physical nodes of element ie
     double physnode[20][3];
@@ -762,7 +766,7 @@ void DGVolume(Field* f){
     const unsigned int sc_npg=npg[0]*npg[1]*npg[2];
 
     // loop on the subcells
-#pragma omp parallel for collapse(3)
+    //#pragma omp parallel for collapse(3)
     for(int icL0 = 0; icL0 < nraf[0]; icL0++){
       for(int icL1 = 0; icL1 < nraf[1]; icL1++){
 	for(int icL2 = 0; icL2 < nraf[2]; icL2++){
@@ -792,6 +796,7 @@ void DGVolume(Field* f){
 	  for(int dim0 = 0; dim0 < 3; dim0++){
 	    // point p at which we compute the flux
     
+	    //#pragma omp parallel for collapse(3)
 	    for(int p0 = 0; p0 < npg[0]; p0++){
 	      for(int p1 = 0; p1 < npg[1]; p1++){
 		for(int p2 = 0; p2 < npg[2]; p2++){
