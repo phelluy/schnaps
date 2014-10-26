@@ -29,7 +29,6 @@ void InitField(Field* f){
   double w[f->model.m];
   double xpg[3];
   double xref[3],omega;
-  double dtau[3][3];
   double physnode[20][3];
 
   f->is2d = false;
@@ -60,6 +59,7 @@ void InitField(Field* f){
     }
     for(int ipg=0;ipg<NPG(f->interp_param+1);ipg++){
       ref_pg_vol(f->interp_param+1, ipg, xref, &omega,NULL);
+      double dtau[3][3];
       Ref2Phy(physnode,
 	      xref,
 	      0,-1, // dphiref,ifa
@@ -82,7 +82,6 @@ void InitField(Field* f){
   f->hmin=1e10;
 
   for (int ie=0;ie<f->macromesh.nbelems;ie++){
-    double codtau[3][3],dtau[3][3];
     double vol=0,surf=0;
     // get the physical nodes of element ie
     double physnode[20][3];
@@ -97,14 +96,17 @@ void InitField(Field* f){
       double xpgref[3],wpg;
       // get the coordinates of the Gauss point
       ref_pg_vol(f->interp_param+1,ipg,xpgref,&wpg,NULL);
+      double codtau[3][3],dtau[3][3];
       Ref2Phy(physnode, // phys. nodes
 	      xpgref,  // xref
 	      NULL,-1, // dpsiref,ifa
 	      NULL,dtau,  // xphy,dtau
 	      codtau,NULL,NULL); // codtau,dpsi,vnds
-      double det=dtau[0][0]*codtau[0][0]+dtau[0][1]*codtau[0][1]+
-	dtau[0][2]*codtau[0][2];
-      vol+=wpg*det;  
+      double det
+	= dtau[0][0] * codtau[0][0]
+	+ dtau[0][1] * codtau[0][1]
+	+ dtau[0][2] * codtau[0][2];
+      vol+=wpg*det;
     }
     for(int ifa=0;ifa<6;ifa++){
       // loop on the faces
@@ -114,6 +116,7 @@ void InitField(Field* f){
 	// get the coordinates of the Gauss point
 	ref_pg_face(f->interp_param+1,ifa,ipgf,xpgref,&wpg,NULL);
 	double vnds[3];
+	double codtau[3][3],dtau[3][3];
 	Ref2Phy(physnode,
 		xpgref,
 		NULL,ifa, // dpsiref,ifa
@@ -583,6 +586,7 @@ void DGMacroCellInterface(Field* f){
 
   // init to zero the time derivative
   int sizew=0;
+#pragma ompo parallel for
   for(int ie=0;ie<f->macromesh.nbelems;ie++){
     for(int ipg=0;ipg<NPG(f->interp_param+1);ipg++){
       for(int iv=0;iv<f->model.m;iv++){
@@ -704,7 +708,7 @@ void DGMacroCellInterface(Field* f){
 void DGMass(Field* f){
 
   // loop on the elements
-#pragma omp parallel for
+
   for (int ie = 0; ie < f->macromesh.nbelems; ie++) {
     // get the physical nodes of element ie
     double physnode[20][3];
@@ -715,7 +719,7 @@ void DGMass(Field* f){
       physnode[inoloc][2]=f->macromesh.node[3*ino+2];
     }
 
-
+#pragma omp parallel for
     for(int ipg=0; ipg < NPG(f->interp_param+1); ipg++){
       double dtau[3][3],codtau[3][3],xpgref[3],wpg;
       ref_pg_vol(f->interp_param+1,ipg,xpgref,&wpg,NULL);
@@ -724,8 +728,10 @@ void DGMass(Field* f){
 	      NULL,-1, // dpsiref,ifa
 	      NULL,dtau,  // xphy,dtau
 	      codtau,NULL,NULL); // codtau,dpsi,vnds
-      double det=dtau[0][0]*codtau[0][0]+dtau[0][1]*codtau[0][1]+
-	dtau[0][2]*codtau[0][2];
+      double det
+	= dtau[0][0]*codtau[0][0]
+	+ dtau[0][1]*codtau[0][1]
+	+ dtau[0][2]*codtau[0][2];
       for(int iv=0;iv<f->model.m;iv++){
 	int imem=f->varindex(f->interp_param,ie,ipg,iv);
 	f->dtwn[imem]/=(wpg*det);
@@ -785,6 +791,7 @@ void DGVolume(Field* f){
 	  for(unsigned int p=0; p < sc_npg; ++p) {
 	    double xref[3];
 	    double tomega;
+
 	    ref_pg_vol(f->interp_param+1,offsetL+p,xref,&tomega,NULL);
 	    xref0[p] = xref[0];
 	    xref1[p] = xref[1];
@@ -823,7 +830,7 @@ void DGVolume(Field* f){
 		    /* ref_pg_vol(f->interp_param+1,ipgL,xrefL,&wpgL,NULL); */
 
 		    // mapping from the ref glop to the physical glop
-		    double dtau[3][3],codtau[3][3],dphi[3];
+		    double dtau[3][3],codtau[3][3],dphiL[3];
 		    Ref2Phy(physnode,
 			    xrefL,
 			    dphiref,  // dphiref
@@ -831,10 +838,10 @@ void DGVolume(Field* f){
 			    NULL,  // xphy  
 			    dtau,
 			    codtau,
-			    dphi,  // dphi
+			    dphiL,  // dphi
 			    NULL);  // vnds   
     
-		    f->model.NumFlux(wL,wL,dphi,flux);
+		    f->model.NumFlux(wL,wL,dphiL,flux);
 
 		    int ipgR=offsetL+q[0]+npg[0]*(q[1]+npg[1]*q[2]);
 		    for(int iv=0; iv < m; iv++){
@@ -903,8 +910,10 @@ void DGVolumeSlow(Field* f){
 		codtau,dpsi,NULL); // codtau,dpsi,vnds
 	// remember the diagonal mass term
 	if (ib == ipg){
-	  double det=dtau[0][0]*codtau[0][0]+dtau[0][1]*codtau[0][1]+
-	    dtau[0][2]*codtau[0][2];
+	  double det
+	    = dtau[0][0] * codtau[0][0]
+	    + dtau[0][1] * codtau[0][1]
+	    + dtau[0][2] * codtau[0][2];
 	  masspg[ipg]=wpg*det;
 	}
 	// int_L F(w,w,grad phi_ib )
@@ -1107,8 +1116,10 @@ void dtFieldSlow(Field* f){
 		codtau,dpsi,NULL); // codtau,dpsi,vnds
 	// remember the diagonal mass term
 	if (ib == ipg){
-	  double det=dtau[0][0]*codtau[0][0]+dtau[0][1]*codtau[0][1]+
-	    dtau[0][2]*codtau[0][2];
+	  double det
+	    = dtau[0][0] * codtau[0][0]
+	    + dtau[0][1] * codtau[0][1]
+	    + dtau[0][2] * codtau[0][2];
 	  masspg[ipg]=wpg*det;
 	}
 	// int_L F(w,w,grad phi_ib )
@@ -1250,8 +1261,10 @@ double L2error(Field* f){
 	      NULL,-1, // dpsiref,ifa
 	      xphy,dtau,  // xphy,dtau
 	      codtau,NULL,NULL); // codtau,dpsi,vnds
-      double det=dtau[0][0]*codtau[0][0]+
-        dtau[0][1]*codtau[0][1]+dtau[0][2]*codtau[0][2]; 
+      double det
+	= dtau[0][0] * codtau[0][0]
+	+ dtau[0][1] * codtau[0][1]
+	+ dtau[0][2] * codtau[0][2]; 
       double w[f->model.m],wex[f->model.m];
       for(int iv=0;iv<f->model.m;iv++){
 	int imem=f->varindex(f->interp_param,ie,ipg,iv);
