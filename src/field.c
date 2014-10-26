@@ -442,6 +442,7 @@ void PlotField(int typplot,int compare,Field* f,char* filename){
 void DGSubCellInterface(Field* f){
 
   // loop on the elements
+#pragma omp parallel for
   for (int ie=0;ie<f->macromesh.nbelems;ie++){
     // get the physical nodes of element ie
     double physnode[20][3];
@@ -466,7 +467,6 @@ void DGSubCellInterface(Field* f){
 
 
     // loop on the subcells
-#pragma omp parallel for collapse(3)
     for(int icL0 = 0; icL0 < nraf[0]; icL0++){
       for(int icL1 = 0; icL1 < nraf[1]; icL1++){
 	for(int icL2 = 0; icL2 < nraf[2]; icL2++){
@@ -490,6 +490,9 @@ void DGSubCellInterface(Field* f){
 	      icR[dim0]++;
 	      int ncR=icR[0]+nraf[0]*(icR[1]+nraf[1]*icR[2]);
 	      int offsetR=npg[0]*npg[1]*npg[2]*ncR;
+
+	      // FIXME: write only write to L-values (and do both
+	      // faces) to parallelise better.
 
 	      // now loop on the left glops of the subface
 	      int dim1=(dim0+1)%3, dim2=(dim0+2)%3;
@@ -623,7 +626,6 @@ void DGMacroCellInterface(Field* f){
       
       // loop on the glops (numerical integration)
       // of the face ifa
-#pragma omp parallel for
       for(int ipgf=0;ipgf<NPGF(f->interp_param+1,ifa);ipgf++){
   	double xpgref[3],xpgref_in[3],wpg;
   	//double xpgref2[3],wpg2;
@@ -694,19 +696,16 @@ void DGMacroCellInterface(Field* f){
     }
   }
 
-
-
 }
-
 
 // apply division by the mass matrix
 void DGMass(Field* f){
 
   // loop on the elements
-  for (int ie=0;ie<f->macromesh.nbelems;ie++){
+  for (int ie = 0; ie < f->macromesh.nbelems; ie++) {
     // get the physical nodes of element ie
     double physnode[20][3];
-    for(int inoloc=0;inoloc<20;inoloc++){
+    for(int inoloc = 0; inoloc < 20; inoloc++) {
       int ino=f->macromesh.elem2node[20*ie+inoloc];
       physnode[inoloc][0]=f->macromesh.node[3*ino+0];
       physnode[inoloc][1]=f->macromesh.node[3*ino+1];
@@ -714,7 +713,7 @@ void DGMass(Field* f){
     }
 
 #pragma omp parallel for
-    for(int ipg=0;ipg<NPG(f->interp_param+1);ipg++){
+    for(int ipg=0; ipg < NPG(f->interp_param+1); ipg++){
       double dtau[3][3],codtau[3][3],xpgref[3],wpg;
       ref_pg_vol(f->interp_param+1,ipg,xpgref,&wpg,NULL);
       Ref2Phy(physnode, // phys. nodes
@@ -749,7 +748,6 @@ void DGVolume(Field* f){
       physnode[inoloc][2]=f->macromesh.node[3*ino+2];
     }
 
-
     const int nraf[3]={f->interp_param[4],
 		       f->interp_param[5],
 		       f->interp_param[6]};
@@ -761,22 +759,39 @@ void DGVolume(Field* f){
 			deg[2]+1};
     const int m = f->model.m;
 
-    int icL[3];
+    const unsigned int sc_npg=npg[0]*npg[1]*npg[2];
+
     // loop on the subcells
-    for(icL[0] = 0; icL[0] < nraf[0]; icL[0]++){
-      for(icL[1] = 0; icL[1] < nraf[1]; icL[1]++){
-	for(icL[2] = 0; icL[2] < nraf[2]; icL[2]++){
+#pragma omp parallel for collapse(3)
+    for(int icL0 = 0; icL0 < nraf[0]; icL0++){
+      for(int icL1 = 0; icL1 < nraf[1]; icL1++){
+	for(int icL2 = 0; icL2 < nraf[2]; icL2++){
+
+	  int icL[3] = {icL0,icL1,icL2};
 	  // get the L subcell id
 	  int ncL=icL[0]+nraf[0]*(icL[1]+nraf[1]*icL[2]);
 	  // first glop index in the subcell
 	  int offsetL=npg[0]*npg[1]*npg[2]*ncL;
 
+	  // compute all of the xref for the subcell
+	  double *xref0 = malloc(sc_npg * sizeof(double));
+	  double *xref1 = malloc(sc_npg * sizeof(double));
+	  double *xref2 = malloc(sc_npg * sizeof(double));
+	  double *omega = malloc(sc_npg * sizeof(double));
+	  for(unsigned int p=0; p < sc_npg; ++p) {
+	    double xref[3];
+	    double tomega;
+	    ref_pg_vol(f->interp_param+1,offsetL+p,xref,&tomega,NULL);
+	    xref0[p] = xref[0];
+	    xref1[p] = xref[1];
+	    xref2[p] = xref[2];
+	    omega[p] = tomega;
+	  }
+
 	  // loop in the "cross" in the three directions
 	  for(int dim0 = 0; dim0 < 3; dim0++){
 	    // point p at which we compute the flux
     
-    // NB: collapse(3) is only available in OpenMP 3.0 and later.
-#pragma omp parallel for collapse(3)
 	    for(int p0 = 0; p0 < npg[0]; p0++){
 	      for(int p1 = 0; p1 < npg[1]; p1++){
 		for(int p2 = 0; p2 < npg[2]; p2++){
@@ -794,12 +809,18 @@ void DGVolume(Field* f){
 		    double dphiref[3]={0,0,0};
 		    // compute grad phi_q at glop p
 		    dphiref[dim0]=dlag(deg[dim0],q[dim0],p[dim0])*nraf[dim0];
-		    double xref[3], wpg;		  
-		    ref_pg_vol(f->interp_param+1,ipgL,xref,&wpg,NULL);
+
+		    double xrefL[3]={xref0[ipgL-offsetL],
+		    		     xref1[ipgL-offsetL],
+		    		     xref2[ipgL-offsetL]};
+		    double wpgL=omega[ipgL-offsetL];
+		    /* double xrefL[3], wpgL; */
+		    /* ref_pg_vol(f->interp_param+1,ipgL,xrefL,&wpgL,NULL); */
+
 		    // mapping from the ref glop to the physical glop
 		    double dtau[3][3],codtau[3][3],dphi[3];
 		    Ref2Phy(physnode,
-			    xref,
+			    xrefL,
 			    dphiref,  // dphiref
 			    -1,    // ifa                                 
 			    NULL,  // xphy  
@@ -812,13 +833,20 @@ void DGVolume(Field* f){
 
 		    int ipgR=offsetL+q[0]+npg[0]*(q[1]+npg[1]*q[2]);
 		    for(int iv=0; iv < m; iv++){
-		      int imemR=f->varindex(f->interp_param,ie,ipgR,iv);		     	       f->dtwn[imemR]+=flux[iv]*wpg;
+		      int imemR=f->varindex(f->interp_param,ie,ipgR,iv);		     	       f->dtwn[imemR]+=flux[iv]*wpgL;
 		    }
 		  } // iq
 		} // p2
 	      } // p1
 	    } // p0
+	    
 	  } // dim loop
+	  
+	  free(omega);
+	  free(xref0);
+	  free(xref1);
+	  free(xref2);
+
 	} // icl2
       } //icl1
     } // icl0
