@@ -470,6 +470,7 @@ void DGSubCellInterface(Field* f){
 
 
     // loop on the subcells
+    //#pragma omp parallel for collapse(3)
     for(int icL0 = 0; icL0 < nraf[0]; icL0++){
       for(int icL1 = 0; icL1 < nraf[1]; icL1++){
 	for(int icL2 = 0; icL2 < nraf[2]; icL2++){
@@ -747,8 +748,10 @@ void DGMass(Field* f){
 void DGVolume(Field* f){
 
   // loop on the elements
-#pragma omp parallel for
-  for (int ie=0;ie<f->macromesh.nbelems;ie++){
+
+  const int nmacro=f->macromesh.nbelems;
+  //#pragma omp parallel for
+  for (int ie=0; ie < nmacro; ie++){
     // get the physical nodes of element ie
     double physnode[20][3];
     for(int inoloc=0;inoloc<20;inoloc++){
@@ -758,21 +761,30 @@ void DGVolume(Field* f){
       physnode[inoloc][2]=f->macromesh.node[3*ino+2];
     }
 
-    const int nraf[3]={f->interp_param[4],
-		       f->interp_param[5],
-		       f->interp_param[6]};
+    const int m = f->model.m;
     const int deg[3]={f->interp_param[1],
 		      f->interp_param[2],
 		      f->interp_param[3]};
     const int npg[3] = {deg[0]+1,
 			deg[1]+1,
 			deg[2]+1};
-    const int m = f->model.m;
+    const int nraf[3]={f->interp_param[4],
+		       f->interp_param[5],
+		       f->interp_param[6]};
 
     const unsigned int sc_npg=npg[0]*npg[1]*npg[2];
 
+    int f_interp_param[8]= {f->interp_param[0],
+			    f->interp_param[1],
+			    f->interp_param[2],
+			    f->interp_param[3],
+			    f->interp_param[4],
+			    f->interp_param[5],
+			    f->interp_param[6],
+			    f->interp_param[7]};
+
     // loop on the subcells
-    //#pragma omp parallel for collapse(3)
+#pragma omp parallel for collapse(3)
     for(int icL0 = 0; icL0 < nraf[0]; icL0++){
       for(int icL1 = 0; icL1 < nraf[1]; icL1++){
 	for(int icL2 = 0; icL2 < nraf[2]; icL2++){
@@ -788,6 +800,8 @@ void DGVolume(Field* f){
 	  double *xref1 = malloc(sc_npg * sizeof(double));
 	  double *xref2 = malloc(sc_npg * sizeof(double));
 	  double *omega = malloc(sc_npg * sizeof(double));
+	  int *imems = malloc(m * sc_npg * sizeof(double*));
+	  int pos=0;
 	  for(unsigned int p=0; p < sc_npg; ++p) {
 	    double xref[3];
 	    double tomega;
@@ -797,6 +811,10 @@ void DGVolume(Field* f){
 	    xref1[p] = xref[1];
 	    xref2[p] = xref[2];
 	    omega[p] = tomega;
+	    
+	    for(int im=0; im < m; ++im) {
+	      imems[pos++] = f->varindex(f_interp_param,ie,offsetL+p,im);
+	    }
 	  }
 
 	  // loop in the "cross" in the three directions
@@ -811,8 +829,10 @@ void DGVolume(Field* f){
 		  int p[3]={p0,p1,p2};
 		  int ipgL=offsetL+p[0]+npg[0]*(p[1]+npg[1]*p[2]);
 		  for(int iv=0; iv < m; iv++){
-		    int imemL=f->varindex(f->interp_param,ie,ipgL,iv);
-		    wL[iv] = f->wn[imemL];
+		    ///int imemL=f->varindex(f_interp_param,ie,ipgL,iv);
+		    wL[iv] = f->wn[imems[ipgL-offsetL+iv]];
+
+		    //wL[iv] = f->wn[imemL];
 		  }
 		  int q[3]={p[0],p[1],p[2]};
 		  // loop on the direction dim0 on the "cross"
@@ -845,7 +865,8 @@ void DGVolume(Field* f){
 
 		    int ipgR=offsetL+q[0]+npg[0]*(q[1]+npg[1]*q[2]);
 		    for(int iv=0; iv < m; iv++){
-		      int imemR=f->varindex(f->interp_param,ie,ipgR,iv);		     	       f->dtwn[imemR]+=flux[iv]*wpgL;
+		      //int imemR=f->varindex(f_interp_param,ie,ipgR,iv);
+		      f->dtwn[imems[ipgR-offsetL+iv]]+=flux[iv]*wpgL;
 		    }
 		  } // iq
 		} // p2
@@ -858,6 +879,7 @@ void DGVolume(Field* f){
 	  free(xref0);
 	  free(xref1);
 	  free(xref2);
+	  free(imems);
 
 	} // icl2
       } //icl1

@@ -25,8 +25,9 @@ int main(void) {
 
 
   // read the gmsh file
-  ReadMacroMesh(&(f.macromesh),"disque.msh");
-
+  ReadMacroMesh(&(f.macromesh),"test/testmacromesh.msh");
+  //ReadMacroMesh(&(f.macromesh),"disque.msh");
+  
   // try to detect a 2d mesh
   bool is2d=Detect2DMacroMesh(&(f.macromesh));
   assert(is2d);
