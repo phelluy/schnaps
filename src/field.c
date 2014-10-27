@@ -1165,6 +1165,7 @@ void RK2(Field* f,double tmax){
       printf("t=%f iter=%d/%d dt=%f\n",f->tnow,iter,itermax,dt);
     // predictor
     dtField(f);
+#pragma omp parallel for
     for(int iw=0;iw<sizew;iw++){
       f->wnp1[iw]=f->wn[iw]+ dt/2 * f->dtwn[iw]; 
     }
@@ -1177,6 +1178,7 @@ void RK2(Field* f,double tmax){
     // corrector
     f->tnow+=dt/2;
     dtField(f);
+#pragma omp parallel for
     for(int iw=0;iw<sizew;iw++){
       f->wnp1[iw]+=dt*f->dtwn[iw];
     }
