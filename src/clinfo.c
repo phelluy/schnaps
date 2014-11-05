@@ -46,12 +46,12 @@ void InitCLInfo(CLInfo* cli,int platform_id,int device_id){
     //  opencl version
     status = clGetPlatformInfo(platforms[i],
 			       CL_PLATFORM_VERSION,
-			       sizeof(pbuf),
-			       pbuf,
+			       sizeof(cli->platformname),
+			       cli->platformname,
 			       NULL);
     assert (status == CL_SUCCESS);
 
-    printf("%s\n",pbuf);
+    printf("%s\n",cli->platformname);
 
   }
 
@@ -72,10 +72,9 @@ void InitCLInfo(CLInfo* cli,int platform_id,int device_id){
   cli->device = malloc(sizeof(cl_device_id) * cli->nbdevices);
   assert(cli->device);
   
-  printf("DeviceID=%d NbDevices=%d\n",device_id,cli->nbdevices);
   assert(device_id < cli->nbdevices);
 
-  printf("We choose device %d/%d ",device_id,cli->nbdevices-1);
+  printf("\nWe choose device %d/%d ",device_id,cli->nbdevices-1);
   printf("of platform %d/%d\n",platform_id,cli->nbplatforms-1);
   
   status = clGetDeviceIDs(platforms[platform_id],
@@ -93,18 +92,8 @@ void InitCLInfo(CLInfo* cli,int platform_id,int device_id){
 			   cli->devicename,
 			   NULL);
   assert (status == CL_SUCCESS);
-  printf("%s",cli->devicename);
+  printf("%s\n",cli->devicename);
   
-
-  status = clGetDeviceInfo(
-			   cli->device[device_id],
-			   CL_DEVICE_EXTENSIONS,
-			   sizeof(cli->clextensions),
-			   cli->clextensions,
-			   NULL);
-  assert (status == CL_SUCCESS);
-  printf(" OpenCL extensions:\n%s\n",cli->clextensions);
-
 
   // device memory
   status = clGetDeviceInfo(
@@ -158,6 +147,16 @@ void InitCLInfo(CLInfo* cli,int platform_id,int device_id){
   assert (status == CL_SUCCESS);
   printf("Max workgroup size: %zu\n",cli->maxworkgroupsize);
 
+  status = clGetDeviceInfo(
+			   cli->device[device_id],
+			   CL_DEVICE_EXTENSIONS,
+			   sizeof(cli->clextensions),
+			   cli->clextensions,
+			   NULL);
+  assert (status == CL_SUCCESS);
+  printf("OpenCL extensions:\n%s\n",cli->clextensions);
+
+
   // first opencl context
   cli->context = clCreateContext(NULL, // no context properties
     1,         // only one device in the list
@@ -176,7 +175,7 @@ void InitCLInfo(CLInfo* cli,int platform_id,int device_id){
 				      &status);
   assert (status == CL_SUCCESS);
 
-  
+  printf("Init OK\n\n");
 
 }
 
@@ -187,7 +186,8 @@ void PrintCLInfo(CLInfo* cli){
 
    char pbuf[2000];
 
-  printf("%s\n",cli->devicename);
+   printf("%s\n",cli->platformname);
+   printf("%s\n",cli->devicename);
 
   // device memory
   printf("Global memory: %f MB\n",cli->devicememsize/1024./1024.);
@@ -203,7 +203,7 @@ void PrintCLInfo(CLInfo* cli){
   printf("Max workgroup size: %zu\n",cli->maxworkgroupsize);
 
 
-   printf("CL extensions:\n%s\n",cli->clextensions);
+   printf("OpenCL extensions:\n%s\n",cli->clextensions);
 
 
 
