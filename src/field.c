@@ -445,7 +445,9 @@ void PlotField(int typplot,int compare,Field* f,char* filename){
 void DGSubCellInterface(Field* f){
 
   // loop on the elements
+#ifdef _OPENMP
 #pragma omp parallel for
+#endif
   for (int ie=0;ie<f->macromesh.nbelems;ie++){
     // get the physical nodes of element ie
     double physnode[20][3];
@@ -591,7 +593,9 @@ void DGMacroCellInterface(Field* f){
 
   // init to zero the time derivative
   int sizew=0;
+#ifdef _OPENMP
 #pragma ompo parallel for
+#endif
   for(int ie=0;ie<f->macromesh.nbelems;ie++){
     for(int ipg=0;ipg<NPG(f->interp_param+1);ipg++){
       for(int iv=0;iv<f->model.m;iv++){
@@ -605,8 +609,9 @@ void DGMacroCellInterface(Field* f){
 
   // assembly of the surface terms
   // loop on the elements
-
+#ifdef _OPENMP
 #pragma ompo parallel for
+#endif
   for (int ie=0;ie<f->macromesh.nbelems;ie++){
     // get the physical nodes of element ie
     double physnode[20][3];
@@ -723,8 +728,9 @@ void DGMass(Field* f){
       physnode[inoloc][1]=f->macromesh.node[3*ino+1];
       physnode[inoloc][2]=f->macromesh.node[3*ino+2];
     }
-
+#ifdef _OPENMP
 #pragma omp parallel for
+#endif
     for(int ipg=0; ipg < NPG(f->interp_param+1); ipg++){
       double dtau[3][3],codtau[3][3],xpgref[3],wpg;
       ref_pg_vol(f->interp_param+1,ipg,xpgref,&wpg,NULL);
@@ -788,7 +794,9 @@ void DGVolume(Field* f){
 			    f->interp_param[7]};
 
     // loop on the subcells
+#ifdef _OPENMP
 #pragma omp parallel for collapse(3)
+#endif
     for(int icL0 = 0; icL0 < nraf[0]; icL0++){
       for(int icL1 = 0; icL1 < nraf[1]; icL1++){
 	for(int icL2 = 0; icL2 < nraf[2]; icL2++){
@@ -1191,7 +1199,9 @@ void RK2(Field* f,double tmax){
       printf("t=%f iter=%d/%d dt=%f\n",f->tnow,iter,itermax,dt);
     // predictor
     dtField(f);
+#ifdef _OPENMP
 #pragma omp parallel for
+#endif
     for(int iw=0;iw<sizew;iw++){
       f->wnp1[iw]=f->wn[iw]+ dt/2 * f->dtwn[iw]; 
     }
@@ -1204,7 +1214,9 @@ void RK2(Field* f,double tmax){
     // corrector
     f->tnow+=dt/2;
     dtField(f);
+#ifdef _OPENMP
 #pragma omp parallel for
+#endif
     for(int iw=0;iw<sizew;iw++){
       f->wnp1[iw]+=dt*f->dtwn[iw];
     }

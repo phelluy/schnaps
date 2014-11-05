@@ -5,6 +5,7 @@ project(schnaps)
 #set(CMAKE_C_COMPILER "tau_cc.sh")
 #set(CMAKE_C_FLAGS "-optRevert -optTauSelectFile=select.tau -std=c99 -fopenmp -Ofast")
 set(CMAKE_C_FLAGS "-std=c99 -fopenmp -Ofast")
+#set(CMAKE_C_FLAGS "-std=c99 -Ofast")
 include_directories(src)
 
 enable_testing()
