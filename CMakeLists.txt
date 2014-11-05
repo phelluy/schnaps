@@ -3,6 +3,10 @@ cmake_minimum_required(VERSION 2.8)
 project(schnaps)
 
 #set(CMAKE_C_COMPILER "/opt/local/bin/gcc-mp-4.8")
+SET(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
+FIND_PACKAGE(OpenCL REQUIRED)
+INCLUDE_DIRECTORIES(${OPENCL_INCLUDE_DIR})
+
 set(CMAKE_C_FLAGS "-std=c99 -D_REENTRANT -O")
 include_directories(src)
 
@@ -139,5 +143,5 @@ add_executable(
   test/test.h
   test/testclinfo.c
 )
-target_link_libraries(testclinfo _schnaps m pthread OpenCL)
+target_link_libraries(testclinfo _schnaps m pthread ${OPENCL_LIBRARY})
 add_test(testclinfo testclinfo)
