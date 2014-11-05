@@ -45,12 +45,12 @@ typedef struct Field{
 
 
 //! \brief a simple struct for packing a field
-//! and a cell range.  To be passed to a thread
+//! and a cells range.  To be passed to a thread
 //! as a void* pointer.
 typedef struct MacroCell{
   int first_cell; //!< first cell index
   int last_cell_p1;  //!< last cell index + 1
-  Field* field; //! pointer to a the field
+  Field* field; //! pointer to a  field
 } MacroCell;
 
 //! \brief memory arrangement of field components.

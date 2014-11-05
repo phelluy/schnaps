@@ -10,6 +10,7 @@ enable_testing()
 
 list(APPEND
 source_files
+src/clinfo.h
 src/field.h
 src/schnaps.h
 src/geometry.h
@@ -18,6 +19,7 @@ src/h20phi.h
 src/interpolation.h
 src/macromesh.h
 src/model.h
+src/clinfo.c
 src/field.c
 src/geometry.c
 src/interpolation.c
@@ -123,6 +125,7 @@ target_link_libraries(testsubcelldgvol _schnaps m pthread)
 add_test(testsubcelldgvol testsubcelldgvol)
 
 add_test(testfieldrk2-2d-subcell testfieldrk2-2d-subcell)
+
 add_executable(
   testfieldrk2-2d-subcell
   test/test.h
@@ -130,3 +133,11 @@ add_executable(
 )
 target_link_libraries(testfieldrk2-2d-subcell _schnaps m pthread)
 add_test(testfieldrk2-2d-subcell testfieldrk2-2d-subcell)
+
+add_executable(
+  testclinfo
+  test/test.h
+  test/testclinfo.c
+)
+target_link_libraries(testclinfo _schnaps m pthread OpenCL)
+add_test(testclinfo testclinfo)

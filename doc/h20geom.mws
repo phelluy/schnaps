@@ -1,4 +1,4 @@
-{VERSION 15 1 "Mac OS X" "15.1" }
+{VERSION 15 1 "Linux" "15.1" }
 {USTYLETAB {PSTYLE "Ordered List 1" -1 200 1 {CSTYLE "" -1 -1 "Times"
  1 12 0 0 0 1 2 2 2 2 2 2 1 0 0 1 }1 1 0 0 3 3 2 0 2 0 2 2 -1 1 }
 {PSTYLE "Ordered List 2" -1 201 1 {CSTYLE "" -1 -1 "Times" 1 12 0 0 0 
@@ -76,28 +76,29 @@ Italic" -1 43 "Times" 1 12 0 0 0 1 1 2 1 2 2 2 0 0 0 1 }{CSTYLE "Maple
 2 2 0 0 0 1 }{CSTYLE "Caption Reference" -1 201 "Times" 1 12 0 0 0 1 2
  1 2 2 2 2 0 0 0 1 }{CSTYLE "Maple Input Placeholder" -1 202 "Courier \+
 New" 1 12 200 0 200 1 2 1 2 2 1 2 0 0 0 1 }{CSTYLE "Code" -1 203 "Cour
-ier New" 1 12 255 0 0 1 2 2 2 2 2 2 0 0 0 1 }{CSTYLE "2D Inert Output"
- -1 204 "Times" 1 12 144 144 144 1 2 2 2 2 1 2 0 0 0 1 }{CSTYLE "2D Ma
-th Italic Small" -1 205 "Times" 1 1 0 0 0 1 1 2 2 2 2 2 0 0 0 1 }
-{CSTYLE "2D Comment" -1 18 "Times" 1 12 0 0 0 1 2 2 2 2 2 2 0 0 0 1 }
-{CSTYLE "Help Underlined Bold" -1 41 "Times" 1 12 0 0 0 1 1 1 2 2 2 2 
-0 0 0 1 }{CSTYLE "Copyright" -1 34 "Times" 1 10 0 0 0 1 2 2 2 2 2 2 0 
-0 0 1 }{CSTYLE "Hyperlink" -1 17 "Times" 1 12 0 128 128 1 2 2 1 2 2 2 
-0 0 0 1 }{CSTYLE "Help Underlined" -1 44 "Times" 1 12 0 0 0 1 2 2 1 2 
-2 2 0 0 0 1 }{CSTYLE "Prompt" -1 1 "Courier" 1 12 0 0 0 1 2 1 2 2 2 2 
-0 0 0 1 }{CSTYLE "2D Math" -1 2 "Times" 1 12 0 0 0 1 2 2 2 2 2 2 0 0 0
- 1 }{CSTYLE "2D Input" -1 19 "Times" 1 12 0 0 0 1 2 2 2 2 1 2 0 0 0 1 
-}{CSTYLE "Header and Footer" -1 206 "Times" 1 10 0 0 0 1 2 2 2 2 2 2 0
- 0 0 1 }{CSTYLE "Text" -1 207 "Times" 1 12 0 0 0 1 2 2 2 2 2 2 0 0 0 1
- }{CSTYLE "Help Notes" -1 37 "Times" 1 12 0 0 0 1 2 1 2 2 2 2 0 0 0 1 
-}{CSTYLE "Help Bold" -1 39 "Times" 1 12 0 0 0 1 2 1 2 2 2 2 0 0 0 1 }
-{CSTYLE "Equation Label" -1 208 "Times" 1 12 0 0 0 1 2 1 2 2 2 2 0 0 0
- 1 }{CSTYLE "LaTeX" -1 32 "Times" 1 12 0 0 0 1 2 2 2 2 2 2 0 0 0 1 }
-{CSTYLE "Popup" -1 31 "Times" 1 12 0 128 128 1 1 2 1 2 2 2 0 0 0 1 }
-{CSTYLE "Dictionary Hyperlink" -1 45 "Times" 1 12 147 0 15 1 2 2 1 2 2
- 2 0 0 0 1 }{CSTYLE "Caption Text" -1 209 "Times" 1 12 0 0 0 1 2 1 2 2
- 2 2 0 0 0 1 }{CSTYLE "Help Fixed" -1 23 "Courier" 1 10 0 0 0 1 2 2 2 
-2 2 2 0 0 0 1 }}
+ier New" 1 12 255 0 0 1 2 2 2 2 2 2 0 0 0 1 }{CSTYLE "2D Math Italic S
+mall205" -1 204 "Times" 1 1 0 0 0 1 1 2 2 2 2 2 0 0 0 1 }{CSTYLE "2D I
+nert Output" -1 205 "Times" 1 12 144 144 144 1 2 2 2 2 1 2 0 0 0 1 }
+{CSTYLE "2D Math Italic Small" -1 206 "Times" 1 1 0 0 0 1 1 2 2 2 2 2 
+0 0 0 1 }{CSTYLE "2D Comment" -1 18 "Times" 1 12 0 0 0 1 2 2 2 2 2 2 0
+ 0 0 1 }{CSTYLE "Help Underlined Bold" -1 41 "Times" 1 12 0 0 0 1 1 1 
+2 2 2 2 0 0 0 1 }{CSTYLE "Copyright" -1 34 "Times" 1 10 0 0 0 1 2 2 2 
+2 2 2 0 0 0 1 }{CSTYLE "Hyperlink" -1 17 "Times" 1 12 0 128 128 1 2 2 
+1 2 2 2 0 0 0 1 }{CSTYLE "Help Underlined" -1 44 "Times" 1 12 0 0 0 1 
+2 2 1 2 2 2 0 0 0 1 }{CSTYLE "Prompt" -1 1 "Courier" 1 12 0 0 0 1 2 1 
+2 2 2 2 0 0 0 1 }{CSTYLE "2D Math" -1 2 "Times" 1 12 0 0 0 1 2 2 2 2 2
+ 2 0 0 0 1 }{CSTYLE "2D Input" -1 19 "Times" 1 12 0 0 0 1 2 2 2 2 1 2 
+0 0 0 1 }{CSTYLE "Header and Footer" -1 207 "Times" 1 10 0 0 0 1 2 2 2
+ 2 2 2 0 0 0 1 }{CSTYLE "Text" -1 208 "Times" 1 12 0 0 0 1 2 2 2 2 2 2
+ 0 0 0 1 }{CSTYLE "Help Notes" -1 37 "Times" 1 12 0 0 0 1 2 1 2 2 2 2 
+0 0 0 1 }{CSTYLE "Help Bold" -1 39 "Times" 1 12 0 0 0 1 2 1 2 2 2 2 0 
+0 0 1 }{CSTYLE "Equation Label" -1 209 "Times" 1 12 0 0 0 1 2 1 2 2 2 
+2 0 0 0 1 }{CSTYLE "LaTeX" -1 32 "Times" 1 12 0 0 0 1 2 2 2 2 2 2 0 0 
+0 1 }{CSTYLE "Popup" -1 31 "Times" 1 12 0 128 128 1 1 2 1 2 2 2 0 0 0 
+1 }{CSTYLE "Dictionary Hyperlink" -1 45 "Times" 1 12 147 0 15 1 2 2 1 
+2 2 2 0 0 0 1 }{CSTYLE "Caption Text" -1 210 "Times" 1 12 0 0 0 1 2 1 
+2 2 2 2 0 0 0 1 }{CSTYLE "Help Fixed" -1 23 "Courier" 1 10 0 0 0 1 2 2
+ 2 2 2 2 0 0 0 1 }}
 {SECT 0 {EXCHG {PARA 0 "> " 0 "" {MPLTEXT 1 0 58 "restart:with(linalg
 ):with(ListTools);with(CodeGeneration):" }}{PARA 11 "" 1 "" {XPPMATH 
 20 "7>I,BinaryPlaceG6\"I-BinarySearchGF$I+CategorizeGF$I+DotProductGF$
@@ -125,85 +126,97 @@ F$F$7%F$F$\"\"\"7%F&F$F&7%F&F$F$7%F$F&F$7%F$F&F&7%F&F&F&7%F&F&F$7%F$F$
 #F&\"\"#7%F.F$F$7%F$F.F$7%F.F$F&7%F$F.F&7%F&F$F.7%F&F.F&7%F&F.F$7%F$F&
 F.7%F.F&F$7%F.F&F&7%F&F&F." }}{PARA 11 "" 1 "" {XPPMATH 20 "76\"\"\"\"
 \"&\"\"'\"\"#\"\"%\"\")\"\"(\"\"$\"#6\"\"*\"#5\"#<\"#=\"#8\"#>\"#7\"#;
-\"#9\"#?\"#:" }}{PARA 6 "" 1 "" {TEXT 210 10 "cg[0] = 1;" }{TEXT 210 
-11 "\ncg[1] = 5;" }{TEXT 210 11 "\ncg[2] = 6;" }{TEXT 210 11 "\ncg[3] \+
-= 2;" }{TEXT 210 11 "\ncg[4] = 4;" }{TEXT 210 11 "\ncg[5] = 8;" }{TEXT
- 210 11 "\ncg[6] = 7;" }{TEXT 210 11 "\ncg[7] = 3;" }{TEXT 210 12 "\nc
-g[8] = 11;" }{TEXT 210 11 "\ncg[9] = 9;" }{TEXT 210 13 "\ncg[10] = 10;
-" }{TEXT 210 13 "\ncg[11] = 17;" }{TEXT 210 13 "\ncg[12] = 18;" }{TEXT
- 210 13 "\ncg[13] = 13;" }{TEXT 210 13 "\ncg[14] = 19;" }{TEXT 210 13 
-"\ncg[15] = 12;" }{TEXT 210 13 "\ncg[16] = 16;" }{TEXT 210 13 "\ncg[17
-] = 14;" }{TEXT 210 13 "\ncg[18] = 20;" }{TEXT 210 13 "\ncg[19] = 15;"
- }}}{EXCHG {PARA 0 "> " 0 "" {MPLTEXT 1 0 130 "P:=vector(20,[1,x,y,z,x
-*y,x*z,y*z,x*x,y*y,z*z,x*y*z,x^2*y,x^2*z,y^2*x,y^2*z,z^2*x,z^2*y,x^2*y
-*z,x*y^2*z,x*y*z^2]);phi:=vector(20);" }}{PARA 11 "" 1 "" {XPPMATH 20 
-"=6\"6#;\"\"\"\"#?E\\[l5F&F&\"\"#I\"xGF#\"\"$I\"yGF#\"\"%I\"zGF#\"\"&*
-&F*F&F,F&\"\"'*&F*F&F.F&\"\"(*&F,F&F.F&\"\")*$F*F)\"\"**$F,F)\"#5*$F.F
-)\"#6*(F*F&F,F&F.F&\"#7*&F*F)F,F&\"#8*&F*F)F.F&\"#9*&F,F)F*F&\"#:*&F,F
-)F.F&\"#<*&F.F)F,F&\"#;*&F.F)F*F&\"#>*(F*F&F,F)F.F&\"#=*(F*F)F,F&F.F&F
-'*(F*F&F,F&F.F)" }}{PARA 11 "" 1 "" {XPPMATH 20 "=6\"6#;\"\"\"\"#?E\\[
-l!" }}}{EXCHG {PARA 0 "> " 0 "" {MPLTEXT 1 0 6 "#?find" }}}{EXCHG 
-{PARA 0 "> " 0 "" {MPLTEXT 1 0 80 "for i to 20 do;phi[i]:=sum(alpha[i,
-k]*P[k],k=1..20);eq:=\{seq(subs(x=node[j,1],y=" }{MPLTEXT 1 0 9 "node[
-j,2]" }{MPLTEXT 1 0 3 ",z=" }{MPLTEXT 1 0 9 "node[j,3]" }{MPLTEXT 1 0 
-58 ",phi[i])=dk(i,j),j=1..20)\};inc:=\{seq(alpha[i,l],l=1..20)\};" }}
-{PARA 0 "> " 0 "" {MPLTEXT 1 0 22 "assign(solve(eq,inc));" }}{PARA 0 "
-> " 0 "" {MPLTEXT 1 0 3 "od:" }}}{EXCHG {PARA 0 "> " 0 "" {MPLTEXT 1 
-0 41 "for i to 20 do phi[i]:=factor(phi[i]);od;" }}{PARA 11 "" 1 "" 
-{XPPMATH 20 "**,&!\"\"\"\"\"I\"zG6\"F%F%,&F$F%I\"yGF'F%F%,&F$F%I\"xGF'
-F%F%,*F+\"\"#F)F-F&F-F$F%F%" }}{PARA 11 "" 1 "" {XPPMATH 20 "**I\"xG6
-\"\"\"\",&!\"\"F%I\"zGF$F%F%,&F'F%I\"yGF$F%F%,*F*!\"#F(F,F#\"\"#F'F%F%
-" }}{PARA 11 "" 1 "" {XPPMATH 20 ",$**I\"xG6\"\"\"\"I\"yGF%F&,&!\"\"F&
-I\"zGF%F&F&,*F'\"\"#F*!\"#!\"$F&F$F,F&F)" }}{PARA 11 "" 1 "" {XPPMATH 
-20 ",$**I\"yG6\"\"\"\",&!\"\"F&I\"zGF%F&F&,&F(F&I\"xGF%F&F&,*F+\"\"#F)
-F-F&F&F$!\"#F&F(" }}{PARA 11 "" 1 "" {XPPMATH 20 ",$**I\"zG6\"\"\"\",&
-!\"\"F&I\"yGF%F&F&,&F(F&I\"xGF%F&F&,*F+\"\"#F)F-F$!\"#F&F&F&F(" }}
-{PARA 11 "" 1 "" {XPPMATH 20 ",$**I\"xG6\"\"\"\"I\"zGF%F&,&!\"\"F&I\"y
-GF%F&F&,*F*!\"#F'\"\"#!\"$F&F$F-F&F)" }}{PARA 11 "" 1 "" {XPPMATH 20 "
-**I\"xG6\"\"\"\"I\"yGF$F%I\"zGF$F%,*F&\"\"#F'F)!\"&F%F#F)F%" }}{PARA 
-11 "" 1 "" {XPPMATH 20 "**I\"yG6\"\"\"\"I\"zGF$F%,&!\"\"F%I\"xGF$F%F%,
-*F)\"\"#F&!\"#\"\"$F%F#F,F%" }}{PARA 11 "" 1 "" {XPPMATH 20 ",$**I\"xG
-6\"\"\"\",&!\"\"F&I\"zGF%F&F&,&F(F&I\"yGF%F&F&,&F(F&F$F&F&!\"%" }}
-{PARA 11 "" 1 "" {XPPMATH 20 ",$**I\"yG6\"\"\"\",&!\"\"F&I\"zGF%F&F&,&
-F(F&F$F&F&,&F(F&I\"xGF%F&F&!\"%" }}{PARA 11 "" 1 "" {XPPMATH 20 ",$**I
-\"zG6\"\"\"\",&!\"\"F&F$F&F&,&F(F&I\"yGF%F&F&,&F(F&I\"xGF%F&F&!\"%" }}
-{PARA 11 "" 1 "" {XPPMATH 20 ",$**I\"xG6\"\"\"\"I\"yGF%F&,&!\"\"F&I\"z
-GF%F&F&,&F)F&F'F&F&\"\"%" }}{PARA 11 "" 1 "" {XPPMATH 20 ",$**I\"xG6\"
-\"\"\"I\"zGF%F&,&!\"\"F&F'F&F&,&F)F&I\"yGF%F&F&\"\"%" }}{PARA 11 "" 1 
-"" {XPPMATH 20 ",$**I\"xG6\"\"\"\"I\"yGF%F&,&!\"\"F&I\"zGF%F&F&,&F)F&F
-$F&F&\"\"%" }}{PARA 11 "" 1 "" {XPPMATH 20 ",$**I\"xG6\"\"\"\"I\"yGF%F
-&I\"zGF%F&,&!\"\"F&F(F&F&!\"%" }}{PARA 11 "" 1 "" {XPPMATH 20 ",$**I\"
-yG6\"\"\"\"I\"zGF%F&,&!\"\"F&F'F&F&,&F)F&I\"xGF%F&F&\"\"%" }}{PARA 11 
-"" 1 "" {XPPMATH 20 ",$**I\"xG6\"\"\"\"I\"zGF%F&,&!\"\"F&I\"yGF%F&F&,&
-F)F&F$F&F&\"\"%" }}{PARA 11 "" 1 "" {XPPMATH 20 ",$**I\"yG6\"\"\"\"I\"
-zGF%F&,&!\"\"F&F$F&F&,&F)F&I\"xGF%F&F&\"\"%" }}{PARA 11 "" 1 "" 
-{XPPMATH 20 ",$**I\"xG6\"\"\"\"I\"yGF%F&I\"zGF%F&,&!\"\"F&F'F&F&!\"%" 
-}}{PARA 11 "" 1 "" {XPPMATH 20 ",$**I\"xG6\"\"\"\"I\"yGF%F&I\"zGF%F&,&
-!\"\"F&F$F&F&!\"%" }}}{EXCHG {PARA 0 "> " 0 "" {MPLTEXT 1 0 25 "#Dd:=m
-atrix(20,20,(i,j)->" }{MPLTEXT 1 0 19 "subs(x=node[j,1],y=" }{MPLTEXT 
-1 0 21 "node[j,2],z=node[j,3]" }{MPLTEXT 1 0 18 ",phi[i])-dk(i,j));" }
-}}{EXCHG {PARA 0 "> " 0 "" {MPLTEXT 1 0 21 "with(CodeGeneration):" }}}
-{EXCHG {PARA 0 "> " 0 "" {MPLTEXT 1 0 7 "C(phi);" }}{PARA 6 "" 1 "" 
-{TEXT 210 70 "phi[0] = (-1 + z) * (-1 + y) * (-1 + x) * (2 * x + 2 * y
- + 2 * z - 1);" }}{PARA 6 "" 1 "" {TEXT 210 64 "phi[1] = x * (-1 + z) \+
-* (-1 + y) * (-2 * y - 2 * z + 2 * x - 1);" }{TEXT 210 58 "\nphi[2] = \+
--x * y * (-1 + z) * (2 * y - 2 * z - 3 + 2 * x);" }{TEXT 210 65 "\nphi
-[3] = -y * (-1 + z) * (-1 + x) * (2 * x + 2 * z + 1 - 2 * y);" }{TEXT 
-210 65 "\nphi[4] = -z * (-1 + y) * (-1 + x) * (2 * x + 2 * y - 2 * z +
- 1);" }{TEXT 210 59 "\nphi[5] = -x * z * (-1 + y) * (-2 * y + 2 * z - \+
-3 + 2 * x);" }{TEXT 210 50 "\nphi[6] = x * y * z * (2 * y + 2 * z - 5 \+
-+ 2 * x);" }{TEXT 210 57 "\nphi[7] = y * z * (-1 + x) * (2 * x - 2 * z
- + 3 - 2 * y);" }{TEXT 210 50 "\nphi[8] = -4 * x * (-1 + z) * (-1 + y)
- * (-1 + x);" }{TEXT 210 50 "\nphi[9] = -4 * y * (-1 + z) * (-1 + y) *
- (-1 + x);" }{TEXT 210 51 "\nphi[10] = -4 * z * (-1 + z) * (-1 + y) * \+
-(-1 + x);" }{TEXT 210 43 "\nphi[11] = 4 * x * y * (-1 + z) * (-1 + y);
-" }{TEXT 210 43 "\nphi[12] = 4 * x * z * (-1 + z) * (-1 + y);" }{TEXT 
-210 43 "\nphi[13] = 4 * x * y * (-1 + z) * (-1 + x);" }{TEXT 210 37 "
-\nphi[14] = -4 * x * y * z * (-1 + z);" }{TEXT 210 43 "\nphi[15] = 4 *
- y * z * (-1 + z) * (-1 + x);" }{TEXT 210 43 "\nphi[16] = 4 * x * z * \+
-(-1 + y) * (-1 + x);" }{TEXT 210 43 "\nphi[17] = 4 * y * z * (-1 + y) \+
-* (-1 + x);" }{TEXT 210 37 "\nphi[18] = -4 * x * y * z * (-1 + y);" }
-{TEXT 210 37 "\nphi[19] = -4 * x * y * z * (-1 + x);" }}}{EXCHG {PARA 
-0 "> " 0 "" {MPLTEXT 1 0 0 "" }}}}
+\"#9\"#?\"#:" }}{PARA 6 "" 1 "" {TEXT 211 10 "cg[0] = 1;" }{TEXT 211 
+1 "\n" }{TEXT 211 10 "cg[1] = 5;" }{TEXT 211 1 "\n" }{TEXT 211 10 "cg[
+2] = 6;" }{TEXT 211 1 "\n" }{TEXT 211 10 "cg[3] = 2;" }{TEXT 211 1 "\n
+" }{TEXT 211 10 "cg[4] = 4;" }{TEXT 211 1 "\n" }{TEXT 211 10 "cg[5] = \+
+8;" }{TEXT 211 1 "\n" }{TEXT 211 10 "cg[6] = 7;" }{TEXT 211 1 "\n" }
+{TEXT 211 10 "cg[7] = 3;" }{TEXT 211 1 "\n" }{TEXT 211 11 "cg[8] = 11;
+" }{TEXT 211 1 "\n" }{TEXT 211 10 "cg[9] = 9;" }{TEXT 211 1 "\n" }
+{TEXT 211 12 "cg[10] = 10;" }{TEXT 211 1 "\n" }{TEXT 211 12 "cg[11] = \+
+17;" }{TEXT 211 1 "\n" }{TEXT 211 12 "cg[12] = 18;" }{TEXT 211 1 "\n" 
+}{TEXT 211 12 "cg[13] = 13;" }{TEXT 211 1 "\n" }{TEXT 211 12 "cg[14] =
+ 19;" }{TEXT 211 1 "\n" }{TEXT 211 12 "cg[15] = 12;" }{TEXT 211 1 "\n"
+ }{TEXT 211 12 "cg[16] = 16;" }{TEXT 211 1 "\n" }{TEXT 211 12 "cg[17] \+
+= 14;" }{TEXT 211 1 "\n" }{TEXT 211 12 "cg[18] = 20;" }{TEXT 211 1 "\n
+" }{TEXT 211 12 "cg[19] = 15;" }}}{EXCHG {PARA 0 "> " 0 "" {MPLTEXT 1 
+0 130 "P:=vector(20,[1,x,y,z,x*y,x*z,y*z,x*x,y*y,z*z,x*y*z,x^2*y,x^2*z
+,y^2*x,y^2*z,z^2*x,z^2*y,x^2*y*z,x*y^2*z,x*y*z^2]);phi:=vector(20);" }
+}{PARA 11 "" 1 "" {XPPMATH 20 "=6\"6#;\"\"\"\"#?E\\[l5F&F&\"\"#I\"xGF#
+\"\"$I\"yGF#\"\"%I\"zGF#\"\"&*&F*F&F,F&\"\"'*&F*F&F.F&\"\"(*&F,F&F.F&
+\"\")*$)F*F)F&\"\"**$)F,F)F&\"#5*$)F.F)F&\"#6*(F*F&F,F&F.F&\"#7*&F7F&F
+,F&\"#8*&F7F&F.F&\"#9*&F:F&F*F&\"#:*&F:F&F.F&\"#<*&F=F&F,F&\"#;*&F=F&F
+*F&\"#>*(F*F&F:F&F.F&\"#=*(F7F&F,F&F.F&F'*(F*F&F,F&F=F&" }}{PARA 11 ""
+ 1 "" {XPPMATH 20 "=6\"6#;\"\"\"\"#?E\\[l!" }}}{EXCHG {PARA 0 "> " 0 "
+" {MPLTEXT 1 0 6 "#?find" }}}{EXCHG {PARA 0 "> " 0 "" {MPLTEXT 1 0 80 
+"for i to 20 do;phi[i]:=sum(alpha[i,k]*P[k],k=1..20);eq:=\{seq(subs(x=
+node[j,1],y=" }{MPLTEXT 1 0 9 "node[j,2]" }{MPLTEXT 1 0 3 ",z=" }
+{MPLTEXT 1 0 9 "node[j,3]" }{MPLTEXT 1 0 58 ",phi[i])=dk(i,j),j=1..20)
+\};inc:=\{seq(alpha[i,l],l=1..20)\};" }}{PARA 0 "> " 0 "" {MPLTEXT 1 
+0 22 "assign(solve(eq,inc));" }}{PARA 0 "> " 0 "" {MPLTEXT 1 0 3 "od:"
+ }}}{EXCHG {PARA 0 "> " 0 "" {MPLTEXT 1 0 41 "for i to 20 do phi[i]:=f
+actor(phi[i]);od;" }}{PARA 11 "" 1 "" {XPPMATH 20 "**,&\"\"\"!\"\"I\"z
+G6\"F$F$,&F$F%I\"yGF'F$F$,&F$F%I\"xGF'F$F$,**&\"\"#F$F+F$F$*&F.F$F)F$F
+$*&F.F$F&F$F$F$F%F$" }}{PARA 11 "" 1 "" {XPPMATH 20 "**I\"xG6\"\"\"\",
+&F%!\"\"I\"zGF$F%F%,&F%F'I\"yGF$F%F%,**&\"\"#F%F*F%F'*&F-F%F(F%F'*&F-F
+%F#F%F%F%F'F%" }}{PARA 11 "" 1 "" {XPPMATH 20 ",$**I\"xG6\"\"\"\"I\"yG
+F%F&,&F&!\"\"I\"zGF%F&F&,**&\"\"#F&F'F&F&*&F-F&F*F&F)\"\"$F)*&F-F&F$F&
+F&F&F)" }}{PARA 11 "" 1 "" {XPPMATH 20 ",$**I\"yG6\"\"\"\",&F&!\"\"I\"
+zGF%F&F&,&F&F(I\"xGF%F&F&,**&\"\"#F&F+F&F&*&F.F&F)F&F&F&F&*&F.F&F$F&F(
+F&F(" }}{PARA 11 "" 1 "" {XPPMATH 20 ",$**I\"zG6\"\"\"\",&F&!\"\"I\"yG
+F%F&F&,&F&F(I\"xGF%F&F&,**&\"\"#F&F+F&F&*&F.F&F)F&F&*&F.F&F$F&F(F&F&F&
+F(" }}{PARA 11 "" 1 "" {XPPMATH 20 ",$**I\"xG6\"\"\"\"I\"zGF%F&,&F&!\"
+\"I\"yGF%F&F&,**&\"\"#F&F*F&F)*&F-F&F'F&F&\"\"$F)*&F-F&F$F&F&F&F)" }}
+{PARA 11 "" 1 "" {XPPMATH 20 "**I\"xG6\"\"\"\"I\"yGF$F%I\"zGF$F%,**&\"
+\"#F%F&F%F%*&F*F%F'F%F%\"\"&!\"\"*&F*F%F#F%F%F%" }}{PARA 11 "" 1 "" 
+{XPPMATH 20 "**I\"yG6\"\"\"\"I\"zGF$F%,&F%!\"\"I\"xGF$F%F%,**&\"\"#F%F
+)F%F%*&F,F%F&F%F(\"\"$F%*&F,F%F#F%F(F%" }}{PARA 11 "" 1 "" {XPPMATH 20
+ ",$*,\"\"%\"\"\"I\"xG6\"F%,&F%!\"\"I\"zGF'F%F%,&F%F)I\"yGF'F%F%,&F%F)
+F&F%F%F)" }}{PARA 11 "" 1 "" {XPPMATH 20 ",$*,\"\"%\"\"\"I\"yG6\"F%,&F
+%!\"\"I\"zGF'F%F%,&F%F)F&F%F%,&F%F)I\"xGF'F%F%F)" }}{PARA 11 "" 1 "" 
+{XPPMATH 20 ",$*,\"\"%\"\"\"I\"zG6\"F%,&F%!\"\"F&F%F%,&F%F)I\"yGF'F%F%
+,&F%F)I\"xGF'F%F%F)" }}{PARA 11 "" 1 "" {XPPMATH 20 ",$*,\"\"%\"\"\"I
+\"xG6\"F%I\"yGF'F%,&F%!\"\"I\"zGF'F%F%,&F%F*F(F%F%F%" }}{PARA 11 "" 1 
+"" {XPPMATH 20 ",$*,\"\"%\"\"\"I\"xG6\"F%I\"zGF'F%,&F%!\"\"F(F%F%,&F%F
+*I\"yGF'F%F%F%" }}{PARA 11 "" 1 "" {XPPMATH 20 ",$*,\"\"%\"\"\"I\"xG6
+\"F%I\"yGF'F%,&F%!\"\"I\"zGF'F%F%,&F%F*F&F%F%F%" }}{PARA 11 "" 1 "" 
+{XPPMATH 20 ",$*,\"\"%\"\"\"I\"xG6\"F%I\"yGF'F%I\"zGF'F%,&F%!\"\"F)F%F
+%F+" }}{PARA 11 "" 1 "" {XPPMATH 20 ",$*,\"\"%\"\"\"I\"yG6\"F%I\"zGF'F
+%,&F%!\"\"F(F%F%,&F%F*I\"xGF'F%F%F%" }}{PARA 11 "" 1 "" {XPPMATH 20 ",
+$*,\"\"%\"\"\"I\"xG6\"F%I\"zGF'F%,&F%!\"\"I\"yGF'F%F%,&F%F*F&F%F%F%" }
+}{PARA 11 "" 1 "" {XPPMATH 20 ",$*,\"\"%\"\"\"I\"yG6\"F%I\"zGF'F%,&F%!
+\"\"F&F%F%,&F%F*I\"xGF'F%F%F%" }}{PARA 11 "" 1 "" {XPPMATH 20 ",$*,\"
+\"%\"\"\"I\"xG6\"F%I\"yGF'F%I\"zGF'F%,&F%!\"\"F(F%F%F+" }}{PARA 11 "" 
+1 "" {XPPMATH 20 ",$*,\"\"%\"\"\"I\"xG6\"F%I\"yGF'F%I\"zGF'F%,&F%!\"\"
+F&F%F%F+" }}}{EXCHG {PARA 0 "> " 0 "" {MPLTEXT 1 0 25 "#Dd:=matrix(20,
+20,(i,j)->" }{MPLTEXT 1 0 19 "subs(x=node[j,1],y=" }{MPLTEXT 1 0 21 "n
+ode[j,2],z=node[j,3]" }{MPLTEXT 1 0 18 ",phi[i])-dk(i,j));" }}}{EXCHG 
+{PARA 0 "> " 0 "" {MPLTEXT 1 0 21 "with(CodeGeneration):" }}}{EXCHG 
+{PARA 0 "> " 0 "" {MPLTEXT 1 0 7 "C(phi);" }}{PARA 6 "" 1 "" {TEXT 
+211 70 "phi[0] = (-1 + z) * (-1 + y) * (-1 + x) * (2 * x + 2 * y + 2 *
+ z - 1);" }}{PARA 6 "" 1 "" {TEXT 211 64 "phi[1] = x * (-1 + z) * (-1 \+
++ y) * (-2 * y - 2 * z + 2 * x - 1);" }{TEXT 211 1 "\n" }{TEXT 211 57 
+"phi[2] = -x * y * (-1 + z) * (2 * y - 2 * z - 3 + 2 * x);" }{TEXT 
+211 1 "\n" }{TEXT 211 64 "phi[3] = -y * (-1 + z) * (-1 + x) * (2 * x +
+ 2 * z + 1 - 2 * y);" }{TEXT 211 1 "\n" }{TEXT 211 64 "phi[4] = -z * (
+-1 + y) * (-1 + x) * (2 * x + 2 * y - 2 * z + 1);" }{TEXT 211 1 "\n" }
+{TEXT 211 58 "phi[5] = -x * z * (-1 + y) * (-2 * y + 2 * z - 3 + 2 * x
+);" }{TEXT 211 1 "\n" }{TEXT 211 49 "phi[6] = x * y * z * (2 * y + 2 *
+ z - 5 + 2 * x);" }{TEXT 211 1 "\n" }{TEXT 211 56 "phi[7] = y * z * (-
+1 + x) * (2 * x - 2 * z + 3 - 2 * y);" }{TEXT 211 1 "\n" }{TEXT 211 
+49 "phi[8] = -4 * x * (-1 + z) * (-1 + y) * (-1 + x);" }{TEXT 211 1 "
+\n" }{TEXT 211 49 "phi[9] = -4 * y * (-1 + z) * (-1 + y) * (-1 + x);" 
+}{TEXT 211 1 "\n" }{TEXT 211 50 "phi[10] = -4 * z * (-1 + z) * (-1 + y
+) * (-1 + x);" }{TEXT 211 1 "\n" }{TEXT 211 42 "phi[11] = 4 * x * y * \+
+(-1 + z) * (-1 + y);" }{TEXT 211 1 "\n" }{TEXT 211 42 "phi[12] = 4 * x
+ * z * (-1 + z) * (-1 + y);" }{TEXT 211 1 "\n" }{TEXT 211 42 "phi[13] \+
+= 4 * x * y * (-1 + z) * (-1 + x);" }{TEXT 211 1 "\n" }{TEXT 211 36 "p
+hi[14] = -4 * x * y * z * (-1 + z);" }{TEXT 211 1 "\n" }{TEXT 211 42 "
+phi[15] = 4 * y * z * (-1 + z) * (-1 + x);" }{TEXT 211 1 "\n" }{TEXT 
+211 42 "phi[16] = 4 * x * z * (-1 + y) * (-1 + x);" }{TEXT 211 1 "\n" 
+}{TEXT 211 42 "phi[17] = 4 * y * z * (-1 + y) * (-1 + x);" }{TEXT 211 
+1 "\n" }{TEXT 211 36 "phi[18] = -4 * x * y * z * (-1 + y);" }{TEXT 
+211 1 "\n" }{TEXT 211 36 "phi[19] = -4 * x * y * z * (-1 + x);" }}}
+{EXCHG {PARA 0 "> " 0 "" {MPLTEXT 1 0 0 "" }}}}
 {MARK "0 0 0" 0 }{VIEWOPTS 1 1 0 1 1 1803 1 1 1 1 }{PAGENUMBERS 0 1 2
  33 1 1 }
