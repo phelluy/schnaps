@@ -50,12 +50,35 @@ int TestFieldSubCellDGVol(void){
   InitField(&f);
   CheckMacroMesh(&(f.macromesh),f.interp.interp_param+1);
 
-  DGMacroCellInterface(&f);
-  DGSubCellInterface(&f);
 
-  DGVolume(&f);
+  MacroCell mcell[f.macromesh.nbelems];
 
-  DGMass(&f);
+  for(int ie=0;ie<f.macromesh.nbelems;ie++){
+    mcell[ie].field=&f;
+    mcell[ie].first_cell=ie;
+    mcell[ie].last_cell_p1=ie+1;
+  }
+
+  for(int ie=0;ie<f.macromesh.nbelems;ie++){
+    DGMacroCellInterface((void*) (mcell+ie));
+  }
+  for(int ie=0;ie<f.macromesh.nbelems;ie++){
+    DGSubCellInterface((void*) (mcell+ie));
+  }
+  for(int ie=0;ie<f.macromesh.nbelems;ie++){
+    DGVolume((void*) (mcell+ie));
+  }
+  for(int ie=0;ie<f.macromesh.nbelems;ie++){
+    DGMass((void*) (mcell+ie));
+  }
+
+
+  /* DGMacroCellInterface(&f); */
+  /* DGSubCellInterface(&f); */
+
+  /* DGVolume(&f); */
+
+  /* DGMass(&f); */
   
   DisplayField(&f);  
 

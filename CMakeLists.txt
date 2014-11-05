@@ -4,13 +4,16 @@ project(schnaps)
 
 #set(CMAKE_C_COMPILER "tau_cc.sh")
 #set(CMAKE_C_FLAGS "-optRevert -optTauSelectFile=select.tau -std=c99 -fopenmp -Ofast")
+#set(CMAKE_C_COMPILER "/opt/local/bin/gcc-mp-4.8")
 
-set(CMAKE_C_FLAGS "-std=c99 -Ofast")
+set(CMAKE_C_FLAGS "-std=c99 -D_REENTRANT -O3")
 find_package(OpenMP)
 if (OPENMP_FOUND)
     set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
     set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
 endif()
+
+
 
 include_directories(src)
 
@@ -41,7 +44,7 @@ add_executable(
   schnaps
   src/schnaps.c
 )
-target_link_libraries(schnaps _schnaps m)
+target_link_libraries(schnaps _schnaps m pthread)
 
 # list of tests
 add_executable(
@@ -49,7 +52,7 @@ add_executable(
   test/test.h
   test/testmacromesh.c
 )
-target_link_libraries(testmacromesh _schnaps m)
+target_link_libraries(testmacromesh _schnaps m pthread)
 add_test(testmacromesh testmacromesh)
 
 add_executable(
@@ -57,7 +60,7 @@ add_executable(
   test/test.h
   test/testgeometry.c
 )
-target_link_libraries(testgeometry _schnaps m)
+target_link_libraries(testgeometry _schnaps m pthread)
 add_test(testgeometry testgeometry)
 
 add_executable(
@@ -65,7 +68,7 @@ add_executable(
   test/test.h
   test/testinterpolation.c
 )
-target_link_libraries(testinterpolation _schnaps m)
+target_link_libraries(testinterpolation _schnaps m pthread)
 add_test(testinterpolation testinterpolation)
 
 add_executable(
@@ -73,7 +76,7 @@ add_executable(
   test/test.h
   test/testmodel.c
 )
-target_link_libraries(testmodel _schnaps m)
+target_link_libraries(testmodel _schnaps m pthread)
 
 add_test(testfield testfield)
 add_executable(
@@ -81,7 +84,7 @@ add_executable(
   test/test.h
   test/testfield.c
 )
-target_link_libraries(testfield _schnaps m)
+target_link_libraries(testfield _schnaps m pthread)
 add_test(testfield testfield)
 
 add_test(testfielddg testfielddg)
@@ -90,7 +93,7 @@ add_executable(
   test/test.h
   test/testfielddg.c
 )
-target_link_libraries(testfielddg _schnaps m)
+target_link_libraries(testfielddg _schnaps m pthread)
 add_test(testfielddg testfielddg)
 
 add_test(testfieldrk2 testfieldrk2)
@@ -99,7 +102,7 @@ add_executable(
   test/test.h
   test/testfieldrk2.c
 )
-target_link_libraries(testfieldrk2 _schnaps m)
+target_link_libraries(testfieldrk2 _schnaps m pthread)
 add_test(testfieldrk2 testfieldrk2)
 
 add_test(test2dmeshdetection test2dmeshdetection)
@@ -108,7 +111,7 @@ add_executable(
   test/test.h
   test/test2dmeshdetection.c
 )
-target_link_libraries(test2dmeshdetection _schnaps m)
+target_link_libraries(test2dmeshdetection _schnaps m pthread)
 add_test(test2dmeshdetection test2dmeshdetection)
 
 add_test(testfieldrk2-2d testfieldrk2-2d)
@@ -117,7 +120,7 @@ add_executable(
   test/test.h
   test/testfieldrk2-2d.c
 )
-target_link_libraries(testfieldrk2-2d _schnaps m)
+target_link_libraries(testfieldrk2-2d _schnaps m pthread)
 add_test(testfieldrk2-2d testfieldrk2-2d)
 
 
@@ -127,7 +130,7 @@ add_executable(
   test/test.h
   test/testsubcelldgvol.c
 )
-target_link_libraries(testsubcelldgvol _schnaps m)
+target_link_libraries(testsubcelldgvol _schnaps m pthread)
 add_test(testsubcelldgvol testsubcelldgvol)
 
 add_test(testfieldrk2-2d-subcell testfieldrk2-2d-subcell)
@@ -136,5 +139,5 @@ add_executable(
   test/test.h
   test/testfieldrk2-2d-subcell.c
 )
-target_link_libraries(testfieldrk2-2d-subcell _schnaps m)
+target_link_libraries(testfieldrk2-2d-subcell _schnaps m pthread)
 add_test(testfieldrk2-2d-subcell testfieldrk2-2d-subcell)

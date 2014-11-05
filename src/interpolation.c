@@ -6,10 +6,11 @@
 
 /* gauss lobatto points */
 
-// horrible trick in order to ensure
-// that the GLOPs are INSIDE the subcells...
+//! would allow to slightly move the boundary glops
+//! (for debuging purpose only)
 #define _EPS_LOB 0
 
+//! Gauss LObatto Points (GLOP) up to order 4
 const double gauss_lob_point[] = {
   0.5,
   _EPS_LOB,
@@ -28,6 +29,7 @@ const double gauss_lob_point[] = {
   1-_EPS_LOB
 };
 
+//! GLOP weights up to order 4
 const double gauss_lob_weight[] = {
   1.,
   0.5,
@@ -46,16 +48,25 @@ const double gauss_lob_weight[] = {
   0.05
 };
 
-const int gauss_lob_offset[] = {
-  0, 1, 3, 6, 10
-};
+//! indirection for finding the GLOP
+//! data for a given degree in the previous arrays
+const int gauss_lob_offset[] = {0, 1, 3, 6, 10};
 
 
-// return the 1d ith GLOP weight for degree deg
+//!  \brief 1d GLOP weights for a given degree
+//! \param[in] deg degree
+//! \param[in] i glop index
+//! \returns the glop weight
 double wglop(int deg,int i){
   return gauss_lob_weight[gauss_lob_offset[deg]+i];
 }
 
+//! derivatives of the Lagrange functions
+//! at the Gauss Lobatto points up to
+//! degree 4
+//! derivatives for the first function
+//! derivatives for the second function
+//! etc. for each degree from 0 to 4
 const double gauss_lob_dpsi[] = {
   0.00000000000000000000000000000000000000000000000000000000000,
   -1.,
@@ -114,6 +125,8 @@ const double gauss_lob_dpsi[] = {
   10
 };
 
+//! indirection for finding the GLOP
+//! data for a given degree in the previous arrays
 const int gauss_lob_dpsi_offset[] = {0, 1, 5, 14, 30};
 
 
@@ -154,14 +167,14 @@ void dlagrange_polynomial(double* dp,const double* subdiv,
 
 // number of Gauss Lobatto Points (GLOPS)
 // in an element
-int NPG(int* param){
+int NPG(int param[]){
   return (param[0]+1)*(param[1]+1)*(param[2]+1) *
          (param[3])*(param[4])*(param[5]);
 }
 
 
 /// Number of interpolation points for each face
-int NPGF(int* param, int ifa){
+int NPGF(int param[], int ifa){
   // For each face, give the dimension index i
   int permut[6][4] = {
     {0, 2, 1, 0},
@@ -218,7 +231,8 @@ int ref_ipg(int* param,double* xref){
   //int iz=floor(xref[2]*deg[2]+0.5); 
 
 
-  //printf("xref %f %f %f ix=%d iy=%d iz=%d\n",xref[0],xref[1],xref[2],ix,iy,iz);
+  //printf("xref %f %f %f ix=%d iy=%d iz=%d\n",
+  //	 xref[0],xref[1],xref[2],ix,iy,iz);
 
   return ix+(deg[0]+1)*(iy+(deg[1]+1)*iz)+offset;
 
@@ -273,7 +287,7 @@ void ref_pg_vol(int* param,int ipg,
     gauss_lob_weight[offset[2]];
 
   if (xpg_in !=0){
-    double small=0.001;
+    double small=1e-3;
     xpg_in[0]=xpg[0];
     xpg_in[1]=xpg[1];
     xpg_in[2]=xpg[2];
@@ -378,8 +392,8 @@ void ref_pg_face(int* param,int ifa,int ipg,
   // if xpgin exists, compute a point slightly INSIDE the opposite
   // subcell along the face.
   if (xpgin!=NULL){
-    double small=1e-3;//0.0001;
-    double vsmall=1e-6;0.00001;
+    double small=1e-3;//0.001
+    double vsmall=1e-6;//0.000001;
 
     xpgin[axis_permut[ifa][0]] =
       h[0]*(ncx+gauss_lob_point[offset[0]]);
