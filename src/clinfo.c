@@ -24,7 +24,7 @@ void InitCLInfo(CLInfo* cli,int platform_id,int device_id){
 
   char pbuf[2000];
   for (int i = 0; i < cli->nbplatforms; ++i) { 
-    printf("Platform %d:\n",i);
+    printf("\nPlatform %d:\n",i);
     status = clGetPlatformInfo(platforms[i],
 			       CL_PLATFORM_NAME,
 			       sizeof(pbuf),
@@ -75,8 +75,8 @@ void InitCLInfo(CLInfo* cli,int platform_id,int device_id){
   printf("DeviceID=%d NbDevices=%d\n",device_id,cli->nbdevices);
   assert(device_id < cli->nbdevices);
 
-  printf("We choose device %d / %d ",device_id,cli->nbdevices);
-  printf("of platform %d / %d\n",platform_id,cli->nbdevices);
+  printf("We choose device %d/%d ",device_id,cli->nbdevices-1);
+  printf("of platform %d/%d\n",platform_id,cli->nbplatforms-1);
   
   status = clGetDeviceIDs(platforms[platform_id],
 			  CL_DEVICE_TYPE_ALL,
@@ -103,7 +103,7 @@ void InitCLInfo(CLInfo* cli,int platform_id,int device_id){
 			   cli->clextensions,
 			   NULL);
   assert (status == CL_SUCCESS);
-  printf("CL extensions for that device:\n%s\n",cli->clextensions);
+  printf(" OpenCL extensions:\n%s\n",cli->clextensions);
 
 
   // device memory
