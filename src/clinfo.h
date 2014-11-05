@@ -8,19 +8,18 @@
 typedef struct CLInfo{
 
   cl_device_id* device; //!< devices list
-  cl_ulong devicememsize;  //!< in bytes
-  cl_ulong maxmembuffer;  //!< in bytes (maximal size of a GPU buffer)
-  cl_ulong cachesize;  //!< cache size of compute units (in bytes)
+  cl_ulong devicememsize;  //!< GPU global memory size
+  cl_ulong maxmembuffer;  //!< maximal size of a GPU buffer
+  cl_ulong cachesize;  //!< cache size of compute units
 
   cl_uint nbcomputeunits;  //!< number of compute units
   size_t  maxworkgroupsize;  //!< maximal allowed size of a work group
   char devicename[1000]; //!< accelerator name
-  char clextensions[1000]; //!< list of extensions of the opencl language
-
+  char clextensions[1000]; //!< list of OpenCL extensions
   cl_uint nbplatforms;  //!< number of platforms
   cl_uint platformid; //!< platform id
 
-  cl_uint nbdevices;   //!< devices on each MPI node
+  cl_uint nbdevices;   //!< number of available devices
   cl_uint deviceid;   //!< chosen device ID 
 
   cl_context context;//!< OpenCL context
