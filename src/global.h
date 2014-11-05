@@ -56,6 +56,6 @@ doxygen doxyschnaps
 #define _GLOBAL_H
 
 //! brief global variables and defs
-//! none for the moment
+#define _WITH_PTHREAD
 
 #endif

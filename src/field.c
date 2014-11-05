@@ -943,6 +943,8 @@ void dtField(Field* f){
     mcell[ie].last_cell_p1=ie+1;
   }
 
+#ifdef _WITH_PTHREAD
+
   // we will have only one flying thread per 
   // macrocell
   pthread_t tmcell[f->macromesh.nbelems];
@@ -1001,6 +1003,30 @@ void dtField(Field* f){
   for (int ie=0;ie<f->macromesh.nbelems;ie++){
     pthread_join(tmcell[ie], NULL);
   }
+
+#else
+
+  // computation of the inter subcell fluxes
+  for(int ie=0;ie<f->macromesh.nbelems;ie++){
+    DGMacroCellInterface(mcell+ie);
+  }
+
+  for(int ie=0;ie<f->macromesh.nbelems;ie++){
+    DGSubCellInterface(mcell+ie);
+  }
+
+  for(int ie=0;ie<f->macromesh.nbelems;ie++){
+    DGVolume(mcell+ie);
+  }
+
+  for(int ie=0;ie<f->macromesh.nbelems;ie++){
+    DGMass(mcell+ie);
+  }
+
+
+
+
+#endif
 
 
 }
