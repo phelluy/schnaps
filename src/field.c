@@ -1512,14 +1512,28 @@ void dtField(Field* f){
 
 #else
 
+/* #ifdef _OPENMP */
+/* #pragma omp parallel for */
+/* #endif */
+/*   for(int ie=0; ie < f->macromesh.nbelems; ++ie) { */
+
+/*   } */
+
+#ifdef _OPENMP
+#pragma omp parallel for schedule(dynamic, 1)
+#endif
+  for(int ie=0; ie < f->macromesh.nbelems; ++ie) {
+    DGMacroCellInterface((void*) (mcell+ie));
+    DGSubCellInterface((void*) (mcell+ie));
+    DGVolume((void*) (mcell+ie));
+    DGMass((void*) (mcell+ie));
+  }
+
   // computation of the inter subcell fluxes
-  DGMacroCellInterface_omp(f);
-
-  DGSubCellInterface_omp(f);
-
-  DGVolume_omp(f);
-
-  DGMass_omp(f);
+  /* DGMacroCellInterface_omp(f); */
+  /* DGSubCellInterface_omp(f); */
+  /* DGVolume_omp(f); */
+  /* DGMass_omp(f); */
   
 #endif
 
