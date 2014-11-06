@@ -25,7 +25,7 @@ int TestCLInfo(void){
 
   CLInfo cli;
 
-  InitCLInfo(&cli,0,0);
+  InitCLInfo(&cli,1,0);
   PrintCLInfo(&cli);
 
   char prog[]="#pragma OPENCL EXTENSION cl_khr_fp64: enable \n"
@@ -36,6 +36,14 @@ int TestCLInfo(void){
     "}\n";
 
   BuildKernels(&cli,prog);
+
+  char* s;
+  ReadFile("src/field.cl",&s);
+
+  //printf("%s\n\n\n",s);
+
+  BuildKernels(&cli,s);
+  
 
 
 

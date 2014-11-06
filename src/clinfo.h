@@ -6,6 +6,9 @@
 #else
 #include <CL/cl.h>
 #endif
+
+#include <stdio.h>
+
 //! \brief Data structure for managing the OpenCL
 //! system informations
 typedef struct CLInfo{
@@ -51,5 +54,8 @@ void PrintCLInfo(CLInfo* cli);
 //! \param[inout] cli pointer to a CLInfo 
 //! \param[in] program string containing the kernels sources
 void BuildKernels(CLInfo* cli,char* program);
+
+//! \brief Fills a char[] with a file
+void ReadFile(char filename[],char** s);
 
 #endif

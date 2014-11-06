@@ -240,3 +240,25 @@ void BuildKernels(CLInfo* cli,char* strprog){
 
 
 }
+
+//! \brief Fills a char[] with a file
+void ReadFile(char filename[],char** s){
+
+  FILE* f = fopen ( filename , "r" );
+  assert(f);
+
+  fseek( f , 0L , SEEK_END);
+  int size = ftell(f);
+  rewind(f);
+
+  /* allocate memory for entire content */
+  *s = calloc(size+1,sizeof(char));
+  assert(*s);
+  /* copy the file into the buffer */
+  int status=fread( *s , sizeof(char), size , f);
+  // assert(status==0);
+  fclose(f);
+
+
+}
+
