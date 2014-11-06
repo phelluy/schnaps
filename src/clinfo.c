@@ -233,7 +233,11 @@ void BuildKernels(CLInfo* cli,char* strprog){
     size_t len;
     char buffer[204800];
     printf("Failed to build program.\n");
-    clGetProgramBuildInfo(cli->program, cli->device[cli->deviceid], CL_PROGRAM_BUILD_LOG, sizeof(buffer), buffer, &len);
+    clGetProgramBuildInfo(cli->program,
+			  cli->device[cli->deviceid],
+			  CL_PROGRAM_BUILD_LOG, sizeof(buffer),
+			  buffer,
+			  &len);
     printf("%s\n",buffer);
   }
     assert( err == CL_SUCCESS);
