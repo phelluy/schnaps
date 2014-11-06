@@ -241,10 +241,9 @@ int ref_ipg(int* param,double* xref){
 
 // return the reference coordinates xpg[3] and weight wpg of the GLOP ipg
 void ref_pg_vol(int* param,int ipg,
-		double* xpg,double* wpg,double* xpg_in){
+		double* xpg, double* wpg, double* xpg_in){
   int deg[3],offset[3],nraf[3];
   
-
   // approximation degree in each direction
   deg[0]=param[0];
   deg[1]=param[1];
@@ -253,7 +252,6 @@ void ref_pg_vol(int* param,int ipg,
   nraf[0]=param[3];
   nraf[1]=param[4];
   nraf[2]=param[5];
-  
   
   int ix = ipg % (deg[0] + 1);  
   ipg/=(deg[0] + 1);
@@ -275,17 +273,16 @@ void ref_pg_vol(int* param,int ipg,
   int ncz= ipg;
   double hz=1/(double) nraf[2]; 
 
-
   offset[0]=gauss_lob_offset[deg[0]]+ix;
   offset[1]=gauss_lob_offset[deg[1]]+iy;
   offset[2]=gauss_lob_offset[deg[2]]+iz;
-
 
   xpg[0]=hx*(ncx+gauss_lob_point[offset[0]]);
   xpg[1]=hy*(ncy+gauss_lob_point[offset[1]]);
   xpg[2]=hz*(ncz+gauss_lob_point[offset[2]]);
 
-  *wpg=hx*hy*hz*gauss_lob_weight[offset[0]]*
+  *wpg=hx*hy*hz*
+    gauss_lob_weight[offset[0]]*
     gauss_lob_weight[offset[1]]*
     gauss_lob_weight[offset[2]];
 

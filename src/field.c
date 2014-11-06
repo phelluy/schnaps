@@ -30,7 +30,6 @@ void InitField(Field* f){
   double w[f->model.m];
   double xpg[3];
   double xref[3],omega;
-  double dtau[3][3];
   double physnode[20][3];
 
   f->is2d = false;
@@ -61,6 +60,7 @@ void InitField(Field* f){
     }
     for(int ipg=0;ipg<NPG(f->interp_param+1);ipg++){
       ref_pg_vol(f->interp_param+1, ipg, xref, &omega,NULL);
+      double dtau[3][3];
       Ref2Phy(physnode,
 	      xref,
 	      0,-1, // dphiref,ifa
@@ -83,7 +83,6 @@ void InitField(Field* f){
   f->hmin=1e10;
 
   for (int ie=0;ie<f->macromesh.nbelems;ie++){
-    double codtau[3][3],dtau[3][3];
     double vol=0,surf=0;
     // get the physical nodes of element ie
     double physnode[20][3];
@@ -98,14 +97,17 @@ void InitField(Field* f){
       double xpgref[3],wpg;
       // get the coordinates of the Gauss point
       ref_pg_vol(f->interp_param+1,ipg,xpgref,&wpg,NULL);
+      double codtau[3][3],dtau[3][3];
       Ref2Phy(physnode, // phys. nodes
 	      xpgref,  // xref
 	      NULL,-1, // dpsiref,ifa
 	      NULL,dtau,  // xphy,dtau
 	      codtau,NULL,NULL); // codtau,dpsi,vnds
-      double det=dtau[0][0]*codtau[0][0]+dtau[0][1]*codtau[0][1]+
-	dtau[0][2]*codtau[0][2];
-      vol+=wpg*det;  
+      double det
+	= dtau[0][0] * codtau[0][0]
+	+ dtau[0][1] * codtau[0][1]
+	+ dtau[0][2] * codtau[0][2];
+      vol+=wpg*det;
     }
     for(int ifa=0;ifa<6;ifa++){
       // loop on the faces
@@ -115,6 +117,7 @@ void InitField(Field* f){
 	// get the coordinates of the Gauss point
 	ref_pg_face(f->interp_param+1,ifa,ipgf,xpgref,&wpg,NULL);
 	double vnds[3];
+	double codtau[3][3],dtau[3][3];
 	Ref2Phy(physnode,
 		xpgref,
 		NULL,ifa, // dpsiref,ifa
@@ -448,7 +451,6 @@ void* DGSubCellInterface(void* mc){
   Field* f= mcell->field;
 
   // loop on the elements
-  //#pragma omp parallel for
   for (int ie=mcell->first_cell;ie<mcell->last_cell_p1;ie++){
     // get the physical nodes of element ie
     double physnode[20][3];
@@ -498,15 +500,21 @@ void* DGSubCellInterface(void* mc){
 	      int ncR=icR[0]+nraf[0]*(icR[1]+nraf[1]*icR[2]);
 	      int offsetR=npg[0]*npg[1]*npg[2]*ncR;
 
+	      // FIXME: write only write to L-values (and do both
+	      // faces) to parallelise better.
+
+	      const int altdim1[3]={1,0,0};
+	      const int altdim2[3]={2,2,1};
+
 	      // now loop on the left glops of the subface
-	      int dim1=(dim0+1)%3, dim2=(dim0+2)%3;
+	      //int dim1=(dim0+1)%3, dim2=(dim0+2)%3;
+	      int dim1=altdim1[dim0], dim2=altdim2[dim0];
 	      int iL[3];
 	      iL[dim0] = deg[dim0];
-	      for(iL[dim1] = 0; iL[dim1] < npg[dim1]; iL[dim1]++){
-		for(iL[dim2] = 0; iL[dim2] < npg[dim2]; iL[dim2]++){
+	      for(iL[dim2] = 0; iL[dim2] < npg[dim2]; iL[dim2]++){
+		for(iL[dim1] = 0; iL[dim1] < npg[dim1]; iL[dim1]++){
 		  // find the right and left glops volume indices
 		  
-
 		  int iR[3] = {iL[0],iL[1],iL[2]};
 		  iR[dim0] = 0;
 
@@ -608,7 +616,6 @@ void* DGMacroCellInterface(void* mc){
 
   // assembly of the surface terms
   // loop on the elements
-  //#pragma omp parallel for
   for (int ie=mcell->first_cell;ie<mcell->last_cell_p1;ie++){
     // get the physical nodes of element ie
     double physnode[20][3];
@@ -635,11 +642,13 @@ void* DGMacroCellInterface(void* mc){
       	  physnodeR[inoloc][2]=f->macromesh.node[3*ino+2];
       	}
       }
-      
+
+
       // loop on the glops (numerical integration)
       // of the face ifa
-      //#pragma omp parallel for
-      for(int ipgf=0;ipgf<NPGF(iparam+1,ifa);ipgf++){
+      for(int ipgf=0;ipgf<NPGF(f->interp_param+1,ifa);ipgf++){
+	//      for(int ipgf=0;ipgf<NPGF(iparam+1,ifa);ipgf++){ // FIXME?
+
   	double xpgref[3],xpgref_in[3],wpg;
   	//double xpgref2[3],wpg2;
   	// get the coordinates of the Gauss point
@@ -710,9 +719,7 @@ void* DGMacroCellInterface(void* mc){
   }
 
   return NULL;
-
 }
-
 
 // apply division by the mass matrix
 void* DGMass(void* mc){
@@ -722,19 +729,17 @@ void* DGMass(void* mc){
   Field* f= mcell->field;
 
   // loop on the elements
-  //#pragma omp parallel for
   for (int ie=mcell->first_cell;ie<mcell->last_cell_p1;ie++){
     // get the physical nodes of element ie
     double physnode[20][3];
-    for(int inoloc=0;inoloc<20;inoloc++){
+    for(int inoloc = 0; inoloc < 20; inoloc++) {
       int ino=f->macromesh.elem2node[20*ie+inoloc];
       physnode[inoloc][0]=f->macromesh.node[3*ino+0];
       physnode[inoloc][1]=f->macromesh.node[3*ino+1];
       physnode[inoloc][2]=f->macromesh.node[3*ino+2];
     }
-
-    //#pragma omp parallel for
     for(int ipg=0;ipg<NPG(f->interp_param+1);ipg++){
+
       double dtau[3][3],codtau[3][3],xpgref[3],wpg;
       ref_pg_vol(f->interp_param+1,ipg,xpgref,&wpg,NULL);
       Ref2Phy(physnode, // phys. nodes
@@ -742,8 +747,10 @@ void* DGMass(void* mc){
 	      NULL,-1, // dpsiref,ifa
 	      NULL,dtau,  // xphy,dtau
 	      codtau,NULL,NULL); // codtau,dpsi,vnds
-      double det=dtau[0][0]*codtau[0][0]+dtau[0][1]*codtau[0][1]+
-	dtau[0][2]*codtau[0][2];
+      double det
+	= dtau[0][0]*codtau[0][0]
+	+ dtau[0][1]*codtau[0][1]
+	+ dtau[0][2]*codtau[0][2];
       for(int iv=0;iv<f->model.m;iv++){
 	int imem=f->varindex(f->interp_param,ie,ipg,iv);
 	f->dtwn[imem]/=(wpg*det);
@@ -765,7 +772,6 @@ void* DGVolume(void* mc){
   Field* f= mcell->field;
 
   // loop on the elements
-  //#pragma omp parallel for
   for (int ie=mcell->first_cell;ie<mcell->last_cell_p1;ie++){
     // get the physical nodes of element ie
     double physnode[20][3];
@@ -776,34 +782,65 @@ void* DGVolume(void* mc){
       physnode[inoloc][2]=f->macromesh.node[3*ino+2];
     }
 
-
-    const int nraf[3]={f->interp_param[4],
-		       f->interp_param[5],
-		       f->interp_param[6]};
+    const int m = f->model.m;
     const int deg[3]={f->interp_param[1],
 		      f->interp_param[2],
 		      f->interp_param[3]};
     const int npg[3] = {deg[0]+1,
 			deg[1]+1,
 			deg[2]+1};
-    const int m = f->model.m;
+    const int nraf[3]={f->interp_param[4],
+		       f->interp_param[5],
+		       f->interp_param[6]};
 
-    int icL[3];
+    const unsigned int sc_npg=npg[0]*npg[1]*npg[2];
+
+    int f_interp_param[8]= {f->interp_param[0],
+			    f->interp_param[1],
+			    f->interp_param[2],
+			    f->interp_param[3],
+			    f->interp_param[4],
+			    f->interp_param[5],
+			    f->interp_param[6],
+			    f->interp_param[7]};
+
     // loop on the subcells
-    for(icL[0] = 0; icL[0] < nraf[0]; icL[0]++){
-      for(icL[1] = 0; icL[1] < nraf[1]; icL[1]++){
-	for(icL[2] = 0; icL[2] < nraf[2]; icL[2]++){
+    for(int icL0 = 0; icL0 < nraf[0]; icL0++){
+      for(int icL1 = 0; icL1 < nraf[1]; icL1++){
+	for(int icL2 = 0; icL2 < nraf[2]; icL2++){
+
+	  int icL[3] = {icL0,icL1,icL2};
 	  // get the L subcell id
 	  int ncL=icL[0]+nraf[0]*(icL[1]+nraf[1]*icL[2]);
 	  // first glop index in the subcell
 	  int offsetL=npg[0]*npg[1]*npg[2]*ncL;
 
+	  // compute all of the xref for the subcell
+	  double *xref0 = malloc(sc_npg * sizeof(double));
+	  double *xref1 = malloc(sc_npg * sizeof(double));
+	  double *xref2 = malloc(sc_npg * sizeof(double));
+	  double *omega = malloc(sc_npg * sizeof(double));
+	  int *imems = malloc(m * sc_npg * sizeof(double*));
+	  int pos=0;
+	  for(unsigned int p=0; p < sc_npg; ++p) {
+	    double xref[3];
+	    double tomega;
+
+	    ref_pg_vol(f->interp_param+1,offsetL+p,xref,&tomega,NULL);
+	    xref0[p] = xref[0];
+	    xref1[p] = xref[1];
+	    xref2[p] = xref[2];
+	    omega[p] = tomega;
+	    
+	    for(int im=0; im < m; ++im) {
+	      imems[pos++] = f->varindex(f_interp_param,ie,offsetL+p,im);
+	    }
+	  }
+
 	  // loop in the "cross" in the three directions
 	  for(int dim0 = 0; dim0 < 3; dim0++){
 	    // point p at which we compute the flux
     
-    // NB: collapse(3) is only available in OpenMP 3.0 and later.
-    //#pragma omp parallel for collapse(3)
 	    for(int p0 = 0; p0 < npg[0]; p0++){
 	      for(int p1 = 0; p1 < npg[1]; p1++){
 		for(int p2 = 0; p2 < npg[2]; p2++){
@@ -811,8 +848,10 @@ void* DGVolume(void* mc){
 		  int p[3]={p0,p1,p2};
 		  int ipgL=offsetL+p[0]+npg[0]*(p[1]+npg[1]*p[2]);
 		  for(int iv=0; iv < m; iv++){
-		    int imemL=f->varindex(f->interp_param,ie,ipgL,iv);
-		    wL[iv] = f->wn[imemL];
+		    ///int imemL=f->varindex(f_interp_param,ie,ipgL,iv);
+		    wL[iv] = f->wn[imems[ipgL-offsetL+iv]];
+
+		    //wL[iv] = f->wn[imemL];
 		  }
 		  int q[3]={p[0],p[1],p[2]};
 		  // loop on the direction dim0 on the "cross"
@@ -821,31 +860,46 @@ void* DGVolume(void* mc){
 		    double dphiref[3]={0,0,0};
 		    // compute grad phi_q at glop p
 		    dphiref[dim0]=dlag(deg[dim0],q[dim0],p[dim0])*nraf[dim0];
-		    double xref[3], wpg;		  
-		    ref_pg_vol(f->interp_param+1,ipgL,xref,&wpg,NULL);
+
+		    double xrefL[3]={xref0[ipgL-offsetL],
+		    		     xref1[ipgL-offsetL],
+		    		     xref2[ipgL-offsetL]};
+		    double wpgL=omega[ipgL-offsetL];
+		    /* double xrefL[3], wpgL; */
+		    /* ref_pg_vol(f->interp_param+1,ipgL,xrefL,&wpgL,NULL); */
+
 		    // mapping from the ref glop to the physical glop
-		    double dtau[3][3],codtau[3][3],dphi[3];
+		    double dtau[3][3],codtau[3][3],dphiL[3];
 		    Ref2Phy(physnode,
-			    xref,
+			    xrefL,
 			    dphiref,  // dphiref
 			    -1,    // ifa                                 
 			    NULL,  // xphy  
 			    dtau,
 			    codtau,
-			    dphi,  // dphi
+			    dphiL,  // dphi
 			    NULL);  // vnds   
     
-		    f->model.NumFlux(wL,wL,dphi,flux);
+		    f->model.NumFlux(wL,wL,dphiL,flux);
 
 		    int ipgR=offsetL+q[0]+npg[0]*(q[1]+npg[1]*q[2]);
 		    for(int iv=0; iv < m; iv++){
-		      int imemR=f->varindex(f->interp_param,ie,ipgR,iv);		     	       f->dtwn[imemR]+=flux[iv]*wpg;
+		      //int imemR=f->varindex(f_interp_param,ie,ipgR,iv);
+		      f->dtwn[imems[ipgR-offsetL+iv]]+=flux[iv]*wpgL;
 		    }
 		  } // iq
 		} // p2
 	      } // p1
 	    } // p0
+	    
 	  } // dim loop
+	  
+	  free(omega);
+	  free(xref0);
+	  free(xref1);
+	  free(xref2);
+	  free(imems);
+
 	} // icl2
       } //icl1
     } // icl0
@@ -900,8 +954,10 @@ void DGVolumeSlow(Field* f){
 		codtau,dpsi,NULL); // codtau,dpsi,vnds
 	// remember the diagonal mass term
 	if (ib == ipg){
-	  double det=dtau[0][0]*codtau[0][0]+dtau[0][1]*codtau[0][1]+
-	    dtau[0][2]*codtau[0][2];
+	  double det
+	    = dtau[0][0] * codtau[0][0]
+	    + dtau[0][1] * codtau[0][1]
+	    + dtau[0][2] * codtau[0][2];
 	  masspg[ipg]=wpg*det;
 	}
 	// int_L F(w,w,grad phi_ib )
@@ -928,6 +984,7 @@ void DGVolumeSlow(Field* f){
   
 
 }
+
 
 
 // apply the Discontinuous Galerkin approximation for computing
@@ -1006,26 +1063,17 @@ void dtField(Field* f){
 
 #else
 
-  // computation of the inter subcell fluxes
-  for(int ie=0;ie<f->macromesh.nbelems;ie++){
-    DGMacroCellInterface(mcell+ie);
+
+#ifdef _OPENMP
+#pragma omp parallel for schedule(dynamic, 1)
+#endif
+  for(int ie=0; ie < f->macromesh.nbelems; ++ie) {
+    DGMacroCellInterface((void*) (mcell+ie));
+    DGSubCellInterface((void*) (mcell+ie));
+    DGVolume((void*) (mcell+ie));
+    DGMass((void*) (mcell+ie));
   }
-
-  for(int ie=0;ie<f->macromesh.nbelems;ie++){
-    DGSubCellInterface(mcell+ie);
-  }
-
-  for(int ie=0;ie<f->macromesh.nbelems;ie++){
-    DGVolume(mcell+ie);
-  }
-
-  for(int ie=0;ie<f->macromesh.nbelems;ie++){
-    DGMass(mcell+ie);
-  }
-
-
-
-
+  
 #endif
 
 
@@ -1199,8 +1247,10 @@ void dtFieldSlow(Field* f){
 		codtau,dpsi,NULL); // codtau,dpsi,vnds
 	// remember the diagonal mass term
 	if (ib == ipg){
-	  double det=dtau[0][0]*codtau[0][0]+dtau[0][1]*codtau[0][1]+
-	    dtau[0][2]*codtau[0][2];
+	  double det
+	    = dtau[0][0] * codtau[0][0]
+	    + dtau[0][1] * codtau[0][1]
+	    + dtau[0][2] * codtau[0][2];
 	  masspg[ipg]=wpg*det;
 	}
 	// int_L F(w,w,grad phi_ib )
@@ -1246,6 +1296,9 @@ void RK2(Field* f,double tmax){
       printf("t=%f iter=%d/%d dt=%f\n",f->tnow,iter,itermax,dt);
     // predictor
     dtField(f);
+#ifdef _OPENMP
+#pragma omp parallel for
+#endif
     for(int iw=0;iw<sizew;iw++){
       f->wnp1[iw]=f->wn[iw]+ dt/2 * f->dtwn[iw]; 
     }
@@ -1258,6 +1311,9 @@ void RK2(Field* f,double tmax){
     // corrector
     f->tnow+=dt/2;
     dtField(f);
+#ifdef _OPENMP
+#pragma omp parallel for
+#endif
     for(int iw=0;iw<sizew;iw++){
       f->wnp1[iw]+=dt*f->dtwn[iw];
     }
@@ -1272,6 +1328,7 @@ void RK2(Field* f,double tmax){
   printf("t=%f iter=%d/%d dt=%f\n",f->tnow,iter,itermax,dt);
 
 }
+
 // time integration by a second order Runge-Kutta algorithm
 //  with memory copy instead of pointers exchange 
 void RK2Copy(Field* f,double tmax){
@@ -1343,8 +1400,10 @@ double L2error(Field* f){
 	      NULL,-1, // dpsiref,ifa
 	      xphy,dtau,  // xphy,dtau
 	      codtau,NULL,NULL); // codtau,dpsi,vnds
-      double det=dtau[0][0]*codtau[0][0]+
-        dtau[0][1]*codtau[0][1]+dtau[0][2]*codtau[0][2]; 
+      double det
+	= dtau[0][0] * codtau[0][0]
+	+ dtau[0][1] * codtau[0][1]
+	+ dtau[0][2] * codtau[0][2]; 
       double w[f->model.m],wex[f->model.m];
       for(int iv=0;iv<f->model.m;iv++){
 	int imem=f->varindex(f->interp_param,ie,ipg,iv);

@@ -23,6 +23,7 @@ void GeomRef2Phy(Geom* g){
   g->det =g->codtau[0][0]*g->dtau[0][0]+g->codtau[0][1]*g->dtau[0][1]+
 	g->codtau[0][2]*g->dtau[0][2];
 };
+
 void Ref2Phy(double physnode[20][3],
              double xref[3],
              double dphiref[3],
@@ -33,7 +34,6 @@ void Ref2Phy(double physnode[20][3],
              double dphi[3],
              double vnds[3]){
 
-
   // compute the mapping and its jacobian
   double x,y,z;
   x=xref[0];
@@ -43,12 +43,7 @@ void Ref2Phy(double physnode[20][3],
   // gradient of the shape functions and value (4th component)
   // of the shape functions
   double gradphi[20][4];
-
-
-
-  // this file fills the values of phi and gradphi
-#include "h20phi.h"
-
+#include "h20phi.h"  // this file fills the values of phi and gradphi
 
   if (xphy != NULL){
     for(int ii=0;ii<3;ii++){
@@ -58,7 +53,6 @@ void Ref2Phy(double physnode[20][3],
       }
     }
   }
-
 
   if (dtau != NULL){
     for(int ii=0;ii<3;ii++){
@@ -85,17 +79,16 @@ void Ref2Phy(double physnode[20][3],
     /* codtau[6] =  dtau[1] * dtau[5] - dtau[2] * dtau[4]; */
     /* codtau[7] = -dtau[0] * dtau[5] + dtau[2] * dtau[3]; */
     /* codtau[8] =  dtau[0] * dtau[4] - dtau[1] * dtau[3]; */
-    codtau[0][0] = dtau[1][1] * dtau[2][2] - dtau[1][2] * dtau[2][1];
+    codtau[0][0] =  dtau[1][1] * dtau[2][2] - dtau[1][2] * dtau[2][1];
     codtau[0][1] = -dtau[1][0] * dtau[2][2] + dtau[1][2] * dtau[2][0];
-    codtau[0][2] = dtau[1][0] * dtau[2][1] - dtau[1][1] * dtau[2][0];
+    codtau[0][2] =  dtau[1][0] * dtau[2][1] - dtau[1][1] * dtau[2][0];
     codtau[1][0] = -dtau[0][1] * dtau[2][2] + dtau[0][2] * dtau[2][1];
-    codtau[1][1] = dtau[0][0] * dtau[2][2] - dtau[0][2] * dtau[2][0];
+    codtau[1][1] =  dtau[0][0] * dtau[2][2] - dtau[0][2] * dtau[2][0];
     codtau[1][2] = -dtau[0][0] * dtau[2][1] + dtau[0][1] * dtau[2][0];
-    codtau[2][0] = dtau[0][1] * dtau[1][2] - dtau[0][2] * dtau[1][1];
+    codtau[2][0] =  dtau[0][1] * dtau[1][2] - dtau[0][2] * dtau[1][1];
     codtau[2][1] = -dtau[0][0] * dtau[1][2] + dtau[0][2] * dtau[1][0];
-    codtau[2][2] = dtau[0][0] * dtau[1][1] - dtau[0][1] * dtau[1][0];
-
-}
+    codtau[2][2] =  dtau[0][0] * dtau[1][1] - dtau[0][1] * dtau[1][0];
+  }
 
   if (dphi != NULL){
     assert(codtau != NULL);

@@ -2,12 +2,22 @@ cmake_minimum_required(VERSION 2.8)
 
 project(schnaps)
 
+#set(CMAKE_C_COMPILER "tau_cc.sh")
+#set(CMAKE_C_FLAGS "-optRevert -optTauSelectFile=select.tau -std=c99 -fopenmp -Ofast")
 #set(CMAKE_C_COMPILER "/opt/local/bin/gcc-mp-4.8")
 SET(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 FIND_PACKAGE(OpenCL REQUIRED)
 INCLUDE_DIRECTORIES(${OPENCL_INCLUDE_DIR})
 
-set(CMAKE_C_FLAGS "-std=c99 -D_REENTRANT -O")
+set(CMAKE_C_FLAGS "-std=c99 -D_REENTRANT -O3")
+
+find_package(OpenMP)
+if (OPENMP_FOUND)
+    set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
+    set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
+endif()
+
+
 include_directories(src)
 
 enable_testing()
