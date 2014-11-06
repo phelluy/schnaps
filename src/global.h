@@ -56,6 +56,9 @@ doxygen doxyschnaps
 #define _GLOBAL_H
 
 //! brief global variables and defs
-//#define _WITH_PTHREAD
+#ifndef _OPENMP
+// activate pthread if openmp is not here
+#define _WITH_PTHREAD
+#endif
 
 #endif
