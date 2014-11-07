@@ -148,6 +148,7 @@ add_executable(
 target_link_libraries(testfieldrk2-2d-subcell _schnaps m pthread ${OPENCL_LIBRARY})
 add_test(testfieldrk2-2d-subcell testfieldrk2-2d-subcell)
 
+add_test(testclinfo testclinfo)
 add_executable(
   testclinfo
   test/test.h
