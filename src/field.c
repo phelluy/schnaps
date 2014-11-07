@@ -51,7 +51,7 @@ void InitField(Field* f){
 
 #ifdef _WITH_OPENCL
   // opencl inits
-  InitCLInfo(&(f->cli),2,0); 
+  InitCLInfo(&(f->cli),1,0); 
   cl_int status;
   f->dtwn_cl = clCreateBuffer(
   f->cli.context,
@@ -842,14 +842,14 @@ void* DGMass_CL(void* mc){
   // the same for element index
   int ie=0;
   cl_mem ie_cl;
-  physnode_cl= clCreateBuffer(
-                              f->cli.context,
-                              CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
-                              sizeof(int),
-                              &ie,
-                              &status);
+  ie_cl= clCreateBuffer(
+                        f->cli.context,
+                        CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
+                        sizeof(int),
+                        &ie,
+                        &status);
   assert(  status ==  CL_SUCCESS); 
-// associates ie buffer to  kernel argument #1
+  // associates ie buffer to  kernel argument #1
   status = clSetKernelArg(f->dgmass,             // kernel name
                           1,                // arg num
                           sizeof(cl_mem),   
@@ -857,7 +857,7 @@ void* DGMass_CL(void* mc){
   assert(  status ==  CL_SUCCESS);  
 
 
-  // loop on the elements
+ // loop on the elements
   for (ie=mcell->first_cell;ie<mcell->last_cell_p1;ie++){
     // get the physical nodes of element ie
     for(int inoloc = 0; inoloc < 20; inoloc++) {
