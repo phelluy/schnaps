@@ -51,7 +51,7 @@ void InitField(Field* f){
 
 #ifdef _WITH_OPENCL
   // opencl inits
-  InitCLInfo(&(f->cli),1,0); 
+  InitCLInfo(&(f->cli),_CL_PLATFORM,_CL_DEVICE); 
   cl_int status;
   f->dtwn_cl = clCreateBuffer(
   f->cli.context,
