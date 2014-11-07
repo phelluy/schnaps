@@ -61,4 +61,6 @@ doxygen doxyschnaps
 #define _WITH_PTHREAD
 #endif
 
+#define _WITH_OPENCL
+
 #endif

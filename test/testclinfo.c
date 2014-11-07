@@ -25,7 +25,7 @@ int TestCLInfo(void){
 
   CLInfo cli;
 
-  InitCLInfo(&cli,0,1);
+  InitCLInfo(&cli,2,0);
   PrintCLInfo(&cli);
 
   char prog[]="#pragma OPENCL EXTENSION cl_khr_fp64: enable \n"

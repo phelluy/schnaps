@@ -47,7 +47,32 @@ void InitField(Field* f){
   f->wnp1=malloc(nmem * sizeof(double));
   assert(f->wnp1);	       
   f->dtwn=malloc(nmem * sizeof(double));
-  assert(f->dtwn);	       
+  assert(f->dtwn);
+
+#ifdef _WITH_OPENCL
+  // opencl inits
+  InitCLInfo(&(f->cli),2,0); 
+  cl_int status;
+  f->dtwn_cl = clCreateBuffer(
+  f->cli.context,
+    CL_MEM_READ_WRITE | CL_MEM_USE_HOST_PTR,
+    sizeof(double)*nmem,
+    f->dtwn,
+    &status);
+  assert(  status ==  CL_SUCCESS); 
+
+  // program compilation
+  char* s;
+  ReadFile("src/field.cl",&s);
+  BuildKernels(&(f->cli),s);
+
+  // prepare the runnning kernel
+  f->dgmass = clCreateKernel(f->cli.program, "DGMass", &status);
+  assert(status == CL_SUCCESS);
+  
+
+#endif
+	       
 
   f->tnow=0;
 
@@ -762,6 +787,113 @@ void* DGMass(void* mc){
 
 
 }
+
+// apply division by the mass matrix OpenCL version
+void* DGMass_CL(void* mc){
+
+  MacroCell* mcell = (MacroCell*) mc;
+
+  Field* f= mcell->field;
+
+  int* param=f->interp_param;
+
+  cl_mem param_cl;
+  cl_int status;
+  param_cl= clCreateBuffer(
+                           f->cli.context,
+                           CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
+                           sizeof(int)*7,
+                           f->interp_param,
+                           &status);
+  assert(  status ==  CL_SUCCESS);  
+
+// associates the param buffer to the 0th kernel argument
+  status = clSetKernelArg(f->dgmass,             // kernel name
+                          0,                // arg num
+                          sizeof(cl_mem),   
+                          &param_cl);     // opencl buffer
+  assert(  status ==  CL_SUCCESS);  
+
+// associates the dtwn buffer to the 3rd kernel argument
+  status = clSetKernelArg(f->dgmass,             // kernel name
+                          3,                // arg num
+                          sizeof(cl_mem),   
+                          &f->dtwn_cl);     // opencl buffer
+  assert(  status ==  CL_SUCCESS);  
+  
+
+  // create constant opencl buffers for the running kernel
+  cl_mem physnode_cl;
+  double physnode[20][3];
+  physnode_cl= clCreateBuffer(
+                              f->cli.context,
+                              CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
+                              sizeof(double)*20*3,
+                              physnode,
+                              &status);
+  assert(  status ==  CL_SUCCESS); 
+// associates physnode buffer to the 2th kernel argument
+  status = clSetKernelArg(f->dgmass,             // kernel name
+                          2,                // arg num
+                          sizeof(cl_mem),   
+                          &physnode_cl);     // opencl buffer
+  assert(  status ==  CL_SUCCESS);  
+  
+  // the same for element index
+  int ie=0;
+  cl_mem ie_cl;
+  physnode_cl= clCreateBuffer(
+                              f->cli.context,
+                              CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
+                              sizeof(int),
+                              &ie,
+                              &status);
+  assert(  status ==  CL_SUCCESS); 
+// associates ie buffer to  kernel argument #1
+  status = clSetKernelArg(f->dgmass,             // kernel name
+                          1,                // arg num
+                          sizeof(cl_mem),   
+                          &ie_cl);     // opencl buffer
+  assert(  status ==  CL_SUCCESS);  
+
+
+  // loop on the elements
+  for (ie=mcell->first_cell;ie<mcell->last_cell_p1;ie++){
+    // get the physical nodes of element ie
+    for(int inoloc = 0; inoloc < 20; inoloc++) {
+      int ino=f->macromesh.elem2node[20*ie+inoloc];
+      physnode[inoloc][0]=f->macromesh.node[3*ino+0];
+      physnode[inoloc][1]=f->macromesh.node[3*ino+1];
+      physnode[inoloc][2]=f->macromesh.node[3*ino+2];
+    }
+
+    // the groupsize is the number of glops
+    // in a subcell
+    size_t groupsize=(param[1]+1)*
+      (param[2]+1)*(param[3]+1);
+    // the total work items number is the number of glops
+    // in a subcell * number of subcells
+    size_t numworkitems= param[4] *
+      param[5] * param[6] * groupsize;
+    // mass kernel launch
+  status = clEnqueueNDRangeKernel(f->cli.commandqueue, 
+  			      f->dgmass, 
+  			       1,NULL,
+  			       &numworkitems,
+  			       &groupsize,
+  			       0, NULL, NULL);
+  assert(status == CL_SUCCESS);
+  clFinish(f->cli.commandqueue);  // wait the end of the computation
+
+
+
+  }
+
+  return NULL;
+
+
+}
+
 
 // compute the Discontinuous Galerkin volume terms
 // fast version

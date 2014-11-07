@@ -49,7 +49,7 @@ add_executable(
   schnaps
   src/schnaps.c
 )
-target_link_libraries(schnaps _schnaps m pthread)
+target_link_libraries(schnaps _schnaps m pthread ${OPENCL_LIBRARY})
 
 # list of tests
 add_executable(
@@ -57,7 +57,7 @@ add_executable(
   test/test.h
   test/testmacromesh.c
 )
-target_link_libraries(testmacromesh _schnaps m pthread)
+target_link_libraries(testmacromesh _schnaps m pthread ${OPENCL_LIBRARY})
 add_test(testmacromesh testmacromesh)
 
 add_executable(
@@ -65,7 +65,7 @@ add_executable(
   test/test.h
   test/testgeometry.c
 )
-target_link_libraries(testgeometry _schnaps m pthread)
+target_link_libraries(testgeometry _schnaps m pthread ${OPENCL_LIBRARY})
 add_test(testgeometry testgeometry)
 
 add_executable(
@@ -73,7 +73,7 @@ add_executable(
   test/test.h
   test/testinterpolation.c
 )
-target_link_libraries(testinterpolation _schnaps m pthread)
+target_link_libraries(testinterpolation _schnaps m pthread ${OPENCL_LIBRARY})
 add_test(testinterpolation testinterpolation)
 
 add_executable(
@@ -81,7 +81,7 @@ add_executable(
   test/test.h
   test/testmodel.c
 )
-target_link_libraries(testmodel _schnaps m pthread)
+target_link_libraries(testmodel _schnaps m pthread ${OPENCL_LIBRARY})
 
 add_test(testfield testfield)
 add_executable(
@@ -89,7 +89,7 @@ add_executable(
   test/test.h
   test/testfield.c
 )
-target_link_libraries(testfield _schnaps m pthread)
+target_link_libraries(testfield _schnaps m pthread ${OPENCL_LIBRARY})
 add_test(testfield testfield)
 
 add_test(testfielddg testfielddg)
@@ -98,7 +98,7 @@ add_executable(
   test/test.h
   test/testfielddg.c
 )
-target_link_libraries(testfielddg _schnaps m pthread)
+target_link_libraries(testfielddg _schnaps m pthread ${OPENCL_LIBRARY})
 add_test(testfielddg testfielddg)
 
 add_test(testfieldrk2 testfieldrk2)
@@ -107,7 +107,7 @@ add_executable(
   test/test.h
   test/testfieldrk2.c
 )
-target_link_libraries(testfieldrk2 _schnaps m pthread)
+target_link_libraries(testfieldrk2 _schnaps m pthread ${OPENCL_LIBRARY})
 add_test(testfieldrk2 testfieldrk2)
 
 add_test(test2dmeshdetection test2dmeshdetection)
@@ -116,7 +116,7 @@ add_executable(
   test/test.h
   test/test2dmeshdetection.c
 )
-target_link_libraries(test2dmeshdetection _schnaps m pthread)
+target_link_libraries(test2dmeshdetection _schnaps m pthread ${OPENCL_LIBRARY})
 add_test(test2dmeshdetection test2dmeshdetection)
 
 add_test(testfieldrk2-2d testfieldrk2-2d)
@@ -125,7 +125,7 @@ add_executable(
   test/test.h
   test/testfieldrk2-2d.c
 )
-target_link_libraries(testfieldrk2-2d _schnaps m pthread)
+target_link_libraries(testfieldrk2-2d _schnaps m pthread ${OPENCL_LIBRARY})
 add_test(testfieldrk2-2d testfieldrk2-2d)
 
 
@@ -135,7 +135,7 @@ add_executable(
   test/test.h
   test/testsubcelldgvol.c
 )
-target_link_libraries(testsubcelldgvol _schnaps m pthread)
+target_link_libraries(testsubcelldgvol _schnaps m pthread ${OPENCL_LIBRARY})
 add_test(testsubcelldgvol testsubcelldgvol)
 
 add_test(testfieldrk2-2d-subcell testfieldrk2-2d-subcell)
@@ -145,7 +145,7 @@ add_executable(
   test/test.h
   test/testfieldrk2-2d-subcell.c
 )
-target_link_libraries(testfieldrk2-2d-subcell _schnaps m pthread)
+target_link_libraries(testfieldrk2-2d-subcell _schnaps m pthread ${OPENCL_LIBRARY})
 add_test(testfieldrk2-2d-subcell testfieldrk2-2d-subcell)
 
 add_executable(
@@ -154,4 +154,13 @@ add_executable(
   test/testclinfo.c
 )
 target_link_libraries(testclinfo _schnaps m pthread ${OPENCL_LIBRARY})
-add_test(testclinfo testclinfo)
+
+
+add_test(testkernel testkernel)
+add_executable(
+  testkernel
+  test/test.h
+  test/testkernel.c
+)
+target_link_libraries(testkernel _schnaps m pthread ${OPENCL_LIBRARY})
+add_test(testkernel testkernel)

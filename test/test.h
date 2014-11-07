@@ -27,5 +27,7 @@ int TestFieldRK2_2D_SubCell(void);
 
 int TestCLInfo(void);
 
+int TestKernel(void);
+
 
 #endif

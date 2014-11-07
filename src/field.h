@@ -5,6 +5,10 @@
 #include "interpolation.h"
 #include "model.h"
 
+#ifdef _WITH_OPENCL
+#include "clinfo.h"
+#endif
+
 //! \brief Data structure for managing a  discrete vector field
 //! solution of a DG approximation 
 typedef struct Field{
@@ -40,6 +44,18 @@ typedef struct Field{
   //! \param[in] ipg glop index
   //! \param[in] iv field component index
   int (*varindex)(int* param, int elem, int ipg, int iv);
+
+#ifdef _WITH_OPENCL
+  //! \brief opencl data
+  CLInfo cli;
+  //! \brief copy of the dtwn array
+  cl_mem dtwn_cl;
+  
+  //! opencl kernels for mass inversion
+  cl_kernel dgmass;
+  
+#endif
+
 
 } Field;
 
@@ -104,6 +120,9 @@ void* DGSubCellInterface(void* mcell);
 //! \brief  apply the DG mass term
 //! \param[inout] mcell a MacroCell
 void* DGMass(void* mcell);
+//! \brief  apply the DG mass term OpenCL version
+//! \param[inout] mcell a MacroCell
+void* DGMass_CL(void* mcell);
 
 //! \brief time integration by a second order Runge-Kutta algorithm 
 //! \param[inout] f a field
