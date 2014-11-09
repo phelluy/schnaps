@@ -59,9 +59,14 @@ int TestKernel(void){
     mcell[ie].last_cell_p1=ie+1;
   }
 
+  
+
   for(int ie=0; ie < f.macromesh.nbelems; ++ie) {
     DGMass_CL((void*) (mcell+ie));
   }
+
+  DisplayField(&f);
+
 
   return test;
 

@@ -124,6 +124,27 @@ void InitCLInfo(CLInfo* cli,int platform_id,int device_id){
   assert (status == CL_SUCCESS);  
   printf("Cache size: %f KB\n",cli->cachesize/1024.);
 
+  // get maxconstmem
+  status = clGetDeviceInfo(
+			   cli->device[device_id],
+			   CL_DEVICE_MAX_CONSTANT_BUFFER_SIZE,
+			   sizeof(cl_ulong),
+                           &(cli->maxconstmem),
+			   NULL);
+  assert (status == CL_SUCCESS);  
+  printf("Const mem: %f KB\n",cli->maxconstmem/1024.);
+
+  // get maxconst args
+  int maxcstargs;
+  status = clGetDeviceInfo(
+			   cli->device[device_id],
+			   CL_DEVICE_MAX_CONSTANT_ARGS,
+			   sizeof(cl_ulong),
+                           &maxcstargs,
+			   NULL);
+  assert (status == CL_SUCCESS);  
+  printf("Max Const args: %d \n",maxcstargs);
+
 
   // nb of compute units
   status = clGetDeviceInfo(

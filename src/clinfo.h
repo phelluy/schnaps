@@ -16,6 +16,7 @@ typedef struct CLInfo{
   cl_device_id* device; //!< devices list
   cl_ulong devicememsize;  //!< GPU global memory size
   cl_ulong maxmembuffer;  //!< maximal size of a GPU buffer
+  cl_ulong maxconstmem;  //!< maximal GPU constant memory
   cl_ulong cachesize;  //!< cache size of compute units
 
   cl_uint nbcomputeunits;  //!< number of compute units

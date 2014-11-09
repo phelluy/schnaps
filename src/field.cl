@@ -58,14 +58,22 @@ double wglop(int deg,int i){
 
 // apply division by the mass matrix on one macrocell
 __kernel
-void DGMass(__constant int* param,        // interp param
-            __constant int* ie,            // macrocel index
+void DGMass(
             __constant double* physnode,  // macrocell nodes
+            __constant int* ie,            // macrocel index
+	    __constant int* param,        // interp param
             __global double* dtwn){       // time derivative
   
   int ipg=get_global_id(0);
   int npg=(param[1]+1)*(param[2]+1)*(param[3]+1) *
          (param[4])*(param[5])*(param[6]);
+
+  printf("param=%d %d %d %d %d %d %d=%d\n",param[0],
+  	 param[1],param[2],param[3],param[4],param[5],param[6]);
+
+  for(int i=0;i<20;i++){
+    printf("physnode[%d]=%lf %lf %lf \n",i,physnode[3*i+0],physnode[3*i+1],physnode[3*i+2]);
+  }
 
   double dtau[3][3],codtau[3][3],x,y,z,wpg;
   //ref_pg_vol(param+1,ipg,xpgref,&wpg,NULL);
@@ -183,6 +191,7 @@ void DGMass(__constant int* param,        // interp param
       dtau[ii][jj]=0;
     }
     for(int i=0;i<20;i++){
+      //printf("xyzphy=%f %f %f \n",physnode[3*i+0],physnode[3*i+1],physnode[3*i+2]);
       for(int jj=0;jj<3;jj++){
         dtau[ii][jj]+=physnode[3*i+ii]*gradphi[i][jj];;
       }
@@ -203,6 +212,8 @@ void DGMass(__constant int* param,        // interp param
 
   double det=dtau[0][0]*codtau[0][0]+dtau[0][1]*codtau[0][1]+
     dtau[0][2]*codtau[0][2];
+
+  printf("det=%f\n",det);
   for(int iv=0;iv<param[0];iv++){
     // varindex
     int imem=iv + param[0] * ( get_global_id(0) + npg * *ie);

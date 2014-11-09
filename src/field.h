@@ -31,6 +31,8 @@ typedef struct Field{
   //! activate or not 2D computations
   bool is2d;
 
+  //! size of the field buffers
+  int wsize;
   //! fields at time steps n 
   double* wn;
   //! fields at time steps n+1   
@@ -82,6 +84,11 @@ int GenericVarindex(int* param, int elem, int ipg, int iv);
 //! at each glop.
 //! \param[inout] f a field
 void InitField(Field* f);
+
+//! copy back the field to host memory
+//! \param[inout] f a field
+void CopyFieldtoCPU(Field* f);
+
 
 //! \brief compute the Discontinuous Galerkin volume terms
 //! slow version (no optimization using the tensors products)
