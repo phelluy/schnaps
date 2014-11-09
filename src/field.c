@@ -30,6 +30,10 @@ void CopyFieldtoCPU(Field* f){
 
   cl_int status;
 
+  // ensures that all the buffers are mapped
+  status=clFinish(f->cli.commandqueue);
+
+  void* chkptr;
   clEnqueueMapBuffer(f->cli.commandqueue,
 		     f->dtwn_cl,  // buffer to copy from
 		     CL_TRUE,  // block until the buffer is available
@@ -40,7 +44,7 @@ void CopyFieldtoCPU(Field* f){
 		     &status);
 
   assert(status == CL_SUCCESS);
-
+  assert(chkptr == f->dtwn);
 #endif
 
 }
@@ -79,31 +83,10 @@ void InitField(Field* f){
   f->dtwn_cl = clCreateBuffer(
 			      f->cli.context,
 			      CL_MEM_READ_WRITE | CL_MEM_USE_HOST_PTR,
-			      sizeof(double)*nmem,
+			      sizeof(double)* f->wsize,
 			      f->dtwn,
 			      &status);
   assert(  status ==  CL_SUCCESS); 
-  void* chkptr;
-  chkptr=clEnqueueMapBuffer(f->cli.commandqueue,
-			    f->dtwn_cl,  // buffer to copy from
-			    CL_TRUE,  // block until the buffer is available
-			    CL_MAP_WRITE,  // we just want to copy physnode
-			    0, // offset
-			    sizeof(double)*f->wsize,  // buffersize
-			    0,NULL,NULL, // events management
-			    &status);
-    assert(status == CL_SUCCESS);
-    assert(chkptr == f->dtwn);
-
-  for(int i=0;i<f->wsize;i++){
-    f->dtwn[i]=1;
-  }
-
-  status=clEnqueueUnmapMemObject (f->cli.commandqueue,
-				  f->dtwn_cl,
-				  f->dtwn,
-    			     0,NULL,NULL);
-  assert(status == CL_SUCCESS);
 
   // program compilation
   char* s;
@@ -841,6 +824,10 @@ void* DGMass_CL(void* mc){
 
   int* param=f->interp_param;
 
+  printf("&pf=%p\n",f);
+  printf("%f\n",f->dtwn[0]);
+  assert(f->dtwn[0]==1);
+
   cl_mem param_cl;
   cl_int status;
   param_cl= clCreateBuffer(
@@ -862,7 +849,7 @@ void* DGMass_CL(void* mc){
   status = clSetKernelArg(f->dgmass,             // kernel name
                           3,                // arg num
                           sizeof(cl_mem),   
-                          &f->dtwn_cl);     // opencl buffer
+                          &(f->dtwn_cl));     // opencl buffer
   assert(  status ==  CL_SUCCESS);  
   
 

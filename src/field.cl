@@ -68,11 +68,12 @@ void DGMass(
   int npg=(param[1]+1)*(param[2]+1)*(param[3]+1) *
          (param[4])*(param[5])*(param[6]);
 
-   printf("param=%d %d %d %d %d %d %d\n",param[0],
-  	 param[1],param[2],param[3],param[4],param[5],param[6]);
+   printf("param=%d %d %d %d %d %d %d ie=%d dtw=%f\n",param[0],
+	  param[1],param[2],param[3],param[4],param[5],param[6],
+	  *ie,dtwn[0]);
 
   for(int i=0;i<20;i++){
-    //printf("physnode[%d]=%f %f %f\n",i,physnode[3*i+0],physnode[3*i+1],physnode[3*i+2]);
+    //printf("ie=%d physnode[%d]=%f %f %f\n",*ie,i,physnode[3*i+0],physnode[3*i+1],physnode[3*i+2]);
   }
 
   double dtau[3][3],codtau[3][3],x,y,z,wpg;

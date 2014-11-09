@@ -51,6 +51,9 @@ int TestKernel(void){
   InitField(&f);
   f.is2d=true;
 
+  printf("&f=%p\n",&f);
+
+  //
   MacroCell mcell[f.macromesh.nbelems];
 
   for(int ie=0;ie<f.macromesh.nbelems;ie++){
@@ -59,11 +62,43 @@ int TestKernel(void){
     mcell[ie].last_cell_p1=ie+1;
   }
 
+  // set dtwn to 1 for testing
   
+  void* chkptr;
+  cl_int status;
+  chkptr=clEnqueueMapBuffer(f.cli.commandqueue,
+			    f.dtwn_cl,  // buffer to copy from
+			    CL_TRUE,  // block until the buffer is available
+			    CL_MAP_READ | CL_MAP_WRITE, 
+			    0, // offset
+			    sizeof(double)*f.wsize,  // buffersize
+			    0,NULL,NULL, // events management
+			    &status);
+    assert(status == CL_SUCCESS);
+    assert(chkptr == f.dtwn);
 
-  for(int ie=0; ie < f.macromesh.nbelems; ++ie) {
-    DGMass_CL((void*) (mcell+ie));
+  for(int i=0;i<f.wsize;i++){
+    f.dtwn[i]=1;
   }
+  assert(f.wsize==720);
+
+  status=clEnqueueUnmapMemObject (f.cli.commandqueue,
+				  f.dtwn_cl,
+				  f.dtwn,
+    			     0,NULL,NULL);
+
+  assert(status == CL_SUCCESS);
+  status=clFinish(f.cli.commandqueue);
+  assert(status == CL_SUCCESS);
+
+
+ 
+  for(int ie=0; ie < f.macromesh.nbelems; ++ie) {
+    DGMass_CL((void*) &(mcell[ie]));
+  }
+
+  CopyFieldtoCPU(&f);
+
 
   DisplayField(&f);
 
