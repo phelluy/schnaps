@@ -831,7 +831,7 @@ void* DGMass_CL(void* mc){
 
   // associates the param buffer to the 0th kernel argument
   status = clSetKernelArg(f->dgmass,             // kernel name
-                          2,                // arg num
+                          0,                // arg num
                           sizeof(cl_mem),   
                           &param_cl);     // opencl buffer
   assert(  status ==  CL_SUCCESS);  
@@ -847,12 +847,12 @@ void* DGMass_CL(void* mc){
   // create constant opencl buffers for the running kernel
   cl_mem physnode_cl;
   cl_double physnode[20*3];
-  for(int inoloc = 0; inoloc < 20; inoloc++) {
-    int ino=f->macromesh.elem2node[20*0+inoloc];
-    physnode[3*inoloc+0]=f->macromesh.node[3*ino+0];
-    physnode[3*inoloc+1]=f->macromesh.node[3*ino+1];
-    physnode[3*inoloc+2]=f->macromesh.node[3*ino+2];
-  }
+  /* for(int inoloc = 0; inoloc < 20; inoloc++) { */
+  /*   int ino=f->macromesh.elem2node[20*0+inoloc]; */
+  /*   physnode[3*inoloc+0]=f->macromesh.node[3*ino+0]; */
+  /*   physnode[3*inoloc+1]=f->macromesh.node[3*ino+1]; */
+  /*   physnode[3*inoloc+2]=f->macromesh.node[3*ino+2]; */
+  /* } */
   physnode_cl= clCreateBuffer(f->cli.context,
                               CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR,
                               sizeof(double)*20*3,
@@ -861,7 +861,7 @@ void* DGMass_CL(void* mc){
   assert(  status ==  CL_SUCCESS); 
   // associates physnode buffer to the 2th kernel argument
   status = clSetKernelArg(f->dgmass,             // kernel name
-                          0,                // arg num
+                          2,                // arg num
                           sizeof(cl_mem),   
                           &physnode_cl);     // opencl buffer
   //printf("%d",status);
@@ -890,16 +890,16 @@ void* DGMass_CL(void* mc){
     // get the physical nodes of element ie
     // first: get the lock on the cpu side
     void* chkptr;
-    /* chkptr=clEnqueueMapBuffer(f->cli.commandqueue, */
-    /* 			      physnode_cl,  // buffer to copy from */
-    /* 			      CL_TRUE,  // block until the buffer is available */
-    /* 			      CL_MAP_WRITE,  // we just want to copy physnode */
-    /* 			      0, // offset */
-    /* 			      sizeof(double)*20*3,  // buffersize */
-    /* 			      0,NULL,NULL, // events management */
-    /* 			      &status); */
-    /* assert(status == CL_SUCCESS); */
-    /* assert(chkptr == physnode); */
+    chkptr=clEnqueueMapBuffer(f->cli.commandqueue,
+    			      physnode_cl,  // buffer to copy from
+    			      CL_TRUE,  // block until the buffer is available
+    			      CL_MAP_WRITE,  // we just want to copy physnode
+    			      0, // offset
+    			      sizeof(double)*20*3,  // buffersize
+    			      0,NULL,NULL, // events management
+    			      &status);
+    assert(status == CL_SUCCESS);
+    assert(chkptr == physnode);
     for(int inoloc = 0; inoloc < 20; inoloc++) {
       int ino=f->macromesh.elem2node[20*ie+inoloc];
       physnode[3*inoloc+0]=f->macromesh.node[3*ino+0];
@@ -907,18 +907,18 @@ void* DGMass_CL(void* mc){
       physnode[3*inoloc+2]=f->macromesh.node[3*ino+2];
     }
     // unlock physnode buffer
-    status=clEnqueueWriteBuffer (f->cli.commandqueue,
-			  physnode_cl,
-			  CL_TRUE,  // block,
-			  0,  // offset
-			  sizeof(double)*20*3,
-			  physnode,
-			  0,NULL,NULL);
-    assert(status == CL_SUCCESS);
-    /* clEnqueueUnmapMemObject (f->cli.commandqueue, */
-    /* 			     physnode_cl, */
-    /* 			     physnode, */
-    /* 			     0,NULL,NULL); */
+    /* status=clEnqueueWriteBuffer (f->cli.commandqueue, */
+    /* 			  physnode_cl, */
+    /* 			  CL_TRUE,  // block, */
+    /* 			  0,  // offset */
+    /* 			  sizeof(double)*20*3, */
+    /* 			  physnode, */
+    /* 			  0,NULL,NULL); */
+    /* assert(status == CL_SUCCESS); */
+    clEnqueueUnmapMemObject (f->cli.commandqueue,
+    			     physnode_cl,
+    			     physnode,
+    			     0,NULL,NULL);
 
     // the groupsize is the number of glops
     // in a subcell
