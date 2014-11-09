@@ -70,6 +70,7 @@ void InitField(Field* f){
   assert(f->wnp1);	       
   f->dtwn=calloc(nmem,sizeof(double));
   assert(f->dtwn);
+  
 
 #ifdef _WITH_OPENCL
   // opencl inits
@@ -82,6 +83,27 @@ void InitField(Field* f){
 			      f->dtwn,
 			      &status);
   assert(  status ==  CL_SUCCESS); 
+  void* chkptr;
+  chkptr=clEnqueueMapBuffer(f->cli.commandqueue,
+			    f->dtwn_cl,  // buffer to copy from
+			    CL_TRUE,  // block until the buffer is available
+			    CL_MAP_WRITE,  // we just want to copy physnode
+			    0, // offset
+			    sizeof(double)*f->wsize,  // buffersize
+			    0,NULL,NULL, // events management
+			    &status);
+    assert(status == CL_SUCCESS);
+    assert(chkptr == f->dtwn);
+
+  for(int i=0;i<f->wsize;i++){
+    f->dtwn[i]=1;
+  }
+
+  status=clEnqueueUnmapMemObject (f->cli.commandqueue,
+				  f->dtwn_cl,
+				  f->dtwn,
+    			     0,NULL,NULL);
+  assert(status == CL_SUCCESS);
 
   // program compilation
   char* s;
@@ -846,7 +868,7 @@ void* DGMass_CL(void* mc){
 
   // create constant opencl buffers for the running kernel
   cl_mem physnode_cl;
-  cl_double physnode[20*3];
+  static cl_double physnode[20*3];
   /* for(int inoloc = 0; inoloc < 20; inoloc++) { */
   /*   int ino=f->macromesh.elem2node[20*0+inoloc]; */
   /*   physnode[3*inoloc+0]=f->macromesh.node[3*ino+0]; */
@@ -889,8 +911,7 @@ void* DGMass_CL(void* mc){
   for (int ie=mcell->first_cell;ie<mcell->last_cell_p1;ie++){
     // get the physical nodes of element ie
     // first: get the lock on the cpu side
-    void* chkptr;
-    chkptr=clEnqueueMapBuffer(f->cli.commandqueue,
+    void* chkptr=clEnqueueMapBuffer(f->cli.commandqueue,
     			      physnode_cl,  // buffer to copy from
     			      CL_TRUE,  // block until the buffer is available
     			      CL_MAP_WRITE,  // we just want to copy physnode
@@ -915,10 +936,11 @@ void* DGMass_CL(void* mc){
     /* 			  physnode, */
     /* 			  0,NULL,NULL); */
     /* assert(status == CL_SUCCESS); */
-    clEnqueueUnmapMemObject (f->cli.commandqueue,
+    status=clEnqueueUnmapMemObject (f->cli.commandqueue,
     			     physnode_cl,
     			     physnode,
     			     0,NULL,NULL);
+    assert(status == CL_SUCCESS);
 
     // the groupsize is the number of glops
     // in a subcell
@@ -960,6 +982,7 @@ void* DGMass_CL(void* mc){
 				    &numworkitems,
 				    &groupsize,
 				    0, NULL, NULL);
+    printf("%d\n",status);
     assert(status == CL_SUCCESS);
     clFinish(f->cli.commandqueue);  // wait the end of the computation
 

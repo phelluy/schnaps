@@ -68,11 +68,11 @@ void DGMass(
   int npg=(param[1]+1)*(param[2]+1)*(param[3]+1) *
          (param[4])*(param[5])*(param[6]);
 
-  // printf("param=%d %d %d %d %d %d %d\n",param[0],
-  //	 param[1],param[2],param[3],param[4],param[5],param[6]);
+   printf("param=%d %d %d %d %d %d %d\n",param[0],
+  	 param[1],param[2],param[3],param[4],param[5],param[6]);
 
   for(int i=0;i<20;i++){
-    printf("physnode[%d]=%f %f %f\n",i,physnode[3*i+0],physnode[3*i+1],physnode[3*i+2]);
+    //printf("physnode[%d]=%f %f %f\n",i,physnode[3*i+0],physnode[3*i+1],physnode[3*i+2]);
   }
 
   double dtau[3][3],codtau[3][3],x,y,z,wpg;
@@ -213,12 +213,14 @@ void DGMass(
   double det=dtau[0][0]*codtau[0][0]+dtau[0][1]*codtau[0][1]+
     dtau[0][2]*codtau[0][2];
 
-  printf("det=%f\n",det);
+  //printf("det=%f\n",det);
   for(int iv=0;iv<param[0];iv++){
     // varindex
     int imem=iv + param[0] * ( get_global_id(0) + npg * *ie);
     // end of varindex
     /////////////////////////////////////
+    printf("imem=%d dtw=%f\n",imem,dtwn[imem]);
+
     dtwn[imem]/=(wpg*det);
   }
 
