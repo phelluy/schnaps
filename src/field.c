@@ -857,7 +857,7 @@ void* DGMass_CL(void* mc){
 
   // create constant opencl buffers for the running kernel
   cl_mem physnode_cl;
-  static cl_double physnode[20*3];
+  cl_double* physnode=calloc(60,sizeof(cl_double));
   /* for(int inoloc = 0; inoloc < 20; inoloc++) { */
   /*   int ino=f->macromesh.elem2node[20*0+inoloc]; */
   /*   physnode[3*inoloc+0]=f->macromesh.node[3*ino+0]; */
@@ -891,9 +891,9 @@ void* DGMass_CL(void* mc){
   // associates ie buffer to  kernel argument #1
   status = clSetKernelArg(f->dgmass,             // kernel name
                           1,                // arg num
-                          sizeof(cl_mem),   
+                          sizeof(cl_mem),
                           &ie_cl);     // opencl buffer
-  assert(  status ==  CL_SUCCESS);  
+  assert(  status ==  CL_SUCCESS);
 
 
   // loop on the elements
@@ -905,7 +905,7 @@ void* DGMass_CL(void* mc){
     			      CL_TRUE,  // block until the buffer is available
     			      CL_MAP_WRITE,  // we just want to copy physnode
     			      0, // offset
-    			      sizeof(double)*20*3,  // buffersize
+    			      sizeof(cl_double)*20*3,  // buffersize
     			      0,NULL,NULL, // events management
     			      &status);
     assert(status == CL_SUCCESS);
@@ -943,22 +943,22 @@ void* DGMass_CL(void* mc){
     // update the constant parameter to be passed to the kernel
     // first: get the lock on the cpu side
     chkptr=clEnqueueMapBuffer(f->cli.commandqueue,
-			      ie_cl,  // buffer to copy from
-			      CL_TRUE,  // block until the buffer is available
-			      CL_MAP_WRITE,  // we just want to copy ie
-			      0, // offset
-			      sizeof(int),  // buffersize
-			      0,NULL,NULL, // events management
-			      &status);
+        		      ie_cl,  // buffer to copy from
+        		      CL_TRUE,  // block until the buffer is available
+        		      CL_MAP_WRITE,  // we just want to copy ie
+        		      0, // offset
+        		      sizeof(int),  // buffersize
+        		      0,NULL,NULL, // events management
+        		      &status);
     assert(status == CL_SUCCESS);
     assert(chkptr == &ie_cpu);
     // second: copy
     ie_cpu=ie;
     //third: unlock
     clEnqueueUnmapMemObject (f->cli.commandqueue,
-			     ie_cl,
-			     &ie_cpu,
-			     0,NULL,NULL);
+        		     ie_cl,
+        		     &ie_cpu,
+        		     0,NULL,NULL);
 
 
     // ensures that all the buffers are mapped
@@ -978,6 +978,8 @@ void* DGMass_CL(void* mc){
 
 
   }
+
+                             free(physnode);
 
   return NULL;
 

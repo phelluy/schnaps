@@ -33,11 +33,11 @@ int TestKernel(void){
 
 
   f.interp.interp_param[0]=1;  // _M
-  f.interp.interp_param[1]=3;  // x direction degree
-  f.interp.interp_param[2]=3;  // y direction degree
+  f.interp.interp_param[1]=2;  // x direction degree
+  f.interp.interp_param[2]=2;  // y direction degree
   f.interp.interp_param[3]=0;  // z direction degree
-  f.interp.interp_param[4]=10;  // x direction refinement
-  f.interp.interp_param[5]=10;  // y direction refinement
+  f.interp.interp_param[4]=2;  // x direction refinement
+  f.interp.interp_param[5]=2;  // y direction refinement
   f.interp.interp_param[6]=1;  // z direction refinement
 
 

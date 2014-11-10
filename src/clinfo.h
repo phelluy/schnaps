@@ -61,6 +61,7 @@ void ReadFile(char filename[],char** s);
 
 //! \brief Gets the header and source for a given
 //! function in a program string
-void GetFunctionSource(char* func_name,char** header,char** source);
+void GetFunctionSource(char* prog,char* func_name,
+                       char** header,char** source);
 
 #endif

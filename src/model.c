@@ -18,7 +18,6 @@ const double transport_v2d[] = {
   ONE_OVER_SQRT_2,
   0};
 
-
 void TransportNumFlux(double wL[],double wR[],double* vnorm,double* flux){
   
   double vn =
@@ -32,6 +31,7 @@ void TransportNumFlux(double wL[],double wR[],double* vnorm,double* flux){
    flux[0] = vnp * wL[0] + vnm * wR[0];
 
 };
+
 
 void TransportNumFlux2d(double wL[],double wR[],double* vnorm,double* flux){
   

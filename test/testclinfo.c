@@ -44,7 +44,12 @@ int TestCLInfo(void){
 
   BuildKernels(&cli,s);
   
-  char* prog2;
+
+  char func_name[]="testadd";
+  char* header;
+  char* source;
+  GetFunctionSource(prog,func_name,
+                    &header,&source);
 
   
 
