@@ -68,9 +68,8 @@ void DGMass(
   int npg=(param[1]+1)*(param[2]+1)*(param[3]+1) *
          (param[4])*(param[5])*(param[6]);
 
-   printf("param=%d %d %d %d %d %d %d ie=%d dtw=%f\n",param[0],
-	  param[1],param[2],param[3],param[4],param[5],param[6],
-	  *ie,dtwn[0]);
+  //printf("debut ie=%d dtw=%f\n",
+  //	  *ie,dtwn[ipg]);
 
   for(int i=0;i<20;i++){
     //printf("ie=%d physnode[%d]=%f %f %f\n",*ie,i,physnode[3*i+0],physnode[3*i+1],physnode[3*i+2]);
@@ -100,9 +99,9 @@ void DGMass(
 
   int offset[3];
 
-  offset[0]=gauss_lob_offset[param[0]]+ix;
-  offset[1]=gauss_lob_offset[param[1]]+iy;
-  offset[2]=gauss_lob_offset[param[2]]+iz;
+  offset[0]=gauss_lob_offset[param[1]]+ix;
+  offset[1]=gauss_lob_offset[param[2]]+iy;
+  offset[2]=gauss_lob_offset[param[3]]+iz;
 
   x=hx*(ncx+gauss_lob_point[offset[0]]);
   y=hy*(ncy+gauss_lob_point[offset[1]]);
@@ -214,13 +213,13 @@ void DGMass(
   double det=dtau[0][0]*codtau[0][0]+dtau[0][1]*codtau[0][1]+
     dtau[0][2]*codtau[0][2];
 
-  //printf("det=%f\n",det);
   for(int iv=0;iv<param[0];iv++){
     // varindex
     int imem=iv + param[0] * ( get_global_id(0) + npg * *ie);
     // end of varindex
     /////////////////////////////////////
-    printf("imem=%d dtw=%f\n",imem,dtwn[imem]);
+    //printf("imem=%d dtw=%f\n",imem,dtwn[imem]);
+    printf("det=%f wpg=%f imem=%d h=%f %f %f\n",det,wpg,imem,hx,hy,hz);
 
     dtwn[imem]/=(wpg*det);
   }

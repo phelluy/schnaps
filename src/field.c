@@ -34,7 +34,7 @@ void CopyFieldtoCPU(Field* f){
   status=clFinish(f->cli.commandqueue);
 
   void* chkptr;
-  clEnqueueMapBuffer(f->cli.commandqueue,
+  chkptr=clEnqueueMapBuffer(f->cli.commandqueue,
 		     f->dtwn_cl,  // buffer to copy from
 		     CL_TRUE,  // block until the buffer is available
 		     CL_MAP_READ,  // we just want to see the results
@@ -45,6 +45,7 @@ void CopyFieldtoCPU(Field* f){
 
   assert(status == CL_SUCCESS);
   assert(chkptr == f->dtwn);
+  status=clFinish(f->cli.commandqueue);
 #endif
 
 }
@@ -806,6 +807,8 @@ void* DGMass(void* mc){
       for(int iv=0;iv<f->model.m;iv++){
 	int imem=f->varindex(f->interp_param,ie,ipg,iv);
 	f->dtwn[imem]/=(wpg*det);
+        printf("det2=%f wpg=%f imem=%d\n",det,wpg,imem);
+
       }
     }
   }
@@ -826,7 +829,6 @@ void* DGMass_CL(void* mc){
 
   printf("&pf=%p\n",f);
   printf("%f\n",f->dtwn[0]);
-  assert(f->dtwn[0]==1);
 
   cl_mem param_cl;
   cl_int status;

@@ -41,7 +41,8 @@ int TestKernel(void){
   f.interp.interp_param[6]=1;  // z direction refinement
 
 
-  ReadMacroMesh(&(f.macromesh),"test/testmacromesh.msh");
+  //ReadMacroMesh(&(f.macromesh),"test/testmacromesh.msh");
+  ReadMacroMesh(&(f.macromesh),"test/testcube.msh");
   bool is2d=Detect2DMacroMesh(&(f.macromesh));
   assert(is2d);
   BuildConnectivity(&(f.macromesh));
@@ -71,7 +72,7 @@ int TestKernel(void){
 			    CL_TRUE,  // block until the buffer is available
 			    CL_MAP_READ | CL_MAP_WRITE, 
 			    0, // offset
-			    sizeof(double)*f.wsize,  // buffersize
+			    sizeof(double)*(f.wsize),  // buffersize
 			    0,NULL,NULL, // events management
 			    &status);
     assert(status == CL_SUCCESS);
@@ -80,12 +81,13 @@ int TestKernel(void){
   for(int i=0;i<f.wsize;i++){
     f.dtwn[i]=1;
   }
-  assert(f.wsize==720);
 
   status=clEnqueueUnmapMemObject (f.cli.commandqueue,
 				  f.dtwn_cl,
 				  f.dtwn,
     			     0,NULL,NULL);
+
+
 
   assert(status == CL_SUCCESS);
   status=clFinish(f.cli.commandqueue);
@@ -99,9 +101,32 @@ int TestKernel(void){
 
   CopyFieldtoCPU(&f);
 
+  DisplayField(&f);
+
+  // save the dtwn pointer
+  double* saveptr=f.dtwn;
+
+  // malloc a new dtwn.
+  f.dtwn=calloc(f.wsize,sizeof(double));
+  for(int i=0;i<f.wsize;i++){
+    f.dtwn[i]=1;
+  }
+
+  for(int ie=0; ie < f.macromesh.nbelems; ++ie) {
+    DGMass((void*) &(mcell[ie]));
+  }
 
   DisplayField(&f);
 
+  //check that the results are the same
+  double maxerr=0;
+  for(int i=0;i<f.wsize;i++){
+    printf("error=%f %f %f\n",f.dtwn[i]-saveptr[i],f.dtwn[i],saveptr[i]);
+    maxerr=fmax(fabs(f.dtwn[i]-saveptr[i]),maxerr);
+  }
+  printf("max error=%f\n",maxerr);
+
+  test=(maxerr < 1e-8);
 
   return test;
 

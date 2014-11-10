@@ -273,6 +273,8 @@ void ref_pg_vol(int* param,int ipg,
   int ncz= ipg;
   double hz=1/(double) nraf[2]; 
 
+  printf("h=%f %f %f\n",hx,hy,hz);
+
   offset[0]=gauss_lob_offset[deg[0]]+ix;
   offset[1]=gauss_lob_offset[deg[1]]+iy;
   offset[2]=gauss_lob_offset[deg[2]]+iz;
