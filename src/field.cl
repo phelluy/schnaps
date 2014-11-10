@@ -72,7 +72,7 @@ void DGMass(
   //	  *ie,dtwn[ipg]);
 
   for(int i=0;i<20;i++){
-    //printf("ie=%d physnode[%d]=%f %f %f\n",*ie,i,physnode[3*i+0],physnode[3*i+1],physnode[3*i+2]);
+    printf("ie=%d physnode[%d]=%f %f %f\n",*ie,i,physnode[3*i+0],physnode[3*i+1],physnode[3*i+2]);
   }
 
   double dtau[3][3],codtau[3][3],x,y,z,wpg;
