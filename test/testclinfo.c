@@ -44,7 +44,9 @@ int TestCLInfo(void){
 
   BuildKernels(&cli,s);
   
+  char* prog2;
 
+  
 
 
   return test;

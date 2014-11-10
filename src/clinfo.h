@@ -56,7 +56,11 @@ void PrintCLInfo(CLInfo* cli);
 //! \param[in] program string containing the kernels sources
 void BuildKernels(CLInfo* cli,char* program);
 
-//! \brief Fills a char[] with a file
+//! \brief allocates and fills a string with a file content
 void ReadFile(char filename[],char** s);
+
+//! \brief Gets the header and source for a given
+//! function in a program string
+void GetFunctionSource(char* func_name,char** header,char** source);
 
 #endif

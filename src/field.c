@@ -827,8 +827,8 @@ void* DGMass_CL(void* mc){
 
   int* param=f->interp_param;
 
-  printf("&pf=%p\n",f);
-  printf("%f\n",f->dtwn[0]);
+  /* printf("&pf=%p\n",f); */
+  /* printf("%f\n",f->dtwn[0]); */
 
   cl_mem param_cl;
   cl_int status;

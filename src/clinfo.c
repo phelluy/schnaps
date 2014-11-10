@@ -266,7 +266,6 @@ void BuildKernels(CLInfo* cli,char* strprog){
 
 }
 
-//! \brief Fills a char[] with a file
 void ReadFile(char filename[],char** s){
 
   FILE* f = fopen ( filename , "r" );
@@ -283,6 +282,12 @@ void ReadFile(char filename[],char** s){
   int status=fread( *s , sizeof(char), size , f);
   // assert(status==0);
   fclose(f);
+
+
+}
+
+void GetFunctionSource(char* func_name,char** header,char** source){
+
 
 
 }
