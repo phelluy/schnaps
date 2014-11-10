@@ -219,7 +219,7 @@ void DGMass(
     // end of varindex
     /////////////////////////////////////
     //printf("imem=%d dtw=%f\n",imem,dtwn[imem]);
-    printf("det=%f wpg=%f imem=%d h=%f %f %f\n",det,wpg,imem,hx,hy,hz);
+    //printf("det=%f wpg=%f imem=%d h=%f %f %f\n",det,wpg,imem,hx,hy,hz);
 
     dtwn[imem]/=(wpg*det);
   }
