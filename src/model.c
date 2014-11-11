@@ -54,6 +54,28 @@ void TransportNumFlux2d(double wL[],double wR[],double* vnorm,double* flux){
 
 };
 
+void VecTransNumFlux2d(double wL[],double wR[],double* vnorm,double* flux){
+  
+  double vn =
+    transport_v2d[0] * vnorm[0] +
+    transport_v2d[1] * vnorm[1] +
+    transport_v2d[2] * vnorm[2];
+
+   double vnp = vn>0 ? vn : 0;
+   double vnm = vn-vnp;
+
+   flux[0] = vnp * wL[0] + vnm * wR[0];
+   flux[1] = vnp * wL[1] + vnm * wR[1];
+   /* if (fabs(vnorm[2])>1e-6){ */
+   /*   printf("vnds %lf %lf %lf \n",vnorm[0],vnorm[1],vnorm[2]); */
+   /* } */
+   // verify that 2d computations are actually
+   // activated
+   assert(fabs(vnorm[2])<1e-8);
+
+
+};
+
 void TransportBoundaryFlux(double x[3],double t,double wL[],double* vnorm,
 			   double* flux){
   double wR[1];
@@ -68,6 +90,13 @@ void TransportBoundaryFlux2d(double x[3],double t,double wL[],double* vnorm,
   TransportNumFlux2d(wL,wR,vnorm,flux);
 };
 
+void VecTransBoundaryFlux2d(double x[3],double t,double wL[],double* vnorm,
+			   double* flux){
+  double wR[2];
+  VecTransImposedData2d(x,t,wR);
+  VecTransNumFlux2d(wL,wR,vnorm,flux);
+};
+
 void TransportInitData(double x[3],double w[]){
 
   double t=0;
@@ -79,6 +108,12 @@ void TransportInitData2d(double x[3],double w[]){
 
   double t=0;
   TransportImposedData2d(x,t,w);
+
+};
+void VecTransInitData2d(double x[3],double w[]){
+
+  double t=0;
+  VecTransImposedData2d(x,t,w);
 
 };
 
@@ -105,6 +140,18 @@ void TransportImposedData2d(double x[3],double t,double w[]){
   double xx = vx - t;
 
   w[0]=cos(xx);
+};
+void VecTransImposedData2d(double x[3],double t,double* w){
+
+  double vx =
+    transport_v2d[0] * x[0] +
+    transport_v2d[1] * x[1] +
+    transport_v2d[2] * x[2];
+
+  double xx = vx - t;
+
+  w[0]=xx*xx;
+  w[1]=xx*xx;
 };
 
 void TestTransportBoundaryFlux(double x[3],double t,double wL[],double* vnorm,
@@ -146,7 +193,6 @@ void TestTransportImposedData(double x[3],double t,double w[]){
   double xx = vx - t;
 
   w[0]=xx*xx;
-  //w[0]=xx;
 };
 
 void TestTransportImposedData2d(double x[3],double t,double w[]){
