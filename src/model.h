@@ -42,6 +42,7 @@ void TransportNumFlux(double wL[],double wR[],double vn[3],double* flux);
 //! \param[in] vn : normal vector
 //! \param[out] flux : the flux
 void TransportNumFlux2d(double wL[],double wR[],double vn[3],double* flux);
+void VecTransNumFlux2d(double wL[],double wR[],double vn[3],double* flux);
 //! \brief particular boundary flux for the transport model
 //! \param[in] x : space position
 //! \param[in] t : time
@@ -66,6 +67,7 @@ void TransportInitData(double* x,double* w);
 //! \param[in] x : space position
 //! \param[out] w : init state at point x
 void TransportInitData2d(double* x,double* w);
+void VecTransInitData2d(double* x,double* w);
 //! \brief particular imposed data for the transport model
 //! \param[in] x,t : space and time position
 //! \param[out] w : imposed state at point x and time t
@@ -74,6 +76,7 @@ void TransportImposedData(double* x,double t,double* w);
 //! \param[in] x,t : space and time position
 //! \param[out] w : imposed state at point x and time t
 void TransportImposedData2d(double* x,double t,double* w);
+void VecTransImposedData2d(double* x,double t,double* w);
 
 //! \brief particular flux for testing the transport model
 //! \param[in] x : space position
@@ -90,6 +93,8 @@ void TestTransportBoundaryFlux(double* x,double t,double* wL,double* vn,
 //! \param[in] vn : normal vector
 //! \param[out] flux : the flux
 void TestTransportBoundaryFlux2d(double* x,double t,double* wL,double* vn,
+				 double* flux);
+void VecTransBoundaryFlux2d(double* x,double t,double* wL,double* vn,
 				 double* flux);
 //! \brief particular init data for the transport model
 //! \param[in] x : space position

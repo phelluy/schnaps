@@ -1048,6 +1048,9 @@ void dtField(Field* f){
     pthread_join(tmcell[ie], NULL);
   }
 
+  //DisplayField(f);
+  //assert(1==2);
+
   for(int ie=0;ie<f->macromesh.nbelems;ie++){
     status=pthread_create (&(tmcell[ie]),   // thread
 			   NULL,                   // default attributes
