@@ -965,6 +965,7 @@ void* DGMass_CL(void* mc){
     status=clFinish(f->cli.commandqueue);
 
     // mass kernel launch
+    printf("groupsize=%d numworkitems=%d\n",groupsize,numworkitems);
     status = clEnqueueNDRangeKernel(f->cli.commandqueue, 
 				    f->dgmass, 
 				    1,NULL,
