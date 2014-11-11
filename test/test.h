@@ -25,5 +25,6 @@ int TestFieldSubCellDGVol(void);
 
 int TestFieldRK2_2D_SubCell(void);
 
+int TestmEq2(void);
 
 #endif

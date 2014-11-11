@@ -141,3 +141,12 @@ add_executable(
 )
 target_link_libraries(testfieldrk2-2d-subcell _schnaps m pthread)
 add_test(testfieldrk2-2d-subcell testfieldrk2-2d-subcell)
+
+add_test(testmeq2 testmeq2)
+add_executable(
+  testmeq2
+  test/test.h
+  test/testmeq2.c
+)
+target_link_libraries(testmeq2 _schnaps m pthread)
+add_test(testmeq2 testmeq2)

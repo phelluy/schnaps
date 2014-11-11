@@ -150,8 +150,8 @@ void VecTransImposedData2d(double x[3],double t,double* w){
 
   double xx = vx - t;
 
-  w[0]=1;
-  w[1]=1;
+  w[0]=xx*xx;
+  w[1]=xx*xx;
 };
 
 void TestTransportBoundaryFlux(double x[3],double t,double wL[],double* vnorm,
@@ -193,7 +193,6 @@ void TestTransportImposedData(double x[3],double t,double w[]){
   double xx = vx - t;
 
   w[0]=xx*xx;
-  w[0]=1;
 };
 
 void TestTransportImposedData2d(double x[3],double t,double w[]){
@@ -206,5 +205,4 @@ void TestTransportImposedData2d(double x[3],double t,double w[]){
   double xx = vx - t;
 
   w[0]=xx*xx;
-  w[0]=1;
 };

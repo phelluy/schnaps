@@ -8,6 +8,7 @@ int main(void) {
 
   Field f;
 
+  
   int vec=2;
   
   if (vec==2) {
@@ -20,11 +21,11 @@ int main(void) {
     
     
     f.interp.interp_param[0]=2;  // _M
-    f.interp.interp_param[1]=1;  // x direction degree
-    f.interp.interp_param[2]=1;  // y direction degree
+    f.interp.interp_param[1]=2;  // x direction degree
+    f.interp.interp_param[2]=2;  // y direction degree
     f.interp.interp_param[3]=0;  // z direction degree
-    f.interp.interp_param[4]=2;  // x direction refinement
-    f.interp.interp_param[5]=2;  // y direction refinement
+    f.interp.interp_param[4]=4;  // x direction refinement
+    f.interp.interp_param[5]=4;  // y direction refinement
     f.interp.interp_param[6]=1;  // z direction refinement
   }
   else {
@@ -37,11 +38,11 @@ int main(void) {
     
     
     f.interp.interp_param[0]=1;  // _M
-    f.interp.interp_param[1]=1;  // x direction degree
-    f.interp.interp_param[2]=1;  // y direction degree
+    f.interp.interp_param[1]=2;  // x direction degree
+    f.interp.interp_param[2]=2;  // y direction degree
     f.interp.interp_param[3]=0;  // z direction degree
-    f.interp.interp_param[4]=2;  // x direction refinement
-    f.interp.interp_param[5]=2;  // y direction refinement
+    f.interp.interp_param[4]=4;  // x direction refinement
+    f.interp.interp_param[5]=4;  // y direction refinement
     f.interp.interp_param[6]=1;  // z direction refinement
   }
   // read the gmsh file
@@ -80,6 +81,7 @@ int main(void) {
   double dd=L2error(&f);
 
   printf("erreur L2=%f\n",dd);
+  assert(dd<1e-7);
   return 0;
 
 };
