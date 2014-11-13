@@ -70,7 +70,7 @@ int TestKernel(void){
   chkptr=clEnqueueMapBuffer(f.cli.commandqueue,
 			    f.dtwn_cl,  // buffer to copy from
 			    CL_TRUE,  // block until the buffer is available
-			    CL_MAP_READ | CL_MAP_WRITE, 
+			     CL_MAP_WRITE, 
 			    0, // offset
 			    sizeof(double)*(f.wsize),  // buffersize
 			    0,NULL,NULL, // events management
