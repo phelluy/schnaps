@@ -207,327 +207,307 @@ atrix(20,20,(i,j)->" }{MPLTEXT 1 0 19 "subs(x=node[j,1],y=" }{MPLTEXT
 (-1 + y) * (-1 + x);" }{TEXT 213 43 "\nphi[17] = 4 * y * z * (-1 + y) \+
 * (-1 + x);" }{TEXT 213 37 "\nphi[18] = -4 * x * y * z * (-1 + y);" }
 {TEXT 213 37 "\nphi[19] = -4 * x * y * z * (-1 + x);" }}}{EXCHG {PARA 
-0 "> " 0 "" {MPLTEXT 1 0 39 "tau:=vector(3,[0,0,0]);p:=matrix(20,3);" 
+0 "> " 0 "" {MPLTEXT 1 0 39 "tau:=vector(3,[0,0,0]);p:=array(1..60);" 
 }}{PARA 11 "" 1 "" {XPPMATH 20 "=6\"6#;\"\"\"\"\"$E\\[l$F&\"\"!\"\"#F)
-F'F)" }}{PARA 11 "" 1 "" {XPPMATH 20 "=6\"6$;\"\"\"\"#?;F&\"\"$E\\[l!"
- }}}{EXCHG {PARA 0 "> " 0 "" {MPLTEXT 1 0 11 "#?submatrix" }}}{EXCHG 
-{PARA 0 "> " 0 "" {MPLTEXT 1 0 66 "i:='i';for k to 3 do tau[k]:=evalm(
-sum(phi[i]*p[i,k],i=1..20));od;" }}{PARA 11 "" 1 "" {XPPMATH 20 "I\"iG
-6\"" }}{PARA 11 "" 1 "" {XPPMATH 20 ",J*,,&!\"\"\"\"\"I\"zG6\"F&F&,&F%
-F&I\"yGF(F&F&,&F%F&I\"xGF(F&F&,*F,\"\"#F*F.F'F.F%F&F&&I\"pGF(6$F&F&F&F
-&*,F,F&F$F&F)F&,*F*!\"#F'F4F,F.F%F&F&&F06$F.F&F&F&*,F,F&F*F&F$F&,*F*F.
-F'F4!\"$F&F,F.F&&F06$\"\"$F&F&F%*,F*F&F$F&F+F&,*F,F.F'F.F&F&F*F4F&&F06
-$\"\"%F&F&F%*,F'F&F)F&F+F&,*F,F.F*F.F'F4F&F&F&&F06$\"\"&F&F&F%*,F,F&F'
-F&F)F&,*F*F4F'F.F9F&F,F.F&&F06$\"\"'F&F&F%*,F,F&F*F&F'F&,*F*F.F'F.!\"&
-F&F,F.F&&F06$\"\"(F&F&F&*,F*F&F'F&F+F&,*F,F.F'F4F<F&F*F4F&&F06$\"\")F&
-F&F&*,F,F&F$F&F)F&F+F&&F06$\"\"*F&F&!\"%*,F*F&F$F&F)F&F+F&&F06$\"#5F&F
-&Fen*,F'F&F$F&F)F&F+F&&F06$\"#6F&F&Fen*,F,F&F*F&F$F&F)F&&F06$\"#7F&F&F
-A*,F,F&F'F&F$F&F)F&&F06$\"#8F&F&FA*,F,F&F*F&F$F&F+F&&F06$\"#9F&F&FA*,F
-,F&F*F&F'F&F$F&&F06$\"#:F&F&Fen*,F*F&F'F&F$F&F+F&&F06$\"#;F&F&FA*,F,F&
-F'F&F)F&F+F&&F06$\"#<F&F&FA*,F*F&F'F&F)F&F+F&&F06$\"#=F&F&FA*,F,F&F*F&
-F'F&F)F&&F06$\"#>F&F&Fen*,F,F&F*F&F'F&F+F&&F06$\"#?F&F&Fen" }}{PARA 11
- "" 1 "" {XPPMATH 20 ",J*,,&!\"\"\"\"\"I\"zG6\"F&F&,&F%F&I\"yGF(F&F&,&
-F%F&I\"xGF(F&F&,*F,\"\"#F*F.F'F.F%F&F&&I\"pGF(6$F&F.F&F&*,F,F&F$F&F)F&
-,*F*!\"#F'F4F,F.F%F&F&&F06$F.F.F&F&*,F,F&F*F&F$F&,*F*F.F'F4!\"$F&F,F.F
-&&F06$\"\"$F.F&F%*,F*F&F$F&F+F&,*F,F.F'F.F&F&F*F4F&&F06$\"\"%F.F&F%*,F
-'F&F)F&F+F&,*F,F.F*F.F'F4F&F&F&&F06$\"\"&F.F&F%*,F,F&F'F&F)F&,*F*F4F'F
-.F9F&F,F.F&&F06$\"\"'F.F&F%*,F,F&F*F&F'F&,*F*F.F'F.!\"&F&F,F.F&&F06$\"
-\"(F.F&F&*,F*F&F'F&F+F&,*F,F.F'F4F<F&F*F4F&&F06$\"\")F.F&F&*,F,F&F$F&F
-)F&F+F&&F06$\"\"*F.F&!\"%*,F*F&F$F&F)F&F+F&&F06$\"#5F.F&Fen*,F'F&F$F&F
-)F&F+F&&F06$\"#6F.F&Fen*,F,F&F*F&F$F&F)F&&F06$\"#7F.F&FA*,F,F&F'F&F$F&
-F)F&&F06$\"#8F.F&FA*,F,F&F*F&F$F&F+F&&F06$\"#9F.F&FA*,F,F&F*F&F'F&F$F&
-&F06$\"#:F.F&Fen*,F*F&F'F&F$F&F+F&&F06$\"#;F.F&FA*,F,F&F'F&F)F&F+F&&F0
-6$\"#<F.F&FA*,F*F&F'F&F)F&F+F&&F06$\"#=F.F&FA*,F,F&F*F&F'F&F)F&&F06$\"
-#>F.F&Fen*,F,F&F*F&F'F&F+F&&F06$\"#?F.F&Fen" }}{PARA 11 "" 1 "" 
+F'F)" }}{PARA 11 "" 1 "" {XPPMATH 20 "=6\"6#;\"\"\"\"#gE\\[l!" }}}
+{EXCHG {PARA 0 "> " 0 "" {MPLTEXT 1 0 11 "#?submatrix" }}}{EXCHG 
+{PARA 0 "> " 0 "" {MPLTEXT 1 0 65 "i:='i';for k to 3 do tau[k]:=sum(ph
+i[i]*p[3*(i-1)+k],i=1..20);od;" }}{PARA 11 "" 1 "" {XPPMATH 20 "I\"iG6
+\"" }}{PARA 11 "" 1 "" {XPPMATH 20 ",J*,,&!\"\"\"\"\"I\"zG6\"F&F&,&F%F
+&I\"yGF(F&F&,&F%F&I\"xGF(F&F&,*F,\"\"#F*F.F'F.F%F&F&&I\"pGF(6#F&F&F&*,
+F,F&F$F&F)F&,*F*!\"#F'F4F,F.F%F&F&&F06#\"\"%F&F&*,F,F&F*F&F$F&,*F*F.F'
+F4!\"$F&F,F.F&&F06#\"\"(F&F%*,F*F&F$F&F+F&,*F,F.F'F.F&F&F*F4F&&F06#\"#
+5F&F%*,F'F&F)F&F+F&,*F,F.F*F.F'F4F&F&F&&F06#\"#8F&F%*,F,F&F'F&F)F&,*F*
+F4F'F.F:F&F,F.F&&F06#\"#;F&F%*,F,F&F*F&F'F&,*F*F.F'F.!\"&F&F,F.F&&F06#
+\"#>F&F&*,F*F&F'F&F+F&,*F,F.F'F4\"\"$F&F*F4F&&F06#\"#AF&F&*,F,F&F$F&F)
+F&F+F&&F06#\"#DF&!\"%*,F*F&F$F&F)F&F+F&&F06#\"#GF&Fgn*,F'F&F$F&F)F&F+F
+&&F06#\"#JF&Fgn*,F,F&F*F&F$F&F)F&&F06#\"#MF&F7*,F,F&F'F&F$F&F)F&&F06#
+\"#PF&F7*,F,F&F*F&F$F&F+F&&F06#\"#SF&F7*,F,F&F*F&F'F&F$F&&F06#\"#VF&Fg
+n*,F*F&F'F&F$F&F+F&&F06#\"#YF&F7*,F,F&F'F&F)F&F+F&&F06#\"#\\F&F7*,F*F&
+F'F&F)F&F+F&&F06#\"#_F&F7*,F,F&F*F&F'F&F)F&&F06#\"#bF&Fgn*,F,F&F*F&F'F
+&F+F&&F06#\"#eF&Fgn" }}{PARA 11 "" 1 "" {XPPMATH 20 ",J*,,&!\"\"\"\"\"
+I\"zG6\"F&F&,&F%F&I\"yGF(F&F&,&F%F&I\"xGF(F&F&,*F,\"\"#F*F.F'F.F%F&F&&
+I\"pGF(6#F.F&F&*,F,F&F$F&F)F&,*F*!\"#F'F4F,F.F%F&F&&F06#\"\"&F&F&*,F,F
+&F*F&F$F&,*F*F.F'F4!\"$F&F,F.F&&F06#\"\")F&F%*,F*F&F$F&F+F&,*F,F.F'F.F
+&F&F*F4F&&F06#\"#6F&F%*,F'F&F)F&F+F&,*F,F.F*F.F'F4F&F&F&&F06#\"#9F&F%*
+,F,F&F'F&F)F&,*F*F4F'F.F:F&F,F.F&&F06#\"#<F&F%*,F,F&F*F&F'F&,*F*F.F'F.
+!\"&F&F,F.F&&F06#\"#?F&F&*,F*F&F'F&F+F&,*F,F.F'F4\"\"$F&F*F4F&&F06#\"#
+BF&F&*,F,F&F$F&F)F&F+F&&F06#\"#EF&!\"%*,F*F&F$F&F)F&F+F&&F06#\"#HF&Fgn
+*,F'F&F$F&F)F&F+F&&F06#\"#KF&Fgn*,F,F&F*F&F$F&F)F&&F06#\"#NF&\"\"%*,F,
+F&F'F&F$F&F)F&&F06#\"#QF&Fdo*,F,F&F*F&F$F&F+F&&F06#\"#TF&Fdo*,F,F&F*F&
+F'F&F$F&&F06#\"#WF&Fgn*,F*F&F'F&F$F&F+F&&F06#\"#ZF&Fdo*,F,F&F'F&F)F&F+
+F&&F06#\"#]F&Fdo*,F*F&F'F&F)F&F+F&&F06#\"#`F&Fdo*,F,F&F*F&F'F&F)F&&F06
+#\"#cF&Fgn*,F,F&F*F&F'F&F+F&&F06#\"#fF&Fgn" }}{PARA 11 "" 1 "" 
 {XPPMATH 20 ",J*,,&!\"\"\"\"\"I\"zG6\"F&F&,&F%F&I\"yGF(F&F&,&F%F&I\"xG
-F(F&F&,*F,\"\"#F*F.F'F.F%F&F&&I\"pGF(6$F&\"\"$F&F&*,F,F&F$F&F)F&,*F*!
-\"#F'F5F,F.F%F&F&&F06$F.F2F&F&*,F,F&F*F&F$F&,*F*F.F'F5!\"$F&F,F.F&&F06
-$F2F2F&F%*,F*F&F$F&F+F&,*F,F.F'F.F&F&F*F5F&&F06$\"\"%F2F&F%*,F'F&F)F&F
-+F&,*F,F.F*F.F'F5F&F&F&&F06$\"\"&F2F&F%*,F,F&F'F&F)F&,*F*F5F'F.F:F&F,F
-.F&&F06$\"\"'F2F&F%*,F,F&F*F&F'F&,*F*F.F'F.!\"&F&F,F.F&&F06$\"\"(F2F&F
-&*,F*F&F'F&F+F&,*F,F.F'F5F2F&F*F5F&&F06$\"\")F2F&F&*,F,F&F$F&F)F&F+F&&
-F06$\"\"*F2F&!\"%*,F*F&F$F&F)F&F+F&&F06$\"#5F2F&Fen*,F'F&F$F&F)F&F+F&&
-F06$\"#6F2F&Fen*,F,F&F*F&F$F&F)F&&F06$\"#7F2F&FA*,F,F&F'F&F$F&F)F&&F06
-$\"#8F2F&FA*,F,F&F*F&F$F&F+F&&F06$\"#9F2F&FA*,F,F&F*F&F'F&F$F&&F06$\"#
-:F2F&Fen*,F*F&F'F&F$F&F+F&&F06$\"#;F2F&FA*,F,F&F'F&F)F&F+F&&F06$\"#<F2
-F&FA*,F*F&F'F&F)F&F+F&&F06$\"#=F2F&FA*,F,F&F*F&F'F&F)F&&F06$\"#>F2F&Fe
-n*,F,F&F*F&F'F&F+F&&F06$\"#?F2F&Fen" }}}{EXCHG {PARA 0 "> " 0 "" 
-{MPLTEXT 1 0 28 "dtau:=jacobian(tau,[x,y,z]);" }}{PARA 11 "" 1 "" 
-{XPPMATH 20 "=6\"6$;\"\"\"\"\"$F%E\\[l*6$F'\"\"#,\\o**,&!\"\"F&I\"zGF#
-F&F&,&F.F&I\"yGF#F&F&,&F.F&I\"xGF#F&F&&I\"pGF#6$F&F'F&F***F3F&F-F&F0F&
-&F56$F*F'F&!\"#**F3F&F1F&F-F&&F56$F'F'F&F:**F1F&F-F&F2F&&F56$\"\"%F'F&
-F***F/F&F0F&F2F&&F56$\"\"&F'F&F:**F3F&F/F&F0F&&F56$\"\"'F'F&F***F3F&F1
-F&F/F&&F56$\"\"(F'F&F***F1F&F/F&F2F&&F56$\"\")F'F&F:**F-F&F2F&,*F3F*F1
-F*F/F*F.F&F&F4F&F&**F3F&F-F&,*F1F:F/F:F3F*F.F&F&F8F&F&**F3F&F-F&,*F1F*
-F/F:!\"$F&F3F*F&F<F&F.**F-F&F2F&,*F3F*F/F*F&F&F1F:F&F?F&F.**F/F&F2F&,*
-F3F*F1F*F/F:F&F&F&FCF&F.**F3F&F/F&,*F1F:F/F*FXF&F3F*F&FGF&F.**F3F&F/F&
-,*F1F*F/F*!\"&F&F3F*F&FKF&F&**F/F&F2F&,*F3F*F/F:F'F&F1F:F&FOF&F&**F3F&
-F-F&F2F&&F56$\"\"*F'F&!\"%**F-F&F0F&F2F&&F56$\"#5F'F&Fbo**F1F&F-F&F2F&
-FdoF&Fbo**F/F&F-F&F2F&&F56$\"#6F'F&Fbo**F3F&F-F&F0F&&F56$\"#7F'F&FA**F
-3F&F1F&F-F&F]pF&FA**F3F&F/F&F-F&&F56$\"#8F'F&FA**F3F&F-F&F2F&&F56$\"#9
-F'F&FA**F3F&F/F&F-F&&F56$\"#:F'F&Fbo**F/F&F-F&F2F&&F56$\"#;F'F&FA**F3F
-&F/F&F2F&&F56$\"#<F'F&FA**F/F&F0F&F2F&&F56$\"#=F'F&FA**F1F&F/F&F2F&Ffq
-F&FA**F3F&F/F&F0F&&F56$\"#>F'F&Fbo**F3F&F1F&F/F&F[rF&Fbo**F3F&F/F&F2F&
-&F56$\"#?F'F&Fbo6$F&F&,\\o**F-F&F0F&F2F&&F5FcrF&F***F3F&F-F&F0F&&F56$F
-*F&F&F***F3F&F1F&F-F&&F56$F'F&F&F:**F1F&F-F&F2F&&F56$FAF&F&F:**F/F&F0F
-&F2F&&F56$FEF&F&F:**F3F&F/F&F0F&&F56$FIF&F&F:**F3F&F1F&F/F&&F56$FMF&F&
-F***F1F&F/F&F2F&&F56$FQF&F&F***F-F&F0F&FSF&FfrF&F&**F-F&F0F&FUF&FhrF&F
-&**F1F&F-F&FWF&F[sF&F.**F1F&F-F&FZF&F^sF&F.**F/F&F0F&FfnF&FasF&F.**F/F
-&F0F&FhnF&FdsF&F.**F1F&F/F&FjnF&FgsF&F&**F1F&F/F&F]oF&FjsF&F&**F-F&F0F
-&F2F&&F56$FaoF&F&Fbo**F3F&F-F&F0F&FetF&Fbo**F1F&F-F&F0F&&F56$FfoF&F&Fb
-o**F/F&F-F&F0F&&F56$F[pF&F&Fbo**F1F&F-F&F0F&&F56$F_pF&F&FA**F/F&F-F&F0
-F&&F56$FdpF&F&FA**F1F&F-F&F2F&&F56$FhpF&F&FA**F3F&F1F&F-F&FeuF&FA**F1F
-&F/F&F-F&&F56$F\\qF&F&Fbo**F1F&F/F&F-F&&F56$F`qF&F&FA**F/F&F0F&F2F&&F5
-6$FdqF&F&FA**F3F&F/F&F0F&F_vF&FA**F1F&F/F&F0F&&F56$FhqF&F&FA**F1F&F/F&
-F0F&&F56$F]rF&F&Fbo**F1F&F/F&F2F&&F56$FbrF&F&Fbo**F3F&F1F&F/F&FivF&Fbo
-6$F&F*,\\oFerF*FgrF:FjrF:F]sF*F`sF:FcsF*FfsF*FisF:**F-F&F2F&FSF&FfrF&F
-&**F3F&F-F&FUF&FhrF&F&**F3F&F-F&FWF&F[sF&F.**F-F&F2F&FZF&F^sF&F.**F/F&
-F2F&FfnF&FasF&F.**F3F&F/F&FhnF&FdsF&F.**F3F&F/F&FjnF&FgsF&F&**F/F&F2F&
-F]oF&FjsF&F&**F3F&F-F&F2F&FetF&Fbo**F-F&F0F&F2F&FitF&Fbo**F1F&F-F&F2F&
-FitF&Fbo**F/F&F-F&F2F&F\\uF&Fbo**F3F&F-F&F0F&F_uF&FA**F3F&F1F&F-F&F_uF
-&FA**F3F&F/F&F-F&FbuF&FA**F3F&F-F&F2F&FeuF&FA**F3F&F/F&F-F&FiuF&Fbo**F
-/F&F-F&F2F&F\\vF&FA**F3F&F/F&F2F&F_vF&FA**F/F&F0F&F2F&FcvF&FA**F1F&F/F
-&F2F&FcvF&FA**F3F&F/F&F0F&FfvF&Fbo**F3F&F1F&F/F&FfvF&Fbo**F3F&F/F&F2F&
-FivF&Fbo6$F*F*,\\o**F-F&F0F&F2F&&F5F\\wF&F***F3F&F-F&F0F&&F5FfxF&F:**F
-3F&F1F&F-F&&F5F)F&F:**F1F&F-F&F2F&&F56$FAF*F&F***F/F&F0F&F2F&&F56$FEF*
-F&F:**F3F&F/F&F0F&&F56$FIF*F&F***F3F&F1F&F/F&&F56$FMF*F&F***F1F&F/F&F2
-F&&F56$FQF*F&F:**F-F&F2F&FSF&FixF&F&**F3F&F-F&FUF&F[yF&F&**F3F&F-F&FWF
-&F]yF&F.**F-F&F2F&FZF&F_yF&F.**F/F&F2F&FfnF&FbyF&F.**F3F&F/F&FhnF&FeyF
-&F.**F3F&F/F&FjnF&FhyF&F&**F/F&F2F&F]oF&F[zF&F&**F3F&F-F&F2F&&F56$FaoF
-*F&Fbo**F-F&F0F&F2F&&F56$FfoF*F&Fbo**F1F&F-F&F2F&FizF&Fbo**F/F&F-F&F2F
-&&F56$F[pF*F&Fbo**F3F&F-F&F0F&&F56$F_pF*F&FA**F3F&F1F&F-F&F`[lF&FA**F3
-F&F/F&F-F&&F56$FdpF*F&FA**F3F&F-F&F2F&&F56$FhpF*F&FA**F3F&F/F&F-F&&F56
-$F\\qF*F&Fbo**F/F&F-F&F2F&&F56$F`qF*F&FA**F3F&F/F&F2F&&F56$FdqF*F&FA**
-F/F&F0F&F2F&&F56$FhqF*F&FA**F1F&F/F&F2F&Fc\\lF&FA**F3F&F/F&F0F&&F56$F]
-rF*F&Fbo**F3F&F1F&F/F&Fg\\lF&Fbo**F3F&F/F&F2F&&F56$FbrF*F&FboF6,\\oFer
-F*FgrF:FjrF*F]sF:F`sF*FcsF:FfsF*FisF:**F-F&F0F&F2F&F\\uF&Fbo**F/F&F0F&
-F2F&F\\uF&Fbo**F3F&F1F&F0F&F_uF&FA**F3F&F-F&F0F&FbuF&FA**F3F&F/F&F0F&F
-buF&FA**F3F&F1F&F2F&FeuF&FA**F3F&F1F&F-F&FiuF&Fbo**F3F&F1F&F/F&FiuF&Fb
-o**F1F&F-F&F2F&F\\vF&FA**F1F&F/F&F2F&F\\vF&FA**F3F&F0F&F2F&F_vF&FA**F1
-F&F0F&F2F&FcvF&FA**F3F&F1F&F0F&FfvF&Fbo**F3F&F1F&F2F&FivF&Fbo**F0F&F2F
-&FSF&FfrF&F&**F3F&F0F&FUF&FhrF&F&**F3F&F1F&FWF&F[sF&F.**F1F&F2F&FZF&F^
-sF&F.**F0F&F2F&FfnF&FasF&F.**F3F&F0F&FhnF&FdsF&F.**F3F&F1F&FjnF&FgsF&F
-&**F1F&F2F&F]oF&FjsF&F&**F3F&F0F&F2F&FetF&Fbo**F1F&F0F&F2F&FitF&FboFir
-,\\oFhxF*FjxF*F\\yF:F^yF:FayF:FdyF:FgyF*FjyF***F-F&F0F&FSF&FixF&F&**F-
-F&F0F&FUF&F[yF&F&**F1F&F-F&FWF&F]yF&F.**F1F&F-F&FZF&F_yF&F.**F/F&F0F&F
-fnF&FbyF&F.**F/F&F0F&FhnF&FeyF&F.**F1F&F/F&FjnF&FhyF&F&**F1F&F/F&F]oF&
-F[zF&F&**F-F&F0F&F2F&FfzF&Fbo**F3F&F-F&F0F&FfzF&Fbo**F1F&F-F&F0F&FizF&
-Fbo**F/F&F-F&F0F&F][lF&Fbo**F1F&F-F&F0F&F`[lF&FA**F/F&F-F&F0F&Fd[lF&FA
-**F1F&F-F&F2F&Fg[lF&FA**F3F&F1F&F-F&Fg[lF&FA**F1F&F/F&F-F&Fj[lF&Fbo**F
-1F&F/F&F-F&F]\\lF&FA**F/F&F0F&F2F&F`\\lF&FA**F3F&F/F&F0F&F`\\lF&FA**F1
-F&F/F&F0F&Fc\\lF&FA**F1F&F/F&F0F&Fg\\lF&Fbo**F1F&F/F&F2F&F[]lF&Fbo**F3
-F&F1F&F/F&F[]lF&FboF9,\\oFhxF*FjxF:F\\yF*F^yF:FayF*FdyF:FgyF*FjyF:**F0
-F&F2F&FSF&FixF&F&**F3F&F0F&FUF&F[yF&F&**F3F&F1F&FWF&F]yF&F.**F1F&F2F&F
-ZF&F_yF&F.**F0F&F2F&FfnF&FbyF&F.**F3F&F0F&FhnF&FeyF&F.**F3F&F1F&FjnF&F
-hyF&F&**F1F&F2F&F]oF&F[zF&F&**F3F&F0F&F2F&FfzF&Fbo**F1F&F0F&F2F&FizF&F
-bo**F-F&F0F&F2F&F][lF&Fbo**F/F&F0F&F2F&F][lF&Fbo**F3F&F1F&F0F&F`[lF&FA
-**F3F&F-F&F0F&Fd[lF&FA**F3F&F/F&F0F&Fd[lF&FA**F3F&F1F&F2F&Fg[lF&FA**F3
-F&F1F&F-F&Fj[lF&Fbo**F3F&F1F&F/F&Fj[lF&Fbo**F1F&F-F&F2F&F]\\lF&FA**F1F
-&F/F&F2F&F]\\lF&FA**F3F&F0F&F2F&F`\\lF&FA**F1F&F0F&F2F&Fc\\lF&FA**F3F&
-F1F&F0F&Fg\\lF&Fbo**F3F&F1F&F2F&F[]lF&FboF\\s,\\oF,F*F7F*F;F:F>F:FBF:F
-FF:FJF*FNF***F-F&F0F&FSF&F4F&F&**F-F&F0F&FUF&F8F&F&**F1F&F-F&FWF&F<F&F
-.**F1F&F-F&FZF&F?F&F.**F/F&F0F&FfnF&FCF&F.**F/F&F0F&FhnF&FGF&F.**F1F&F
-/F&FjnF&FKF&F&**F1F&F/F&F]oF&FOF&F&**F-F&F0F&F2F&F_oF&Fbo**F3F&F-F&F0F
-&F_oF&Fbo**F1F&F-F&F0F&FdoF&Fbo**F/F&F-F&F0F&FioF&Fbo**F1F&F-F&F0F&F]p
-F&FA**F/F&F-F&F0F&FbpF&FA**F1F&F-F&F2F&FfpF&FA**F3F&F1F&F-F&FfpF&FA**F
-1F&F/F&F-F&FjpF&Fbo**F1F&F/F&F-F&F^qF&FA**F/F&F0F&F2F&FbqF&FA**F3F&F/F
-&F0F&FbqF&FA**F1F&F/F&F0F&FfqF&FA**F1F&F/F&F0F&F[rF&Fbo**F1F&F/F&F2F&F
-`rF&Fbo**F3F&F1F&F/F&F`rF&FboF=,\\oF,F*F7F:F;F*F>F:FBF*FFF:FJF*FNF:**F
-0F&F2F&FSF&F4F&F&**F3F&F0F&FUF&F8F&F&**F3F&F1F&FWF&F<F&F.**F1F&F2F&FZF
-&F?F&F.**F0F&F2F&FfnF&FCF&F.**F3F&F0F&FhnF&FGF&F.**F3F&F1F&FjnF&FKF&F&
-**F1F&F2F&F]oF&FOF&F&**F3F&F0F&F2F&F_oF&Fbo**F1F&F0F&F2F&FdoF&Fbo**F-F
-&F0F&F2F&FioF&Fbo**F/F&F0F&F2F&FioF&Fbo**F3F&F1F&F0F&F]pF&FA**F3F&F-F&
-F0F&FbpF&FA**F3F&F/F&F0F&FbpF&FA**F3F&F1F&F2F&FfpF&FA**F3F&F1F&F-F&Fjp
-F&Fbo**F3F&F1F&F/F&FjpF&Fbo**F1F&F-F&F2F&F^qF&FA**F1F&F/F&F2F&F^qF&FA*
-*F3F&F0F&F2F&FbqF&FA**F1F&F0F&F2F&FfqF&FA**F3F&F1F&F0F&F[rF&Fbo**F3F&F
-1F&F2F&F`rF&Fbo" }}}{EXCHG {PARA 0 "> " 0 "" {MPLTEXT 1 0 8 "C(dtau);"
- }}{PARA 6 "" 1 "" {TEXT 213 256 "dtau[0][0] = 2 * (-1 + z) * (-1 + y)
- * (-1 + x) * p[0][0] + 2 * x * (-1 + z) * (-1 + y) * p[1][0] - 2 * x \+
-* y * (-1 + z) * p[2][0] - 2 * y * (-1 + z) * (-1 + x) * p[3][0] - 2 *
- z * (-1 + y) * (-1 + x) * p[4][0] - 2 * x * z * (-1 + y) * p[5][0] + \+
-2 * x * y " }{TEXT 213 256 "* z * p[6][0] + 2 * y * z * (-1 + x) * p[7
-][0] + (-1 + z) * (-1 + y) * (2 * x + 2 * y + 2 * z - 1) * p[0][0] + (
--1 + z) * (-1 + y) * (-2 * y - 2 * z + 2 * x - 1) * p[1][0] - y * (-1 \+
-+ z) * (2 * y - 2 * z - 3 + 2 * x) * p[2][0] - y * (-1 + z) * (2 * x +
- 2 *" }{TEXT 213 256 " z + 1 - 2 * y) * p[3][0] - z * (-1 + y) * (2 * \+
-x + 2 * y - 2 * z + 1) * p[4][0] - z * (-1 + y) * (-2 * y + 2 * z - 3 \+
-+ 2 * x) * p[5][0] + y * z * (2 * y + 2 * z - 5 + 2 * x) * p[6][0] + y
- * z * (2 * x - 2 * z + 3 - 2 * y) * p[7][0] - 4 * (-1 + z) * (-1 + " 
-}{TEXT 213 256 "y) * (-1 + x) * p[8][0] - 4 * x * (-1 + z) * (-1 + y) \+
-* p[8][0] - 4 * y * (-1 + z) * (-1 + y) * p[9][0] - 4 * z * (-1 + z) *
- (-1 + y) * p[10][0] + 4 * y * (-1 + z) * (-1 + y) * p[11][0] + 4 * z \+
-* (-1 + z) * (-1 + y) * p[12][0] + 4 * y * (-1 + z) * (-1 + x)" }{TEXT
- 213 256 " * p[13][0] + 4 * x * y * (-1 + z) * p[13][0] - 4 * y * z * \+
-(-1 + z) * p[14][0] + 4 * y * z * (-1 + z) * p[15][0] + 4 * z * (-1 + \+
-y) * (-1 + x) * p[16][0] + 4 * x * z * (-1 + y) * p[16][0] + 4 * y * z
- * (-1 + y) * p[17][0] - 4 * y * z * (-1 + y) * p[18][0]" }{TEXT 213 
-62 " - 4 * y * z * (-1 + x) * p[19][0] - 4 * x * y * z * p[19][0];" }
-{TEXT 213 257 "\ndtau[0][1] = 2 * (-1 + z) * (-1 + y) * (-1 + x) * p[0
-][0] - 2 * x * (-1 + z) * (-1 + y) * p[1][0] - 2 * x * y * (-1 + z) * \+
-p[2][0] + 2 * y * (-1 + z) * (-1 + x) * p[3][0] - 2 * z * (-1 + y) * (
--1 + x) * p[4][0] + 2 * x * z * (-1 + y) * p[5][0] + 2 * x * y " }
-{TEXT 213 256 "* z * p[6][0] - 2 * y * z * (-1 + x) * p[7][0] + (-1 + \+
-z) * (-1 + x) * (2 * x + 2 * y + 2 * z - 1) * p[0][0] + x * (-1 + z) *
- (-2 * y - 2 * z + 2 * x - 1) * p[1][0] - x * (-1 + z) * (2 * y - 2 * \+
-z - 3 + 2 * x) * p[2][0] - (-1 + z) * (-1 + x) * (2 * x + 2 *" }{TEXT 
-213 256 " z + 1 - 2 * y) * p[3][0] - z * (-1 + x) * (2 * x + 2 * y - 2
- * z + 1) * p[4][0] - x * z * (-2 * y + 2 * z - 3 + 2 * x) * p[5][0] +
- x * z * (2 * y + 2 * z - 5 + 2 * x) * p[6][0] + z * (-1 + x) * (2 * x
- - 2 * z + 3 - 2 * y) * p[7][0] - 4 * x * (-1 + z) * (-" }{TEXT 213 
-256 "1 + x) * p[8][0] - 4 * (-1 + z) * (-1 + y) * (-1 + x) * p[9][0] -
- 4 * y * (-1 + z) * (-1 + x) * p[9][0] - 4 * z * (-1 + z) * (-1 + x) *
- p[10][0] + 4 * x * (-1 + z) * (-1 + y) * p[11][0] + 4 * x * y * (-1 +
- z) * p[11][0] + 4 * x * z * (-1 + z) * p[12][0] + " }{TEXT 213 256 "4
- * x * (-1 + z) * (-1 + x) * p[13][0] - 4 * x * z * (-1 + z) * p[14][0
-] + 4 * z * (-1 + z) * (-1 + x) * p[15][0] + 4 * x * z * (-1 + x) * p[
-16][0] + 4 * z * (-1 + y) * (-1 + x) * p[17][0] + 4 * y * z * (-1 + x)
- * p[17][0] - 4 * x * z * (-1 + y) * p[18][0]" }{TEXT 213 62 " - 4 * x
- * y * z * p[18][0] - 4 * x * z * (-1 + x) * p[19][0];" }{TEXT 213 
-257 "\ndtau[0][2] = 2 * (-1 + z) * (-1 + y) * (-1 + x) * p[0][0] - 2 *
- x * (-1 + z) * (-1 + y) * p[1][0] + 2 * x * y * (-1 + z) * p[2][0] - \+
-2 * y * (-1 + z) * (-1 + x) * p[3][0] + 2 * z * (-1 + y) * (-1 + x) * \+
-p[4][0] - 2 * x * z * (-1 + y) * p[5][0] + 2 * x * y " }{TEXT 213 256 
-"* z * p[6][0] - 2 * y * z * (-1 + x) * p[7][0] - 4 * (-1 + z) * (-1 +
- y) * (-1 + x) * p[10][0] - 4 * z * (-1 + y) * (-1 + x) * p[10][0] + 4
- * x * y * (-1 + y) * p[11][0] + 4 * x * (-1 + z) * (-1 + y) * p[12][0
-] + 4 * x * z * (-1 + y) * p[12][0] + 4 * x * y" }{TEXT 213 256 " * (-
-1 + x) * p[13][0] - 4 * x * y * (-1 + z) * p[14][0] - 4 * x * y * z * \+
-p[14][0] + 4 * y * (-1 + z) * (-1 + x) * p[15][0] + 4 * y * z * (-1 + \+
-x) * p[15][0] + 4 * x * (-1 + y) * (-1 + x) * p[16][0] + 4 * y * (-1 +
- y) * (-1 + x) * p[17][0] - 4 * x * y * (" }{TEXT 213 256 "-1 + y) * p
-[18][0] - 4 * x * y * (-1 + x) * p[19][0] + (-1 + y) * (-1 + x) * (2 *
- x + 2 * y + 2 * z - 1) * p[0][0] + x * (-1 + y) * (-2 * y - 2 * z + 2
- * x - 1) * p[1][0] - x * y * (2 * y - 2 * z - 3 + 2 * x) * p[2][0] - \+
-y * (-1 + x) * (2 * x + 2 * z + 1 -" }{TEXT 213 256 " 2 * y) * p[3][0]
- - (-1 + y) * (-1 + x) * (2 * x + 2 * y - 2 * z + 1) * p[4][0] - x * (
--1 + y) * (-2 * y + 2 * z - 3 + 2 * x) * p[5][0] + x * y * (2 * y + 2 \+
-* z - 5 + 2 * x) * p[6][0] + y * (-1 + x) * (2 * x - 2 * z + 3 - 2 * y
-) * p[7][0] - 4 * x * (-1 + y" }{TEXT 213 63 ") * (-1 + x) * p[8][0] -
- 4 * y * (-1 + y) * (-1 + x) * p[9][0];" }{TEXT 213 257 "\ndtau[1][0] \+
-= 2 * (-1 + z) * (-1 + y) * (-1 + x) * p[0][1] + 2 * x * (-1 + z) * (-
-1 + y) * p[1][1] - 2 * x * y * (-1 + z) * p[2][1] - 2 * y * (-1 + z) *
- (-1 + x) * p[3][1] - 2 * z * (-1 + y) * (-1 + x) * p[4][1] - 2 * x * \+
-z * (-1 + y) * p[5][1] + 2 * x * y " }{TEXT 213 256 "* z * p[6][1] + 2
- * y * z * (-1 + x) * p[7][1] + (-1 + z) * (-1 + y) * (2 * x + 2 * y +
- 2 * z - 1) * p[0][1] + (-1 + z) * (-1 + y) * (-2 * y - 2 * z + 2 * x \+
-- 1) * p[1][1] - y * (-1 + z) * (2 * y - 2 * z - 3 + 2 * x) * p[2][1] \+
-- y * (-1 + z) * (2 * x + 2 *" }{TEXT 213 256 " z + 1 - 2 * y) * p[3][
-1] - z * (-1 + y) * (2 * x + 2 * y - 2 * z + 1) * p[4][1] - z * (-1 + \+
-y) * (-2 * y + 2 * z - 3 + 2 * x) * p[5][1] + y * z * (2 * y + 2 * z -
- 5 + 2 * x) * p[6][1] + y * z * (2 * x - 2 * z + 3 - 2 * y) * p[7][1] \+
-- 4 * (-1 + z) * (-1 + " }{TEXT 213 256 "y) * (-1 + x) * p[8][1] - 4 *
- x * (-1 + z) * (-1 + y) * p[8][1] - 4 * y * (-1 + z) * (-1 + y) * p[9
-][1] - 4 * z * (-1 + z) * (-1 + y) * p[10][1] + 4 * y * (-1 + z) * (-1
- + y) * p[11][1] + 4 * z * (-1 + z) * (-1 + y) * p[12][1] + 4 * y * (-
-1 + z) * (-1 + x)" }{TEXT 213 256 " * p[13][1] + 4 * x * y * (-1 + z) \+
-* p[13][1] - 4 * y * z * (-1 + z) * p[14][1] + 4 * y * z * (-1 + z) * \+
-p[15][1] + 4 * z * (-1 + y) * (-1 + x) * p[16][1] + 4 * x * z * (-1 + \+
-y) * p[16][1] + 4 * y * z * (-1 + y) * p[17][1] - 4 * y * z * (-1 + y)
- * p[18][1]" }{TEXT 213 62 " - 4 * y * z * (-1 + x) * p[19][1] - 4 * x
- * y * z * p[19][1];" }{TEXT 213 257 "\ndtau[1][1] = 2 * (-1 + z) * (-
-1 + y) * (-1 + x) * p[0][1] - 2 * x * (-1 + z) * (-1 + y) * p[1][1] - \+
-2 * x * y * (-1 + z) * p[2][1] + 2 * y * (-1 + z) * (-1 + x) * p[3][1]
- - 2 * z * (-1 + y) * (-1 + x) * p[4][1] + 2 * x * z * (-1 + y) * p[5]
-[1] + 2 * x * y " }{TEXT 213 256 "* z * p[6][1] - 2 * y * z * (-1 + x)
- * p[7][1] + (-1 + z) * (-1 + x) * (2 * x + 2 * y + 2 * z - 1) * p[0][
-1] + x * (-1 + z) * (-2 * y - 2 * z + 2 * x - 1) * p[1][1] - x * (-1 +
- z) * (2 * y - 2 * z - 3 + 2 * x) * p[2][1] - (-1 + z) * (-1 + x) * (2
- * x + 2 *" }{TEXT 213 256 " z + 1 - 2 * y) * p[3][1] - z * (-1 + x) *
- (2 * x + 2 * y - 2 * z + 1) * p[4][1] - x * z * (-2 * y + 2 * z - 3 +
- 2 * x) * p[5][1] + x * z * (2 * y + 2 * z - 5 + 2 * x) * p[6][1] + z \+
-* (-1 + x) * (2 * x - 2 * z + 3 - 2 * y) * p[7][1] - 4 * x * (-1 + z) \+
-* (-" }{TEXT 213 256 "1 + x) * p[8][1] - 4 * (-1 + z) * (-1 + y) * (-1
- + x) * p[9][1] - 4 * y * (-1 + z) * (-1 + x) * p[9][1] - 4 * z * (-1 \+
-+ z) * (-1 + x) * p[10][1] + 4 * x * (-1 + z) * (-1 + y) * p[11][1] + \+
-4 * x * y * (-1 + z) * p[11][1] + 4 * x * z * (-1 + z) * p[12][1] + " 
-}{TEXT 213 256 "4 * x * (-1 + z) * (-1 + x) * p[13][1] - 4 * x * z * (
--1 + z) * p[14][1] + 4 * z * (-1 + z) * (-1 + x) * p[15][1] + 4 * x * \+
-z * (-1 + x) * p[16][1] + 4 * z * (-1 + y) * (-1 + x) * p[17][1] + 4 *
- y * z * (-1 + x) * p[17][1] - 4 * x * z * (-1 + y) * p[18][1]" }{TEXT
- 213 62 " - 4 * x * y * z * p[18][1] - 4 * x * z * (-1 + x) * p[19][1]
-;" }{TEXT 213 257 "\ndtau[1][2] = 2 * (-1 + z) * (-1 + y) * (-1 + x) *
- p[0][1] - 2 * x * (-1 + z) * (-1 + y) * p[1][1] + 2 * x * y * (-1 + z
-) * p[2][1] - 2 * y * (-1 + z) * (-1 + x) * p[3][1] + 2 * z * (-1 + y)
- * (-1 + x) * p[4][1] - 2 * x * z * (-1 + y) * p[5][1] + 2 * x * y " }
-{TEXT 213 256 "* z * p[6][1] - 2 * y * z * (-1 + x) * p[7][1] + (-1 + \+
-y) * (-1 + x) * (2 * x + 2 * y + 2 * z - 1) * p[0][1] + x * (-1 + y) *
- (-2 * y - 2 * z + 2 * x - 1) * p[1][1] - x * y * (2 * y - 2 * z - 3 +
- 2 * x) * p[2][1] - y * (-1 + x) * (2 * x + 2 * z + 1 - 2 * y" }{TEXT 
-213 256 ") * p[3][1] - (-1 + y) * (-1 + x) * (2 * x + 2 * y - 2 * z + \+
-1) * p[4][1] - x * (-1 + y) * (-2 * y + 2 * z - 3 + 2 * x) * p[5][1] +
- x * y * (2 * y + 2 * z - 5 + 2 * x) * p[6][1] + y * (-1 + x) * (2 * x
- - 2 * z + 3 - 2 * y) * p[7][1] - 4 * x * (-1 + y) * (-" }{TEXT 213 
-256 "1 + x) * p[8][1] - 4 * y * (-1 + y) * (-1 + x) * p[9][1] - 4 * (-
-1 + z) * (-1 + y) * (-1 + x) * p[10][1] - 4 * z * (-1 + y) * (-1 + x) \+
-* p[10][1] + 4 * x * y * (-1 + y) * p[11][1] + 4 * x * (-1 + z) * (-1 \+
-+ y) * p[12][1] + 4 * x * z * (-1 + y) * p[12][1] +" }{TEXT 213 256 " \+
-4 * x * y * (-1 + x) * p[13][1] - 4 * x * y * (-1 + z) * p[14][1] - 4 \+
-* x * y * z * p[14][1] + 4 * y * (-1 + z) * (-1 + x) * p[15][1] + 4 * \+
-y * z * (-1 + x) * p[15][1] + 4 * x * (-1 + y) * (-1 + x) * p[16][1] +
- 4 * y * (-1 + y) * (-1 + x) * p[17][1] - 4 *" }{TEXT 213 63 " x * y *
- (-1 + y) * p[18][1] - 4 * x * y * (-1 + x) * p[19][1];" }{TEXT 213 
-257 "\ndtau[2][0] = 2 * (-1 + z) * (-1 + y) * (-1 + x) * p[0][2] + 2 *
- x * (-1 + z) * (-1 + y) * p[1][2] - 2 * x * y * (-1 + z) * p[2][2] - \+
-2 * y * (-1 + z) * (-1 + x) * p[3][2] - 2 * z * (-1 + y) * (-1 + x) * \+
-p[4][2] - 2 * x * z * (-1 + y) * p[5][2] + 2 * x * y " }{TEXT 213 256 
-"* z * p[6][2] + 2 * y * z * (-1 + x) * p[7][2] + (-1 + z) * (-1 + y) \+
-* (2 * x + 2 * y + 2 * z - 1) * p[0][2] + (-1 + z) * (-1 + y) * (-2 * \+
-y - 2 * z + 2 * x - 1) * p[1][2] - y * (-1 + z) * (2 * y - 2 * z - 3 +
- 2 * x) * p[2][2] - y * (-1 + z) * (2 * x + 2 *" }{TEXT 213 256 " z + \+
-1 - 2 * y) * p[3][2] - z * (-1 + y) * (2 * x + 2 * y - 2 * z + 1) * p[
-4][2] - z * (-1 + y) * (-2 * y + 2 * z - 3 + 2 * x) * p[5][2] + y * z \+
-* (2 * y + 2 * z - 5 + 2 * x) * p[6][2] + y * z * (2 * x - 2 * z + 3 -
- 2 * y) * p[7][2] - 4 * (-1 + z) * (-1 + " }{TEXT 213 256 "y) * (-1 + \+
-x) * p[8][2] - 4 * x * (-1 + z) * (-1 + y) * p[8][2] - 4 * y * (-1 + z
-) * (-1 + y) * p[9][2] - 4 * z * (-1 + z) * (-1 + y) * p[10][2] + 4 * \+
-y * (-1 + z) * (-1 + y) * p[11][2] + 4 * z * (-1 + z) * (-1 + y) * p[1
-2][2] + 4 * y * (-1 + z) * (-1 + x)" }{TEXT 213 256 " * p[13][2] + 4 *
- x * y * (-1 + z) * p[13][2] - 4 * y * z * (-1 + z) * p[14][2] + 4 * y
- * z * (-1 + z) * p[15][2] + 4 * z * (-1 + y) * (-1 + x) * p[16][2] + \+
-4 * x * z * (-1 + y) * p[16][2] + 4 * y * z * (-1 + y) * p[17][2] - 4 \+
-* y * z * (-1 + y) * p[18][2]" }{TEXT 213 62 " - 4 * y * z * (-1 + x) \+
-* p[19][2] - 4 * x * y * z * p[19][2];" }{TEXT 213 257 "\ndtau[2][1] =
- 2 * (-1 + z) * (-1 + y) * (-1 + x) * p[0][2] - 2 * x * (-1 + z) * (-1
- + y) * p[1][2] - 2 * x * y * (-1 + z) * p[2][2] + 2 * y * (-1 + z) * \+
-(-1 + x) * p[3][2] - 2 * z * (-1 + y) * (-1 + x) * p[4][2] + 2 * x * z
- * (-1 + y) * p[5][2] + 2 * x * y " }{TEXT 213 256 "* z * p[6][2] - 2 \+
-* y * z * (-1 + x) * p[7][2] + (-1 + z) * (-1 + x) * (2 * x + 2 * y + \+
-2 * z - 1) * p[0][2] + x * (-1 + z) * (-2 * y - 2 * z + 2 * x - 1) * p
-[1][2] - x * (-1 + z) * (2 * y - 2 * z - 3 + 2 * x) * p[2][2] - (-1 + \+
-z) * (-1 + x) * (2 * x + 2 *" }{TEXT 213 256 " z + 1 - 2 * y) * p[3][2
-] - z * (-1 + x) * (2 * x + 2 * y - 2 * z + 1) * p[4][2] - x * z * (-2
- * y + 2 * z - 3 + 2 * x) * p[5][2] + x * z * (2 * y + 2 * z - 5 + 2 *
- x) * p[6][2] + z * (-1 + x) * (2 * x - 2 * z + 3 - 2 * y) * p[7][2] -
- 4 * x * (-1 + z) * (-" }{TEXT 213 256 "1 + x) * p[8][2] - 4 * (-1 + z
-) * (-1 + y) * (-1 + x) * p[9][2] - 4 * y * (-1 + z) * (-1 + x) * p[9]
-[2] - 4 * z * (-1 + z) * (-1 + x) * p[10][2] + 4 * x * (-1 + z) * (-1 \+
-+ y) * p[11][2] + 4 * x * y * (-1 + z) * p[11][2] + 4 * x * z * (-1 + \+
-z) * p[12][2] + " }{TEXT 213 256 "4 * x * (-1 + z) * (-1 + x) * p[13][
-2] - 4 * x * z * (-1 + z) * p[14][2] + 4 * z * (-1 + z) * (-1 + x) * p
-[15][2] + 4 * x * z * (-1 + x) * p[16][2] + 4 * z * (-1 + y) * (-1 + x
-) * p[17][2] + 4 * y * z * (-1 + x) * p[17][2] - 4 * x * z * (-1 + y) \+
-* p[18][2]" }{TEXT 213 62 " - 4 * x * y * z * p[18][2] - 4 * x * z * (
--1 + x) * p[19][2];" }{TEXT 213 257 "\ndtau[2][2] = 2 * (-1 + z) * (-1
- + y) * (-1 + x) * p[0][2] - 2 * x * (-1 + z) * (-1 + y) * p[1][2] + 2
- * x * y * (-1 + z) * p[2][2] - 2 * y * (-1 + z) * (-1 + x) * p[3][2] \+
-+ 2 * z * (-1 + y) * (-1 + x) * p[4][2] - 2 * x * z * (-1 + y) * p[5][
-2] + 2 * x * y " }{TEXT 213 256 "* z * p[6][2] - 2 * y * z * (-1 + x) \+
-* p[7][2] + (-1 + y) * (-1 + x) * (2 * x + 2 * y + 2 * z - 1) * p[0][2
-] + x * (-1 + y) * (-2 * y - 2 * z + 2 * x - 1) * p[1][2] - x * y * (2
- * y - 2 * z - 3 + 2 * x) * p[2][2] - y * (-1 + x) * (2 * x + 2 * z + \+
-1 - 2 * y" }{TEXT 213 256 ") * p[3][2] - (-1 + y) * (-1 + x) * (2 * x \+
-+ 2 * y - 2 * z + 1) * p[4][2] - x * (-1 + y) * (-2 * y + 2 * z - 3 + \+
-2 * x) * p[5][2] + x * y * (2 * y + 2 * z - 5 + 2 * x) * p[6][2] + y *
- (-1 + x) * (2 * x - 2 * z + 3 - 2 * y) * p[7][2] - 4 * x * (-1 + y) *
- (-" }{TEXT 213 256 "1 + x) * p[8][2] - 4 * y * (-1 + y) * (-1 + x) * \+
-p[9][2] - 4 * (-1 + z) * (-1 + y) * (-1 + x) * p[10][2] - 4 * z * (-1 \+
-+ y) * (-1 + x) * p[10][2] + 4 * x * y * (-1 + y) * p[11][2] + 4 * x *
- (-1 + z) * (-1 + y) * p[12][2] + 4 * x * z * (-1 + y) * p[12][2] +" }
-{TEXT 213 256 " 4 * x * y * (-1 + x) * p[13][2] - 4 * x * y * (-1 + z)
- * p[14][2] - 4 * x * y * z * p[14][2] + 4 * y * (-1 + z) * (-1 + x) *
- p[15][2] + 4 * y * z * (-1 + x) * p[15][2] + 4 * x * (-1 + y) * (-1 +
- x) * p[16][2] + 4 * y * (-1 + y) * (-1 + x) * p[17][2] - 4 *" }{TEXT 
-213 63 " x * y * (-1 + y) * p[18][2] - 4 * x * y * (-1 + x) * p[19][2]
-;" }}}{EXCHG {PARA 0 "> " 0 "" {MPLTEXT 1 0 0 "" }}}}
+F(F&F&,*F,\"\"#F*F.F'F.F%F&F&&I\"pGF(6#\"\"$F&F&*,F,F&F$F&F)F&,*F*!\"#
+F'F5F,F.F%F&F&&F06#\"\"'F&F&*,F,F&F*F&F$F&,*F*F.F'F5!\"$F&F,F.F&&F06#
+\"\"*F&F%*,F*F&F$F&F+F&,*F,F.F'F.F&F&F*F5F&&F06#\"#7F&F%*,F'F&F)F&F+F&
+,*F,F.F*F.F'F5F&F&F&&F06#\"#:F&F%*,F,F&F'F&F)F&,*F*F5F'F.F;F&F,F.F&&F0
+6#\"#=F&F%*,F,F&F*F&F'F&,*F*F.F'F.!\"&F&F,F.F&&F06#\"#@F&F&*,F*F&F'F&F
++F&,*F,F.F'F5F2F&F*F5F&&F06#\"#CF&F&*,F,F&F$F&F)F&F+F&&F06#\"#FF&!\"%*
+,F*F&F$F&F)F&F+F&&F06#\"#IF&Fgn*,F'F&F$F&F)F&F+F&&F06#\"#LF&Fgn*,F,F&F
+*F&F$F&F)F&&F06#\"#OF&\"\"%*,F,F&F'F&F$F&F)F&&F06#\"#RF&Fdo*,F,F&F*F&F
+$F&F+F&&F06#\"#UF&Fdo*,F,F&F*F&F'F&F$F&&F06#\"#XF&Fgn*,F*F&F'F&F$F&F+F
+&&F06#\"#[F&Fdo*,F,F&F'F&F)F&F+F&&F06#\"#^F&Fdo*,F*F&F'F&F)F&F+F&&F06#
+\"#aF&Fdo*,F,F&F*F&F'F&F)F&&F06#\"#dF&Fgn*,F,F&F*F&F'F&F+F&&F06#\"#gF&
+Fgn" }}}{EXCHG {PARA 0 "> " 0 "" {MPLTEXT 1 0 28 "dtau:=jacobian(tau,[
+x,y,z]);" }}{PARA 11 "" 1 "" {XPPMATH 20 "=6\"6$;\"\"\"\"\"$F%E\\[l*6$
+F'\"\"#,\\o**,&!\"\"F&I\"zGF#F&F&,&F.F&I\"yGF#F&F&,&F.F&I\"xGF#F&F&&I
+\"pGF#6#F'F&F***F3F&F-F&F0F&&F56#\"\"'F&!\"#**F3F&F1F&F-F&&F56#\"\"*F&
+F;**F1F&F-F&F2F&&F56#\"#7F&F***F/F&F0F&F2F&&F56#\"#:F&F;**F3F&F/F&F0F&
+&F56#\"#=F&F***F3F&F1F&F/F&&F56#\"#@F&F***F1F&F/F&F2F&&F56#\"#CF&F;**F
+-F&F2F&,*F3F*F1F*F/F*F.F&F&F4F&F&**F3F&F-F&,*F1F;F/F;F3F*F.F&F&F8F&F&*
+*F3F&F-F&,*F1F*F/F;!\"$F&F3F*F&F=F&F.**F-F&F2F&,*F3F*F/F*F&F&F1F;F&FAF
+&F.**F/F&F2F&,*F3F*F1F*F/F;F&F&F&FEF&F.**F3F&F/F&,*F1F;F/F*FZF&F3F*F&F
+IF&F.**F3F&F/F&,*F1F*F/F*!\"&F&F3F*F&FMF&F&**F/F&F2F&,*F3F*F/F;F'F&F1F
+;F&FQF&F&**F3F&F-F&F2F&&F56#\"#FF&!\"%**F-F&F0F&F2F&&F56#\"#IF&Fdo**F1
+F&F-F&F2F&FfoF&Fdo**F/F&F-F&F2F&&F56#\"#LF&Fdo**F3F&F-F&F0F&&F56#\"#OF
+&\"\"%**F3F&F1F&F-F&F_pF&Fbp**F3F&F/F&F-F&&F56#\"#RF&Fbp**F3F&F-F&F2F&
+&F56#\"#UF&Fbp**F3F&F/F&F-F&&F56#\"#XF&Fdo**F/F&F-F&F2F&&F56#\"#[F&Fbp
+**F3F&F/F&F2F&&F56#\"#^F&Fbp**F/F&F0F&F2F&&F56#\"#aF&Fbp**F1F&F/F&F2F&
+FiqF&Fbp**F3F&F/F&F0F&&F56#\"#dF&Fdo**F3F&F1F&F/F&F^rF&Fdo**F3F&F/F&F2
+F&&F56#\"#gF&Fdo6$F&F&,\\o**F-F&F0F&F2F&&F56#F&F&F***F3F&F-F&F0F&&F56#
+FbpF&F***F3F&F1F&F-F&&F56#\"\"(F&F;**F1F&F-F&F2F&&F56#\"#5F&F;**F/F&F0
+F&F2F&&F56#\"#8F&F;**F3F&F/F&F0F&&F56#\"#;F&F;**F3F&F1F&F/F&&F56#\"#>F
+&F***F1F&F/F&F2F&&F56#\"#AF&F***F-F&F0F&FUF&FirF&F&**F-F&F0F&FWF&F\\sF
+&F&**F1F&F-F&FYF&F_sF&F.**F1F&F-F&FfnF&FcsF&F.**F/F&F0F&FhnF&FgsF&F.**
+F/F&F0F&FjnF&F[tF&F.**F1F&F/F&F\\oF&F_tF&F&**F1F&F/F&F_oF&FctF&F&**F-F
+&F0F&F2F&&F56#\"#DF&Fdo**F3F&F-F&F0F&F_uF&Fdo**F1F&F-F&F0F&&F56#\"#GF&
+Fdo**F/F&F-F&F0F&&F56#\"#JF&Fdo**F1F&F-F&F0F&&F56#\"#MF&Fbp**F/F&F-F&F
+0F&&F56#\"#PF&Fbp**F1F&F-F&F2F&&F56#\"#SF&Fbp**F3F&F1F&F-F&FdvF&Fbp**F
+1F&F/F&F-F&&F56#\"#VF&Fdo**F1F&F/F&F-F&&F56#\"#YF&Fbp**F/F&F0F&F2F&&F5
+6#\"#\\F&Fbp**F3F&F/F&F0F&FawF&Fbp**F1F&F/F&F0F&&F56#\"#_F&Fbp**F1F&F/
+F&F0F&&F56#\"#bF&Fdo**F1F&F/F&F2F&&F56#\"#eF&Fdo**F3F&F1F&F/F&F^xF&Fdo
+6$F&F*,\\oFhrF*F[sF;F^sF;FbsF*FfsF;FjsF*F^tF*FbtF;**F-F&F2F&FUF&FirF&F
+&**F3F&F-F&FWF&F\\sF&F&**F3F&F-F&FYF&F_sF&F.**F-F&F2F&FfnF&FcsF&F.**F/
+F&F2F&FhnF&FgsF&F.**F3F&F/F&FjnF&F[tF&F.**F3F&F/F&F\\oF&F_tF&F&**F/F&F
+2F&F_oF&FctF&F&**F3F&F-F&F2F&F_uF&Fdo**F-F&F0F&F2F&FduF&Fdo**F1F&F-F&F
+2F&FduF&Fdo**F/F&F-F&F2F&FhuF&Fdo**F3F&F-F&F0F&F\\vF&Fbp**F3F&F1F&F-F&
+F\\vF&Fbp**F3F&F/F&F-F&F`vF&Fbp**F3F&F-F&F2F&FdvF&Fbp**F3F&F/F&F-F&Fiv
+F&Fdo**F/F&F-F&F2F&F]wF&Fbp**F3F&F/F&F2F&FawF&Fbp**F/F&F0F&F2F&FfwF&Fb
+p**F1F&F/F&F2F&FfwF&Fbp**F3F&F/F&F0F&FjwF&Fdo**F3F&F1F&F/F&FjwF&Fdo**F
+3F&F/F&F2F&F^xF&Fdo6$F*F*,\\o**F-F&F0F&F2F&&F56#F*F&F***F3F&F-F&F0F&&F
+56#\"\"&F&F;**F3F&F1F&F-F&&F56#\"\")F&F;**F1F&F-F&F2F&&F56#\"#6F&F***F
+/F&F0F&F2F&&F56#\"#9F&F;**F3F&F/F&F0F&&F56#\"#<F&F***F3F&F1F&F/F&&F56#
+\"#?F&F***F1F&F/F&F2F&&F56#\"#BF&F;**F-F&F2F&FUF&F_zF&F&**F3F&F-F&FWF&
+FbzF&F&**F3F&F-F&FYF&FfzF&F.**F-F&F2F&FfnF&FjzF&F.**F/F&F2F&FhnF&F^[lF
+&F.**F3F&F/F&FjnF&Fb[lF&F.**F3F&F/F&F\\oF&Ff[lF&F&**F/F&F2F&F_oF&Fj[lF
+&F&**F3F&F-F&F2F&&F56#\"#EF&Fdo**F-F&F0F&F2F&&F56#\"#HF&Fdo**F1F&F-F&F
+2F&Fj\\lF&Fdo**F/F&F-F&F2F&&F56#\"#KF&Fdo**F3F&F-F&F0F&&F56#\"#NF&Fbp*
+*F3F&F1F&F-F&Fc]lF&Fbp**F3F&F/F&F-F&&F56#\"#QF&Fbp**F3F&F-F&F2F&&F56#
+\"#TF&Fbp**F3F&F/F&F-F&&F56#\"#WF&Fdo**F/F&F-F&F2F&&F56#\"#ZF&Fbp**F3F
+&F/F&F2F&&F56#\"#]F&Fbp**F/F&F0F&F2F&&F56#\"#`F&Fbp**F1F&F/F&F2F&F\\_l
+F&Fbp**F3F&F/F&F0F&&F56#\"#cF&Fdo**F3F&F1F&F/F&Fa_lF&Fdo**F3F&F/F&F2F&
+&F56#\"#fF&Fdo6$F&F',\\oFhrF*F[sF;F^sF*FbsF;FfsF*FjsF;F^tF*FbtF;**F0F&
+F2F&FUF&FirF&F&**F3F&F0F&FWF&F\\sF&F&**F3F&F1F&FYF&F_sF&F.**F1F&F2F&Ff
+nF&FcsF&F.**F0F&F2F&FhnF&FgsF&F.**F3F&F0F&FjnF&F[tF&F.**F3F&F1F&F\\oF&
+F_tF&F&**F1F&F2F&F_oF&FctF&F&**F3F&F0F&F2F&F_uF&Fdo**F1F&F0F&F2F&FduF&
+Fdo**F-F&F0F&F2F&FhuF&Fdo**F/F&F0F&F2F&FhuF&Fdo**F3F&F1F&F0F&F\\vF&Fbp
+**F3F&F-F&F0F&F`vF&Fbp**F3F&F/F&F0F&F`vF&Fbp**F3F&F1F&F2F&FdvF&Fbp**F3
+F&F1F&F-F&FivF&Fdo**F3F&F1F&F/F&FivF&Fdo**F1F&F-F&F2F&F]wF&Fbp**F1F&F/
+F&F2F&F]wF&Fbp**F3F&F0F&F2F&FawF&Fbp**F1F&F0F&F2F&FfwF&Fbp**F3F&F1F&F0
+F&FjwF&Fdo**F3F&F1F&F2F&F^xF&Fdo6$F*F&,\\oF^zF*FazF*FezF;FizF;F][lF;Fa
+[lF;Fe[lF*Fi[lF***F-F&F0F&FUF&F_zF&F&**F-F&F0F&FWF&FbzF&F&**F1F&F-F&FY
+F&FfzF&F.**F1F&F-F&FfnF&FjzF&F.**F/F&F0F&FhnF&F^[lF&F.**F/F&F0F&FjnF&F
+b[lF&F.**F1F&F/F&F\\oF&Ff[lF&F&**F1F&F/F&F_oF&Fj[lF&F&**F-F&F0F&F2F&Ff
+\\lF&Fdo**F3F&F-F&F0F&Ff\\lF&Fdo**F1F&F-F&F0F&Fj\\lF&Fdo**F/F&F-F&F0F&
+F_]lF&Fdo**F1F&F-F&F0F&Fc]lF&Fbp**F/F&F-F&F0F&Fh]lF&Fbp**F1F&F-F&F2F&F
+\\^lF&Fbp**F3F&F1F&F-F&F\\^lF&Fbp**F1F&F/F&F-F&F`^lF&Fdo**F1F&F/F&F-F&
+Fd^lF&Fbp**F/F&F0F&F2F&Fh^lF&Fbp**F3F&F/F&F0F&Fh^lF&Fbp**F1F&F/F&F0F&F
+\\_lF&Fbp**F1F&F/F&F0F&Fa_lF&Fdo**F1F&F/F&F2F&Ff_lF&Fdo**F3F&F1F&F/F&F
+f_lF&Fdo6$F*F',\\oF^zF*FazF;FezF*FizF;F][lF*Fa[lF;Fe[lF*Fi[lF;**F0F&F2
+F&FUF&F_zF&F&**F3F&F0F&FWF&FbzF&F&**F3F&F1F&FYF&FfzF&F.**F1F&F2F&FfnF&
+FjzF&F.**F0F&F2F&FhnF&F^[lF&F.**F3F&F0F&FjnF&Fb[lF&F.**F3F&F1F&F\\oF&F
+f[lF&F&**F1F&F2F&F_oF&Fj[lF&F&**F3F&F0F&F2F&Ff\\lF&Fdo**F1F&F0F&F2F&Fj
+\\lF&Fdo**F-F&F0F&F2F&F_]lF&Fdo**F/F&F0F&F2F&F_]lF&Fdo**F3F&F1F&F0F&Fc
+]lF&Fbp**F3F&F-F&F0F&Fh]lF&Fbp**F3F&F/F&F0F&Fh]lF&Fbp**F3F&F1F&F2F&F
+\\^lF&Fbp**F3F&F1F&F-F&F`^lF&Fdo**F3F&F1F&F/F&F`^lF&Fdo**F1F&F-F&F2F&F
+d^lF&Fbp**F1F&F/F&F2F&Fd^lF&Fbp**F3F&F0F&F2F&Fh^lF&Fbp**F1F&F0F&F2F&F
+\\_lF&Fbp**F3F&F1F&F0F&Fa_lF&Fdo**F3F&F1F&F2F&Ff_lF&Fdo6$F'F&,\\oF,F*F
+7F*F<F;F@F;**F1F&F-F&F0F&FfoF&Fdo**F-F&F0F&FUF&F4F&F&**F-F&F0F&FWF&F8F
+&F&**F1F&F-F&FYF&F=F&F.**F1F&F-F&FfnF&FAF&F.**F/F&F0F&FhnF&FEF&F.**F/F
+&F0F&FjnF&FIF&F.**F1F&F/F&F\\oF&FMF&F&**F1F&F/F&F_oF&FQF&F&**F-F&F0F&F
+2F&FaoF&Fdo**F3F&F-F&F0F&FaoF&FdoFDF;FHF;FLF*FPF***F/F&F-F&F0F&F[pF&Fd
+o**F1F&F-F&F0F&F_pF&Fbp**F/F&F-F&F0F&FepF&Fbp**F1F&F-F&F2F&FipF&Fbp**F
+3F&F1F&F-F&FipF&Fbp**F1F&F/F&F-F&F]qF&Fdo**F1F&F/F&F-F&FaqF&Fbp**F/F&F
+0F&F2F&FeqF&Fbp**F3F&F/F&F0F&FeqF&Fbp**F1F&F/F&F0F&FiqF&Fbp**F1F&F/F&F
+0F&F^rF&Fdo**F1F&F/F&F2F&FcrF&Fdo**F3F&F1F&F/F&FcrF&Fdo6$F'F',\\oF,F*F
+7F;F<F*F@F;FDF*FHF;FLF*FPF;**F0F&F2F&FUF&F4F&F&**F3F&F0F&FWF&F8F&F&**F
+3F&F1F&FYF&F=F&F.**F1F&F2F&FfnF&FAF&F.**F0F&F2F&FhnF&FEF&F.**F3F&F0F&F
+jnF&FIF&F.**F3F&F1F&F\\oF&FMF&F&**F1F&F2F&F_oF&FQF&F&**F3F&F0F&F2F&Fao
+F&Fdo**F1F&F0F&F2F&FfoF&Fdo**F-F&F0F&F2F&F[pF&Fdo**F/F&F0F&F2F&F[pF&Fd
+o**F3F&F1F&F0F&F_pF&Fbp**F3F&F-F&F0F&FepF&Fbp**F3F&F/F&F0F&FepF&Fbp**F
+3F&F1F&F2F&FipF&Fbp**F3F&F1F&F-F&F]qF&Fdo**F3F&F1F&F/F&F]qF&Fdo**F1F&F
+-F&F2F&FaqF&Fbp**F1F&F/F&F2F&FaqF&Fbp**F3F&F0F&F2F&FeqF&Fbp**F1F&F0F&F
+2F&FiqF&Fbp**F3F&F1F&F0F&F^rF&Fdo**F3F&F1F&F2F&FcrF&Fdo" }}}{EXCHG 
+{PARA 0 "> " 0 "" {MPLTEXT 1 0 8 "C(dtau);" }}{PARA 6 "" 1 "" {TEXT 
+213 256 "dtau[0][0] = 2 * (-1 + z) * (-1 + y) * (-1 + x) * p[0] + 2 * \+
+x * (-1 + z) * (-1 + y) * p[3] - 2 * x * y * (-1 + z) * p[6] - 2 * y *
+ (-1 + z) * (-1 + x) * p[9] - 2 * z * (-1 + y) * (-1 + x) * p[12] - 2 \+
+* x * z * (-1 + y) * p[15] + 2 * x * y * z * p[18] + 2 " }{TEXT 213 
+256 "* y * z * (-1 + x) * p[21] + (-1 + z) * (-1 + y) * (2 * x + 2 * y
+ + 2 * z - 1) * p[0] + (-1 + z) * (-1 + y) * (-2 * y - 2 * z + 2 * x -
+ 1) * p[3] - y * (-1 + z) * (2 * y - 2 * z - 3 + 2 * x) * p[6] - y * (
+-1 + z) * (2 * x + 2 * z + 1 - 2 * y) * p[9] - z * " }{TEXT 213 256 "(
+-1 + y) * (2 * x + 2 * y - 2 * z + 1) * p[12] - z * (-1 + y) * (-2 * y
+ + 2 * z - 3 + 2 * x) * p[15] + y * z * (2 * y + 2 * z - 5 + 2 * x) * \+
+p[18] + y * z * (2 * x - 2 * z + 3 - 2 * y) * p[21] - 4 * (-1 + z) * (
+-1 + y) * (-1 + x) * p[24] - 4 * x * (-1 + z)" }{TEXT 213 256 " * (-1 \+
++ y) * p[24] - 4 * y * (-1 + z) * (-1 + y) * p[27] - 4 * z * (-1 + z) \+
+* (-1 + y) * p[30] + 4 * y * (-1 + z) * (-1 + y) * p[33] + 4 * z * (-1
+ + z) * (-1 + y) * p[36] + 4 * y * (-1 + z) * (-1 + x) * p[39] + 4 * x
+ * y * (-1 + z) * p[39] - 4 * y * z * (" }{TEXT 213 233 "-1 + z) * p[4
+2] + 4 * y * z * (-1 + z) * p[45] + 4 * z * (-1 + y) * (-1 + x) * p[48
+] + 4 * x * z * (-1 + y) * p[48] + 4 * y * z * (-1 + y) * p[51] - 4 * \+
+y * z * (-1 + y) * p[54] - 4 * y * z * (-1 + x) * p[57] - 4 * x * y * \+
+z * p[57];" }{TEXT 213 257 "\ndtau[0][1] = 2 * (-1 + z) * (-1 + y) * (
+-1 + x) * p[0] - 2 * x * (-1 + z) * (-1 + y) * p[3] - 2 * x * y * (-1 \+
++ z) * p[6] + 2 * y * (-1 + z) * (-1 + x) * p[9] - 2 * z * (-1 + y) * \+
+(-1 + x) * p[12] + 2 * x * z * (-1 + y) * p[15] + 2 * x * y * z * p[18
+] - 2 " }{TEXT 213 256 "* y * z * (-1 + x) * p[21] + (-1 + z) * (-1 + \+
+x) * (2 * x + 2 * y + 2 * z - 1) * p[0] + x * (-1 + z) * (-2 * y - 2 *
+ z + 2 * x - 1) * p[3] - x * (-1 + z) * (2 * y - 2 * z - 3 + 2 * x) * \+
+p[6] - (-1 + z) * (-1 + x) * (2 * x + 2 * z + 1 - 2 * y) * p[9] - z * 
+" }{TEXT 213 256 "(-1 + x) * (2 * x + 2 * y - 2 * z + 1) * p[12] - x *
+ z * (-2 * y + 2 * z - 3 + 2 * x) * p[15] + x * z * (2 * y + 2 * z - 5
+ + 2 * x) * p[18] + z * (-1 + x) * (2 * x - 2 * z + 3 - 2 * y) * p[21]
+ - 4 * x * (-1 + z) * (-1 + x) * p[24] - 4 * (-1 + z) * (-1 + y)" }
+{TEXT 213 256 " * (-1 + x) * p[27] - 4 * y * (-1 + z) * (-1 + x) * p[2
+7] - 4 * z * (-1 + z) * (-1 + x) * p[30] + 4 * x * (-1 + z) * (-1 + y)
+ * p[33] + 4 * x * y * (-1 + z) * p[33] + 4 * x * z * (-1 + z) * p[36]
+ + 4 * x * (-1 + z) * (-1 + x) * p[39] - 4 * x * z * (-1 + z)" }{TEXT 
+213 233 " * p[42] + 4 * z * (-1 + z) * (-1 + x) * p[45] + 4 * x * z * \+
+(-1 + x) * p[48] + 4 * z * (-1 + y) * (-1 + x) * p[51] + 4 * y * z * (
+-1 + x) * p[51] - 4 * x * z * (-1 + y) * p[54] - 4 * x * y * z * p[54]
+ - 4 * x * z * (-1 + x) * p[57];" }{TEXT 213 257 "\ndtau[0][2] = 2 * (
+-1 + z) * (-1 + y) * (-1 + x) * p[0] - 2 * x * (-1 + z) * (-1 + y) * p
+[3] + 2 * x * y * (-1 + z) * p[6] - 2 * y * (-1 + z) * (-1 + x) * p[9]
+ + 2 * z * (-1 + y) * (-1 + x) * p[12] - 2 * x * z * (-1 + y) * p[15] \+
++ 2 * x * y * z * p[18] - 2 " }{TEXT 213 256 "* y * z * (-1 + x) * p[2
+1] + (-1 + y) * (-1 + x) * (2 * x + 2 * y + 2 * z - 1) * p[0] + x * (-
+1 + y) * (-2 * y - 2 * z + 2 * x - 1) * p[3] - x * y * (2 * y - 2 * z \+
+- 3 + 2 * x) * p[6] - y * (-1 + x) * (2 * x + 2 * z + 1 - 2 * y) * p[9
+] - (-1 + y) * (-1 + x" }{TEXT 213 256 ") * (2 * x + 2 * y - 2 * z + 1
+) * p[12] - x * (-1 + y) * (-2 * y + 2 * z - 3 + 2 * x) * p[15] + x * \+
+y * (2 * y + 2 * z - 5 + 2 * x) * p[18] + y * (-1 + x) * (2 * x - 2 * \+
+z + 3 - 2 * y) * p[21] - 4 * x * (-1 + y) * (-1 + x) * p[24] - 4 * y *
+ (-1 + y) * (-1 " }{TEXT 213 256 "+ x) * p[27] - 4 * (-1 + z) * (-1 + \+
+y) * (-1 + x) * p[30] - 4 * z * (-1 + y) * (-1 + x) * p[30] + 4 * x * \+
+y * (-1 + y) * p[33] + 4 * x * (-1 + z) * (-1 + y) * p[36] + 4 * x * z
+ * (-1 + y) * p[36] + 4 * x * y * (-1 + x) * p[39] - 4 * x * y * (-1 +
+ z) * p[42" }{TEXT 213 233 "] - 4 * x * y * z * p[42] + 4 * y * (-1 + \+
+z) * (-1 + x) * p[45] + 4 * y * z * (-1 + x) * p[45] + 4 * x * (-1 + y
+) * (-1 + x) * p[48] + 4 * y * (-1 + y) * (-1 + x) * p[51] - 4 * x * y
+ * (-1 + y) * p[54] - 4 * x * y * (-1 + x) * p[57];" }{TEXT 213 257 "
+\ndtau[1][0] = 2 * (-1 + z) * (-1 + y) * (-1 + x) * p[1] + 2 * x * (-1 + z) * (-1 + y) * p[4] - 2 * x * y * (-1 + z) * p[7] - 2 * y * (-1 + z) * (-1 + x) * p[10] - 2 * z * (-1 + y) * (-1 + x) * p[13] - 2 * x * z * (-1 + y) * p[16] + 2 * x * y * z * p[19] + 2
+" }{TEXT 213 256 " * y * z * (-1 + x) * p[22] + (-1 + z) * (-1 + y) * \+
+(2 * x + 2 * y + 2 * z - 1) * p[1] + (-1 + z) * (-1 + y) * (-2 * y - 2
+ * z + 2 * x - 1) * p[4] - y * (-1 + z) * (2 * y - 2 * z - 3 + 2 * x) \+
+* p[7] - y * (-1 + z) * (2 * x + 2 * z + 1 - 2 * y) * p[10] - z " }
+{TEXT 213 256 "* (-1 + y) * (2 * x + 2 * y - 2 * z + 1) * p[13] - z * \+
+(-1 + y) * (-2 * y + 2 * z - 3 + 2 * x) * p[16] + y * z * (2 * y + 2 *
+ z - 5 + 2 * x) * p[19] + y * z * (2 * x - 2 * z + 3 - 2 * y) * p[22] \+
+- 4 * (-1 + z) * (-1 + y) * (-1 + x) * p[25] - 4 * x * (-1 + " }{TEXT 
+213 256 "z) * (-1 + y) * p[25] - 4 * y * (-1 + z) * (-1 + y) * p[28] -
+ 4 * z * (-1 + z) * (-1 + y) * p[31] + 4 * y * (-1 + z) * (-1 + y) * p
+[34] + 4 * z * (-1 + z) * (-1 + y) * p[37] + 4 * y * (-1 + z) * (-1 + \+
+x) * p[40] + 4 * x * y * (-1 + z) * p[40] - 4 * y * z *" }{TEXT 213 
+235 " (-1 + z) * p[43] + 4 * y * z * (-1 + z) * p[46] + 4 * z * (-1 + \+
+y) * (-1 + x) * p[49] + 4 * x * z * (-1 + y) * p[49] + 4 * y * z * (-1
+ + y) * p[52] - 4 * y * z * (-1 + y) * p[55] - 4 * y * z * (-1 + x) * \+
+p[58] - 4 * x * y * z * p[58];" }{TEXT 213 257 "\ndtau[1][1] = 2 * (-1
+ + z) * (-1 + y) * (-1 + x) * p[1] - 2 * x * (-1 + z) * (-1 + y) * p[4
+] - 2 * x * y * (-1 + z) * p[7] + 2 * y * (-1 + z) * (-1 + x) * p[10] \+
+- 2 * z * (-1 + y) * (-1 + x) * p[13] + 2 * x * z * (-1 + y) * p[16] +
+ 2 * x * y * z * p[19] - 2" }{TEXT 213 256 " * y * z * (-1 + x) * p[22
+] + (-1 + z) * (-1 + x) * (2 * x + 2 * y + 2 * z - 1) * p[1] + x * (-1
+ + z) * (-2 * y - 2 * z + 2 * x - 1) * p[4] - x * (-1 + z) * (2 * y - \+
+2 * z - 3 + 2 * x) * p[7] - (-1 + z) * (-1 + x) * (2 * x + 2 * z + 1 -
+ 2 * y) * p[10] - z " }{TEXT 213 256 "* (-1 + x) * (2 * x + 2 * y - 2 \+
+* z + 1) * p[13] - x * z * (-2 * y + 2 * z - 3 + 2 * x) * p[16] + x * \+
+z * (2 * y + 2 * z - 5 + 2 * x) * p[19] + z * (-1 + x) * (2 * x - 2 * \+
+z + 3 - 2 * y) * p[22] - 4 * x * (-1 + z) * (-1 + x) * p[25] - 4 * (-1
+ + z) * (-1 + " }{TEXT 213 256 "y) * (-1 + x) * p[28] - 4 * y * (-1 + \+
+z) * (-1 + x) * p[28] - 4 * z * (-1 + z) * (-1 + x) * p[31] + 4 * x * \+
+(-1 + z) * (-1 + y) * p[34] + 4 * x * y * (-1 + z) * p[34] + 4 * x * z
+ * (-1 + z) * p[37] + 4 * x * (-1 + z) * (-1 + x) * p[40] - 4 * x * z \+
+* (-1 + " }{TEXT 213 235 "z) * p[43] + 4 * z * (-1 + z) * (-1 + x) * p
+[46] + 4 * x * z * (-1 + x) * p[49] + 4 * z * (-1 + y) * (-1 + x) * p[
+52] + 4 * y * z * (-1 + x) * p[52] - 4 * x * z * (-1 + y) * p[55] - 4 \+
+* x * y * z * p[55] - 4 * x * z * (-1 + x) * p[58];" }{TEXT 213 257 "
+\ndtau[1][2] = 2 * (-1 + z) * (-1 + y) * (-1 + x) * p[1] - 2 * x * (-1 + z) * (-1 + y) * p[4] + 2 * x * y * (-1 + z) * p[7] - 2 * y * (-1 + z) * (-1 + x) * p[10] + 2 * z * (-1 + y) * (-1 + x) * p[13] - 2 * x * z * (-1 + y) * p[16] + 2 * x * y * z * p[19] - 2
+" }{TEXT 213 256 " * y * z * (-1 + x) * p[22] + (-1 + y) * (-1 + x) * \+
+(2 * x + 2 * y + 2 * z - 1) * p[1] + x * (-1 + y) * (-2 * y - 2 * z + \+
+2 * x - 1) * p[4] - x * y * (2 * y - 2 * z - 3 + 2 * x) * p[7] - y * (
+-1 + x) * (2 * x + 2 * z + 1 - 2 * y) * p[10] - (-1 + y) * (-1 +" }
+{TEXT 213 256 " x) * (2 * x + 2 * y - 2 * z + 1) * p[13] - x * (-1 + y
+) * (-2 * y + 2 * z - 3 + 2 * x) * p[16] + x * y * (2 * y + 2 * z - 5 \+
++ 2 * x) * p[19] + y * (-1 + x) * (2 * x - 2 * z + 3 - 2 * y) * p[22] \+
+- 4 * x * (-1 + y) * (-1 + x) * p[25] - 4 * y * (-1 + y) * (-" }{TEXT 
+213 256 "1 + x) * p[28] - 4 * (-1 + z) * (-1 + y) * (-1 + x) * p[31] -
+ 4 * z * (-1 + y) * (-1 + x) * p[31] + 4 * x * y * (-1 + y) * p[34] + \+
+4 * x * (-1 + z) * (-1 + y) * p[37] + 4 * x * z * (-1 + y) * p[37] + 4
+ * x * y * (-1 + x) * p[40] - 4 * x * y * (-1 + z) * p[" }{TEXT 213 
+235 "43] - 4 * x * y * z * p[43] + 4 * y * (-1 + z) * (-1 + x) * p[46]
+ + 4 * y * z * (-1 + x) * p[46] + 4 * x * (-1 + y) * (-1 + x) * p[49] \+
++ 4 * y * (-1 + y) * (-1 + x) * p[52] - 4 * x * y * (-1 + y) * p[55] -
+ 4 * x * y * (-1 + x) * p[58];" }{TEXT 213 257 "\ndtau[2][0] = 2 * (-1
+ + z) * (-1 + y) * (-1 + x) * p[2] + 2 * x * (-1 + z) * (-1 + y) * p[5
+] - 2 * x * y * (-1 + z) * p[8] - 2 * y * (-1 + z) * (-1 + x) * p[11] \+
+- 4 * y * (-1 + z) * (-1 + y) * p[29] + (-1 + z) * (-1 + y) * (2 * x +
+ 2 * y + 2 * z - 1) * p[2]" }{TEXT 213 256 " + (-1 + z) * (-1 + y) * (
+-2 * y - 2 * z + 2 * x - 1) * p[5] - y * (-1 + z) * (2 * y - 2 * z - 3
+ + 2 * x) * p[8] - y * (-1 + z) * (2 * x + 2 * z + 1 - 2 * y) * p[11] \+
+- z * (-1 + y) * (2 * x + 2 * y - 2 * z + 1) * p[14] - z * (-1 + y) * \+
+(-2 * y + 2 * z - 3 " }{TEXT 213 256 "+ 2 * x) * p[17] + y * z * (2 * \+
+y + 2 * z - 5 + 2 * x) * p[20] + y * z * (2 * x - 2 * z + 3 - 2 * y) *
+ p[23] - 4 * (-1 + z) * (-1 + y) * (-1 + x) * p[26] - 4 * x * (-1 + z)
+ * (-1 + y) * p[26] - 2 * z * (-1 + y) * (-1 + x) * p[14] - 2 * x * z \+
+* (-1 + y) * p" }{TEXT 213 256 "[17] + 2 * x * y * z * p[20] + 2 * y *
+ z * (-1 + x) * p[23] - 4 * z * (-1 + z) * (-1 + y) * p[32] + 4 * y * \+
+(-1 + z) * (-1 + y) * p[35] + 4 * z * (-1 + z) * (-1 + y) * p[38] + 4 \+
+* y * (-1 + z) * (-1 + x) * p[41] + 4 * x * y * (-1 + z) * p[41] - 4 *
+ y * z *" }{TEXT 213 235 " (-1 + z) * p[44] + 4 * y * z * (-1 + z) * p
+[47] + 4 * z * (-1 + y) * (-1 + x) * p[50] + 4 * x * z * (-1 + y) * p[
+50] + 4 * y * z * (-1 + y) * p[53] - 4 * y * z * (-1 + y) * p[56] - 4 \+
+* y * z * (-1 + x) * p[59] - 4 * x * y * z * p[59];" }{TEXT 213 257 "
+\ndtau[2][1] = 2 * (-1 + z) * (-1 + y) * (-1 + x) * p[2] - 2 * x * (-1 + z) * (-1 + y) * p[5] - 2 * x * y * (-1 + z) * p[8] + 2 * y * (-1 + z) * (-1 + x) * p[11] - 2 * z * (-1 + y) * (-1 + x) * p[14] + 2 * x * z * (-1 + y) * p[17] + 2 * x * y * z * p[20] - 2
+" }{TEXT 213 256 " * y * z * (-1 + x) * p[23] + (-1 + z) * (-1 + x) * \+
+(2 * x + 2 * y + 2 * z - 1) * p[2] + x * (-1 + z) * (-2 * y - 2 * z + \+
+2 * x - 1) * p[5] - x * (-1 + z) * (2 * y - 2 * z - 3 + 2 * x) * p[8] \+
+- (-1 + z) * (-1 + x) * (2 * x + 2 * z + 1 - 2 * y) * p[11] - z " }
+{TEXT 213 256 "* (-1 + x) * (2 * x + 2 * y - 2 * z + 1) * p[14] - x * \+
+z * (-2 * y + 2 * z - 3 + 2 * x) * p[17] + x * z * (2 * y + 2 * z - 5 \+
++ 2 * x) * p[20] + z * (-1 + x) * (2 * x - 2 * z + 3 - 2 * y) * p[23] \+
+- 4 * x * (-1 + z) * (-1 + x) * p[26] - 4 * (-1 + z) * (-1 + " }{TEXT 
+213 256 "y) * (-1 + x) * p[29] - 4 * y * (-1 + z) * (-1 + x) * p[29] -
+ 4 * z * (-1 + z) * (-1 + x) * p[32] + 4 * x * (-1 + z) * (-1 + y) * p
+[35] + 4 * x * y * (-1 + z) * p[35] + 4 * x * z * (-1 + z) * p[38] + 4
+ * x * (-1 + z) * (-1 + x) * p[41] - 4 * x * z * (-1 + " }{TEXT 213 
+235 "z) * p[44] + 4 * z * (-1 + z) * (-1 + x) * p[47] + 4 * x * z * (-
+1 + x) * p[50] + 4 * z * (-1 + y) * (-1 + x) * p[53] + 4 * y * z * (-1
+ + x) * p[53] - 4 * x * z * (-1 + y) * p[56] - 4 * x * y * z * p[56] -
+ 4 * x * z * (-1 + x) * p[59];" }{TEXT 213 257 "\ndtau[2][2] = 2 * (-1
+ + z) * (-1 + y) * (-1 + x) * p[2] - 2 * x * (-1 + z) * (-1 + y) * p[5
+] + 2 * x * y * (-1 + z) * p[8] - 2 * y * (-1 + z) * (-1 + x) * p[11] \+
++ 2 * z * (-1 + y) * (-1 + x) * p[14] - 2 * x * z * (-1 + y) * p[17] +
+ 2 * x * y * z * p[20] - 2" }{TEXT 213 256 " * y * z * (-1 + x) * p[23
+] + (-1 + y) * (-1 + x) * (2 * x + 2 * y + 2 * z - 1) * p[2] + x * (-1
+ + y) * (-2 * y - 2 * z + 2 * x - 1) * p[5] - x * y * (2 * y - 2 * z -
+ 3 + 2 * x) * p[8] - y * (-1 + x) * (2 * x + 2 * z + 1 - 2 * y) * p[11
+] - (-1 + y) * (-1 +" }{TEXT 213 256 " x) * (2 * x + 2 * y - 2 * z + 1
+) * p[14] - x * (-1 + y) * (-2 * y + 2 * z - 3 + 2 * x) * p[17] + x * \+
+y * (2 * y + 2 * z - 5 + 2 * x) * p[20] + y * (-1 + x) * (2 * x - 2 * \+
+z + 3 - 2 * y) * p[23] - 4 * x * (-1 + y) * (-1 + x) * p[26] - 4 * y *
+ (-1 + y) * (-" }{TEXT 213 256 "1 + x) * p[29] - 4 * (-1 + z) * (-1 + \+
+y) * (-1 + x) * p[32] - 4 * z * (-1 + y) * (-1 + x) * p[32] + 4 * x * \+
+y * (-1 + y) * p[35] + 4 * x * (-1 + z) * (-1 + y) * p[38] + 4 * x * z
+ * (-1 + y) * p[38] + 4 * x * y * (-1 + x) * p[41] - 4 * x * y * (-1 +
+ z) * p[" }{TEXT 213 235 "44] - 4 * x * y * z * p[44] + 4 * y * (-1 + \+
+z) * (-1 + x) * p[47] + 4 * y * z * (-1 + x) * p[47] + 4 * x * (-1 + y
+) * (-1 + x) * p[50] + 4 * y * (-1 + y) * (-1 + x) * p[53] - 4 * x * y
+ * (-1 + y) * p[56] - 4 * x * y * (-1 + x) * p[59];" }}}{EXCHG {PARA 0
+ "> " 0 "" {MPLTEXT 1 0 2 "?C" }}}{EXCHG {PARA 0 "> " 0 "" {MPLTEXT 1 
+0 0 "" }}}}
 {MARK "0 0 0" 0 }{VIEWOPTS 1 1 0 125 100 1803 1 1 1 1 }{PAGENUMBERS 0
  1 2 33 1 1 }
