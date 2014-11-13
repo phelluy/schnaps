@@ -253,7 +253,7 @@ void BuildKernels(CLInfo* cli,char* strprog){
   // compilation
   err = clBuildProgram(cli->program,
 		       1,               // one device
-		       cli->device + cli->deviceid,
+		       &(cli->device[cli->deviceid]),
 		       NULL, NULL, NULL);
 
   /* cl_int clBuildProgram (	cl_program program, */
