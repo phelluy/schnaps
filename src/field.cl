@@ -57,11 +57,12 @@ double wglop(int deg,int i){
 
 void get_dtau(__constant double* physnode,double* dtau);
 
-void get_dtau(__constant double* physnode,double* dtau){
+void get_dtau(double x,double y,double z,__constant double* physnode,double* dtau){
 
  // gradient of the shape functions and value (4th component)
   // of the shape functions
   double gradphi[20][3];
+  double x,y,z;
   // this fills the values of gradphi
   gradphi[0][0] = (-1 + z) * (-1 + y) * (2 * y + 2 * z + 4 * x - 3);
   gradphi[0][1] = (-1 + z) * (-1 + x) * (2 * x + 2 * z - 3 + 4 * y);
@@ -204,7 +205,7 @@ void DGMass(
   //        NULL,dtau,  // xphy,dtau
   //        codtau,NULL,NULL); // codtau,dpsi,vnds
 
-  get_dtau(physnode,dtau);
+  get_dtau(x,y,z,physnode,dtau);
 
    codtau[0][0] = dtau[1][1] * dtau[2][2] - dtau[1][2] * dtau[2][1];
   codtau[0][1] = -dtau[1][0] * dtau[2][2] + dtau[1][2] * dtau[2][0];
