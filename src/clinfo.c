@@ -253,17 +253,17 @@ void BuildKernels(CLInfo* cli,char* strprog){
   // if not successfull: display the errors
   if (err != CL_SUCCESS || err == CL_SUCCESS ) {
     size_t len;
-    char buffer[1024*1024];
+    char buffer[10000];
     printf("Compilation output:\n");
     clGetProgramBuildInfo(cli->program,
 			  cli->device[cli->deviceid],
 			  CL_PROGRAM_BUILD_LOG, sizeof(buffer),
 			  buffer,
 			  &len);
-    printf("len=%d\n",(int) len);
+    printf("len=%d buf=%zd\n",(int) len,sizeof(buffer));
     printf("%s\n",buffer);
   }
-    assert( err == CL_SUCCESS);
+  assert( err == CL_SUCCESS);
 
 
 }

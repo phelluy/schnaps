@@ -161,7 +161,7 @@ void DGMass(
 
   double dtau[3][3],codtau[3][3],x,y,z,wpg;
   //ref_pg_vol(param+1,ipg,xpgref,&wpg,NULL);
-  int ix = ipg % (param[1] + 1);  
+  int ix = ipg % (param[1] + 1);
   ipg/=(param[1] + 1);
 
   int iy = ipg % (param[2] + 1);
@@ -171,15 +171,15 @@ void DGMass(
   ipg/=(param[3] + 1);
 
   int ncx= ipg % param[4];
-  double hx=1/(double) param[4]; 
+  double hx=1/(double) param[4];
   ipg/=param[4];
 
   int ncy= ipg % param[5];
-  double hy=1/(double) param[5]; 
+  double hy=1/(double) param[5];
   ipg/=param[5];
 
   int ncz= ipg;
-  double hz=1/(double) param[6]; 
+  double hz=1/(double) param[6];
 
   int offset[3];
 
@@ -206,7 +206,7 @@ void DGMass(
   //        NULL,dtau,  // xphy,dtau
   //        codtau,NULL,NULL); // codtau,dpsi,vnds
 
-  get_dtau(x,y,z,physnode,dtau);
+   get_dtau(x,y,z,physnode,dtau);
 
    codtau[0][0] = dtau[1][1] * dtau[2][2] - dtau[1][2] * dtau[2][1];
   codtau[0][1] = -dtau[1][0] * dtau[2][2] + dtau[1][2] * dtau[2][0];
