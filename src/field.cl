@@ -55,7 +55,8 @@ double wglop(int deg,int i){
   return gauss_lob_weight[gauss_lob_offset[deg]+i];
 }
 
-void get_dtau(__constant double* physnode,double* dtau);
+void get_dtau(double x,double y,double z,
+	      __constant double* physnode,double* dtau);
 
 void get_dtau(double x,double y,double z,__constant double* physnode,double* dtau){
 
