@@ -47,6 +47,78 @@ __constant double gauss_lob_weight[] = {
 __constant int gauss_lob_offset[] = {0, 1, 3, 6, 10};
 
 
+__constant double gauss_lob_dpsi[] = {
+  0.00000000000000000000000000000000000000000000000000000000000,
+  -1.,
+  -1.,
+  1.,
+  1.,
+  -3.,
+  -1.,
+  1.,
+  4.,
+  0.,
+  -4.,
+  -1.,
+  1.,
+  3.,
+  -6,
+  -1.61803398874989484820458683436,
+  .618033988749894848204586834362,
+  -1,
+  8.09016994374947424102293417177,
+  0,
+  -2.23606797749978969640917366872,
+  3.09016994374947424102293417184,
+  -3.09016994374947424102293417182,
+  2.23606797749978969640917366872,
+  0,
+  -8.09016994374947424102293417177,
+  1,
+  -.618033988749894848204586834362,
+  1.61803398874989484820458683436,
+  6,
+  -10,
+  -2.48198050606196571569743868436,
+  .75,
+  -.518019493938034284302561315632,
+  1,
+  13.5130049774484800076860550594,
+  0,
+  -2.67316915539090667050969419631,
+  1.52752523165194666886268239794,
+  -2.82032835588485332564727827404,
+  -5.33333333333333333333333333336,
+  3.49148624377587810025755976667,
+  0,
+  -3.49148624377587810025755976662,
+  5.33333333333333333333333333336,
+  2.82032835588485332564727827399,
+  -1.52752523165194666886268239791,
+  2.67316915539090667050969419635,
+  0,
+  -13.5130049774484800076860550594,
+  -1,
+  .518019493938034284302561315631,
+  -.75,
+  2.48198050606196571569743868437,
+  10
+};
+
+//! indirection for finding the GLOP
+//! data for a given degree in the previous arrays
+__constant int gauss_lob_dpsi_offset[] = {0, 1, 5, 14, 30};
+
+
+double dlag(int deg,int ib,int ipg);
+// return the 1d derivative of lagrange polynomial ib at glop ipg
+double dlag(int deg,int ib,int ipg){
+
+  return gauss_lob_dpsi[gauss_lob_dpsi_offset[deg]+ib*(deg+1)+ipg];
+
+}
+
+
 //!  \brief 1d GLOP weights for a given degree
 //! \param[in] deg degree
 //! \param[in] i glop index
@@ -58,21 +130,120 @@ double wglop(int deg,int i){
 void get_dtau(double x,double y,double z,
 	      __constant double physnode[],double dtau[][3]);
 
-// compute the volume terms on one macrocell
 
+void NumFlux(double* wL,double* wR,double* vnds,double* flux);
+
+
+// compute the volume terms on one macrocell
 __kernel
 void DGVolume(
-	    __constant int* param,        // interp param
-            __constant int* ie,            // macrocel index
-            __constant double* physnode,  // macrocell nodes
-            __global double* wn,       // field values
-            __global double* dtwn){       // time derivative
-
-  // cell id
-  int ic=get_group_id(0);
-  // 
-  int p=get_local_id(0);
+	      __constant int* param,        // interp param
+	      __constant int* ie,            // macrocel index
+	      __constant double* physnode,  // macrocell nodes
+	      __global double* wn,       // field values
+	      __global double* dtwn){       // time derivative
   
+  const int m = param[0];
+  const int deg[3]={param[1],
+			 param[2],
+			 param[3]};
+  const int npg[3] = {deg[0]+1,
+			   deg[1]+1,
+			   deg[2]+1};
+  const int nraf[3]={param[4],
+			  param[5],
+			  param[6]};  
+  
+  const int nnpg=(param[1]+1)*(param[2]+1)*(param[3]+1) *
+    (param[4])*(param[5])*(param[6]);
+  
+  // cell id
+  int icell=get_group_id(0);
+  int ic[3];
+  ic[0]=icell%nraf[0];
+  ic[1]=(icell/nraf[0])%nraf[1];
+  ic[2]=icell/nraf[0]/nraf[1];
+  
+  
+  // gauss point id where
+  // we compute the jacobian
+  int ipg=get_local_id(0);
+  int p[3];
+  p[0]=ipg%npg[0];
+  p[1]=(ipg/npg[0])%npg[1];
+  p[2]=ipg/npg[0]/npg[1];
+  
+  // ref coordinates
+  double hx=1/(double) nraf[0];
+  double hy=1/(double) nraf[1];
+  double hz=1/(double) nraf[2];
+
+  int offset[3];
+
+  offset[0]=gauss_lob_offset[deg[0]]+p[0];
+  offset[1]=gauss_lob_offset[deg[1]]+p[1];
+  offset[2]=gauss_lob_offset[deg[2]]+p[2];
+
+  double x=hx*(ic[0]+gauss_lob_point[offset[0]]);
+  double y=hy*(ic[1]+gauss_lob_point[offset[1]]);
+  double z=hz*(ic[2]+gauss_lob_point[offset[2]]);
+
+  double wpg=hx*hy*hz*gauss_lob_weight[offset[0]]*
+    gauss_lob_weight[offset[1]]*
+    gauss_lob_weight[offset[2]];
+
+  double dtau[3][3];
+  get_dtau(x,y,z,physnode,dtau);
+  
+  double codtau[3][3];
+
+  codtau[0][0] = dtau[1][1] * dtau[2][2] - dtau[1][2] * dtau[2][1];
+  codtau[0][1] = -dtau[1][0] * dtau[2][2] + dtau[1][2] * dtau[2][0];
+  codtau[0][2] = dtau[1][0] * dtau[2][1] - dtau[1][1] * dtau[2][0];
+  codtau[1][0] = -dtau[0][1] * dtau[2][2] + dtau[0][2] * dtau[2][1];
+  codtau[1][1] = dtau[0][0] * dtau[2][2] - dtau[0][2] * dtau[2][0];
+  codtau[1][2] = -dtau[0][0] * dtau[2][1] + dtau[0][1] * dtau[2][0];
+  codtau[2][0] = dtau[0][1] * dtau[1][2] - dtau[0][2] * dtau[1][1];
+  codtau[2][1] = -dtau[0][0] * dtau[1][2] + dtau[0][2] * dtau[1][0];
+  codtau[2][2] = dtau[0][0] * dtau[1][1] - dtau[0][1] * dtau[1][0];
+
+
+#define _M 3  /// to do let schnaps specify m !!!!!!!!
+
+  double wL[_M];
+  for(int iv=0; iv < m; iv++){
+    //int imemL=f->varindex(f_interp_param,ie,ipgL,iv);
+    int imemL= iv + m * ( get_global_id(0) + nnpg * *ie);
+    wL[iv] = wn[imemL]; /// big bug !!!!
+    
+    //wL[iv] = f->wn[imemL];
+  }
+
+
+  int q[3]={p[0],p[1],p[2]};
+  for(int dim0 = 0; dim0 < 3; dim0++){
+    for(int iq = 0; iq < npg[dim0]; iq++){
+      q[dim0]=(p[dim0]+iq)%npg[dim0];
+      double dphiref[3]={0,0,0};
+      dphiref[dim0]=dlag(deg[dim0],q[dim0],p[dim0])*nraf[dim0];
+      double dphi[3];
+      for(int ii=0;ii<3;ii++){
+	dphi[ii]=0;
+	for(int jj=0;jj<3;jj++){
+	  dphi[ii]+=codtau[ii][jj]*dphiref[jj];
+	}
+      }
+      double flux[_M];
+      //NumFlux(wL,wL,dphi,flux); // to do let schnaps give fluxnum
+
+      for(int iv=0; iv < m; iv++){
+	int imemR;//=f->varindex(f_interp_param,ie,ipgR,iv); // to do !
+	dtwn[imemR]+=flux[iv]*wpg;
+      }
+
+
+    }
+  }
 
 }
 
@@ -88,7 +259,7 @@ void DGMass(
   int npg=(param[1]+1)*(param[2]+1)*(param[3]+1) *
          (param[4])*(param[5])*(param[6]);
 
-  double dtau[3][3],codtau[3][3],x,y,z,wpg;
+  double dtau[3][3],x,y,z,wpg;
   //ref_pg_vol(param+1,ipg,xpgref,&wpg,NULL);
   int ix = ipg % (param[1] + 1);
   ipg/=(param[1] + 1);

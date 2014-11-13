@@ -1074,7 +1074,7 @@ void* DGVolume(void* mc){
 		  int ipgL=offsetL+p[0]+npg[0]*(p[1]+npg[1]*p[2]);
 		  for(int iv=0; iv < m; iv++){
 		    ///int imemL=f->varindex(f_interp_param,ie,ipgL,iv);
-		    wL[iv] = f->wn[imems[m*(ipgL-offsetL)+iv]]; /// big bug !!!!
+		    wL[iv] = f->wn[imems[m*(ipgL-offsetL)+iv]]; 
 
 		    //wL[iv] = f->wn[imemL];
 		  }
