@@ -280,11 +280,12 @@ void ReadFile(char filename[],char** s){
   rewind(f);
 
   /* allocate memory for entire content */
-  *s = calloc(size+1,sizeof(char));
+  *s = calloc(size+2,sizeof(char));
   assert(*s);
   /* copy the file into the buffer */
   int status=fread( *s , sizeof(char), size , f);
   // assert(status==0);
+  //assert(s[size]=='\0');
   fclose(f);
 
 
