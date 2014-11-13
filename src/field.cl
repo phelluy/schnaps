@@ -56,9 +56,9 @@ double wglop(int deg,int i){
 }
 
 void get_dtau(double x,double y,double z,
-	      __constant double physnode[],double dtau[][3]);
+	      __constant double physnode[][3],double dtau[][3]);
 
-void get_dtau(double x,double y,double z,__constant double physnode[],double dtau[][3]){
+void get_dtau(double x,double y,double z,__constant double p[][3],double dtau[][3]){
 
  // gradient of the shape functions and value (4th component)
   // of the shape functions
@@ -136,7 +136,6 @@ void get_dtau(double x,double y,double z,__constant double physnode[],double dta
   /*     } */
   /*   } */
   /* } */
-  double **p=physnode;
 
 dtau[0][0] = 2 * (-1 + z) * (-1 + y) * (-1 + x) * p[0] + 2 * x * (-1 + z) * (-1 + y) * p[3] - 2 * x * y * (-1 + z) * p[6] - 2 * y * (-1 + z) * (-1 + x) * p[9] - 2 * z * (-1 + y) * (-1 + x) * p[12] - 2 * x * z * (-1 + y) * p[15] + 2 * x * y * z * p[18] + 2 * y * z * (-1 + x) * p[21] + (-1 + z) * (-1 + y) * (2 * x + 2 * y + 2 * z - 1) * p[0] + (-1 + z) * (-1 + y) * (-2 * y - 2 * z + 2 * x - 1) * p[3] - y * (-1 + z) * (2 * y - 2 * z - 3 + 2 * x) * p[6] - y * (-1 + z) * (2 * x + 2 * z + 1 - 2 * y) * p[9] - z * (-1 + y) * (2 * x + 2 * y - 2 * z + 1) * p[12] - z * (-1 + y) * (-2 * y + 2 * z - 3 + 2 * x) * p[15] + y * z * (2 * y + 2 * z - 5 + 2 * x) * p[18] + y * z * (2 * x - 2 * z + 3 - 2 * y) * p[21] - 4 * (-1 + z) * (-1 + y) * (-1 + x) * p[24] - 4 * x * (-1 + z) * (-1 + y) * p[24] - 4 * y * (-1 + z) * (-1 + y) * p[27] - 4 * z * (-1 + z) * (-1 + y) * p[30] + 4 * y * (-1 + z) * (-1 + y) * p[33] + 4 * z * (-1 + z) * (-1 + y) * p[36] + 4 * y * (-1 + z) * (-1 + x) * p[39] + 4 * x * y * (-1 + z) * p[39] - 4 * y * z * (-1 + z) * p[42] + 4 * y * z * (-1 + z) * p[45] + 4 * z * (-1 + y) * (-1 + x) * p[48] + 4 * x * z * (-1 + y) * p[48] + 4 * y * z * (-1 + y) * p[51] - 4 * y * z * (-1 + y) * p[54] - 4 * y * z * (-1 + x) * p[57] - 4 * x * y * z * p[57];
 dtau[0][1] = 2 * (-1 + z) * (-1 + y) * (-1 + x) * p[0] - 2 * x * (-1 + z) * (-1 + y) * p[3] - 2 * x * y * (-1 + z) * p[6] + 2 * y * (-1 + z) * (-1 + x) * p[9] - 2 * z * (-1 + y) * (-1 + x) * p[12] + 2 * x * z * (-1 + y) * p[15] + 2 * x * y * z * p[18] - 2 * y * z * (-1 + x) * p[21] + (-1 + z) * (-1 + x) * (2 * x + 2 * y + 2 * z - 1) * p[0] + x * (-1 + z) * (-2 * y - 2 * z + 2 * x - 1) * p[3] - x * (-1 + z) * (2 * y - 2 * z - 3 + 2 * x) * p[6] - (-1 + z) * (-1 + x) * (2 * x + 2 * z + 1 - 2 * y) * p[9] - z * (-1 + x) * (2 * x + 2 * y - 2 * z + 1) * p[12] - x * z * (-2 * y + 2 * z - 3 + 2 * x) * p[15] + x * z * (2 * y + 2 * z - 5 + 2 * x) * p[18] + z * (-1 + x) * (2 * x - 2 * z + 3 - 2 * y) * p[21] - 4 * x * (-1 + z) * (-1 + x) * p[24] - 4 * (-1 + z) * (-1 + y) * (-1 + x) * p[27] - 4 * y * (-1 + z) * (-1 + x) * p[27] - 4 * z * (-1 + z) * (-1 + x) * p[30] + 4 * x * (-1 + z) * (-1 + y) * p[33] + 4 * x * y * (-1 + z) * p[33] + 4 * x * z * (-1 + z) * p[36] + 4 * x * (-1 + z) * (-1 + x) * p[39] - 4 * x * z * (-1 + z) * p[42] + 4 * z * (-1 + z) * (-1 + x) * p[45] + 4 * x * z * (-1 + x) * p[48] + 4 * z * (-1 + y) * (-1 + x) * p[51] + 4 * y * z * (-1 + x) * p[51] - 4 * x * z * (-1 + y) * p[54] - 4 * x * y * z * p[54] - 4 * x * z * (-1 + x) * p[57];
