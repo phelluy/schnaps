@@ -58,6 +58,23 @@ double wglop(int deg,int i){
 void get_dtau(double x,double y,double z,
 	      __constant double physnode[],double dtau[][3]);
 
+// compute the volume terms on one macrocell
+
+__kernel
+void DGVolume(
+	    __constant int* param,        // interp param
+            __constant int* ie,            // macrocel index
+            __constant double* physnode,  // macrocell nodes
+            __global double* wn,       // field values
+            __global double* dtwn){       // time derivative
+
+  // cell id
+  int ic=get_group_id(0);
+  // 
+  int p=get_local_id(0);
+  
+
+}
 
 // apply division by the mass matrix on one macrocell
 __kernel
@@ -70,13 +87,6 @@ void DGMass(
   int ipg=get_global_id(0);
   int npg=(param[1]+1)*(param[2]+1)*(param[3]+1) *
          (param[4])*(param[5])*(param[6]);
-
-  //printf("debut ie=%d dtw=%f\n",
-  //	  *ie,dtwn[ipg]);
-
-  for(int i=0;i<20;i++){
-    //printf("ie=%d physnode[%d]=%f %f %f\n",*ie,i,physnode[3*i+0],physnode[3*i+1],physnode[3*i+2]);
-  }
 
   double dtau[3][3],codtau[3][3],x,y,z,wpg;
   //ref_pg_vol(param+1,ipg,xpgref,&wpg,NULL);
