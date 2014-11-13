@@ -251,9 +251,21 @@ void BuildKernels(CLInfo* cli,char* strprog){
   }
 
   // compilation
-  err = clBuildProgram(cli->program, 0, NULL, NULL, NULL, NULL);
+  err = clBuildProgram(cli->program,
+		       1,               // one device
+		       cli->device + cli->deviceid,
+		       NULL, NULL, NULL);
+
+  /* cl_int clBuildProgram (	cl_program program, */
+  /* 				cl_uint num_devices, */
+  /* 				const cl_device_id *device_list, */
+  /* 				const char *options, */
+  /* 				void (CL_CALLBACK *pfn_notify)(cl_program program, void *user_data), */
+  /* 				void *user_data) */
+
+
   // if not successfull: display the errors
-  if (err != CL_SUCCESS || err == CL_SUCCESS ) {
+  if (err != CL_SUCCESS) {
     size_t len;
     char buffer[1024*1024];
     printf("Compilation output:\n");
