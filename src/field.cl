@@ -225,21 +225,23 @@ void DGMass(
 
    get_dtau(x,y,z,physnode,dtau);
 
-   codtau[0][0] = dtau[1][1] * dtau[2][2] - dtau[1][2] * dtau[2][1];
-  codtau[0][1] = -dtau[1][0] * dtau[2][2] + dtau[1][2] * dtau[2][0];
-  codtau[0][2] = dtau[1][0] * dtau[2][1] - dtau[1][1] * dtau[2][0];
-  codtau[1][0] = -dtau[0][1] * dtau[2][2] + dtau[0][2] * dtau[2][1];
-  codtau[1][1] = dtau[0][0] * dtau[2][2] - dtau[0][2] * dtau[2][0];
-  codtau[1][2] = -dtau[0][0] * dtau[2][1] + dtau[0][1] * dtau[2][0];
-  codtau[2][0] = dtau[0][1] * dtau[1][2] - dtau[0][2] * dtau[1][1];
-  codtau[2][1] = -dtau[0][0] * dtau[1][2] + dtau[0][2] * dtau[1][0];
-  codtau[2][2] = dtau[0][0] * dtau[1][1] - dtau[0][1] * dtau[1][0];
-
+   //codtau[0][0] = dtau[1][1] * dtau[2][2] - dtau[1][2] * dtau[2][1];
+   //codtau[0][1] = -dtau[1][0] * dtau[2][2] + dtau[1][2] * dtau[2][0];
+   //codtau[0][2] = dtau[1][0] * dtau[2][1] - dtau[1][1] * dtau[2][0];
+   //codtau[1][0] = -dtau[0][1] * dtau[2][2] + dtau[0][2] * dtau[2][1];
+   //codtau[1][1] = dtau[0][0] * dtau[2][2] - dtau[0][2] * dtau[2][0];
+   //codtau[1][2] = -dtau[0][0] * dtau[2][1] + dtau[0][1] * dtau[2][0];
+   //codtau[2][0] = dtau[0][1] * dtau[1][2] - dtau[0][2] * dtau[1][1];
+   //codtau[2][1] = -dtau[0][0] * dtau[1][2] + dtau[0][2] * dtau[1][0];
+   //codtau[2][2] = dtau[0][0] * dtau[1][1] - dtau[0][1] * dtau[1][0];
+   //double det=dtau[0][0]*codtau[0][0]+dtau[0][1]*codtau[0][1]+
+   // dtau[0][2]*codtau[0][2];
+   
   // end of Ref2Phy
   //////////////////////////////////////////////////////////
 
-  double det=dtau[0][0]*codtau[0][0]+dtau[0][1]*codtau[0][1]+
-    dtau[0][2]*codtau[0][2];
+  double det=tau[0][0]*tau[1][1]*tau[2][2]-tau[0][0]*tau[1][2]*tau[2][1]-tau[1][0]*tau[0][1]*tau[2][2]+
+    tau[1][0]*tau[0][2]*tau[2][1]+tau[2][0]*tau[0][1]*tau[1][2]-tau[2][0]*tau[0][2]*tau[1][1];
 
   for(int iv=0;iv<param[0];iv++){
     // varindex
