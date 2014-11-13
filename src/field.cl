@@ -56,9 +56,9 @@ double wglop(int deg,int i){
 }
 
 void get_dtau(double x,double y,double z,
-	      __constant double physnode[][3],double dtau[][3]);
+	      __constant double physnode[],double dtau[][3]);
 
-void get_dtau(double x,double y,double z,__constant double p[][3],double dtau[][3]){
+void get_dtau(double x,double y,double z,__constant double p[],double dtau[][3]){
 
  // gradient of the shape functions and value (4th component)
   // of the shape functions
