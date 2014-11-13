@@ -244,8 +244,8 @@ void BuildKernels(CLInfo* cli,char* strprog){
                               (const char **) &strprog,
                               NULL,
                               &err);
-  printf("%s\n",strprog);
-  assert(1==2);
+  //printf("%s\n",strprog);
+  //assert(1==2);
   if (!(cli->program)) {
     printf("Failed to create program.\n");
   }
