@@ -240,8 +240,8 @@ void DGMass(
   // end of Ref2Phy
   //////////////////////////////////////////////////////////
 
-  double det=tau[0][0]*tau[1][1]*tau[2][2]-tau[0][0]*tau[1][2]*tau[2][1]-tau[1][0]*tau[0][1]*tau[2][2]+
-    tau[1][0]*tau[0][2]*tau[2][1]+tau[2][0]*tau[0][1]*tau[1][2]-tau[2][0]*tau[0][2]*tau[1][1];
+  double det=dtau[0][0]*dtau[1][1]*dtau[2][2]-dtau[0][0]*dtau[1][2]*dtau[2][1]-dtau[1][0]*dtau[0][1]*dtau[2][2]+
+    dtau[1][0]*dtau[0][2]*dtau[2][1]+dtau[2][0]*dtau[0][1]*dtau[1][2]-dtau[2][0]*dtau[0][2]*dtau[1][1];
 
   for(int iv=0;iv<param[0];iv++){
     // varindex
