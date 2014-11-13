@@ -55,76 +55,15 @@ double wglop(int deg,int i){
   return gauss_lob_weight[gauss_lob_offset[deg]+i];
 }
 
+void get_dtau(double x,double y,double z,
+	      __constant double physnode[],double dtau[][3]);
 
-// apply division by the mass matrix on one macrocell
-__kernel
-void DGMass(
-	    __constant int* param,        // interp param
-            __constant int* ie,            // macrocel index
-            __constant double* physnode,  // macrocell nodes
-            __global double* dtwn){       // time derivative
-  
-  int ipg=get_global_id(0);
-  int npg=(param[1]+1)*(param[2]+1)*(param[3]+1) *
-         (param[4])*(param[5])*(param[6]);
+void get_dtau(double x,double y,double z,__constant double physnode[],double dtau[][3]){
 
-  //printf("debut ie=%d dtw=%f\n",
-  //	  *ie,dtwn[ipg]);
-
-  for(int i=0;i<20;i++){
-    //printf("ie=%d physnode[%d]=%f %f %f\n",*ie,i,physnode[3*i+0],physnode[3*i+1],physnode[3*i+2]);
-  }
-
-  double dtau[3][3],codtau[3][3],x,y,z,wpg;
-  //ref_pg_vol(param+1,ipg,xpgref,&wpg,NULL);
-  int ix = ipg % (param[1] + 1);  
-  ipg/=(param[1] + 1);
-
-  int iy = ipg % (param[2] + 1);
-  ipg/=(param[2] + 1);
-
-  int iz = ipg % (param[3] + 1);
-  ipg/=(param[3] + 1);
-
-  int ncx= ipg % param[4];
-  double hx=1/(double) param[4]; 
-  ipg/=param[4];
-
-  int ncy= ipg % param[5];
-  double hy=1/(double) param[5]; 
-  ipg/=param[5];
-
-  int ncz= ipg;
-  double hz=1/(double) param[6]; 
-
-  int offset[3];
-
-  offset[0]=gauss_lob_offset[param[1]]+ix;
-  offset[1]=gauss_lob_offset[param[2]]+iy;
-  offset[2]=gauss_lob_offset[param[3]]+iz;
-
-  x=hx*(ncx+gauss_lob_point[offset[0]]);
-  y=hy*(ncy+gauss_lob_point[offset[1]]);
-  z=hz*(ncz+gauss_lob_point[offset[2]]);
-
-
-  wpg=hx*hy*hz*gauss_lob_weight[offset[0]]*
-    gauss_lob_weight[offset[1]]*
-    gauss_lob_weight[offset[2]];
-
-
-  // end of ref_pg_vol
-  //////////////////////////////////////////////
-
-  //Ref2Phy(physnode, // phys. nodes
-  //        xpgref,  // xref
-  //        NULL,-1, // dpsiref,ifa
-  //        NULL,dtau,  // xphy,dtau
-  //        codtau,NULL,NULL); // codtau,dpsi,vnds
-
-  // gradient of the shape functions and value (4th component)
+ // gradient of the shape functions and value (4th component)
   // of the shape functions
   double gradphi[20][3];
+  //double x,y,z;
   // this fills the values of gradphi
   gradphi[0][0] = (-1 + z) * (-1 + y) * (2 * y + 2 * z + 4 * x - 3);
   gradphi[0][1] = (-1 + z) * (-1 + x) * (2 * x + 2 * z - 3 + 4 * y);
@@ -197,7 +136,79 @@ void DGMass(
       }
     }
   }
-  codtau[0][0] = dtau[1][1] * dtau[2][2] - dtau[1][2] * dtau[2][1];
+
+
+}
+
+// apply division by the mass matrix on one macrocell
+__kernel
+void DGMass(
+	    __constant int* param,        // interp param
+            __constant int* ie,            // macrocel index
+            __constant double* physnode,  // macrocell nodes
+            __global double* dtwn){       // time derivative
+  
+  int ipg=get_global_id(0);
+  int npg=(param[1]+1)*(param[2]+1)*(param[3]+1) *
+         (param[4])*(param[5])*(param[6]);
+
+  //printf("debut ie=%d dtw=%f\n",
+  //	  *ie,dtwn[ipg]);
+
+  for(int i=0;i<20;i++){
+    //printf("ie=%d physnode[%d]=%f %f %f\n",*ie,i,physnode[3*i+0],physnode[3*i+1],physnode[3*i+2]);
+  }
+
+  double dtau[3][3],codtau[3][3],x,y,z,wpg;
+  //ref_pg_vol(param+1,ipg,xpgref,&wpg,NULL);
+  int ix = ipg % (param[1] + 1);
+  ipg/=(param[1] + 1);
+
+  int iy = ipg % (param[2] + 1);
+  ipg/=(param[2] + 1);
+
+  int iz = ipg % (param[3] + 1);
+  ipg/=(param[3] + 1);
+
+  int ncx= ipg % param[4];
+  double hx=1/(double) param[4];
+  ipg/=param[4];
+
+  int ncy= ipg % param[5];
+  double hy=1/(double) param[5];
+  ipg/=param[5];
+
+  int ncz= ipg;
+  double hz=1/(double) param[6];
+
+  int offset[3];
+
+  offset[0]=gauss_lob_offset[param[1]]+ix;
+  offset[1]=gauss_lob_offset[param[2]]+iy;
+  offset[2]=gauss_lob_offset[param[3]]+iz;
+
+  x=hx*(ncx+gauss_lob_point[offset[0]]);
+  y=hy*(ncy+gauss_lob_point[offset[1]]);
+  z=hz*(ncz+gauss_lob_point[offset[2]]);
+
+
+  wpg=hx*hy*hz*gauss_lob_weight[offset[0]]*
+    gauss_lob_weight[offset[1]]*
+    gauss_lob_weight[offset[2]];
+
+
+  // end of ref_pg_vol
+  //////////////////////////////////////////////
+
+  //Ref2Phy(physnode, // phys. nodes
+  //        xpgref,  // xref
+  //        NULL,-1, // dpsiref,ifa
+  //        NULL,dtau,  // xphy,dtau
+  //        codtau,NULL,NULL); // codtau,dpsi,vnds
+
+   get_dtau(x,y,z,physnode,dtau);
+
+   codtau[0][0] = dtau[1][1] * dtau[2][2] - dtau[1][2] * dtau[2][1];
   codtau[0][1] = -dtau[1][0] * dtau[2][2] + dtau[1][2] * dtau[2][0];
   codtau[0][2] = dtau[1][0] * dtau[2][1] - dtau[1][1] * dtau[2][0];
   codtau[1][0] = -dtau[0][1] * dtau[2][2] + dtau[0][2] * dtau[2][1];
