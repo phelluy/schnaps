@@ -251,10 +251,10 @@ void BuildKernels(CLInfo* cli,char* strprog){
   // compilation
   err = clBuildProgram(cli->program, 0, NULL, NULL, NULL, NULL);
   // if not successfull: display the errors
-  if (err != CL_SUCCESS) {
+  if (err != CL_SUCCESS || err == CL_SUCCESS ) {
     size_t len;
     char buffer[204800];
-    printf("Failed to build program.\n");
+    printf("Compilation output:\n");
     clGetProgramBuildInfo(cli->program,
 			  cli->device[cli->deviceid],
 			  CL_PROGRAM_BUILD_LOG, sizeof(buffer),
