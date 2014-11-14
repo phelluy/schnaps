@@ -156,12 +156,13 @@ void NumFlux(double wL[],double wR[],double* vnorm,double* flux){
 //! \param[in] deg degree
 //! \param[in] i glop index
 //! \returns the glop weight
+double wglop(int deg,int i);
 double wglop(int deg,int i){
   return gauss_lob_weight[gauss_lob_offset[deg]+i];
 }
 
 void get_dtau(double x,double y,double z,
-	      __constant double physnode[],double dtau[][3]);
+	      __constant double* physnode,double dtau[][3]);
 
 
 
@@ -185,8 +186,8 @@ void DGVolume(
 			  param[5],
 			  param[6]};  
   
-  const int nnpg=(param[1]+1)*(param[2]+1)*(param[3]+1) *
-    (param[4])*(param[5])*(param[6]);
+  //const int nnpg=(param[1]+1)*(param[2]+1)*(param[3]+1) *
+  // (param[4])*(param[5])*(param[6]);
   
   // subcell id
   int icell=get_group_id(0);
@@ -380,7 +381,7 @@ void DGMass(
 }
 
 
-void get_dtau(double x,double y,double z,__constant double p[],double dtau[][3]){
+void get_dtau(double x,double y,double z,__constant double* p,double dtau[][3]){
 
  // gradient of the shape functions and value (4th component)
   // of the shape functions
