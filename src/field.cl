@@ -131,6 +131,25 @@ int varindex(__constant int* param, int elem, int ipg, int iv){
 
 }
 
+void NumFlux(double wL[],double wR[],double* vnorm,double* flux);
+
+void NumFlux(double wL[],double wR[],double* vnorm,double* flux){
+  
+
+  double s2=0.707106781186547524400844362105;
+  double vn =
+    s2 * vnorm[0] +
+    s2 * vnorm[1];
+
+   double vnp = vn>0 ? vn : 0;
+   double vnm = vn-vnp;
+
+   flux[0] = vnp * wL[0] + vnm * wR[0];
+
+
+};
+
+
 
 
 //!  \brief 1d GLOP weights for a given degree
@@ -144,8 +163,6 @@ double wglop(int deg,int i){
 void get_dtau(double x,double y,double z,
 	      __constant double physnode[],double dtau[][3]);
 
-
-void NumFlux(double* wL,double* wR,double* vnds,double* flux);
 
 
 // compute the volume terms on one macrocell
@@ -249,7 +266,7 @@ void DGVolume(
 	}
       }
       double flux[_M];
-      //NumFlux(wL,wL,dphi,flux); // to do let schnaps give fluxnum
+      NumFlux(wL,wL,dphi,flux); // to do: let schnaps gives fluxnum
 
       for(int iv=0; iv < m; iv++){
         int ipgR=npg[0]*npg[1]*npg[2]*icell+q[0]+npg[0]*(q[1]+npg[1]*q[2]);

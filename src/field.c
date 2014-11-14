@@ -24,6 +24,10 @@ int GenericVarindex(int* param, int elem, int ipg, int iv){
 
 }
 
+
+
+
+
 void CopyFieldtoCPU(Field* f){
 
 #ifdef _WITH_OPENCL
