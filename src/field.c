@@ -1070,7 +1070,7 @@ void* DGVolume_CL(void* mc){
                               &status);
   assert(  status ==  CL_SUCCESS); 
   // associates physnode buffer to the 2th kernel argument
-  status = clSetKernelArg(f->dgmass,             // kernel name
+  status = clSetKernelArg(f->dgvolume,             // kernel name
                           2,                // arg num
                           sizeof(cl_mem),   
                           &physnode_cl);     // opencl buffer
@@ -1088,7 +1088,7 @@ void* DGVolume_CL(void* mc){
                         &status);
   assert(  status ==  CL_SUCCESS); 
   // associates ie buffer to  kernel argument #1
-  status = clSetKernelArg(f->dgmass,             // kernel name
+  status = clSetKernelArg(f->dgvolume,             // kernel name
                           1,                // arg num
                           sizeof(cl_mem),
                           &ie_cl);     // opencl buffer
@@ -1107,6 +1107,7 @@ void* DGVolume_CL(void* mc){
     			      sizeof(cl_double)*20*3,  // buffersize
     			      0,NULL,NULL, // events management
     			      &status);
+    printf("%d\n",status);
     assert(status == CL_SUCCESS);
     assert(chkptr == physnode);
     for(int inoloc = 0; inoloc < 20; inoloc++) {

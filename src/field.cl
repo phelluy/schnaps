@@ -154,7 +154,7 @@ void DGVolume(
 	      __constant int* param,        // interp param
 	      __constant int* ie,            // macrocel index
 	      __constant double* physnode,  // macrocell nodes
-	      __global double* wn,       // field values
+              __global double* wn,       // field values
 	      __global double* dtwn){       // time derivative
   
   const int m = param[0];
