@@ -118,6 +118,20 @@ double dlag(int deg,int ib,int ipg){
 
 }
 
+int varindex(__constant int* param, int elem, int ipg, int iv);
+
+// memory location of w : component iv, macrocell elem and
+// gauss point id in the macrocell ipg 
+int varindex(__constant int* param, int elem, int ipg, int iv){
+
+  int npg= (param[1]+1)*(param[2]+1)*(param[3]+1)
+    *param[4]*param[5]*param[6];
+
+  return iv + param[0] * ( ipg + npg * elem);
+
+}
+
+
 
 //!  \brief 1d GLOP weights for a given degree
 //! \param[in] deg degree
@@ -157,7 +171,7 @@ void DGVolume(
   const int nnpg=(param[1]+1)*(param[2]+1)*(param[3]+1) *
     (param[4])*(param[5])*(param[6]);
   
-  // cell id
+  // subcell id
   int icell=get_group_id(0);
   int ic[3];
   ic[0]=icell%nraf[0];
@@ -212,10 +226,11 @@ void DGVolume(
 
   double wL[_M];
   for(int iv=0; iv < m; iv++){
-    //int imemL=f->varindex(f_interp_param,ie,ipgL,iv);
-    int imemL= iv + m * ( get_global_id(0) + nnpg * *ie);
-    wL[iv] = wn[imemL]; /// big bug !!!!
-    
+    // gauss point id in the macrocell
+    int ipgL=npg[0]*npg[1]*npg[2]*icell+p[0]+npg[0]*(p[1]+npg[1]*p[2]);
+    int imemL=varindex(param,ie,ipgL,iv);
+    //int imemL= iv + m * ( get_global_id(0) + nnpg * *ie);
+    wL[iv] = wn[imemL];   
     //wL[iv] = f->wn[imemL];
   }
 
@@ -237,7 +252,8 @@ void DGVolume(
       //NumFlux(wL,wL,dphi,flux); // to do let schnaps give fluxnum
 
       for(int iv=0; iv < m; iv++){
-	int imemR;//=f->varindex(f_interp_param,ie,ipgR,iv); // to do !
+        int ipgR=npg[0]*npg[1]*npg[2]*icell+q[0]+npg[0]*(q[1]+npg[1]*q[2]);
+	int imemR=varindex(param,ie,ipgR,iv); // to do !
 	dtwn[imemR]+=flux[iv]*wpg;
       }
 

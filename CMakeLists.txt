@@ -174,3 +174,10 @@ add_executable(
 )
 target_link_libraries(testkernel _schnaps m pthread ${OPENCL_LIBRARY})
 
+add_test(testkernelvolume testkernelvolume)
+add_executable(
+  testkernelvolume
+  test/test.h
+  test/testkernelvolume.c
+)
+target_link_libraries(testkernelvolume _schnaps m pthread ${OPENCL_LIBRARY})

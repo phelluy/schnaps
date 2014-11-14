@@ -31,5 +31,7 @@ int TestCLInfo(void);
 
 int TestKernel(void);
 
+int TestKernelVolume(void);
+
 
 #endif

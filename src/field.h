@@ -51,10 +51,12 @@ typedef struct Field{
   //! \brief opencl data
   CLInfo cli;
   //! \brief copy of the dtwn array
+  cl_mem wn_cl;
   cl_mem dtwn_cl;
   
   //! opencl kernels for mass inversion
   cl_kernel dgmass;
+  cl_kernel dgvolume;
   
 #endif
 
@@ -121,6 +123,7 @@ void* DGMacroCellInterface(void* mcell);
 //! but it is logically a MacroCell*
 //! \param[inout] mcell a MacroCell
 void* DGVolume(void* mcell);
+void* DGVolume_CL(void* mcell);
 //! \brief compute the Discontinuous Galerkin inter-subcells terms
 //! \param[inout] mcell a MacroCell
 void* DGSubCellInterface(void* mcell);
