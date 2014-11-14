@@ -41,8 +41,8 @@ int TestKernelVolume(void){
   f.interp.interp_param[6]=1;  // z direction refinement
 
 
-  ReadMacroMesh(&(f.macromesh),"test/testmacromesh.msh");
-  //ReadMacroMesh(&(f.macromesh),"test/testcube.msh");
+  //ReadMacroMesh(&(f.macromesh),"test/testmacromesh.msh");
+  ReadMacroMesh(&(f.macromesh),"test/testcube.msh");
   bool is2d=Detect2DMacroMesh(&(f.macromesh));
   assert(is2d);
   BuildConnectivity(&(f.macromesh));

@@ -238,22 +238,26 @@ void DGVolume(
   codtau[2][1] = -dtau[0][0] * dtau[1][2] + dtau[0][2] * dtau[1][0];
   codtau[2][2] = dtau[0][0] * dtau[1][1] - dtau[0][1] * dtau[1][0];
 
+  /* double det=dtau[0][0]*dtau[1][1]*dtau[2][2]-dtau[0][0]*dtau[1][2]*dtau[2][1]-dtau[1][0]*dtau[0][1]*dtau[2][2]+ */
+  /*   dtau[1][0]*dtau[0][2]*dtau[2][1]+dtau[2][0]*dtau[0][1]*dtau[1][2]-dtau[2][0]*dtau[0][2]*dtau[1][1]; */
 
-#define _M 3  /// to do let schnaps specify m !!!!!!!!
+  /* printf("det=%f\n",det); */
+
+#define _M 1  /// to do let schnaps specify m !!!!!!!!
 
   double wL[_M];
   for(int iv=0; iv < m; iv++){
     // gauss point id in the macrocell
     int ipgL=npg[0]*npg[1]*npg[2]*icell+p[0]+npg[0]*(p[1]+npg[1]*p[2]);
-    int imemL=varindex(param,ie,ipgL,iv);
+    int imemL=varindex(param,*ie,ipgL,iv);
     //int imemL= iv + m * ( get_global_id(0) + nnpg * *ie);
-    wL[iv] = wn[imemL];   
-    //wL[iv] = f->wn[imemL];
+    wL[iv] = wn[imemL]; 
   }
 
 
   int q[3]={p[0],p[1],p[2]};
-  for(int dim0 = 0; dim0 < 3; dim0++){
+  //for(int dim0 = 0; dim0 < 3; dim0++){
+  for(int dim0 = 0; dim0 < 2; dim0++){
     for(int iq = 0; iq < npg[dim0]; iq++){
       q[dim0]=(p[dim0]+iq)%npg[dim0];
       double dphiref[3]={0,0,0};
@@ -270,7 +274,10 @@ void DGVolume(
 
       for(int iv=0; iv < m; iv++){
         int ipgR=npg[0]*npg[1]*npg[2]*icell+q[0]+npg[0]*(q[1]+npg[1]*q[2]);
-	int imemR=varindex(param,ie,ipgR,iv); // to do !
+	int imemR=varindex(param,*ie,ipgR,iv); // to do !
+    int ipgL=npg[0]*npg[1]*npg[2]*icell+p[0]+npg[0]*(p[1]+npg[1]*p[2]);
+    int imemL=varindex(param,*ie,ipgL,iv);
+    printf("imemL=%d imemR=%d\n",imemL,imemR);
 	dtwn[imemR]+=flux[iv]*wpg;
       }
 
