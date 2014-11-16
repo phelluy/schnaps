@@ -1134,15 +1134,6 @@ void* DGVolume_CL(void* mc){
     			     physnode,
     			     0,NULL,NULL);
     assert(status == CL_SUCCESS);
-
-    // the groupsize is the number of glops
-    // in a subcell
-    size_t groupsize=(param[1]+1)*
-      (param[2]+1)*(param[3]+1);
-    // the total work items number is the number of glops
-    // in a subcell * number of subcells
-    size_t numworkitems= param[4] *
-      param[5] * param[6] * groupsize;
     
     // update the constant parameter to be passed to the kernel
     // first: get the lock on the cpu side
@@ -1169,6 +1160,14 @@ void* DGVolume_CL(void* mc){
     status=clFinish(f->cli.commandqueue);
 
     // mass kernel launch
+    // the groupsize is the number of glops
+    // in a subcell
+    size_t groupsize=(param[1]+1)*
+      (param[2]+1)*(param[3]+1);
+    // the total work items number is the number of glops
+    // in a subcell * number of subcells
+    size_t numworkitems= param[4] *
+      param[5] * param[6] * groupsize;
     printf("groupsize=%zd numworkitems=%zd\n",groupsize,numworkitems);
     status = clEnqueueNDRangeKernel(f->cli.commandqueue, 
 				    f->dgvolume, 
@@ -1267,7 +1266,8 @@ void* DGVolume(void* mc){
 	  }
 
 	  // loop in the "cross" in the three directions
-	  for(int dim0 = 0; dim0 < 3; dim0++){
+	  //for(int dim0 = 0; dim0 < 3; dim0++){
+	  for(int dim0 = 0; dim0 < 2; dim0++){    // to do : return to 3d !
 	    // point p at which we compute the flux
     
 	    for(int p0 = 0; p0 < npg[0]; p0++){
@@ -1313,8 +1313,13 @@ void* DGVolume(void* mc){
 
 		    int ipgR=offsetL+q[0]+npg[0]*(q[1]+npg[1]*q[2]);
 		    for(int iv=0; iv < m; iv++){
-		      //int imemR=f->varindex(f_interp_param,ie,ipgR,iv);
+		      int imemR=f->varindex(f_interp_param,ie,ipgR,iv);
+		      assert(imemR==imems[m*(ipgR-offsetL)+iv]);
 		      f->dtwn[imems[m*(ipgR-offsetL)+iv]]+=flux[iv]*wpgL;
+		      if (ipgL==7 && iq==iq){
+			printf("cpu ipgL=%d ipgR=%d iq=%d flux=%f\n",ipgL,ipgR,iq,flux[0]);
+			printf("cpu dim0=%d q=%d %d %d \n",dim0,q[0],q[1],q[2]);
+		      }
 		    }
 		  } // iq
 		} // p2

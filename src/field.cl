@@ -256,9 +256,9 @@ void DGVolume(
   }
 
 
-  int q[3]={p[0],p[1],p[2]};
   //for(int dim0 = 0; dim0 < 3; dim0++){
   for(int dim0 = 0; dim0 < 2; dim0++){
+  int q[3]={p[0],p[1],p[2]};
     for(int iq = 0; iq < npg[dim0]; iq++){
       q[dim0]=(p[dim0]+iq)%npg[dim0];
       double dphiref[3]={0,0,0};
@@ -276,10 +276,14 @@ void DGVolume(
       for(int iv=0; iv < m; iv++){
         int ipgR=npg[0]*npg[1]*npg[2]*icell+q[0]+npg[0]*(q[1]+npg[1]*q[2]);
 	int imemR=varindex(param,*ie,ipgR,iv); // to do !
-    int ipgL=npg[0]*npg[1]*npg[2]*icell+p[0]+npg[0]*(p[1]+npg[1]*p[2]);
-    int imemL=varindex(param,*ie,ipgL,iv);
-    printf("imemL=%d imemR=%d\n",imemL,imemR);
-	dtwn[imemR]+=flux[iv]*wpg;
+	int ipgL=npg[0]*npg[1]*npg[2]*icell+p[0]+npg[0]*(p[1]+npg[1]*p[2]);
+	int imemL=varindex(param,*ie,ipgL,iv);
+	if (imemL==7 && iq==iq){
+	  printf("gpu ipgL=%d ipgR=%d iq=%d flux=%f\n",ipgL,ipgR,iq,flux[0]);
+	  printf("gpu dim0=%d q=%d %d %d\n",dim0,q[0],q[1],q[2]);
+	}
+
+    	dtwn[imemR]+=flux[iv]*wpg;
       }
 
 
