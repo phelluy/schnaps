@@ -1266,8 +1266,8 @@ void* DGVolume(void* mc){
 	  }
 
 	  // loop in the "cross" in the three directions
-	  //for(int dim0 = 0; dim0 < 3; dim0++){
-	  for(int dim0 = 0; dim0 < 2; dim0++){    // to do : return to 3d !
+	  for(int dim0 = 0; dim0 < 3; dim0++){
+	    //for(int dim0 = 0; dim0 < 2; dim0++){    // to do : return to 3d !
 	    // point p at which we compute the flux
     
 	    for(int p0 = 0; p0 < npg[0]; p0++){

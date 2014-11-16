@@ -256,8 +256,8 @@ void DGVolume(
   }
 
 
-  //for(int dim0 = 0; dim0 < 3; dim0++){
-  for(int dim0 = 0; dim0 < 2; dim0++){
+  for(int dim0 = 0; dim0 < 3; dim0++){
+    //for(int dim0 = 0; dim0 < 2; dim0++){
   int q[3]={p[0],p[1],p[2]};
     for(int iq = 0; iq < npg[dim0]; iq++){
       q[dim0]=(p[dim0]+iq)%npg[dim0];
