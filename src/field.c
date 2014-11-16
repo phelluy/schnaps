@@ -991,14 +991,14 @@ void* DGMass_CL(void* mc){
     status=clFinish(f->cli.commandqueue);
 
     // mass kernel launch
-    printf("groupsize=%zd numworkitems=%zd\n",groupsize,numworkitems);
+    //printf("groupsize=%zd numworkitems=%zd\n",groupsize,numworkitems);
     status = clEnqueueNDRangeKernel(f->cli.commandqueue, 
 				    f->dgmass, 
 				    1,NULL,
 				    &numworkitems,
 				    &groupsize,
 				    0, NULL, NULL);
-    printf("%d\n",status);
+    //printf("%d\n",status);
     assert(status == CL_SUCCESS);
     clFinish(f->cli.commandqueue);  // wait the end of the computation
 
@@ -1111,7 +1111,7 @@ void* DGVolume_CL(void* mc){
     			      sizeof(cl_double)*20*3,  // buffersize
     			      0,NULL,NULL, // events management
     			      &status);
-    printf("%d\n",status);
+    //printf("%d\n",status);
     assert(status == CL_SUCCESS);
     assert(chkptr == physnode);
     for(int inoloc = 0; inoloc < 20; inoloc++) {
@@ -1168,14 +1168,14 @@ void* DGVolume_CL(void* mc){
     // in a subcell * number of subcells
     size_t numworkitems= param[4] *
       param[5] * param[6] * groupsize;
-    printf("groupsize=%zd numworkitems=%zd\n",groupsize,numworkitems);
+    //printf("groupsize=%zd numworkitems=%zd\n",groupsize,numworkitems);
     status = clEnqueueNDRangeKernel(f->cli.commandqueue, 
 				    f->dgvolume, 
 				    1,NULL,
 				    &numworkitems,
 				    &groupsize,
 				    0, NULL, NULL);
-    printf("%d\n",status);
+    //printf("%d\n",status);
     assert(status == CL_SUCCESS);
     clFinish(f->cli.commandqueue);  // wait the end of the computation
 
@@ -1316,10 +1316,6 @@ void* DGVolume(void* mc){
 		      int imemR=f->varindex(f_interp_param,ie,ipgR,iv);
 		      assert(imemR==imems[m*(ipgR-offsetL)+iv]);
 		      f->dtwn[imems[m*(ipgR-offsetL)+iv]]+=flux[iv]*wpgL;
-		      if (ipgL==7 && iq==iq){
-			printf("cpu ipgL=%d ipgR=%d iq=%d flux=%f\n",ipgL,ipgR,iq,flux[0]);
-			printf("cpu dim0=%d q=%d %d %d \n",dim0,q[0],q[1],q[2]);
-		      }
 		    }
 		  } // iq
 		} // p2

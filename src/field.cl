@@ -278,10 +278,6 @@ void DGVolume(
 	int imemR=varindex(param,*ie,ipgR,iv); // to do !
 	int ipgL=npg[0]*npg[1]*npg[2]*icell+p[0]+npg[0]*(p[1]+npg[1]*p[2]);
 	int imemL=varindex(param,*ie,ipgL,iv);
-	if (imemL==7 && iq==iq){
-	  printf("gpu ipgL=%d ipgR=%d iq=%d flux=%f\n",ipgL,ipgR,iq,flux[0]);
-	  printf("gpu dim0=%d q=%d %d %d\n",dim0,q[0],q[1],q[2]);
-	}
 
     	dtwn[imemR]+=flux[iv]*wpg;
       }
