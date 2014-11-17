@@ -33,8 +33,8 @@ int TestKernelVolume(void){
 
 
   f.interp.interp_param[0]=1;  // _M
-  f.interp.interp_param[1]=1;  // x direction degree
-  f.interp.interp_param[2]=1;  // y direction degree
+  f.interp.interp_param[1]=2;  // x direction degree
+  f.interp.interp_param[2]=2;  // y direction degree
   f.interp.interp_param[3]=0;  // z direction degree
   f.interp.interp_param[4]=2;  // x direction refinement
   f.interp.interp_param[5]=2;  // y direction refinement
@@ -109,7 +109,8 @@ int TestKernelVolume(void){
   f.dtwn=calloc(f.wsize,sizeof(double));
  
   for(int ie=0; ie < f.macromesh.nbelems; ++ie) {
-    DGVolume((void*) &(mcell[ie]));
+    //DGVolume((void*) &(mcell[ie]));
+    DGSubCellInterface((void*) &(mcell[ie]));
   }
 
   DisplayField(&f);

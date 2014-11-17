@@ -280,7 +280,7 @@ void DGVolume(
 	int ipgL=npg[0]*npg[1]*npg[2]*icell+p[0]+npg[0]*(p[1]+npg[1]*p[2]);
 	int imemL=varindex(param,*ie,ipgL,iv);
 
-    	dtwn[imemR]+=flux[iv]*wpg;
+    	//dtwn[imemR]+=flux[iv]*wpg;
       }
 
 
