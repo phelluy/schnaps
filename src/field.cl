@@ -191,10 +191,10 @@ void DGVolume(
   
   // subcell id
   int icell=get_group_id(0);
-  int ic[3];
-  ic[0]=icell%nraf[0];
-  ic[1]=(icell/nraf[0])%nraf[1];
-  ic[2]=icell/nraf[0]/nraf[1];
+  int icL[3];
+  icL[0]=icell%nraf[0];
+  icL[1]=(icell/nraf[0])%nraf[1];
+  icL[2]=icell/nraf[0]/nraf[1];
   
   
   // gauss point id where
@@ -216,9 +216,9 @@ void DGVolume(
   offset[1]=gauss_lob_offset[deg[1]]+p[1];
   offset[2]=gauss_lob_offset[deg[2]]+p[2];
 
-  double x=hx*(ic[0]+gauss_lob_point[offset[0]]);
-  double y=hy*(ic[1]+gauss_lob_point[offset[1]]);
-  double z=hz*(ic[2]+gauss_lob_point[offset[2]]);
+  double x=hx*(icL[0]+gauss_lob_point[offset[0]]);
+  double y=hy*(icL[1]+gauss_lob_point[offset[1]]);
+  double z=hz*(icL[2]+gauss_lob_point[offset[2]]);
 
   double wpg=hx*hy*hz*gauss_lob_weight[offset[0]]*
     gauss_lob_weight[offset[1]]*
@@ -259,6 +259,7 @@ void DGVolume(
   for(int dim0 = 0; dim0 < 3; dim0++){
     //for(int dim0 = 0; dim0 < 2; dim0++){
   int q[3]={p[0],p[1],p[2]};
+  // loop on the "cross" points
     for(int iq = 0; iq < npg[dim0]; iq++){
       q[dim0]=(p[dim0]+iq)%npg[dim0];
       double dphiref[3]={0,0,0};
@@ -284,9 +285,50 @@ void DGVolume(
 
 
     }
-  }
+    // compute the inter-subcell fluxes if needed
+    if (p[dim0]==0 || p[dim0]==npg[dim0]-1){
+      int sgn=(p[dim0]>0)?1:-1;
+      int dim1=(dim0+1)%3;
+      int dim2=(dim1+1)%3;
+      double wpgs
+        = wglop(deg[dim1],p[dim1]) 
+        * wglop(deg[dim2],p[dim2]);
+      double vnds[3];
+      double h1h2=1./nraf[dim1]/nraf[dim2];
+      vnds[0] = sgn*codtau[0][dim0]*h1h2;
+      vnds[1] = sgn*codtau[1][dim0]*h1h2;
+      vnds[2] = sgn*codtau[2][dim0]*h1h2;
+      double wR[_M];
+      int icR[3]={icL[0],icL[1],icL[2]};
+      icR[dim0]+=sgn;
+      // if we are not at the boundary of the macrocell
+      if (icR[dim0]>=0 && icR[dim0]<nraf[dim0]) {
+        int ncR=icR[0]+nraf[0]*(icR[1]+nraf[1]*icR[2]);
+        int q[3]={p[0],p[1],p[2]};
+        q[dim0]=(sgn==-1)?npg[dim0]-1:0;
+        int ipgR=npg[0]*npg[1]*npg[2]*ncR+q[0]+npg[0]*(q[1]+npg[1]*q[2]);
+        for(int iv=0; iv < m; iv++){
+          int imemR=varindex(param,*ie,ipgR,iv);
+          wR[iv] = wn[imemR];
+        }
+        double flux[_M];
+        NumFlux(wL,wR,vnds,flux); // to do: let schnaps gives fluxnum
+        for(int iv=0; iv < m; iv++){
+          int ipgL=npg[0]*npg[1]*npg[2]*icell+p[0]+npg[0]*(p[1]+npg[1]*p[2]);
+          int imemL = varindex(param, *ie, ipgL, iv);
+          dtwn[imemL] -= flux[iv] * wpgs;
+        }
+      }
+    }
 
+  }
 }
+
+
+
+
+
+
 
 // apply division by the mass matrix on one macrocell
 __kernel
