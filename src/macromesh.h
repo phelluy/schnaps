@@ -10,10 +10,12 @@
 typedef struct MacroMesh{
   int nbelems; //!< number of macro elems
   int nbnodes; //!< number of nodes in the macromesh
+  int nbfaces; //!< number of macrofaces
   // connectivity
   int* elem2node; //!< elems to nodes connectivity (20 nodes/elem) 
   int* elem2elem; //!< elems to elems connectivity (along 6 faces)
-  double* node; //!< nodes coordintes array
+  int* face2elem; //!< faces to elems connectivity (Left and Right)
+  double* node; //!< nodes coordinates array
   bool is2d; //!< 2d computation detection
 } MacroMesh;
 

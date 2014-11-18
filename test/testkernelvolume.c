@@ -47,6 +47,8 @@ int TestKernelVolume(void){
   assert(is2d);
   BuildConnectivity(&(f.macromesh));
 
+  PrintMacroMesh(&(f.macromesh));
+
   //AffineMapMacroMesh(&(f.macromesh));
  
   InitField(&f);

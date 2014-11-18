@@ -191,7 +191,7 @@ int NPGF(int param[], int ifa){
 
 // from a reference point find the nearest
 // gauss point
-// warning: works only with no subcell and degree 1,2 or 3
+// warning: works only  degree 1,2 or 3
 int ref_ipg(int* param,double* xref){
   int deg[3],nraf[3];
   

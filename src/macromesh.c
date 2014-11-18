@@ -170,6 +170,16 @@ void PrintMacroMesh(MacroMesh* m){
       printf("\n");
     }
   }
+  if (m->face2elem !=0) {
+    for(int ifa=0;ifa<m->nbfaces;ifa++){
+      printf("face %d, left: %d loc%d, right: %d loc%d\n",ifa,
+             m->face2elem[4*ifa+0]+start,
+             m->face2elem[4*ifa+1]+start,
+             m->face2elem[4*ifa+2]+start,
+             m->face2elem[4*ifa+3]+start
+             );
+    }
+  }
 }
 
 // build other connectivity arrays
@@ -237,18 +247,67 @@ void BuildConnectivity(MacroMesh* m){
   // now, two successive equal faces
   // correspond to two neighbours in the 
   // element list
-  for(int ifa=0;ifa<6*m->nbelems-1;ifa++){
+  m->nbfaces=0;
+  int stop=6*m->nbelems;
+  for(int ifa=0;ifa < stop;ifa++) {
     Face4Sort* f1=face+ifa;
     Face4Sort* f2=face+ifa+1;
-    if (CompareFace4Sort(f1,f2)==0){
+    if (ifa!=stop-1 && CompareFace4Sort(f1,f2)==0){
+      m->nbfaces++;
+      ifa++;
       int ie1=f1->left;
       int if1=f1->locfaceleft;
       int ie2=f2->left;
       int if2=f2->locfaceleft;
 	m->elem2elem[if1+6*ie1]=ie2;
 	m->elem2elem[if2+6*ie2]=ie1;
+    } else {
+      m->nbfaces++;
     }
   }
+  m->face2elem=malloc(4*sizeof(int)*m->nbfaces);
+  printf("nfaces=%d\n",m->nbfaces);
+  
+  /* m->nbfaces=0; */
+  /* for(int ifa=0;ifa < stop;ifa++) { */
+  /*   Face4Sort* f1=face+ifa; */
+  /*   Face4Sort* f2=face+ifa+1; */
+  /*   if (ifa!=stop-1 && CompareFace4Sort(f1,f2)==0){ */
+  /*     ifa++; */
+  /*     int ie1=f1->left; */
+  /*     int if1=f1->locfaceleft; */
+  /*     int ie2=f2->left; */
+  /*     int if2=f2->locfaceleft; */
+  /*     m->face2elem[4*m->nbfaces+0]=ie1; */
+  /*     m->face2elem[4*m->nbfaces+1]=if1; */
+  /*     m->face2elem[4*m->nbfaces+2]=ie2; */
+  /*     m->face2elem[4*m->nbfaces+3]=if2; */
+  /*   } else { */
+  /*     int ie1=f1->left; */
+  /*     int if1=f1->locfaceleft; */
+  /*     m->face2elem[4*m->nbfaces+0]=ie1; */
+  /*     m->face2elem[4*m->nbfaces+1]=if1; */
+  /*     m->face2elem[4*m->nbfaces+2]=-1; */
+  /*     m->face2elem[4*m->nbfaces+3]=-1; */
+  /*   } */
+  /*   m->nbfaces++; */
+  /* } */
+  int facecount=0;
+  for(int ie=0;ie<m->nbelems;ie++){
+    for(int ifa=0;ifa<6;ifa++){
+      int ie2=m->elem2elem[6*ie+ifa];
+      if (ie2<ie){
+        m->face2elem[4*facecount+0]=ie;
+        m->face2elem[4*facecount+1]=ifa;
+        m->face2elem[4*facecount+2]=ie2;
+        int ifa2=0;
+        while(m->elem2elem[6*ie2+ifa2]!=ie) ifa2++;
+        m->face2elem[4*facecount+3]=ifa2;
+        facecount++;
+      }
+    }
+  }
+  
 
   free(face);
 
