@@ -59,8 +59,8 @@ int TestKernel(void){
 
   for(int ie=0;ie<f.macromesh.nbelems;ie++){
     mcell[ie].field=&f;
-    mcell[ie].first_cell=ie;
-    mcell[ie].last_cell_p1=ie+1;
+    mcell[ie].first=ie;
+    mcell[ie].last_p1=ie+1;
   }
 
   // set dtwn to 1 for testing

@@ -240,6 +240,7 @@ void BuildConnectivity(MacroMesh* m){
 
   // allocate element connectivity array
   m->elem2elem=malloc(6 * m->nbelems * sizeof(int));
+  assert(m->elem2elem);
   for(int i=0;i<6 * m->nbelems;i++){
     m->elem2elem[i]=-1;
   }
@@ -300,8 +301,16 @@ void BuildConnectivity(MacroMesh* m){
         m->face2elem[4*facecount+0]=ie;
         m->face2elem[4*facecount+1]=ifa;
         m->face2elem[4*facecount+2]=ie2;
-        int ifa2=0;
-        while(m->elem2elem[6*ie2+ifa2]!=ie) ifa2++;
+        int ifa2=-1;
+        if (ie2>=0){
+          while(m->elem2elem[6*ie2+ifa2]!=ie) {
+            ifa2++; /// bug here !!!!!!
+            //printf("ie2=%d ifa2=%d iep=%d ie=%d\n",ie2,ifa2,
+            //       m->elem2elem[6*ie2+ifa2],ie);
+            assert(ifa2<6);
+            assert(ie2 >=0 && ie2< m->nbelems);
+          }
+        }
         m->face2elem[4*facecount+3]=ifa2;
         facecount++;
       }

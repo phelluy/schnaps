@@ -39,25 +39,25 @@ void CopyFieldtoCPU(Field* f){
 
   void* chkptr;
   chkptr=clEnqueueMapBuffer(f->cli.commandqueue,
-		     f->dtwn_cl,  // buffer to copy from
-		     CL_TRUE,  // block until the buffer is available
-		     CL_MAP_READ,  // we just want to see the results
-		     0, // offset
-		     f->wsize*sizeof(double),  // buffersize
-		     0,NULL,NULL, // events management
-		     &status);
+                            f->dtwn_cl,  // buffer to copy from
+                            CL_TRUE,  // block until the buffer is available
+                            CL_MAP_READ,  // we just want to see the results
+                            0, // offset
+                            f->wsize*sizeof(double),  // buffersize
+                            0,NULL,NULL, // events management
+                            &status);
 
   assert(status == CL_SUCCESS);
   assert(chkptr == f->dtwn);
 
   chkptr=clEnqueueMapBuffer(f->cli.commandqueue,
-		     f->wn_cl,  // buffer to copy from
-		     CL_TRUE,  // block until the buffer is available
-		     CL_MAP_READ,  // we just want to see the results
-		     0, // offset
-		     f->wsize*sizeof(double),  // buffersize
-		     0,NULL,NULL, // events management
-		     &status);
+                            f->wn_cl,  // buffer to copy from
+                            CL_TRUE,  // block until the buffer is available
+                            CL_MAP_READ,  // we just want to see the results
+                            0, // offset
+                            f->wsize*sizeof(double),  // buffersize
+                            0,NULL,NULL, // events management
+                            &status);
 
   assert(status == CL_SUCCESS);
   assert(chkptr == f->wn);
@@ -188,11 +188,11 @@ void InitField(Field* f){
   InitCLInfo(&(f->cli),_CL_PLATFORM,_CL_DEVICE); 
   cl_int status;
   f->wn_cl = clCreateBuffer(
-			      f->cli.context,
-			      CL_MEM_READ_WRITE | CL_MEM_USE_HOST_PTR,
-			      sizeof(double)* f->wsize,
-			      f->wn,
-			      &status);
+                            f->cli.context,
+                            CL_MEM_READ_WRITE | CL_MEM_USE_HOST_PTR,
+                            sizeof(double)* f->wsize,
+                            f->wn,
+                            &status);
   assert(  status ==  CL_SUCCESS); 
 
   f->dtwn_cl = clCreateBuffer(
@@ -530,7 +530,7 @@ void* DGSubCellInterface(void* mc){
   Field* f= mcell->field;
 
   // loop on the elements
-  for (int ie=mcell->first_cell;ie<mcell->last_cell_p1;ie++){
+  for (int ie=mcell->first;ie<mcell->last_p1;ie++){
     // get the physical nodes of element ie
     double physnode[20][3];
     for(int inoloc=0;inoloc<20;inoloc++){
@@ -683,7 +683,7 @@ void* DGMacroCellInterface(void* mc){
   for(int ip=0;ip<8;ip++) iparam[ip]=f->interp_param[ip];
     
   // init to zero the time derivative
-  for (int ie=mcell->first_cell;ie<mcell->last_cell_p1;ie++){
+  for (int ie=mcell->first;ie<mcell->last_p1;ie++){
     for(int ipg=0;ipg<NPG(iparam+1);ipg++){
       for(int iv=0;iv<f->model.m;iv++){
 	int imem=f->varindex(iparam,ie,ipg,iv);
@@ -695,7 +695,7 @@ void* DGMacroCellInterface(void* mc){
 
   // assembly of the surface terms
   // loop on the elements
-  for (int ie=mcell->first_cell;ie<mcell->last_cell_p1;ie++){
+  for (int ie=mcell->first;ie<mcell->last_p1;ie++){
     // get the physical nodes of element ie
     double physnode[20][3];
     for(int inoloc=0;inoloc<20;inoloc++){
@@ -800,6 +800,146 @@ void* DGMacroCellInterface(void* mc){
   return NULL;
 }
 
+
+// compute the Discontinuous Galerkin inter-macrocells boundary terms
+//  second implementation with a loop on the faces
+void* DGMacroCellInterface2(void* mc){
+
+  MacroCell* mcell = (MacroCell*) mc;
+
+  Field* f= mcell->field;
+
+  MacroMesh* m=&(f->macromesh);
+
+  int iparam[8];
+  for(int ip=0;ip<8;ip++) iparam[ip]=f->interp_param[ip];
+    
+  // init to zero the time derivative
+  for (int ie=mcell->first;ie<mcell->last_p1;ie++){
+    for(int ipg=0;ipg<NPG(iparam+1);ipg++){
+      for(int iv=0;iv<f->model.m;iv++){
+	int imem=f->varindex(iparam,ie,ipg,iv);
+        //	f->dtwn[imem]=0; // SEGFAULT
+      }
+    }
+  }
+  //assert(sizew==m->nbelems * f->model.m * NPG(iparam+1));
+
+  // assembly of the surface terms
+  // loop on the macrocells faces
+  for (int ifa=mcell->first;ifa<mcell->last_p1;ifa++){
+    int ieL=m->face2elem[4*ifa+0];
+    int locfaL=m->face2elem[4*ifa+1];
+    // get the physical nodes of element ieL
+    double physnode[20][3];
+    for(int inoloc=0;inoloc<20;inoloc++){
+      int ino=m->elem2node[20*ieL+inoloc];
+      physnode[inoloc][0]=m->node[3*ino+0];
+      physnode[inoloc][1]=m->node[3*ino+1];
+      physnode[inoloc][2]=m->node[3*ino+2];
+    }
+
+    // four faces for 2d computations
+    //int nbfa=6;
+    //if (f->is2d) nbfa=4;
+    int ieR=m->face2elem[4*ifa+2];
+    int locfaR=m->face2elem[4*ifa+3];
+    double physnodeR[20][3];
+    if (ieR >= 0) {
+      for(int inoloc=0;inoloc<20;inoloc++){
+        int ino=m->elem2node[20*ieR+inoloc];
+        physnodeR[inoloc][0]=m->node[3*ino+0];
+        physnodeR[inoloc][1]=m->node[3*ino+1];
+        physnodeR[inoloc][2]=m->node[3*ino+2];
+      }
+    }
+
+    // loop on the glops (numerical integration)
+    // of the face ifa
+    for(int ipgf=0;ipgf<NPGF(f->interp_param+1,locfaL);ipgf++){
+      //      for(int ipgf=0;ipgf<NPGF(iparam+1,ifa);ipgf++){ // FIXME?
+
+      double xpgref[3],xpgref_in[3],wpg;
+      //double xpgref2[3],wpg2;
+      // get the coordinates of the Gauss point
+      // and coordinates of a point slightly inside the
+      // opposite element in xref_in
+      ref_pg_face(iparam+1,locfaL,ipgf,xpgref,&wpg,xpgref_in);
+
+      // recover the volume gauss point from
+      // the face index
+      int ipg=iparam[7];
+      //printf("ieL=%d ieR=%d locfaL=%d ipg=%d\n",ieL,ieR,locfaL,ipg);
+      // get the left value of w at the gauss point
+      double wL[f->model.m],wR[f->model.m];
+      for(int iv=0;iv<f->model.m;iv++){
+        int imem=f->varindex(iparam,ieL,ipg,iv);
+        wL[iv]=f->wn[imem];
+      }
+      // the basis functions is also the gauss point index
+      int ib=ipg;
+      // normal vector at gauss point ipg
+      double dtau[3][3],codtau[3][3],xpg[3];
+      double vnds[3];
+      Ref2Phy(physnode,
+              xpgref,
+              NULL,locfaL, // dpsiref,ifa
+              xpg,dtau,
+              codtau,NULL,vnds); // codtau,dpsi,vnds
+      double flux[f->model.m];
+      int ipgR;
+      if (ieR >=0) {  // the right element exists
+        // find the corresponding point in the right elem
+        double xpg_in[3];
+        Ref2Phy(physnode,
+                xpgref_in,
+                NULL,ifa, // dpsiref,ifa
+                xpg_in,dtau,
+                codtau,NULL,vnds); // codtau,dpsi,vnds
+        double xref[3];
+        Phy2Ref(physnodeR,xpg_in,xref);
+        ipgR=ref_ipg(iparam+1,xref);
+        double xpgR[3],xrefR[3],wpgR;
+        ref_pg_vol(iparam+1, ipgR, xrefR, &wpgR,NULL);
+        Ref2Phy(physnodeR,
+                xrefR,
+                NULL,-1, // dphiref,ifa
+                xpgR,NULL,  
+                NULL,NULL,NULL); // codtau,dphi,vnds
+
+        assert(Dist(xpgR,xpg)<1e-10);
+        for(int iv=0;iv<f->model.m;iv++){
+          int imem=f->varindex(iparam,ieR,ipgR,iv);
+          wR[iv]=f->wn[imem];
+        }
+        // int_dL F(wL,wR,grad phi_ib )
+        f->model.NumFlux(wL,wR,vnds,flux);
+
+   
+      }
+      else { //the right element does not exist
+        f->model.BoundaryFlux(xpg,f->tnow,wL,vnds,flux);
+      }
+      for(int iv=0;iv<f->model.m;iv++){
+        int imemL=f->varindex(iparam,ieL,ib,iv);
+        f->dtwn[imemL]-=flux[iv]*wpg;
+        if (ieR>=0){
+          int imemR=f->varindex(iparam,ieR,ipgR,iv);
+          //printf("imemR=%d < %d",imemR,f->wsize);
+          f->dtwn[imemR]+=flux[iv]*wpg;
+        }
+      }
+	
+    }
+
+  }
+  
+  //assert(1==2);
+
+  return NULL;
+}
+
+
 // apply division by the mass matrix
 void* DGMass(void* mc){
 
@@ -808,7 +948,7 @@ void* DGMass(void* mc){
   Field* f= mcell->field;
 
   // loop on the elements
-  for (int ie=mcell->first_cell;ie<mcell->last_cell_p1;ie++){
+  for (int ie=mcell->first;ie<mcell->last_p1;ie++){
     // get the physical nodes of element ie
     double physnode[20][3];
     for(int inoloc = 0; inoloc < 20; inoloc++) {
@@ -923,17 +1063,17 @@ void* DGMass_CL(void* mc){
 
 
   // loop on the elements
-  for (int ie=mcell->first_cell;ie<mcell->last_cell_p1;ie++){
+  for (int ie=mcell->first;ie<mcell->last_p1;ie++){
     // get the physical nodes of element ie
     // first: get the lock on the cpu side
     void* chkptr=clEnqueueMapBuffer(f->cli.commandqueue,
-    			      physnode_cl,  // buffer to copy from
-    			      CL_TRUE,  // block until the buffer is available
-    			      CL_MAP_WRITE,  // we just want to copy physnode
-    			      0, // offset
-    			      sizeof(cl_double)*20*3,  // buffersize
-    			      0,NULL,NULL, // events management
-    			      &status);
+                                    physnode_cl,  // buffer to copy from
+                                    CL_TRUE,  // block until the buffer is available
+                                    CL_MAP_WRITE,  // we just want to copy physnode
+                                    0, // offset
+                                    sizeof(cl_double)*20*3,  // buffersize
+                                    0,NULL,NULL, // events management
+                                    &status);
     assert(status == CL_SUCCESS);
     assert(chkptr == physnode);
     for(int inoloc = 0; inoloc < 20; inoloc++) {
@@ -952,9 +1092,9 @@ void* DGMass_CL(void* mc){
     /* 			  0,NULL,NULL); */
     /* assert(status == CL_SUCCESS); */
     status=clEnqueueUnmapMemObject (f->cli.commandqueue,
-    			     physnode_cl,
-    			     physnode,
-    			     0,NULL,NULL);
+                                    physnode_cl,
+                                    physnode,
+                                    0,NULL,NULL);
     assert(status == CL_SUCCESS);
 
     // the groupsize is the number of glops
@@ -1006,7 +1146,7 @@ void* DGMass_CL(void* mc){
 
   }
 
-                             free(physnode);
+  free(physnode);
 
   return NULL;
 
@@ -1100,17 +1240,17 @@ void* DGVolume_CL(void* mc){
 
 
   // loop on the elements
-  for (int ie=mcell->first_cell;ie<mcell->last_cell_p1;ie++){
+  for (int ie=mcell->first;ie<mcell->last_p1;ie++){
     // get the physical nodes of element ie
     // first: get the lock on the cpu side
     void* chkptr=clEnqueueMapBuffer(f->cli.commandqueue,
-    			      physnode_cl,  // buffer to copy from
-    			      CL_TRUE,  // block until the buffer is available
-    			      CL_MAP_WRITE,  // we just want to copy physnode
-    			      0, // offset
-    			      sizeof(cl_double)*20*3,  // buffersize
-    			      0,NULL,NULL, // events management
-    			      &status);
+                                    physnode_cl,  // buffer to copy from
+                                    CL_TRUE,  // block until the buffer is available
+                                    CL_MAP_WRITE,  // we just want to copy physnode
+                                    0, // offset
+                                    sizeof(cl_double)*20*3,  // buffersize
+                                    0,NULL,NULL, // events management
+                                    &status);
     //printf("%d\n",status);
     assert(status == CL_SUCCESS);
     assert(chkptr == physnode);
@@ -1130,9 +1270,9 @@ void* DGVolume_CL(void* mc){
     /* 			  0,NULL,NULL); */
     /* assert(status == CL_SUCCESS); */
     status=clEnqueueUnmapMemObject (f->cli.commandqueue,
-    			     physnode_cl,
-    			     physnode,
-    			     0,NULL,NULL);
+                                    physnode_cl,
+                                    physnode,
+                                    0,NULL,NULL);
     assert(status == CL_SUCCESS);
     
     // update the constant parameter to be passed to the kernel
@@ -1200,7 +1340,7 @@ void* DGVolume(void* mc){
   Field* f= mcell->field;
 
   // loop on the elements
-  for (int ie=mcell->first_cell;ie<mcell->last_cell_p1;ie++){
+  for (int ie=mcell->first;ie<mcell->last_p1;ie++){
     // get the physical nodes of element ie
     double physnode[20][3];
     for(int inoloc=0;inoloc<20;inoloc++){
@@ -1423,12 +1563,31 @@ void dtField(Field* f){
 
 
   MacroCell mcell[f->macromesh.nbelems];
+  MacroFace mface[f->macromesh.nbfaces];
 
   for(int ie=0;ie<f->macromesh.nbelems;ie++){
     mcell[ie].field=f;
-    mcell[ie].first_cell=ie;
-    mcell[ie].last_cell_p1=ie+1;
+    mcell[ie].first=ie;
+    mcell[ie].last_p1=ie+1;
   }
+
+  for(int ifa=0;ifa<f->macromesh.nbfaces;ifa++){
+    mface[ifa].field=f;
+    mface[ifa].first=ifa;
+    mface[ifa].last_p1=ifa+1;
+  }
+
+
+  bool facealgo=true;
+  //facealgo=false;
+
+  if (facealgo){
+    for(int iw=0;iw<f->wsize;iw++) f->dtwn[iw]=0;
+    for(int ifa=0;ifa<f->macromesh.nbfaces;ifa++){
+      DGMacroCellInterface2((void*) (mface+ifa));
+    }
+  }
+
 
 #ifdef _WITH_PTHREAD
 
@@ -1439,17 +1598,19 @@ void dtField(Field* f){
 
   // launch a thread for each macro cell
   // computation of the inter subcell fluxes
-  for(int ie=0;ie<f->macromesh.nbelems;ie++){
-    status=pthread_create (&(tmcell[ie]),   // thread
-			   NULL,                   // default attributes
-			   DGMacroCellInterface,    // called function
-			   (void*) (mcell+ie));  // function params
-    assert(status==0);
-    //DGMacroCellInterface((void*) (mcell+ie));
-  }
-  // wait the end of the threads before next step
-  for (int ie=0;ie<f->macromesh.nbelems;ie++){
-    pthread_join(tmcell[ie], NULL);
+  if (!facealgo){
+    for(int ie=0;ie<f->macromesh.nbelems;ie++){
+      status=pthread_create (&(tmcell[ie]),   // thread
+                             NULL,                   // default attributes
+                             DGMacroCellInterface,    // called function
+                             (void*) (mcell+ie));  // function params
+      assert(status==0);
+      //DGMacroCellInterface((void*) (mcell+ie));
+    }
+    // wait the end of the threads before next step
+    for (int ie=0;ie<f->macromesh.nbelems;ie++){
+      pthread_join(tmcell[ie], NULL);
+    }
   }
 
   for(int ie=0;ie<f->macromesh.nbelems;ie++){
@@ -1497,13 +1658,16 @@ void dtField(Field* f){
 #else
 
 
-#ifdef _OPENMP
+#ifdef _OPENMP 
 #pragma omp parallel for schedule(dynamic, 1)
 #endif
+
   for(int ie=0; ie < f->macromesh.nbelems; ++ie) {
-    DGMacroCellInterface((void*) (mcell+ie));
+    if (facealgo==false){
+      DGMacroCellInterface((void*) (mcell+ie));
+    }
     DGSubCellInterface((void*) (mcell+ie));
-     DGVolume((void*) (mcell+ie)); 
+    DGVolume((void*) (mcell+ie)); 
     DGMass((void*) (mcell+ie)); 
   }
   

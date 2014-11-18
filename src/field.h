@@ -68,10 +68,19 @@ typedef struct Field{
 //! and a cells range.  To be passed to a thread
 //! as a void* pointer.
 typedef struct MacroCell{
-  int first_cell; //!< first cell index
-  int last_cell_p1;  //!< last cell index + 1
+  int first; //!< first cell/face index
+  int last_p1;  //!< last cell/face index + 1
   Field* field; //! pointer to a  field
 } MacroCell;
+
+//! \brief a simple struct for packing a field
+//! and a faces range.  To be passed to a thread
+//! as a void* pointer.
+typedef struct MacroFace{
+  int first; //!< first cell/face index
+  int last_p1;  //!< last cell/face index + 1
+  Field* field; //! pointer to a  field
+} MacroFace;
 
 //! \brief memory arrangement of field components.
 //! Generic implementation.
@@ -118,6 +127,11 @@ void dtField(Field* f);
 //! but it is logically a MacroCell*
 //! \param[inout] mcell a MacroCell
 void* DGMacroCellInterface(void* mcell);
+//! \brief  compute the Discontinuous Galerkin inter-macrocells boundary terms second implementation with a loop on the faces
+//! The argument has to be void* (for compatibility with pthread)
+//! but it is logically a MacroCell*
+//! \param[inout] mcell a MacroCell
+void* DGMacroCellInterface2(void* mcell);
 //! \brief compute the Discontinuous Galerkin volume terms
 //! The argument has to be void* (for compatibility with pthread)
 //! but it is logically a MacroCell*
