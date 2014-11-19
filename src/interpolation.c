@@ -143,8 +143,6 @@ void lagrange_polynomial(double* p,const double* subdiv,
 }
 
 
-
-
 void dlagrange_polynomial(double* dp,const double* subdiv,
 			  int deg,int i,double x){
   double xj;

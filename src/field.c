@@ -21,12 +21,7 @@ int GenericVarindex(int* param, int elem, int ipg, int iv){
     *param[4]*param[5]*param[6];
 
   return iv + param[0] * ( ipg + npg * elem);
-
 }
-
-
-
-
 
 void CopyFieldtoCPU(Field* f){
 
@@ -246,9 +241,6 @@ void DisplayField(Field* f){
       printf("\n");
     }
   }
-
-
-
 };
 
 
@@ -802,12 +794,12 @@ void* DGMacroCellInterface(void* mc){
 
 
 // compute the Discontinuous Galerkin inter-macrocells boundary terms
-//  second implementation with a loop on the faces
+// second implementation with a loop on the faces
 void* DGMacroCellInterface2(void* mc){
 
-  MacroCell* mcell = (MacroCell*) mc;
+  MacroFace* mface = (MacroFace*) mc;
 
-  Field* f= mcell->field;
+  Field* f= mface->field;
 
   MacroMesh* m=&(f->macromesh);
 
@@ -815,7 +807,7 @@ void* DGMacroCellInterface2(void* mc){
   for(int ip=0;ip<8;ip++) iparam[ip]=f->interp_param[ip];
     
   // init to zero the time derivative
-  for (int ie=mcell->first;ie<mcell->last_p1;ie++){
+  for (int ie=mface->first;ie<mface->last_p1;ie++){
     for(int ipg=0;ipg<NPG(iparam+1);ipg++){
       for(int iv=0;iv<f->model.m;iv++){
 	int imem=f->varindex(iparam,ie,ipg,iv);
@@ -827,57 +819,54 @@ void* DGMacroCellInterface2(void* mc){
 
   // assembly of the surface terms
   // loop on the macrocells faces
-  for (int ifa=mcell->first;ifa<mcell->last_p1;ifa++){
-    int ieL=m->face2elem[4*ifa+0];
-    int locfaL=m->face2elem[4*ifa+1];
+  for (int ifa = mface->first; ifa < mface->last_p1; ifa++){
+    int ieL = m->face2elem[4*ifa+0];
+    int locfaL = m->face2elem[4*ifa+1];
     // get the physical nodes of element ieL
     double physnode[20][3];
-    for(int inoloc=0;inoloc<20;inoloc++){
-      int ino=m->elem2node[20*ieL+inoloc];
-      physnode[inoloc][0]=m->node[3*ino+0];
-      physnode[inoloc][1]=m->node[3*ino+1];
-      physnode[inoloc][2]=m->node[3*ino+2];
+    for(int inoloc = 0; inoloc < 20; inoloc++){
+      int ino = m->elem2node[20 * ieL + inoloc];
+      physnode[inoloc][0] = m->node[3*ino + 0];
+      physnode[inoloc][1] = m->node[3*ino + 1];
+      physnode[inoloc][2] = m->node[3*ino + 2];
     }
 
     // four faces for 2d computations
     //int nbfa=6;
     //if (f->is2d) nbfa=4;
-    int ieR=m->face2elem[4*ifa+2];
-    int locfaR=m->face2elem[4*ifa+3];
+    int ieR = m->face2elem[4*ifa + 2];
+    int locfaR = m->face2elem[4*ifa + 3];
     double physnodeR[20][3];
     if (ieR >= 0) {
-      for(int inoloc=0;inoloc<20;inoloc++){
-        int ino=m->elem2node[20*ieR+inoloc];
-        physnodeR[inoloc][0]=m->node[3*ino+0];
-        physnodeR[inoloc][1]=m->node[3*ino+1];
-        physnodeR[inoloc][2]=m->node[3*ino+2];
+      for(int inoloc = 0; inoloc < 20; inoloc++){
+        int ino = m->elem2node[20*ieR+inoloc];
+        physnodeR[inoloc][0] = m->node[3*ino + 0];
+        physnodeR[inoloc][1] = m->node[3*ino + 1];
+        physnodeR[inoloc][2] = m->node[3*ino + 2];
       }
     }
 
-    // loop on the glops (numerical integration)
-    // of the face ifa
-    for(int ipgf=0;ipgf<NPGF(f->interp_param+1,locfaL);ipgf++){
-      //      for(int ipgf=0;ipgf<NPGF(iparam+1,ifa);ipgf++){ // FIXME?
+    // loop on the glops (numerical integration) of the face ifa
+    for(int ipgf = 0; ipgf < NPGF(f->interp_param+1,locfaL); ipgf++){
 
       double xpgref[3],xpgref_in[3],wpg;
       //double xpgref2[3],wpg2;
-      // get the coordinates of the Gauss point
-      // and coordinates of a point slightly inside the
-      // opposite element in xref_in
-      ref_pg_face(iparam+1,locfaL,ipgf,xpgref,&wpg,xpgref_in);
+      // get the coordinates of the Gauss point and coordinates of a
+      // point slightly inside the opposite element in xref_in
+      ref_pg_face(iparam+1, locfaL, ipgf, xpgref, &wpg, xpgref_in);
 
-      // recover the volume gauss point from
-      // the face index
-      int ipg=iparam[7];
+      // recover the volume gauss point from the face index
+      int ipg = iparam[7];
       //printf("ieL=%d ieR=%d locfaL=%d ipg=%d\n",ieL,ieR,locfaL,ipg);
       // get the left value of w at the gauss point
-      double wL[f->model.m],wR[f->model.m];
+      double wL[f->model.m], wR[f->model.m];
       for(int iv=0;iv<f->model.m;iv++){
-        int imem=f->varindex(iparam,ieL,ipg,iv);
-        wL[iv]=f->wn[imem];
+        int imem = f->varindex(iparam, ieL, ipg, iv);
+        wL[iv] = f->wn[imem];
       }
       // the basis functions is also the gauss point index
       int ib=ipg;
+
       // normal vector at gauss point ipg
       double dtau[3][3],codtau[3][3],xpg[3];
       double vnds[3];
@@ -887,6 +876,7 @@ void* DGMacroCellInterface2(void* mc){
               xpg,dtau,
               codtau,NULL,vnds); // codtau,dpsi,vnds
       double flux[f->model.m];
+
       int ipgR;
       if (ieR >=0) {  // the right element exists
         // find the corresponding point in the right elem
@@ -920,6 +910,7 @@ void* DGMacroCellInterface2(void* mc){
       else { //the right element does not exist
         f->model.BoundaryFlux(xpg,f->tnow,wL,vnds,flux);
       }
+
       for(int iv=0;iv<f->model.m;iv++){
         int imemL=f->varindex(iparam,ieL,ib,iv);
         f->dtwn[imemL]-=flux[iv]*wpg;

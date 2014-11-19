@@ -121,6 +121,7 @@ void Ref2Phy(double physnode[20][3],
 void GeomPhy2Ref(Geom* g){
   Phy2Ref(g->physnode,g->xphy,g->xref);
 }
+
 void Phy2Ref(double physnode[20][3],double xphy[3],double xref[3]){
 #define ITERNEWTON 10
 
@@ -152,5 +153,4 @@ void Phy2Ref(double physnode[20][3],double xphy[3],double xref[3]){
   assert(xref[0]<1+eps && xref[0]>-eps);
   assert(xref[1]<1+eps && xref[1]>-eps);
   assert(xref[2]<1+eps && xref[2]>-eps);
-
 }

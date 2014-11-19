@@ -184,10 +184,9 @@ void PrintMacroMesh(MacroMesh* m){
 
 // build other connectivity arrays
 void BuildConnectivity(MacroMesh* m){
-
   printf("Build connectivity...\n");
 
-  assert(m->elem2elem==NULL);
+  assert(m->elem2elem == NULL);
   
   // build a list of faces
   // each face is made of four corners of 
@@ -195,9 +194,8 @@ void BuildConnectivity(MacroMesh* m){
   Face4Sort* face;
   Face4Sort* f;
 
-  face=malloc(6*sizeof(Face4Sort)*m->nbelems);
-
-  assert(face);
+  face=malloc(6 * sizeof(Face4Sort) * m->nbelems);
+  assert(face != NULL);
 
   int face2locnode[6][4]={
     {0,1,5,4},
@@ -208,17 +206,16 @@ void BuildConnectivity(MacroMesh* m){
     {0,3,2,1},
   };
 
-
-  for(int ie=0;ie<m->nbelems;ie++){
-    for(int ifa=0;ifa<6;ifa++){
-      f=face+ifa+6*ie;
-      for(int ino=0;ino<4;ino++){
-	f->node[ino]=m->elem2node[face2locnode[ifa][ino]+20*ie];
+  for(int ie = 0; ie < m->nbelems; ie++){
+    for(int ifa = 0; ifa < 6; ifa++){
+      f = face + ifa + 6 * ie;
+      for(int ino = 0; ino < 4; ino++){
+	f->node[ino] = m->elem2node[face2locnode[ifa][ino] + 20 * ie];
       }
-      f->left=ie;
-      f->locfaceleft=ifa;
-      f->right=-1;
-      f->locfaceright=-1;
+      f->left = ie;
+      f->locfaceleft = ifa;
+      f->right = -1;
+      f->locfaceright = -1;
       OrderFace4Sort(f);
       /* printf("elem=%d ifa=%d left=%d nodes %d %d %d %d\n",ie,ifa, */
       /* 	     f->left,f->node[0], */
@@ -239,35 +236,34 @@ void BuildConnectivity(MacroMesh* m){
   /* } */
 
   // allocate element connectivity array
-  m->elem2elem=malloc(6 * m->nbelems * sizeof(int));
+  m->elem2elem = malloc(6 * m->nbelems * sizeof(int));
   assert(m->elem2elem);
-  for(int i=0;i<6 * m->nbelems;i++){
-    m->elem2elem[i]=-1;
+  for(int i = 0; i < 6 * m->nbelems; i++){
+    m->elem2elem[i] = -1;
   }
 
-  // now, two successive equal faces
-  // correspond to two neighbours in the 
-  // element list
+  // now, two successive equal faces correspond to two neighbours in
+  // the element list
   m->nbfaces=0;
-  int stop=6*m->nbelems;
-  for(int ifa=0;ifa < stop;ifa++) {
-    Face4Sort* f1=face+ifa;
-    Face4Sort* f2=face+ifa+1;
-    if (ifa!=stop-1 && CompareFace4Sort(f1,f2)==0){
-      m->nbfaces++;
+  int stop = 6 * m->nbelems;
+  for(int ifa = 0; ifa < stop; ifa++) {
+    Face4Sort* f1 = face + ifa;
+    Face4Sort* f2 = face + ifa + 1;
+    if (ifa != (stop-1) && CompareFace4Sort(f1,f2) == 0){
+
       ifa++;
-      int ie1=f1->left;
-      int if1=f1->locfaceleft;
-      int ie2=f2->left;
-      int if2=f2->locfaceleft;
-	m->elem2elem[if1+6*ie1]=ie2;
-	m->elem2elem[if2+6*ie2]=ie1;
-    } else {
-      m->nbfaces++;
+      int ie1 = f1->left;
+      int if1 = f1->locfaceleft;
+      int ie2 = f2->left;
+      int if2 = f2->locfaceleft;
+      m->elem2elem[if1 + 6 * ie1] = ie2;
+      m->elem2elem[if2 + 6 * ie2] = ie1;
     }
+    m->nbfaces++;
   }
-  m->face2elem=malloc(4*sizeof(int)*m->nbfaces);
-  printf("nfaces=%d\n",m->nbfaces);
+
+  m->face2elem = malloc(4 * sizeof(int) * m->nbfaces);
+  printf("nfaces=%d\n", m->nbfaces);
   
   /* m->nbfaces=0; */
   /* for(int ifa=0;ifa < stop;ifa++) { */
@@ -293,31 +289,48 @@ void BuildConnectivity(MacroMesh* m){
   /*   } */
   /*   m->nbfaces++; */
   /* } */
+
+  // Loop over the face of the macro elements
   int facecount=0;
-  for(int ie=0;ie<m->nbelems;ie++){
-    for(int ifa=0;ifa<6;ifa++){
-      int ie2=m->elem2elem[6*ie+ifa];
-      if (ie2<ie){
-        m->face2elem[4*facecount+0]=ie;
-        m->face2elem[4*facecount+1]=ifa;
-        m->face2elem[4*facecount+2]=ie2;
-        int ifa2=-1;
-        if (ie2>=0){
-          while(m->elem2elem[6*ie2+ifa2]!=ie) {
-            ifa2++; /// bug here !!!!!!
-            //printf("ie2=%d ifa2=%d iep=%d ie=%d\n",ie2,ifa2,
-            //       m->elem2elem[6*ie2+ifa2],ie);
-            assert(ifa2<6);
-            assert(ie2 >=0 && ie2< m->nbelems);
-          }
+  for(int ie = 0; ie < m->nbelems; ie++){
+    for(int ifa = 0; ifa < 6; ifa++){
+
+      // Find the element that is connected to face ifa of element ie.
+      int ie2 = m->elem2elem[6 * ie + ifa];
+      if(ie2 < ie){
+        m->face2elem[4 * facecount+0] = ie;
+        m->face2elem[4 * facecount+1] = ifa;
+        m->face2elem[4 * facecount+2] = ie2;
+        if (ie2 >= 0){
+	  m->face2elem[4 * facecount + 3] = -1;
+	  for(int ifa2=0; ifa2 < 6; ++ifa2) {
+	    if(m->elem2elem[6 * ie2 + ifa2] == ie) {
+	      m->face2elem[4 * facecount + 3] = ifa2;
+	      break;
+	    }
+	  }
+	  assert(m->face2elem[4 * facecount + 3] != -1);
+
+          /* while(m->elem2elem[6 * ie2 + ifa2] != ie) { */
+          /*   ifa2++; /// bug here !!!!!! */
+          /*   /\* printf("ie2=%d ifa2=%d iep=%d ie=%d\n",ie2,ifa2, *\/ */
+          /*   /\*        m->elem2elem[6*ie2+ifa2],ie); *\/ */
+          /*   assert(ifa2 < 6); */
+          /*   assert(ie2 >= 0 && ie2 < m->nbelems); */
+          /* } */
+
         }
-        m->face2elem[4*facecount+3]=ifa2;
-        facecount++;
+
+	facecount++; // FIXME: why is this incremented only if ie2 >= 0?	
+      } else {
+        m->face2elem[4 * facecount + 3] = -1;
       }
+
     }
   }
-  
 
+  assert(facecount == m->nbfaces);
+  
   free(face);
 
   // check
