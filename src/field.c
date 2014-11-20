@@ -847,8 +847,8 @@ void* DGMacroCellInterface2(void* mc){
       }
     }
 
-#ifdef _OPENMP 
-#pragma omp parallel for schedule(dynamic, 1)
+#ifdef _OPENMP
+#pragma omp parallel for
 #endif
     for(int ipgf = 0; ipgf < NPGF(f->interp_param+1,locfaL); ipgf++){
       
