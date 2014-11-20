@@ -16,8 +16,8 @@ int main(void) {
 
 
   f.interp.interp_param[0]=1;  // _M
-  f.interp.interp_param[1]=1;  // x direction degree
-  f.interp.interp_param[2]=1;  // y direction degree
+  f.interp.interp_param[1]=3;  // x direction degree
+  f.interp.interp_param[2]=3;  // y direction degree
   f.interp.interp_param[3]=0;  // z direction degree
   f.interp.interp_param[4]=4;  // x direction refinement
   f.interp.interp_param[5]=4;  // y direction refinement

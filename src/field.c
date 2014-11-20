@@ -738,6 +738,7 @@ void* DGMacroCellInterface(void* mc){
   	}
   	// the basis functions is also the gauss point index
   	int ib=ipg;
+        int ipgL=ipg;
   	// normal vector at gauss point ipg
   	double dtau[3][3],codtau[3][3],xpg[3];
   	double vnds[3];
@@ -866,6 +867,7 @@ void* DGMacroCellInterface2(void* mc){
       }
       // the basis functions is also the gauss point index
       int ib=ipg;
+      int ipgL=ipg;
 
       // normal vector at gauss point ipg
       double dtau[3][3],codtau[3][3],xpg[3];
@@ -883,9 +885,9 @@ void* DGMacroCellInterface2(void* mc){
         double xpg_in[3];
         Ref2Phy(physnode,
                 xpgref_in,
-                NULL,ifa, // dpsiref,ifa
-                xpg_in,dtau,
-                codtau,NULL,vnds); // codtau,dpsi,vnds
+                NULL,-1, // dpsiref,ifa
+                xpg_in,NULL,
+                NULL,NULL,NULL); // codtau,dpsi,vnds
         double xref[3];
         Phy2Ref(physnodeR,xpg_in,xref);
         ipgR=ref_ipg(iparam+1,xref);
@@ -904,7 +906,7 @@ void* DGMacroCellInterface2(void* mc){
         }
         // int_dL F(wL,wR,grad phi_ib )
         f->model.NumFlux(wL,wR,vnds,flux);
-
+     
    
       }
       else { //the right element does not exist
@@ -925,7 +927,6 @@ void* DGMacroCellInterface2(void* mc){
 
   }
   
-  //assert(1==2);
 
   return NULL;
 }
@@ -1631,7 +1632,6 @@ void dtField(Field* f){
   }
 
   //DisplayField(f);
-  //assert(1==2);
 
   for(int ie=0;ie<f->macromesh.nbelems;ie++){
     status=pthread_create (&(tmcell[ie]),   // thread
@@ -1746,6 +1746,7 @@ void dtFieldSlow(Field* f){
   	}
   	// the basis functions is also the gauss point index
   	int ib=ipg;
+        int ipgL=ipg;
   	// normal vector at gauss point ipg
   	double dtau[3][3],codtau[3][3],xpg[3];
   	double vnds[3];

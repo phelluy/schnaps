@@ -39,7 +39,8 @@ int TestFieldDG(void){
   f.interp.interp_param[6]=2;  // z direction refinement
 
 
-  ReadMacroMesh(&(f.macromesh),"test/testcube.msh");
+  ReadMacroMesh(&(f.macromesh),"test/testcube2.msh");
+  //ReadMacroMesh(&(f.macromesh),"test/testmacromesh.msh");
   BuildConnectivity(&(f.macromesh));
 
   PrintMacroMesh(&(f.macromesh));

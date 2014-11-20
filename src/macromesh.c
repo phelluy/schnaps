@@ -135,9 +135,9 @@ void AffineMap(double* x){
 
 void AffineMapMacroMesh(MacroMesh* m){
 
-    for(int ino=0;ino<m->nbnodes;ino++){
-      AffineMap(&(m->node[ino*3]));
-    }
+  for(int ino=0;ino<m->nbnodes;ino++){
+    AffineMap(&(m->node[ino*3]));
+  }
 }
 
 
@@ -319,12 +319,12 @@ void BuildConnectivity(MacroMesh* m){
           /*   assert(ie2 >= 0 && ie2 < m->nbelems); */
           /* } */
 
+        }else {
+          m->face2elem[4 * facecount + 3] = -1;
         }
 
-	facecount++; // FIXME: why is this incremented only if ie2 >= 0?	
-      } else {
-        m->face2elem[4 * facecount + 3] = -1;
-      }
+        facecount++; // FIXME: why is this incremented only if ie2 >= 0?	
+      } 
 
     }
   }
@@ -342,6 +342,40 @@ void BuildConnectivity(MacroMesh* m){
   /* } */
 
   
+  // suppression of the z faces from the faces list
+
+  if (m->is2d){
+
+    printf("Suppress 3d faces...\n");
+    int newfacecount=0;
+    for(int ifa=0;ifa<m->nbfaces;ifa++){
+      if (m->face2elem[4*ifa+1]<4) newfacecount++;
+    }
+
+    printf("Old num faces=%d, new num faces=%d\n",m->nbfaces,
+           newfacecount);
+
+    int* oldf=m->face2elem;
+    m->face2elem=malloc(4 * sizeof(int) * newfacecount);
+
+    newfacecount=0;
+    for(int ifa=0;ifa<m->nbfaces;ifa++){
+      if (oldf[4*ifa+1]<4) {
+        m->face2elem[4*newfacecount+0]=oldf[4*ifa+0];
+        m->face2elem[4*newfacecount+1]=oldf[4*ifa+1];
+        m->face2elem[4*newfacecount+2]=oldf[4*ifa+2];
+        m->face2elem[4*newfacecount+3]=oldf[4*ifa+3];
+        newfacecount++;
+      }
+    }
+
+    m->nbfaces=newfacecount;
+
+    free(oldf);
+
+  } 
+
+
 }
 
 // compare two integers
@@ -411,7 +445,7 @@ void CheckMacroMesh(MacroMesh* m,int* param){
       //printf("ipg %d ipg2 %d xref %f %f %f\n",ipg,
       //	     ref_ipg(param,xref_in),xref_in[0],xref_in[1],xref_in[2]);
       assert(ipg==ref_ipg(param,xref_in));
-	//}
+      //}
     }
 
     // middle of the element
@@ -438,27 +472,27 @@ void CheckMacroMesh(MacroMesh* m,int* param){
       assert(g.vnds[0]*vec[0]+g.vnds[1]*vec[1]+g.vnds[2]*vec[2] > 0);
 
       // check compatibility between face and volume numbering
-        for(int ipgf=0;ipgf<NPGF(param,ifa);ipgf++){
-          double xpgref[3],wpg;
-          // get the coordinates of the Gauss point
-          ref_pg_face(param,ifa,ipgf,xpgref,&wpg,NULL);
-          // recover the volume gauss point from
-          // the face index
-          int ipgv=param[6];
-          double xpgref2[3],wpg2;
-          ref_pg_vol(param,ipgv,xpgref2,&wpg2,NULL);
-	  // in 2D do not check upper and lower face
-	  if (m->is2d){
-	    if (ifa !=4 && ifa!=5) {
-	      assert(Dist(xpgref,xpgref2)<1e-11);
-	    }
-	  }
-	  // in 3D check all faces
-	  else {
-	    assert(Dist(xpgref,xpgref2)<1e-11);
-	  }
-	  	      
+      for(int ipgf=0;ipgf<NPGF(param,ifa);ipgf++){
+        double xpgref[3],wpg;
+        // get the coordinates of the Gauss point
+        ref_pg_face(param,ifa,ipgf,xpgref,&wpg,NULL);
+        // recover the volume gauss point from
+        // the face index
+        int ipgv=param[6];
+        double xpgref2[3],wpg2;
+        ref_pg_vol(param,ipgv,xpgref2,&wpg2,NULL);
+        // in 2D do not check upper and lower face
+        if (m->is2d){
+          if (ifa !=4 && ifa!=5) {
+            assert(Dist(xpgref,xpgref2)<1e-11);
+          }
         }
+        // in 3D check all faces
+        else {
+          assert(Dist(xpgref,xpgref2)<1e-11);
+        }
+	  	      
+      }
 
 
     }
@@ -469,8 +503,8 @@ void CheckMacroMesh(MacroMesh* m,int* param){
 
   // check that the faces are defined by the same mapping
   // with opposite normals
-   for (int ie=0;ie<m->nbelems;ie++){
-     //int param[8]={1,_DEGX,_DEGY,_DEGZ,_RAFX,_RAFY,_RAFZ,0};
+  for (int ie=0;ie<m->nbelems;ie++){
+    //int param[8]={1,_DEGX,_DEGY,_DEGZ,_RAFX,_RAFY,_RAFZ,0};
     // get the physical nodes of element ie
     double physnode[20][3];
     for(int inoloc=0;inoloc<20;inoloc++){
@@ -560,7 +594,7 @@ void CheckMacroMesh(MacroMesh* m,int* param){
         }
       }
     }
-   }
+  }
   
 
 
@@ -669,6 +703,9 @@ bool Detect2DMacroMesh(MacroMesh* m){
 
 
   }
+
+
+    
 
 
   return m->is2d;
