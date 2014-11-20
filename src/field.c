@@ -847,8 +847,14 @@ void* DGMacroCellInterface2(void* mc){
       }
     }
 
-    // loop on the glops (numerical integration) of the face ifa
+#ifdef _OPENMP 
+#pragma omp parallel for schedule(dynamic, 1)
+#endif
     for(int ipgf = 0; ipgf < NPGF(f->interp_param+1,locfaL); ipgf++){
+      
+      int iparam[8];
+      for(int ip=0;ip<8;ip++) iparam[ip]=f->interp_param[ip];
+  
 
       double xpgref[3],xpgref_in[3],wpg;
       //double xpgref2[3],wpg2;
@@ -1652,7 +1658,6 @@ void dtField(Field* f){
 #ifdef _OPENMP 
 #pragma omp parallel for schedule(dynamic, 1)
 #endif
-
   for(int ie=0; ie < f->macromesh.nbelems; ++ie) {
     if (facealgo==false){
       DGMacroCellInterface((void*) (mcell+ie));
