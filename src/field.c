@@ -807,12 +807,14 @@ void* DGMacroCellInterface2(void* mc){
   unsigned int m = f->model.m;
 
   int iparam[8];
-  for(int ip = 0; ip < 8; ip++) iparam[ip]=f->interp_param[ip];
+  for(int ip = 0; ip < 8; ip++) 
+    iparam[ip]=f->interp_param[ip];
   
   // assembly of the surface terms loop on the macrocells faces
   for (int ifa = mface->first; ifa < mface->last_p1; ifa++){
     int ieL = msh->face2elem[4 * ifa + 0];
     int locfaL = msh->face2elem[4 * ifa + 1];
+
     // get the physical nodes of element ieL
     double physnode[20][3];
     for(int inoloc = 0; inoloc < 20; inoloc++){
@@ -853,21 +855,20 @@ void* DGMacroCellInterface2(void* mc){
       // get the left value of w at the gauss point
       double wL[m], wR[m];
       for(int iv = 0; iv < m; iv++){
-        int imem = f->varindex(iparam, ieL, ipgL, iv);
-        wL[iv] = f->wn[imem];
+        int imemL = f->varindex(iparam, ieL, ipgL, iv);
+        wL[iv] = f->wn[imemL];
       }
-      // the basis functions is also the gauss point index
-      int ib = ipgL;
 
       // normal vector at gauss point ipg
-      double dtau[3][3], codtau[3][3], xpg[3];
-      double vnds[3];
-      Ref2Phy(physnode,
-              xpgref,
-              NULL, locfaL, // dpsiref,ifa
-              xpg, dtau,
-              codtau, NULL, vnds); // codtau,dpsi,vnds
-      double flux[m];
+      double vnds[3], xpg[3];
+      {
+	double dtau[3][3], codtau[3][3];
+	Ref2Phy(physnode,
+		xpgref,
+		NULL, locfaL, // dpsiref,ifa
+		xpg, dtau,
+		codtau, NULL, vnds); // codtau,dpsi,vnds
+      }
 
       if (ieR >= 0) {  // the right element exists
         // find the corresponding point in the right elem
@@ -884,6 +885,7 @@ void* DGMacroCellInterface2(void* mc){
 	}
 
         int ipgR = ref_ipg(iparam + 1, xrefL);
+
 	// FIXME: this code doesn't seem to be necessary.
 	/* { */
 	/*   double xpgR[3], xrefR[3], wpgR; */
@@ -897,30 +899,34 @@ void* DGMacroCellInterface2(void* mc){
 	/* }	 */
 
         for(int iv = 0; iv < m; iv++){
-          int imem = f->varindex(iparam, ieR, ipgR, iv);
-          wR[iv] = f->wn[imem];
+          int imemR = f->varindex(iparam, ieR, ipgR, iv);
+          wR[iv] = f->wn[imemR];
         }
-        // int_dL F(wL,wR,grad phi_ib )
+
+        // int_dL F(wL, wR, grad phi_ib)
+	double flux[m];
         f->model.NumFlux(wL, wR, vnds, flux);
 	
 	// Add flux to both sides
-	for(int iv = 0; iv < m; iv++){
-	  int imemL = f->varindex(iparam, ieL, ib, iv);
-	  f->dtwn[imemL] -= flux[iv] * wpg;
+	for(int iv = 0; iv < m; iv++) {
+	  // the basis functions is also the gauss point index
+	  int imemL = f->varindex(iparam, ieL, ipgL, iv);
           int imemR = f->varindex(iparam, ieR, ipgR, iv);
+	  f->dtwn[imemL] -= flux[iv] * wpg;
           f->dtwn[imemR] += flux[iv] * wpg;
 	}
 
-      } else { //the right element does not exist: we are on the
-	       //boundary.
+      } else { // we are on the boundary.
+	double flux[m];
         f->model.BoundaryFlux(xpg, f->tnow, wL, vnds, flux);
-	for(int iv = 0; iv < m; iv++){
-	  int imemL = f->varindex(iparam, ieL, ib, iv);
+
+	for(int iv = 0; iv < m; iv++) {
+	  int imemL = f->varindex(iparam, ieL, ipgL, iv);
 	  f->dtwn[imemL] -= flux[iv] * wpg;
 	}
       }
 
-	
+      
     }
 
   }
