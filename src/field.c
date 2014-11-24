@@ -794,30 +794,27 @@ void* DGMacroCellInterface(void* mc){
 }
 
 
-// compute the Discontinuous Galerkin inter-macrocells boundary terms
-// second implementation with a loop on the faces
+// Compute the Discontinuous Galerkin inter-macrocells boundary terms.
+// Second implementation with a loop on the faces.
 void* DGMacroCellInterface2(void* mc){
 
   MacroFace *mface = (MacroFace*) mc;
-
   Field *f = mface->field;
-  
   MacroMesh *msh = &(f->macromesh);
-
-  unsigned int m = f->model.m;
+  const unsigned int m = f->model.m;
 
   int iparam[8];
   for(int ip = 0; ip < 8; ip++) 
     iparam[ip]=f->interp_param[ip];
   
   // assembly of the surface terms loop on the macrocells faces
-  for (int ifa = mface->first; ifa < mface->last_p1; ifa++){
+  for (int ifa = mface->first; ifa < mface->last_p1; ifa++) {
     int ieL = msh->face2elem[4 * ifa + 0];
     int locfaL = msh->face2elem[4 * ifa + 1];
 
     // get the physical nodes of element ieL
     double physnode[20][3];
-    for(int inoloc = 0; inoloc < 20; inoloc++){
+    for(int inoloc = 0; inoloc < 20; inoloc++) {
       int ino = msh->elem2node[20 * ieL + inoloc];
       physnode[inoloc][0] = msh->node[3 * ino + 0];
       physnode[inoloc][1] = msh->node[3 * ino + 1];
@@ -828,7 +825,7 @@ void* DGMacroCellInterface2(void* mc){
     int locfaR = msh->face2elem[4 * ifa + 3];
     double physnodeR[20][3];
     if (ieR >= 0) {
-      for(int inoloc = 0; inoloc < 20; inoloc++){
+      for(int inoloc = 0; inoloc < 20; inoloc++) {
         int ino = msh->elem2node[20 * ieR + inoloc];
         physnodeR[inoloc][0] = msh->node[3 * ino + 0];
         physnodeR[inoloc][1] = msh->node[3 * ino + 1];
@@ -845,19 +842,13 @@ void* DGMacroCellInterface2(void* mc){
       for(int ip = 0; ip < 8; ip++) 
 	iparam[ip] = f->interp_param[ip];
   
-      double xpgref[3],xpgref_in[3],wpg;
+      double xpgref[3], xpgref_in[3], wpg;
       // get the coordinates of the Gauss point and coordinates of a
       // point slightly inside the opposite element in xref_in
       ref_pg_face(iparam + 1, locfaL, ipgf, xpgref, &wpg, xpgref_in);
-
+      
       // recover the volume gauss point from the face index
       int ipgL = iparam[7];
-      // get the left value of w at the gauss point
-      double wL[m], wR[m];
-      for(int iv = 0; iv < m; iv++){
-        int imemL = f->varindex(iparam, ieL, ipgL, iv);
-        wL[iv] = f->wn[imemL];
-      }
 
       // normal vector at gauss point ipg
       double vnds[3], xpg[3];
@@ -886,7 +877,7 @@ void* DGMacroCellInterface2(void* mc){
 
         int ipgR = ref_ipg(iparam + 1, xrefL);
 
-	// FIXME: this code doesn't seem to be necessary.
+	// FIXME: this code doesn't seem to be necessary.  What does it do?
 	/* { */
 	/*   double xpgR[3], xrefR[3], wpgR; */
 	/*   ref_pg_vol(iparam + 1, ipgR, xrefR, &wpgR, NULL); */
@@ -898,7 +889,10 @@ void* DGMacroCellInterface2(void* mc){
 	/*   assert(Dist(xpgR, xpg) < 1e-10); */
 	/* }	 */
 
-        for(int iv = 0; iv < m; iv++){
+	double wL[m], wR[m];
+        for(int iv = 0; iv < m; iv++) {
+	  int imemL = f->varindex(iparam, ieL, ipgL, iv);
+	  wL[iv] = f->wn[imemL];
           int imemR = f->varindex(iparam, ieR, ipgR, iv);
           wR[iv] = f->wn[imemR];
         }
@@ -909,18 +903,25 @@ void* DGMacroCellInterface2(void* mc){
 	
 	// Add flux to both sides
 	for(int iv = 0; iv < m; iv++) {
-	  // the basis functions is also the gauss point index
+	  // The basis functions is also the gauss point index
 	  int imemL = f->varindex(iparam, ieL, ipgL, iv);
           int imemR = f->varindex(iparam, ieR, ipgR, iv);
 	  f->dtwn[imemL] -= flux[iv] * wpg;
           f->dtwn[imemR] += flux[iv] * wpg;
 	}
 
-      } else { // we are on the boundary.
+      } else { // The point is on the boundary.
+	double wL[m];
+	for(int iv = 0; iv < m; iv++) {
+	  int imemL = f->varindex(iparam, ieL, ipgL, iv);
+	  wL[iv] = f->wn[imemL];
+	}
+
 	double flux[m];
         f->model.BoundaryFlux(xpg, f->tnow, wL, vnds, flux);
 
 	for(int iv = 0; iv < m; iv++) {
+	  // The basis functions is also the gauss point index
 	  int imemL = f->varindex(iparam, ieL, ipgL, iv);
 	  f->dtwn[imemL] -= flux[iv] * wpg;
 	}
