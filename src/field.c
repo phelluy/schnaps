@@ -798,142 +798,133 @@ void* DGMacroCellInterface(void* mc){
 // second implementation with a loop on the faces
 void* DGMacroCellInterface2(void* mc){
 
-  MacroFace* mface = (MacroFace*) mc;
+  MacroFace *mface = (MacroFace*) mc;
 
-  Field* f= mface->field;
+  Field *f = mface->field;
+  
+  MacroMesh *msh = &(f->macromesh);
 
-  MacroMesh* m=&(f->macromesh);
+  unsigned int m = f->model.m;
 
   int iparam[8];
-  for(int ip=0;ip<8;ip++) iparam[ip]=f->interp_param[ip];
-    
-  // init to zero the time derivative
-  for (int ie=mface->first;ie<mface->last_p1;ie++){
-    for(int ipg=0;ipg<NPG(iparam+1);ipg++){
-      for(int iv=0;iv<f->model.m;iv++){
-	int imem=f->varindex(iparam,ie,ipg,iv);
-        //	f->dtwn[imem]=0; // SEGFAULT
-      }
-    }
-  }
-  //assert(sizew==m->nbelems * f->model.m * NPG(iparam+1));
-
-  // assembly of the surface terms
-  // loop on the macrocells faces
+  for(int ip = 0; ip < 8; ip++) iparam[ip]=f->interp_param[ip];
+  
+  // assembly of the surface terms loop on the macrocells faces
   for (int ifa = mface->first; ifa < mface->last_p1; ifa++){
-    int ieL = m->face2elem[4*ifa+0];
-    int locfaL = m->face2elem[4*ifa+1];
+    int ieL = msh->face2elem[4 * ifa + 0];
+    int locfaL = msh->face2elem[4 * ifa + 1];
     // get the physical nodes of element ieL
     double physnode[20][3];
     for(int inoloc = 0; inoloc < 20; inoloc++){
-      int ino = m->elem2node[20 * ieL + inoloc];
-      physnode[inoloc][0] = m->node[3*ino + 0];
-      physnode[inoloc][1] = m->node[3*ino + 1];
-      physnode[inoloc][2] = m->node[3*ino + 2];
+      int ino = msh->elem2node[20 * ieL + inoloc];
+      physnode[inoloc][0] = msh->node[3 * ino + 0];
+      physnode[inoloc][1] = msh->node[3 * ino + 1];
+      physnode[inoloc][2] = msh->node[3 * ino + 2];
     }
 
-    // four faces for 2d computations
-    //int nbfa=6;
-    //if (f->is2d) nbfa=4;
-    int ieR = m->face2elem[4*ifa + 2];
-    int locfaR = m->face2elem[4*ifa + 3];
+    int ieR = msh->face2elem[4 * ifa + 2];
+    int locfaR = msh->face2elem[4 * ifa + 3];
     double physnodeR[20][3];
     if (ieR >= 0) {
       for(int inoloc = 0; inoloc < 20; inoloc++){
-        int ino = m->elem2node[20*ieR+inoloc];
-        physnodeR[inoloc][0] = m->node[3*ino + 0];
-        physnodeR[inoloc][1] = m->node[3*ino + 1];
-        physnodeR[inoloc][2] = m->node[3*ino + 2];
+        int ino = msh->elem2node[20 * ieR + inoloc];
+        physnodeR[inoloc][0] = msh->node[3 * ino + 0];
+        physnodeR[inoloc][1] = msh->node[3 * ino + 1];
+        physnodeR[inoloc][2] = msh->node[3 * ino + 2];
       }
     }
 
 #ifdef _OPENMP
 #pragma omp parallel for
 #endif
-    for(int ipgf = 0; ipgf < NPGF(f->interp_param+1,locfaL); ipgf++){
+    for(int ipgf = 0; ipgf < NPGF(f->interp_param + 1, locfaL); ipgf++) {
       
       int iparam[8];
-      for(int ip=0;ip<8;ip++) iparam[ip]=f->interp_param[ip];
+      for(int ip = 0; ip < 8; ip++) 
+	iparam[ip] = f->interp_param[ip];
   
-
       double xpgref[3],xpgref_in[3],wpg;
-      //double xpgref2[3],wpg2;
       // get the coordinates of the Gauss point and coordinates of a
       // point slightly inside the opposite element in xref_in
-      ref_pg_face(iparam+1, locfaL, ipgf, xpgref, &wpg, xpgref_in);
+      ref_pg_face(iparam + 1, locfaL, ipgf, xpgref, &wpg, xpgref_in);
 
       // recover the volume gauss point from the face index
-      int ipg = iparam[7];
-      //printf("ieL=%d ieR=%d locfaL=%d ipg=%d\n",ieL,ieR,locfaL,ipg);
+      int ipgL = iparam[7];
       // get the left value of w at the gauss point
-      double wL[f->model.m], wR[f->model.m];
-      for(int iv=0;iv<f->model.m;iv++){
-        int imem = f->varindex(iparam, ieL, ipg, iv);
+      double wL[m], wR[m];
+      for(int iv = 0; iv < m; iv++){
+        int imem = f->varindex(iparam, ieL, ipgL, iv);
         wL[iv] = f->wn[imem];
       }
       // the basis functions is also the gauss point index
-      int ib=ipg;
-      int ipgL=ipg;
+      int ib = ipgL;
 
       // normal vector at gauss point ipg
-      double dtau[3][3],codtau[3][3],xpg[3];
+      double dtau[3][3], codtau[3][3], xpg[3];
       double vnds[3];
       Ref2Phy(physnode,
               xpgref,
-              NULL,locfaL, // dpsiref,ifa
-              xpg,dtau,
-              codtau,NULL,vnds); // codtau,dpsi,vnds
-      double flux[f->model.m];
+              NULL, locfaL, // dpsiref,ifa
+              xpg, dtau,
+              codtau, NULL, vnds); // codtau,dpsi,vnds
+      double flux[m];
 
-      int ipgR;
-      if (ieR >=0) {  // the right element exists
+      if (ieR >= 0) {  // the right element exists
         // find the corresponding point in the right elem
-        double xpg_in[3];
-        Ref2Phy(physnode,
-                xpgref_in,
-                NULL,-1, // dpsiref,ifa
-                xpg_in,NULL,
-                NULL,NULL,NULL); // codtau,dpsi,vnds
-        double xref[3];
-        Phy2Ref(physnodeR,xpg_in,xref);
-        ipgR=ref_ipg(iparam+1,xref);
-        double xpgR[3],xrefR[3],wpgR;
-        ref_pg_vol(iparam+1, ipgR, xrefR, &wpgR,NULL);
-        Ref2Phy(physnodeR,
-                xrefR,
-                NULL,-1, // dphiref,ifa
-                xpgR,NULL,  
-                NULL,NULL,NULL); // codtau,dphi,vnds
 
-        assert(Dist(xpgR,xpg)<1e-10);
-        for(int iv=0;iv<f->model.m;iv++){
-          int imem=f->varindex(iparam,ieR,ipgR,iv);
-          wR[iv]=f->wn[imem];
+        double xrefL[3];
+	{
+	  double xpg_in[3];
+	  Ref2Phy(physnode,
+		  xpgref_in,
+		  NULL, -1, // dpsiref,ifa
+		  xpg_in, NULL,
+		  NULL, NULL, NULL); // codtau,dpsi,vnds
+	  Phy2Ref(physnodeR, xpg_in, xrefL);
+	}
+
+        int ipgR = ref_ipg(iparam + 1, xrefL);
+	// FIXME: this code doesn't seem to be necessary.
+	/* { */
+	/*   double xpgR[3], xrefR[3], wpgR; */
+	/*   ref_pg_vol(iparam + 1, ipgR, xrefR, &wpgR, NULL); */
+	/*   Ref2Phy(physnodeR, */
+	/* 	  xrefR, */
+	/* 	  NULL, -1, // dphiref,ifa */
+	/* 	  xpgR, NULL,   */
+	/* 	  NULL, NULL, NULL); // codtau,dphi,vnds */
+	/*   assert(Dist(xpgR, xpg) < 1e-10); */
+	/* }	 */
+
+        for(int iv = 0; iv < m; iv++){
+          int imem = f->varindex(iparam, ieR, ipgR, iv);
+          wR[iv] = f->wn[imem];
         }
         // int_dL F(wL,wR,grad phi_ib )
-        f->model.NumFlux(wL,wR,vnds,flux);
-     
-   
-      }
-      else { //the right element does not exist
-        f->model.BoundaryFlux(xpg,f->tnow,wL,vnds,flux);
+        f->model.NumFlux(wL, wR, vnds, flux);
+	
+	// Add flux to both sides
+	for(int iv = 0; iv < m; iv++){
+	  int imemL = f->varindex(iparam, ieL, ib, iv);
+	  f->dtwn[imemL] -= flux[iv] * wpg;
+          int imemR = f->varindex(iparam, ieR, ipgR, iv);
+          f->dtwn[imemR] += flux[iv] * wpg;
+	}
+
+      } else { //the right element does not exist: we are on the
+	       //boundary.
+        f->model.BoundaryFlux(xpg, f->tnow, wL, vnds, flux);
+	for(int iv = 0; iv < m; iv++){
+	  int imemL = f->varindex(iparam, ieL, ib, iv);
+	  f->dtwn[imemL] -= flux[iv] * wpg;
+	}
       }
 
-      for(int iv=0;iv<f->model.m;iv++){
-        int imemL=f->varindex(iparam,ieL,ib,iv);
-        f->dtwn[imemL]-=flux[iv]*wpg;
-        if (ieR>=0){
-          int imemR=f->varindex(iparam,ieR,ipgR,iv);
-          //printf("imemR=%d < %d",imemR,f->wsize);
-          f->dtwn[imemR]+=flux[iv]*wpg;
-        }
-      }
 	
     }
 
   }
   
-
   return NULL;
 }
 
