@@ -796,7 +796,7 @@ void* DGMacroCellInterface(void* mc){
 
 // Compute the Discontinuous Galerkin inter-macrocells boundary terms.
 // Second implementation with a loop on the faces.
-void* DGMacroCellInterface2(void* mc){
+void* DGMacroCellInterface2(void* mc) {
 
   MacroFace *mface = (MacroFace*) mc;
   Field *f = mface->field;
@@ -833,24 +833,25 @@ void* DGMacroCellInterface2(void* mc){
       }
     }
 
+    // Loop over the points on a single macro cell interface.
 #ifdef _OPENMP
 #pragma omp parallel for
 #endif
-    for(int ipgf = 0; ipgf < NPGF(f->interp_param + 1, locfaL); ipgf++) {
+    for(int ipgfL = 0; ipgfL < NPGF(f->interp_param + 1, locfaL); ipgfL++) {
       
       int iparam[8];
       for(int ip = 0; ip < 8; ip++) 
 	iparam[ip] = f->interp_param[ip];
   
       double xpgref[3], xpgref_in[3], wpg;
-      // get the coordinates of the Gauss point and coordinates of a
+      // Get the coordinates of the Gauss point and coordinates of a
       // point slightly inside the opposite element in xref_in
-      ref_pg_face(iparam + 1, locfaL, ipgf, xpgref, &wpg, xpgref_in);
+      ref_pg_face(iparam + 1, locfaL, ipgfL, xpgref, &wpg, xpgref_in);
       
-      // recover the volume gauss point from the face index
+      // Recover the volume gauss point from the face index
       int ipgL = iparam[7];
 
-      // normal vector at gauss point ipg
+      // Normal vector at gauss point ipg
       double vnds[3], xpg[3];
       {
 	double dtau[3][3], codtau[3][3];
@@ -862,8 +863,6 @@ void* DGMacroCellInterface2(void* mc){
       }
 
       if (ieR >= 0) {  // the right element exists
-        // find the corresponding point in the right elem
-
         double xrefL[3];
 	{
 	  double xpg_in[3];
@@ -933,6 +932,11 @@ void* DGMacroCellInterface2(void* mc){
   }
   
   return NULL;
+}
+
+void* DGMacroCellInterface2_CL(void* mc) {
+  
+
 }
 
 
@@ -1557,33 +1561,31 @@ void DGVolumeSlow(Field* f){
 // the time derivative of the field
 void dtField(Field* f){
 
-
   MacroCell mcell[f->macromesh.nbelems];
   MacroFace mface[f->macromesh.nbfaces];
 
-  for(int ie=0;ie<f->macromesh.nbelems;ie++){
+  for(int ie = 0; ie < f->macromesh.nbelems; ie++){
     mcell[ie].field=f;
     mcell[ie].first=ie;
     mcell[ie].last_p1=ie+1;
   }
 
   for(int ifa=0;ifa<f->macromesh.nbfaces;ifa++){
-    mface[ifa].field=f;
-    mface[ifa].first=ifa;
-    mface[ifa].last_p1=ifa+1;
+    mface[ifa].field = f;
+    mface[ifa].first = ifa;
+    mface[ifa].last_p1 = ifa + 1;
   }
-
 
   bool facealgo=true;
   //facealgo=false;
 
-  if (facealgo){
-    for(int iw=0;iw<f->wsize;iw++) f->dtwn[iw]=0;
-    for(int ifa=0;ifa<f->macromesh.nbfaces;ifa++){
-      DGMacroCellInterface2((void*) (mface+ifa));
+  if(facealgo) {
+    for(int iw = 0; iw < f->wsize; iw++) 
+      f->dtwn[iw] = 0;
+    for(int ifa = 0; ifa < f->macromesh.nbfaces; ifa++) {
+      DGMacroCellInterface2((void*) (mface + ifa));
     }
   }
-
 
 #ifdef _WITH_PTHREAD
 
@@ -1657,12 +1659,11 @@ void dtField(Field* f){
 #pragma omp parallel for schedule(dynamic, 1)
 #endif
   for(int ie=0; ie < f->macromesh.nbelems; ++ie) {
-    if (facealgo==false){
-      DGMacroCellInterface((void*) (mcell+ie));
-    }
-    DGSubCellInterface((void*) (mcell+ie));
-    DGVolume((void*) (mcell+ie)); 
-    DGMass((void*) (mcell+ie)); 
+    MacroCell *mcelli = mcell + ie;
+    if(facealgo == false) DGMacroCellInterface(mcelli);
+    DGSubCellInterface(mcelli);
+    DGVolume(mcelli); 
+    DGMass(mcelli); 
   }
   
 #endif
@@ -1698,7 +1699,7 @@ void dtFieldSlow(Field* f){
   }
   assert(sizew==f->macromesh.nbelems * f->model.m * NPG(f->interp_param+1));
 
-  // assembly of the surface terms
+  // assembly of the subrface terms
   // loop on the elements
   //#pragma omp parallel for
   for (int ie=0;ie<f->macromesh.nbelems;ie++){
