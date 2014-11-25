@@ -312,52 +312,48 @@ void DGVolume(
 __kernel
 void DGMass(
 	    __constant int* param,        // interp param
-            __constant int* ie,            // macrocel index
+            int ie,            // macrocel index
             __constant double* physnode,  // macrocell nodes
             __global double* dtwn){       // time derivative
   
-  int ipg=get_global_id(0);
-  int npg=(param[1]+1)*(param[2]+1)*(param[3]+1) *
-         (param[4])*(param[5])*(param[6]);
+  int ipg = get_global_id(0);
+  const int m = param[0];
+  const int npg[3] = {param[1] + 1, param[2] + 1, param[3] + 1};
+  const int nraf[3] = {param[4], param[5], param[6]};
+  
+  const int npgie = npg[0] * npg[1] * npg[2] * nraf[0] * nraf[1] * nraf[2];
 
-  double dtau[3][3],x,y,z,wpg;
   //ref_pg_vol(param+1,ipg,xpgref,&wpg,NULL);
-  int ix = ipg % (param[1] + 1);
-  ipg/=(param[1] + 1);
+  int ix = ipg % npg[0];
+  ipg /= npg[0];
+  int iy = ipg % npg[1];
+  ipg /= npg[1];
+  int iz = ipg % npg[2];
+  ipg /= npg[2];
 
-  int iy = ipg % (param[2] + 1);
-  ipg/=(param[2] + 1);
+  int ncx = ipg % nraf[0];
+  ipg /= nraf[0];
+  int ncy = ipg % nraf[1];
+  ipg /= nraf[1];
+  int ncz = ipg;
 
-  int iz = ipg % (param[3] + 1);
-  ipg/=(param[3] + 1);
+  double hx = 1.0 / (double) nraf[0];
+  double hy = 1.0 / (double) nraf[1];
+  double hz = 1.0 / (double) nraf[2];
 
-  int ncx= ipg % param[4];
-  double hx=1/(double) param[4];
-  ipg/=param[4];
+  int offset[3] = {gauss_lob_offset[param[1]] + ix,
+		   gauss_lob_offset[param[2]] + iy,
+		   gauss_lob_offset[param[3]] + iz};
+  
+  double x = hx * (ncx + gauss_lob_point[offset[0]]);
+  double y = hy * (ncy + gauss_lob_point[offset[1]]);
+  double z = hz * (ncz + gauss_lob_point[offset[2]]);
 
-  int ncy= ipg % param[5];
-  double hy=1/(double) param[5];
-  ipg/=param[5];
-
-  int ncz= ipg;
-  double hz=1/(double) param[6];
-
-  int offset[3];
-
-  offset[0]=gauss_lob_offset[param[1]]+ix;
-  offset[1]=gauss_lob_offset[param[2]]+iy;
-  offset[2]=gauss_lob_offset[param[3]]+iz;
-
-  x=hx*(ncx+gauss_lob_point[offset[0]]);
-  y=hy*(ncy+gauss_lob_point[offset[1]]);
-  z=hz*(ncz+gauss_lob_point[offset[2]]);
-
-
-  wpg=hx*hy*hz*gauss_lob_weight[offset[0]]*
-    gauss_lob_weight[offset[1]]*
-    gauss_lob_weight[offset[2]];
-
-
+  double wpg = hx * hy * hz 
+    * gauss_lob_weight[offset[0]]
+    * gauss_lob_weight[offset[1]]
+    * gauss_lob_weight[offset[2]];
+  
   // end of ref_pg_vol
   //////////////////////////////////////////////
 
@@ -367,35 +363,41 @@ void DGMass(
   //        NULL,dtau,  // xphy,dtau
   //        codtau,NULL,NULL); // codtau,dpsi,vnds
 
-   get_dtau(x,y,z,physnode,dtau);
+  double dtau[3][3];
+  get_dtau(x, y, z, physnode, dtau);
 
-   //codtau[0][0] = dtau[1][1] * dtau[2][2] - dtau[1][2] * dtau[2][1];
-   //codtau[0][1] = -dtau[1][0] * dtau[2][2] + dtau[1][2] * dtau[2][0];
-   //codtau[0][2] = dtau[1][0] * dtau[2][1] - dtau[1][1] * dtau[2][0];
-   //codtau[1][0] = -dtau[0][1] * dtau[2][2] + dtau[0][2] * dtau[2][1];
-   //codtau[1][1] = dtau[0][0] * dtau[2][2] - dtau[0][2] * dtau[2][0];
-   //codtau[1][2] = -dtau[0][0] * dtau[2][1] + dtau[0][1] * dtau[2][0];
-   //codtau[2][0] = dtau[0][1] * dtau[1][2] - dtau[0][2] * dtau[1][1];
-   //codtau[2][1] = -dtau[0][0] * dtau[1][2] + dtau[0][2] * dtau[1][0];
-   //codtau[2][2] = dtau[0][0] * dtau[1][1] - dtau[0][1] * dtau[1][0];
-   //double det=dtau[0][0]*codtau[0][0]+dtau[0][1]*codtau[0][1]+
-   // dtau[0][2]*codtau[0][2];
+  //codtau[0][0] = dtau[1][1] * dtau[2][2] - dtau[1][2] * dtau[2][1];
+  //codtau[0][1] = -dtau[1][0] * dtau[2][2] + dtau[1][2] * dtau[2][0];
+  //codtau[0][2] = dtau[1][0] * dtau[2][1] - dtau[1][1] * dtau[2][0];
+  //codtau[1][0] = -dtau[0][1] * dtau[2][2] + dtau[0][2] * dtau[2][1];
+  //codtau[1][1] = dtau[0][0] * dtau[2][2] - dtau[0][2] * dtau[2][0];
+  //codtau[1][2] = -dtau[0][0] * dtau[2][1] + dtau[0][1] * dtau[2][0];
+  //codtau[2][0] = dtau[0][1] * dtau[1][2] - dtau[0][2] * dtau[1][1];
+  //codtau[2][1] = -dtau[0][0] * dtau[1][2] + dtau[0][2] * dtau[1][0];
+  //codtau[2][2] = dtau[0][0] * dtau[1][1] - dtau[0][1] * dtau[1][0];
+  //double det=dtau[0][0]*codtau[0][0]+dtau[0][1]*codtau[0][1]+
+  // dtau[0][2]*codtau[0][2];
    
   // end of Ref2Phy
   //////////////////////////////////////////////////////////
 
-  double det=dtau[0][0]*dtau[1][1]*dtau[2][2]-dtau[0][0]*dtau[1][2]*dtau[2][1]-dtau[1][0]*dtau[0][1]*dtau[2][2]+
-    dtau[1][0]*dtau[0][2]*dtau[2][1]+dtau[2][0]*dtau[0][1]*dtau[1][2]-dtau[2][0]*dtau[0][2]*dtau[1][1];
+  double det
+    = dtau[0][0] * dtau[1][1] * dtau[2][2]
+    - dtau[0][0] * dtau[1][2] * dtau[2][1]
+    - dtau[1][0] * dtau[0][1] * dtau[2][2]
+    + dtau[1][0] * dtau[0][2] * dtau[2][1]
+    + dtau[2][0] * dtau[0][1] * dtau[1][2]
+    - dtau[2][0] * dtau[0][2] * dtau[1][1];
 
-  for(int iv=0;iv<param[0];iv++){
+  for(int iv = 0; iv < m; iv++){
     // varindex
-    int imem=iv + param[0] * ( get_global_id(0) + npg * *ie);
+    int imem = iv + m * (get_global_id(0) + npgie * ie);
     // end of varindex
     /////////////////////////////////////
     //printf("imem=%d dtw=%f\n",imem,dtwn[imem]);
     //printf("det=%f wpg=%f imem=%d h=%f %f %f\n",det,wpg,imem,hx,hy,hz);
 
-    dtwn[imem]/=(wpg*det);
+    dtwn[imem] /= (wpg * det);
   }
 
 }
