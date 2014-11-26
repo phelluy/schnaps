@@ -181,3 +181,12 @@ add_executable(
   test/testkernelvolume.c
 )
 target_link_libraries(testkernelvolume _schnaps m pthread ${OPENCL_LIBRARY})
+
+
+add_test(testkernelinterface testkernelinterface)
+add_executable(
+  testkernelinterface
+  test/test.h
+  test/testkernelinterface.c
+)
+target_link_libraries(testkernelinterface _schnaps m pthread ${OPENCL_LIBRARY})
