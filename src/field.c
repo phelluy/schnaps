@@ -208,6 +208,8 @@ void InitField(Field* f){
   assert(status == CL_SUCCESS);
   f->dgvolume = clCreateKernel(f->cli.program, "DGVolume", &status);
   assert(status == CL_SUCCESS);
+  f->dginterface = clCreateKernel(f->cli.program, "DGMacroCellInterface", &status);
+  assert(status == CL_SUCCESS);
   
 
 #endif
@@ -934,8 +936,183 @@ void* DGMacroCellInterface2(void* mc) {
   return NULL;
 }
 
-void* DGMacroCellInterface2_CL(void* mc) {
+void* DGMacroCellInterface_CL(void* mf) {
   
+  MacroFace* mface = (MacroFace*) mf;
+  Field* f= mface->field;
+  int* param=f->interp_param;
+  /* printf("&pf=%p\n",f); */
+  /* printf("%f\n",f->dtwn[0]); */
+
+  cl_mem param_cl;
+  cl_int status;
+  param_cl= clCreateBuffer(
+                           f->cli.context,
+                           CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR,
+                           sizeof(int)*7,
+                           f->interp_param,
+                           &status);
+  assert(status == CL_SUCCESS);  
+
+  // associates the param buffer to the 0th kernel argument
+  status = clSetKernelArg(f->dginterface,             // kernel name
+                          0,                // arg num
+                          sizeof(cl_mem),   
+                          &param_cl);     // opencl buffer
+  assert(status == CL_SUCCESS);  
+
+  // associates the dtwn buffer 
+  status = clSetKernelArg(f->dginterface,             // kernel name
+                          8,                // arg num
+                          sizeof(cl_mem),   
+                          &(f->wn_cl));     // opencl buffer
+  assert(status == CL_SUCCESS);  
+
+  // associates the dtwn buffer 
+  status = clSetKernelArg(f->dginterface,             // kernel name
+                          9,                // arg num
+                          sizeof(cl_mem),   
+                          &(f->dtwn_cl));     // opencl buffer
+  assert(status == CL_SUCCESS);  
+
+
+  cl_mem physnodeL_cl;
+  cl_double* physnodeL=calloc(60,sizeof(cl_double));
+  cl_mem physnodeR_cl;
+  cl_double* physnodeR=calloc(60,sizeof(cl_double));
+  physnodeL_cl= clCreateBuffer(f->cli.context,
+                              CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR,
+                              sizeof(double)*20*3,
+                              physnodeL,
+                              &status);
+  assert(  status ==  CL_SUCCESS); 
+  status = clSetKernelArg(f->dginterface,             // kernel name
+                          6,                // arg num
+                          sizeof(cl_mem),   
+                          &physnodeL);     // opencl buffer
+  assert(status == CL_SUCCESS);  
+  physnodeR_cl= clCreateBuffer(f->cli.context,
+                              CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR,
+                              sizeof(double)*20*3,
+                              physnodeR,
+                              &status);
+  assert(  status ==  CL_SUCCESS); 
+  status = clSetKernelArg(f->dginterface,             // kernel name
+                          7,                // arg num
+                          sizeof(cl_mem),   
+                          &physnodeR);     // opencl buffer
+  assert(status == CL_SUCCESS);  
+
+
+
+
+  // loop on the macro faces
+  for(int ifa = 0; ifa < f->macromesh.nbfaces; ifa++) {
+    int ieL=f->macromesh.face2elem[4*ifa+0];
+    int locfaL=f->macromesh.face2elem[4*ifa+1];
+    int ieR=f->macromesh.face2elem[4*ifa+2];
+    int locfaR=f->macromesh.face2elem[4*ifa+3];
+    
+    void* chkptr=clEnqueueMapBuffer(f->cli.commandqueue,
+                                    physnodeL_cl,  // buffer to copy from
+                                    CL_TRUE,  // block until the buffer is available
+                                    CL_MAP_WRITE,  // we just want to copy physnode
+                                    0, // offset
+                                    sizeof(cl_double)*20*3,  // buffersize
+                                    0,NULL,NULL, // events management
+                                    &status);
+    //printf("%d\n",status);
+    assert(status == CL_SUCCESS);
+    assert(chkptr == physnodeL);
+    
+    
+    
+    for(int inoloc = 0; inoloc < 20; inoloc++) {
+      int ino=f->macromesh.elem2node[20*ieL+inoloc];
+      physnodeL[3*inoloc+0]=f->macromesh.node[3*ino+0];
+      physnodeL[3*inoloc+1]=f->macromesh.node[3*ino+1];
+      physnodeL[3*inoloc+2]=f->macromesh.node[3*ino+2];
+    }
+    status=clEnqueueUnmapMemObject (f->cli.commandqueue,
+                                    physnodeL_cl,
+                                    physnodeL,
+                                    0,NULL,NULL);
+    assert(status == CL_SUCCESS);
+
+    if (ieR>=0) {
+      void* chkptr=clEnqueueMapBuffer(f->cli.commandqueue,
+                                      physnodeR_cl,  // buffer to copy from
+                                      CL_TRUE,  // block until the buffer is available
+                                      CL_MAP_WRITE,  // we just want to copy physnode
+                                      0, // offset
+                                      sizeof(cl_double)*20*3,  // buffersize
+                                      0,NULL,NULL, // events management
+                                      &status);
+      //printf("%d\n",status);
+      assert(status == CL_SUCCESS);
+      assert(chkptr == physnodeR);
+      for(int inoloc = 0; inoloc < 20; inoloc++) {
+        int ino=f->macromesh.elem2node[20*ieR+inoloc];
+        physnodeR[3*inoloc+0]=f->macromesh.node[3*ino+0];
+        physnodeR[3*inoloc+1]=f->macromesh.node[3*ino+1];
+        physnodeR[3*inoloc+2]=f->macromesh.node[3*ino+2];
+      }
+      
+      status=clEnqueueUnmapMemObject (f->cli.commandqueue,
+                                      physnodeR_cl,
+                                      physnodeR,
+                                      0,NULL,NULL);
+      assert(status == CL_SUCCESS);
+      
+
+    }
+
+    status = clSetKernelArg(f->dginterface,             // kernel name
+                            1,                // arg num
+                            sizeof(double),
+                            &(f->tnow));     // opencl buffer
+    assert(  status ==  CL_SUCCESS);
+
+    status = clSetKernelArg(f->dginterface,             // kernel name
+                            2,                // arg num
+                            sizeof(int),
+                            &ieL);     // opencl buffer
+    assert(  status ==  CL_SUCCESS);
+    status = clSetKernelArg(f->dginterface,             // kernel name
+                            3,                // arg num
+                            sizeof(int),
+                            &ieR);     // opencl buffer
+    assert(  status ==  CL_SUCCESS);
+    status = clSetKernelArg(f->dginterface,             // kernel name
+                            4,                // arg num
+                            sizeof(int),
+                            &locfaL);     // opencl buffer
+    assert(  status ==  CL_SUCCESS);
+    status = clSetKernelArg(f->dginterface,             // kernel name
+                            5,                // arg num
+                            sizeof(int),
+                            &locfaR);     // opencl buffer
+    assert(  status ==  CL_SUCCESS);
+
+
+    size_t numworkitems=NPGF(f->interp_param+1,ifa);
+    status = clEnqueueNDRangeKernel(f->cli.commandqueue, 
+				    f->dginterface, 
+				    1, NULL,
+				    &numworkitems,
+				    NULL,
+				    0, NULL, NULL);
+    assert(status == CL_SUCCESS);
+    clFinish(f->cli.commandqueue);  // wait the end of the computati
+
+  }
+
+
+  free(physnodeL);
+  assert(clReleaseMemObject(physnodeL_cl)==CL_SUCCESS);
+  free(physnodeR);
+  assert(clReleaseMemObject(physnodeR_cl)==CL_SUCCESS);
+
 
 }
 
@@ -1149,6 +1326,7 @@ void* DGMass_CL(void* mc){
   }
 
   free(physnode);
+  assert(clReleaseMemObject(physnode_cl)==CL_SUCCESS);
 
   return NULL;
 }
@@ -1324,6 +1502,7 @@ void* DGVolume_CL(void* mc){
   }
 
   free(physnode);
+  assert(clReleaseMemObject(physnode_cl)==CL_SUCCESS);
 
   return NULL;
 

@@ -57,6 +57,7 @@ typedef struct Field{
   //! opencl kernels for mass inversion
   cl_kernel dgmass;
   cl_kernel dgvolume;
+  cl_kernel dginterface;
   
 #endif
 
@@ -131,7 +132,8 @@ void* DGMacroCellInterface(void* mcell);
 //! The argument has to be void* (for compatibility with pthread)
 //! but it is logically a MacroCell*
 //! \param[inout] mcell a MacroCell
-void* DGMacroCellInterface2(void* mcell);
+void* DGMacroCellInterface2(void* mface);
+void* DGMacroCellInterface_CL(void* mface);
 //! \brief compute the Discontinuous Galerkin volume terms
 //! The argument has to be void* (for compatibility with pthread)
 //! but it is logically a MacroCell*

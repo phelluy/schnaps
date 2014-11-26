@@ -569,7 +569,6 @@ __kernel
 void DGMacroCellInterface(
                           __constant int* param,        // interp param
                           double tnow,  // current time
-                          int ifa,            // macroface index
                           int ieL,int ieR,  // left and right elem ids 
                           int locfaL,int locfaR, // current face local indices
                           __constant double* physnodeL,  // left macrocell nodes

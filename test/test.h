@@ -33,5 +33,8 @@ int TestKernel(void);
 
 int TestKernelVolume(void);
 
+int TestKernelInterface(void);
+
+
 
 #endif
