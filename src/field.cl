@@ -577,6 +577,8 @@ void DGMacroCellInterface(
                           __global double* dtwn){       // time derivative
 
   
+  //printf("ieL=%d ieR=%d locfaL=%d locfaR=%d\n",ieL,ieR,locfaL,locfaR);
+
 
   int ipgfL=get_global_id(0);
         
@@ -586,8 +588,9 @@ void DGMacroCellInterface(
   int ipgL=ref_pg_face(param + 1, locfaL, ipgfL,
                        xpgref, &wpg, xpgref_in);
       
+  printf("ipgfL=%d ipgL=%d xpgref=%f %f %f\n",ipgfL,ipgL,xpgref[0],xpgref[1],xpgref[2]);
       
-      
+
 
   // Normal vector at gauss point ipg
   double vnds[3], xpg[3];

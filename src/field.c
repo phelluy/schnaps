@@ -978,29 +978,31 @@ void* DGMacroCellInterface_CL(void* mf) {
 
   cl_mem physnodeL_cl;
   cl_double* physnodeL=calloc(60,sizeof(cl_double));
+  assert(physnodeL);
   cl_mem physnodeR_cl;
   cl_double* physnodeR=calloc(60,sizeof(cl_double));
+  assert(physnodeR);
   physnodeL_cl= clCreateBuffer(f->cli.context,
                               CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR,
                               sizeof(double)*20*3,
                               physnodeL,
                               &status);
-  assert(  status ==  CL_SUCCESS); 
+  assert(status ==  CL_SUCCESS); 
   status = clSetKernelArg(f->dginterface,             // kernel name
                           6,                // arg num
                           sizeof(cl_mem),   
-                          &physnodeL);     // opencl buffer
+                          &physnodeL_cl);     // opencl buffer
   assert(status == CL_SUCCESS);  
   physnodeR_cl= clCreateBuffer(f->cli.context,
                               CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR,
                               sizeof(double)*20*3,
                               physnodeR,
                               &status);
-  assert(  status ==  CL_SUCCESS); 
+  assert(status ==  CL_SUCCESS); 
   status = clSetKernelArg(f->dginterface,             // kernel name
                           7,                // arg num
                           sizeof(cl_mem),   
-                          &physnodeR);     // opencl buffer
+                          &physnodeR_cl);     // opencl buffer
   assert(status == CL_SUCCESS);  
 
 
@@ -1008,11 +1010,12 @@ void* DGMacroCellInterface_CL(void* mf) {
 
   // loop on the macro faces
   for(int ifa = 0; ifa < f->macromesh.nbfaces; ifa++) {
-    int ieL=f->macromesh.face2elem[4*ifa+0];
-    int locfaL=f->macromesh.face2elem[4*ifa+1];
-    int ieR=f->macromesh.face2elem[4*ifa+2];
-    int locfaR=f->macromesh.face2elem[4*ifa+3];
+    int ieL = f->macromesh.face2elem[4*ifa+0];
+    int locfaL = f->macromesh.face2elem[4*ifa+1];
+    int ieR = f->macromesh.face2elem[4*ifa+2];
+    int locfaR = f->macromesh.face2elem[4*ifa+3];
     
+
     void* chkptr=clEnqueueMapBuffer(f->cli.commandqueue,
                                     physnodeL_cl,  // buffer to copy from
                                     CL_TRUE,  // block until the buffer is available
@@ -1021,25 +1024,24 @@ void* DGMacroCellInterface_CL(void* mf) {
                                     sizeof(cl_double)*20*3,  // buffersize
                                     0,NULL,NULL, // events management
                                     &status);
-    //printf("%d\n",status);
+    printf("%d\n",status);
     assert(status == CL_SUCCESS);
     assert(chkptr == physnodeL);
-    
-    
+
     
     for(int inoloc = 0; inoloc < 20; inoloc++) {
       int ino=f->macromesh.elem2node[20*ieL+inoloc];
-      physnodeL[3*inoloc+0]=f->macromesh.node[3*ino+0];
-      physnodeL[3*inoloc+1]=f->macromesh.node[3*ino+1];
-      physnodeL[3*inoloc+2]=f->macromesh.node[3*ino+2];
+      physnodeL[3*inoloc+0] = f->macromesh.node[3*ino+0];
+      physnodeL[3*inoloc+1] = f->macromesh.node[3*ino+1];
+      physnodeL[3*inoloc+2] = f->macromesh.node[3*ino+2];
     }
-    status=clEnqueueUnmapMemObject (f->cli.commandqueue,
-                                    physnodeL_cl,
-                                    physnodeL,
-                                    0,NULL,NULL);
+    status=clEnqueueUnmapMemObject(f->cli.commandqueue,
+                                   physnodeL_cl,
+                                   physnodeL,
+                                   0,NULL,NULL);
     assert(status == CL_SUCCESS);
 
-    if (ieR>=0) {
+    if(ieR >= 0) {
       void* chkptr=clEnqueueMapBuffer(f->cli.commandqueue,
                                       physnodeR_cl,  // buffer to copy from
                                       CL_TRUE,  // block until the buffer is available
@@ -1067,6 +1069,7 @@ void* DGMacroCellInterface_CL(void* mf) {
 
     }
 
+ 
     status = clSetKernelArg(f->dginterface,             // kernel name
                             1,                // arg num
                             sizeof(double),
@@ -1096,14 +1099,15 @@ void* DGMacroCellInterface_CL(void* mf) {
 
 
     size_t numworkitems=NPGF(f->interp_param+1,ifa);
-    status = clEnqueueNDRangeKernel(f->cli.commandqueue, 
-				    f->dginterface, 
-				    1, NULL,
-				    &numworkitems,
-				    NULL,
-				    0, NULL, NULL);
+    status = clEnqueueNDRangeKernel(f->cli.commandqueue,
+        			    f->dginterface,
+        			    1, NULL,
+        			    &numworkitems,
+        			    NULL,
+        			    0, NULL, NULL);
     assert(status == CL_SUCCESS);
     clFinish(f->cli.commandqueue);  // wait the end of the computati
+
 
   }
 
