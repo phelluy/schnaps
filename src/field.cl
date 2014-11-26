@@ -566,29 +566,25 @@ void DGMass(
 // Compute the Discontinuous Galerkin inter-macrocells boundary terms.
 // Second implementation with a loop on the faces.
 __kernel
-void DGMacroCellInterface(
-                          __constant int* param,        // interp param
+void DGMacroCellInterface(__constant int* param,        // interp param
                           double tnow,  // current time
-                          int ieL,int ieR,  // left and right elem ids 
-                          int locfaL,int locfaR, // current face local indices
-                          __constant double* physnodeL,  // left macrocell nodes
-                          __constant double* physnodeR,  // right macrocell nodes
+                          int ieL, int ieR,  // left and right elem ids 
+                          int locfaL, int locfaR, // current face local indices
+                          __constant double* physnodeL, // left macrocell nodes
+                          __constant double* physnodeR, // right macrocell nodes
                           __global double* wn,
                           __global double* dtwn){       // time derivative
-
-  
-  //printf("ieL=%d ieR=%d locfaL=%d locfaR=%d\n",ieL,ieR,locfaL,locfaR);
-
-
   int ipgfL=get_global_id(0);
-        
+
+  //printf("ieL=%d ieR=%d locfaL=%d locfaR=%d\n",ieL,ieR,locfaL,locfaR);        
+
   double xpgref[3], xpgref_in[3], wpg;
   // Get the coordinates of the Gauss point and coordinates of a
   // point slightly inside the opposite element in xref_in
   int ipgL=ref_pg_face(param + 1, locfaL, ipgfL,
                        xpgref, &wpg, xpgref_in);
       
-  printf("ipgfL=%d ipgL=%d xpgref=%f %f %f\n",ipgfL,ipgL,xpgref[0],xpgref[1],xpgref[2]);
+  //printf("ipgfL=%d ipgL=%d xpgref=%f %f %f\n",ipgfL,ipgL,xpgref[0],xpgref[1],xpgref[2]);
       
 
 
