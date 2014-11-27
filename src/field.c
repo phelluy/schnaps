@@ -937,6 +937,7 @@ void* DGMacroCellInterface2(void* mc) {
     }
 
   }
+  return NULL;
 }
 
 void* DGMacroCellInterface_CL(void* mf) {
@@ -1129,6 +1130,9 @@ void* DGMacroCellInterface_CL(void* mf) {
   free(physnodeR);
   status = clReleaseMemObject(physnodeR_cl);
   assert(status == CL_SUCCESS);
+
+
+  return NULL;
 }
 
 
