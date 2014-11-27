@@ -656,6 +656,8 @@ void DGMacroCellInterface(__constant int* param,        // interp param
     double flux[_M];
     BoundaryFlux(xpg, tnow, wL, vnds, flux);
 
+    //printf("ipgfL=%d ipgL=%d tnow=%f wL=%f flux=%f\n",ipgfL,ipgL,tnow,wL[0],flux[0]);
+
     for(int iv = 0; iv < _M; iv++) {
       // The basis functions is also the gauss point index
       int imemL = varindex(param, ieL, ipgL, iv);
