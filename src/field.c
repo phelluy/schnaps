@@ -924,7 +924,7 @@ void* DGMacroCellInterface2(void* mc) {
 
 	double flux[m];
         f->model.BoundaryFlux(xpg, f->tnow, wL, vnds, flux);
-        printf("ipgL=%d tnow=%f wL=%f flux=%f\n",ipgL,f->tnow,wL[0],flux[0]);
+        //printf("ipgL=%d tnow=%f wL=%f flux=%f\n",ipgL,f->tnow,wL[0],flux[0]);
 
 	for(int iv = 0; iv < m; iv++) {
 	  // The basis functions is also the gauss point index
@@ -1038,7 +1038,6 @@ void* DGMacroCellInterface_CL(void* mf) {
 				      sizeof(cl_double) * 60,  // buffersize
 				      0, NULL, NULL, // events management
 				      &status);
-    printf("status=%d\n",status);
     assert(status == CL_SUCCESS);
     assert(chkptr == physnodeL);
 

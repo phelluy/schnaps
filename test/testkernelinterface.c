@@ -98,8 +98,7 @@ int TestKernelInterface(void){
 
  
   for(int ifa = 0; ifa < f.macromesh.nbfaces; ifa++) {
-    printf("loop ifa=%d\n",ifa);
-    DGMacroCellInterface_CL((void*) (mface + ifa));
+     DGMacroCellInterface_CL((void*) (mface + ifa));
   }
 
   CopyFieldtoCPU(&f);
