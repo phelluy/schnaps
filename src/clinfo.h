@@ -12,7 +12,6 @@
 //! \brief Data structure for managing the OpenCL
 //! system informations
 typedef struct CLInfo{
-
   cl_device_id* device; //!< devices list
   cl_ulong devicememsize;  //!< GPU global memory size
   cl_ulong maxmembuffer;  //!< maximal size of a GPU buffer
@@ -31,7 +30,6 @@ typedef struct CLInfo{
   cl_uint deviceid;   //!< chosen device ID
 
   cl_context context;//!< OpenCL context
-
   cl_command_queue commandqueue;   //!< default command queue
 
   cl_program program;   //!< compute program
@@ -43,9 +41,7 @@ typedef struct CLInfo{
 //! \param[inout] cli pointer to a CLInfo
 //! \param[in] platform_id  Platform ID
 //! \param[in] device_id  Compute device ID
-void InitCLInfo(CLInfo* cli,
-                int platform_id,
-                int device_id);
+void InitCLInfo(CLInfo* cli, int platform_id, int device_id);
 
 //! \brief Display OpenCL informations
 //! \param[in] cli pointer to a CLInfo
@@ -54,14 +50,13 @@ void PrintCLInfo(CLInfo* cli);
 //! \brief Compile kernels source
 //! \param[inout] cli pointer to a CLInfo
 //! \param[in] program string containing the kernels sources
-void BuildKernels(CLInfo* cli,char* program);
+void BuildKernels(CLInfo* cli, char* program);
 
 //! \brief allocates and fills a string with a file content
-void ReadFile(char filename[],char** s);
+void ReadFile(char filename[], char** s);
 
 //! \brief Gets the header and source for a given
 //! function in a program string
-void GetFunctionSource(char* prog,char* func_name,
-                       char** header,char** source);
-
+void GetFunctionSource(char* prog, char* func_name,
+		       char** header, char** source);
 #endif
