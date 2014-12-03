@@ -124,24 +124,25 @@ __constant int h20_refnormal[6][3]={{0,-1,0},{1,0,0},
 //! data for a given degree in the previous arrays
 __constant int gauss_lob_dpsi_offset[] = {0, 1, 5, 14, 30};
 
-double dlag(int deg,int ib,int ipg);
-// return the 1d derivative of lagrange polynomial ib at glop ipg
-double dlag(int deg,int ib,int ipg) {
-  return gauss_lob_dpsi[gauss_lob_dpsi_offset[deg]+ib*(deg+1)+ipg];
+double dlag(int deg, int ib, int ipg);
+
+// Return the 1d derivative of lagrange polynomial ib at glop ipg
+double dlag(int deg, int ib, int ipg) {
+  return gauss_lob_dpsi[gauss_lob_dpsi_offset[deg] + ib * (deg + 1) + ipg];
 }
 
 int varindex(__constant int* param, int elem, int ipg, int iv);
 
-// memory location of w : component iv, macrocell elem and
-// gauss point id in the macrocell ipg
-int varindex(__constant int* param, int elem, int ipg, int iv) {
+// Memory location of w : component iv, macrocell elem and gauss point
+// id in the macrocell ipg
+int varindex(__constant int *param, int elem, int ipg, int iv) {
   int npg
     = (param[1] + 1) * (param[2] + 1) * (param[3] + 1)
     * param[4] * param[5] * param[6];
   return iv + param[0] * ( ipg + npg * elem);
 }
 
-int ref_ipg(__constant int* param,double* xref);
+int ref_ipg(__constant int* param, double* xref);
 
 void Ref2Phy(__constant double* physnode,
              double xref[3],
@@ -154,7 +155,7 @@ void Ref2Phy(__constant double* physnode,
              double vnds[3]);
 
 void Phy2Ref(__constant double* physnode,
-             double xphy[3],double xref[3]);
+             double xphy[3], double xref[3]);
 
 int ref_pg_face(__constant int* param, int ifa, int ipg,
                 double* xpg, double* wpg, double* xpgin);
@@ -169,9 +170,9 @@ int ref_pg_face(__constant int* param, int ifa, int ipg,
 		param[axis_permut[ifa][2]]};
 
   // number of subcells in each direction
-  int nraf[3] = {param[3+axis_permut[ifa][0]],
-		 param[3+axis_permut[ifa][1]],
-		 param[3+axis_permut[ifa][2]]};
+  int nraf[3] = {param[3 + axis_permut[ifa][0]],
+		 param[3 + axis_permut[ifa][1]],
+		 param[3 + axis_permut[ifa][2]]};
 
   // Compute permuted indices
   int ix = ipg % (deg[0] + 1);
@@ -268,9 +269,9 @@ int ref_pg_face(__constant int* param, int ifa, int ipg,
 };
 
 
-void NumFlux(double wL[],double wR[],double* vnorm,double* flux);
+void NumFlux(double wL[], double wR[], double* vnorm, double* flux);
 
-void NumFlux(double wL[],double wR[],double* vnorm,double* flux) {
+void NumFlux(double wL[], double wR[], double* vnorm, double* flux) {
   double s2 = 0.707106781186547524400844362105;
   double vn = s2 * (vnorm[0] + vnorm[1]);
 
@@ -473,7 +474,7 @@ void DGMass(__constant int* param,        // interp param
 
   const int npgie = npg[0] * npg[1] * npg[2] * nraf[0] * nraf[1] * nraf[2];
 
-  //ref_pg_vol(param+1,ipg,xpgref,&wpg,NULL);
+  //ref_pg_vol(param+1, ipg,xpgref,&wpg,NULL);
   int ix = ipg % npg[0];
   ipg /= npg[0];
   int iy = ipg % npg[1];
@@ -509,9 +510,9 @@ void DGMass(__constant int* param,        // interp param
 
   //Ref2Phy(physnode, // phys. nodes
   //        xpgref,  // xref
-  //        NULL,-1, // dpsiref,ifa
-  //        NULL,dtau,  // xphy,dtau
-  //        codtau,NULL,NULL); // codtau,dpsi,vnds
+  //        NULL,-1, // dpsiref, ifa
+  //        NULL, dtau,  // xphy, dtau
+  //        codtau,NULL,NULL); // codtau, dpsi,vnds
 
   double dtau[3][3];
   get_dtau(x, y, z, physnode, dtau);
@@ -544,8 +545,8 @@ void DGMass(__constant int* param,        // interp param
     int imem = iv + m * (get_global_id(0) + npgie * ie);
     // end of varindex
     /////////////////////////////////////
-    //printf("imem=%d dtw=%f\n",imem,dtwn[imem]);
-    //printf("det=%f wpg=%f imem=%d h=%f %f %f\n",det,wpg,imem,hx,hy,hz);
+    //printf("imem=%d dtw=%f\n", imem, dtwn[imem]);
+    //printf("det=%f wpg=%f imem=%d h=%f %f %f\n", det,wpg, imem,hx,hy,hz);
 
     dtwn[imem] /= (wpg * det);
   }
@@ -576,9 +577,9 @@ void DGMacroCellInterface(__constant int* param,        // interp param
     double dtau[3][3], codtau[3][3];
     Ref2Phy(physnodeL,
             xpgref,
-            NULL, locfaL, // dpsiref,ifa
+            NULL, locfaL, // dpsiref, ifa
             xpg, dtau,
-            codtau, NULL, vnds); // codtau,dpsi,vnds
+            codtau, NULL, vnds); // codtau, dpsi,vnds
   }
 
   if (ieR >= 0) {  // the right element exists
@@ -587,9 +588,9 @@ void DGMacroCellInterface(__constant int* param,        // interp param
       double xpg_in[3];
       Ref2Phy(physnodeL,
               xpgref_in,
-              NULL, -1, // dpsiref,ifa
+              NULL, -1, // dpsiref, ifa
               xpg_in, NULL,
-              NULL, NULL, NULL); // codtau,dpsi,vnds
+              NULL, NULL, NULL); // codtau, dpsi,vnds
       Phy2Ref(physnodeR, xpg_in, xrefL);
     }
 
@@ -601,9 +602,9 @@ void DGMacroCellInterface(__constant int* param,        // interp param
     /*   ref_pg_vol(param + 1, ipgR, xrefR, &wpgR, NULL); */
     /*   Ref2Phy(physnodeR, */
     /* 	  xrefR, */
-    /* 	  NULL, -1, // dphiref,ifa */
+    /* 	  NULL, -1, // dphiref, ifa */
     /* 	  xpgR, NULL,   */
-    /* 	  NULL, NULL, NULL); // codtau,dphi,vnds */
+    /* 	  NULL, NULL, NULL); // codtau, dphi,vnds */
     /*   assert(Dist(xpgR, xpg) < 1e-10); */
     /* }	 */
 
@@ -638,7 +639,7 @@ void DGMacroCellInterface(__constant int* param,        // interp param
     double flux[_M];
     BoundaryFlux(xpg, tnow, wL, vnds, flux);
 
-    //printf("ipgfL=%d ipgL=%d tnow=%f wL=%f flux=%f\n",ipgfL,ipgL,tnow,wL[0],flux[0]);
+    //printf("ipgfL=%d ipgL=%d tnow=%f wL=%f flux=%f\n", ipgfL, ipgL,tnow,wL[0],flux[0]);
 
     for(int iv = 0; iv < _M; iv++) {
       // The basis functions is also the gauss point index
@@ -1024,7 +1025,7 @@ int ref_ipg(__constant int *param, double *xref) {
   //int iz=floor(xref[2]*deg[2]+0.5);
 
   //printf("xref %f %f %f ix=%d iy=%d iz=%d\n",
-  //	 xref[0],xref[1],xref[2],ix,iy,iz);
+  //	 xref[0],xref[1],xref[2], ix, iy, iz);
 
   return ix + (deg[0] + 1) * (iy + (deg[1] + 1) * iz) + offset;
 };
