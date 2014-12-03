@@ -25,7 +25,7 @@ void InitCLInfo(CLInfo* cli,int platform_id,int device_id){
   printf("Available platforms:\n");
 
   char pbuf[2000];
-  for (int i = 0; i < cli->nbplatforms; ++i) { 
+  for (int i = 0; i < cli->nbplatforms; ++i) {
     printf("\nPlatform %d:\n",i);
     status = clGetPlatformInfo(platforms[i],
 			       CL_PLATFORM_NAME,
@@ -73,12 +73,12 @@ void InitCLInfo(CLInfo* cli,int platform_id,int device_id){
   // devices array construction
   cli->device = malloc(sizeof(cl_device_id) * cli->nbdevices);
   assert(cli->device);
-  
+
   assert(device_id < cli->nbdevices);
 
   printf("\nWe choose device %d/%d ",device_id,cli->nbdevices-1);
   printf("of platform %d/%d\n",platform_id,cli->nbplatforms-1);
-  
+
   status = clGetDeviceIDs(platforms[platform_id],
 			  CL_DEVICE_TYPE_ALL,
 			  cli->nbdevices,
@@ -95,7 +95,7 @@ void InitCLInfo(CLInfo* cli,int platform_id,int device_id){
 			   NULL);
   assert (status == CL_SUCCESS);
   printf("%s\n",cli->devicename);
-  
+
 
   // device memory
   status = clGetDeviceInfo(
@@ -106,7 +106,7 @@ void InitCLInfo(CLInfo* cli,int platform_id,int device_id){
 			   NULL);
   assert (status == CL_SUCCESS);
   printf("Global memory: %f MB\n",cli->devicememsize/1024./1024.);
-  
+
   status = clGetDeviceInfo(
 			   cli->device[device_id],
 			   CL_DEVICE_MAX_MEM_ALLOC_SIZE,
@@ -123,7 +123,7 @@ void InitCLInfo(CLInfo* cli,int platform_id,int device_id){
 			   sizeof(cl_ulong),
                            &(cli->cachesize),
 			   NULL);
-  assert (status == CL_SUCCESS);  
+  assert (status == CL_SUCCESS);
   printf("Cache size: %f KB\n",cli->cachesize/1024.);
 
   // get maxconstmem
@@ -133,7 +133,7 @@ void InitCLInfo(CLInfo* cli,int platform_id,int device_id){
 			   sizeof(cl_ulong),
                            &(cli->maxconstmem),
 			   NULL);
-  assert (status == CL_SUCCESS);  
+  assert (status == CL_SUCCESS);
   printf("Const mem: %f KB\n",cli->maxconstmem/1024.);
 
   // get maxconst args
@@ -144,7 +144,7 @@ void InitCLInfo(CLInfo* cli,int platform_id,int device_id){
 			   sizeof(cl_ulong),
                            &maxcstargs,
 			   NULL);
-  assert (status == CL_SUCCESS);  
+  assert (status == CL_SUCCESS);
   printf("Max Const args: %d \n",maxcstargs);
 
 
@@ -157,7 +157,7 @@ void InitCLInfo(CLInfo* cli,int platform_id,int device_id){
 			   NULL);
   assert (status == CL_SUCCESS);
   printf("Nb of compute units: %d\n",cli->nbcomputeunits);
-  
+
 
 
   // max workgroup size
@@ -184,7 +184,7 @@ void InitCLInfo(CLInfo* cli,int platform_id,int device_id){
   cli->context = clCreateContext(NULL, // no context properties
     1,         // only one device in the list
     &cli->device[device_id], // device list
-    NULL, // callback function 
+    NULL, // callback function
     NULL, // function arguments
     &status);
 
@@ -220,7 +220,7 @@ void PrintCLInfo(CLInfo* cli){
 
 
   printf("Nb of compute units: %d\n",cli->nbcomputeunits);
-  
+
 
 
   printf("Max workgroup size: %zu\n",cli->maxworkgroupsize);
@@ -238,7 +238,7 @@ void BuildKernels(CLInfo* cli,char* strprog){
   cl_int err;
 
   // kernels creation
-  cli->program = 
+  cli->program =
     clCreateProgramWithSource(
                               cli->context,
                               1,

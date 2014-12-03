@@ -34,7 +34,7 @@ int main(void) {
   BuildConnectivity(&(f.macromesh));
 
   //AffineMapMacroMesh(&(f.macromesh));
- 
+
   // prepare the initial fields
   InitField(&f);
   f.is2d=true;
@@ -47,10 +47,10 @@ int main(void) {
 
 
   // apply the DG scheme
-  // time integration by RK2 scheme 
+  // time integration by RK2 scheme
   // up to final time = 1.
   RK2(&f,1.0);
- 
+
   // save the results and the error
   PlotField(0,(1==0),&f,"dgvisu.msh");
   PlotField(0,(1==1),&f,"dgerror.msh");

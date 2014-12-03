@@ -24,12 +24,12 @@ void ReadMacroMesh(MacroMesh* m,char* filename){
   f=fopen(filename,"r");
   assert(f != NULL);
 
-  
+
 
   do {
     ret=getline(&line,&linesize,f);
   }
-  while(strcmp(line,"$Nodes\n") != 0);   
+  while(strcmp(line,"$Nodes\n") != 0);
 
   // read the nodes data
   ret=getline(&line,&linesize,f);
@@ -39,7 +39,7 @@ void ReadMacroMesh(MacroMesh* m,char* filename){
   m->node=malloc(3 * m->nbnodes * sizeof(double));
   assert(m->node);
 
-  for(int i=0;i<m->nbnodes;i++){    
+  for(int i=0;i<m->nbnodes;i++){
     ret=getdelim(&line,&linesize,(int) ' ',f); // node number
     ret=getdelim(&line,&linesize,(int) ' ',f); // x
     m->node[3*i+0]=atof(line);
@@ -51,19 +51,19 @@ void ReadMacroMesh(MacroMesh* m,char* filename){
     /* 	   m->node[3*i+0], */
     /* 	   m->node[3*i+1], */
     /* 	   m->node[3*i+2]); */
-  }    
+  }
   ret=getline(&line,&linesize,f);
   //printf("%s",line);
   // check that we have reached the end of nodes
   assert(strcmp(line,"$EndNodes\n") == 0);
-  
+
   // Now read all the elements of the mesh
   do {
     ret=getline(&line,&linesize,f);
   }
-  while(strcmp(line,"$Elements\n") != 0);   
+  while(strcmp(line,"$Elements\n") != 0);
 
-  // size of the gmsh elems list 
+  // size of the gmsh elems list
   ret=getline(&line,&linesize,f);
   int nball=atoi(line);
   // allocate to a too big size
@@ -96,7 +96,7 @@ void ReadMacroMesh(MacroMesh* m,char* filename){
       m->elem2node[countnode]=atoi(line)-1;
       countnode++;
     }
-  }	
+  }
   ret=getline(&line,&linesize,f);
   //printf("%s",line);
   // check that we have reached the end of nodes
@@ -187,9 +187,9 @@ void BuildConnectivity(MacroMesh* m){
   printf("Build connectivity...\n");
 
   assert(m->elem2elem == NULL);
-  
+
   // build a list of faces
-  // each face is made of four corners of 
+  // each face is made of four corners of
   // the hexaedron mesh
   Face4Sort* face;
   Face4Sort* f;
@@ -264,7 +264,7 @@ void BuildConnectivity(MacroMesh* m){
 
   m->face2elem = malloc(4 * sizeof(int) * m->nbfaces);
   printf("nfaces=%d\n", m->nbfaces);
-  
+
   /* m->nbfaces=0; */
   /* for(int ifa=0;ifa < stop;ifa++) { */
   /*   Face4Sort* f1=face+ifa; */
@@ -323,14 +323,14 @@ void BuildConnectivity(MacroMesh* m){
           m->face2elem[4 * facecount + 3] = -1;
         }
 
-        facecount++; // FIXME: why is this incremented only if ie2 >= 0?	
-      } 
+        facecount++; // FIXME: why is this incremented only if ie2 >= 0?
+      }
 
     }
   }
 
   assert(facecount == m->nbfaces);
-  
+
   free(face);
 
   // check
@@ -341,7 +341,7 @@ void BuildConnectivity(MacroMesh* m){
   /*   } */
   /* } */
 
-  
+
   // suppression of the z faces from the faces list
 
   if (m->is2d){
@@ -373,7 +373,7 @@ void BuildConnectivity(MacroMesh* m){
 
     free(oldf);
 
-  } 
+  }
 
 
 }
@@ -391,7 +391,7 @@ void OrderFace4Sort(Face4Sort* f){
 // compare two ordered four-corner faces
 // lexicographical order
 int CompareFace4Sort(const void* a,const void* b){
-  Face4Sort* f1= (Face4Sort*)a; 
+  Face4Sort* f1= (Face4Sort*)a;
   Face4Sort* f2= (Face4Sort*)b;
 
   int r= f1->node[0]-f2->node[0];
@@ -399,7 +399,7 @@ int CompareFace4Sort(const void* a,const void* b){
   if (r==0) r=f1->node[2]-f2->node[2];
   if (r==0) r=f1->node[3]-f2->node[3];
   return r;
-  
+
 };
 
 void CheckMacroMesh(MacroMesh* m,int* param){
@@ -427,7 +427,7 @@ void CheckMacroMesh(MacroMesh* m,int* param){
       g.physnode[inoloc][1]=m->node[3*ino+1];
       g.physnode[inoloc][2]=m->node[3*ino+2];
     }
-    
+
     // test that the ref_ipg function
     // is compatible with ref_pg_vol
     //int param[7]={_DEGX,_DEGY,_DEGZ,_RAFX,_RAFY,_RAFZ,0};
@@ -441,7 +441,7 @@ void CheckMacroMesh(MacroMesh* m,int* param){
       GeomRef2Phy(&g);
       GeomPhy2Ref(&g);
 
-      // if (param[4]==1 && param[5]==1 && param[6]==1){ 
+      // if (param[4]==1 && param[5]==1 && param[6]==1){
       //printf("ipg %d ipg2 %d xref %f %f %f\n",ipg,
       //	     ref_ipg(param,xref_in),xref_in[0],xref_in[1],xref_in[2]);
       assert(ipg==ref_ipg(param,xref_in));
@@ -456,7 +456,7 @@ void CheckMacroMesh(MacroMesh* m,int* param){
     GeomRef2Phy(&g);
     double xphym[3];
     memcpy(xphym,g.xphy,sizeof(xphym));
- 
+
     for(int ifa=0;ifa<6;ifa++){
       // middle of the face
       memcpy(g.xref,face_centers[ifa],sizeof(g.xref));
@@ -464,10 +464,10 @@ void CheckMacroMesh(MacroMesh* m,int* param){
       GeomRef2Phy(&g);
       // check volume  orientation
       assert(g.det >0);
-      
+
       double vec[3]={g.xphy[0]-xphym[0],
 		     g.xphy[1]-xphym[1],g.xphy[2]-xphym[2]};
-      
+
       // check face orientation
       assert(g.vnds[0]*vec[0]+g.vnds[1]*vec[1]+g.vnds[2]*vec[2] > 0);
 
@@ -491,7 +491,7 @@ void CheckMacroMesh(MacroMesh* m,int* param){
         else {
           assert(Dist(xpgref,xpgref2)<1e-11);
         }
-	  	      
+
       }
 
 
@@ -527,7 +527,7 @@ void CheckMacroMesh(MacroMesh* m,int* param){
       	  physnodeR[inoloc][2]=m->node[3*ino+2];
       	}
       }
-      
+
       // loop on the glops (numerical integration)
       // of the face ifa
       for(int ipgf=0;ipgf<NPGF(param,ifa);ipgf++){
@@ -541,7 +541,7 @@ void CheckMacroMesh(MacroMesh* m,int* param){
   	// the face index
   	//int ipg=param[6];
 
-	
+
   	// get the left value of w at the gauss point
   	// the basis functions is also the gauss point index
   	// normal vector at gauss point ipg
@@ -583,7 +583,7 @@ void CheckMacroMesh(MacroMesh* m,int* param){
 	  Ref2Phy(physnodeR,
 		  xrefR,
 		  NULL,ifaR, // dphiref,ifa
-		  xpgR,dtauR,  
+		  xpgR,dtauR,
 		  codtauR,NULL,vndsR); // codtau,dphi,vnds
 	  // printf("x1=%f %f %f x2=%f %f %f\n",xpg[0],xpg[1],xpg[2],
 	  //xpgR[0],xpgR[1],xpgR[2]);
@@ -595,7 +595,7 @@ void CheckMacroMesh(MacroMesh* m,int* param){
       }
     }
   }
-  
+
 
 
 };
@@ -625,8 +625,8 @@ bool Detect2DMacroMesh(MacroMesh* m){
       physnode[inoloc][2]=m->node[3*ino+2];
     }
 
-    // we decide that the mesh is 2D if the 
-    // middles of the elements have a constant z 
+    // we decide that the mesh is 2D if the
+    // middles of the elements have a constant z
     // coordinate equal to 0.5
     double zmil=0;
     for(int inoloc=0;inoloc<20;inoloc++){
@@ -651,7 +651,7 @@ bool Detect2DMacroMesh(MacroMesh* m){
       physnode[inoloc][2]=m->node[3*ino+2];
     }
     // if the mesh is 2d permut the nodes
-    // in order that the z^ and z axis are the 
+    // in order that the z^ and z axis are the
     // same
 
     double face_centers[6][3]={
@@ -705,7 +705,7 @@ bool Detect2DMacroMesh(MacroMesh* m){
   }
 
 
-    
+
 
 
   return m->is2d;
@@ -715,5 +715,5 @@ bool Detect2DMacroMesh(MacroMesh* m){
 
 
 
-  
+
 

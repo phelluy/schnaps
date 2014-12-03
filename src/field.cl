@@ -211,14 +211,14 @@ int ref_pg_face(__constant int* param, int ifa, int ipg,
 
   // Compute the global index of the
   // Gauss-Lobatto point in the volume
-  int ipgv 
-   = ipgxyz[0] 
-   + (param[0] + 1) 
-   * (ipgxyz[1] + (param[1] + 1) 
-      * (ipgxyz[2] + (param[2] + 1) 
-	 * (ncpgxyz[0] + param[3] 
-	    * (ncpgxyz[1] + param[4] 
-	       * ncpgxyz[2]) 
+  int ipgv
+   = ipgxyz[0]
+   + (param[0] + 1)
+   * (ipgxyz[1] + (param[1] + 1)
+      * (ipgxyz[2] + (param[2] + 1)
+	 * (ncpgxyz[0] + param[3]
+	    * (ncpgxyz[1] + param[4]
+	       * ncpgxyz[2])
 	    )
 	 )
       );
@@ -649,7 +649,7 @@ void DGMacroCellInterface(__constant int* param,        // interp param
   }
 }
 
-void get_dtau(double x, double y, double z, 
+void get_dtau(double x, double y, double z,
 	      __constant double* p, double dtau[][3]) {
 
   // gradient of the shape functions and value (4th component)

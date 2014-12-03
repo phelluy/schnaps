@@ -37,7 +37,7 @@ typedef struct Geom{
                       double codtau[3][3],
                       double dphi[3],
                       double vnds[3]);
-  
+
   //! \brief pointer to a particular Phy2Ref inverse mapping
   void (*Phy2Ref)(double physnode[_NB_REF_NODES][3],double xphy[3],double xref[3]);
 } Geom;
@@ -66,7 +66,7 @@ void Ref2Phy(double physnode[20][3],
              double dphi[3],
              double vnds[3]);
 
-//! \brief mapping tau from the reference point to the physical point. 
+//! \brief mapping tau from the reference point to the physical point.
 //! Data encapsulation for more simplicity
 //! \param[inout] g a Geom data structure
 void GeomRef2Phy(Geom* g);

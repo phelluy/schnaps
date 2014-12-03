@@ -12,7 +12,7 @@ typedef struct MacroMesh{
   int nbnodes; //!< number of nodes in the macromesh
   int nbfaces; //!< number of macrofaces
   // connectivity
-  int* elem2node; //!< elems to nodes connectivity (20 nodes/elem) 
+  int* elem2node; //!< elems to nodes connectivity (20 nodes/elem)
   int* elem2elem; //!< elems to elems connectivity (along 6 faces)
   int* face2elem; //!< faces to elems connectivity (Left and Right)
   double* node; //!< nodes coordinates array
@@ -43,19 +43,19 @@ void OrderFace4Sort(Face4Sort* f);
 //! \brief compare two integers (used by quicksort).
 //! \param[in] a first integer
 //! \param[in] b second integer
-//! \returns a value v, v<0 if a<b, v=0 if a==b, v>0 if a>b 
+//! \returns a value v, v<0 if a<b, v=0 if a==b, v>0 if a>b
 int CompareInt(const void* a,const void* b);
 
 //! \brief compare two ordered four-corner faces (used by quicksort).
 //! Lexicographic order on the four nodes indices.
 //! \param[in] a first face
 //! \param[in] b second face
-//! \returns a value v, v<0 if a<b, v=0 if a==b, v>0 if a>b 
+//! \returns a value v, v<0 if a<b, v=0 if a==b, v>0 if a>b
 int CompareFace4Sort(const void* a,const void* b);
 
 //! \brief get the mesh from a gmsh file.
 //! \param[inout] m pointer to a macromesh
-//! \param[in] filename location of the gmsh file 
+//! \param[in] filename location of the gmsh file
 void ReadMacroMesh(MacroMesh* m,char* filename);
 
 //! \brief compute additional connectivity arrays from

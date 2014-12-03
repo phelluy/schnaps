@@ -10,9 +10,9 @@
 #endif
 
 //! \brief Data structure for managing a  discrete vector field
-//! solution of a DG approximation 
+//! solution of a DG approximation
 typedef struct Field{
-  //! underlying mesh 
+  //! underlying mesh
   MacroMesh macromesh;
   //! physical and numerical model
   Model model;
@@ -33,9 +33,9 @@ typedef struct Field{
 
   //! size of the field buffers
   int wsize;
-  //! fields at time steps n 
+  //! fields at time steps n
   double* wn;
-  //! fields at time steps n+1   
+  //! fields at time steps n+1
   double* wnp1;
   //! time derivative of the field
   double* dtwn;
@@ -53,12 +53,12 @@ typedef struct Field{
   //! \brief copy of the dtwn array
   cl_mem wn_cl;
   cl_mem dtwn_cl;
-  
+
   //! opencl kernels for mass inversion
   cl_kernel dgmass;
   cl_kernel dgvolume;
   cl_kernel dginterface;
-  
+
 #endif
 
 
@@ -89,7 +89,7 @@ typedef struct MacroFace{
 //! \param[in] elem macro element index
 //! \param[in] ipg glop index
 //! \param[in] iv field component index
-//! \returns the memory position in the arrays wn wnp1 or dtwn. 
+//! \returns the memory position in the arrays wn wnp1 or dtwn.
 int GenericVarindex(int* param, int elem, int ipg, int iv);
 
 //! field initialization. Computation of the initial
@@ -119,7 +119,7 @@ void dtFieldSlow(Field* f);
 
 //! \brief apply the Discontinuous Galerkin approximation for computing
 //! the time derivative of the field. Works with several subcells.
-//! Fast version: multithreaded and with tensor products optimizations 
+//! Fast version: multithreaded and with tensor products optimizations
 //! \param[inout] f a field
 void dtField(Field* f);
 
@@ -150,7 +150,7 @@ void* DGMass(void* mcell);
 //! \param[inout] mcell a MacroCell
 void* DGMass_CL(void* mcell);
 
-//! \brief time integration by a second order Runge-Kutta algorithm 
+//! \brief time integration by a second order Runge-Kutta algorithm
 //! \param[inout] f a field
 //! \param[in] tmax physical duration of the simulation
 void RK2(Field* f,double tmax);
@@ -174,7 +174,7 @@ void DisplayField(Field* f);
 
 //!  \brief compute the normalized L2 distance with the imposed data
 //! \param[in] f the field.
-//! \returns the error. 
+//! \returns the error.
 double L2error(Field* f);
 
 
