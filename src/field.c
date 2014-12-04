@@ -6,7 +6,10 @@
 #include <assert.h>
 #include "global.h"
 #include <math.h>
+
+#ifdef _WITH_PTHREAD
 #include <pthread.h>
+#endif
 
 // param[0] = M
 // param[1] = deg x
@@ -16,9 +19,9 @@
 // param[5] = raf y
 // param[6] = raf z
 int GenericVarindex(int* param, int elem, int ipg, int iv) {
-  int npg = (param[1] + 1)*(param[2] + 1)*(param[3] + 1)
-    *param[4]*param[5]*param[6];
-  return iv + param[0] * ( ipg + npg * elem);
+  int npg = (param[1] + 1) * (param[2] + 1) * (param[3] + 1)
+    * param[4] * param[5] * param[6];
+  return iv + param[0] * (ipg + npg * elem);
 }
 
 void CopyFieldtoCPU(Field* f) {
@@ -34,7 +37,7 @@ void CopyFieldtoCPU(Field* f) {
 			      CL_TRUE, // block until the buffer is available
 			      CL_MAP_READ, // we just want to see the results
 			      0, // offset
-			      f->wsize*sizeof(double), // buffersize
+			      f->wsize * sizeof(double), // buffersize
 			      0, NULL, NULL, // events management
 			      &status);
   assert(status == CL_SUCCESS);
@@ -45,7 +48,7 @@ void CopyFieldtoCPU(Field* f) {
 			      CL_TRUE, // block until the buffer is available
 			      CL_MAP_READ, // we just want to see the results
 			      0, // offset
-			      f->wsize*sizeof(double), // buffersize
+			      f->wsize * sizeof(double), // buffersize
 			      0, NULL, NULL, // events management
 			      &status);
   assert(status == CL_SUCCESS);
@@ -169,21 +172,20 @@ void InitField(Field* f) {
 
   printf("hmin=%f\n", f->hmin);
 
-  // opencl inits
 #ifdef _WITH_OPENCL
   // opencl inits
   InitCLInfo(&(f->cli), _CL_PLATFORM, _CL_DEVICE);
   cl_int status;
   f->wn_cl = clCreateBuffer(f->cli.context,
                             CL_MEM_READ_WRITE | CL_MEM_USE_HOST_PTR,
-                            sizeof(double)* f->wsize,
+                            sizeof(double) * f->wsize,
                             f->wn,
                             &status);
   assert(status == CL_SUCCESS);
 
   f->dtwn_cl = clCreateBuffer(f->cli.context,
 			      CL_MEM_READ_WRITE | CL_MEM_USE_HOST_PTR,
-			      sizeof(double)* f->wsize,
+			      sizeof(double) * f->wsize,
 			      f->dtwn,
 			      &status);
   assert(status == CL_SUCCESS);
@@ -242,7 +244,6 @@ void DisplayField(Field* f) {
 // typplot: index of the plotted variable
 // int compare == true -> compare with the exact value
 void PlotField(int typplot, int compare, Field* f, char* filename) {
-
   const int hexa64ref[3 * 64] = {
     0, 0, 3,
     3, 0, 3,
@@ -284,7 +285,7 @@ void PlotField(int typplot, int compare, Field* f, char* filename) {
 	  f->macromesh.nbelems*nraf[0]*nraf[1]*nraf[2]*64);
 
   int nb_plotnodes = f->macromesh.nbelems*nraf[0]*nraf[1]*nraf[2]*64;
-  double* value = malloc(nb_plotnodes*sizeof(double));
+  double* value = malloc(nb_plotnodes * sizeof(double));
   assert(value);
   int nodecount = 0;
   // nodes
@@ -311,9 +312,9 @@ void PlotField(int typplot, int compare, Field* f, char* filename) {
 	    Xr[1] = (double) (hexa64ref[3 * ino + 1]) / 3;
 	    Xr[2] = (double) (hexa64ref[3 * ino + 2]) / 3;
 
-	    Xr[0] = icL[0]*hh[0]+ Xr[0] * hh[0];
-	    Xr[1] = icL[1]*hh[1]+ Xr[1] * hh[1];
-	    Xr[2] = icL[2]*hh[2]+ Xr[2] * hh[2];
+	    Xr[0] = icL[0] * hh[0]+ Xr[0] * hh[0];
+	    Xr[1] = icL[1] * hh[1]+ Xr[1] * hh[1];
+	    Xr[2] = icL[2] * hh[2]+ Xr[2] * hh[2];
 
 	    for(int ii = 0; ii < 3; ii++) {
 	      assert(Xr[ii] < 1 + 1e-10 && Xr[ii]>-1e-10);
@@ -339,7 +340,7 @@ void PlotField(int typplot, int compare, Field* f, char* filename) {
 	    for(int ib = 0; ib < npgv; ib++) {
 	      double psi;
 	      psi_ref_subcell(f->interp_param + 1, icL, ib, Xr, &psi, NULL);
-	      testpsi+=psi;
+	      testpsi += psi;
 	      int vi = f->varindex(f->interp_param, i, ib, typplot);
 	      value[nodecount] += psi * f->wn[vi];
 	    }
@@ -353,7 +354,6 @@ void PlotField(int typplot, int compare, Field* f, char* filename) {
 	      value[nodecount] -= wex[typplot];
 	    }
 	    nodecount++;
-
 
 	    // fwrite((char*) &nnoe, sizeof(int), 1, gmshfile);
 	    // fwrite((char*) &(Xplot[0]), sizeof(double), 1, gmshfile);
@@ -400,7 +400,6 @@ void PlotField(int typplot, int compare, Field* f, char* filename) {
 	  fprintf(gmshfile, "%d ", elm_type);
 	  fprintf(gmshfile, "%d ", num_tags);
 
-
 	  for(int ii = 0; ii < 64; ii++) {
 	    int numnoe = 64*(i*nraf[0]*nraf[1]*nraf[2]+ncL) + ii  + 1;
 	    //fwrite((char*) &numnoe, sizeof(int), 1, gmshfile);
@@ -415,13 +414,11 @@ void PlotField(int typplot, int compare, Field* f, char* filename) {
   fprintf(gmshfile, "$EndElements\n");
 
   // now display data
-
   fprintf(gmshfile, "$NodeData\n");
   fprintf(gmshfile, "1\n");
   fprintf(gmshfile, "\"Field %d\"\n", typplot);
 
   double t = 0;
-
   fprintf(gmshfile, "1\n%f\n3\n0\n1\n", t);
   fprintf(gmshfile, "%d\n", nb_plotnodes);
 
@@ -530,23 +527,22 @@ void* DGSubCellInterface(void* mc) {
 
 	  int icL[3] = {icL0, icL1, icL2};
 
-	  // get the left subcell id
+	  // Get the left subcell id
 	  int ncL = icL[0]+nraf[0]*(icL[1]+nraf[1]*icL[2]);
-	  // first glop index in the subcell
+	  // First glop index in the subcell
 	  int offsetL = npg[0]*npg[1]*npg[2]*ncL;
 
-	  // sweeping subcell faces in the three directions
+	  // Sweeping subcell faces in the three directions
 	  for(int dim0 = 0; dim0 < 3; dim0++) {
-	    // compute the subface flux only
-	    // if we do not touch the subcell boundary
-	    // along the current direction dim0
-	    if (icL[dim0] != nraf[dim0]-1) {
+	    // Compute the subface flux only if we do not touch the
+	    // subcell boundary along the current direction dim0
+	    if (icL[dim0] != nraf[dim0] - 1) {
 	      int icR[3] = {icL[0], icL[1], icL[2]};
 	      // The right cell index corresponds to an increment in
 	      // the dim0 direction
 	      icR[dim0]++;
-	      int ncR = icR[0]+nraf[0]*(icR[1]+nraf[1]*icR[2]);
-	      int offsetR = npg[0]*npg[1]*npg[2]*ncR;
+	      int ncR = icR[0] + nraf[0] * (icR[1] + nraf[1] * icR[2]);
+	      int offsetR = npg[0] * npg[1] * npg[2] * ncR;
 
 	      // FIXME: write only write to L-values (and do both
 	      // faces) to parallelise better.
@@ -566,8 +562,10 @@ void* DGSubCellInterface(void* mc) {
 		  int iR[3] = {iL[0], iL[1], iL[2]};
 		  iR[dim0] = 0;
 
-		  int ipgL = offsetL+iL[0]+(deg[0] + 1)*(iL[1]+(deg[1] + 1)*iL[2]);
-		  int ipgR = offsetR+iR[0]+(deg[0] + 1)*(iR[1]+(deg[1] + 1)*iR[2]);
+		  int ipgL = offsetL 
+		    + iL[0] + (deg[0] + 1) * (iL[1] + (deg[1] + 1) * iL[2]);
+		  int ipgR = offsetR 
+		    + iR[0] + (deg[0] + 1) * (iR[1] + (deg[1] + 1) * iR[2]);
 		  //printf("ipgL=%d ipgR=%d\n", ipgL, ipgR);
 
 		  // Compute the normal vector for integrating on the
@@ -590,10 +588,10 @@ void* DGSubCellInterface(void* mc) {
 		    // we compute ourself the normal vector because we
 		    // have to take into account the subcell surface
 
-		    double h1h2 = 1./nraf[dim1]/nraf[dim2];
-		    vnds[0] = codtau[0][dim0]*h1h2;
-		    vnds[1] = codtau[1][dim0]*h1h2;
-		    vnds[2] = codtau[2][dim0]*h1h2;
+		    double h1h2 = 1. / nraf[dim1] / nraf[dim2];
+		    vnds[0] = codtau[0][dim0] * h1h2;
+		    vnds[1] = codtau[1][dim0] * h1h2;
+		    vnds[2] = codtau[2][dim0] * h1h2;
 		  }
 
 		  // numerical flux from the left and right state and
@@ -749,7 +747,7 @@ void* DGMacroCellInterface(void* mc) {
   	}
   	for(int iv = 0; iv < f->model.m; iv++) {
   	  int imem = f->varindex(iparam, ie, ib, iv);
-  	  f->dtwn[imem] -= flux[iv]*wpg;
+  	  f->dtwn[imem] -= flux[iv] * wpg;
   	}
 
       }
@@ -901,18 +899,16 @@ void* DGMacroCellInterface_CL(void* mf) {
   MacroFace* mface = (MacroFace*) mf;
   Field* f = mface->field;
   int* param = f->interp_param;
-  /* printf("&pf=%p\n", f); */
-  /* printf("%f\n", f->dtwn[0]); */
 
   cl_int status;
-
-  unsigned int argnum = 0;
-
   cl_kernel kernel = f->dginterface;
+
+  // Set kernel arguments
+  unsigned int argnum = 0;
 
   cl_mem param_cl= clCreateBuffer(f->cli.context,
 				  CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR,
-				  sizeof(int)*7,
+				  sizeof(int) * 7,
 				  f->interp_param,
 				  &status);
   assert(status == CL_SUCCESS);
@@ -978,7 +974,7 @@ void* DGMacroCellInterface_CL(void* mf) {
                           &(f->dtwn_cl));     // opencl buffer
   assert(status == CL_SUCCESS);
 
-  // loop on the macro faces
+  // Loop on the macro faces
   const unsigned int nbfaces = f->macromesh.nbfaces;
   for(int ifa = mface->first; ifa < mface->last_p1; ifa++) {
     int ieL =    f->macromesh.face2elem[4 * ifa + 0];
@@ -1142,7 +1138,7 @@ void* DGMass_CL(void* mc) {
   param_cl = clCreateBuffer(
 			    f->cli.context,
 			    CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR,
-			    sizeof(int)*7,
+			    sizeof(int) * 7,
 			    f->interp_param,
 			    &status);
   assert(status == CL_SUCCESS);
@@ -1172,7 +1168,7 @@ void* DGMass_CL(void* mc) {
   /* } */
   physnode_cl = clCreateBuffer(f->cli.context,
 			       CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR,
-			       sizeof(double)*20*3,
+			       sizeof(double) * 60,
 			       physnode,
 			       &status);
   assert(status == CL_SUCCESS);
@@ -1214,7 +1210,7 @@ void* DGMass_CL(void* mc) {
 				      CL_TRUE, //block until buffer is available
 				      CL_MAP_WRITE, // we just want to copy
 				      0, // offset
-				      sizeof(cl_double) * 20 * 3, // buffersize
+				      sizeof(cl_double) * 60, // buffersize
 				      0, NULL, NULL, // events management
 				      &status);
     assert(status == CL_SUCCESS);
@@ -1232,7 +1228,7 @@ void* DGMass_CL(void* mc) {
 				  physnode_cl,
 				  CL_TRUE, // block,
 				  0, // offset
-				  sizeof(double) * 20* 3,
+				  sizeof(double) * 60,
 				  physnode,
 				  0, NULL, NULL);
     assert(status == CL_SUCCESS);
@@ -1310,7 +1306,7 @@ void* DGVolume_CL(void* mc) {
   param_cl = clCreateBuffer(
 			    f->cli.context,
 			    CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR,
-			    sizeof(int)*7,
+			    sizeof(int) * 7,
 			    f->interp_param,
 			    &status);
   assert(status == CL_SUCCESS);
@@ -1348,7 +1344,7 @@ void* DGVolume_CL(void* mc) {
   /* } */
   physnode_cl = clCreateBuffer(f->cli.context,
 			       CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR,
-			       sizeof(double)*20*3,
+			       sizeof(double) * 60,
 			       physnode,
 			       &status);
   assert(status == CL_SUCCESS);
@@ -1387,7 +1383,7 @@ void* DGVolume_CL(void* mc) {
 				      CL_TRUE, // block until buffer is available
 				      CL_MAP_WRITE, //we just want to copy
 				      0, // offset
-				      sizeof(cl_double) * 20 * 3, // buffersize
+				      sizeof(cl_double) * 60, // buffersize
 				      0, NULL, NULL, // events management
 				      &status);
     //printf("%d\n", status);
@@ -1509,9 +1505,9 @@ void* DGVolume(void* mc) {
 
 	  int icL[3] = {icL0, icL1, icL2};
 	  // get the L subcell id
-	  int ncL = icL[0]+nraf[0]*(icL[1]+nraf[1]*icL[2]);
+	  int ncL = icL[0] + nraf[0] * (icL[1] + nraf[1] * icL[2]);
 	  // first glop index in the subcell
-	  int offsetL = npg[0]*npg[1]*npg[2]*ncL;
+	  int offsetL = npg[0] * npg[1] * npg[2] * ncL;
 
 	  // compute all of the xref for the subcell
 	  double *xref0 = malloc(sc_npg * sizeof(double));
@@ -1524,14 +1520,14 @@ void* DGVolume(void* mc) {
 	    double xref[3];
 	    double tomega;
 
-	    ref_pg_vol(f->interp_param + 1, offsetL+p, xref, &tomega, NULL);
+	    ref_pg_vol(f->interp_param + 1, offsetL + p, xref, &tomega, NULL);
 	    xref0[p] = xref[0];
 	    xref1[p] = xref[1];
 	    xref2[p] = xref[2];
 	    omega[p] = tomega;
 
 	    for(int im = 0; im < m; ++im) {
-	      imems[pos++] = f->varindex(f_interp_param, ie, offsetL+p, im);
+	      imems[pos++] = f->varindex(f_interp_param, ie, offsetL + p, im);
 	    }
 	  }
 
@@ -1545,27 +1541,28 @@ void* DGVolume(void* mc) {
 		for(int p2 = 0; p2 < npg[2]; p2++) {
 		  double wL[m], flux[m];
 		  int p[3] = {p0, p1, p2};
-		  int ipgL = offsetL+p[0]+npg[0]*(p[1]+npg[1]*p[2]);
+		  int ipgL = offsetL + p[0] + npg[0] * (p[1] + npg[1] * p[2]);
 		  for(int iv = 0; iv < m; iv++) {
 		    ///int imemL = f->varindex(f_interp_param, ie, ipgL, iv);
-		    wL[iv] = f->wn[imems[m*(ipgL-offsetL)+iv]];
+		    wL[iv] = f->wn[imems[m * (ipgL - offsetL) + iv]];
 
 		    //wL[iv] = f->wn[imemL];
 		  }
 		  int q[3] = {p[0], p[1], p[2]};
 		  // loop on the direction dim0 on the "cross"
 		  for(int iq = 0; iq < npg[dim0]; iq++) {
-		    q[dim0] = (p[dim0]+iq)%npg[dim0];
+		    q[dim0] = (p[dim0] + iq) % npg[dim0];
 		    double dphiref[3] = {0, 0, 0};
 		    // compute grad phi_q at glop p
-		    dphiref[dim0] = dlag(deg[dim0], q[dim0], p[dim0])*nraf[dim0];
+		    dphiref[dim0] = dlag(deg[dim0], q[dim0], p[dim0]) 
+		      * nraf[dim0];
 
-		    double xrefL[3] = {xref0[ipgL-offsetL],
-				       xref1[ipgL-offsetL],
-				       xref2[ipgL-offsetL]};
-		    double wpgL = omega[ipgL-offsetL];
+		    double xrefL[3] = {xref0[ipgL - offsetL],
+				       xref1[ipgL - offsetL],
+				       xref2[ipgL - offsetL]};
+		    double wpgL = omega[ipgL - offsetL];
 		    /* double xrefL[3], wpgL; */
-		    /* ref_pg_vol(f->interp_param + 1, ipgL, xrefL, &wpgL, NULL); */
+		    /* ref_pg_vol(f->interp_param+1,ipgL,xrefL, &wpgL, NULL); */
 
 		    // mapping from the ref glop to the physical glop
 		    double dtau[3][3], codtau[3][3], dphiL[3];
@@ -1618,7 +1615,7 @@ void DGVolumeSlow(Field* f) {
     // get the physical nodes of element ie
     double physnode[20][3];
     for(int inoloc = 0; inoloc < 20; inoloc++) {
-      int ino = f->macromesh.elem2node[20*ie+inoloc];
+      int ino = f->macromesh.elem2node[20 * ie + inoloc];
       physnode[inoloc][0] = f->macromesh.node[3 * ino + 0];
       physnode[inoloc][1] = f->macromesh.node[3 * ino + 1];
       physnode[inoloc][2] = f->macromesh.node[3 * ino + 2];
@@ -1663,7 +1660,7 @@ void DGVolumeSlow(Field* f) {
 
 	for(int iv = 0; iv < f->model.m; iv++) {
 	  int imem = f->varindex(f->interp_param, ie, ib, iv);
-	  f->dtwn[imem]+=flux[iv]*wpg;
+	  f->dtwn[imem] += flux[iv] * wpg;
 	}
       }
     }
@@ -1679,9 +1676,8 @@ void DGVolumeSlow(Field* f) {
   }
 }
 
-// apply the Discontinuous Galerkin approximation for computing
-// the time derivative of the field
-void dtField(Field* f) {
+void dtField_pthread(Field *f) 
+{
   MacroCell mcell[f->macromesh.nbelems];
   MacroFace mface[f->macromesh.nbfaces];
 
@@ -1699,7 +1695,6 @@ void dtField(Field* f) {
 
   bool facealgo = true;
   //facealgo=false;
-
   if(facealgo) {
     for(int iw = 0; iw < f->wsize; iw++)
       f->dtwn[iw] = 0;
@@ -1709,13 +1704,12 @@ void dtField(Field* f) {
   }
 
 #ifdef _WITH_PTHREAD
-  // we will have only one flying thread per
-  // macrocell
+  // One flying thread per macrocell
   pthread_t tmcell[f->macromesh.nbelems];
   int status;
 
-  // launch a thread for each macro cell
-  // computation of the inter subcell fluxes
+  // Launch a thread for each macro cell computation of the inter
+  // subcell fluxes
   if (!facealgo) {
     for(int ie = 0; ie < f->macromesh.nbelems; ie++) {
       status = pthread_create (&(tmcell[ie]), // thread
@@ -1723,9 +1717,8 @@ void dtField(Field* f) {
 			       DGMacroCellInterface,  // called function
 			       (void*) (mcell+ie));  // function params
       assert(status==0);
-      //DGMacroCellInterface((void*) (mcell+ie));
     }
-    // wait the end of the threads before next step
+    // Wait the end of the threads before next step
     for (int ie = 0; ie < f->macromesh.nbelems; ie++) {
       pthread_join(tmcell[ie], NULL);
     }
@@ -1737,7 +1730,6 @@ void dtField(Field* f) {
 			     DGSubCellInterface,  // called function
 			     (void*) (mcell+ie));  // function params
     assert(status==0);
-    //DGSubCellInterface((void*) (mcell+ie));
   }
   // wait the end of the threads before next step
   for (int ie = 0; ie < f->macromesh.nbelems; ie++) {
@@ -1750,14 +1742,11 @@ void dtField(Field* f) {
 			     DGVolume,  // called function
 			     (void*) (mcell+ie));  // function params
     assert(status==0);
-    //DGVolume((void*) (mcell+ie));
   }
-  // wait the end of the threads before next step
+  // Wait the end of the threads before next step
   for (int ie = 0; ie < f->macromesh.nbelems; ie++) {
     pthread_join(tmcell[ie], NULL);
   }
-
-  //DisplayField(f);
 
   for(int ie = 0; ie < f->macromesh.nbelems; ie++) {
     status = pthread_create (&(tmcell[ie]), // thread
@@ -1765,30 +1754,57 @@ void dtField(Field* f) {
 			     DGMass,  // called function
 			     (void*) (mcell+ie));  // function params
     assert(status==0);
-    //DGMass((void*) (mcell+ie));
   }
-  // wait the end of the threads before next step
+  // Wait the end of the threads before next step
   for (int ie = 0; ie < f->macromesh.nbelems; ie++) {
     pthread_join(tmcell[ie], NULL);
   }
+#endif
+}
+
+// Apply the Discontinuous Galerkin approximation for computing the
+// time derivative of the field
+void dtField(Field* f) {
+#ifdef _WITH_PTHREAD
+  dtField_pthread(f);
 #else
 
+  MacroFace mface[f->macromesh.nbfaces];
+  for(int ifa = 0; ifa < f->macromesh.nbfaces; ifa++) {
+    mface[ifa].field = f;
+    mface[ifa].first = ifa;
+    mface[ifa].last_p1 = ifa + 1;
+  }
+  bool facealgo = true;
+  if(facealgo) {
+    for(int iw = 0; iw < f->wsize; iw++)
+      f->dtwn[iw] = 0;
+    for(int ifa = 0; ifa < f->macromesh.nbfaces; ifa++) {
+      DGMacroCellInterface2((void*) (mface + ifa));
+    }
+  }
+
+  MacroCell mcell[f->macromesh.nbelems];
+  for(int ie = 0; ie < f->macromesh.nbelems; ie++) {
+    mcell[ie].field = f;
+    mcell[ie].first = ie;
+    mcell[ie].last_p1 = ie + 1;
+  }
 #ifdef _OPENMP
 #pragma omp parallel for schedule(dynamic, 1)
 #endif
   for(int ie = 0; ie < f->macromesh.nbelems; ++ie) {
     MacroCell *mcelli = mcell + ie;
-    if(facealgo == false) DGMacroCellInterface(mcelli);
+    if(!facealgo) DGMacroCellInterface(mcelli);
     DGSubCellInterface(mcelli);
     DGVolume(mcelli);
     DGMass(mcelli);
   }
-
 #endif
 }
 
-// apply the Discontinuous Galerkin approximation for computing
-// the time derivative of the field
+// Apply the Discontinuous Galerkin approximation for computing the
+// time derivative of the field
 void dtFieldSlow(Field* f) {
 
   // interpolation params
