@@ -8,7 +8,8 @@
 #include "interpolation.h"
 #include <math.h>
 
-void ReadMacroMesh(MacroMesh* m,char* filename){
+void ReadMacroMesh(MacroMesh* m,char* filename)
+{
   m->is2d=false;
 
   FILE* f=NULL;
@@ -46,75 +47,75 @@ void ReadMacroMesh(MacroMesh* m,char* filename){
     /* 	   m->node[3*i+1], */
     /* 	   m->node[3*i+2]); */
   }
-  ret=getline(&line,&linesize,f);
+  ret = getline(&line, &linesize, f);
   //printf("%s",line);
   // check that we have reached the end of nodes
-  assert(strcmp(line,"$EndNodes\n") == 0);
+  assert(strcmp(line, "$EndNodes\n") == 0);
 
   // Now read all the elements of the mesh
   do {
-    ret=getline(&line,&linesize,f);
+    ret = getline(&line, &linesize, f);
   }
   while(strcmp(line,"$Elements\n") != 0);
 
   // size of the gmsh elems list
-  ret=getline(&line,&linesize,f);
-  int nball=atoi(line);
+  ret = getline(&line, &linesize, f);
+  int nball = atoi(line);
   // allocate to a too big size
-  m->elem2node=malloc(20 * sizeof(int) * nball);
+  m->elem2node = malloc(20 * sizeof(int) * nball);
   assert(m->elem2node);
 
   // now count only the H20 elems (code=17)
   m->nbelems = 0;
   int countnode = 0;
-  for(int i = 0;i<nball;i++){
-    ret=getdelim(&line,&linesize,(int) ' ',f); // elem number
-    ret=getdelim(&line,&linesize,(int) ' ',f); // elem type
-    int elemtype=atoi(line);
+  for(int i = 0; i < nball; i++){
+    ret = getdelim(&line, &linesize, (int) ' ', f); // elem number
+    ret = getdelim(&line, &linesize, (int) ' ', f); // elem type
+    int elemtype = atoi(line);
     if (elemtype != 17) {
-      ret=getline(&line,&linesize,f);
-    }
-    else {
+      ret=getline(&line, &linesize, f);
+    } else {
       m->nbelems++;
-      ret=getdelim(&line,&linesize,(int) ' ',f); //useless code
-      ret=getdelim(&line,&linesize,(int) ' ',f); //useless code
-      ret=getdelim(&line,&linesize,(int) ' ',f); //useless code
-      for(int j = 0;j<19;j++){
-	ret=getdelim(&line,&linesize,(int) ' ',f);
+      ret = getdelim(&line, &linesize, (int) ' ', f); //useless code
+      ret = getdelim(&line, &linesize, (int) ' ', f); //useless code
+      ret = getdelim(&line, &linesize, (int) ' ', f); //useless code
+      for(int j = 0; j < 19; j++){
+	ret = getdelim(&line, &linesize,(int) ' ', f);
 	//printf("%d ",atoi(line));
-	m->elem2node[countnode]=atoi(line)-1;
+	m->elem2node[countnode] = atoi(line) - 1;
 	countnode++;
       }
-      ret=getline(&line,&linesize,f);
+      ret = getline(&line, &linesize, f);
       //printf("%d\n",atoi(line));
-      m->elem2node[countnode]=atoi(line)-1;
+      m->elem2node[countnode] = atoi(line) - 1;
       countnode++;
     }
   }
-  ret=getline(&line,&linesize,f);
+  ret = getline(&line, &linesize, f);
   //printf("%s",line);
   // check that we have reached the end of nodes
   assert(strcmp(line,"$EndElements\n") == 0);
-  printf("nbelems=%d\n",m->nbelems);
-  m->elem2node=realloc(m->elem2node,20 * sizeof(int) * m->nbelems);
+  printf("nbelems=%d\n", m->nbelems);
+  m->elem2node=realloc(m->elem2node, 20 * sizeof(int) * m->nbelems);
   assert(m->elem2node);
 
-  m->elem2elem=NULL;
+  m->elem2elem = NULL;
 }
 
-void AffineMap(double* x){
+void AffineMap(double* x)
+{
   //double A[3][3]={{1,2,1},{0,-1,4},{7,8,-5}};
-  double A[3][3]={{0,-1,0},{-2,0,0},{0,0,-1}};
+  double A[3][3] = {{0,-1,0},{-2,0,0},{0,0,-1}};
   //double A[3][3]={1,0,0,0,2,0,0,0,1};
-  double x0[3]={0,0,1};
+  double x0[3] = {0,0,1};
   //double x0[3]={0,0,0};
 
   double newx[3];
 
-  for(int i = 0;i<3;i++){
-    newx[i]=x0[i];
-    for(int j = 0;j<3;j++){
-      newx[i]+=A[i][j]*x[j];
+  for(int i = 0; i < 3; i++){
+    newx[i] = x0[i];
+    for(int j = 0; j < 3; j++){
+      newx[i] += A[i][j] * x[j];
     }
   }
   x[0] = newx[0];
@@ -122,48 +123,48 @@ void AffineMap(double* x){
   x[2] = newx[2];
 }
 
-void AffineMapMacroMesh(MacroMesh* m){
-
-  for(int ino = 0;ino<m->nbnodes;ino++){
-    AffineMap(&(m->node[ino*3]));
+void AffineMapMacroMesh(MacroMesh* m)
+{
+  for(int ino = 0; ino < m->nbnodes; ino++){
+    AffineMap(&(m->node[ino * 3]));
   }
 }
 
 // Display macromesh data on standard output
 void PrintMacroMesh(MacroMesh* m){
   printf("Print macromesh...\n");
-  int start=1;
-  printf("nbnodes=%d\n",m->nbnodes);
-  for(int i = 0;i<m->nbnodes;i++){
+  int start = 1;
+  printf("nbnodes=%d\n", m->nbnodes);
+  for(int i = 0; i < m->nbnodes; i++){
     printf("node %d x=%f y=%f z=%f\n",i+start,
-	   m->node[3*i+0],
-	   m->node[3*i+1],
-	   m->node[3*i+2]);
+	   m->node[3 * i + 0],
+	   m->node[3 * i + 1],
+	   m->node[3 * i + 2]);
   }
   printf("nbelems=%d\n",m->nbelems);
-  for(int i = 0;i<m->nbelems;i++){
-    printf("elem %d -> ",i+start);
-    for(int j = 0;j<20;j++){
-      printf("%d ",m->elem2node[20*i+j]+start);
+  for(int i = 0; i < m->nbelems; i++){
+    printf("elem %d -> ", i + start);
+    for(int j = 0; j < 20; j++){
+      printf("%d ", m->elem2node[20 * i + j] + start);
     }
     printf("\n");
   }
-  if (m->elem2elem !=0) {
-    for(int i = 0;i<m->nbelems;i++){
-      printf("elem %d voisins: ",i+start);
-      for(int j = 0;j<6;j++){
-	printf("%d ",m->elem2elem[6*i+j]+start);
+  if (m->elem2elem != 0) {
+    for(int i = 0; i < m->nbelems; i++){
+      printf("elem %d voisins: ",i + start);
+      for(int j = 0; j < 6; j++){
+	printf("%d ",m->elem2elem[6 * i + j] + start);
       }
       printf("\n");
     }
   }
   if (m->face2elem !=0) {
-    for(int ifa = 0;ifa<m->nbfaces;ifa++){
+    for(int ifa = 0; ifa < m->nbfaces; ifa++){
       printf("face %d, left: %d loc%d, right: %d loc%d\n",ifa,
-             m->face2elem[4*ifa+0]+start,
-             m->face2elem[4*ifa+1]+start,
-             m->face2elem[4*ifa+2]+start,
-             m->face2elem[4*ifa+3]+start
+             m->face2elem[4 * ifa + 0] + start,
+             m->face2elem[4 * ifa + 1] + start,
+             m->face2elem[4 * ifa + 2] + start,
+             m->face2elem[4 * ifa + 3] + start
              );
     }
   }
@@ -174,15 +175,12 @@ void Build_face(MacroMesh* m, Face4Sort* face)
 {
   assert(face != NULL);
 
-  int face2locnode[6][4]={
-    {0,1,5,4},
-    {1,2,6,5},
-    {2,3,7,6},
-    {0,4,7,3},
-    {5,6,7,4},
-    {0,3,2,1},
-  };
-
+  int face2locnode[6][4] = { {0,1,5,4},
+			     {1,2,6,5},
+			     {2,3,7,6},
+			     {0,4,7,3},
+			     {5,6,7,4},
+			     {0,3,2,1} };
   Face4Sort* f;
 
   for(int ie = 0; ie < m->nbelems; ie++){
@@ -316,7 +314,7 @@ void Build_elem2elem(MacroMesh* m, Face4Sort* face)
   assert(facecount == m->nbfaces);
 }
 
-// For 2D meshes, remove the faces in the third z dimension form the list.
+// Remove the faces in the third z dimension form the list.
 void suppress_zfaces(MacroMesh* m)
 {
   printf("Suppress 3d faces...\n");
@@ -346,7 +344,8 @@ void suppress_zfaces(MacroMesh* m)
 }
 
 // Build other connectivity arrays
-void BuildConnectivity(MacroMesh* m) {
+void BuildConnectivity(MacroMesh* m) 
+{
   printf("Build connectivity...\n");
   
   // Build a list of faces each face is made of four corners of the
@@ -394,14 +393,12 @@ int CompareFace4Sort(const void* a,const void* b){
 void CheckMacroMesh(MacroMesh* m,int* param){
   Geom g;
 
-  double face_centers[6][3]={
-    {0.5,0.0,0.5},
-    {1.0,0.5,0.5},
-    {0.5,1.0,0.5},
-    {0.0,0.5,0.5},
-    {0.5,0.5,1.0},
-    {0.5,0.5,0.0},
-  };
+  double face_centers[6][3]={ {0.5,0.0,0.5},
+			      {1.0,0.5,0.5},
+			      {0.5,1.0,0.5},
+			      {0.0,0.5,0.5},
+			      {0.5,0.5,1.0},
+			      {0.5,0.5,0.0} };
 
   /* double refnormal[6][3]={{0,-1,0},{1,0,0}, */
   /* 			  {0,1,0},{-1,0,0}, */
@@ -410,19 +407,19 @@ void CheckMacroMesh(MacroMesh* m,int* param){
   for(int ie = 0;ie<m->nbelems;ie++){
     for(int inoloc = 0;inoloc<20;inoloc++){
       int ino=m->elem2node[20*ie+inoloc];
-      g.physnode[inoloc][0]=m->node[3*ino+0];
-      g.physnode[inoloc][1]=m->node[3*ino+1];
-      g.physnode[inoloc][2]=m->node[3*ino+2];
+      g.physnode[inoloc][0] = m->node[3 * ino + 0];
+      g.physnode[inoloc][1] = m->node[3 * ino + 1];
+      g.physnode[inoloc][2] = m->node[3 * ino + 2];
     }
 
     // test that the ref_ipg function
     // is compatible with ref_pg_vol
     //int param[7]={_DEGX,_DEGY,_DEGZ,_RAFX,_RAFY,_RAFZ,0};
-    for(int ipg = 0;ipg<NPG(param);ipg++){
-      double xref1[3],xref_in[3];
+    for(int ipg = 0; ipg < NPG(param); ipg++){
+      double xref1[3], xref_in[3];
       double wpg;
-      ref_pg_vol(param,ipg,xref1,&wpg,xref_in);
-      memcpy(g.xref,xref1,sizeof(g.xref));
+      ref_pg_vol(param, ipg, xref1, &wpg, xref_in);
+      memcpy(g.xref, xref1, sizeof(g.xref));
 
       g.ifa = 0;
       GeomRef2Phy(&g);
@@ -431,7 +428,7 @@ void CheckMacroMesh(MacroMesh* m,int* param){
       // if (param[4]==1 && param[5]==1 && param[6]==1){
       //printf("ipg %d ipg2 %d xref %f %f %f\n",ipg,
       //	     ref_ipg(param,xref_in),xref_in[0],xref_in[1],xref_in[2]);
-      assert(ipg==ref_ipg(param,xref_in));
+      assert(ipg == ref_ipg(param,xref_in));
       //}
     }
 
@@ -442,41 +439,39 @@ void CheckMacroMesh(MacroMesh* m,int* param){
 
     GeomRef2Phy(&g);
     double xphym[3];
-    memcpy(xphym,g.xphy,sizeof(xphym));
+    memcpy(xphym, g.xphy, sizeof(xphym));
 
-    for(int ifa = 0;ifa<6;ifa++){
+    for(int ifa = 0; ifa < 6; ifa++){
       // middle of the face
-      memcpy(g.xref,face_centers[ifa],sizeof(g.xref));
-      g.ifa=ifa;
+      memcpy(g.xref, face_centers[ifa], sizeof(g.xref));
+      g.ifa = ifa;
       GeomRef2Phy(&g);
       // check volume  orientation
-      assert(g.det >0);
+      assert(g.det > 0);
 
-      double vec[3]={g.xphy[0]-xphym[0],
-		     g.xphy[1]-xphym[1],g.xphy[2]-xphym[2]};
+      double vec[3] = {g.xphy[0]-xphym[0],
+		       g.xphy[1]-xphym[1],
+		       g.xphy[2]-xphym[2]};
 
-      // check face orientation
-      assert(g.vnds[0]*vec[0]+g.vnds[1]*vec[1]+g.vnds[2]*vec[2] > 0);
+      // Check face orientation
+      assert(g.vnds[0] * vec[0] + g.vnds[1] * vec[1] + g.vnds[2] * vec[2] > 0);
 
-      // check compatibility between face and volume numbering
-      for(int ipgf = 0;ipgf<NPGF(param,ifa);ipgf++){
-        double xpgref[3],wpg;
-        // get the coordinates of the Gauss point
-        ref_pg_face(param,ifa,ipgf,xpgref,&wpg,NULL);
-        // recover the volume gauss point from
-        // the face index
-        int ipgv=param[6];
-        double xpgref2[3],wpg2;
-        ref_pg_vol(param,ipgv,xpgref2,&wpg2,NULL);
-        // in 2D do not check upper and lower face
-        if (m->is2d){
+      // Check compatibility between face and volume numbering
+      for(int ipgf = 0; ipgf < NPGF(param, ifa); ipgf++){
+        double xpgref[3], wpg;
+        // Get the coordinates of the Gauss point
+        ref_pg_face(param, ifa, ipgf, xpgref, &wpg, NULL);
+        // Recover the volume gauss point from the face index
+        int ipgv = param[6];
+        double xpgref2[3], wpg2;
+        ref_pg_vol(param, ipgv, xpgref2, &wpg2, NULL);
+
+        if (m->is2d) { // in 2D do not check upper and lower face
           if (ifa !=4 && ifa!=5) {
-            assert(Dist(xpgref,xpgref2)<1e-11);
+            assert(Dist(xpgref, xpgref2) < 1e-11);
           }
-        }
-        // in 3D check all faces
-        else {
-          assert(Dist(xpgref,xpgref2)<1e-11);
+        } else { // in 3D check all faces
+          assert(Dist(xpgref,xpgref2) < 1e-11);
         }
 
       }
@@ -485,109 +480,105 @@ void CheckMacroMesh(MacroMesh* m,int* param){
 
   // Check that the faces are defined by the same mapping with
   // opposite normals
-  for (int ie = 0;ie<m->nbelems;ie++){
+  for (int ie = 0; ie < m->nbelems; ie++){
     //int param[8]={1,_DEGX,_DEGY,_DEGZ,_RAFX,_RAFY,_RAFZ,0};
     // get the physical nodes of element ie
     double physnode[20][3];
-    for(int inoloc = 0;inoloc<20;inoloc++){
-      int ino=m->elem2node[20*ie+inoloc];
-      physnode[inoloc][0]=m->node[3*ino+0];
-      physnode[inoloc][1]=m->node[3*ino+1];
-      physnode[inoloc][2]=m->node[3*ino+2];
+    for(int inoloc = 0; inoloc < 20; inoloc++){
+      int ino = m->elem2node[20 * ie + inoloc];
+      physnode[inoloc][0] = m->node[3 * ino + 0];
+      physnode[inoloc][1] = m->node[3 * ino + 1];
+      physnode[inoloc][2] = m->node[3 * ino + 2];
     }
 
-    // loop on the 6 faces
-    for(int ifa = 0;ifa<6;ifa++){
+    // Loop on the 6 faces
+    for(int ifa = 0; ifa < 6; ifa++){
       // get the right elem or the boundary id
-      int ieR=m->elem2elem[6*ie+ifa];
+      int ieR = m->elem2elem[6 * ie + ifa];
       double physnodeR[20][3];
       if (ieR >= 0) {
-      	for(int inoloc = 0;inoloc<20;inoloc++){
-      	  int ino=m->elem2node[20*ieR+inoloc];
-      	  physnodeR[inoloc][0]=m->node[3*ino+0];
-      	  physnodeR[inoloc][1]=m->node[3*ino+1];
-      	  physnodeR[inoloc][2]=m->node[3*ino+2];
+      	for(int inoloc = 0; inoloc < 20; inoloc++){
+      	  int ino = m->elem2node[20 * ieR + inoloc];
+      	  physnodeR[inoloc][0] = m->node[3 * ino + 0];
+      	  physnodeR[inoloc][1] = m->node[3 * ino + 1];
+      	  physnodeR[inoloc][2] = m->node[3 * ino + 2];
       	}
       }
 
-      // loop on the glops (numerical integration)
-      // of the face ifa
-      for(int ipgf = 0;ipgf<NPGF(param,ifa);ipgf++){
-  	double xpgref[3],xpgref_in[3],wpg;
+      // Loop on the glops (numerical integration) of the face ifa
+      for(int ipgf = 0; ipgf < NPGF(param, ifa); ipgf++){
+  	double xpgref[3], xpgref_in[3], wpg;
   	//double xpgref2[3],wpg2;
-  	// get the coordinates of the Gauss point
-  	ref_pg_face(param,ifa,ipgf,xpgref,&wpg,xpgref_in);
+  	// Get the coordinates of the Gauss point
+  	ref_pg_face(param, ifa, ipgf, xpgref, &wpg, xpgref_in);
 	//printf("xref_in=%f %f %f\n",xpgref_in[0],xpgref_in[1],xpgref_in[2]);
 
   	// recover the volume gauss point from
   	// the face index
   	//int ipg=param[6];
 
-
-  	// get the left value of w at the gauss point
-  	// the basis functions is also the gauss point index
-  	// normal vector at gauss point ipg
-  	//double dpsiref[3];dpsi[3];
-  	double dtau[3][3],codtau[3][3],xpg[3],xpg_in[3];
+  	// Get the left value of w at the gauss point the basis
+  	// functions is also the gauss point index normal vector at
+  	// gauss point ipg double dpsiref[3];dpsi[3];
+  	double dtau[3][3], codtau[3][3], xpg[3], xpg_in[3];
   	double vnds[3];
 
 	// compute the "slightly inside" position
   	Ref2Phy(physnode,
   		xpgref_in,
-  		NULL,ifa, // dpsiref,ifa
-  		xpg_in,dtau,
-  		codtau,NULL,vnds); // codtau,dpsi,vnds
+  		NULL, ifa, // dpsiref,ifa
+  		xpg_in, dtau,
+  		codtau, NULL, vnds); // codtau,dpsi,vnds
 	//printf("ie=%d ifa=%d xrefL=%f %f %f\n",ie,
 	//     ifa,xpgref_in[0],xpgref_in[1],xpgref_in[2]);
 
 	// compute the exact ref position
  	Ref2Phy(physnode,
   		xpgref,
-  		NULL,ifa, // dpsiref,ifa
-  		xpg,dtau,
-  		codtau,NULL,vnds); // codtau,dpsi,vnds
+  		NULL, ifa, // dpsiref,ifa
+  		xpg, dtau,
+  		codtau, NULL, vnds); // codtau,dpsi,vnds
 
-  	if (ieR >=0) {  // the right element exists
+  	if (ieR >= 0) {  // the right element exists
   	  // find the corresponding point in the right elem
   	  double xref[3];
 	  //printf("xpg_in=%f %f %f\n",xpg_in[0],xpg_in[1],xpg_in[2]);
-	  Phy2Ref(physnodeR,xpg_in,xref);
+	  Phy2Ref(physnodeR, xpg_in, xref);
           int ifaR = 0;
-          while (m->elem2elem[6*ieR+ifaR] != ie) ifaR++;
-          assert(ifaR<6);
+          while (m->elem2elem[6 * ieR + ifaR] != ie) ifaR++;
+          assert(ifaR < 6);
 	  //printf("ieR=%d ifaR=%d xref=%f %f %f\n",ieR,
 	  //	 ifaR,xref[0],xref[1],xref[2]);
-  	  int ipgR=ref_ipg(param,xref);
+  	  int ipgR = ref_ipg(param, xref);
 	  //printf("ok\n");
-	  double xpgR[3],xrefR[3],wpgR;
-	  ref_pg_vol(param, ipgR, xrefR, &wpgR,NULL);
-          double dtauR[3][3],codtauR[3][3];double vndsR[3];
+	  double xpgR[3], xrefR[3], wpgR;
+	  ref_pg_vol(param, ipgR, xrefR, &wpgR, NULL);
+          double dtauR[3][3], codtauR[3][3];
+	  double vndsR[3];
 	  Ref2Phy(physnodeR,
 		  xrefR,
-		  NULL,ifaR, // dphiref,ifa
-		  xpgR,dtauR,
-		  codtauR,NULL,vndsR); // codtau,dphi,vnds
+		  NULL, ifaR, // dphiref,ifa
+		  xpgR, dtauR,
+		  codtauR, NULL, vndsR); // codtau,dphi,vnds
 	  // printf("x1=%f %f %f x2=%f %f %f\n",xpg[0],xpg[1],xpg[2],
 	  //xpgR[0],xpgR[1],xpgR[2]);
-          assert(Dist(xpg,xpgR)<1e-11);
-          assert(fabs(vnds[0]+vndsR[0])<1e-11);
-          assert(fabs(vnds[1]+vndsR[1])<1e-11);
-          assert(fabs(vnds[1]+vndsR[1])<1e-11);
+          assert(Dist(xpg, xpgR) < 1e-11);
+          assert(fabs(vnds[0] + vndsR[0]) < 1e-11);
+          assert(fabs(vnds[1] + vndsR[1]) < 1e-11);
+          assert(fabs(vnds[2] + vndsR[2]) < 1e-11);
         }
       }
     }
   }
 };
 
-// detect if the mesh is 2D
-// and then permut the nodes so that
-// the z direction coincides in the reference
-// or physical frame
-bool Detect2DMacroMesh(MacroMesh* m){
+// Detect if the mesh is 2D and then permut the nodes so that the z
+// direction coincides in the reference or physical frame
+bool Detect2DMacroMesh(MacroMesh* m)
+{
   m->is2d= true;
 
-  // do not permut the node if the connectivity
-  // is already built
+  // Do not permut the node if the connectivity is already built
   if (m->elem2elem != NULL)
     printf("Cannot permut nodes before building connectivity\n");
   assert(m->elem2elem == 0);
@@ -597,82 +588,77 @@ bool Detect2DMacroMesh(MacroMesh* m){
     double physnode[20][3];
     for(int inoloc = 0;inoloc<20;inoloc++){
       int ino=m->elem2node[20*ie+inoloc];
-      physnode[inoloc][0]=m->node[3*ino+0];
-      physnode[inoloc][1]=m->node[3*ino+1];
-      physnode[inoloc][2]=m->node[3*ino+2];
+      physnode[inoloc][0] = m->node[3 * ino + 0];
+      physnode[inoloc][1] = m->node[3 * ino + 1];
+      physnode[inoloc][2] = m->node[3 * ino + 2];
     }
 
-    // we decide that the mesh is 2D if the
-    // middles of the elements have a constant z
-    // coordinate equal to 0.5
+    // We decide that the mesh is 2D if the middles of the elements
+    // have a constant z coordinate equal to 0.5
     double zmil = 0;
-    for(int inoloc = 0;inoloc<20;inoloc++){
-      zmil+=physnode[inoloc][2];
+    for(int inoloc = 0; inoloc < 20; inoloc++){
+      zmil += physnode[inoloc][2];
     }
-    zmil/=20;
+    zmil /= 20;
     // the mesh is not 2d
-    if (fabs(zmil-0.5)>1e-6) {
-      m->is2d=false;
+    if(fabs(zmil-0.5) > 1e-6) {
+      m->is2d = false;
       return m->is2d;
     }
   }
 
   printf("Detection of a 2D mesh\n");
-  for(int ie = 0;ie<m->nbelems;ie++){
+  for(int ie = 0; ie < m->nbelems; ie++){
     // get the physical nodes of element ie
     double physnode[20][3];
-    for(int inoloc = 0;inoloc<20;inoloc++){
-      int ino=m->elem2node[20*ie+inoloc];
-      physnode[inoloc][0]=m->node[3*ino+0];
-      physnode[inoloc][1]=m->node[3*ino+1];
-      physnode[inoloc][2]=m->node[3*ino+2];
+    for(int inoloc = 0; inoloc < 20; inoloc++){
+      int ino=m->elem2node[20 * ie + inoloc];
+      physnode[inoloc][0] = m->node[3 * ino + 0];
+      physnode[inoloc][1] = m->node[3 * ino + 1];
+      physnode[inoloc][2] = m->node[3 * ino + 2];
     }
-    // if the mesh is 2d permut the nodes
-    // in order that the z^ and z axis are the
-    // same
+    // If the mesh is 2d permut the nodes in order that the z^ and z
+    // axis are the same
 
-    double face_centers[6][3]={
-      {0.5,0.0,0.5},
-      {1.0,0.5,0.5},
-      {0.5,1.0,0.5},
-      {0.0,0.5,0.5},
-      {0.5,0.5,1.0},
-      {0.5,0.5,0.0},
-    };
+    double face_centers[6][3] = { {0.5,0.0,0.5},
+				  {1.0,0.5,0.5},
+				  {0.5,1.0,0.5},
+				  {0.0,0.5,0.5},
+				  {0.5,0.5,1.0},
+				  {0.5,0.5,0.0} };
 
-    // rotation of the cube around the origin
-    // at most two rotations are needed to put the cube
-    // in a correct position
-    for(int irot = 0;irot<2;irot++){
+    // Rotation of the cube around the origin at most two rotations
+    // are needed to put the cube in a correct position
+    for(int irot = 0; irot < 2; irot++){
       // compute the normal to face 4
-      double vnds[3],dtau[3][3],codtau[3][3];
+      double vnds[3], dtau[3][3], codtau[3][3];
       Ref2Phy(physnode,
 	      face_centers[4],
-	      NULL,4, // dphiref,ifa
-	      NULL,dtau,
-	      codtau,NULL,vnds); // codtau,dphi,vnds
+	      NULL, 4, // dphiref,ifa
+	      NULL, dtau,
+	      codtau, NULL, vnds); // codtau,dphi,vnds
 
-      double d 
-	= sqrt(vnds[0] * vnds[0] + vnds[1] * vnds[1] + vnds[2] * vnds[2]);
+      double d = vnds[0] * vnds[0] + vnds[1] * vnds[1] + vnds[2] * vnds[2];
+      d = sqrt(d);
       // If the normal is not up or down we have to permut the nodes
       if(fabs(vnds[2] / d) < 0.9){
 	printf("irot=%d rotating the element %d\n",irot,ie);
 	int oldnum[20];
 	int newnum[20]={1,5,6,2,4,8,7,3,11,9,10,17,18,13,19,12,16,14,20,15};
-	for(int inoloc = 0;inoloc<20;inoloc++) {
+	for(int inoloc = 0; inoloc < 20; inoloc++) {
 	  newnum[inoloc]--;
-	  oldnum[inoloc]=m->elem2node[20*ie+inoloc];
+	  oldnum[inoloc] = m->elem2node[20 * ie + inoloc];
 	}
 	// rotate the node numbering
-	for(int inoloc = 0;inoloc<20;inoloc++) {
-	  m->elem2node[20*ie+inoloc]=oldnum[newnum[inoloc]];
+	for(int inoloc = 0; inoloc < 20; inoloc++) {
+	  m->elem2node[20 * ie + inoloc] = oldnum[newnum[inoloc]];
 	}
 	// get the rotated nodes coordinates
-	for(int inoloc = 0;inoloc<20;inoloc++){
-	  int ino=m->elem2node[20*ie+inoloc];
-	  physnode[inoloc][0]=m->node[3*ino+0];
-	  physnode[inoloc][1]=m->node[3*ino+1];
-	  physnode[inoloc][2]=m->node[3*ino+2];
+	for(int inoloc = 0; inoloc < 20; inoloc++){
+	  int ino = m->elem2node[20 * ie + inoloc];
+	  physnode[inoloc][0] = m->node[3 * ino + 0];
+	  physnode[inoloc][1] = m->node[3 * ino + 1];
+	  physnode[inoloc][2] = m->node[3 * ino + 2];
 	}
 
       }
