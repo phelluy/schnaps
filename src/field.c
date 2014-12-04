@@ -6,6 +6,7 @@
 #include <assert.h>
 #include "global.h"
 #include <math.h>
+#include <float.h>
 
 #ifdef _WITH_PTHREAD
 #include <pthread.h>
@@ -113,7 +114,7 @@ void InitField(Field* f) {
   }
 
   // compute cfl parameter min_i vol_i/surf_i
-  f->hmin = 1e10;
+  f->hmin = FLT_MAX;
 
   for (int ie = 0; ie < f->macromesh.nbelems; ie++) {
     double vol = 0, surf = 0;
@@ -168,7 +169,7 @@ void InitField(Field* f) {
   maxd = maxd > f->interp_param[2] ? maxd : f->interp_param[2];
   maxd = maxd > f->interp_param[3] ? maxd : f->interp_param[3];
 
-  f->hmin/=((maxd + 1)*f->interp_param[4]);
+  f->hmin /= ((maxd + 1) * f->interp_param[4]);
 
   printf("hmin=%f\n", f->hmin);
 
@@ -212,10 +213,8 @@ void InitField(Field* f) {
 #endif
 };
 
-// display the field on screen
+// Display the field on screen
 void DisplayField(Field* f) {
-  //int param[8] = {f->model.m, _DEGX, _DEGY, _DEGZ, _RAFX, _RAFY, _RAFZ, 0};
-
   printf("Display field...\n");
   for(int ie = 0; ie < f->macromesh.nbelems; ie++) {
     printf("elem %d\n", ie);
@@ -240,7 +239,7 @@ void DisplayField(Field* f) {
   }
 };
 
-// save the results in the gmsh format
+// Save the results in the gmsh format
 // typplot: index of the plotted variable
 // int compare == true -> compare with the exact value
 void PlotField(int typplot, int compare, Field* f, char* filename) {
@@ -282,9 +281,9 @@ void PlotField(int typplot, int compare, Field* f, char* filename) {
   //int one = 1;
   //fwrite((char*) &one, sizeof(int), 1, gmshfile);
   fprintf(gmshfile, "$EndMeshFormat\n$Nodes\n%d\n",
-	  f->macromesh.nbelems*nraf[0]*nraf[1]*nraf[2]*64);
+	  f->macromesh.nbelems * nraf[0] * nraf[1] * nraf[2] * 64);
 
-  int nb_plotnodes = f->macromesh.nbelems*nraf[0]*nraf[1]*nraf[2]*64;
+  int nb_plotnodes = f->macromesh.nbelems * nraf[0] * nraf[1] * nraf[2] * 64;
   double* value = malloc(nb_plotnodes * sizeof(double));
   assert(value);
   int nodecount = 0;
@@ -294,15 +293,15 @@ void PlotField(int typplot, int compare, Field* f, char* filename) {
     for(int ino = 0; ino < nnodes; ino++) {
       int numnoe = elem2nodes[nnodes*i+ino];
       for(int ii = 0; ii < 3; ii++) {
-        physnode[ino][ii] = node[3 * numnoe+ii];
+        physnode[ino][ii] = node[3 * numnoe + ii];
       }
     }
     // loop on the macro elem subcells
     int icL[3];
     // loop on the subcells
-    for(icL[0] = 0;icL[0] < nraf[0];icL[0]++) {
-      for(icL[1] = 0;icL[1] < nraf[1];icL[1]++) {
-	for(icL[2] = 0;icL[2] < nraf[2];icL[2]++) {
+    for(icL[0] = 0; icL[0] < nraf[0]; icL[0]++) {
+      for(icL[1] = 0; icL[1] < nraf[1]; icL[1]++) {
+	for(icL[2] = 0; icL[2] < nraf[2]; icL[2]++) {
 	  // get the left subcell id
 	  // first glop index in the subcell
 	  //int offsetL = (deg[0] + 1)*(deg[1] + 1)*(deg[2] + 1)*ncL;
@@ -317,7 +316,7 @@ void PlotField(int typplot, int compare, Field* f, char* filename) {
 	    Xr[2] = icL[2] * hh[2]+ Xr[2] * hh[2];
 
 	    for(int ii = 0; ii < 3; ii++) {
-	      assert(Xr[ii] < 1 + 1e-10 && Xr[ii]>-1e-10);
+	      assert(Xr[ii] < 1 + 1e-10 && Xr[ii] > -1e-10);
 	    }
 
 	    Ref2Phy(physnode,
@@ -371,7 +370,7 @@ void PlotField(int typplot, int compare, Field* f, char* filename) {
 
   // elements
   fprintf(gmshfile, "$Elements\n");
-  fprintf(gmshfile, "%d\n", f->macromesh.nbelems*nraf[0]*nraf[1]*nraf[2]);
+  fprintf(gmshfile, "%d\n", f->macromesh.nbelems * nraf[0] * nraf[1] * nraf[2]);
 
   int elm_type = 92;
   //int num_elm_follow=f->macromesh.nbelems;
@@ -394,14 +393,14 @@ void PlotField(int typplot, int compare, Field* f, char* filename) {
 	  //int offsetL = (deg[0] + 1)*(deg[1] + 1)*(deg[2] + 1)*ncL;
 
 	  // global subcell id
-	  int numelem = ncL+i*nraf[0]*nraf[1]*nraf[2] + 1;
+	  int numelem = ncL + i * nraf[0] * nraf[1] * nraf[2] + 1;
 	  //fwrite((char*) &numelem, sizeof(int), 1, gmshfile);
 	  fprintf(gmshfile, "%d ", numelem);
 	  fprintf(gmshfile, "%d ", elm_type);
 	  fprintf(gmshfile, "%d ", num_tags);
 
 	  for(int ii = 0; ii < 64; ii++) {
-	    int numnoe = 64*(i*nraf[0]*nraf[1]*nraf[2]+ncL) + ii  + 1;
+	    int numnoe = 64 * (i * nraf[0] * nraf[1] * nraf[2] + ncL) + ii  + 1;
 	    //fwrite((char*) &numnoe, sizeof(int), 1, gmshfile);
 	    fprintf(gmshfile, "%d ", numnoe);
 	  }
@@ -492,12 +491,12 @@ void PlotField(int typplot, int compare, Field* f, char* filename) {
   free(value);
 }
 
-// inter-subcell fluxes
+// Compute inter-subcell fluxes
 void* DGSubCellInterface(void* mc) {
   MacroCell* mcell = (MacroCell*) mc;
   Field *f = mcell->field;
 
-  // loop on the elements
+  // Loop on the elements
   for (int ie = mcell->first; ie < mcell->last_p1; ie++) {
     // get the physical nodes of element ie
     double physnode[20][3];
@@ -519,8 +518,7 @@ void* DGSubCellInterface(void* mc) {
 			deg[2] + 1};
     const int m = f->model.m;
 
-    // loop on the subcells
-    //#pragma omp parallel for collapse(3)
+    // Loop on the subcells
     for(int icL0 = 0; icL0 < nraf[0]; icL0++) {
       for(int icL1 = 0; icL1 < nraf[1]; icL1++) {
 	for(int icL2 = 0; icL2 < nraf[2]; icL2++) {
