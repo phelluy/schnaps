@@ -813,7 +813,7 @@ void* DGMacroCellInterface2(void* mc) {
       // Recover the volume gauss point from the face index
       int ipgL = iparam[7];
 
-      // Normal vector at gauss point ipg
+      // Normal vector at gauss point ipgL
       double vnds[3], xpg[3];
       {
 	double dtau[3][3], codtau[3][3];
@@ -838,7 +838,7 @@ void* DGMacroCellInterface2(void* mc) {
 
         int ipgR = ref_ipg(iparam + 1, xrefL);
 
-	// FIXME: this code doesn't seem to be necessary.  What does it do?
+	// Uncomment to check that the neighbour-finding algorithm worked.
 	/* { */
 	/*   double xpgR[3], xrefR[3], wpgR; */
 	/*   ref_pg_vol(iparam + 1, ipgR, xrefR, &wpgR, NULL); */
@@ -880,7 +880,7 @@ void* DGMacroCellInterface2(void* mc) {
 
 	double flux[m];
         f->model.BoundaryFlux(xpg, f->tnow, wL, vnds, flux);
-        //printf("ipgL=%d tnow=%f wL=%f flux=%f\n", ipgL, f->tnow, wL[0], flux[0]);
+        //printf("ipgL=%d tnow=%f wL=%f flux=%f\n",ipgL,f->tnow,wL[0],flux[0]);
 
 	for(int iv = 0; iv < m; iv++) {
 	  // The basis functions is also the gauss point index

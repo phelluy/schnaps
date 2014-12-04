@@ -110,7 +110,7 @@ void TransportImposedData2d(double x[3], double t, double w[]) {
     + transport_v2d[1] * x[1]
     + transport_v2d[2] * x[2];
   double xx = vx - t;
-  w[0]=cos(xx);
+  w[0] = cos(xx);
 };
 
 void VecTransImposedData2d(double x[3], double t, double* w) {
