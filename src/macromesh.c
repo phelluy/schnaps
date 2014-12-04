@@ -8,12 +8,12 @@
 #include "interpolation.h"
 #include <math.h>
 
-void ReadMacroMesh(MacroMesh* m,char* filename)
+void ReadMacroMesh(MacroMesh* m, char* filename)
 {
   m->is2d=false;
 
-  FILE* f=NULL;
-  char* line=NULL;
+  FILE* f = NULL;
+  char* line = NULL;
   size_t linesize = 0;
   size_t ret;
 
@@ -35,13 +35,13 @@ void ReadMacroMesh(MacroMesh* m,char* filename)
   assert(m->node);
 
   for(int i = 0;i<m->nbnodes;i++){
-    ret=getdelim(&line,&linesize,(int) ' ',f); // node number
-    ret=getdelim(&line,&linesize,(int) ' ',f); // x
-    m->node[3*i+0]=atof(line);
-    ret=getdelim(&line,&linesize,(int) ' ',f); // y
-    m->node[3*i+1]=atof(line);
-    ret=getline(&line,&linesize,f); // z (end of the line)
-    m->node[3*i+2]=atof(line);
+    ret = getdelim(&line, &linesize,(int) ' ',f); // node number
+    ret = getdelim(&line, &linesize,(int) ' ',f); // x
+    m->node[3 * i + 0] = atof(line);
+    ret = getdelim(&line, &linesize,(int) ' ',f); // y
+    m->node[3 * i + 1] = atof(line);
+    ret = getline(&line, &linesize,f); // z (end of the line)
+    m->node[3 * i + 2] = atof(line);
     /* printf("Node %d x=%f y=%f z=%f\n",i, */
     /* 	   m->node[3*i+0], */
     /* 	   m->node[3*i+1], */
@@ -55,8 +55,7 @@ void ReadMacroMesh(MacroMesh* m,char* filename)
   // Now read all the elements of the mesh
   do {
     ret = getline(&line, &linesize, f);
-  }
-  while(strcmp(line,"$Elements\n") != 0);
+  } while(strcmp(line,"$Elements\n") != 0);
 
   // size of the gmsh elems list
   ret = getline(&line, &linesize, f);
@@ -65,7 +64,7 @@ void ReadMacroMesh(MacroMesh* m,char* filename)
   m->elem2node = malloc(20 * sizeof(int) * nball);
   assert(m->elem2node);
 
-  // now count only the H20 elems (code=17)
+  // Now count only the H20 elems (code=17)
   m->nbelems = 0;
   int countnode = 0;
   for(int i = 0; i < nball; i++){
@@ -73,7 +72,7 @@ void ReadMacroMesh(MacroMesh* m,char* filename)
     ret = getdelim(&line, &linesize, (int) ' ', f); // elem type
     int elemtype = atoi(line);
     if (elemtype != 17) {
-      ret=getline(&line, &linesize, f);
+      ret = getline(&line, &linesize, f);
     } else {
       m->nbelems++;
       ret = getdelim(&line, &linesize, (int) ' ', f); //useless code
@@ -93,10 +92,11 @@ void ReadMacroMesh(MacroMesh* m,char* filename)
   }
   ret = getline(&line, &linesize, f);
   //printf("%s",line);
-  // check that we have reached the end of nodes
+
+  // Check that we have reached the end of nodes
   assert(strcmp(line,"$EndElements\n") == 0);
   printf("nbelems=%d\n", m->nbelems);
-  m->elem2node=realloc(m->elem2node, 20 * sizeof(int) * m->nbelems);
+  m->elem2node = realloc(m->elem2node, 20 * sizeof(int) * m->nbelems);
   assert(m->elem2node);
 
   m->elem2elem = NULL;
