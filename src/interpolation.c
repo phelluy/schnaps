@@ -53,11 +53,11 @@ const double gauss_lob_weight[] = {
 const int gauss_lob_offset[] = {0, 1, 3, 6, 10};
 
 
-//!  \brief 1d GLOP weights for a given degree
+//! \brief 1d GLOP weights for a given degree
 //! \param[in] deg degree
 //! \param[in] i glop index
 //! \returns the glop weight
-double wglop(int deg,int i){
+double wglop(int deg,int i) {
   return gauss_lob_weight[gauss_lob_offset[deg]+i];
 }
 
@@ -68,7 +68,7 @@ double wglop(int deg,int i){
 //! derivatives for the second function
 //! etc. for each degree from 0 to 4
 const double gauss_lob_dpsi[] = {
-  0.00000000000000000000000000000000000000000000000000000000000,
+  0.0,
   -1.,
   -1.,
   1.,
@@ -130,29 +130,28 @@ const double gauss_lob_dpsi[] = {
 const int gauss_lob_dpsi_offset[] = {0, 1, 5, 14, 30};
 
 
-void lagrange_polynomial(double* p,const double* subdiv,
-			 int deg,int ii,double x) {
+void lagrange_polynomial(double* p, const double* subdiv,
+			 int deg, int ii, double x) {
   *p = 1;
-  for(int j=0;j<deg+1;j++){
-    if (j != ii){
-      *p *= (x - subdiv[j]) /
-	(subdiv[ii] - subdiv[j]);
+  const int npg = deg + 1;
+  for(int j = 0; j < npg; j++) {
+    if (j != ii) {
+      *p *= (x - subdiv[j]) / (subdiv[ii] - subdiv[j]);
     }
   }
-
 }
 
-
-void dlagrange_polynomial(double* dp,const double* subdiv,
-			  int deg,int i,double x){
+void dlagrange_polynomial(double* dp, const double* subdiv,
+			  int deg, int i, double x) {
   double xj;
   *dp = 0;
-  for(int k=0;k<((deg)+1);k++){
-    if (k != (i)){
+  const int npg = deg + 1;
+  for(int k = 0; k < npg; k++) {
+    if (k != (i)) {
       double xk = (subdiv)[k];
       double dploc = ((double)1) / ((subdiv)[i] -  xk);
-      for(int j=0;j<(deg)+1;j++){
-	if (j != (i) && j != k){
+      for(int j=0;j<(deg)+1;j++) {
+	if (j != (i) && j != k) {
 	  xj = (subdiv)[j];
 	  dploc *= ((x) - xj) / ((subdiv)[i] - xj);
 	}
@@ -162,17 +161,17 @@ void dlagrange_polynomial(double* dp,const double* subdiv,
   }
 }
 
-
-// number of Gauss Lobatto Points (GLOPS)
-// in an element
-int NPG(int param[]){
-  return (param[0]+1)*(param[1]+1)*(param[2]+1) *
-         (param[3])*(param[4])*(param[5]);
+// Number of Gauss Lobatto Points (GLOPS) in an element
+// FIXME: element? macro cell? subcell?
+int NPG(int param[]) {
+  return 
+    (param[0] + 1) * (param[1] + 1) * (param[2] + 1) 
+    * param[3] * param[4] * param[5];
 }
 
-
-/// Number of interpolation points for each face
-int NPGF(int param[], int ifa){
+// Number of interpolation points for each face
+// FIXME: macrocell face?  subcell face?
+int NPGF(int param[], int ifa) {
   // For each face, give the dimension index i
   int permut[6][4] = {
     {0, 2, 1, 0},
@@ -187,11 +186,10 @@ int NPGF(int param[], int ifa){
   return (param[i0] + 1) * (param[i1] + 1) * param[i0+3] * param[i1+3];
 }
 
-// from a reference point find the nearest
-// gauss point
-// warning: works only  degree 1,2 or 3
-int ref_ipg(int* param,double* xref){
-  int deg[3],nraf[3];
+// From a reference point find the nearest gauss point
+// Warning: works only  degree 1,2 or 3
+int ref_ipg(int* param,double* xref) {
+  int deg[3], nraf[3];
 
   // approximation degree in each direction
   deg[0]=param[0];
@@ -202,7 +200,6 @@ int ref_ipg(int* param,double* xref){
   nraf[0]=param[3];
   nraf[1]=param[4];
   nraf[2]=param[5];
-
 
   double hh[3]={1./nraf[0],1./nraf[1],1./nraf[2]};
 
@@ -228,18 +225,15 @@ int ref_ipg(int* param,double* xref){
   int iz=floor((xref[2]-ncz*hh[2])/hh[2]*deg[2]+0.5);
   //int iz=floor(xref[2]*deg[2]+0.5);
 
-
   //printf("xref %f %f %f ix=%d iy=%d iz=%d\n",
   //	 xref[0],xref[1],xref[2],ix,iy,iz);
 
   return ix+(deg[0]+1)*(iy+(deg[1]+1)*iz)+offset;
-
 };
-
 
 // return the reference coordinates xpg[3] and weight wpg of the GLOP ipg
 void ref_pg_vol(int* param,int ipg,
-		double* xpg, double* wpg, double* xpg_in){
+		double* xpg, double* wpg, double* xpg_in) {
   int deg[3],offset[3],nraf[3];
 
   // approximation degree in each direction
@@ -286,31 +280,29 @@ void ref_pg_vol(int* param,int ipg,
     gauss_lob_weight[offset[1]]*
     gauss_lob_weight[offset[2]];
 
-  if (xpg_in !=0){
+  if (xpg_in !=0) {
     double small=1e-3;
     xpg_in[0]=xpg[0];
     xpg_in[1]=xpg[1];
     xpg_in[2]=xpg[2];
 
-    if (ix==0) xpg_in[0]+=hx*small;
-    if (ix==deg[0]) xpg_in[0]-=hx*small;
-    if (iy==0) xpg_in[1]+=hy*small;
-    if (iy==deg[1]) xpg_in[1]-=hy*small;
-    if (iz==0) xpg_in[2]+=hz*small;
-    if (iz==deg[2]) xpg_in[2]-=hz*small;
+    if (ix == 0) xpg_in[0]+=hx*small;
+    if (ix == deg[0]) xpg_in[0]-=hx*small;
+    if (iy == 0) xpg_in[1]+=hy*small;
+    if (iy == deg[1]) xpg_in[1]-=hy*small;
+    if (iz == 0) xpg_in[2]+=hz*small;
+    if (iz == deg[2]) xpg_in[2]-=hz*small;
 
-   /* printf("xpg %f %f %f\n",xpg[0],xpg[1],xpg[2]); */
-   /*  printf("xpg_in %f %f %f %d %d %d\n",xpg_in[0],xpg_in[1],xpg_in[2], */
-   /* 	   ix,iy,iz); */
-
+    /* printf("xpg %f %f %f\n",xpg[0],xpg[1],xpg[2]); */
+    /*  printf("xpg_in %f %f %f %d %d %d\n",xpg_in[0],xpg_in[1],xpg_in[2], */
+    /* 	   ix,iy,iz); */
   }
-
 };
 
 // Return the reference coordinates xpg[3] and weight wpg of the GLOP
 // ipg on the face ifa.
 void ref_pg_face(int* param, int ifa, int ipg,
-		 double* xpg, double* wpg, double* xpgin){
+		 double* xpg, double* wpg, double* xpgin) {
   // For each face, give the dimension index i
   const int axis_permut[6][4] = {
     {0, 2, 1, 0},
@@ -376,11 +368,10 @@ void ref_pg_face(int* param, int ifa, int ipg,
        (ncpgxyz[1] + param[4] *
 	ncpgxyz[2]))));
 
-  // Compute the reference coordinates of the
-  // Gauss-Lobatto point in the volume
+  // Compute the reference coordinates of the Gauss-Lobatto point in
+  // the volume
   offset[0] = gauss_lob_offset[deg[0]] + ix;
   offset[1] = gauss_lob_offset[deg[1]] + iy;
-  //printf("offset=%d\n",offset);
 
   xpg[axis_permut[ifa][0]] = h[0] * (ncx + gauss_lob_point[offset[0]]);
   xpg[axis_permut[ifa][1]] = h[1] * (ncy + gauss_lob_point[offset[1]]);
@@ -389,7 +380,7 @@ void ref_pg_face(int* param, int ifa, int ipg,
   *wpg = h[0] * h[1] *
     gauss_lob_weight[offset[0]] * gauss_lob_weight[offset[1]];
 
-  // if xpgin exists, compute a point slightly INSIDE the opposite
+  // If xpgin exists, compute a point slightly INSIDE the opposite
   // subcell along the face.
   if(xpgin != NULL) {
     double small = 1e-3;//0.001
@@ -417,23 +408,20 @@ void ref_pg_face(int* param, int ifa, int ipg,
       xpgin[axis_permut[ifa][1]]
 	= h[1] * (ncy + gauss_lob_point[offset[1]] - small);
   }
-
 };
 
-
 // return the 1d derivative of lagrange polynomial ib at glop ipg
-double dlag(int deg,int ib,int ipg){
-
+double dlag(int deg,int ib,int ipg) 
+{
   return gauss_lob_dpsi[gauss_lob_dpsi_offset[deg]+ib*(deg+1)+ipg];
-
 }
 
-// return the value psi  and the gradient dpsi[3] of the basis
-// function ib at point xref[3]. Warning: the value of the gradient is
-// not reliable if xref is on the boundary
-//of a subcell (because the gradient is discontinuous)
-void psi_ref(int* param, int ib, double* xref, double* psi, double* dpsi){
-
+// Return the value psi and the gradient dpsi[3] of the basis function
+// ib at point xref[3].
+// Warning: the value of the gradient is not reliable if xref is on
+// the boundary of a subcell (because the gradient is discontinuous)
+void psi_ref(int* param, int ib, double* xref, double* psi, double* dpsi)
+{
   double dpsibx;
   double dpsiby;
   double dpsibz;
@@ -485,11 +473,11 @@ void psi_ref(int* param, int ib, double* xref, double* psi, double* dpsi){
   lagrange_polynomial(&psibz, gauss_lob_point + offset[2],
                       deg[2], ibz, xref[2]/hz-ncbz);
 
-  assert(nraf[0]==1 && nraf[1]==1 && nraf[2]==1);
+  assert(nraf[0] == 1 && nraf[1] == 1 && nraf[2] == 1);
 
   *psi = psibx * psiby * psibz;
 
-  if (dpsi != NULL){
+  if (dpsi != NULL) {
 
     dlagrange_polynomial(&dpsibx, gauss_lob_point + offset[0],
                          deg[0], ibx, xref[0]);
@@ -502,15 +490,14 @@ void psi_ref(int* param, int ib, double* xref, double* psi, double* dpsi){
     dpsi[1] =  psibx * dpsiby *  psibz;
     dpsi[2] =  psibx *  psiby * dpsibz;
   }
-
 };
 
 // same function but with specification of the subcell
 // indices is[3] in the three directions: now the computation
 // is reliable
+// FIXME: same as which function?
 void psi_ref_subcell(int* param, int* is,int ib,
-		     double* xref, double* psi, double* dpsi){
-
+		     double* xref, double* psi, double* dpsi) {
   double dpsibx;
   double dpsiby;
   double dpsibz;
@@ -551,7 +538,7 @@ void psi_ref_subcell(int* param, int* is,int ib,
   int ncbz= ib;
   double hz=1/(double) nraf[2];
 
-  int is_in_subcell= (ncbx==is[0]) && (ncby==is[1]) && (ncbz==is[2]);
+  int is_in_subcell= (ncbx == is[0]) && (ncby == is[1]) && (ncbz == is[2]);
 
   double psibx = 0;
   double psiby = 0;
@@ -571,7 +558,7 @@ void psi_ref_subcell(int* param, int* is,int ib,
 
   *psi = psibx * psiby * psibz * is_in_subcell ;
 
-  if (dpsi != NULL){
+  if (dpsi != NULL) {
 
     dlagrange_polynomial(&dpsibx, gauss_lob_point + offset[0],
                          deg[0], ibx, xref[0]);
@@ -584,18 +571,11 @@ void psi_ref_subcell(int* param, int* is,int ib,
     dpsi[1] =  psibx * dpsiby *  psibz * is_in_subcell;
     dpsi[2] =  psibx *  psiby * dpsibz * is_in_subcell;
   }
-
-
-
 }
 
-
-
-
-
-// return the gradient dpsi[0..2] of the basis
-// function ib at GLOP ipg.
-void grad_psi_pg(int* param,int ib,int ipg,double* dpsi){
+// Return the gradient dpsi[0..2] of the basis function ib at GLOP
+// ipg.
+void grad_psi_pg(int* param,int ib,int ipg,double* dpsi) {
   int deg[3],offset[3],nraf[3];
 
   // approximation degree in each direction
@@ -647,7 +627,6 @@ void grad_psi_pg(int* param,int ib,int ipg,double* dpsi){
 
   int ncbz= ib;
 
-
   // Number of Gauss-Lobatto points in each direction
   offset[0]=gauss_lob_dpsi_offset[deg[0]];
   offset[1]=gauss_lob_dpsi_offset[deg[1]];
@@ -656,21 +635,16 @@ void grad_psi_pg(int* param,int ib,int ipg,double* dpsi){
   // Computation of the value of the interpollation polynomial gradient
   double psibx,psiby,psibz,dpsibx,dpsiby,dpsibz;
 
-  psibx=(ipgx==ibx) * (ncpgx==ncbx);
-  dpsibx = (ncpgx==ncbx) * gauss_lob_dpsi[offset[0]+ibx*(deg[0]+1)+ipgx] / hx;
+  psibx = (ipgx == ibx) * (ncpgx == ncbx);
+  dpsibx = (ncpgx == ncbx) * gauss_lob_dpsi[offset[0]+ibx*(deg[0]+1)+ipgx] / hx;
 
-  psiby=(ipgy==iby) * (ncpgy==ncby);
-  dpsiby = (ncpgy==ncby) * gauss_lob_dpsi[offset[1]+iby*(deg[1]+1)+ipgy] / hy;
+  psiby = (ipgy == iby) * (ncpgy == ncby);
+  dpsiby = (ncpgy == ncby) * gauss_lob_dpsi[offset[1]+iby*(deg[1]+1)+ipgy] / hy;
 
-  psibz=(ipgz==ibz) * (ncpgz==ncbz);
-  dpsibz = (ncpgz==ncbz) * gauss_lob_dpsi[offset[2]+ibz*(deg[2]+1)+ipgz] / hz;
+  psibz = (ipgz == ibz) * (ncpgz == ncbz);
+  dpsibz = (ncpgz == ncbz) * gauss_lob_dpsi[offset[2]+ibz*(deg[2]+1)+ipgz] / hz;
 
-
-  dpsi[0]=dpsibx*psiby*psibz;
-  dpsi[1]=psibx*dpsiby*psibz;
-  dpsi[2]=psibx*psiby*dpsibz;
-
+  dpsi[0] = dpsibx*psiby*psibz;
+  dpsi[1] = psibx*dpsiby*psibz;
+  dpsi[2] = psibx*psiby*dpsibz;
 };
-
-
-
