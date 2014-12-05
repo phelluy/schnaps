@@ -273,8 +273,7 @@ void Build_elem2elem(MacroMesh* m, Face4Sort* face)
   for(int ifa = 0; ifa < stop; ifa++) {
     Face4Sort* f1 = face + ifa;
     Face4Sort* f2 = face + ifa + 1;
-    if (ifa != (stop-1) && CompareFace4Sort(f1, f2) == 0) {
-
+    if (ifa != (stop - 1) && CompareFace4Sort(f1, f2) == 0) {
       ifa++;
       int ie1 = f1->left;
       int if1 = f1->locfaceleft;
