@@ -179,7 +179,7 @@ void PrintMacroMesh(MacroMesh* m) {
 }
 
 // Fill array of faces of subcells
-void Build_face(MacroMesh* m, Face4Sort* face) 
+void build_face(MacroMesh* m, Face4Sort* face) 
 {
   assert(face != NULL);
 
@@ -191,6 +191,7 @@ void Build_face(MacroMesh* m, Face4Sort* face)
 			     {0,3,2,1} };
   Face4Sort* f;
 
+  // Loop over macroelements and their six faces
   for(int ie = 0; ie < m->nbelems; ie++) {
     for(int ifa = 0; ifa < 6; ifa++) {
       f = face + ifa + 6 * ie;
@@ -199,8 +200,9 @@ void Build_face(MacroMesh* m, Face4Sort* face)
       }
       f->left = ie;
       f->locfaceleft = ifa;
-      f->right = -1;
-      f->locfaceright = -1;
+      //f->right = -1; // FIXME: this is never referenced
+      //f->locfaceright = -1; // FIXME: this is never referenced.
+
       OrderFace4Sort(f);
       /* printf("elem=%d ifa=%d left=%d nodes %d %d %d %d\n",ie,ifa, */
       /* 	     f->left,f->node[0], */
@@ -256,7 +258,7 @@ void macromesh_bounds(MacroMesh* m, double *bounds)
 
 // Allocate and fill the elem2elem array, which provides macrocell
 // interface connectivity.
-void Build_elem2elem(MacroMesh* m, Face4Sort* face) 
+void build_elem2elem(MacroMesh* m, Face4Sort* face) 
 {
   // Allocate element connectivity array
   assert(m->elem2elem == NULL);
@@ -321,9 +323,9 @@ void Build_elem2elem(MacroMesh* m, Face4Sort* face)
       // Find the element that is connected to face ifa of element ie.
       int ie2 = m->elem2elem[6 * ie + ifa];
       if(ie2 < ie) {
-        m->face2elem[4 * facecount+0] = ie;
-        m->face2elem[4 * facecount+1] = ifa;
-        m->face2elem[4 * facecount+2] = ie2;
+        m->face2elem[4 * facecount + 0] = ie;
+        m->face2elem[4 * facecount + 1] = ifa;
+        m->face2elem[4 * facecount + 2] = ie2;
         if (ie2 >= 0) {
 	  m->face2elem[4 * facecount + 3] = -1;
 	  for(int ifa2 = 0; ifa2 < 6; ++ifa2) {
@@ -396,8 +398,8 @@ void BuildConnectivity(MacroMesh* m)
   // Build a list of faces each face is made of four corners of the
   // hexaedron mesh
   Face4Sort *face = malloc(6 * sizeof(Face4Sort) * m->nbelems);
-  Build_face(m, face);
-  Build_elem2elem(m, face);
+  build_face(m, face);
+  build_elem2elem(m, face);
   free(face);
 
   // check

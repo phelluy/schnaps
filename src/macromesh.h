@@ -30,11 +30,11 @@ typedef struct Face4Sort{
   //! left elem index
   int left;
   //! right elem index
-  int right;
+  //int right;  // FIXME: this is never referenced
   //! index of this face in the left elem
   int locfaceleft;
   //! index of this face in the right elem
-  int locfaceright;
+  //int locfaceright;  // FIXME: this is never referenced
 } Face4Sort;
 
 //!\brief  sort the node list of the face.

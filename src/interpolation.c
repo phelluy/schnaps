@@ -227,9 +227,9 @@ int ref_ipg(int* param,double* xref) {
   return ix + (deg[0] + 1) * (iy + (deg[1] + 1) * iz) + offset;
 };
 
-// return the reference coordinates xpg[3] and weight wpg of the GLOP ipg
-void ref_pg_vol(int* param,int ipg,
-		double* xpg, double* wpg, double* xpg_in) {
+// Return the reference coordinates xpg[3] and weight wpg of the GLOP ipg
+void ref_pg_vol(int *param, int ipg,
+		double *xpg, double *wpg, double *xpg_in) {
   int deg[3], offset[3], nraf[3];
 
   // approximation degree in each direction
