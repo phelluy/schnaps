@@ -17,8 +17,6 @@ typedef struct MacroMesh{
   int* face2elem; //!< faces to elems connectivity (Left and Right)
   double* node; //!< nodes coordinates array
   bool is2d; //!< 2d computation detection
-  bool periodic; //!< determines if the macromesh has periodic
-		 //!boundary conditions
 } MacroMesh;
 
 //! \brief a simple struct for modelling a four

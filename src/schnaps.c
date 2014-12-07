@@ -27,12 +27,12 @@ int main(void) {
   assert(is2d);
   //PrintMacroMesh(&(f.macromesh));
 
-  // mesh preparation
+  // Mesh preparation
   BuildConnectivity(&(f.macromesh));
 
-  //AffineMapMacroMesh(&(f.macromesh));
+  // AffineMapMacroMesh(&(f.macromesh));
 
-  // prepare the initial fields
+  // Prepare the initial fields
   InitField(&f);
   f.is2d = true;
 
