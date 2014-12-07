@@ -71,7 +71,7 @@ void ReadMacroMesh(MacroMesh* m, char* filename)
     ret = getdelim(&line, &linesize, (int) ' ', f); // elem number
     ret = getdelim(&line, &linesize, (int) ' ', f); // elem type
     int elemtype = atoi(line);
-    if (elemtype != 17) {
+    if(elemtype != 17) {
       ret = getline(&line, &linesize, f);
     } else {
       m->nbelems++;
@@ -153,7 +153,7 @@ void PrintMacroMesh(MacroMesh* m) {
     printf("\n");
   }
 
-  if (m->elem2elem != 0) {
+  if(m->elem2elem != 0) {
     for(int i = 0; i < m->nbelems; i++) {
       printf("elem %d neighbours: ",
 	     i + start);
@@ -165,7 +165,7 @@ void PrintMacroMesh(MacroMesh* m) {
     }
   }
 
-  if (m->face2elem !=0) {
+  if(m->face2elem !=0) {
     for(int ifa = 0; ifa < m->nbfaces; ifa++) {
       printf("face %d, left: %d loc%d, right: %d loc%d\n",
 	     ifa,
@@ -275,7 +275,7 @@ void build_elem2elem(MacroMesh* m, Face4Sort* face)
   for(int ifa = 0; ifa < stop; ifa++) {
     Face4Sort* f1 = face + ifa;
     Face4Sort* f2 = face + ifa + 1;
-    if (ifa != (stop - 1) && CompareFace4Sort(f1, f2) == 0) {
+    if(ifa != (stop - 1) && CompareFace4Sort(f1, f2) == 0) {
       ifa++;
       int ie1 = f1->left;
       int if1 = f1->locfaceleft;
@@ -294,7 +294,7 @@ void build_elem2elem(MacroMesh* m, Face4Sort* face)
   /* for(int ifa = 0;ifa < stop;ifa++) { */
   /*   Face4Sort* f1=face+ifa; */
   /*   Face4Sort* f2=face+ifa+1; */
-  /*   if (ifa!=stop-1 && CompareFace4Sort(f1,f2)= = 0) { */
+  /*   if(ifa!=stop-1 && CompareFace4Sort(f1,f2)= = 0) { */
   /*     ifa++; */
   /*     int ie1=f1->left; */
   /*     int if1=f1->locfaceleft; */
@@ -326,7 +326,7 @@ void build_elem2elem(MacroMesh* m, Face4Sort* face)
         m->face2elem[4 * facecount + 0] = ie;
         m->face2elem[4 * facecount + 1] = ifa;
         m->face2elem[4 * facecount + 2] = ie2;
-        if (ie2 >= 0) {
+        if(ie2 >= 0) {
 	  m->face2elem[4 * facecount + 3] = -1;
 	  for(int ifa2 = 0; ifa2 < 6; ++ifa2) {
 	    if(m->elem2elem[6 * ie2 + ifa2] == ie) {
@@ -361,7 +361,7 @@ void suppress_zfaces(MacroMesh* m)
   printf("Suppress 3d faces...\n");
   int newfacecount = 0;
   for(int ifa = 0; ifa < m->nbfaces; ifa++) {
-    if (m->face2elem[4 * ifa + 1] < 4) newfacecount++;
+    if(m->face2elem[4 * ifa + 1] < 4) newfacecount++;
   }
 
   printf("Old num faces=%d, new num faces=%d\n", m->nbfaces, newfacecount);
@@ -371,7 +371,7 @@ void suppress_zfaces(MacroMesh* m)
 
   newfacecount = 0;
   for(int ifa = 0; ifa < m->nbfaces; ifa++) {
-    if (oldf[4 * ifa + 1] < 4) {
+    if(oldf[4 * ifa + 1] < 4) {
       m->face2elem[4 * newfacecount + 0] = oldf[4 * ifa + 0];
       m->face2elem[4 * newfacecount + 1] = oldf[4 * ifa + 1];
       m->face2elem[4 * newfacecount + 2] = oldf[4  *ifa + 2];
@@ -410,7 +410,7 @@ void BuildConnectivity(MacroMesh* m)
   /*   } */
   /* } */
 
-  if (m->is2d) suppress_zfaces(m);
+  if(m->is2d) suppress_zfaces(m);
 }
 
 // Compare two integers
@@ -429,9 +429,9 @@ int CompareFace4Sort(const void* a,const void* b) {
   Face4Sort *f2 = (Face4Sort*)b;
 
   int r = f1->node[0]-f2->node[0];
-  if (r == 0) r = f1->node[1] - f2->node[1];
-  if (r == 0) r = f1->node[2] - f2->node[2];
-  if (r == 0) r = f1->node[3] - f2->node[3];
+  if(r == 0) r = f1->node[1] - f2->node[1];
+  if(r == 0) r = f1->node[2] - f2->node[2];
+  if(r == 0) r = f1->node[3] - f2->node[3];
   return r;
 };
 
@@ -469,7 +469,7 @@ void CheckMacroMesh(MacroMesh* m, int* param) {
       GeomRef2Phy(&g);
       GeomPhy2Ref(&g);
 
-      // if (param[4]==1 && param[5]==1 && param[6]==1) {
+      // if(param[4]==1 && param[5]==1 && param[6]==1) {
       //printf("ipg %d ipg2 %d xref %f %f %f\n",ipg,
       //	     ref_ipg(param,xref_in),xref_in[0],xref_in[1],xref_in[2]);
 
@@ -505,19 +505,35 @@ void CheckMacroMesh(MacroMesh* m, int* param) {
 
       // Check compatibility between face and volume numbering
       for(int ipgf = 0; ipgf < NPGF(param, ifa); ipgf++) {
-        double xpgref[3], wpg;
-        // Get the coordinates of the Gauss point
-        ref_pg_face(param, ifa, ipgf, xpgref, &wpg, NULL);
-        // Recover the volume gauss point from the face index
-        int ipgv = param[6];
-        double xpgref2[3], wpg2;
-        ref_pg_vol(param, ipgv, xpgref2, &wpg2, NULL);
 
-        if (m->is2d) { // in 2D do not check upper and lower face
-          if (ifa < 4) {
+        // Get the coordinates of the Gauss point
+        double xpgref[3];
+	{
+	  double wpg;
+	  ref_pg_face(param, ifa, ipgf, xpgref, &wpg, NULL);
+	}
+        
+	// Recover the volume gauss point from the face index
+	int ipgv = param[6];
+	double xpgref2[3];
+	{
+	  double wpg2;
+	  ref_pg_vol(param, ipgv, xpgref2, &wpg2, NULL);
+	}
+
+        if(m->is2d) { // in 2D do not check upper and lower face
+          if(ifa < 4) {
             assert(Dist(xpgref, xpgref2) < 1e-11);
           }
         } else { // in 3D check all faces
+	  if(Dist(xpgref, xpgref2) >= 1e-11) {
+	    printf("ERROR: face and vol indices give different rev points:\n");
+	    printf("ipgv: %d\n", ipgv);
+	    printf("ipgf: %d\n", ipgf);
+	    printf("ifa: %d\n", ifa);
+	    printf("xpgref:%f %f %f\n", xpgref[0], xpgref[1], xpgref[2]);
+	    printf("xpgref2:%f %f %f\n", xpgref2[0], xpgref2[1], xpgref2[2]);
+	  }
           assert(Dist(xpgref, xpgref2) < 1e-11);
         }
 
@@ -545,7 +561,7 @@ void CheckMacroMesh(MacroMesh* m, int* param) {
 
 	// Get the right elem or the boundary id
 	int ieR = m->elem2elem[6 * ie + ifa];
-  	if (ieR >= 0) {  // The right element exists
+  	if(ieR >= 0) {  // The right element exists
 	  // Get the coordinates of the Gauss point from the
 	  // face-local point index and the point slightly inside the
 	  // macrocell.
@@ -640,7 +656,7 @@ bool Detect2DMacroMesh(MacroMesh* m)
   m->is2d= true;
 
   // Do not permut the node if the connectivity is already built
-  if (m->elem2elem != NULL)
+  if(m->elem2elem != NULL)
     printf("Cannot permut nodes before building connectivity\n");
   assert(m->elem2elem == 0);
 
