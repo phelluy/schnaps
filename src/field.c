@@ -62,6 +62,11 @@ void InitField(Field* f) {
   //int param[8]={f->model.m,_DEGX,_DEGY,_DEGZ,_RAFX,_RAFY,_RAFZ,0};
   f->is2d = false;
 
+  int mx = f->model.mx;
+  int my = f->model.my;
+  int mz = f->model.mz;
+  int vmax = f->model.vmax;
+
   // a copy for avoiding too much "->"
   for(int ip = 0; ip < 8; ip++) {
     f->interp_param[ip] = f->interp.interp_param[ip];
@@ -106,7 +111,7 @@ void InitField(Field* f) {
       }
 
       double w[f->model.m];
-      f->model.InitData(xpg, w);
+      f->model.InitData(xpg, w, mx, my, mz, vmax);
       for(int iv = 0; iv < f->model.m; iv++) {
 	int imem = f->varindex(f->interp_param, ie, ipg, iv);
 	f->wn[imem] = w[iv];
@@ -249,6 +254,10 @@ void DisplayField(Field* f) {
 // typplot: index of the plotted variable
 // int compare == true -> compare with the exact value
 void PlotField(int typplot, int compare, Field* f, char* filename) {
+  int mx = f->model.mx;
+  int my = f->model.my;
+  int mz = f->model.mz;
+  int vmax = f->model.vmax;
 
   double hexa64ref[3 * 64] = { 
     0, 0, 3, 3, 0, 3, 3, 3, 3, 0, 3, 3, 0, 0, 0, 3, 0, 0, 3, 3, 0, 0, 3, 0,
@@ -334,7 +343,7 @@ void PlotField(int typplot, int compare, Field* f, char* filename) {
 	    // Compare with an exact solution
 	    if (compare) {
 	      double wex[f->model.m];
-	      f->model.ImposedData(Xphy, f->tnow, wex);
+	      f->model.ImposedData(Xphy, f->tnow, wex, mx, my, mz, vmax);
 	      value[nodecount] -= wex[typplot];
 	    }
 	    nodecount++;
@@ -500,11 +509,10 @@ void* DGSubCellInterface(void* mc) {
 			deg[2] + 1};
     const int m = f->model.m;
 
-  int mx = f->model.mx;
-  int my = f->model.my;
-  int mz = f->model.mz;
-  int vmax = f->model.vmax;
-
+    int mx = f->model.mx;
+    int my = f->model.my;
+    int mz = f->model.mz;
+    int vmax = f->model.vmax;
 
     // Loop on the subcells
     for(int icL0 = 0; icL0 < nraf[0]; icL0++) {
@@ -735,7 +743,7 @@ void* DGMacroCellInterface(void* mc) {
 
   	}
   	else { //the right element does not exist
-  	  f->model.BoundaryFlux(xpg, f->tnow, wL, vnds, flux);
+  	  f->model.BoundaryFlux(xpg, f->tnow, wL, vnds, flux, mx, my, mz, vmax);
   	}
   	for(int iv = 0; iv < f->model.m; iv++) {
   	  int imem = f->varindex(iparam, ie, ib, iv);
@@ -876,7 +884,7 @@ void* DGMacroCellInterface2(void* mc) {
 	}
 
 	double flux[m];
-        f->model.BoundaryFlux(xpg, f->tnow, wL, vnds, flux);
+        f->model.BoundaryFlux(xpg, f->tnow, wL, vnds, flux, mx, my, mz, vmax);
         //printf("ipgL=%d tnow=%f wL=%f flux=%f\n",ipgL,f->tnow,wL[0],flux[0]);
 
 	for(int iv = 0; iv < m; iv++) {
@@ -1929,7 +1937,7 @@ void dtFieldSlow(Field* f) {
 
   	}
   	else { //the right element does not exist
-  	  f->model.BoundaryFlux(xpg, f->tnow, wL, vnds, flux);
+  	  f->model.BoundaryFlux(xpg, f->tnow, wL, vnds, flux, mx, my, mz, vmax);
   	}
   	for(int iv = 0; iv < f->model.m; iv++) {
   	  int imem = f->varindex(f->interp_param, ie, ib, iv);
@@ -2104,6 +2112,11 @@ void RK2Copy(Field* f, double tmax) {
 
 // compute the normalized L2 distance with the imposed data
 double L2error(Field* f) {
+  int mx = f->model.mx;
+  int my = f->model.my;
+  int mz = f->model.mz;
+  int vmax = f->model.vmax;
+
   //int param[8] = {f->model.m, _DEGX, _DEGY, _DEGZ, _RAFX, _RAFY, _RAFZ, 0};
   double error = 0;
   double moy = 0; // mean value
@@ -2139,7 +2152,7 @@ double L2error(Field* f) {
 	w[iv] = f->wn[imem];
       }
       // get the exact value
-      f->model.ImposedData(xphy, f->tnow, wex);
+      f->model.ImposedData(xphy, f->tnow, wex, mx, my, mz, vmax);
       for(int iv = 0; iv < f->model.m; iv++) {
         error += pow(w[iv] - wex[iv], 2) * wpg * det;
         moy += pow(w[iv], 2) * wpg * det;

@@ -11,9 +11,8 @@
 #include <assert.h>
 
 int main(void) {
-  // unit tests
+  // Unit tests
   int resu = TestModel();
-	 
   if (resu) printf("Model test OK !\n");
   else printf("Model test failed !\n");
   return !resu;
@@ -37,10 +36,11 @@ int TestModel(void){
   double t = 0;
   double vn[3] = {sqrt(1.0 / 3.0), sqrt(1.0 / 3.0), sqrt(1.0 / 3.0)};
 
-  tr.InitData(x, wR);
+  double vmax = 1.0;
+  tr.InitData(x, wR, tr.m, tr.m, tr.m, vmax);
   tr.NumFlux(wL, wR, vn, flux1, 0, 0, 0, 0.0);
   printf("NumFlux %f \n", flux1[0]);
-  tr.BoundaryFlux(x, t, wL, vn, flux2);
+  tr.BoundaryFlux(x, t, wL, vn, flux2, tr.m, tr.m, tr.m, vmax);
   printf("BoundaryFlux %f \n", flux2[0]);
 
   double err = fabs(flux2[0] - flux1[0]);
