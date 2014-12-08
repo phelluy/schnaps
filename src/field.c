@@ -60,11 +60,6 @@ void CopyFieldtoCPU(Field* f) {
 
 void InitField(Field* f) {
   //int param[8]={f->model.m,_DEGX,_DEGY,_DEGZ,_RAFX,_RAFY,_RAFZ,0};
-  double w[f->model.m];
-  double xpg[3];
-  double xref[3], omega;
-  double physnode[20][3];
-
   f->is2d = false;
 
   // a copy for avoiding too much "->"
@@ -72,8 +67,7 @@ void InitField(Field* f) {
     f->interp_param[ip] = f->interp.interp_param[ip];
   }
 
-  int nmem = f->model.m * f->macromesh.nbelems *
-    NPG(f->interp_param + 1);
+  int nmem = f->model.m * f->macromesh.nbelems * NPG(f->interp_param + 1);
   f->wsize = nmem;
   printf("allocate %d doubles\n", nmem);
   f->wn = calloc(nmem, sizeof(double));
@@ -86,13 +80,18 @@ void InitField(Field* f) {
   f->tnow = 0;
 
   for(int ie = 0; ie < f->macromesh.nbelems; ie++) {
+    
+    double physnode[20][3];
     for(int inoloc = 0; inoloc < 20; inoloc++) {
       int ino = f->macromesh.elem2node[20 * ie + inoloc];
       physnode[inoloc][0] = f->macromesh.node[3 * ino + 0];
       physnode[inoloc][1] = f->macromesh.node[3 * ino + 1];
       physnode[inoloc][2] = f->macromesh.node[3 * ino + 2];
     }
+    
     for(int ipg = 0; ipg < NPG(f->interp_param + 1); ipg++) {
+      double xpg[3];
+      double xref[3], omega;
       ref_pg_vol(f->interp_param + 1, ipg, xref, &omega, NULL);
       double dtau[3][3];
       Ref2Phy(physnode,
@@ -100,11 +99,13 @@ void InitField(Field* f) {
 	      0, -1, // dphiref, ifa
               xpg, dtau,
 	      NULL, NULL, NULL); // codtau, dphi, vnds
-      // check the reverse transform at all the GLOPS
-      double xref2[3];
-      Phy2Ref(physnode, xpg, xref2);
-      assert(Dist(xref, xref2) < 1e-8);
+      { // Check the reverse transform at all the GLOPS
+ 	double xref2[3];
+	Phy2Ref(physnode, xpg, xref2);
+	assert(Dist(xref, xref2) < 1e-8);
+      }
 
+      double w[f->model.m];
       f->model.InitData(xpg, w);
       for(int iv = 0; iv < f->model.m; iv++) {
 	int imem = f->varindex(f->interp_param, ie, ipg, iv);
@@ -118,7 +119,7 @@ void InitField(Field* f) {
 
   for (int ie = 0; ie < f->macromesh.nbelems; ie++) {
     double vol = 0, surf = 0;
-    // get the physical nodes of element ie
+    // Get the physical nodes of element ie
     double physnode[20][3];
     for(int inoloc = 0; inoloc < 20; inoloc++) {
       int ino = f->macromesh.elem2node[20*ie+inoloc];
@@ -126,10 +127,11 @@ void InitField(Field* f) {
       physnode[inoloc][1] = f->macromesh.node[3 * ino + 1];
       physnode[inoloc][2] = f->macromesh.node[3 * ino + 2];
     }
-    // loop on the glops (for numerical integration)
+
+    // Loop on the glops (for numerical integration)
     for(int ipg = 0; ipg < NPG(f->interp_param + 1); ipg++) {
       double xpgref[3], wpg;
-      // get the coordinates of the Gauss point
+      // Get the coordinates of the Gauss point
       ref_pg_vol(f->interp_param + 1, ipg, xpgref, &wpg, NULL);
       double codtau[3][3], dtau[3][3];
       Ref2Phy(physnode, // phys. nodes
@@ -141,30 +143,33 @@ void InitField(Field* f) {
 	= dtau[0][0] * codtau[0][0]
 	+ dtau[0][1] * codtau[0][1]
 	+ dtau[0][2] * codtau[0][2];
-      vol+=wpg*det;
+      vol += wpg * det;
     }
     for(int ifa = 0; ifa < 6; ifa++) {
       // loop on the faces
       for(int ipgf = 0; ipgf < NPGF(f->interp_param + 1, ifa); ipgf++) {
 	double xpgref[3], wpg;
-	//double xpgref2[3], wpg2;
 	// get the coordinates of the Gauss point
 	ref_pg_face(f->interp_param + 1, ifa, ipgf, xpgref, &wpg, NULL);
 	double vnds[3];
-	double codtau[3][3], dtau[3][3];
-	Ref2Phy(physnode,
-		xpgref,
-		NULL, ifa, // dpsiref, ifa
-		NULL, dtau,
-		codtau, NULL, vnds); // codtau, dpsi, vnds
-	surf+=sqrt(vnds[0]*vnds[0]+vnds[1]*vnds[1]+vnds[2]*vnds[2])*wpg;
+	{
+	  double codtau[3][3], dtau[3][3];
+	  Ref2Phy(physnode,
+		  xpgref,
+		  NULL, ifa, // dpsiref, ifa
+		  NULL, dtau,
+		  codtau, NULL, vnds); // codtau, dpsi, vnds
+	}
+	surf += sqrt(vnds[0] * vnds[0]
+		     + vnds[1] * vnds[1]
+		     + vnds[2] * vnds[2]) * wpg;
       }
     }
     f->hmin = f->hmin < vol/surf ? f->hmin : vol/surf;
 
   }
 
-  // now take into account the polynomial degree and the refinement
+  // Now take into account the polynomial degree and the refinement
   int maxd = f->interp_param[1];
   maxd = maxd > f->interp_param[2] ? maxd : f->interp_param[2];
   maxd = maxd > f->interp_param[3] ? maxd : f->interp_param[3];
@@ -177,6 +182,7 @@ void InitField(Field* f) {
   // opencl inits
   InitCLInfo(&(f->cli), _CL_PLATFORM, _CL_DEVICE);
   cl_int status;
+
   f->wn_cl = clCreateBuffer(f->cli.context,
                             CL_MEM_READ_WRITE | CL_MEM_USE_HOST_PTR,
                             sizeof(double) * f->wsize,
@@ -191,7 +197,7 @@ void InitField(Field* f) {
 			      &status);
   assert(status == CL_SUCCESS);
 
-  // program compilation
+  // Program compilation
   char* s;
   ReadFile("src/field.cl", &s);
   BuildKernels(&(f->cli), s);
