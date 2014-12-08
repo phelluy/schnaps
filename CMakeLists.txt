@@ -157,6 +157,15 @@ add_executable(
 target_link_libraries(testmeq2 _schnaps m pthread ${OPENCL_LIBRARY})
 add_test(testmeq2 testmeq2)
 
+add_test(testmanyv testmanyv)
+add_executable(
+  testmanyv
+  test/test.h
+  test/testmanyv.c
+)
+target_link_libraries(testmanyv _schnaps m pthread ${OPENCL_LIBRARY})
+add_test(testmanyv testmanyv)
+
 add_test(testclinfo testclinfo)
 add_executable(
   testclinfo

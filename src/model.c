@@ -16,7 +16,10 @@ const double transport_v2d[] = {ONE_OVER_SQRT_2,
 				ONE_OVER_SQRT_2,
 				0};
 
-void TransportNumFlux(double wL[], double wR[], double* vnorm, double* flux) {
+void TransportNumFlux(double wL[], double wR[], 
+		      double* vnorm, double* flux, 
+		      const int mx, const int my, const int mz, 
+		      const double vmax) {
   double vn 
     = transport_v[0] * vnorm[0] 
     + transport_v[1] * vnorm[1]
@@ -26,7 +29,10 @@ void TransportNumFlux(double wL[], double wR[], double* vnorm, double* flux) {
   flux[0] = vnp * wL[0] + vnm * wR[0];
 };
 
-void TransportNumFlux2d(double wL[], double wR[], double* vnorm, double* flux) {
+void TransportNumFlux2d(double wL[], double wR[], 
+			double* vnorm, double* flux, 
+			const int mx, const int my, const int mz, 
+			const double vmax) {
   double vn 
     = transport_v2d[0] * vnorm[0]
     + transport_v2d[1] * vnorm[1]
@@ -42,7 +48,37 @@ void TransportNumFlux2d(double wL[], double wR[], double* vnorm, double* flux) {
   assert(fabs(vnorm[2]) < 1e-8);
 };
 
-void VecTransNumFlux2d(double wL[], double wR[], double* vnorm, double* flux) {
+void vTransportNumFlux2d(double wL[], double wR[], 
+			 double* vnorm, double* flux,
+			 const int mx, const int my, const int mz, 
+			 const double vmax) 
+{
+  // FIXME: how to get mx, my, and vmax from the model to here?
+  int im = 0;
+  for(int ix = 0; ix < mx; ++ix) {
+    double vx = vmax * (ix - (mx / 2));
+    for(int iy = 0; iy < my; ++iy) {
+      double vy = vmax * (iy - (my / 2));
+      // The 2D velocity is (vx, vy)
+      
+      double vn = vx * vnorm[0]	+ vy * vnorm[1];
+      double vnp = vn > 0 ? vn : 0;
+      double vnm = vn - vnp;
+
+      // NB: assumes a certain memory distribution for the velocity
+      // components at each point.
+      flux[im] = vnp * wL[im] + vnm * wR[im];
+      ++im;
+    }
+  }
+  // Verify that 2d computations are actually activated
+  assert(fabs(vnorm[2]) < 1e-8);
+};
+
+void VecTransNumFlux2d(double wL[], double wR[], 
+		       double* vnorm, double* flux,
+		       const int mx, const int my, const int mz, 
+		       const double vmax) {
   double vn 
     = transport_v2d[0] * vnorm[0]
     + transport_v2d[1] * vnorm[1]
@@ -54,30 +90,32 @@ void VecTransNumFlux2d(double wL[], double wR[], double* vnorm, double* flux) {
   /* if (fabs(vnorm[2])>1e-6) { */
   /*   printf("vnds %lf %lf %lf \n", vnorm[0], vnorm[1], vnorm[2]); */
   /* } */
-  // verify that 2d computations are actually
-  // activated
+  // Verify that 2d computations are actually activated
   assert(fabs(vnorm[2]) < 1e-8);
 };
 
-void TransportBoundaryFlux(double x[3], double t, double wL[], double* vnorm,
+void TransportBoundaryFlux(double x[3], double t, 
+			   double wL[], double* vnorm,
 			   double* flux) {
   double wR[1];
   TransportImposedData(x, t, wR);
-  TransportNumFlux(wL, wR, vnorm, flux);
+  TransportNumFlux(wL, wR, vnorm, flux, 0, 0, 0, 0.0);
 };
 
-void TransportBoundaryFlux2d(double x[3], double t, double wL[], double* vnorm,
+void TransportBoundaryFlux2d(double x[3], double t, 
+			     double wL[], double* vnorm,
 			     double* flux) {
   double wR[1];
   TransportImposedData2d(x, t, wR);
-  TransportNumFlux2d(wL, wR, vnorm, flux);
+  TransportNumFlux2d(wL, wR, vnorm, flux, 0 ,0, 0, 0.0);
 };
 
-void VecTransBoundaryFlux2d(double x[3], double t, double wL[], double* vnorm,
+void VecTransBoundaryFlux2d(double x[3], double t, 
+			    double wL[], double* vnorm,
 			    double* flux) {
   double wR[2];
   VecTransImposedData2d(x, t, wR);
-  VecTransNumFlux2d(wL, wR, vnorm, flux);
+  VecTransNumFlux2d(wL, wR, vnorm, flux, 0 ,0, 0, 0.0);
 };
 
 void TransportInitData(double x[3], double w[]) {
@@ -123,18 +161,19 @@ void VecTransImposedData2d(double x[3], double t, double* w) {
   w[1] = xx * xx;
 };
 
-void TestTransportBoundaryFlux(double x[3], double t, double wL[],double* vnorm,
+void TestTransportBoundaryFlux(double x[3], double t, 
+			       double wL[],double* vnorm,
 			       double* flux) {
   double wR[1];
   TestTransportImposedData(x, t, wR);
-  TransportNumFlux(wL, wR, vnorm, flux);
+  TransportNumFlux(wL, wR, vnorm, flux, 0 ,0, 0, 0.0);
 };
 
 void TestTransportBoundaryFlux2d(double x[3], double t, double wL[],
 				 double* vnorm, double* flux) {
   double wR[1];
   TestTransportImposedData2d(x, t, wR);
-  TransportNumFlux2d(wL, wR, vnorm, flux);
+  TransportNumFlux2d(wL, wR, vnorm, flux, 0 ,0, 0, 0.0);
 };
 
 void TestTransportInitData(double x[3], double w[]) {

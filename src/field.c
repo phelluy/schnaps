@@ -524,6 +524,12 @@ void* DGSubCellInterface(void* mc) {
 			deg[2] + 1};
     const int m = f->model.m;
 
+  int mx = f->model.mx;
+  int my = f->model.my;
+  int mz = f->model.mz;
+  int vmax = f->model.vmax;
+
+
     // Loop on the subcells
     for(int icL0 = 0; icL0 < nraf[0]; icL0++) {
       for(int icL1 = 0; icL1 < nraf[1]; icL1++) {
@@ -607,7 +613,7 @@ void* DGSubCellInterface(void* mc) {
 		    wL[iv] = f->wn[imemL];
 		    wR[iv] = f->wn[imemR];
 		  }
-		  f->model.NumFlux(wL, wR, vnds, flux);
+		  f->model.NumFlux(wL, wR, vnds, flux, mx, my, mz, vmax);
 
 		  // subcell ref surface glop weight
 		  double wpg
@@ -642,6 +648,12 @@ void* DGSubCellInterface(void* mc) {
 void* DGMacroCellInterface(void* mc) {
   MacroCell* mcell = (MacroCell*) mc;
   Field *f = mcell->field;
+
+  int mx = f->model.mx;
+  int my = f->model.my;
+  int mz = f->model.mz;
+  int vmax = f->model.vmax;
+
 
   int iparam[8];
   for(int ip = 0; ip < 8; ip++)
@@ -743,7 +755,7 @@ void* DGMacroCellInterface(void* mc) {
   	    wR[iv] = f->wn[imem];
   	  }
   	  // int_dL F(wL, wR, grad phi_ib )
-  	  f->model.NumFlux(wL, wR, vnds, flux);
+  	  f->model.NumFlux(wL, wR, vnds, flux, mx, my, mz, vmax);
 
   	}
   	else { //the right element does not exist
@@ -768,6 +780,11 @@ void* DGMacroCellInterface2(void* mc) {
   Field *f = mface->field;
   MacroMesh *msh = &(f->macromesh);
   const unsigned int m = f->model.m;
+
+  int mx = f->model.mx;
+  int my = f->model.my;
+  int mz = f->model.mz;
+  int vmax = f->model.vmax;
 
   int iparam[8];
   for(int ip = 0; ip < 8; ip++)
@@ -864,7 +881,7 @@ void* DGMacroCellInterface2(void* mc) {
 
         // int_dL F(wL, wR, grad phi_ib)
 	double flux[m];
-        f->model.NumFlux(wL, wR, vnds, flux);
+        f->model.NumFlux(wL, wR, vnds, flux, mx, my, mz, vmax);
 
 	// Add flux to both sides
 	for(int iv = 0; iv < m; iv++) {
@@ -1469,6 +1486,11 @@ void* DGVolume(void* mc) {
   MacroCell* mcell = (MacroCell*) mc;
   Field *f = mcell->field;
 
+  int mx = f->model.mx;
+  int my = f->model.my;
+  int mz = f->model.mz;
+  int vmax = f->model.vmax;
+
   // loop on the elements
   for (int ie = mcell->first; ie < mcell->last_p1; ie++) {
     // get the physical nodes of element ie
@@ -1580,7 +1602,7 @@ void* DGVolume(void* mc) {
 			    dphiL, // dphi
 			    NULL);  // vnds
 
-		    f->model.NumFlux(wL, wL, dphiL, flux);
+		    f->model.NumFlux(wL, wL, dphiL, flux, mx, my, mz, vmax);
 
 		    int ipgR = offsetL+q[0]+npg[0]*(q[1]+npg[1]*q[2]);
 		    for(int iv = 0; iv < m; iv++) {
@@ -1611,6 +1633,10 @@ void* DGVolume(void* mc) {
 // compute the Discontinuous Galerkin volume terms
 // slow version
 void DGVolumeSlow(Field* f) {
+  int mx = f->model.mx;
+  int my = f->model.my;
+  int mz = f->model.mz;
+  int vmax = f->model.vmax;
 
   // assembly of the volume terms
   // loop on the elements
@@ -1660,7 +1686,7 @@ void DGVolumeSlow(Field* f) {
 	}
 	// int_L F(w, w, grad phi_ib )
 	double flux[f->model.m];
-	f->model.NumFlux(w, w, dpsi, flux);
+	f->model.NumFlux(w, w, dpsi, flux, mx, my, mz, vmax);
 
 	for(int iv = 0; iv < f->model.m; iv++) {
 	  int imem = f->varindex(f->interp_param, ie, ib, iv);
@@ -1810,14 +1836,18 @@ void dtField(Field* f) {
 // Apply the Discontinuous Galerkin approximation for computing the
 // time derivative of the field
 void dtFieldSlow(Field* f) {
+  int mx = f->model.mx;
+  int my = f->model.my;
+  int mz = f->model.mz;
+  int vmax = f->model.vmax;
 
-  // interpolation params
-  // warning: this is ugly, but the last
-  // parameter is used for computing the volume
-  // GLOP index from the face GLOP index...
-  // ugly too: the first parameter is not used by all
+  // Interpolation params
+  // Warning: this is ugly, but the last parameter is used for
+  // computing the volume GLOP index from the face GLOP index...
+  // Ugly too: the first parameter is not used by all
   // utilities. we have sometimes to jump over : pass param + 1
   // instead of param...
+
   //int param[8] = {f->model.m, _DEGX, _DEGY, _DEGZ, _RAFX, _RAFY, _RAFZ, 0};
 
   // init to zero the time derivative
@@ -1919,7 +1949,7 @@ void dtFieldSlow(Field* f) {
   	    wR[iv] = f->wn[imem];
   	  }
   	  // int_dL F(wL, wR, grad phi_ib )
-  	  f->model.NumFlux(wL, wR, vnds, flux);
+  	  f->model.NumFlux(wL, wR, vnds, flux, mx, my, mz, vmax);
 
   	}
   	else { //the right element does not exist
@@ -1935,34 +1965,33 @@ void dtFieldSlow(Field* f) {
     }
   }
 
-  // assembly of the volume terms
-  // loop on the elements
-  //#pragma omp parallel for
+  // Assembly of the volume terms loop on the elements
   for (int ie = 0; ie < f->macromesh.nbelems; ie++) {
     // get the physical nodes of element ie
     double physnode[20][3];
     for(int inoloc = 0; inoloc < 20; inoloc++) {
-      int ino = f->macromesh.elem2node[20*ie+inoloc];
+      int ino = f->macromesh.elem2node[20 * ie + inoloc];
       physnode[inoloc][0] = f->macromesh.node[3 * ino + 0];
       physnode[inoloc][1] = f->macromesh.node[3 * ino + 1];
       physnode[inoloc][2] = f->macromesh.node[3 * ino + 2];
     }
 
-    // mass matrix
+    // Mass matrix
     double masspg[NPG(f->interp_param + 1)];
-    // loop on the glops (for numerical integration)
+    // Loop on the glops (for numerical integration)
     for(int ipg = 0; ipg < NPG(f->interp_param + 1); ipg++) {
       double xpgref[3], wpg;
-      // get the coordinates of the Gauss point
+      // Get the coordinates of the Gauss point
       ref_pg_vol(f->interp_param + 1, ipg, xpgref, &wpg, NULL);
 
-      // get the value of w at the gauss point
+      // Get the value of w at the gauss point
       double w[f->model.m];
       for(int iv = 0; iv < f->model.m; iv++) {
 	int imem = f->varindex(f->interp_param, ie, ipg, iv);
 	w[iv] = f->wn[imem];
       }
-      // loop on the basis functions
+
+      // Loop on the basis functions
       for(int ib = 0; ib < NPG(f->interp_param + 1); ib++) {
 	// gradient of psi_ib at gauss point ipg
 	double dpsiref[3], dpsi[3];
@@ -1979,15 +2008,15 @@ void dtFieldSlow(Field* f) {
 	    = dtau[0][0] * codtau[0][0]
 	    + dtau[0][1] * codtau[0][1]
 	    + dtau[0][2] * codtau[0][2];
-	  masspg[ipg] = wpg*det;
+	  masspg[ipg] = wpg * det;
 	}
 	// int_L F(w, w, grad phi_ib )
 	double flux[f->model.m];
-	f->model.NumFlux(w, w, dpsi, flux);
+	f->model.NumFlux(w, w, dpsi, flux, mx, my, mz, vmax);
 
 	for(int iv = 0; iv < f->model.m; iv++) {
 	  int imem = f->varindex(f->interp_param, ie, ib, iv);
-	  f->dtwn[imem]+=flux[iv]*wpg;
+	  f->dtwn[imem] += flux[iv] * wpg;
 	}
       }
     }
@@ -1996,7 +2025,7 @@ void dtFieldSlow(Field* f) {
       // apply the inverse of the diagonal mass matrix
       for(int iv = 0; iv < f->model.m; iv++) {
 	int imem = f->varindex(f->interp_param, ie, ipg, iv);
-	(f->dtwn[imem])/=masspg[ipg];
+	(f->dtwn[imem]) /= masspg[ipg];
       }
     }
 
