@@ -11,13 +11,13 @@ int main(void) {
   f.model.ImposedData = TransportImposedData2d;
   f.varindex = GenericVarindex;
 
-  f.interp.interp_param[0] = 1;  // _M
-  f.interp.interp_param[1] = 3;  // x direction degree
-  f.interp.interp_param[2] = 3;  // y direction degree
-  f.interp.interp_param[3] = 0;  // z direction degree
-  f.interp.interp_param[4] = 4;  // x direction refinement
-  f.interp.interp_param[5] = 4;  // y direction refinement
-  f.interp.interp_param[6] = 1;  // z direction refinement
+  f.interp.interp_param[0] = 1; // _M
+  f.interp.interp_param[1] = 3; // x direction degree
+  f.interp.interp_param[2] = 3; // y direction degree
+  f.interp.interp_param[3] = 0; // z direction degree
+  f.interp.interp_param[4] = 4; // x direction refinement
+  f.interp.interp_param[5] = 4; // y direction refinement
+  f.interp.interp_param[6] = 1; // z direction refinement
 
   // Read the gmsh file
   ReadMacroMesh(&(f.macromesh), "disque.msh");
@@ -42,8 +42,9 @@ int main(void) {
   printf("cfl param =%f\n", f.hmin);
 
   // Apply the DG scheme time integration by RK2 scheme up to final
-  // time = 1.
-  RK2(&f, 1.0);
+  // time tmax.
+  double tmax = 1.0;
+  RK2(&f, tmax);
 
   // Save the results and the error
   PlotField(0, false, &f, "dgvisu.msh");
