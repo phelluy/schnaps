@@ -62,11 +62,6 @@ void InitField(Field* f) {
   //int param[8]={f->model.m,_DEGX,_DEGY,_DEGZ,_RAFX,_RAFY,_RAFZ,0};
   f->is2d = false;
 
-  int mx = f->model.mx;
-  int my = f->model.my;
-  int mz = f->model.mz;
-  int vmax = f->model.vmax;
-
   // a copy for avoiding too much "->"
   for(int ip = 0; ip < 8; ip++) {
     f->interp_param[ip] = f->interp.interp_param[ip];
@@ -111,7 +106,7 @@ void InitField(Field* f) {
       }
 
       double w[f->model.m];
-      f->model.InitData(xpg, w, mx, my, mz, vmax);
+      f->model.InitData(xpg, w);
       for(int iv = 0; iv < f->model.m; iv++) {
 	int imem = f->varindex(f->interp_param, ie, ipg, iv);
 	f->wn[imem] = w[iv];
@@ -254,10 +249,6 @@ void DisplayField(Field* f) {
 // typplot: index of the plotted variable
 // int compare == true -> compare with the exact value
 void PlotField(int typplot, int compare, Field* f, char* filename) {
-  int mx = f->model.mx;
-  int my = f->model.my;
-  int mz = f->model.mz;
-  int vmax = f->model.vmax;
 
   double hexa64ref[3 * 64] = { 
     0, 0, 3, 3, 0, 3, 3, 3, 3, 0, 3, 3, 0, 0, 0, 3, 0, 0, 3, 3, 0, 0, 3, 0,
@@ -343,7 +334,7 @@ void PlotField(int typplot, int compare, Field* f, char* filename) {
 	    // Compare with an exact solution
 	    if (compare) {
 	      double wex[f->model.m];
-	      f->model.ImposedData(Xphy, f->tnow, wex, mx, my, mz, vmax);
+	      f->model.ImposedData(Xphy, f->tnow, wex);
 	      value[nodecount] -= wex[typplot];
 	    }
 	    nodecount++;
@@ -509,11 +500,6 @@ void* DGSubCellInterface(void* mc) {
 			deg[2] + 1};
     const int m = f->model.m;
 
-    int mx = f->model.mx;
-    int my = f->model.my;
-    int mz = f->model.mz;
-    int vmax = f->model.vmax;
-
     // Loop on the subcells
     for(int icL0 = 0; icL0 < nraf[0]; icL0++) {
       for(int icL1 = 0; icL1 < nraf[1]; icL1++) {
@@ -597,7 +583,7 @@ void* DGSubCellInterface(void* mc) {
 		    wL[iv] = f->wn[imemL];
 		    wR[iv] = f->wn[imemR];
 		  }
-		  f->model.NumFlux(wL, wR, vnds, flux, mx, my, mz, vmax);
+		  f->model.NumFlux(wL, wR, vnds, flux);
 
 		  // subcell ref surface glop weight
 		  double wpg
@@ -632,12 +618,6 @@ void* DGSubCellInterface(void* mc) {
 void* DGMacroCellInterface(void* mc) {
   MacroCell* mcell = (MacroCell*) mc;
   Field *f = mcell->field;
-
-  int mx = f->model.mx;
-  int my = f->model.my;
-  int mz = f->model.mz;
-  int vmax = f->model.vmax;
-
 
   int iparam[8];
   for(int ip = 0; ip < 8; ip++)
@@ -739,11 +719,11 @@ void* DGMacroCellInterface(void* mc) {
   	    wR[iv] = f->wn[imem];
   	  }
   	  // int_dL F(wL, wR, grad phi_ib )
-  	  f->model.NumFlux(wL, wR, vnds, flux, mx, my, mz, vmax);
+  	  f->model.NumFlux(wL, wR, vnds, flux);
 
   	}
   	else { //the right element does not exist
-  	  f->model.BoundaryFlux(xpg, f->tnow, wL, vnds, flux, mx, my, mz, vmax);
+  	  f->model.BoundaryFlux(xpg, f->tnow, wL, vnds, flux);
   	}
   	for(int iv = 0; iv < f->model.m; iv++) {
   	  int imem = f->varindex(iparam, ie, ib, iv);
@@ -764,11 +744,6 @@ void* DGMacroCellInterface2(void* mc) {
   Field *f = mface->field;
   MacroMesh *msh = &(f->macromesh);
   const unsigned int m = f->model.m;
-
-  int mx = f->model.mx;
-  int my = f->model.my;
-  int mz = f->model.mz;
-  int vmax = f->model.vmax;
 
   int iparam[8];
   for(int ip = 0; ip < 8; ip++)
@@ -865,7 +840,7 @@ void* DGMacroCellInterface2(void* mc) {
 
         // int_dL F(wL, wR, grad phi_ib)
 	double flux[m];
-        f->model.NumFlux(wL, wR, vnds, flux, mx, my, mz, vmax);
+        f->model.NumFlux(wL, wR, vnds, flux);
 
 	// Add flux to both sides
 	for(int iv = 0; iv < m; iv++) {
@@ -884,7 +859,7 @@ void* DGMacroCellInterface2(void* mc) {
 	}
 
 	double flux[m];
-        f->model.BoundaryFlux(xpg, f->tnow, wL, vnds, flux, mx, my, mz, vmax);
+        f->model.BoundaryFlux(xpg, f->tnow, wL, vnds, flux);
         //printf("ipgL=%d tnow=%f wL=%f flux=%f\n",ipgL,f->tnow,wL[0],flux[0]);
 
 	for(int iv = 0; iv < m; iv++) {
@@ -1470,11 +1445,6 @@ void* DGVolume(void* mc) {
   MacroCell* mcell = (MacroCell*) mc;
   Field *f = mcell->field;
 
-  int mx = f->model.mx;
-  int my = f->model.my;
-  int mz = f->model.mz;
-  int vmax = f->model.vmax;
-
   // loop on the elements
   for (int ie = mcell->first; ie < mcell->last_p1; ie++) {
     // get the physical nodes of element ie
@@ -1586,7 +1556,7 @@ void* DGVolume(void* mc) {
 			    dphiL, // dphi
 			    NULL);  // vnds
 
-		    f->model.NumFlux(wL, wL, dphiL, flux, mx, my, mz, vmax);
+		    f->model.NumFlux(wL, wL, dphiL, flux);
 
 		    int ipgR = offsetL+q[0]+npg[0]*(q[1]+npg[1]*q[2]);
 		    for(int iv = 0; iv < m; iv++) {
@@ -1614,17 +1584,11 @@ void* DGVolume(void* mc) {
   return NULL;
 }
 
-// compute the Discontinuous Galerkin volume terms
-// slow version
+// Compute the Discontinuous Galerkin volume terms: slow version
 void DGVolumeSlow(Field* f) {
-  int mx = f->model.mx;
-  int my = f->model.my;
-  int mz = f->model.mz;
-  int vmax = f->model.vmax;
+  // Assembly of the volume terms
 
-  // assembly of the volume terms
-  // loop on the elements
-  //#pragma omp parallel for
+  // Loop on the elements
   for (int ie = 0; ie < f->macromesh.nbelems; ie++) {
     // get the physical nodes of element ie
     double physnode[20][3];
@@ -1670,7 +1634,7 @@ void DGVolumeSlow(Field* f) {
 	}
 	// int_L F(w, w, grad phi_ib )
 	double flux[f->model.m];
-	f->model.NumFlux(w, w, dpsi, flux, mx, my, mz, vmax);
+	f->model.NumFlux(w, w, dpsi, flux);
 
 	for(int iv = 0; iv < f->model.m; iv++) {
 	  int imem = f->varindex(f->interp_param, ie, ib, iv);
@@ -1820,11 +1784,6 @@ void dtField(Field* f) {
 // Apply the Discontinuous Galerkin approximation for computing the
 // time derivative of the field
 void dtFieldSlow(Field* f) {
-  int mx = f->model.mx;
-  int my = f->model.my;
-  int mz = f->model.mz;
-  int vmax = f->model.vmax;
-
   // Interpolation params
   // Warning: this is ugly, but the last parameter is used for
   // computing the volume GLOP index from the face GLOP index...
@@ -1933,11 +1892,11 @@ void dtFieldSlow(Field* f) {
   	    wR[iv] = f->wn[imem];
   	  }
   	  // int_dL F(wL, wR, grad phi_ib )
-  	  f->model.NumFlux(wL, wR, vnds, flux, mx, my, mz, vmax);
+  	  f->model.NumFlux(wL, wR, vnds, flux);
 
   	}
   	else { //the right element does not exist
-  	  f->model.BoundaryFlux(xpg, f->tnow, wL, vnds, flux, mx, my, mz, vmax);
+  	  f->model.BoundaryFlux(xpg, f->tnow, wL, vnds, flux);
   	}
   	for(int iv = 0; iv < f->model.m; iv++) {
   	  int imem = f->varindex(f->interp_param, ie, ib, iv);
@@ -1996,7 +1955,7 @@ void dtFieldSlow(Field* f) {
 	}
 	// int_L F(w, w, grad phi_ib )
 	double flux[f->model.m];
-	f->model.NumFlux(w, w, dpsi, flux, mx, my, mz, vmax);
+	f->model.NumFlux(w, w, dpsi, flux);
 
 	for(int iv = 0; iv < f->model.m; iv++) {
 	  int imem = f->varindex(f->interp_param, ie, ib, iv);
@@ -2016,9 +1975,8 @@ void dtFieldSlow(Field* f) {
   }
 };
 
-// time integration by a second order Runge-Kutta algorithm
+// Time integration by a second order Runge-Kutta algorithm
 void RK2(Field* f, double tmax) {
-
   double vmax = 1; // to be changed for another model !!!!!!!!!
   double cfl = 0.05;
 
@@ -2068,8 +2026,8 @@ void RK2(Field* f, double tmax) {
   printf("t=%f iter=%d/%d dt=%f\n", f->tnow, iter, itermax, dt);
 }
 
-// time integration by a second order Runge-Kutta algorithm
-//  with memory copy instead of pointers exchange
+// Time integration by a second order Runge-Kutta algorithm with
+// memory copy instead of pointers exchange
 void RK2Copy(Field* f, double tmax) {
   double vmax = 1; // to be changed for another model !!!!!!!!!
   double cfl = 0.05;
@@ -2112,11 +2070,6 @@ void RK2Copy(Field* f, double tmax) {
 
 // compute the normalized L2 distance with the imposed data
 double L2error(Field* f) {
-  int mx = f->model.mx;
-  int my = f->model.my;
-  int mz = f->model.mz;
-  int vmax = f->model.vmax;
-
   //int param[8] = {f->model.m, _DEGX, _DEGY, _DEGZ, _RAFX, _RAFY, _RAFZ, 0};
   double error = 0;
   double moy = 0; // mean value
@@ -2152,7 +2105,7 @@ double L2error(Field* f) {
 	w[iv] = f->wn[imem];
       }
       // get the exact value
-      f->model.ImposedData(xphy, f->tnow, wex, mx, my, mz, vmax);
+      f->model.ImposedData(xphy, f->tnow, wex);
       for(int iv = 0; iv < f->model.m; iv++) {
         error += pow(w[iv] - wex[iv], 2) * wpg * det;
         moy += pow(w[iv], 2) * wpg * det;

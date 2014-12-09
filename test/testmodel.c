@@ -37,10 +37,10 @@ int TestModel(void){
   double vn[3] = {sqrt(1.0 / 3.0), sqrt(1.0 / 3.0), sqrt(1.0 / 3.0)};
 
   double vmax = 1.0;
-  tr.InitData(x, wR, tr.m, tr.m, tr.m, vmax);
-  tr.NumFlux(wL, wR, vn, flux1, 0, 0, 0, 0.0);
+  tr.InitData(x, wR);
+  tr.NumFlux(wL, wR, vn, flux1);
   printf("NumFlux %f \n", flux1[0]);
-  tr.BoundaryFlux(x, t, wL, vn, flux2, tr.m, tr.m, tr.m, vmax);
+  tr.BoundaryFlux(x, t, wL, vn, flux2);
   printf("BoundaryFlux %f \n", flux2[0]);
 
   double err = fabs(flux2[0] - flux1[0]);

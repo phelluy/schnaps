@@ -16,10 +16,7 @@ const double transport_v2d[] = {ONE_OVER_SQRT_2,
 				ONE_OVER_SQRT_2,
 				0};
 
-void TransNumFlux(double wL[], double wR[], 
-		      double* vnorm, double* flux, 
-		      const int mx, const int my, const int mz, 
-		      const double vmax) {
+void TransNumFlux(double wL[], double wR[], double* vnorm, double* flux) {
   double vn 
     = transport_v[0] * vnorm[0] 
     + transport_v[1] * vnorm[1]
@@ -29,10 +26,7 @@ void TransNumFlux(double wL[], double wR[],
   flux[0] = vnp * wL[0] + vnm * wR[0];
 };
 
-void TransNumFlux2d(double wL[], double wR[], 
-			double* vnorm, double* flux, 
-			const int mx, const int my, const int mz, 
-			const double vmax) {
+void TransNumFlux2d(double wL[], double wR[], double* vnorm, double* flux) {
   double vn 
     = transport_v2d[0] * vnorm[0]
     + transport_v2d[1] * vnorm[1]
@@ -48,36 +42,7 @@ void TransNumFlux2d(double wL[], double wR[],
   assert(fabs(vnorm[2]) < 1e-8);
 };
 
-void vTransNumFlux2d(double wL[], double wR[], 
-			 double* vnorm, double* flux,
-			 const int mx, const int my, const int mz, 
-			 const double vmax) 
-{
-  int im = 0;
-  for(int ix = 0; ix < mx; ++ix) {
-    double vx = vmax * (ix - (mx / 2));
-    for(int iy = 0; iy < my; ++iy) {
-      double vy = vmax * (iy - (my / 2));
-      // The 2D velocity is (vx, vy)
-      
-      double vn = vx * vnorm[0]	+ vy * vnorm[1];
-      double vnp = vn > 0 ? vn : 0;
-      double vnm = vn - vnp;
-
-      // NB: assumes a certain memory distribution for the velocity
-      // components at each point.
-      flux[im] = vnp * wL[im] + vnm * wR[im];
-      ++im;
-    }
-  }
-  // Verify that 2d computations are actually activated
-  assert(fabs(vnorm[2]) < 1e-8);
-};
-
-void VecTransNumFlux2d(double wL[], double wR[], 
-		       double* vnorm, double* flux,
-		       const int mx, const int my, const int mz, 
-		       const double vmax) {
+void VecTransNumFlux2d(double wL[], double wR[], double* vnorm, double* flux) {
   double vn 
     = transport_v2d[0] * vnorm[0]
     + transport_v2d[1] * vnorm[1]
@@ -93,59 +58,44 @@ void VecTransNumFlux2d(double wL[], double wR[],
   assert(fabs(vnorm[2]) < 1e-8);
 };
 
-void TransBoundaryFlux(double x[3], double t, 
-			   double wL[], double* vnorm,
-			   double* flux,
-			   int mx, int my, int mz, double vmax) {
+void TransBoundaryFlux(double x[3], double t, double wL[], double* vnorm,
+		       double* flux) {
   double wR[1];
-  TransImposedData(x, t, wR, mx, my, mz, vmax);
-  TransNumFlux(wL, wR, vnorm, flux, 0, 0, 0, 0.0);
+  TransImposedData(x, t, wR);
+  TransNumFlux(wL, wR, vnorm, flux);
 };
 
-void TransBoundaryFlux2d(double x[3], double t, 
-			     double wL[], double* vnorm,
-			     double* flux,
-			     int mx, int my, int mz, double vmax) {
+void TransBoundaryFlux2d(double x[3], double t, double wL[], double *vnorm,
+			 double *flux) {
   double wR[1];
-  TransImposedData2d(x, t, wR, mx, my, mz, vmax);
-  TransNumFlux2d(wL, wR, vnorm, flux, mx, my, mz, vmax);
+  TransImposedData2d(x, t, wR);
+  TransNumFlux2d(wL, wR, vnorm, flux);
 };
 
 void VecTransBoundaryFlux2d(double x[3], double t, 
-			    double wL[], double* vnorm,
-			    double* flux,
-			    int mx, int my, int mz, double vmax) {
+			    double wL[], double *vnorm,
+			    double* flux) {
   double wR[2];
-  VecTransImposedData2d(x, t, wR, mx, my, mz, vmax);
-  VecTransNumFlux2d(wL, wR, vnorm, flux, mx, my, mz, vmax);
+  VecTransImposedData2d(x, t, wR);
+  VecTransNumFlux2d(wL, wR, vnorm, flux);
 };
 
-void TransInitData(double x[3], double w[], 
-		       int mx, int my, int mz, double vmax) {
+void TransInitData(double x[3], double w[]) {
   double t = 0;
-  TransImposedData(x, t, w, mx, my, mz, vmax);
+  TransImposedData(x, t, w);
 };
 
-void TransInitData2d(double x[3], double w[], 
-			 int mx, int my, int mz, double vmax) {
+void TransInitData2d(double x[3], double w[]) {
   double t = 0;
-  TransImposedData2d(x, t, w, mx, my, mz, vmax);
+  TransImposedData2d(x, t, w);
 };
 
-void vTransInitData2d(double x[3], double w[], 
-			  int mx, int my, int mz, double vmax) {
+void VecTransInitData2d(double x[3], double w[]) {
   double t = 0;
-  vTransImposedData2d(x, t, w, mx, my, mz, vmax);
+  VecTransImposedData2d(x, t, w);
 };
 
-void VecTransInitData2d(double x[3], double w[], 
-			int mx, int my, int mz, double vmax) {
-  double t = 0;
-  VecTransImposedData2d(x, t, w, mx, my, mz, vmax);
-};
-
-void TransImposedData(double x[3], double t, double w[], 
-			  int mx, int my, int mz, double vmax) {
+void TransImposedData(double x[3], double t, double w[]) {
   double vx =
     transport_v[0] * x[0] +
     transport_v[1] * x[1] +
@@ -154,8 +104,7 @@ void TransImposedData(double x[3], double t, double w[],
   w[0]=cos(xx);
 };
 
-void TransImposedData2d(double x[3], double t, double w[], 
-			    int mx, int my, int mz, double vmax) {
+void TransImposedData2d(double x[3], double t, double w[]) {
   double vx 
     = transport_v2d[0] * x[0]
     + transport_v2d[1] * x[1]
@@ -165,8 +114,7 @@ void TransImposedData2d(double x[3], double t, double w[],
 };
 
 // m = 2 test-case
-void VecTransImposedData2d(double x[3], double t, double* w, 
-			  int mx, int my, int mz, double vmax) {
+void VecTransImposedData2d(double x[3], double t, double* w) {
   double vx 
     = transport_v2d[0] * x[0]
     + transport_v2d[1] * x[1]
@@ -176,61 +124,33 @@ void VecTransImposedData2d(double x[3], double t, double* w,
   w[1] = xx * xx;
 };
 
-// zero-centered Gaussian distribution in both x and v.
-void vTransImposedData2d(double x[3], double t, double* w, 
-			 int mx, int my, int mz, double vmax) {
-  double PI = 4.0 * atan(1.0);
-  double s2pi = sqrt(2.0 * PI);
-  double xval = 1.0;
-
-
-  int im = 0;
-  for(int ix = 0; ix < mx; ++ix) {
-    double vx = vmax * (ix - (mx / 2));
-        
-    for(int iy = 0; iy < my; ++iy) {
-      double vy = vmax * (iy - (my / 2));
-      // The 2D velocity is (vx, vy)
-      double v = vx * x[0] + vy * x[1];
-      double xx = v - t;
-      w[im++] = xx * xx; // FIXME: choose a function.
-    }
-  }
-  //v = vx - y
-  //f = (1 + (- 3 + (3 - v * v ) * v * v) * v * v) * hh
-};
 
 void TestTransBoundaryFlux(double x[3], double t, 
 			       double wL[], double* vnorm,
-			       double* flux, 
-			       int mx, int my, int mz, double vmax) {
+			       double* flux) {
   double wR[1];
-  TestTransImposedData(x, t, wR, mx, my, mz, vmax);
-  TransNumFlux(wL, wR, vnorm, flux, 0 ,0, 0, 0.0);
+  TestTransImposedData(x, t, wR);
+  TransNumFlux(wL, wR, vnorm, flux);
 };
 
 void TestTransBoundaryFlux2d(double x[3], double t, double wL[],
-				 double* vnorm, double* flux, 
-				 int mx, int my, int mz, double vmax) {
+				 double* vnorm, double* flux) {
   double wR[1];
-  TestTransImposedData2d(x, t, wR, mx, my, mz, vmax);
-  TransNumFlux2d(wL, wR, vnorm, flux, 0 ,0, 0, 0.0);
+  TestTransImposedData2d(x, t, wR);
+  TransNumFlux2d(wL, wR, vnorm, flux);
 };
 
-void TestTransInitData(double x[3], double w[], 
-			   int mx, int my, int mz, double vmax) {
+void TestTransInitData(double x[3], double w[]) {
   double t = 0;
-  TestTransImposedData(x, t, w, mx, my, mz, vmax);
+  TestTransImposedData(x, t, w);
 };
 
-void TestTransInitData2d(double x[3], double w[], 
-			     int mx, int my, int mz, double vmax) {
+void TestTransInitData2d(double x[3], double w[]) {
   double t = 0;
-  TestTransImposedData2d(x, t, w, mx, my, mz, vmax);
+  TestTransImposedData2d(x, t, w);
 };
 
-void TestTransImposedData(double x[3], double t, double w[], 
-			      int mx, int my, int mz, double vmax) {
+void TestTransImposedData(double x[3], double t, double w[]) {
   double vx 
     = transport_v[0] * x[0] 
     + transport_v[1] * x[1] 
@@ -239,12 +159,101 @@ void TestTransImposedData(double x[3], double t, double w[],
   w[0] = xx * xx;
 };
 
-void TestTransImposedData2d(double x[3], double t, double w[], 
-				int mx, int my, int mz, double vmax) {
+void TestTransImposedData2d(double x[3], double t, double w[]) {
   double vx 
     = transport_v2d[0] * x[0] 
     + transport_v2d[1] * x[1] 
     + transport_v2d[2] * x[2];
   double xx = vx - t;
   w[0] = xx * xx;
+};
+
+// Vlasov 2D transport equation functions
+
+// Set the parameters for the Vlasov equation that are stored in the
+// global space of model.h
+void set_vlasov_params(int mx0, int my0, int mz0, double vmax0) 
+{
+  mx = mx0;
+  my = my0;
+  mz = mz0;
+  vmax = vmax0;
+}
+
+void vlaTransInitData2d(double x[3], double w[]) 
+{
+  double t = 0;
+  vlaTransImposedData2d(x, t, w);
+};
+
+void vlaTransNumFlux2d(double wL[], double wR[], double* vnorm, double* flux) 
+{
+  int im = 0;
+  for(int ix = 0; ix < mx; ++ix) {
+    double vx = vmax * (ix - (mx / 2));
+
+    for(int iy = 0; iy < my; ++iy) {
+      double vy = vmax * (iy - (my / 2));
+      
+      double vn = vx * vnorm[0]	+ vy * vnorm[1];
+      double vnp = vn > 0 ? vn : 0;
+      double vnm = vn - vnp;
+      
+      // NB: assumes a certain memory distribution for the velocity
+      // components at each point.
+      flux[im] = vnp * wL[im] + vnm * wR[im];
+
+      ++im;
+    }
+  }
+  // Verify that 2d computations are actually activated
+  assert(fabs(vnorm[2]) < 1e-8);
+};
+
+void vlaTransBoundaryFlux2d(double x[3], double t, 
+			    double wL[], double* vnorm,
+			    double* flux) 
+{
+  double wR[2]; // FIXME implicit assumption m = 2
+  vlaTransImposedData2d(x, t, wR);
+  vlaTransNumFlux2d(wL, wR, vnorm, flux);
+};
+
+// 6th-degree polynomial with compact support
+double compact_poly6(double r)
+{
+  if (fabs(2 * r) > 1)
+    return 0;
+  double rrm1 = 2 * r - 1;
+  double rrp1 = 2 * r + 1;
+  return -35.0 / 16.0 * rrm1 * rrm1 * rrm1 * rrp1 * rrp1 * rrp1;
+}
+
+// Impose a compact-supporrt 6th degree polynomial in 2+2D
+void vlaTransImposedData2d(double x[3], double t, double* w) 
+{
+  double PI = 4.0 * atan(1.0);
+  double s2pi = sqrt(2.0 * PI);
+  double xval = 1.0;
+
+  printf("mx: %d\n", mx);
+  printf("my: %d\n", my);
+
+  double r = sqrt(x[0] * x[0] + x[1] * x[1]);
+  double pr = compact_poly6(r);
+
+  int im = 0;
+  for(int ix = 0; ix < mx; ++ix) {
+    double vx = vmax * (ix - (mx / 2));
+
+    for(int iy = 0; iy < my; ++iy) {
+      double vy = vmax * (iy - (my / 2));
+
+      double vr = sqrt(vx * vx + vy * vy);
+      double pvr = compact_poly6(vr);
+
+      printf("im: %d", im);
+      w[im++] = pr * pvr;
+    }
+  }
 };
