@@ -6,32 +6,24 @@
 #include <math.h>
 
 int main(void) {
-  
-  // unit tests
-    
-  int resu=TestKernelVolume();
-	 
+  // Unit tests
+  int resu = TestKernelVolume();
   if (resu) printf("Volume Kernel test OK !\n");
   else printf("Volume Kernel test failed !\n");
-
   return !resu;
 } 
-
-
-
 
 int TestKernelVolume(void){
 
   bool test=true;
 
   Field f;
-  f.model.m=1; // only one conservative variable
-  f.model.NumFlux=TransportNumFlux2d;
-  f.model.BoundaryFlux=TransportBoundaryFlux2d;
-  f.model.InitData=TransportInitData2d;
-  f.model.ImposedData=TransportImposedData2d;
-  f.varindex=GenericVarindex;
-
+  f.model.m = 1; // only one conservative variable
+  f.model.NumFlux = TransNumFlux2d;
+  f.model.BoundaryFlux = TransBoundaryFlux2d;
+  f.model.InitData = TransInitData2d;
+  f.model.ImposedData = TransImposedData2d;
+  f.varindex = GenericVarindex;
 
   f.interp.interp_param[0]=1;  // _M
   f.interp.interp_param[1]=2;  // x direction degree
@@ -129,5 +121,4 @@ int TestKernelVolume(void){
   test=(maxerr < 1e-8);
 
   return test;
-
 }

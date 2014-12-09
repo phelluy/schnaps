@@ -23,10 +23,10 @@ int TestModel(void){
   // Creation of a simple transport model
   Model tr;
   tr.m = 1; // only one conservative variable
-  tr.NumFlux = TransportNumFlux;
-  tr.BoundaryFlux = TestTransportBoundaryFlux;
-  tr.InitData = TestTransportInitData;
-  tr.ImposedData = TestTransportImposedData;
+  tr.NumFlux = TransNumFlux;
+  tr.BoundaryFlux = TestTransBoundaryFlux;
+  tr.InitData = TestTransInitData;
+  tr.ImposedData = TestTransImposedData;
 
   double wL[tr.m];
   double wR[tr.m];

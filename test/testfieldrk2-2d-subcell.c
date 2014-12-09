@@ -3,31 +3,26 @@
 #include<stdio.h>
 #include <assert.h>
 #include <math.h>
+
 int main(void) {
-  
   // unit tests
-    
   int resu=TestFieldRK2_2D_SubCell();
-	 
   if (resu) printf("Field RK2 2D Subcell test OK !\n");
   else printf("Field RK2 2D Subcell test failed !\n");
-
   return !resu;
 } 
-
-
 
 int TestFieldRK2_2D_SubCell(void) {
 
   bool test=true;
 
   Field f;
-  f.model.m=1; // only one conservative variable
-  f.model.NumFlux=TransportNumFlux2d;
-  f.model.BoundaryFlux=TransportBoundaryFlux2d;
-  f.model.InitData=TransportInitData2d;
-  f.model.ImposedData=TransportImposedData2d;
-  f.varindex=GenericVarindex;
+  f.model.m = 1; // only one conservative variable
+  f.model.NumFlux = TransNumFlux2d;
+  f.model.BoundaryFlux = TransBoundaryFlux2d;
+  f.model.InitData = TransInitData2d;
+  f.model.ImposedData = TransImposedData2d;
+  f.varindex = GenericVarindex;
 
 
   f.interp.interp_param[0]=1;  // _M

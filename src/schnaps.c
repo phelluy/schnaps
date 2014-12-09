@@ -5,10 +5,10 @@
 int main(void) {
   Field f;
   f.model.m = 1; // only one conservative variable
-  f.model.NumFlux = TransportNumFlux2d;
-  f.model.BoundaryFlux = TransportBoundaryFlux2d;
-  f.model.InitData = TransportInitData2d;
-  f.model.ImposedData = TransportImposedData2d;
+  f.model.NumFlux = TransNumFlux2d;
+  f.model.BoundaryFlux = TransBoundaryFlux2d;
+  f.model.InitData = TransInitData2d;
+  f.model.ImposedData = TransImposedData2d;
   f.varindex = GenericVarindex;
 
   f.interp.interp_param[0] = 1; // _M

@@ -16,7 +16,7 @@ const double transport_v2d[] = {ONE_OVER_SQRT_2,
 				ONE_OVER_SQRT_2,
 				0};
 
-void TransportNumFlux(double wL[], double wR[], 
+void TransNumFlux(double wL[], double wR[], 
 		      double* vnorm, double* flux, 
 		      const int mx, const int my, const int mz, 
 		      const double vmax) {
@@ -29,7 +29,7 @@ void TransportNumFlux(double wL[], double wR[],
   flux[0] = vnp * wL[0] + vnm * wR[0];
 };
 
-void TransportNumFlux2d(double wL[], double wR[], 
+void TransNumFlux2d(double wL[], double wR[], 
 			double* vnorm, double* flux, 
 			const int mx, const int my, const int mz, 
 			const double vmax) {
@@ -48,12 +48,11 @@ void TransportNumFlux2d(double wL[], double wR[],
   assert(fabs(vnorm[2]) < 1e-8);
 };
 
-void vTransportNumFlux2d(double wL[], double wR[], 
+void vTransNumFlux2d(double wL[], double wR[], 
 			 double* vnorm, double* flux,
 			 const int mx, const int my, const int mz, 
 			 const double vmax) 
 {
-  // FIXME: how to get mx, my, and vmax from the model to here?
   int im = 0;
   for(int ix = 0; ix < mx; ++ix) {
     double vx = vmax * (ix - (mx / 2));
@@ -94,22 +93,22 @@ void VecTransNumFlux2d(double wL[], double wR[],
   assert(fabs(vnorm[2]) < 1e-8);
 };
 
-void TransportBoundaryFlux(double x[3], double t, 
+void TransBoundaryFlux(double x[3], double t, 
 			   double wL[], double* vnorm,
 			   double* flux,
 			   int mx, int my, int mz, double vmax) {
   double wR[1];
-  TransportImposedData(x, t, wR, mx, my, mz, vmax);
-  TransportNumFlux(wL, wR, vnorm, flux, 0, 0, 0, 0.0);
+  TransImposedData(x, t, wR, mx, my, mz, vmax);
+  TransNumFlux(wL, wR, vnorm, flux, 0, 0, 0, 0.0);
 };
 
-void TransportBoundaryFlux2d(double x[3], double t, 
+void TransBoundaryFlux2d(double x[3], double t, 
 			     double wL[], double* vnorm,
 			     double* flux,
 			     int mx, int my, int mz, double vmax) {
   double wR[1];
-  TransportImposedData2d(x, t, wR, mx, my, mz, vmax);
-  TransportNumFlux2d(wL, wR, vnorm, flux, mx, my, mz, vmax);
+  TransImposedData2d(x, t, wR, mx, my, mz, vmax);
+  TransNumFlux2d(wL, wR, vnorm, flux, mx, my, mz, vmax);
 };
 
 void VecTransBoundaryFlux2d(double x[3], double t, 
@@ -121,23 +120,22 @@ void VecTransBoundaryFlux2d(double x[3], double t,
   VecTransNumFlux2d(wL, wR, vnorm, flux, mx, my, mz, vmax);
 };
 
-void TransportInitData(double x[3], double w[], 
+void TransInitData(double x[3], double w[], 
 		       int mx, int my, int mz, double vmax) {
   double t = 0;
-  TransportImposedData(x, t, w, mx, my, mz, vmax);
+  TransImposedData(x, t, w, mx, my, mz, vmax);
 };
 
-void TransportInitData2d(double x[3], double w[], 
+void TransInitData2d(double x[3], double w[], 
 			 int mx, int my, int mz, double vmax) {
   double t = 0;
-  TransportImposedData2d(x, t, w, mx, my, mz, vmax);
+  TransImposedData2d(x, t, w, mx, my, mz, vmax);
 };
 
-void vTransportInitData2d(double x[3], double w[], 
+void vTransInitData2d(double x[3], double w[], 
 			  int mx, int my, int mz, double vmax) {
   double t = 0;
-  // TransportImposedData2d(x, t, w);
-  // FIXME
+  vTransImposedData2d(x, t, w, mx, my, mz, vmax);
 };
 
 void VecTransInitData2d(double x[3], double w[], 
@@ -146,7 +144,7 @@ void VecTransInitData2d(double x[3], double w[],
   VecTransImposedData2d(x, t, w, mx, my, mz, vmax);
 };
 
-void TransportImposedData(double x[3], double t, double w[], 
+void TransImposedData(double x[3], double t, double w[], 
 			  int mx, int my, int mz, double vmax) {
   double vx =
     transport_v[0] * x[0] +
@@ -156,7 +154,7 @@ void TransportImposedData(double x[3], double t, double w[],
   w[0]=cos(xx);
 };
 
-void TransportImposedData2d(double x[3], double t, double w[], 
+void TransImposedData2d(double x[3], double t, double w[], 
 			    int mx, int my, int mz, double vmax) {
   double vx 
     = transport_v2d[0] * x[0]
@@ -166,6 +164,7 @@ void TransportImposedData2d(double x[3], double t, double w[],
   w[0] = cos(xx);
 };
 
+// m = 2 test-case
 void VecTransImposedData2d(double x[3], double t, double* w, 
 			  int mx, int my, int mz, double vmax) {
   double vx 
@@ -177,36 +176,60 @@ void VecTransImposedData2d(double x[3], double t, double* w,
   w[1] = xx * xx;
 };
 
-void TestTransportBoundaryFlux(double x[3], double t, 
+// zero-centered Gaussian distribution in both x and v.
+void vTransImposedData2d(double x[3], double t, double* w, 
+			 int mx, int my, int mz, double vmax) {
+  double PI = 4.0 * atan(1.0);
+  double s2pi = sqrt(2.0 * PI);
+  double xval = 1.0;
+
+
+  int im = 0;
+  for(int ix = 0; ix < mx; ++ix) {
+    double vx = vmax * (ix - (mx / 2));
+        
+    for(int iy = 0; iy < my; ++iy) {
+      double vy = vmax * (iy - (my / 2));
+      // The 2D velocity is (vx, vy)
+      double v = vx * x[0] + vy * x[1];
+      double xx = v - t;
+      w[im++] = xx * xx; // FIXME: choose a function.
+    }
+  }
+  //v = vx - y
+  //f = (1 + (- 3 + (3 - v * v ) * v * v) * v * v) * hh
+};
+
+void TestTransBoundaryFlux(double x[3], double t, 
 			       double wL[], double* vnorm,
 			       double* flux, 
 			       int mx, int my, int mz, double vmax) {
   double wR[1];
-  TestTransportImposedData(x, t, wR, mx, my, mz, vmax);
-  TransportNumFlux(wL, wR, vnorm, flux, 0 ,0, 0, 0.0);
+  TestTransImposedData(x, t, wR, mx, my, mz, vmax);
+  TransNumFlux(wL, wR, vnorm, flux, 0 ,0, 0, 0.0);
 };
 
-void TestTransportBoundaryFlux2d(double x[3], double t, double wL[],
+void TestTransBoundaryFlux2d(double x[3], double t, double wL[],
 				 double* vnorm, double* flux, 
 				 int mx, int my, int mz, double vmax) {
   double wR[1];
-  TestTransportImposedData2d(x, t, wR, mx, my, mz, vmax);
-  TransportNumFlux2d(wL, wR, vnorm, flux, 0 ,0, 0, 0.0);
+  TestTransImposedData2d(x, t, wR, mx, my, mz, vmax);
+  TransNumFlux2d(wL, wR, vnorm, flux, 0 ,0, 0, 0.0);
 };
 
-void TestTransportInitData(double x[3], double w[], 
+void TestTransInitData(double x[3], double w[], 
 			   int mx, int my, int mz, double vmax) {
   double t = 0;
-  TestTransportImposedData(x, t, w, mx, my, mz, vmax);
+  TestTransImposedData(x, t, w, mx, my, mz, vmax);
 };
 
-void TestTransportInitData2d(double x[3], double w[], 
+void TestTransInitData2d(double x[3], double w[], 
 			     int mx, int my, int mz, double vmax) {
   double t = 0;
-  TestTransportImposedData2d(x, t, w, mx, my, mz, vmax);
+  TestTransImposedData2d(x, t, w, mx, my, mz, vmax);
 };
 
-void TestTransportImposedData(double x[3], double t, double w[], 
+void TestTransImposedData(double x[3], double t, double w[], 
 			      int mx, int my, int mz, double vmax) {
   double vx 
     = transport_v[0] * x[0] 
@@ -216,7 +239,7 @@ void TestTransportImposedData(double x[3], double t, double w[],
   w[0] = xx * xx;
 };
 
-void TestTransportImposedData2d(double x[3], double t, double w[], 
+void TestTransImposedData2d(double x[3], double t, double w[], 
 				int mx, int my, int mz, double vmax) {
   double vx 
     = transport_v2d[0] * x[0] 

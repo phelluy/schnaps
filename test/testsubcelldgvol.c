@@ -3,32 +3,26 @@
 #include<stdio.h>
 #include <assert.h>
 #include <math.h>
+
 int main(void) {
-  
   // unit tests
-    
   int resu=TestFieldSubCellDGVol();
-	 
   if (resu) printf("Field DG Subcell Vol test OK !\n");
   else printf("Field DG Subcell Vol test failed !\n");
-
   return !resu;
 } 
 
-
-
-
 int TestFieldSubCellDGVol(void){
 
-  int test = (1==1);
+  int test = true;
 
   Field f;
-  f.model.m=1; // only one conservative variable
-  f.model.NumFlux=TransportNumFlux;
-  f.model.BoundaryFlux=TestTransportBoundaryFlux;
-  f.model.InitData=TestTransportInitData;
-  f.model.ImposedData=TestTransportImposedData;
-  f.varindex=GenericVarindex;
+  f.model.m = 1; // only one conservative variable
+  f.model.NumFlux = TransNumFlux;
+  f.model.BoundaryFlux = TestTransBoundaryFlux;
+  f.model.InitData = TestTransInitData;
+  f.model.ImposedData = TestTransImposedData;
+  f.varindex = GenericVarindex;
 
   f.interp.interp_param[0]=1;  // _M
   f.interp.interp_param[1]=2;  // x direction degree

@@ -48,14 +48,14 @@ typedef struct Model {
 //! \param[in] wL, wR : left and right states
 //! \param[in] vn : normal vector
 //! \param[out] flux : the flux
-void TransportNumFlux(double wL[], double wR[], double vn[3], double* flux, 
+void TransNumFlux(double wL[], double wR[], double vn[3], double* flux, 
 		      int mx, int my, int mz, double vmax);
 
 //! \brief The particular flux for the 2d transport model
 //! \param[in] wL, wR : left and right states
 //! \param[in] vn : normal vector
 //! \param[out] flux : the flux
-void TransportNumFlux2d(double wL[], double wR[], double vn[3], double* flux, 
+void TransNumFlux2d(double wL[], double wR[], double vn[3], double* flux, 
 			int mx, int my, int mz, double vmax);
 
 void VecTransNumFlux2d(double wL[], double wR[], double vn[3], double* flux, 
@@ -67,7 +67,7 @@ void VecTransNumFlux2d(double wL[], double wR[], double vn[3], double* flux,
 //! \param[in] wL : left state
 //! \param[in] vn : normal vector
 //! \param[out] flux : the flux
-void TransportBoundaryFlux(double* x, double t, double* wL, double* vn,
+void TransBoundaryFlux(double* x, double t, double* wL, double* vn,
 			   double* flux,
 			   int mx, int my, int mz, double vmax);
 
@@ -77,35 +77,38 @@ void TransportBoundaryFlux(double* x, double t, double* wL, double* vn,
 //! \param[in] wL : left state
 //! \param[in] vn : normal vector
 //! \param[out] flux : the flux
-void TransportBoundaryFlux2d(double* x, double t, double* wL, double* vn,
+void TransBoundaryFlux2d(double* x, double t, double* wL, double* vn,
 			     double* flux,
 			     int mx, int my, int mz, double vmax);
 
 //! \brief The particular init data for the transport model
 //! \param[in] x : space position
 //! \param[out] w : init state at point x
-void TransportInitData(double* x, double* w,
+void TransInitData(double* x, double* w,
 		       int mx, int my, int mz, double vmax);
 
 //! \brief The particular init data for the 2d transport model
 //! \param[in] x : space position
 //! \param[out] w : init state at point x
-void TransportInitData2d(double* x, double* w,
+void TransInitData2d(double *x, double *w,
 			 int mx, int my, int mz, double vmax);
 
-void VecTransInitData2d(double* x, double* w,
+void VecTransInitData2d(double *x, double *w,
 			int mx, int my, int mz, double vmax);
+
+void vTransImposedData2d(double *x, double t, double *w, 
+			 int mx, int my, int mz, double vmax);
 
 //! \brief The particular imposed data for the transport model
 //! \param[in] x, t : space and time position
 //! \param[out] w : imposed state at point x and time t
-void TransportImposedData(double* x, double t, double* w,
+void TransImposedData(double* x, double t, double* w,
 			  int mx, int my, int mz, double vmax);
 
 //! \brief The particular imposed data for the 2d transport model
 //! \param[in] x, t : space and time position
 //! \param[out] w : imposed state at point x and time t
-void TransportImposedData2d(double* x, double t, double* w, 
+void TransImposedData2d(double* x, double t, double* w, 
 			    int mx, int my, int mz, double vmax);
 
 void VecTransImposedData2d(double* x, double t, double* w, 
@@ -117,7 +120,7 @@ void VecTransImposedData2d(double* x, double t, double* w,
 //! \param[in] wL : left state
 //! \param[in] vn : normal vector
 //! \param[out] flux : the flux
-void TestTransportBoundaryFlux(double* x, double t, double* wL, double* vn,
+void TestTransBoundaryFlux(double* x, double t, double* wL, double* vn,
 			       double* flux,
 			       int mx, int my, int mz, double vmax);
 
@@ -127,7 +130,7 @@ void TestTransportBoundaryFlux(double* x, double t, double* wL, double* vn,
 //! \param[in] wL : left state
 //! \param[in] vn : normal vector
 //! \param[out] flux : the flux
-void TestTransportBoundaryFlux2d(double* x, double t, double* wL, double* vn,
+void TestTransBoundaryFlux2d(double* x, double t, double* wL, double* vn,
 				 double* flux,
 				 int mx, int my, int mz, double vmax);
 
@@ -138,25 +141,25 @@ void VecTransBoundaryFlux2d(double* x, double t, double* wL, double* vn,
 //! \brief The particular init data for the transport model
 //! \param[in] x : space position
 //! \param[out] w : init state at point x
-void TestTransportInitData(double* x, double* w,
+void TestTransInitData(double* x, double* w,
 			   int mx, int my, int mz, double vmax);
 
 //! \brief The particular init data for the 2d transport model
 //! \param[in] x : space position
 //! \param[out] w : init state at point x
-void TestTransportInitData2d(double* x, double* w,
+void TestTransInitData2d(double* x, double* w,
 			     int mx, int my, int mz, double vmax);
 
 //! \brief The particular imposed data for the transport model
 //! \param[in] x, t : space and time position
 //! \param[out] w : imposed state at point x and time t
-void TestTransportImposedData(double* x, double t, double* w, 
+void TestTransImposedData(double* x, double t, double* w, 
 			      int mx, int my, int mz, double vmax);
 
 //! \brief The particular imposed data for the 2d transport model
 //! \param[in] x, t : space and time position
 //! \param[out] w : imposed state at point x and time t
-void TestTransportImposedData2d(double* x, double t, double* w, 
+void TestTransImposedData2d(double* x, double t, double* w, 
 				int mx, int my, int mz, double vmax);
 
 #endif

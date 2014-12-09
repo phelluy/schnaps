@@ -17,10 +17,10 @@ int TestField(void){
 
   Field f;
   f.model.m = 1; // only one conservative variable
-  f.model.NumFlux = TransportNumFlux;
-  f.model.BoundaryFlux = TestTransportBoundaryFlux;
-  f.model.InitData = TestTransportInitData;
-  f.model.ImposedData = TestTransportImposedData;
+  f.model.NumFlux = TransNumFlux;
+  f.model.BoundaryFlux = TestTransBoundaryFlux;
+  f.model.InitData = TestTransInitData;
+  f.model.ImposedData = TestTransImposedData;
   f.varindex = GenericVarindex;
 
   f.interp.interp_param[0] = 1; // _M
