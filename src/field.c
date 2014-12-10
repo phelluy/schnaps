@@ -271,9 +271,7 @@ void PlotField(int typplot, int compare, Field* f, char* filename) {
   //int param[8] = {f->model.m, _DEGX, _DEGY, _DEGZ, _RAFX, _RAFY, _RAFZ, 0};
   int nraf[3] = {f->interp_param[4], f->interp_param[5], f->interp_param[6]};
   // Refinement size in each direction
-  double hh[3] = {1.0 / nraf[0], 
-		  1.0 / nraf[1], 
-		  1.0 / nraf[2]};
+  double hh[3] = {1.0 / nraf[0], 1.0 / nraf[1], 1.0 / nraf[2]};
 
   // Header
   fprintf(gmshfile, "$MeshFormat\n2.2 0 %d\n", (int) sizeof(double));
@@ -355,7 +353,8 @@ void PlotField(int typplot, int compare, Field* f, char* filename) {
 
   // Elements
   fprintf(gmshfile, "$Elements\n");
-  fprintf(gmshfile, "%d\n", f->macromesh.nbelems * nraf[0] * nraf[1] * nraf[2]);
+  fprintf(gmshfile, "%d\n", 
+	  f->macromesh.nbelems * nraf[0] * nraf[1] * nraf[2]);
 
   int elm_type = 92;
   int num_tags = 0;
@@ -397,7 +396,7 @@ void PlotField(int typplot, int compare, Field* f, char* filename) {
   // now display data
   fprintf(gmshfile, "$NodeData\n");
   fprintf(gmshfile, "1\n");
-  fprintf(gmshfile, "\"Field %d\"\n", typplot);
+  fprintf(gmshfile, "\"Field %d\"\n", typplot); // Name of field
 
   double t = 0;
   fprintf(gmshfile, "1\n%f\n3\n0\n1\n", t);
