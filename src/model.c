@@ -124,7 +124,6 @@ void VecTransImposedData2d(double x[3], double t, double* w) {
   w[1] = 2 * xx * xx;
 };
 
-
 void TestTransBoundaryFlux(double x[3], double t, 
 			       double wL[], double* vnorm,
 			       double* flux) {
@@ -172,13 +171,14 @@ void TestTransImposedData2d(double x[3], double t, double w[]) {
 
 // Set the parameters for the Vlasov equation that are stored in the
 // global space of model.h
-void set_vlasov_params(int mx0, int my0, int mz0, double vmax0) 
+void set_vlasov_params(Model *mod) 
 {
-  mx = mx0;
-  my = my0;
-  mz = mz0;
-  m = mx * my * mz;
-  vmax = vmax0;
+  m = mod->m;
+  mx = mod->mx;
+  my = mod->my;
+  mz = mod->mz;
+  assert(m == mx * my * mz);
+  vmax = mod->vmax;
 }
 
 void vlaTransInitData2d(double x[3], double w[]) 

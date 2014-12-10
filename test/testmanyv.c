@@ -20,7 +20,6 @@ int TestmEq2(void) {
   f.model.mx = 3;
   f.model.my = 3;
   f.model.mz = 1;
-  assert(f.model.m == f.model.mx * f.model.my * f.model.mz);
   f.model.vmax = 1.0;
   f.model.NumFlux = vlaTransNumFlux2d;
   f.model.BoundaryFlux = vlaTransBoundaryFlux2d;
@@ -29,7 +28,7 @@ int TestmEq2(void) {
   f.varindex = GenericVarindex;
 
   // Set the global parameters for the Vlasov equation
-  set_vlasov_params(f.model.mx, f.model.my, f.model.mz, f.model.vmax); 
+  set_vlasov_params(&(f.model)); 
     
   f.interp.interp_param[0] = f.model.m; // _M
   f.interp.interp_param[1] = 2; // x direction degree

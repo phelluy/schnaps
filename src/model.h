@@ -146,7 +146,7 @@ static int my;
 static int mz;
 static double vmax;
 
-void set_vlasov_params(int mx0, int my0, int mz0, double vmax0);
+void set_vlasov_params(Model *mod);
 void vlaTransInitData2d(double x[3], double w[]);
 void vlaTransNumFlux2d(double wL[], double wR[], double* vnorm, double* flux);
 void vlaTransBoundaryFlux2d(double x[3], double t, 
