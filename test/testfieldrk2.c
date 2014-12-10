@@ -37,14 +37,14 @@ int TestFieldRK2(void){
   //AffineMapMacroMesh(&(f.macromesh));
   InitField(&f);
 
-  CheckMacroMesh(&(f.macromesh),f.interp.interp_param+1);
+  CheckMacroMesh(&(f.macromesh), f.interp.interp_param + 1);
  
-  printf("cfl param =%f\n",f.hmin);
+  printf("cfl param =%f\n", f.hmin);
 
   RK2(&f, .1);
  
-  PlotField(0, false, &f, "dgvisu.msh");
-  PlotField(0, true , &f, "dgerror.msh");
+  PlotField(0, false, &f, NULL, "dgvisu.msh");
+  PlotField(0, true , &f, "error", "dgerror.msh");
 
   double dd = L2error(&f);
 

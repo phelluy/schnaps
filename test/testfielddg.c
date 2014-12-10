@@ -45,10 +45,10 @@ int TestFieldDG(void){
 
   dtField(&f);
   
-  DisplayField(&f);  
+  DisplayField(&f);
 
-  PlotField(0, false ,&f,"visu.msh");
-  PlotField(0, true ,&f,"error.msh");
+  PlotField(0, false, &f, NULL, "visu.msh");
+  PlotField(0, true, &f, "error", "error.msh");
 
   // Test the time derivative with the exact solution
   for(int i = 0; 

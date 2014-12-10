@@ -248,7 +248,9 @@ void DisplayField(Field* f) {
 // Save the results in the gmsh format
 // typplot: index of the plotted variable
 // int compare == true -> compare with the exact value
-void PlotField(int typplot, int compare, Field* f, char* filename) {
+// If fieldname is NULL, then the fieldname is typpplot.
+void PlotField(int typplot, int compare, Field* f, char *fieldname,
+	       char *filename) {
 
   double hexa64ref[3 * 64] = { 
     0, 0, 3, 3, 0, 3, 3, 3, 3, 0, 3, 3, 0, 0, 0, 3, 0, 0, 3, 3, 0, 0, 3, 0,
@@ -393,10 +395,13 @@ void PlotField(int typplot, int compare, Field* f, char* filename) {
 
   fprintf(gmshfile, "$EndElements\n");
 
-  // now display data
+  // Now display data
   fprintf(gmshfile, "$NodeData\n");
   fprintf(gmshfile, "1\n");
-  fprintf(gmshfile, "\"Field %d\"\n", typplot); // Name of field
+  if(fieldname == NULL)
+    fprintf(gmshfile, "\"Field %d\"\n", typplot);
+  else 
+    fprintf(gmshfile, "\"Field: %s\"\n", fieldname);
 
   double t = 0;
   fprintf(gmshfile, "1\n%f\n3\n0\n1\n", t);

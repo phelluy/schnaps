@@ -62,10 +62,17 @@ int TestmEq2(void) {
   RK2(&f, tmax);
  
   // Save the results and the error
-
-  int mplot = f.model.m / 2; // m / 2 gives (vx, vy) = (0, 0) 
+  int mxplot = f.model.mx / 2;
+  int myplot = f.model.my / 2;
+  int mplot = mxplot * f.model.my + myplot; 
   printf("mplot: %d\n", mplot);
-  PlotField(mplot, false, &f, "dgvisu.msh");
+  double vx = f.model.vmax * (mxplot - (f.model.mx / 2));
+  double vy = f.model.vmax * (myplot - (f.model.my / 2));
+  char fieldname[100];
+  sprintf(fieldname, "output field has v = (%f,%f)", vx, vy);
+  printf("%s\n", fieldname);
+  PlotField(mplot, false, &f, fieldname, "dgvisu.msh");
+
   /* PlotField(mplot, true, &f, "dgerror.msh"); */
 
   /* double dd = L2error(&f); */

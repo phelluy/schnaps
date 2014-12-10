@@ -47,8 +47,8 @@ int TestFieldRK2_2D(void) {
 
   RK2(&f, 0.2);
  
-  PlotField(0, false, &f, "dgvisu.msh");
-  PlotField(0, true, &f, "dgerror.msh");
+  PlotField(0, false, &f, NULL, "dgvisu.msh");
+  PlotField(0, true, &f, "error", "dgerror.msh");
 
   double dd = L2error(&f);
 

@@ -47,8 +47,8 @@ int main(void) {
   RK2(&f, tmax);
 
   // Save the results and the error
-  PlotField(0, false, &f, "dgvisu.msh");
-  PlotField(0, true, &f, "dgerror.msh");
+  PlotField(0, false, &f, NULL, "dgvisu.msh");
+  PlotField(0, true, &f, "Error", "dgerror.msh");
 
   double dd = L2error(&f);
  

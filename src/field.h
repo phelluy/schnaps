@@ -173,7 +173,8 @@ void RK2Copy(Field *f,double tmax);
 //! \param[in] f a field
 //! with the analytical solution
 //! \param[in] filename the path to the gmsh visualization file.
-void PlotField(int typplot, int compare, Field *f, char *filename);
+void PlotField(int typplot, int compare, Field *f, char *fieldname, 
+	       char *filename);
 
 //! \brief  display the field on screen
 //! \param[in] f the field.

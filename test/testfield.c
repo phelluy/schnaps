@@ -37,7 +37,7 @@ int TestField(void){
   InitField(&f);
   CheckMacroMesh(&(f.macromesh), f.interp.interp_param + 1);
 
-  PlotField(0, false, &f,"testvisufield.msh");
+  PlotField(0, false, &f, NULL, "testvisufield.msh");
   
   return test;
 };
