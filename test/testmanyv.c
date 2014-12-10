@@ -35,8 +35,8 @@ int TestmEq2(void) {
   f.interp.interp_param[1] = 2; // x direction degree
   f.interp.interp_param[2] = 2; // y direction degree
   f.interp.interp_param[3] = 0; // z direction degree
-  f.interp.interp_param[4] = 4; // x direction refinement
-  f.interp.interp_param[5] = 4; // y direction refinement
+  f.interp.interp_param[4] = 2; // x direction refinement
+  f.interp.interp_param[5] = 2; // y direction refinement
   f.interp.interp_param[6] = 1; // z direction refinement
 
   // Read the gmsh file
@@ -47,8 +47,6 @@ int TestmEq2(void) {
 
   // Mesh preparation
   BuildConnectivity(&(f.macromesh));
-
-  //AffineMapMacroMesh(&(f.macromesh));
  
   // Prepare the initial fields
   InitField(&f);
@@ -59,7 +57,10 @@ int TestmEq2(void) {
 
   printf("cfl param: %f\n", f.hmin);
 
-  //RK2(&f, 0.1);
+  dtField(&f);
+
+  double tmax = 0.1;
+  RK2(&f, tmax);
  
   // Save the results and the error
 

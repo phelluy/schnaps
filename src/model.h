@@ -140,6 +140,7 @@ void TestTransImposedData(double* x, double t, double* w);
 void TestTransImposedData2d(double* x, double t, double* w);
 
 //! Parameters used for computing the velocity for the Vlasov equation.
+static int m;
 static int mx;
 static int my;
 static int mz;

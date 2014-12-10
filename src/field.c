@@ -749,12 +749,12 @@ void* DGMacroCellInterface2(void* mc) {
   for(int ip = 0; ip < 8; ip++)
     iparam[ip] = f->interp_param[ip];
 
-  // assembly of the surface terms loop on the macrocells faces
+  // Assembly of the surface terms loop on the macrocells faces
   for (int ifa = mface->first; ifa < mface->last_p1; ifa++) {
     int ieL = msh->face2elem[4 * ifa + 0];
     int locfaL = msh->face2elem[4 * ifa + 1];
 
-    // get the physical nodes of element ieL
+    // Get the physical nodes of element ieL
     double physnode[20][3];
     for(int inoloc = 0; inoloc < 20; inoloc++) {
       int ino = msh->elem2node[20 * ieL + inoloc];
@@ -1754,6 +1754,8 @@ void dtField(Field* f) {
     mface[ifa].last_p1 = ifa + 1;
   }
   bool facealgo = true;
+  facealgo = false; // FIXME: temp
+
   if(facealgo) {
     for(int iw = 0; iw < f->wsize; iw++)
       f->dtwn[iw] = 0;

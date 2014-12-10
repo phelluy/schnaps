@@ -121,7 +121,7 @@ void VecTransImposedData2d(double x[3], double t, double* w) {
     + transport_v2d[2] * x[2];
   double xx = vx - t;
   w[0] = xx * xx;
-  w[1] = xx * xx;
+  w[1] = 2 * xx * xx;
 };
 
 
@@ -177,6 +177,7 @@ void set_vlasov_params(int mx0, int my0, int mz0, double vmax0)
   mx = mx0;
   my = my0;
   mz = mz0;
+  m = mx * my * mz;
   vmax = vmax0;
 }
 
@@ -188,7 +189,6 @@ void vlaTransInitData2d(double x[3], double w[])
 
 void vlaTransNumFlux2d(double wL[], double wR[], double* vnorm, double* flux) 
 {
-  int im = 0;
   for(int ix = 0; ix < mx; ++ix) {
     double vx = vmax * (ix - (mx / 2));
 
@@ -201,9 +201,8 @@ void vlaTransNumFlux2d(double wL[], double wR[], double* vnorm, double* flux)
       
       // NB: assumes a certain memory distribution for the velocity
       // components at each point.
+      int im = ix * my + iy;
       flux[im] = vnp * wL[im] + vnm * wR[im];
-
-      ++im;
     }
   }
   // Verify that 2d computations are actually activated
@@ -214,7 +213,7 @@ void vlaTransBoundaryFlux2d(double x[3], double t,
 			    double wL[], double* vnorm,
 			    double* flux) 
 {
-  double wR[2]; // FIXME implicit assumption m = 2
+  double wR[m];
   vlaTransImposedData2d(x, t, wR);
   vlaTransNumFlux2d(wL, wR, vnorm, flux);
 };
@@ -236,13 +235,9 @@ void vlaTransImposedData2d(double x[3], double t, double* w)
   double s2pi = sqrt(2.0 * PI);
   double xval = 1.0;
 
-  /* printf("mx: %d\n", mx); */
-  /* printf("my: %d\n", my); */
-
   double r = sqrt(x[0] * x[0] + x[1] * x[1]);
   double pr = compact_poly6(r);
 
-  int im = 0;
   for(int ix = 0; ix < mx; ++ix) {
     double vx = vmax * (ix - (mx / 2));
 
@@ -252,10 +247,10 @@ void vlaTransImposedData2d(double x[3], double t, double* w)
       double vr = sqrt(vx * vx + vy * vy);
       double pvr = compact_poly6(vr);
 
-      //printf("im: %d", im);
+      // NB: assumes a certain memory distribution for the velocity
+      // components at each point.
+      int im = ix * my + iy;
       w[im] = pr * pvr;
-      //w[im] = x[0]; // FIXME: temp debugging code
-      im++;
     }
   }
 };
