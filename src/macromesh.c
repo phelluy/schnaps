@@ -653,7 +653,7 @@ void CheckMacroMesh(MacroMesh* m, int* param) {
 // direction coincides in the reference or physical frame
 bool Detect2DMacroMesh(MacroMesh* m)
 {
-  m->is2d= true;
+  m->is2d = true;
 
   // Do not permut the node if the connectivity is already built
   if(m->elem2elem != NULL)
@@ -664,7 +664,7 @@ bool Detect2DMacroMesh(MacroMesh* m)
     // get the physical nodes of element ie
     double physnode[20][3];
     for(int inoloc = 0; inoloc < 20; inoloc++) {
-      int ino=m->elem2node[20 * ie + inoloc];
+      int ino = m->elem2node[20 * ie + inoloc];
       physnode[inoloc][0] = m->node[3 * ino + 0];
       physnode[inoloc][1] = m->node[3 * ino + 1];
       physnode[inoloc][2] = m->node[3 * ino + 2];
@@ -677,12 +677,17 @@ bool Detect2DMacroMesh(MacroMesh* m)
       zmil += physnode[inoloc][2];
     }
     zmil /= 20;
-    // the mesh is not 2d
+    //printf("zmil: %f\n", zmil);
+
     if(fabs(zmil-0.5) > 1e-6) {
+      // The mesh is not 2d
       m->is2d = false;
       return m->is2d;
     }
   }
+
+  // TODO: if the mesh is not 2D, then assert constraints on nraf[2]
+  // and deg[2].
 
   printf("Detection of a 2D mesh\n");
   for(int ie = 0; ie < m->nbelems; ie++) {

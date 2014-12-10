@@ -236,8 +236,8 @@ void vlaTransImposedData2d(double x[3], double t, double* w)
   double s2pi = sqrt(2.0 * PI);
   double xval = 1.0;
 
-  printf("mx: %d\n", mx);
-  printf("my: %d\n", my);
+  /* printf("mx: %d\n", mx); */
+  /* printf("my: %d\n", my); */
 
   double r = sqrt(x[0] * x[0] + x[1] * x[1]);
   double pr = compact_poly6(r);
@@ -252,8 +252,10 @@ void vlaTransImposedData2d(double x[3], double t, double* w)
       double vr = sqrt(vx * vx + vy * vy);
       double pvr = compact_poly6(vr);
 
-      printf("im: %d", im);
-      w[im++] = pr * pvr;
+      //printf("im: %d", im);
+      w[im] = pr * pvr;
+      //w[im] = x[0]; // FIXME: temp debugging code
+      im++;
     }
   }
 };

@@ -17,9 +17,10 @@ int TestmEq2(void) {
   Field f;
   
   f.model.m = 9; // num of conservative variables
-  f.model.mx = 3; // num of conservative variables
-  f.model.my = 3; // num of conservative variables
-  f.model.mz = 1; // num of conservative variables
+  f.model.mx = 3;
+  f.model.my = 3;
+  f.model.mz = 1;
+  assert(f.model.m == f.model.mx * f.model.my * f.model.mz);
   f.model.vmax = 1.0;
   f.model.NumFlux = vlaTransNumFlux2d;
   f.model.BoundaryFlux = vlaTransBoundaryFlux2d;
@@ -39,7 +40,7 @@ int TestmEq2(void) {
   f.interp.interp_param[6] = 1; // z direction refinement
 
   // Read the gmsh file
-  ReadMacroMesh(&(f.macromesh), "test/testcube.msh");
+  ReadMacroMesh(&(f.macromesh), "geo/square.msh");
   // Try to detect a 2d mesh
   bool is2d = Detect2DMacroMesh(&(f.macromesh));
   assert(is2d);
@@ -61,8 +62,11 @@ int TestmEq2(void) {
   //RK2(&f, 0.1);
  
   // Save the results and the error
-  PlotField(0, false, &f, "dgvisu.msh");
-  /* PlotField(0, true, &f, "dgerror.msh"); */
+
+  int mplot = f.model.m / 2; // m / 2 gives (vx, vy) = (0, 0) 
+  printf("mplot: %d\n", mplot);
+  PlotField(mplot, false, &f, "dgvisu.msh");
+  /* PlotField(mplot, true, &f, "dgerror.msh"); */
 
   /* double dd = L2error(&f); */
 
