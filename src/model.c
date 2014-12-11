@@ -24,7 +24,7 @@ void TransNumFlux(double wL[], double wR[], double* vnorm, double* flux) {
   double vnp = vn > 0 ? vn : 0;
   double vnm = vn - vnp;
   flux[0] = vnp * wL[0] + vnm * wR[0];
-};
+}
 
 void TransNumFlux2d(double wL[], double wR[], double* vnorm, double* flux) {
   double vn 
@@ -40,7 +40,7 @@ void TransNumFlux2d(double wL[], double wR[], double* vnorm, double* flux) {
   // verify that 2d computations are actually
   // activated
   assert(fabs(vnorm[2]) < 1e-8);
-};
+}
 
 void VecTransNumFlux2d(double wL[], double wR[], double* vnorm, double* flux) {
   double vn 
@@ -56,21 +56,21 @@ void VecTransNumFlux2d(double wL[], double wR[], double* vnorm, double* flux) {
   /* } */
   // Verify that 2d computations are actually activated
   assert(fabs(vnorm[2]) < 1e-8);
-};
+}
 
 void TransBoundaryFlux(double x[3], double t, double wL[], double* vnorm,
 		       double* flux) {
   double wR[1];
   TransImposedData(x, t, wR);
   TransNumFlux(wL, wR, vnorm, flux);
-};
+}
 
 void TransBoundaryFlux2d(double x[3], double t, double wL[], double *vnorm,
 			 double *flux) {
   double wR[1];
   TransImposedData2d(x, t, wR);
   TransNumFlux2d(wL, wR, vnorm, flux);
-};
+}
 
 void VecTransBoundaryFlux2d(double x[3], double t, 
 			    double wL[], double *vnorm,
@@ -78,22 +78,22 @@ void VecTransBoundaryFlux2d(double x[3], double t,
   double wR[2];
   VecTransImposedData2d(x, t, wR);
   VecTransNumFlux2d(wL, wR, vnorm, flux);
-};
+}
 
 void TransInitData(double x[3], double w[]) {
   double t = 0;
   TransImposedData(x, t, w);
-};
+}
 
 void TransInitData2d(double x[3], double w[]) {
   double t = 0;
   TransImposedData2d(x, t, w);
-};
+}
 
 void VecTransInitData2d(double x[3], double w[]) {
   double t = 0;
   VecTransImposedData2d(x, t, w);
-};
+}
 
 void TransImposedData(double x[3], double t, double w[]) {
   double vx =
@@ -102,7 +102,7 @@ void TransImposedData(double x[3], double t, double w[]) {
     transport_v[2] * x[2];
   double xx = vx - t;
   w[0]=cos(xx);
-};
+}
 
 void TransImposedData2d(double x[3], double t, double w[]) {
   double vx 
@@ -111,7 +111,7 @@ void TransImposedData2d(double x[3], double t, double w[]) {
     + transport_v2d[2] * x[2];
   double xx = vx - t;
   w[0] = cos(xx);
-};
+}
 
 // m = 2 test-case
 void VecTransImposedData2d(double x[3], double t, double* w) {
@@ -122,7 +122,7 @@ void VecTransImposedData2d(double x[3], double t, double* w) {
   double xx = vx - t;
   w[0] = xx * xx;
   w[1] = 2 * xx * xx;
-};
+}
 
 void TestTransBoundaryFlux(double x[3], double t, 
 			       double wL[], double* vnorm,
@@ -130,24 +130,24 @@ void TestTransBoundaryFlux(double x[3], double t,
   double wR[1];
   TestTransImposedData(x, t, wR);
   TransNumFlux(wL, wR, vnorm, flux);
-};
+}
 
 void TestTransBoundaryFlux2d(double x[3], double t, double wL[],
 				 double* vnorm, double* flux) {
   double wR[1];
   TestTransImposedData2d(x, t, wR);
   TransNumFlux2d(wL, wR, vnorm, flux);
-};
+}
 
 void TestTransInitData(double x[3], double w[]) {
   double t = 0;
   TestTransImposedData(x, t, w);
-};
+}
 
 void TestTransInitData2d(double x[3], double w[]) {
   double t = 0;
   TestTransImposedData2d(x, t, w);
-};
+}
 
 void TestTransImposedData(double x[3], double t, double w[]) {
   double vx 
@@ -156,7 +156,7 @@ void TestTransImposedData(double x[3], double t, double w[]) {
     + transport_v[2] * x[2];
   double xx = vx - t;
   w[0] = xx * xx;
-};
+}
 
 void TestTransImposedData2d(double x[3], double t, double w[]) {
   double vx 
@@ -165,7 +165,7 @@ void TestTransImposedData2d(double x[3], double t, double w[]) {
     + transport_v2d[2] * x[2];
   double xx = vx - t;
   w[0] = xx * xx;
-};
+}
 
 // Vlasov 2D transport equation functions
 
@@ -186,7 +186,7 @@ void vlaTransInitData2d(double x[3], double w[])
 {
   double t = 0;
   vlaTransImposedData2d(x, t, w);
-};
+}
 
 // Return the component of the vlasov velocity with index id.
 double vlasov_vel(const int id, const int md, double vmax)
@@ -216,7 +216,7 @@ void vlaTransNumFlux2d(double wL[], double wR[], double* vnorm, double* flux)
   }
   // Verify that 2d computations are actually activated
   assert(fabs(vnorm[2]) < 1e-8);
-};
+}
 
 void vlaTransBoundaryFlux2d(double x[3], double t, 
 			    double wL[], double* vnorm,
@@ -225,7 +225,7 @@ void vlaTransBoundaryFlux2d(double x[3], double t,
   double wR[m];
   vlaTransImposedData2d(x, t, wR);
   vlaTransNumFlux2d(wL, wR, vnorm, flux);
-};
+}
 
 // 6th-degree polynomial with compact support
 double compact_poly6(double r)
@@ -244,13 +244,17 @@ void vlaTransImposedData2d(double x[3], double t, double* w)
   double s2pi = sqrt(2.0 * PI);
   double xval = 1.0;
 
-  double r = sqrt(x[0] * x[0] + x[1] * x[1]);
-  double pr = compact_poly6(r);
 
   for(int ix = 0; ix < mx; ++ix) {
     double vx = vlasov_vel(ix, mx, vmax);
+    double px = x[0] - vx * t;
+
     for(int iy = 0; iy < my; ++iy) {
       double vy = vlasov_vel(iy, my, vmax);
+      double py = x[1] - vy * t;
+
+      double r = sqrt(px * px + py * py);
+      double pr = compact_poly6(r);
 
       double vr = sqrt(vx * vx + vy * vy);
       double pvr = compact_poly6(vr);
@@ -261,4 +265,4 @@ void vlaTransImposedData2d(double x[3], double t, double* w)
       w[im] = pr * pvr;
     }
   }
-};
+}

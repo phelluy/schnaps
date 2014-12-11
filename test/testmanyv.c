@@ -31,8 +31,8 @@ int TestmEq2(void) {
   set_vlasov_params(&(f.model));
   
   f.interp.interp_param[0] = f.model.m; // _M
-  f.interp.interp_param[1] = 2; // x direction degree
-  f.interp.interp_param[2] = 2; // y direction degree
+  f.interp.interp_param[1] = 3; // x direction degree
+  f.interp.interp_param[2] = 3; // y direction degree
   f.interp.interp_param[3] = 0; // z direction degree
   f.interp.interp_param[4] = 4; // x direction refinement
   f.interp.interp_param[5] = 4; // y direction refinement
@@ -61,23 +61,25 @@ int TestmEq2(void) {
     printf("L2 error: %f\n", dd);
   }
 
-  double tmax = 1.0;
+  double tmax = 1e-2;
   RK2(&f, tmax);
  
   // Save the results and the error
   for(int ix = 0; ix < f.model.mx; ++ix) {
     for(int iy = 0; iy < f.model.my; ++iy) {
       int mplot = ix * f.model.my + iy; 
-      printf("mplot: %d\n", mplot);
+
       double vx = vlasov_vel(ix, f.model.mx, f.model.vmax);
       double vy = vlasov_vel(iy, f.model.my, f.model.vmax);
       char fieldname[100];
       sprintf(fieldname, "output field has v = (%f,%f)", vx, vy);
-      printf("%s\n", fieldname);
+      //printf("%s\n", fieldname);
       
       char filename[100];
       sprintf(filename, "dgvisuix%diy%d.msh", ix, iy);
+      printf("ix: %d, iy: %d, fieldname: %s\n", ix, iy, fieldname);
       PlotField(mplot, false, &f, fieldname, filename);
+
     }
   }
   /* PlotField(mplot, true, &f, "dgerror.msh"); */
