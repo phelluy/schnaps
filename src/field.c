@@ -2074,14 +2074,14 @@ void RK2Copy(Field* f, double tmax) {
   }
 }
 
-// compute the normalized L2 distance with the imposed data
+// Compute the normalized L2 distance with the imposed data
 double L2error(Field* f) {
   //int param[8] = {f->model.m, _DEGX, _DEGY, _DEGZ, _RAFX, _RAFY, _RAFZ, 0};
   double error = 0;
-  double moy = 0; // mean value
-  //#pragma omp parallel for
+  double mean = 0;
+
   for (int ie = 0; ie < f->macromesh.nbelems; ie++) {
-    // get the physical nodes of element ie
+    // Get the physical nodes of element ie
     double physnode[20][3];
     for(int inoloc = 0; inoloc < 20; inoloc++) {
       int ino = f->macromesh.elem2node[20*ie+inoloc];
@@ -2090,33 +2090,42 @@ double L2error(Field* f) {
       physnode[inoloc][2] = f->macromesh.node[3 * ino + 2];
     }
 
-    // loop on the glops (for numerical integration)
-    for(int ipg = 0; ipg < NPG(f->interp_param + 1); ipg++) {
-      double xpgref[3], xphy[3], wpg;
-      double dtau[3][3], codtau[3][3];//, xpg[3];
-      // get the coordinates of the Gauss point
-      ref_pg_vol(f->interp_param + 1, ipg, xpgref, &wpg, NULL);
-      Ref2Phy(physnode, // phys. nodes
-	      xpgref, // xref
-	      NULL, -1, // dpsiref, ifa
-	      xphy, dtau, // xphy, dtau
-	      codtau, NULL, NULL); // codtau, dpsi, vnds
-      double det
-	= dtau[0][0] * codtau[0][0]
-	+ dtau[0][1] * codtau[0][1]
-	+ dtau[0][2] * codtau[0][2];
-      double w[f->model.m], wex[f->model.m];
+    // Loop on the glops (for numerical integration)
+    const int npg = NPG(f->interp_param + 1);
+    for(int ipg = 0; ipg < npg; ipg++) {
+      double w[f->model.m];
       for(int iv = 0; iv < f->model.m; iv++) {
 	int imem = f->varindex(f->interp_param, ie, ipg, iv);
 	w[iv] = f->wn[imem];
       }
-      // get the exact value
-      f->model.ImposedData(xphy, f->tnow, wex);
+
+      double wex[f->model.m];
+      double wpg, det;
+      // Compute wpg, det, and the exact solution
+      { 
+	double xphy[3], xpgref[3];
+	double dtau[3][3], codtau[3][3];
+	// Get the coordinates of the Gauss point
+	ref_pg_vol(f->interp_param + 1, ipg, xpgref, &wpg, NULL);
+	Ref2Phy(physnode, // phys. nodes
+		xpgref, // xref
+		NULL, -1, // dpsiref, ifa
+		xphy, dtau, // xphy, dtau
+		codtau, NULL, NULL); // codtau, dpsi, vnds
+	det = dtau[0][0] * codtau[0][0] 
+	  + dtau[0][1] * codtau[0][1]
+	  + dtau[0][2] * codtau[0][2];
+
+	// Get the exact value
+	f->model.ImposedData(xphy, f->tnow, wex);
+      }
+
       for(int iv = 0; iv < f->model.m; iv++) {
-        error += pow(w[iv] - wex[iv], 2) * wpg * det;
-        moy += pow(w[iv], 2) * wpg * det;
+	double diff = w[iv] - wex[iv];
+        error += diff * diff * wpg * det;
+        mean += w[iv] * w[iv] * wpg * det;
       }
     }
   }
-  return sqrt(error) / sqrt(moy);
+  return sqrt(error) / (sqrt(mean)  + 1e-10);
 }

@@ -16,11 +16,11 @@ int TestmEq2(void) {
   bool test = true;
   Field f;
   
-  f.model.mx = 7;
-  f.model.my = 7;
+  f.model.mx = 5;
+  f.model.my = 5;
   f.model.mz = 1;
   f.model.m = f.model.mx * f.model.my * f.model.mz;
-  f.model.vmax = 1.0;
+  f.model.vmax = 0.5;
   f.model.NumFlux = vlaTransNumFlux2d;
   f.model.BoundaryFlux = vlaTransBoundaryFlux2d;
   f.model.InitData = vlaTransInitData2d;
@@ -28,14 +28,14 @@ int TestmEq2(void) {
   f.varindex = GenericVarindex;
 
   // Set the global parameters for the Vlasov equation
-  set_vlasov_params(&(f.model)); 
-    
+  set_vlasov_params(&(f.model));
+  
   f.interp.interp_param[0] = f.model.m; // _M
   f.interp.interp_param[1] = 2; // x direction degree
   f.interp.interp_param[2] = 2; // y direction degree
   f.interp.interp_param[3] = 0; // z direction degree
-  f.interp.interp_param[4] = 2; // x direction refinement
-  f.interp.interp_param[5] = 2; // y direction refinement
+  f.interp.interp_param[4] = 4; // x direction refinement
+  f.interp.interp_param[5] = 4; // y direction refinement
   f.interp.interp_param[6] = 1; // z direction refinement
 
   // Read the gmsh file
@@ -56,30 +56,35 @@ int TestmEq2(void) {
 
   printf("cfl param: %f\n", f.hmin);
 
-  dtField(&f);
+  { // Check error wrt initial conditions
+    double dd = L2error(&f);
+    printf("L2 error: %f\n", dd);
+  }
 
-  double tmax = 0.1;
+  double tmax = 1.0;
   RK2(&f, tmax);
  
   // Save the results and the error
-  int mxplot = f.model.mx / 2 + 1;
-  int myplot = f.model.my / 2;
-  printf("mxplot: %d\n", mxplot);
-  printf("myplot: %d\n", myplot);
-  int mplot = mxplot * f.model.my + myplot; 
-  printf("mplot: %d\n", mplot);
-  double vx = vlasov_vel(mxplot, f.model.mx, f.model.vmax);
-  double vy = vlasov_vel(myplot, f.model.my, f.model.vmax);
-  char fieldname[100];
-  sprintf(fieldname, "output field has v = (%f,%f)", vx, vy);
-  printf("%s\n", fieldname);
-  PlotField(mplot, false, &f, fieldname, "dgvisu.msh");
-
+  for(int ix = 0; ix < f.model.mx; ++ix) {
+    for(int iy = 0; iy < f.model.my; ++iy) {
+      int mplot = ix * f.model.my + iy; 
+      printf("mplot: %d\n", mplot);
+      double vx = vlasov_vel(ix, f.model.mx, f.model.vmax);
+      double vy = vlasov_vel(iy, f.model.my, f.model.vmax);
+      char fieldname[100];
+      sprintf(fieldname, "output field has v = (%f,%f)", vx, vy);
+      printf("%s\n", fieldname);
+      
+      char filename[100];
+      sprintf(filename, "dgvisuix%diy%d.msh", ix, iy);
+      PlotField(mplot, false, &f, fieldname, filename);
+    }
+  }
   /* PlotField(mplot, true, &f, "dgerror.msh"); */
 
-  /* double dd = L2error(&f); */
-
-  /* printf("erreur L2=%f\n", dd); */
+  double dd = L2error(&f);
+  printf("L2 error: %f\n", dd);
   /* test = test && (dd < 1e-7); */
+
   return test;
 };
