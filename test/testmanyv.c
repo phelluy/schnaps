@@ -16,10 +16,10 @@ int TestmEq2(void) {
   bool test = true;
   Field f;
   
-  f.model.m = 9; // num of conservative variables
-  f.model.mx = 3;
-  f.model.my = 3;
+  f.model.mx = 7;
+  f.model.my = 7;
   f.model.mz = 1;
+  f.model.m = f.model.mx * f.model.my * f.model.mz;
   f.model.vmax = 1.0;
   f.model.NumFlux = vlaTransNumFlux2d;
   f.model.BoundaryFlux = vlaTransBoundaryFlux2d;
@@ -62,12 +62,14 @@ int TestmEq2(void) {
   RK2(&f, tmax);
  
   // Save the results and the error
-  int mxplot = f.model.mx / 2;
+  int mxplot = f.model.mx / 2 + 1;
   int myplot = f.model.my / 2;
+  printf("mxplot: %d\n", mxplot);
+  printf("myplot: %d\n", myplot);
   int mplot = mxplot * f.model.my + myplot; 
   printf("mplot: %d\n", mplot);
-  double vx = f.model.vmax * (mxplot - (f.model.mx / 2));
-  double vy = f.model.vmax * (myplot - (f.model.my / 2));
+  double vx = vlasov_vel(mxplot, f.model.mx, f.model.vmax);
+  double vy = vlasov_vel(myplot, f.model.my, f.model.vmax);
   char fieldname[100];
   sprintf(fieldname, "output field has v = (%f,%f)", vx, vy);
   printf("%s\n", fieldname);

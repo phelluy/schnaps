@@ -147,6 +147,7 @@ static int mz;
 static double vmax;
 
 void set_vlasov_params(Model *mod);
+double vlasov_vel(const int id, const int md, double vmax);
 void vlaTransInitData2d(double x[3], double w[]);
 void vlaTransNumFlux2d(double wL[], double wR[], double* vnorm, double* flux);
 void vlaTransBoundaryFlux2d(double x[3], double t, 

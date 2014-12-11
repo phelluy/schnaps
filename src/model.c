@@ -174,6 +174,7 @@ void TestTransImposedData2d(double x[3], double t, double w[]) {
 void set_vlasov_params(Model *mod) 
 {
   m = mod->m;
+  assert(m > 0);
   mx = mod->mx;
   my = mod->my;
   mz = mod->mz;
@@ -187,13 +188,21 @@ void vlaTransInitData2d(double x[3], double w[])
   vlaTransImposedData2d(x, t, w);
 };
 
+// Return the component of the vlasov velocity with index id.
+double vlasov_vel(const int id, const int md, double vmax)
+{
+  int mid = md / 2;
+  double dv = vmax / mid;
+  return (id - mid) * dv;
+}
+
 void vlaTransNumFlux2d(double wL[], double wR[], double* vnorm, double* flux) 
 {
   for(int ix = 0; ix < mx; ++ix) {
-    double vx = vmax * (ix - (mx / 2));
+    double vx = vlasov_vel(ix, mx, vmax);
 
     for(int iy = 0; iy < my; ++iy) {
-      double vy = vmax * (iy - (my / 2));
+      double vy = vlasov_vel(iy, my, vmax);
       
       double vn = vx * vnorm[0]	+ vy * vnorm[1];
       double vnp = vn > 0 ? vn : 0;
@@ -239,10 +248,9 @@ void vlaTransImposedData2d(double x[3], double t, double* w)
   double pr = compact_poly6(r);
 
   for(int ix = 0; ix < mx; ++ix) {
-    double vx = vmax * (ix - (mx / 2));
-
+    double vx = vlasov_vel(ix, mx, vmax);
     for(int iy = 0; iy < my; ++iy) {
-      double vy = vmax * (iy - (my / 2));
+      double vy = vlasov_vel(iy, my, vmax);
 
       double vr = sqrt(vx * vx + vy * vy);
       double pvr = compact_poly6(vr);
