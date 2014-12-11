@@ -86,7 +86,7 @@ int TestmEq2(void) {
 
   double dd = L2error(&f);
   printf("L2 error: %f\n", dd);
-  /* test = test && (dd < 1e-7); */
+  test = test && (dd < 1e-3); // FIXME: reasonable precision?
 
   return test;
 };
