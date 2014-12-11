@@ -3,16 +3,8 @@
 #include <assert.h>
 #include "test.h"
 
-int main(void) {
-  // Unit tests
-  int resu = TestmEq2();
- 
-  if (resu) printf("multiple velocity transport test OK !\n");
-  else printf("multiple velocity transport test failed !\n");
-  return !resu;
-}
-
-int TestmEq2(void) {
+int test_manyv(void) 
+{
   bool test = true;
   Field f;
   
@@ -89,4 +81,13 @@ int TestmEq2(void) {
   test = test && (dd < 1e-3); // FIXME: reasonable precision?
 
   return test;
-};
+}
+
+int main(void) {
+  // Unit tests
+  int resu = test_manyv();
+ 
+  if (resu) printf("multiple velocity transport test OK !\n");
+  else printf("multiple velocity transport test failed !\n");
+  return !resu;
+}
