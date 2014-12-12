@@ -244,7 +244,6 @@ void vlaTransImposedData2d(double x[3], double t, double* w)
   double s2pi = sqrt(2.0 * PI);
   double xval = 1.0;
 
-
   for(int ix = 0; ix < mx; ++ix) {
     double vx = vlasov_vel(ix, mx, vmax);
     double px = x[0] - vx * t;

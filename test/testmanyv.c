@@ -57,24 +57,26 @@ int test_manyv(void)
   RK2(&f, tmax);
  
   // Save the results and the error
-  for(int ix = 0; ix < f.model.mx; ++ix) {
-    for(int iy = 0; iy < f.model.my; ++iy) {
-      int mplot = ix * f.model.my + iy; 
+  bool writemsh = false;
+  if(writemsh) {
+    for(int ix = 0; ix < f.model.mx; ++ix) {
+      for(int iy = 0; iy < f.model.my; ++iy) {
+	int mplot = ix * f.model.my + iy; 
 
-      double vx = vlasov_vel(ix, f.model.mx, f.model.vmax);
-      double vy = vlasov_vel(iy, f.model.my, f.model.vmax);
-      char fieldname[100];
-      sprintf(fieldname, "output field has v = (%f,%f)", vx, vy);
-      //printf("%s\n", fieldname);
+	double vx = vlasov_vel(ix, f.model.mx, f.model.vmax);
+	double vy = vlasov_vel(iy, f.model.my, f.model.vmax);
+	char fieldname[100];
+	sprintf(fieldname, "output field has v = (%f,%f)", vx, vy);
+	//printf("%s\n", fieldname);
       
-      char filename[100];
-      sprintf(filename, "dgvisuix%diy%d.msh", ix, iy);
-      printf("ix: %d, iy: %d, fieldname: %s\n", ix, iy, fieldname);
-      PlotField(mplot, false, &f, fieldname, filename);
-
+	char filename[100];
+	sprintf(filename, "dgvisuix%diy%d.msh", ix, iy);
+	printf("ix: %d, iy: %d, fieldname: %s\n", ix, iy, fieldname);
+	PlotField(mplot, false, &f, fieldname, filename);
+      }
     }
+    /* PlotField(mplot, true, &f, "dgerror.msh"); */
   }
-  /* PlotField(mplot, true, &f, "dgerror.msh"); */
 
   double dd = L2error(&f);
   printf("L2 error: %f\n", dd);
