@@ -5,7 +5,7 @@
 #include "getopt.h"
 #include <stdlib.h>     /* atoi */
 
-int test_manyv(int deg, int nraf, double cfl) 
+int test_manyv(int deg, int nraf, double cfl, double tmax) 
 {
   bool test = true;
   Field f;
@@ -51,7 +51,6 @@ int test_manyv(int deg, int nraf, double cfl)
 
   printf("cfl param: %f\n", f.hmin);
 
-  double tmax = 1e-2;
   RK2(&f, tmax);
  
   // Save the results and the error
@@ -76,9 +75,10 @@ int test_manyv(int deg, int nraf, double cfl)
     /* PlotField(mplot, true, &f, "dgerror.msh"); */
   }
 
-  printf("cfl: %f, deg: %d, nraf: %d", cfl, deg, nraf);
+  printf("cfl: %f, deg: %d, nraf: %d\n", cfl, deg, nraf);
   double dd = L2error(&f);
-  printf("L2 error: %f\n", dd);
+  printf("L2 error\n");
+  printf("%f\n", dd);
   
   test = test && (dd < 1e-3); // FIXME: reasonable precision?
 
@@ -90,8 +90,9 @@ int main(int argc, char* argv[]) {
   double cfl = 0.05;
   int deg = 3;
   int nraf = 4;
+  double tmax = 1e-2;
   for (;;) {
-    int cc = getopt(argc, argv, "c:d:n:");
+    int cc = getopt(argc, argv, "c:d:n:t:");
     if (cc == -1) break;
     switch (cc) {
     case 0:
@@ -106,15 +107,18 @@ int main(int argc, char* argv[]) {
     case 'n':
       nraf = atoi(optarg);
       break;
+    case 't':
+      tmax = atof(optarg);
+      break;
     default:
       printf("Error: invalid option.\n");
       printf("Usage:\n");
-      printf("./testmanyv -c <cfl> -d <deg> -n <nraf>");
+      printf("./testmanyv -c <cfl> -d <deg> -n <nraf> -t <tmax>\n");
       exit(1);
     }
   }
 
-  int resu = test_manyv(deg, nraf, cfl);
+  int resu = test_manyv(deg, nraf, cfl, tmax);
   if (resu) printf("multiple velocity transport test OK !\n");
   else printf("multiple velocity transport test failed !\n");
   return !resu;
