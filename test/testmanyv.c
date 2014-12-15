@@ -22,12 +22,15 @@ int test_manyv(void)
   // Set the global parameters for the Vlasov equation
   set_vlasov_params(&(f.model));
   
+  int deg = 3;
+  int nraf = 4;
+
   f.interp.interp_param[0] = f.model.m; // _M
-  f.interp.interp_param[1] = 3; // x direction degree
-  f.interp.interp_param[2] = 3; // y direction degree
+  f.interp.interp_param[1] = deg; // x direction degree
+  f.interp.interp_param[2] = deg; // y direction degree
   f.interp.interp_param[3] = 0; // z direction degree
-  f.interp.interp_param[4] = 4; // x direction refinement
-  f.interp.interp_param[5] = 4; // y direction refinement
+  f.interp.interp_param[4] = nraf; // x direction refinement
+  f.interp.interp_param[5] = nraf; // y direction refinement
   f.interp.interp_param[6] = 1; // z direction refinement
 
   // Read the gmsh file
