@@ -5,27 +5,19 @@
 #include <math.h>
 
 int main(void) {
-  
   // unit tests
-    
   int resu=TestCLInfo();
-	 
   if (resu) printf("CLInfo test OK !\n");
   else printf("CLInfo test failed !\n");
-
   return !resu;
 } 
 
-
-
-
 int TestCLInfo(void){
-
-  int test = (1==1);
+  int test = true;
 
   CLInfo cli;
 
-  InitCLInfo(&cli,_CL_PLATFORM,_CL_DEVICE);
+  InitCLInfo(&cli, _CL_PLATFORM, _CL_DEVICE);
   PrintCLInfo(&cli);
 
   char prog[]="#pragma OPENCL EXTENSION cl_khr_fp64: enable \n"
@@ -38,22 +30,15 @@ int TestCLInfo(void){
   BuildKernels(&cli,prog);
 
   char* s;
-  ReadFile("src/field.cl",&s);
+  ReadFile("src/field.cl", &s);
 
   //printf("%s\n\n\n",s);
 
-  BuildKernels(&cli,s);
-  
+  BuildKernels(&cli, s);
 
   char func_name[]="testadd";
   char* header;
   char* source;
-  GetFunctionSource(prog,func_name,
-                    &header,&source);
-
-  
-
-
+  GetFunctionSource(prog, func_name, &header, &source);
   return test;
-
 }

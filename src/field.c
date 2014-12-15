@@ -1984,9 +1984,8 @@ void dtFieldSlow(Field* f) {
 // Time integration by a second order Runge-Kutta algorithm
 void RK2(Field* f, double tmax) {
   double vmax = 1; // to be changed for another model !!!!!!!!!
-  double cfl = 0.05;
 
-  double dt = cfl * f->hmin / vmax;
+  double dt = f->model.cfl * f->hmin / vmax;
   int itermax = tmax/dt;
   int freq = (1 >= itermax/10)? 1 : itermax/10;
   //int param[8] = {f->model.m, _DEGX, _DEGY, _DEGZ, _RAFX, _RAFY, _RAFZ, 0};
@@ -2036,9 +2035,8 @@ void RK2(Field* f, double tmax) {
 // memory copy instead of pointers exchange
 void RK2Copy(Field* f, double tmax) {
   double vmax = 1; // to be changed for another model !!!!!!!!!
-  double cfl = 0.05;
 
-  double dt = cfl * f->hmin / vmax;
+  double dt = f->model.cfl * f->hmin / vmax;
 
   //int param[8] = {f->model.m, _DEGX, _DEGY, _DEGZ, _RAFX, _RAFY, _RAFZ, 0};
   int sizew = f->macromesh.nbelems * f->model.m * NPG(f->interp_param + 1);

@@ -6,6 +6,9 @@ typedef struct Model {
   //! Number of conservative variables
   int m;
 
+  //! CFL coefficient for time-stepping
+  double cfl; // 0.05
+
   //! Number of conservative variables in each dimension (NB: their
   //! prouduct must equal m).
   int vlasov_mx, vlasov_my, vlasov_mz;

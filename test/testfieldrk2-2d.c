@@ -15,6 +15,7 @@ int main(void) {
 int TestFieldRK2_2D(void) {
   bool test = true;
   Field f;
+  f.model.cfl = 0.05;
   f.model.m = 1; // only one conservative variable
   f.model.NumFlux = TransNumFlux2d;
   f.model.BoundaryFlux = TransBoundaryFlux2d;

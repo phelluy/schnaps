@@ -7,7 +7,7 @@ int test_manyv(void)
 {
   bool test = true;
   Field f;
-  
+  f.model.cfl = 0.05;  
   f.model.vlasov_mx = 5;
   f.model.vlasov_my = 5;
   f.model.vlasov_mz = 1;

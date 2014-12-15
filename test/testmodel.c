@@ -22,6 +22,7 @@ int TestModel(void){
   int test = true;
   // Creation of a simple transport model
   Model tr;
+  tr.cfl = 0.05;
   tr.m = 1; // only one conservative variable
   tr.NumFlux = TransNumFlux;
   tr.BoundaryFlux = TestTransBoundaryFlux;

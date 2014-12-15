@@ -16,7 +16,8 @@ int TestmEq2(void) {
   bool test = true;
   Field f;
   int vec = 2;
-  
+
+  f.model.cfl = 0.05;  
   if(vec == 2) {
     f.model.m = 2; // num of conservative variables
   } else {
