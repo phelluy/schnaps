@@ -8,11 +8,11 @@ int test_manyv(void)
   bool test = true;
   Field f;
   
-  f.model.mx = 5;
-  f.model.my = 5;
-  f.model.mz = 1;
-  f.model.m = f.model.mx * f.model.my * f.model.mz;
-  f.model.vmax = 0.5;
+  f.model.vlasov_mx = 5;
+  f.model.vlasov_my = 5;
+  f.model.vlasov_mz = 1;
+  f.model.m = f.model.vlasov_mx * f.model.vlasov_my * f.model.vlasov_mz;
+  f.model.vlasov_vmax = 0.5;
   f.model.NumFlux = vlaTransNumFlux2d;
   f.model.BoundaryFlux = vlaTransBoundaryFlux2d;
   f.model.InitData = vlaTransInitData2d;
@@ -59,12 +59,12 @@ int test_manyv(void)
   // Save the results and the error
   bool writemsh = false;
   if(writemsh) {
-    for(int ix = 0; ix < f.model.mx; ++ix) {
-      for(int iy = 0; iy < f.model.my; ++iy) {
-	int mplot = ix * f.model.my + iy; 
+    for(int ix = 0; ix < f.model.vlasov_mx; ++ix) {
+      for(int iy = 0; iy < f.model.vlasov_my; ++iy) {
+	int mplot = ix * f.model.vlasov_my + iy; 
 
-	double vx = vlasov_vel(ix, f.model.mx, f.model.vmax);
-	double vy = vlasov_vel(iy, f.model.my, f.model.vmax);
+	double vx = vlasov_vel(ix, f.model.vlasov_mx, f.model.vlasov_vmax);
+	double vy = vlasov_vel(iy, f.model.vlasov_my, f.model.vlasov_vmax);
 	char fieldname[100];
 	sprintf(fieldname, "output field has v = (%f,%f)", vx, vy);
 	//printf("%s\n", fieldname);

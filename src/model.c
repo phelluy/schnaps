@@ -175,11 +175,11 @@ void set_vlasov_params(Model *mod)
 {
   m = mod->m;
   assert(m > 0);
-  mx = mod->mx;
-  my = mod->my;
-  mz = mod->mz;
-  assert(m == mx * my * mz);
-  vmax = mod->vmax;
+  vlasov_mx = mod->vlasov_mx;
+  vlasov_my = mod->vlasov_my;
+  vlasov_mz = mod->vlasov_mz;
+  assert(m == vlasov_mx * vlasov_my * vlasov_mz);
+  vlasov_vmax = mod->vlasov_vmax;
 }
 
 void vlaTransInitData2d(double x[3], double w[]) 
@@ -189,20 +189,20 @@ void vlaTransInitData2d(double x[3], double w[])
 }
 
 // Return the component of the vlasov velocity with index id.
-double vlasov_vel(const int id, const int md, double vmax)
+double vlasov_vel(const int id, const int md, double vlasov_vmax)
 {
   int mid = md / 2;
-  double dv = vmax / mid;
+  double dv = vlasov_vmax / mid;
   return (id - mid) * dv;
 }
 
 void vlaTransNumFlux2d(double wL[], double wR[], double* vnorm, double* flux) 
 {
-  for(int ix = 0; ix < mx; ++ix) {
-    double vx = vlasov_vel(ix, mx, vmax);
+  for(int ix = 0; ix < vlasov_mx; ++ix) {
+    double vx = vlasov_vel(ix, vlasov_mx, vlasov_vmax);
 
-    for(int iy = 0; iy < my; ++iy) {
-      double vy = vlasov_vel(iy, my, vmax);
+    for(int iy = 0; iy < vlasov_my; ++iy) {
+      double vy = vlasov_vel(iy, vlasov_my, vlasov_vmax);
       
       double vn = vx * vnorm[0]	+ vy * vnorm[1];
       double vnp = vn > 0 ? vn : 0;
@@ -210,7 +210,7 @@ void vlaTransNumFlux2d(double wL[], double wR[], double* vnorm, double* flux)
       
       // NB: assumes a certain memory distribution for the velocity
       // components at each point.
-      int im = ix * my + iy;
+      int im = ix * vlasov_my + iy;
       flux[im] = vnp * wL[im] + vnm * wR[im];
     }
   }
@@ -244,12 +244,12 @@ void vlaTransImposedData2d(double x[3], double t, double* w)
   double s2pi = sqrt(2.0 * PI);
   double xval = 1.0;
 
-  for(int ix = 0; ix < mx; ++ix) {
-    double vx = vlasov_vel(ix, mx, vmax);
+  for(int ix = 0; ix < vlasov_mx; ++ix) {
+    double vx = vlasov_vel(ix, vlasov_mx, vlasov_vmax);
     double px = x[0] - vx * t;
 
-    for(int iy = 0; iy < my; ++iy) {
-      double vy = vlasov_vel(iy, my, vmax);
+    for(int iy = 0; iy < vlasov_my; ++iy) {
+      double vy = vlasov_vel(iy, vlasov_my, vlasov_vmax);
       double py = x[1] - vy * t;
 
       double r = sqrt(px * px + py * py);
@@ -260,7 +260,7 @@ void vlaTransImposedData2d(double x[3], double t, double* w)
 
       // NB: assumes a certain memory distribution for the velocity
       // components at each point.
-      int im = ix * my + iy;
+      int im = ix * vlasov_my + iy;
       w[im] = pr * pvr;
     }
   }

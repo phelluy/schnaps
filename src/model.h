@@ -8,10 +8,10 @@ typedef struct Model {
 
   //! Number of conservative variables in each dimension (NB: their
   //! prouduct must equal m).
-  int mx, my, mz;
+  int vlasov_mx, vlasov_my, vlasov_mz;
 
-  //! The conservative variables have velocity in [-vmax, vmax]
-  double vmax;
+  //! The conservative variables have velocity in [-vlasov_vmax, vlasov_vmax]
+  double vlasov_vmax;
 
   //! \brief A pointer to the numflux function
   //! \param[in] wL, wR : left and right states
@@ -141,13 +141,13 @@ void TestTransImposedData2d(double* x, double t, double* w);
 
 //! Parameters used for computing the velocity for the Vlasov equation.
 static int m;
-static int mx;
-static int my;
-static int mz;
-static double vmax;
+static int vlasov_mx;
+static int vlasov_my;
+static int vlasov_mz;
+static double vlasov_vmax;
 
 void set_vlasov_params(Model *mod);
-double vlasov_vel(const int id, const int md, double vmax);
+double vlasov_vel(const int id, const int md, double vlasov_vmax);
 void vlaTransInitData2d(double x[3], double w[]);
 void vlaTransNumFlux2d(double wL[], double wR[], double* vnorm, double* flux);
 void vlaTransBoundaryFlux2d(double x[3], double t, 
