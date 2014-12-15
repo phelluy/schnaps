@@ -2,8 +2,10 @@
 #include <stdio.h>
 #include <assert.h>
 #include "test.h"
+#include "getopt.h"
+#include <stdlib.h>     /* atoi */
 
-int test_manyv(void) 
+int test_manyv(int deg, int nraf, double cfl) 
 {
   bool test = true;
   Field f;
@@ -22,8 +24,6 @@ int test_manyv(void)
   // Set the global parameters for the Vlasov equation
   set_vlasov_params(&(f.model));
   
-  int deg = 3;
-  int nraf = 4;
 
   f.interp.interp_param[0] = f.model.m; // _M
   f.interp.interp_param[1] = deg; // x direction degree
@@ -51,11 +51,6 @@ int test_manyv(void)
 
   printf("cfl param: %f\n", f.hmin);
 
-  { // Check error wrt initial conditions
-    double dd = L2error(&f);
-    printf("L2 error: %f\n", dd);
-  }
-
   double tmax = 1e-2;
   RK2(&f, tmax);
  
@@ -81,17 +76,45 @@ int test_manyv(void)
     /* PlotField(mplot, true, &f, "dgerror.msh"); */
   }
 
+  printf("cfl: %f, deg: %d, nraf: %d", cfl, deg, nraf);
   double dd = L2error(&f);
   printf("L2 error: %f\n", dd);
+  
   test = test && (dd < 1e-3); // FIXME: reasonable precision?
 
   return test;
 }
 
-int main(void) {
+int main(int argc, char* argv[]) {
   // Unit tests
-  int resu = test_manyv();
- 
+  double cfl = 0.05;
+  int deg = 3;
+  int nraf = 4;
+  for (;;) {
+    int cc = getopt(argc, argv, "c:d:n:");
+    if (cc == -1) break;
+    switch (cc) {
+    case 0:
+      break;
+    case 'c':
+      cfl = atof(optarg);
+      // set cfl
+      break;
+    case 'd':
+      deg = atoi(optarg);
+      break;
+    case 'n':
+      nraf = atoi(optarg);
+      break;
+    default:
+      printf("Error: invalid option.\n");
+      printf("Usage:\n");
+      printf("./testmanyv -c <cfl> -d <deg> -n <nraf>");
+      exit(1);
+    }
+  }
+
+  int resu = test_manyv(deg, nraf, cfl);
   if (resu) printf("multiple velocity transport test OK !\n");
   else printf("multiple velocity transport test failed !\n");
   return !resu;
