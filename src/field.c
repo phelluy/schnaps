@@ -19,15 +19,15 @@
 // param[4] = raf x
 // param[5] = raf y
 // param[6] = raf z
+#pragma start_opencl
 int GenericVarindex(int* param, int elem, int ipg, int iv) {
   int npg = (param[1] + 1) * (param[2] + 1) * (param[3] + 1)
     * param[4] * param[5] * param[6];
   return iv + param[0] * (ipg + npg * elem);
 }
-
-#pragma start_opencl
-void CopyFieldtoCPU(Field* f) {
 #pragma end_opencl
+
+void CopyFieldtoCPU(Field* f) {
 #ifdef _WITH_OPENCL
   cl_int status;
 
@@ -201,7 +201,7 @@ void InitField(Field* f) {
 
   // Program compilation
   char* s;
-  ReadFile("src/field.cl", &s);
+  ReadFile("schnaps.cl", &s);
   BuildKernels(&(f->cli), s);
 
   f->dgmass = clCreateKernel(f->cli.program,

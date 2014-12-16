@@ -52,6 +52,14 @@ void PrintCLInfo(CLInfo* cli);
 //! \param[in] program string containing the kernels sources
 void BuildKernels(CLInfo* cli, char* program);
 
+//! \brief scan all *.h and *.c in order to find the code
+//! to be shared with opencl
+//! such code is enclosed between #pragma start_opencl and 
+//! #pragma end_opencl
+//! get also field.cl
+//! the result is put into schnaps.cl
+void GetOpenCLCode(void);
+
 //! \brief allocates and fills a string with a file content
 void ReadFile(char filename[], char** s);
 

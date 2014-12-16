@@ -40,5 +40,11 @@ int TestCLInfo(void){
   char* header;
   char* source;
   GetFunctionSource(prog, func_name, &header, &source);
+
+  char* allsrc;
+
+  GetOpenCLCode();
+
+
   return test;
 }

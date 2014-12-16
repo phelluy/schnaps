@@ -83,6 +83,7 @@ typedef struct MacroFace {
   Field *field; //! pointer to a  field
 } MacroFace;
 
+#pragma start_opencl
 //! \brief memory arrangement of field components.
 //! Generic implementation.
 //! \param[in] param interpolation parameters
@@ -91,6 +92,7 @@ typedef struct MacroFace {
 //! \param[in] iv field component index
 //! \returns the memory position in the arrays wn wnp1 or dtwn.
 int GenericVarindex(int *param, int elem, int ipg, int iv);
+#pragma end_opencl
 
 //! field initialization. Computation of the initial
 //! at each glop.
