@@ -29,21 +29,13 @@ int TestCLInfo(void){
 
   BuildKernels(&cli,prog);
 
-  char* s;
-  ReadFile("src/field.cl", &s);
+  GetOpenCLCode();
 
-  //printf("%s\n\n\n",s);
+  char* s;
+  ReadFile("schnaps.cl", &s);
+
 
   BuildKernels(&cli, s);
-
-  char func_name[]="testadd";
-  char* header;
-  char* source;
-  GetFunctionSource(prog, func_name, &header, &source);
-
-  char* allsrc;
-
-  GetOpenCLCode();
 
 
   return test;

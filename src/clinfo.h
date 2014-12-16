@@ -63,8 +63,4 @@ void GetOpenCLCode(void);
 //! \brief allocates and fills a string with a file content
 void ReadFile(char filename[], char** s);
 
-//! \brief Gets the header and source for a given
-//! function in a program string
-void GetFunctionSource(char* prog, char* func_name,
-		       char** header, char** source);
 #endif

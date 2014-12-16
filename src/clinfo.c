@@ -257,17 +257,6 @@ void ReadFile(char filename[],char** s){
   fclose(f);
 }
 
-void GetFunctionSource(char* prog, char* func_name,
-                       char** header, char** source){
-  char* pch;
-  printf("Splitting string \"%s\" into tokens:\n",prog);
-  pch = strtok(prog,"{");
-  while(pch != NULL) {
-    printf("%s\n",pch);
-    pch = strtok(NULL, "{");
-  }
-}
-
 
 //! \brief scan all *.h and *.c in order to find the code
 //! to be shared with opencl

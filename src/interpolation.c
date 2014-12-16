@@ -1,37 +1,35 @@
 #include <stdio.h>
 #include <math.h>
 #include <assert.h>
+#include "global.h"
 
 #include "interpolation.h"
 
+
+#pragma start_opencl
 /* gauss lobatto points */
-
-//! would allow to slightly move the boundary glops
-//! (for debuging purpose only)
-#define _EPS_LOB 0
-
 //! Gauss LObatto Points (GLOP) up to order 4
-const double gauss_lob_point[] = {
+__constant double gauss_lob_point[] = {
   0.5,
-  _EPS_LOB,
-  1-_EPS_LOB,
-  _EPS_LOB,
+  0,
+  1,
+  0,
   0.5,
-  1-_EPS_LOB,
-  _EPS_LOB,
+  1,
+  0,
   0.276393202250021030359082633127,
   0.723606797749978969640917366873,
-  1-_EPS_LOB,
-  _EPS_LOB,
+  1,
+  0,
   0.172673164646011428100853771877,
   0.5,
   0.827326835353988571899146228123,
-  1-_EPS_LOB
+  1
 };
 
 //! GLOP weights up to order 4
-const double gauss_lob_weight[] = {
-  1.,
+__constant double gauss_lob_weight[] = {
+  1,
   0.5,
   0.5,
   0.166666666666666666666666666667,
@@ -50,23 +48,9 @@ const double gauss_lob_weight[] = {
 
 //! indirection for finding the GLOP
 //! data for a given degree in the previous arrays
-const int gauss_lob_offset[] = {0, 1, 3, 6, 10};
+__constant int gauss_lob_offset[] = {0, 1, 3, 6, 10};
 
-//! \brief 1d GLOP weights for a given degree
-//! \param[in] deg degree
-//! \param[in] i glop index
-//! \returns the glop weight
-double wglop(int deg,int i) {
-  return gauss_lob_weight[gauss_lob_offset[deg] + i];
-}
-
-//! derivatives of the Lagrange functions
-//! at the Gauss Lobatto points up to
-//! degree 4
-//! derivatives for the first function
-//! derivatives for the second function
-//! etc. for each degree from 0 to 4
-const double gauss_lob_dpsi[] = {
+__constant double gauss_lob_dpsi[] = {
   0.0,
   -1.,
   -1.,
@@ -126,7 +110,19 @@ const double gauss_lob_dpsi[] = {
 
 //! indirection for finding the GLOP
 //! data for a given degree in the previous arrays
-const int gauss_lob_dpsi_offset[] = {0, 1, 5, 14, 30};
+__constant int gauss_lob_dpsi_offset[] = {0, 1, 5, 14, 30};
+
+
+#pragma end_opencl
+
+//! \brief 1d GLOP weights for a given degree
+//! \param[in] deg degree
+//! \param[in] i glop index
+//! \returns the glop weight
+double wglop(int deg,int i) {
+  return gauss_lob_weight[gauss_lob_offset[deg] + i];
+}
+
 
 void lagrange_polynomial(double* p, const double* subdiv,
 			 int deg, int ii, double x) {
