@@ -62,8 +62,9 @@ doxygen doxyschnaps
 #endif
 
 #define _WITH_OPENCL
-#define _CL_PLATFORM 1
+#define _CL_PLATFORM 0
 #define _CL_DEVICE 0
+
 
 #define __constant const
 

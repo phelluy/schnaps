@@ -108,11 +108,6 @@ void CopyFieldtoCPU(Field *f);
 //! \param[inout] f a field
 void DGVolumeSlow(Field *f);
 
-//! \brief compute the Discontinuous Galerkin inter-macrocells boundary terms.
-//! Slow version  (no optimization using the tensors products)
-//! \param[inout] f a field
-void DGMacroCellInterfaceSlow(Field *f);
-
 //! \brief apply the Discontinuous Galerkin approximation for computing
 //! the time derivative of the field. One subcell implementation.
 //! \param[inout] f a field
@@ -128,13 +123,13 @@ void dtField(Field *f);
 //! The argument has to be void* (for compatibility with pthread)
 //! but it is logically a MacroCell*
 //! \param[inout] mcell a MacroCell
-void* DGMacroCellInterface(void *mcell);
+void* DGMacroCellInterfaceSlow(void *mcell);
 
 //! \brief  compute the Discontinuous Galerkin inter-macrocells boundary terms second implementation with a loop on the faces
 //! The argument has to be void* (for compatibility with pthread)
 //! but it is logically a MacroCell*
 //! \param[inout] mcell a MacroCell
-void* DGMacroCellInterface2(void *mface);
+void* DGMacroCellInterface(void *mface);
 
 void* DGMacroCellInterface_CL(void *mface);
 
@@ -162,6 +157,12 @@ void* DGMass_CL(void *mcell);
 //! \param[inout] f a field
 //! \param[in] tmax physical duration of the simulation
 void RK2(Field *f,double tmax);
+
+//! \brief time integration by a second order Runge-Kutta algorithm
+// ! for OpenCL
+//! \param[inout] f a field
+//! \param[in] tmax physical duration of the simulation
+void RK2_CL(Field *f,double tmax);
 
 //! \brief time integration by a second order Runge-Kutta algorithm.
 //! slow version

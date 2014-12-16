@@ -105,7 +105,7 @@ int TestKernelInterface(void){
   f.dtwn=calloc(f.wsize,sizeof(double));
  
   for(int ifa = 0; ifa < f.macromesh.nbfaces; ifa++) {
-    DGMacroCellInterface2((void*) (mface + ifa));
+    DGMacroCellInterface((void*) (mface + ifa));
   }
 
   DisplayField(&f);

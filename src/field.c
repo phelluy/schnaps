@@ -622,7 +622,7 @@ void* DGSubCellInterface(void* mc) {
 }
 
 // compute the Discontinuous Galerkin inter-macrocells boundary terms
-void* DGMacroCellInterface(void* mc) {
+void* DGMacroCellInterfaceSlow(void* mc) {
   MacroCell* mcell = (MacroCell*) mc;
   Field *f = mcell->field;
 
@@ -746,7 +746,7 @@ void* DGMacroCellInterface(void* mc) {
 
 // Compute the Discontinuous Galerkin inter-macrocells boundary terms.
 // Second implementation with a loop on the faces.
-void* DGMacroCellInterface2(void* mc) {
+void* DGMacroCellInterface(void* mc) {
   MacroFace *mface = (MacroFace*) mc;
   Field *f = mface->field;
   MacroMesh *msh = &(f->macromesh);
@@ -1684,7 +1684,7 @@ void dtField_pthread(Field *f)
     for(int iw = 0; iw < f->wsize; iw++)
       f->dtwn[iw] = 0;
     for(int ifa = 0; ifa < f->macromesh.nbfaces; ifa++) {
-      DGMacroCellInterface2((void*) (mface + ifa));
+      DGMacroCellInterface((void*) (mface + ifa));
     }
   }
 
@@ -1699,7 +1699,7 @@ void dtField_pthread(Field *f)
     for(int ie = 0; ie < f->macromesh.nbelems; ie++) {
       status = pthread_create (&(tmcell[ie]), // thread
 			       NULL,                 // default attributes
-			       DGMacroCellInterface,  // called function
+			       DGMacroCellInterfaceSlow,  // called function
 			       (void*) (mcell+ie));  // function params
       assert(status==0);
     }
@@ -1767,7 +1767,7 @@ void dtField(Field* f) {
     for(int iw = 0; iw < f->wsize; iw++)
       f->dtwn[iw] = 0;
     for(int ifa = 0; ifa < f->macromesh.nbfaces; ifa++) {
-      DGMacroCellInterface2((void*) (mface + ifa));
+      DGMacroCellInterface((void*) (mface + ifa));
     }
   }
 
@@ -1782,7 +1782,7 @@ void dtField(Field* f) {
 #endif
   for(int ie = 0; ie < f->macromesh.nbelems; ++ie) {
     MacroCell *mcelli = mcell + ie;
-    if(!facealgo) DGMacroCellInterface(mcelli);
+    if(!facealgo) DGMacroCellInterfaceSlow(mcelli);
     DGSubCellInterface(mcelli);
     DGVolume(mcelli);
     DGMass(mcelli);
@@ -1984,52 +1984,63 @@ void dtFieldSlow(Field* f) {
   }
 };
 
+void swap_pdoubles(double **a, double **b)
+{
+  // exchange the field pointers
+  double *temp;
+  temp = *a;
+  *a = *b;
+  *b = temp;
+}
+
+void RK2_step1(double *fwnp1, double *fwn, double *fdtwn, const double dt, const int sizew)
+{
+  double halfdt = 0.5 * dt;
+#ifdef _OPENMP
+#pragma omp parallel for
+#endif
+  for(int iw = 0; iw < sizew; iw++) {
+    fwnp1[iw] = fwn[iw] + halfdt * fdtwn[iw];
+  }
+}
+
+void RK2_step2(double *fwnp1, double *fdtwn, const double dt, const int sizew)
+{
+#ifdef _OPENMP
+#pragma omp parallel for
+#endif
+  for(int iw = 0; iw < sizew; iw++) {
+    fwnp1[iw] += dt * fdtwn[iw];
+  }
+}
+
 // Time integration by a second order Runge-Kutta algorithm
 void RK2(Field* f, double tmax) {
   double vmax = 1; // to be changed for another model !!!!!!!!!
 
   double dt = f->model.cfl * f->hmin / vmax;
-  int itermax = tmax/dt;
-  int freq = (1 >= itermax/10)? 1 : itermax/10;
+  int itermax = tmax / dt;
+  int freq = (1 >= itermax / 10)? 1 : itermax / 10;
   //int param[8] = {f->model.m, _DEGX, _DEGY, _DEGZ, _RAFX, _RAFY, _RAFZ, 0};
   int sizew = f->macromesh.nbelems * f->model.m * NPG(f->interp_param + 1);
-
   int iter = 0;
 
   while(f->tnow < tmax) {
-    if (iter%freq==0)
+    if (iter % freq == 0)
       printf("t=%f iter=%d/%d dt=%f\n", f->tnow, iter, itermax, dt);
     // predictor
     dtField(f);
-
-#ifdef _OPENMP
-#pragma omp parallel for
-#endif
-    for(int iw = 0; iw < sizew; iw++) {
-      f->wnp1[iw] = f->wn[iw]+ dt/2 * f->dtwn[iw];
-    }
-    //exchange the field pointers
-    double *temp;
-    temp = f->wnp1;
-    f->wnp1 = f->wn;
-    f->wn = temp;
+    RK2_step1(f->wnp1, f->wn, f->dtwn, dt, sizew);
+    swap_pdoubles(&f->wnp1, &f->wn);
 
     // corrector
-    f->tnow += dt /2;
+    f->tnow += 0.5 * dt;
     dtField(f);
-#ifdef _OPENMP
-#pragma omp parallel for
-#endif
-    for(int iw = 0; iw < sizew; iw++) {
-      f->wnp1[iw]+=dt*f->dtwn[iw];
-    }
-    f->tnow+=dt/2;
-    iter++;
-    //exchange the field pointers
-    temp = f->wnp1;
-    f->wnp1 = f->wn;
-    f->wn = temp;
+    RK2_step2(f->wnp1, f->dtwn, dt, sizew);
+    swap_pdoubles(&f->wnp1, &f->wn);
 
+    f->tnow += 0.5 * dt;
+    iter++;
   }
   printf("t=%f iter=%d/%d dt=%f\n", f->tnow, iter, itermax, dt);
 }

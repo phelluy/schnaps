@@ -52,7 +52,7 @@ int TestFieldSubCellDGVol(void){
   }
 
   for(int ie = 0;ie < f.macromesh.nbelems; ie++){
-    DGMacroCellInterface((void*) (mcell+ie));
+    DGMacroCellInterfaceSlow((void*) (mcell+ie));
   }
   for(int ie = 0; ie < f.macromesh.nbelems; ie++){
     DGSubCellInterface((void*) (mcell+ie));
@@ -60,7 +60,7 @@ int TestFieldSubCellDGVol(void){
     DGMass((void*) (mcell+ie));
   }
 
-  /* DGMacroCellInterface(&f); */
+  /* DGMacroCellInterfaceSlow(&f); */
   /* DGSubCellInterface(&f); */
   /* DGVolume(&f); */
   /* DGMass(&f); */
