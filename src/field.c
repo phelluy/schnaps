@@ -201,6 +201,7 @@ void InitField(Field* f) {
 
   // Program compilation
   char* s;
+  GetOpenCLCode();
   ReadFile("schnaps.cl", &s);
   BuildKernels(&(f->cli), s);
 

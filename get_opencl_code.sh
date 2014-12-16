@@ -5,4 +5,5 @@ sed -n '/#pragma start_opencl/,/#pragma end_opencl/p' schnaps_temp.cl > schnaps.
 sed -i '/start_opencl/d' schnaps.cl
 sed -i '/end_opencl/d' schnaps.cl
 cat src/field.cl >> schnaps.cl
+rm schnaps_temp.cl
 return 0
