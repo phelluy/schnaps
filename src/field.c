@@ -25,7 +25,9 @@ int GenericVarindex(int* param, int elem, int ipg, int iv) {
   return iv + param[0] * (ipg + npg * elem);
 }
 
+#pragma start_opencl
 void CopyFieldtoCPU(Field* f) {
+#pragma end_opencl
 #ifdef _WITH_OPENCL
   cl_int status;
 
