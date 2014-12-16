@@ -227,6 +227,20 @@ void vlaTransBoundaryFlux2d(double x[3], double t,
   vlaTransNumFlux2d(wL, wR, vnorm, flux);
 }
 
+// compact support bump (C-infinity, but not analytic):
+double bump(double r)
+{
+  if(fabs(r) >= 0.5)
+    return 0;
+  return exp(-1.0/(1.0 - 4.0 * r * r));
+}
+
+double gaussian(double r)
+{
+  double c = 0.1;
+  return exp(-r * r / (c * c));
+}
+
 // 6th-degree polynomial with compact support
 double compact_poly6(double r)
 {
@@ -237,7 +251,6 @@ double compact_poly6(double r)
   return -35.0 / 16.0 * rrm1 * rrm1 * rrm1 * rrp1 * rrp1 * rrp1;
 }
 
-// Impose a compact-supporrt 6th degree polynomial in 2+2D
 void vlaTransImposedData2d(double x[3], double t, double* w) 
 {
   double PI = 4.0 * atan(1.0);
@@ -253,10 +266,11 @@ void vlaTransImposedData2d(double x[3], double t, double* w)
       double py = x[1] - vy * t;
 
       double r = sqrt(px * px + py * py);
-      double pr = compact_poly6(r);
+      double pi = 4.0 * atan(1.0);
+      double pr = gaussian(r);
 
       double vr = sqrt(vx * vx + vy * vy);
-      double pvr = compact_poly6(vr);
+      double pvr = gaussian(vr);
 
       // NB: assumes a certain memory distribution for the velocity
       // components at each point.

@@ -2128,5 +2128,5 @@ double L2error(Field* f) {
       }
     }
   }
-  return sqrt(error) / (sqrt(mean)  + 1e-10);
+  return sqrt(error) / (sqrt(mean)  + 1e-16);
 }

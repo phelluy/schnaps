@@ -24,7 +24,6 @@ int test_manyv(int deg, int nraf, double cfl, double tmax)
   // Set the global parameters for the Vlasov equation
   set_vlasov_params(&(f.model));
   
-
   f.interp.interp_param[0] = f.model.m; // _M
   f.interp.interp_param[1] = deg; // x direction degree
   f.interp.interp_param[2] = deg; // y direction degree
@@ -75,12 +74,12 @@ int test_manyv(int deg, int nraf, double cfl, double tmax)
     /* PlotField(mplot, true, &f, "dgerror.msh"); */
   }
 
-  printf("cfl: %f, deg: %d, nraf: %d\n", cfl, deg, nraf);
+  printf("tmax: %f, cfl: %f, deg: %d, nraf: %d\n", tmax, cfl, deg, nraf);
   double dd = L2error(&f);
   printf("L2 error\n");
-  printf("%f\n", dd);
+  printf("%e\n", dd);
   
-  test = test && (dd < 1e-3); // FIXME: reasonable precision?
+  test = test && (dd < 1e-2);
 
   return test;
 }
