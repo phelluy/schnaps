@@ -58,6 +58,8 @@ typedef struct Field{
   cl_kernel dgmass;
   cl_kernel dgvolume;
   cl_kernel dginterface;
+  cl_kernel rk2step1;
+  cl_kernel rk2step2;
 
 #endif
 
@@ -119,6 +121,13 @@ void dtFieldSlow(Field *f);
 //! \param[inout] f a field
 void dtField(Field *f);
 
+//! \brief OpenCL version of dtField : 
+//! apply the Discontinuous Galerkin approximation for computing
+//! the time derivative of the field. Works with several subcells.
+//! Fast version: multithreaded and with tensor products optimizations
+//! \param[inout] f a field
+void dtField_CL(Field *f);
+
 //! \brief  compute the Discontinuous Galerkin inter-macrocells boundary terms
 //! The argument has to be void* (for compatibility with pthread)
 //! but it is logically a MacroCell*
@@ -153,13 +162,33 @@ void* DGMass(void *mcell);
 //! \param[inout] mcell a MacroCell
 void* DGMass_CL(void *mcell);
 
+//! \brief exchange two pointers
+//! \param[inout] a first pointer
+//! \param[inout] b second pointer
+void swap_pdoubles(double **a, double **b);
+
+//! \brief first step in the RK2 algorithm
+//! \param[out] fwnp1 field at time n+1
+//! \param[in] fwn field at time n
+//! \param[in] fdtwn time derivative of the field
+//! \param[in] time step
+//! \param[in] size of the field buffer
+void RK2_step1(double *fwnp1, double *fwn, double *fdtwn, const double dt, const int sizew);
+
+//! \brief second step in the RK2 algorithm
+//! \param[inout] fwnp1 field at time n+1
+//! \param[in] fdtwn time derivative of the field
+//! \param[in] time step
+//! \param[in] size of the field buffer
+void RK2_step2(double *fwnp1, double *fdtwn, const double dt, const int sizew);
+
 //! \brief time integration by a second order Runge-Kutta algorithm
 //! \param[inout] f a field
 //! \param[in] tmax physical duration of the simulation
 void RK2(Field *f,double tmax);
 
-//! \brief time integration by a second order Runge-Kutta algorithm
-// ! for OpenCL
+//! \brief OpenCL version of RK2
+//! time integration by a second order Runge-Kutta algorithm
 //! \param[inout] f a field
 //! \param[in] tmax physical duration of the simulation
 void RK2_CL(Field *f,double tmax);

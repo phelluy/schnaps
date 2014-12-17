@@ -35,6 +35,6 @@ int TestKernelVolume(void);
 
 int TestKernelInterface(void);
 
-
+int TestFieldRK2_CL(void);
 
 #endif

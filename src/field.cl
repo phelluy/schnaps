@@ -1,3 +1,5 @@
+// -*- mode: c; -*-
+
 #pragma OPENCL EXTENSION cl_khr_fp64: enable
 
 //#define _FPREC
@@ -926,3 +928,37 @@ int ref_ipg(__constant int *param, double *xref) {
 
   return ix + (deg[0] + 1) * (iy + (deg[1] + 1) * iz) + offset;
 };
+
+
+// Compute the volume and subcell-interface terms on one macrocell
+__kernel
+void RK2_step1_CL(__constant int* param,    // interp param
+	       __constant int* ie,        // macrocel index
+	       __constant double *halfdt, // time step divided by two
+	       __global double* wn,       // field values
+	       __global double* wnp1,     // field values
+	       __global double* dtwn) {   // time derivative
+
+  int ipg = get_global_id(0);
+  
+  for(int iv=0; iv < param[0]; iv++) {
+    int imem = varindex(param, *ie, ipg, iv);
+    wnp1[imem] = wn[imem] + *halfdt * dtwn[imem];
+  }
+}
+
+// Compute the volume and subcell-interface terms on one macrocell
+__kernel
+void RK2_step2_CL(__constant int* param,    // interp param
+		  __constant int* ie,        // macrocel index
+		  __constant double *dt, // time step divided
+		  __global double* wnp1,     // field values
+		  __global double* dtwn) {   // time derivative
+  
+  int ipg = get_global_id(0);
+  
+  for(int iv=0; iv < param[0]; iv++) {
+    int imem = varindex(param, *ie, ipg, iv);
+    wnp1[imem] += *dt * dtwn[imem];
+  }
+}
