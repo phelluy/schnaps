@@ -940,9 +940,11 @@ void RK2_step1_CL(__constant int* param,    // interp param
 	       __global double* dtwn) {   // time derivative
 
   int ipg = get_global_id(0);
-  
+
+  printf("ipg = %d\n",ipg);  
   for(int iv=0; iv < param[0]; iv++) {
     int imem = varindex(param, *ie, ipg, iv);
+    printf("%d %d %d %d\n",ipg,*ie,iv,imem);
     wnp1[imem] = wn[imem] + *halfdt * dtwn[imem];
   }
 }

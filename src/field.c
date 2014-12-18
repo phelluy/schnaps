@@ -1482,6 +1482,7 @@ void* DGVolume_CL(void* mc) {
     clFinish(f->cli.commandqueue);  // wait the end of the computation
   }
 
+
   free(physnode);
   assert(clReleaseMemObject(physnode_cl)==CL_SUCCESS);
 
@@ -2160,11 +2161,11 @@ void RK2(Field* f, double tmax) {
 
 // {{{ RK2_step1_CL
 // first step in the RK2 algorithm
-void* RK2_step1_CL(void* mc) {
-  MacroCell *mcell = (MacroCell*) mc;
-  Field *f = mcell->field;
+void* RK2_step1_CL(Field *f) {
 
   int* param = f->interp_param;
+
+  double halfdt = 0.5*(f->dt);
 
   cl_mem param_cl;
   cl_int status;
@@ -2200,6 +2201,13 @@ void* RK2_step1_CL(void* mc) {
                           &ie_cl);
   assert(status == CL_SUCCESS);
 
+  // associates the param buffer to the 0th kernel argument
+  status = clSetKernelArg(f->rk2step1,    // kernel name
+                          2,              // arg num
+                          sizeof(double),
+                          &halfdt);     // opencl buffer
+  assert(status == CL_SUCCESS);
+
   // associates the wn buffer to the 3rd kernel argument
   status = clSetKernelArg(f->rk2step1,
                           3,
@@ -2209,7 +2217,7 @@ void* RK2_step1_CL(void* mc) {
 
   // associates the wnp1 buffer to the 4th kernel argument
   status = clSetKernelArg(f->rk2step1,
-                          3,
+                          4,
                           sizeof(cl_mem),
                           &(f->wnp1_cl));
   assert(status == CL_SUCCESS);
@@ -2223,7 +2231,16 @@ void* RK2_step1_CL(void* mc) {
 
 
   // loop on the elements
-  for (int ie = mcell->first; ie < mcell->last_p1; ie++) {
+  MacroCell mcell[f->macromesh.nbelems];
+  for(int ie = 0; ie < f->macromesh.nbelems; ie++) {
+    mcell[ie].field = f;
+    mcell[ie].first = ie;
+    mcell[ie].last_p1 = ie + 1;
+  }
+  for(int ie = 0; ie < f->macromesh.nbelems; ++ie) {
+    MacroCell *mcelli = mcell + ie;
+
+  //for (int ie = mcell->first; ie < mcell->last_p1; ie++) {
 
     // update the constant parameter to be passed to the kernel
     // first: get the lock on the cpu side
@@ -2251,23 +2268,23 @@ void* RK2_step1_CL(void* mc) {
 
     // kernel launch
     // the groupsize is the total number of glops
-    size_t groupsize = (param[1] + 1)*
-      (param[2] + 1)*(param[3] + 1);
+    //size_t groupsize = (param[1] + 1)*(param[2] + 1)*(param[3] + 1);
     // the total work items number is the number of glops
     // in a subcell * number of subcells
-    size_t numworkitems = param[4] * param[5] * param[6] * groupsize;
-    //printf("groupsize=%zd numworkitems=%zd\n", groupsize, numworkitems);
+    size_t numworkitems = param[0] * (param[1] + 1) * (param[2] + 1) * (param[3] + 1) 
+      * param[4] * param[5] * param[6];
+    printf("numworkitems=%zd\n", numworkitems);
     status = clEnqueueNDRangeKernel(f->cli.commandqueue,
 				    f->rk2step1,
 				    1, NULL,
 				    &numworkitems,
-				    &groupsize,
+				    NULL,//&groupsize,
 				    0, NULL, NULL);
     //printf("%d\n", status);
     assert(status == CL_SUCCESS);
     clFinish(f->cli.commandqueue);  // wait the end of the computation
+    printf("numworkitems=%zd\n", numworkitems);
   }
-
   return NULL;
 }
 // }}}
@@ -2291,6 +2308,7 @@ void RK2_CL(Field* f, double tmax) {
       printf("t=%f iter=%d/%d dt=%f\n", f->tnow, iter, itermax, dt);
     // predictor
     dtField_CL(f);
+    //RK2_step1_CL(f);
     RK2_step1(f->wnp1, f->wn, f->dtwn, dt, sizew);
     swap_pdoubles(&f->wnp1, &f->wn);
 
