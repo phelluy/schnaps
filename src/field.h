@@ -52,6 +52,7 @@ typedef struct Field{
   CLInfo cli;
   //! \brief copy of the dtwn array
   cl_mem wn_cl;
+  cl_mem wnp1_cl;
   cl_mem dtwn_cl;
 
   //! opencl kernels for mass inversion
@@ -186,6 +187,8 @@ void RK2_step2(double *fwnp1, double *fdtwn, const double dt, const int sizew);
 //! \param[inout] f a field
 //! \param[in] tmax physical duration of the simulation
 void RK2(Field *f,double tmax);
+
+void* RK2_step1_CL(void* mc);
 
 //! \brief OpenCL version of RK2
 //! time integration by a second order Runge-Kutta algorithm

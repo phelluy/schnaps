@@ -198,6 +198,13 @@ void InitField(Field* f) {
                             &status);
   assert(status == CL_SUCCESS);
 
+  f->wnp1_cl = clCreateBuffer(f->cli.context,
+                            CL_MEM_READ_WRITE | CL_MEM_USE_HOST_PTR,
+                            sizeof(double) * f->wsize,
+                            f->wnp1,
+                            &status);
+  assert(status == CL_SUCCESS);
+
   f->dtwn_cl = clCreateBuffer(f->cli.context,
 			      CL_MEM_READ_WRITE | CL_MEM_USE_HOST_PTR,
 			      sizeof(double) * f->wsize,
@@ -2145,6 +2152,123 @@ void RK2(Field* f, double tmax) {
     iter++;
   }
   printf("t=%f iter=%d/%d dt=%f\n", f->tnow, iter, itermax, dt);
+}
+// }}}
+
+
+
+
+// {{{ RK2_step1_CL
+// first step in the RK2 algorithm
+void* RK2_step1_CL(void* mc) {
+  MacroCell *mcell = (MacroCell*) mc;
+  Field *f = mcell->field;
+
+  int* param = f->interp_param;
+
+  cl_mem param_cl;
+  cl_int status;
+  param_cl = clCreateBuffer(
+			    f->cli.context,
+			    CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR,
+			    sizeof(int) * 7,
+			    f->interp_param,
+			    &status);
+  assert(status == CL_SUCCESS);
+
+  // associates the param buffer to the 0th kernel argument
+  status = clSetKernelArg(f->rk2step1,    // kernel name
+                          0,              // arg num
+                          sizeof(cl_mem),
+                          &param_cl);     // opencl buffer
+  assert(status == CL_SUCCESS);
+
+  // the same for element index
+  int ie_cpu = 0;
+  cl_mem ie_cl;
+  ie_cl = clCreateBuffer(
+			 f->cli.context,
+			 CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR,
+			 sizeof(int),
+			 &ie_cpu,
+			 &status);
+  assert(status == CL_SUCCESS);
+  // associates ie buffer to  kernel argument #1
+  status = clSetKernelArg(f->rk2step1,
+                          1,
+                          sizeof(cl_mem),
+                          &ie_cl);
+  assert(status == CL_SUCCESS);
+
+  // associates the wn buffer to the 3rd kernel argument
+  status = clSetKernelArg(f->rk2step1,
+                          3,
+                          sizeof(cl_mem),
+                          &(f->wn_cl));
+  assert(status == CL_SUCCESS);
+
+  // associates the wnp1 buffer to the 4th kernel argument
+  status = clSetKernelArg(f->rk2step1,
+                          3,
+                          sizeof(cl_mem),
+                          &(f->wnp1_cl));
+  assert(status == CL_SUCCESS);
+
+  // associates the dtwn buffer to the 5th kernel argument
+  status = clSetKernelArg(f->rk2step1,           // kernel name
+                          5,              // arg num
+                          sizeof(cl_mem),
+                          &(f->dtwn_cl));     // opencl buffer
+  assert(status == CL_SUCCESS);
+
+
+  // loop on the elements
+  for (int ie = mcell->first; ie < mcell->last_p1; ie++) {
+
+    // update the constant parameter to be passed to the kernel
+    // first: get the lock on the cpu side
+    void *chkptr = clEnqueueMapBuffer(f->cli.commandqueue,
+				ie_cl, // buffer to copy from
+				CL_TRUE, // block until the buffer is available
+				CL_MAP_WRITE, // we just want to copy ie
+				0, // offset
+				sizeof(int), // buffersize
+				0, NULL, NULL, // events management
+				&status);
+    assert(status == CL_SUCCESS);
+    assert(chkptr == &ie_cpu);
+    // second: copy
+    ie_cpu = ie;
+    //third: unlock
+    clEnqueueUnmapMemObject (f->cli.commandqueue,
+        		     ie_cl,
+        		     &ie_cpu,
+        		     0, NULL, NULL);
+
+    // ensures that all the buffers are mapped
+    status = clFinish(f->cli.commandqueue);
+
+
+    // kernel launch
+    // the groupsize is the total number of glops
+    size_t groupsize = (param[1] + 1)*
+      (param[2] + 1)*(param[3] + 1);
+    // the total work items number is the number of glops
+    // in a subcell * number of subcells
+    size_t numworkitems = param[4] * param[5] * param[6] * groupsize;
+    //printf("groupsize=%zd numworkitems=%zd\n", groupsize, numworkitems);
+    status = clEnqueueNDRangeKernel(f->cli.commandqueue,
+				    f->rk2step1,
+				    1, NULL,
+				    &numworkitems,
+				    &groupsize,
+				    0, NULL, NULL);
+    //printf("%d\n", status);
+    assert(status == CL_SUCCESS);
+    clFinish(f->cli.commandqueue);  // wait the end of the computation
+  }
+
+  return NULL;
 }
 // }}}
 
