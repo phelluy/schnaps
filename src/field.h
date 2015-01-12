@@ -56,6 +56,9 @@ typedef struct Field{
   cl_mem dtwn_cl;
   //! \brief copy of the params
   cl_mem param_cl;
+  //! \brief copy physnode
+  cl_mem physnode_cl;
+  cl_double *physnode;
 
   //! opencl kernels for mass inversion
   cl_kernel dgmass;
@@ -63,6 +66,7 @@ typedef struct Field{
   cl_kernel dginterface;
   cl_kernel RK_out_CL;
   cl_kernel RK_in_CL;
+
 
 #endif
 
@@ -97,10 +101,13 @@ typedef struct MacroFace {
 int GenericVarindex(int *param, int elem, int ipg, int iv);
 #pragma end_opencl
 
-//! field initialization. Computation of the initial
-//! at each glop.
+//! field initialization. Computation of the initial at each glop.
 //! \param[inout] f a field
 void InitField(Field *f);
+
+//! free the buffers created in InitField.
+//! \param[inout] f a field
+void FreeField(Field *f);
 
 //! copy back the field to host memory
 //! \param[inout] f a field

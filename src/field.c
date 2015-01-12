@@ -7,6 +7,7 @@
 #include "global.h"
 #include <math.h>
 #include <float.h>
+#include "clutils.h"
 
 #ifdef _WITH_PTHREAD
 #include <pthread.h>
@@ -43,6 +44,7 @@ void CopyFieldtoCPU(Field* f) {
 			      f->wsize * sizeof(double), // buffersize
 			      0, NULL, NULL, // events management
 			      &status);
+  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status == CL_SUCCESS);
   assert(chkptr == f->dtwn);
 
@@ -54,6 +56,7 @@ void CopyFieldtoCPU(Field* f) {
 			      f->wsize * sizeof(double), // buffersize
 			      0, NULL, NULL, // events management
 			      &status);
+  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status == CL_SUCCESS);
   assert(chkptr == f->wn);
   status = clFinish(f->cli.commandqueue);
@@ -190,6 +193,7 @@ void InitField(Field* f) {
                             sizeof(double) * f->wsize,
                             f->wn,
                             &status);
+  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status == CL_SUCCESS);
 
   f->wnp1_cl = clCreateBuffer(f->cli.context,
@@ -197,6 +201,7 @@ void InitField(Field* f) {
 			      sizeof(double) * f->wsize,
 			      f->wnp1,
 			      &status);
+  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status == CL_SUCCESS);
 
   f->dtwn_cl = clCreateBuffer(f->cli.context,
@@ -204,6 +209,7 @@ void InitField(Field* f) {
 			      sizeof(double) * f->wsize,
 			      f->dtwn,
 			      &status);
+  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status == CL_SUCCESS);
 
   f->param_cl = clCreateBuffer(f->cli.context,
@@ -211,6 +217,17 @@ void InitField(Field* f) {
 			       sizeof(int) * 7,
 			       f->interp_param,
 			       &status);
+  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status == CL_SUCCESS);
+
+  f->physnode = calloc(60, sizeof(cl_double));
+
+  f->physnode_cl = clCreateBuffer(f->cli.context,
+				  CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR,
+				  sizeof(cl_double) * 60,
+				  f->physnode,
+				  &status);
+  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status == CL_SUCCESS);
 
   // Program compilation
@@ -222,30 +239,49 @@ void InitField(Field* f) {
   f->dgmass = clCreateKernel(f->cli.program,
 			     "DGMass",
 			     &status);
+  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status == CL_SUCCESS);
 
   f->dgvolume = clCreateKernel(f->cli.program,
 			       "DGVolume",
 			       &status);
+  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status == CL_SUCCESS);
 
   f->dginterface = clCreateKernel(f->cli.program,
 				  "DGMacroCellInterface",
 				  &status);
+  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status == CL_SUCCESS);
 
   f->RK_out_CL = clCreateKernel(f->cli.program,
-			       "RK_out_CL",
-			       &status);
+				"RK_out_CL",
+				&status);
+  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status == CL_SUCCESS);
 
   f->RK_in_CL = clCreateKernel(f->cli.program,
 			       "RK_in_CL",
 			       &status);
+  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status == CL_SUCCESS);
 #endif
 };
 
+// This is the destructor for a field
+void FreeField(Field* f) 
+{
+#ifdef _WITH_OPENCL
+  cl_int status;
+
+  status = clReleaseMemObject(f->physnode_cl);
+  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status == CL_SUCCESS);
+
+  free(f->physnode);
+
+#endif
+}
 
 // Display the field on screen
 void DisplayField(Field* f) {
@@ -923,6 +959,7 @@ void* DGMacroCellInterface_CL(void* mf) {
                           argnum++,              // arg num
                           sizeof(cl_mem),
                           &(f->param_cl));     // opencl buffer
+  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status == CL_SUCCESS);
 
   // tnow
@@ -944,11 +981,13 @@ void* DGMacroCellInterface_CL(void* mf) {
 			       sizeof(cl_double) * 60,
 			       physnodeL,
 			       &status);
+  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status == CL_SUCCESS);
   status = clSetKernelArg(kernel,           // kernel name
                           argnum++,              // arg num
                           sizeof(cl_mem),
                           &physnodeL_cl);     // opencl buffer
+  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status == CL_SUCCESS);
 
   cl_mem physnodeR_cl;
@@ -959,24 +998,28 @@ void* DGMacroCellInterface_CL(void* mf) {
 				sizeof(cl_double) * 60,
 				physnodeR,
 				&status);
+  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status == CL_SUCCESS);
 
   status = clSetKernelArg(kernel,           // kernel name
                           argnum++,              // arg num
                           sizeof(cl_mem),
                           &physnodeR_cl);     // opencl buffer
+  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status == CL_SUCCESS);
 
   status = clSetKernelArg(kernel,           // kernel name
                           argnum++,              // arg num
                           sizeof(cl_mem),
                           &(f->wn_cl));     // opencl buffer
+  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status == CL_SUCCESS);
 
   status = clSetKernelArg(kernel,           // kernel name
                           argnum++,              // arg num
                           sizeof(cl_mem),
                           &(f->dtwn_cl));     // opencl buffer
+  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status == CL_SUCCESS);
 
   // Loop on the macro faces
@@ -995,6 +1038,7 @@ void* DGMacroCellInterface_CL(void* mf) {
 				      sizeof(cl_double) * 60, // buffersize
 				      0, NULL, NULL, // events management
 				      &status);
+    if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
     assert(status == CL_SUCCESS);
     assert(chkptr == physnodeL);
 
@@ -1008,6 +1052,7 @@ void* DGMacroCellInterface_CL(void* mf) {
 				     physnodeL_cl,
 				     physnodeL,
 				     0, NULL, NULL);
+    if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
     assert(status == CL_SUCCESS);
 
     if(ieR >= 0) {
@@ -1019,8 +1064,10 @@ void* DGMacroCellInterface_CL(void* mf) {
 					sizeof(cl_double) * 60, // buffersize
 					0, NULL, NULL, // events management
 					&status);
+      if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
       assert(status == CL_SUCCESS);
       assert(chkptr == physnodeR);
+
       for(int inoloc = 0; inoloc < 20; inoloc++) {
         int ino = f->macromesh.elem2node[20 * ieR + inoloc];
 	for(unsigned int i = 0; i < 3; ++i) {
@@ -1031,6 +1078,7 @@ void* DGMacroCellInterface_CL(void* mf) {
 				       physnodeR_cl,
 				       physnodeR,
 				       0, NULL, NULL);
+      if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
       assert(status == CL_SUCCESS);
     }
 
@@ -1039,30 +1087,35 @@ void* DGMacroCellInterface_CL(void* mf) {
                             argnum++,
                             sizeof(double),
                             &(f->tnow));
+    if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
     assert(status == CL_SUCCESS);
 
     status = clSetKernelArg(kernel,
                             argnum++,
                             sizeof(int),
                             &ieL);
+    if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
     assert(status == CL_SUCCESS);
 
     status = clSetKernelArg(kernel,
                             argnum++,
                             sizeof(int),
                             &ieR);
+    if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
     assert(status == CL_SUCCESS);
 
     status = clSetKernelArg(kernel,
                             argnum++,
                             sizeof(int),
                             &locfaL);
+    if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
     assert(status == CL_SUCCESS);
 
     status = clSetKernelArg(kernel,
                             argnum++,
                             sizeof(int),
                             &locfaR);
+    if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
     assert(status == CL_SUCCESS);
 
     clFinish(f->cli.commandqueue);
@@ -1074,16 +1127,19 @@ void* DGMacroCellInterface_CL(void* mf) {
         			    &numworkitems,
         			    NULL,
         			    0, NULL, NULL);
+    if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
     assert(status == CL_SUCCESS);
     clFinish(f->cli.commandqueue);
   }
 
   free(physnodeL);
   status = clReleaseMemObject(physnodeL_cl);
+  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status == CL_SUCCESS);
 
   free(physnodeR);
   status = clReleaseMemObject(physnodeR_cl);
+  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status == CL_SUCCESS);
 
   return NULL;
@@ -1128,16 +1184,9 @@ void* DGMass(void* mc) {
   return NULL;
 }
 
-// apply division by the mass matrix OpenCL version
-void* DGMass_CL(void* mc) {
-  MacroCell* mcell = (MacroCell*) mc;
-  Field *f = mcell->field;
-
-  int* param = f->interp_param;
-
-  /* printf("&pf = %p\n", f); */
-  /* printf("%f\n", f->dtwn[0]); */
-
+// Set up kernel arguments, etc, for DGMass_CL.
+void init_DGMass_CL(Field *f)
+{
   cl_int status;
 
   // associates the param buffer to the 0th kernel argument
@@ -1145,6 +1194,7 @@ void* DGMass_CL(void* mc) {
                           0,              // arg num
                           sizeof(cl_mem),
                           &(f->param_cl));     // opencl buffer
+  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status == CL_SUCCESS);
 
   // associates the dtwn buffer to the 3rd kernel argument
@@ -1152,30 +1202,18 @@ void* DGMass_CL(void* mc) {
                           3,              // arg num
                           sizeof(cl_mem),
                           &(f->dtwn_cl));     // opencl buffer
+  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status == CL_SUCCESS);
 
   // create constant opencl buffers for the running kernel
-  cl_mem physnode_cl;
-  cl_double* physnode = calloc(60, sizeof(cl_double));
-  /* for(int inoloc = 0; inoloc < 20; inoloc++) { */
-  /*   int ino = f->macromesh.elem2node[20*0+inoloc]; */
-  /*   physnode[3 * inoloc + 0] = f->macromesh.node[3 * ino + 0]; */
-  /*   physnode[3 * inoloc + 1] = f->macromesh.node[3 * ino + 1]; */
-  /*   physnode[3 * inoloc + 2] = f->macromesh.node[3 * ino + 2]; */
-  /* } */
-  physnode_cl = clCreateBuffer(f->cli.context,
-			       CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR,
-			       sizeof(double) * 60,
-			       physnode,
-			       &status);
-  assert(status == CL_SUCCESS);
+
 
   // associates physnode buffer to the 2th kernel argument
   status = clSetKernelArg(f->dgmass,           // kernel name
                           2,              // arg num
                           sizeof(cl_mem),
-                          &physnode_cl);     // opencl buffer
-  //printf("%d", status);
+                          &f->physnode_cl);     // opencl buffer
+  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status == CL_SUCCESS);
 
   // the same for element index
@@ -1187,15 +1225,25 @@ void* DGMass_CL(void* mc) {
 			  sizeof(int),
 			  &ie_cpu,
 			  &status);
+  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status == CL_SUCCESS);
 
-  /* // associates ie buffer to  kernel argument #1 */
-  /* status = clSetKernelArg(f->dgmass,           // kernel name */
-  /*                         1,              // arg num */
-  /*                         sizeof(cl_mem), */
-  /*                         &ie_cl);     // opencl buffer */
-  /* assert(status == CL_SUCCESS); */
+  // FIXME
+}
 
+// apply division by the mass matrix OpenCL version
+void* DGMass_CL(void* mc) {
+  MacroCell* mcell = (MacroCell*) mc;
+  Field *f = mcell->field;
+
+  init_DGMass_CL(f);
+
+  int* param = f->interp_param;
+
+  /* printf("&pf = %p\n", f); */
+  /* printf("%f\n", f->dtwn[0]); */
+
+  cl_int status;
 
   // loop on the elements
   for (int ie = mcell->first; ie < mcell->last_p1; ie++) {
@@ -1203,36 +1251,39 @@ void* DGMass_CL(void* mc) {
     // get the physical nodes of element ie
     // first: get the lock on the cpu side
     void* chkptr = clEnqueueMapBuffer(f->cli.commandqueue,
-				      physnode_cl, // buffer to copy from
+				      f->physnode_cl, // buffer to copy from
 				      CL_TRUE, //block until buffer is available
 				      CL_MAP_WRITE, // we just want to copy
 				      0, // offset
 				      sizeof(cl_double) * 60, // buffersize
 				      0, NULL, NULL, // events management
 				      &status);
+    if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
     assert(status == CL_SUCCESS);
-    assert(chkptr == physnode);
+    assert(chkptr == f->physnode);
 
     for(int inoloc = 0; inoloc < 20; inoloc++) {
       int ino = f->macromesh.elem2node[20 * ie + inoloc];
       int nj = 3;
       for(int j = 0; j < nj; ++j) {
-	physnode[nj * inoloc + j] = f->macromesh.node[nj * ino + j];
+	f->physnode[nj * inoloc + j] = f->macromesh.node[nj * ino + j];
       }
     }
     // unlock physnode buffer
     status = clEnqueueWriteBuffer(f->cli.commandqueue,
-				  physnode_cl,
+				  f->physnode_cl,
 				  CL_TRUE, // block,
 				  0, // offset
 				  sizeof(double) * 60,
-				  physnode,
+				  f->physnode,
 				  0, NULL, NULL);
+    if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
     assert(status == CL_SUCCESS);
     status = clEnqueueUnmapMemObject(f->cli.commandqueue,
-				     physnode_cl,
-				     physnode,
+				     f->physnode_cl,
+				     f->physnode,
 				     0, NULL, NULL);
+    if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
     assert(status == CL_SUCCESS);
 
     // update the constant parameter to be passed to the kernel
@@ -1261,6 +1312,7 @@ void* DGMass_CL(void* mc) {
 
     // associates ie to  kernel argument #1
     status = clSetKernelArg(f->dgmass, 1, sizeof(int), (void *)&ie);
+    if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
     assert(status == CL_SUCCESS);
 
     // The groupsize is the number of glops in a subcell
@@ -1269,22 +1321,18 @@ void* DGMass_CL(void* mc) {
     // subcell) * (number of subcells)
     size_t numworkitems = param[4] * param[5] * param[6] * groupsize;
 
-    // mass kernel launch
-    //printf("groupsize = %zd numworkitems = %zd\n", groupsize, numworkitems);
+    // Mass kernel launch
+    // printf("groupsize = %zd numworkitems = %zd\n", groupsize, numworkitems);
     status = clEnqueueNDRangeKernel(f->cli.commandqueue,
 				    f->dgmass,
 				    1, NULL,
 				    &numworkitems,
 				    &groupsize,
 				    0, NULL, NULL);
-    //printf("%d\n", status);
+    if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
     assert(status == CL_SUCCESS);
     clFinish(f->cli.commandqueue);  // wait the end of the computation
   }
-
-  free(physnode);
-  assert(clReleaseMemObject(physnode_cl)==CL_SUCCESS);
-
   return NULL;
 }
 
@@ -1305,6 +1353,7 @@ void* DGVolume_CL(void* mc) {
                           0,              // arg num
                           sizeof(cl_mem),
                           &(f->param_cl));     // opencl buffer
+  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status == CL_SUCCESS);
 
   // associates the dtwn buffer to the 3rd kernel argument
@@ -1312,6 +1361,7 @@ void* DGVolume_CL(void* mc) {
                           3,              // arg num
                           sizeof(cl_mem),
                           &(f->wn_cl));     // opencl buffer
+  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status == CL_SUCCESS);
 
   // associates the dtwn buffer to the 3rd kernel argument
@@ -1319,10 +1369,11 @@ void* DGVolume_CL(void* mc) {
                           4,              // arg num
                           sizeof(cl_mem),
                           &(f->dtwn_cl));     // opencl buffer
+  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status == CL_SUCCESS);
 
-
-  // create constant opencl buffers for the running kernel
+  // FIXME: move to Field struct and initialization to init.
+  // Create constant opencl buffers for the running kernel
   cl_mem physnode_cl;
   cl_double* physnode = calloc(60, sizeof(cl_double));
   /* for(int inoloc = 0; inoloc < 20; inoloc++) { */
@@ -1336,48 +1387,52 @@ void* DGVolume_CL(void* mc) {
 			       sizeof(double) * 60,
 			       physnode,
 			       &status);
+  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status == CL_SUCCESS);
   // associates physnode buffer to the 2th kernel argument
   status = clSetKernelArg(f->dgvolume,           // kernel name
                           2,              // arg num
                           sizeof(cl_mem),
                           &physnode_cl);     // opencl buffer
-  //printf("%d", status);
+  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status == CL_SUCCESS);
 
   // the same for element index
   int ie_cpu = 0;
   cl_mem ie_cl;
-  ie_cl = clCreateBuffer(
-			 f->cli.context,
+  ie_cl = clCreateBuffer(f->cli.context,
 			 CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR,
 			 sizeof(int),
 			 &ie_cpu,
 			 &status);
+  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status == CL_SUCCESS);
+
   // associates ie buffer to  kernel argument #1
   status = clSetKernelArg(f->dgvolume,           // kernel name
                           1,              // arg num
                           sizeof(cl_mem),
                           &ie_cl);     // opencl buffer
+  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status == CL_SUCCESS);
 
-
-  // loop on the elements
+  // Loop on the elements
   for (int ie = mcell->first; ie < mcell->last_p1; ie++) {
     // get the physical nodes of element ie
     // first: get the lock on the cpu side
     void* chkptr = clEnqueueMapBuffer(f->cli.commandqueue,
 				      physnode_cl, // buffer to copy from
-				      CL_TRUE, // block until buffer is available
+				      CL_TRUE, //block until buffer is available
 				      CL_MAP_WRITE, //we just want to copy
 				      0, // offset
 				      sizeof(cl_double) * 60, // buffersize
 				      0, NULL, NULL, // events management
 				      &status);
     //printf("%d\n", status);
+    if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
     assert(status == CL_SUCCESS);
     assert(chkptr == physnode);
+
     for(int inoloc = 0; inoloc < 20; inoloc++) {
       int ino = f->macromesh.elem2node[20*ie+inoloc];
       physnode[3 * inoloc + 0] = f->macromesh.node[3 * ino + 0];
@@ -1397,6 +1452,7 @@ void* DGVolume_CL(void* mc) {
 				      physnode_cl,
 				      physnode,
 				      0, NULL, NULL);
+    if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
     assert(status == CL_SUCCESS);
 
     // update the constant parameter to be passed to the kernel
@@ -1409,26 +1465,25 @@ void* DGVolume_CL(void* mc) {
 				sizeof(int), // buffersize
 				0, NULL, NULL, // events management
 				&status);
+    if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
     assert(status == CL_SUCCESS);
     assert(chkptr == &ie_cpu);
     // second: copy
-    ie_cpu = ie;
+    ie_cpu = ie; // FIXME: make local and just setarg when updated.
     //third: unlock
-    clEnqueueUnmapMemObject (f->cli.commandqueue,
-        		     ie_cl,
-        		     &ie_cpu,
-        		     0, NULL, NULL);
+    clEnqueueUnmapMemObject(f->cli.commandqueue,
+			    ie_cl,
+			    &ie_cpu,
+			    0, NULL, NULL);
 
-    // ensures that all the buffers are mapped
+    // Ensures that all the buffers are mapped
     status = clFinish(f->cli.commandqueue);
 
-    // mass kernel launch
-    // the groupsize is the number of glops
-    // in a subcell
-    size_t groupsize = (param[1] + 1)*
-      (param[2] + 1)*(param[3] + 1);
-    // the total work items number is the number of glops
-    // in a subcell * number of subcells
+    // Mass kernel launch
+    // The groupsize is the number of glops in a subcell
+    size_t groupsize = (param[1] + 1)* (param[2] + 1)*(param[3] + 1);
+    // The total work items number is the number of glops in a subcell
+    // * number of subcells
     size_t numworkitems = param[4] * param[5] * param[6] * groupsize;
     //printf("groupsize=%zd numworkitems=%zd\n", groupsize, numworkitems);
     status = clEnqueueNDRangeKernel(f->cli.commandqueue,
@@ -1438,10 +1493,10 @@ void* DGVolume_CL(void* mc) {
 				    &groupsize,
 				    0, NULL, NULL);
     //printf("%d\n", status);
+    if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
     assert(status == CL_SUCCESS);
     clFinish(f->cli.commandqueue);  // wait the end of the computation
   }
-
 
   free(physnode);
   assert(clReleaseMemObject(physnode_cl)==CL_SUCCESS);
@@ -1449,9 +1504,7 @@ void* DGVolume_CL(void* mc) {
   return NULL;
 }
 
-
-// compute the Discontinuous Galerkin volume terms
-// fast version
+// Compute the Discontinuous Galerkin volume terms, fast version
 void* DGVolume(void* mc) {
   MacroCell* mcell = (MacroCell*) mc;
   Field *f = mcell->field;
@@ -1489,7 +1542,7 @@ void* DGVolume(void* mc) {
 			     f->interp_param[6],
 			     f->interp_param[7]};
 
-    // loop on the subcells
+    // Loop on the subcells
     for(int icL0 = 0; icL0 < nraf[0]; icL0++) {
       for(int icL1 = 0; icL1 < nraf[1]; icL1++) {
 	for(int icL2 = 0; icL2 < nraf[2]; icL2++) {
@@ -1595,8 +1648,6 @@ void* DGVolume(void* mc) {
   return NULL;
 }
 
-
-
 // Compute the Discontinuous Galerkin volume terms: slow version
 void DGVolumeSlow(Field* f) {
   // Assembly of the volume terms
@@ -1666,8 +1717,6 @@ void DGVolumeSlow(Field* f) {
 
   }
 }
-
-
 
 void dtField_pthread(Field *f) 
 {
@@ -1755,8 +1804,6 @@ void dtField_pthread(Field *f)
 #endif
 }
 
-
-
 // Apply the Discontinuous Galerkin approximation for computing the
 // time derivative of the field
 void dtField(Field* f) {
@@ -1800,19 +1847,16 @@ void dtField(Field* f) {
 #endif
 }
 
-
-
-
 // Apply the Discontinuous Galerkin approximation for computing the
-// time derivative of the field. OpenCL version
+// time derivative of the field. OpenCL version.
 void dtField_CL(Field* f) {
-
   MacroFace mface[f->macromesh.nbfaces];
   for(int ifa = 0; ifa < f->macromesh.nbfaces; ifa++) {
     mface[ifa].field = f;
     mface[ifa].first = ifa;
     mface[ifa].last_p1 = ifa + 1;
   }
+  
   bool facealgo = true;
   //facealgo = false; // FIXME: temp
 
@@ -1820,7 +1864,7 @@ void dtField_CL(Field* f) {
     for(int iw = 0; iw < f->wsize; iw++)
       f->dtwn[iw] = 0;
     for(int ifa = 0; ifa < f->macromesh.nbfaces; ifa++) {
-      DGMacroCellInterface((void*) (mface + ifa));         // FIXME : Must be _CL
+      DGMacroCellInterface((void*) (mface + ifa));  // FIXME : Must be _CL
     }
   }
 
@@ -1830,17 +1874,15 @@ void dtField_CL(Field* f) {
     mcell[ie].first = ie;
     mcell[ie].last_p1 = ie + 1;
   }
+
   for(int ie = 0; ie < f->macromesh.nbelems; ++ie) {
     MacroCell *mcelli = mcell + ie;
     //if(!facealgo) DGMacroCellInterfaceSlow(mcelli);
-    DGSubCellInterface(mcelli);                           // FIXME : Must be delete
-    DGVolume(mcelli);                                     // FIXME : Must be _CL
+    DGSubCellInterface(mcelli);           // FIXME : Must be deleted
+    DGVolume(mcelli);                       // FIXME : Must be _CL
     DGMass_CL(mcelli);
   }
 }
-
-
-
 
 // Apply the Discontinuous Galerkin approximation for computing the
 // time derivative of the field
@@ -1898,7 +1940,7 @@ void dtFieldSlow(Field* f) {
       	}
       }
 
-      // loop on the glops (numerical integration)
+      // Loop on the glops (numerical integration)
       // of the face ifa
       for(int ipgf = 0; ipgf < NPGF(f->interp_param + 1, ifa); ipgf++) {
   	double xpgref[3], xpgref_in[3], wpg;
@@ -2036,6 +2078,15 @@ void dtFieldSlow(Field* f) {
   }
 };
 
+#ifdef _WITH_OPENCL
+void swap_clmem(cl_mem *a, cl_mem *b)
+{
+  cl_mem *temp = a;
+  a = b;
+  b = temp;
+}
+#endif
+
 void swap_pdoubles(double **a, double **b)
 {
   double *temp = *a;
@@ -2096,146 +2147,157 @@ void RK2(Field* f, double tmax) {
   printf("t=%f iter=%d/%d dt=%f\n", f->tnow, iter, itermax, dt);
 }
 
-void init_RK2_CL_stage1(Field *f) 
+void init_RK2_CL_stage1(Field *f, const double dt) 
 {
   cl_kernel kernel = f->RK_in_CL;
-  int *param = f->interp_param;
-
+  cl_int status;
   int argnum = 0;
 
-  /* status = clSetKernelArg(kernel, */
-  /*                         argnum++, */
-  /*                         sizeof(cl_mem), */
-  /*                         &(f->wn_cl)); */
-  /* assert(status == CL_SUCCESS); */
+  //__constant int* param  // interp param
+  status = clSetKernelArg(kernel,
+                          argnum++,
+                          sizeof(cl_mem),
+			  &(f->param_cl));
+  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status == CL_SUCCESS);
+  
+  //int ie, // macrocel index
+  // Set just before queuing.
   argnum++;
 
+  //double dt, // time step for the stage
+  double halfdt = 0.5 * dt;
+  status = clSetKernelArg(kernel,
+			  argnum++,
+			  sizeof(double),
+			  &(halfdt));
+  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status == CL_SUCCESS);
 
+  //__global double* wn, // field values
+  status = clSetKernelArg(kernel,
+			  argnum++, 
+                          sizeof(cl_mem),
+                          &(f->wn_cl));     // opencl buffer
+  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status == CL_SUCCESS);
+  
+  //__global double* wnp1 // field values
+  status = clSetKernelArg(kernel,
+			  argnum++, 
+                          sizeof(cl_mem),
+                          &(f->wnp1_cl));     // opencl buffer
+  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status == CL_SUCCESS);
+  
+  //__global double* dtwn // time derivative
+  status = clSetKernelArg(kernel,
+			  argnum++, 
+                          sizeof(cl_mem),
+                          &(f->dtwn_cl));     // opencl buffer
+  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status == CL_SUCCESS);
 }
 
-void init_RK2_CL_stage2(Field *f) 
+void init_RK2_CL_stage2(Field *f, const double dt) 
 {
   cl_kernel kernel = f->RK_out_CL;
-  // FIXME: set args
-}
-
-// First step in the RK2 algorithm
-void init_RK2_CL(Field *f) 
-{
-  int *param = f->interp_param;
-
-  init_RK2_CL_stage1(f); 
-  init_RK2_CL_stage2(f); 
-
   cl_int status;
+  int argnum = 0;
 
-  /* // Associates the param buffer to the 0th kernel argument */
-  /* status = clSetKernelArg(f->rk2step1,    // kernel name */
-  /*                         0,              // arg num */
-  /*                         sizeof(cl_mem), */
-  /*                         f->param_cl);     // opencl buffer */
-  /* assert(status == CL_SUCCESS); */
+  //__constant int* param,    // interp param
+  status = clSetKernelArg(kernel,
+                          argnum++,
+                          sizeof(cl_mem),
+                          &(f->param_cl));
+  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status == CL_SUCCESS);
 
-  /* // The same for element index */
-  /* int ie_cpu = 0; */
-  /* cl_mem ie_cl; */
-  /* ie_cl = clCreateBuffer( */
-  /* 			 f->cli.context, */
-  /* 			 CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR, */
-  /* 			 sizeof(int), */
-  /* 			 &ie_cpu, */
-  /* 			 &status); */
-  /* assert(status == CL_SUCCESS); */
+  //int ie // macrocel index
+  // Set just before queuing.
+  argnum++;
 
-  /* // associates ie buffer to  kernel argument #1 */
-  /* status = clSetKernelArg(f->rk2step1, */
-  /*                         1, */
-  /*                         sizeof(cl_mem), */
-  /*                         &ie_cl); */
-  /* assert(status == CL_SUCCESS); */
+  //double dt, // time step
+  status = clSetKernelArg(kernel,
+			  argnum++,
+			  sizeof(double),
+			  &(dt));
+  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status == CL_SUCCESS);
 
-  /* double halfdt = 0.5*(f->dt); */
-  /* status = clSetKernelArg(f->rk2step1,    // kernel name */
-  /*                         2,              // arg num */
-  /*                         sizeof(double), */
-  /*                         &halfdt);     // opencl buffer */
-  /* assert(status == CL_SUCCESS); */
-
-  /* status = clSetKernelArg(f->rk2step1, */
-  /*                         3, */
-  /*                         sizeof(cl_mem), */
-  /*                         &(f->wn_cl)); */
-  /* assert(status == CL_SUCCESS); */
-
-  /* status = clSetKernelArg(f->rk2step1, */
-  /*                         4, */
-  /*                         sizeof(cl_mem), */
-  /*                         &(f->wnp1_cl)); */
-  /* assert(status == CL_SUCCESS); */
-
-  /* status = clSetKernelArg(f->rk2step1,           // kernel name */
-  /*                         5,              // arg num */
-  /*                         sizeof(cl_mem), */
-  /*                         &(f->dtwn_cl));     // opencl buffer */
-  /* assert(status == CL_SUCCESS); */
-
-  /* // Loop on the elements */
-  /* MacroCell mcell[f->macromesh.nbelems]; */
-  /* for(int ie = 0; ie < f->macromesh.nbelems; ie++) { */
-  /*   mcell[ie].field = f; */
-  /*   mcell[ie].first = ie; */
-  /*   mcell[ie].last_p1 = ie + 1; */
-  /* } */
-
-  /* for(int ie = 0; ie < f->macromesh.nbelems; ++ie) { */
-  /*   MacroCell *mcelli = mcell + ie; */
-
-  /*   //for (int ie = mcell->first; ie < mcell->last_p1; ie++) { */
-
-  /*   // Update the constant parameter to be passed to the kernel */
-  /*   // first: get the lock on the cpu side */
-  /*   void *chkptr = clEnqueueMapBuffer(f->cli.commandqueue, */
-  /* 				      ie_cl, // buffer to copy from */
-  /* 				      CL_TRUE, // block until the buffer is available */
-  /* 				      CL_MAP_WRITE, // we just want to copy ie */
-  /* 				      0, // offset */
-  /* 				      sizeof(int), // buffersize */
-  /* 				      0, NULL, NULL, // events management */
-  /* 				      &status); */
-  /*   assert(status == CL_SUCCESS); */
-  /*   assert(chkptr == &ie_cpu); */
-  /*   // second: copy */
-  /*   ie_cpu = ie; */
-  /*   //third: unlock */
-  /*   clEnqueueUnmapMemObject(f->cli.commandqueue, */
-  /* 			    ie_cl, */
-  /* 			    &ie_cpu, */
-  /* 			    0, NULL, NULL); */
-
-  /*   // ensures that all the buffers are mapped */
-  /*   status = clFinish(f->cli.commandqueue); */
-
-  /*   // kernel launch */
-  /*   // the groupsize is the total number of glops */
-  /*   // size_t groupsize = (param[1] + 1)*(param[2] + 1)*(param[3] + 1); */
-  /*   // the total work items number is the number of glops */
-  /*   // in a subcell * number of subcells */
-  /*   size_t numworkitems = param[0]  */
-  /*     * (param[1] + 1) * (param[2] + 1) * (param[3] + 1)  */
-  /*     * param[4] * param[5] * param[6]; */
-  /*   printf("numworkitems=%zd\n", numworkitems); */
-  /*   status = clEnqueueNDRangeKernel(f->cli.commandqueue, */
-  /* 				    f->rk, */
-  /* 				    1, NULL, */
-  /* 				    &numworkitems, */
-  /* 				    NULL,//&groupsize, */
-  /* 				    0, NULL, NULL); */
-  /*   //printf("%d\n", status); */
-  /*   assert(status == CL_SUCCESS); */
-  /*   clFinish(f->cli.commandqueue);  // wait the end of the computation */
-  /*   printf("numworkitems=%zd\n", numworkitems); */
-  /* } */
+  //__global double* wnp1,     // field values
+  status = clSetKernelArg(kernel,
+			  argnum++, 
+                          sizeof(cl_mem),
+                          &(f->wnp1_cl));     // opencl buffer
+  assert(status == CL_SUCCESS);
+  
+  //__global double* dtwn // time derivative
+  status = clSetKernelArg(kernel,
+			  argnum++, 
+                          sizeof(cl_mem),
+                          &(f->dtwn_cl));     // opencl buffer
+  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status == CL_SUCCESS);
 }
+
+void RK2_CL_stage1()
+{
+// FIXME: call kernel, etc.
+}
+
+void RK2_CL_stage2()
+{
+// FIXME: call kernel, etc.
+}
+
+/* // First step in the RK2 algorithm */
+/* void init_RK2_CL(Field *f, const double dt)  */
+/* { */
+/*   int *param = f->interp_param; */
+/*   double vmax = 1; // FIXME: to be changed for another model. */
+/*   double dt = f->model.cfl * f->hmin / vmax; */
+
+/*   init_RK2_CL_stage1(f, dt);  */
+/*   init_RK2_CL_stage2(f, dt);  */
+
+/*   cl_int status; */
+
+/*   // Loop on the elements */
+/*   MacroCell mcell[f->macromesh.nbelems]; */
+/*   for(int ie = 0; ie < f->macromesh.nbelems; ie++) { */
+/*     mcell[ie].field = f; */
+/*     mcell[ie].first = ie; */
+/*     mcell[ie].last_p1 = ie + 1; */
+/*   } */
+  
+/*   size_t numworkitems = param[0] */
+/*     * (param[1] + 1) * (param[2] + 1) * (param[3] + 1) */
+/*     * param[4] * param[5] * param[6]; */
+  
+/*   for(int ie = 0; ie < f->macromesh.nbelems; ++ie) { */
+/*     MacroCell *mcelli = mcell + ie; */
+
+/*     //for (int ie = mcell->first; ie < mcell->last_p1; ie++) { */
+    
+/*     // Kernel launch */
+/*     // The groupsize is the total number of glops */
+/*     // size_t groupsize = (param[1] + 1)*(param[2] + 1)*(param[3] + 1); */
+/*     // The total work items number is the number of glops in a subcell */
+/*     // * number of subcells */
+/*     printf("numworkitems=%zd\n", numworkitems); */
+/*     status = clEnqueueNDRangeKernel(f->cli.commandqueue, */
+/*   				    f->rk2, */
+/*   				    1, NULL, */
+/*   				    &numworkitems, */
+/*   				    NULL,//&groupsize, */
+/*   				    0, NULL, NULL); */
+/*     //printf("%d\n", status); */
+/*     assert(status == CL_SUCCESS); */
+/*     clFinish(f->cli.commandqueue);  // wait the end of the computation */
+/*     printf("numworkitems=%zd\n", numworkitems); */
+/*   } */
+/* } */
 
 // Time integration by a second order Runge-Kutta algorithm, OpenCL
 // version.
@@ -2243,6 +2305,11 @@ void RK2_CL(Field* f, double tmax) {
   double vmax = 1; // FIXME: to be changed for another model.
 
   double dt = f->model.cfl * f->hmin / vmax;
+
+  // Set up kernels
+  init_RK2_CL_stage1(f, dt);
+  init_RK2_CL_stage2(f, dt);
+
   int itermax = tmax / dt;
   int freq = (1 >= itermax / 10)? 1 : itermax / 10;
   //int param[8] = {f->model.m, _DEGX, _DEGY, _DEGZ, _RAFX, _RAFY, _RAFZ, 0};
@@ -2252,17 +2319,28 @@ void RK2_CL(Field* f, double tmax) {
   while(f->tnow < tmax) {
     if (iter % freq == 0)
       printf("t=%f iter=%d/%d dt=%f\n", f->tnow, iter, itermax, dt);
-    // predictor
+
+#if 0
+    // OpenCL version
     dtField_CL(f);
-    //RK2_step1_CL(f);
+    RK2_CL_stage1(f);
+    swap_clmem(&(f->wnp1_cl), &(f->wn_cl));
+
+    f->tnow += 0.5 * dt;
+    dtField_CL(f);
+    RK2_CL_stage2(f);
+    swap_clmem(&(f->wnp1_cl), &(f->wn_cl));
+#else
+    // Temporary non-OpenCL version
+    dtField_CL(f);
     RK_out(f->wnp1, f->wn, f->dtwn, 0.5 * dt, sizew);
     swap_pdoubles(&f->wnp1, &f->wn);
 
-    // corrector
     f->tnow += 0.5 * dt;
     dtField_CL(f);
     RK_in(f->wnp1, f->dtwn, dt, sizew);
     swap_pdoubles(&f->wnp1, &f->wn);
+#endif
 
     f->tnow += 0.5 * dt;
     iter++;

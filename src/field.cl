@@ -933,7 +933,7 @@ int ref_ipg(__constant int *param, double *xref) {
 __kernel
 void RK_in_CL(__constant int* param,    // interp param
 	      int ie,        // macrocel index
-	      double dt, // time step divided by two
+	      double dt, // time step for the stage
 	      __global double* wn,       // field values
 	      __global double* wnp1,     // field values
 	      __global double* dtwn)    // time derivative

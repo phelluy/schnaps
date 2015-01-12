@@ -39,6 +39,8 @@ src/geometry.c
 src/interpolation.c
 src/macromesh.c
 src/model.c
+src/clutils.c
+src/clutils.h
 )
 
 #schnaps library
