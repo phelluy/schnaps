@@ -119,7 +119,7 @@ void InitField(Field* f) {
     }
   }
 
-  // compute cfl parameter min_i vol_i/surf_i
+  // Compute cfl parameter min_i vol_i/surf_i
   f->hmin = FLT_MAX;
 
   for (int ie = 0; ie < f->macromesh.nbelems; ie++) {
@@ -1305,19 +1305,18 @@ void* DGMass_CL(void* mc) {
 }
 
 // apply division by the mass matrix OpenCL version
-void* DGVolume_CL(void* mc) {
+void* DGVolume_CL(void *mc) {
   MacroCell *mcell = (MacroCell*) mc;
   Field *f = mcell->field;
-
+  cl_kernel kernel = f->dgvolume;
   int* param = f->interp_param;
 
   /* printf("&pf=%p\n", f); */
   /* printf("%f\n", f->dtwn[0]); */
-
   cl_int status;
 
   // associates the param buffer to the 0th kernel argument
-  status = clSetKernelArg(f->dgvolume,           // kernel name
+  status = clSetKernelArg(kernel,			  
                           0,              // arg num
                           sizeof(cl_mem),
                           &(f->param_cl));     // opencl buffer
@@ -1325,7 +1324,7 @@ void* DGVolume_CL(void* mc) {
   assert(status == CL_SUCCESS);
 
   // associates the dtwn buffer to the 3rd kernel argument
-  status = clSetKernelArg(f->dgvolume,           // kernel name
+  status = clSetKernelArg(kernel,
                           3,              // arg num
                           sizeof(cl_mem),
                           &(f->wn_cl));     // opencl buffer
@@ -1333,7 +1332,7 @@ void* DGVolume_CL(void* mc) {
   assert(status == CL_SUCCESS);
 
   // associates the dtwn buffer to the 3rd kernel argument
-  status = clSetKernelArg(f->dgvolume,           // kernel name
+  status = clSetKernelArg(kernel,
                           4,              // arg num
                           sizeof(cl_mem),
                           &(f->dtwn_cl));     // opencl buffer
@@ -1341,36 +1340,17 @@ void* DGVolume_CL(void* mc) {
   assert(status == CL_SUCCESS);
 
   // associates physnode buffer to the 2th kernel argument
-  status = clSetKernelArg(f->dgvolume,           // kernel name
+  status = clSetKernelArg(kernel,
                           2,              // arg num
                           sizeof(cl_mem),
                           &f->physnode_cl);     // opencl buffer
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status == CL_SUCCESS);
 
-  // the same for element index
-  int ie_cpu = 0;
-  cl_mem ie_cl;
-  ie_cl = clCreateBuffer(f->cli.context,
-			 CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR,
-			 sizeof(int),
-			 &ie_cpu,
-			 &status);
-  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status == CL_SUCCESS);
-
-  // associates ie buffer to  kernel argument #1
-  status = clSetKernelArg(f->dgvolume,           // kernel name
-                          1,              // arg num
-                          sizeof(cl_mem),
-                          &ie_cl);     // opencl buffer
-  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status == CL_SUCCESS);
-
   // Loop on the elements
   for (int ie = mcell->first; ie < mcell->last_p1; ie++) {
-    // get the physical nodes of element ie
-    // first: get the lock on the cpu side
+    // Get the physical nodes of element ie.
+    // First: get the lock on the cpu side
     void* chkptr = clEnqueueMapBuffer(f->cli.commandqueue,
 				      f->physnode_cl, // buffer to copy from
 				      CL_TRUE, //block until buffer is available
@@ -1390,45 +1370,21 @@ void* DGVolume_CL(void* mc) {
       f->physnode[3 * inoloc + 1] = f->macromesh.node[3 * ino + 1];
       f->physnode[3 * inoloc + 2] = f->macromesh.node[3 * ino + 2];
     }
-    // unlock physnode buffer
-    /* status=clEnqueueWriteBuffer (f->cli.commandqueue, */
-    /* 			  physnode_cl, */
-    /* 			  CL_TRUE, // block, */
-    /* 			  0, // offset */
-    /* 			  sizeof(double)*20*3, */
-    /* 			  physnode, */
-    /* 			  0, NULL, NULL); */
-    /* assert(status == CL_SUCCESS); */
-    status = clEnqueueUnmapMemObject (f->cli.commandqueue,
-				      f->physnode_cl,
-				      f->physnode,
-				      0, NULL, NULL);
+
+    status = clEnqueueUnmapMemObject(f->cli.commandqueue,
+				     f->physnode_cl,
+				     f->physnode,
+				     0, NULL, NULL);
     if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
     assert(status == CL_SUCCESS);
 
-    // update the constant parameter to be passed to the kernel
-    // first: get the lock on the cpu side
-    chkptr = clEnqueueMapBuffer(f->cli.commandqueue,
-				ie_cl, // buffer to copy from
-				CL_TRUE, // block until the buffer is available
-				CL_MAP_WRITE, // we just want to copy ie
-				0, // offset
-				sizeof(int), // buffersize
-				0, NULL, NULL, // events management
-				&status);
+    // Pass value of ie to  kernel argument #1
+    status = clSetKernelArg(kernel,
+			    1,   // arg num
+			    sizeof(int),
+			    &ie);     // opencl buffer
     if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
     assert(status == CL_SUCCESS);
-    assert(chkptr == &ie_cpu);
-    // second: copy
-    ie_cpu = ie; // FIXME: make local and just setarg when updated.
-    //third: unlock
-    clEnqueueUnmapMemObject(f->cli.commandqueue,
-			    ie_cl,
-			    &ie_cpu,
-			    0, NULL, NULL);
-
-    // Ensures that all the buffers are mapped
-    status = clFinish(f->cli.commandqueue);
 
     // Mass kernel launch
     // The groupsize is the number of glops in a subcell
@@ -1438,7 +1394,7 @@ void* DGVolume_CL(void* mc) {
     size_t numworkitems = param[4] * param[5] * param[6] * groupsize;
     //printf("groupsize=%zd numworkitems=%zd\n", groupsize, numworkitems);
     status = clEnqueueNDRangeKernel(f->cli.commandqueue,
-				    f->dgvolume,
+				    kernel,
 				    1, NULL,
 				    &numworkitems,
 				    &groupsize,

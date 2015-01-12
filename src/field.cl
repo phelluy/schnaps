@@ -215,7 +215,7 @@ int ipg(const int npg[], const int p[], const int icell) {
 // Compute the volume and subcell-interface terms on one macrocell
 __kernel
 void DGVolume(__constant int* param,        // interp param
-	      __constant int* ie,            // macrocel index
+	      int ie,            // macrocel index
 	      __constant double* physnode,  // macrocell nodes
               __global double* wn,       // field values
 	      __global double* dtwn) {       // time derivative
@@ -282,7 +282,7 @@ void DGVolume(__constant int* param,        // interp param
   for(int iv = 0; iv < m; iv++) {
     // gauss point id in the macrocell
     int ipgL = ipg(npg, p, icell);
-    int imemL = varindex(param, *ie, ipgL, iv);
+    int imemL = varindex(param, ie, ipgL, iv);
     //int imemL= iv + m * ( get_global_id(0) + nnpg * *ie);
     wL[iv] = wn[imemL];
   }
@@ -308,7 +308,7 @@ void DGVolume(__constant int* param,        // interp param
 
       int ipgR = ipg(npg, q, icell);
       for(int iv=0; iv < m; iv++) {
-	int imemR = varindex(param, *ie, ipgR, iv); // to do !
+	int imemR = varindex(param, ie, ipgR, iv); // to do !
     	dtwn[imemR] += flux[iv] * wpg;
       }
     }
@@ -338,7 +338,7 @@ void DGVolume(__constant int* param,        // interp param
 
 	double wR[_M];
         for(int iv = 0; iv < m; iv++) {
-          int imemR = varindex(param, *ie, ipgR, iv);
+          int imemR = varindex(param, ie, ipgR, iv);
           wR[iv] = wn[imemR];
         }
 
@@ -347,7 +347,7 @@ void DGVolume(__constant int* param,        // interp param
         NumFlux(wL, wR, vnds, flux); // to do: let schnaps gives fluxnum
         for(int iv = 0; iv < m; iv++) {
           int ipgL = ipg(npg, p, icell);
-          int imemL = varindex(param, *ie, ipgL, iv);
+          int imemL = varindex(param, ie, ipgL, iv);
           dtwn[imemL] -= flux[iv] * wpgs;
         }
       }
@@ -357,8 +357,7 @@ void DGVolume(__constant int* param,        // interp param
 
 }
 
-
-// apply division by the mass matrix on one macrocell
+// Apply division by the mass matrix on one macrocell
 __kernel
 void DGMass(__constant int* param,        // interp param
             int ie,            // macrocel index
