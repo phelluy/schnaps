@@ -1481,7 +1481,7 @@ void* DGVolume(void* mc) {
 
 	  // loop in the "cross" in the three directions
 	  for(int dim0 = 0; dim0 < 3; dim0++) {
-	    //for(int dim0 = 0; dim0 < 2; dim0++) {    // to do : return to 3d !
+	    // for(int dim0 = 0; dim0 < 2; dim0++) {  // TODO : return to 3d !
 	    // point p at which we compute the flux
 
 	    for(int p0 = 0; p0 < npg[0]; p0++) {
@@ -2057,35 +2057,6 @@ void init_RK2_CL_stage1(Field *f, const double dt)
   cl_int status;
   int argnum = 0;
 
-  //__constant int* param  // interp param
-  status = clSetKernelArg(kernel,
-                          argnum++,
-                          sizeof(cl_mem),
-			  &(f->param_cl));
-  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status == CL_SUCCESS);
-  
-  //int ie, // macrocel index
-  // Set just before queuing.
-  argnum++;
-
-  //double dt, // time step for the stage
-  double halfdt = 0.5 * dt;
-  status = clSetKernelArg(kernel,
-			  argnum++,
-			  sizeof(double),
-			  &(halfdt));
-  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status == CL_SUCCESS);
-
-  //__global double* wn, // field values
-  status = clSetKernelArg(kernel,
-			  argnum++, 
-                          sizeof(cl_mem),
-                          &(f->wn_cl));     // opencl buffer
-  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status == CL_SUCCESS);
-  
   //__global double* wnp1 // field values
   status = clSetKernelArg(kernel,
 			  argnum++, 
@@ -2098,10 +2069,20 @@ void init_RK2_CL_stage1(Field *f, const double dt)
   status = clSetKernelArg(kernel,
 			  argnum++, 
                           sizeof(cl_mem),
-                          &(f->dtwn_cl));     // opencl buffer
+                          &(f->dtwn_cl));
+  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status == CL_SUCCESS);
+
+  //double dt, // time step for the stage
+  double halfdt = 0.5 * dt;
+  status = clSetKernelArg(kernel,
+			  argnum++,
+			  sizeof(double),
+			  &(halfdt));
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status == CL_SUCCESS);
 }
+
 
 void init_RK2_CL_stage2(Field *f, const double dt) 
 {
@@ -2109,19 +2090,25 @@ void init_RK2_CL_stage2(Field *f, const double dt)
   cl_int status;
   int argnum = 0;
 
-  //__constant int* param,    // interp param
   status = clSetKernelArg(kernel,
-                          argnum++,
+			  argnum++, 
                           sizeof(cl_mem),
-                          &(f->param_cl));
+                          &(f->wnp1_cl));
+  assert(status == CL_SUCCESS);
+
+  status = clSetKernelArg(kernel,
+			  argnum++, 
+                          sizeof(cl_mem),
+                          &(f->wn_cl));
+  assert(status == CL_SUCCESS);
+    
+  status = clSetKernelArg(kernel,
+			  argnum++,
+                          sizeof(cl_mem),
+                          &(f->dtwn_cl));
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status == CL_SUCCESS);
 
-  //int ie // macrocel index
-  // Set just before queuing.
-  argnum++;
-
-  //double dt, // time step
   status = clSetKernelArg(kernel,
 			  argnum++,
 			  sizeof(double),
@@ -2129,79 +2116,38 @@ void init_RK2_CL_stage2(Field *f, const double dt)
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status == CL_SUCCESS);
 
-  //__global double* wnp1,     // field values
-  status = clSetKernelArg(kernel,
-			  argnum++, 
-                          sizeof(cl_mem),
-                          &(f->wnp1_cl));     // opencl buffer
-  assert(status == CL_SUCCESS);
-  
-  //__global double* dtwn // time derivative
-  status = clSetKernelArg(kernel,
-			  argnum++, 
-                          sizeof(cl_mem),
-                          &(f->dtwn_cl));     // opencl buffer
+}
+
+void RK2_CL_stage1(Field *f, size_t numworkitems)
+{
+  cl_int status;
+  status = clEnqueueNDRangeKernel(f->cli.commandqueue,
+				  f->RK_out_CL,
+				  1, 
+				  NULL,
+				  &numworkitems,
+				  NULL,
+				  0, 
+				  NULL, 
+				  NULL);
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status == CL_SUCCESS);
+  clFinish(f->cli.commandqueue);
 }
 
-void RK2_CL_stage1()
+void RK2_CL_stage2(Field *f, size_t numworkitems)
 {
-// FIXME: call kernel, etc.
+  cl_int status;
+  status = clEnqueueNDRangeKernel(f->cli.commandqueue,
+				  f->RK_in_CL,
+				  1, NULL,
+				  &numworkitems,
+				  NULL,
+				  0, NULL, NULL);
+  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status == CL_SUCCESS);
+  clFinish(f->cli.commandqueue);
 }
-
-void RK2_CL_stage2()
-{
-// FIXME: call kernel, etc.
-}
-
-/* // First step in the RK2 algorithm */
-/* void init_RK2_CL(Field *f, const double dt)  */
-/* { */
-/*   int *param = f->interp_param; */
-/*   double vmax = 1; // FIXME: to be changed for another model. */
-/*   double dt = f->model.cfl * f->hmin / vmax; */
-
-/*   init_RK2_CL_stage1(f, dt);  */
-/*   init_RK2_CL_stage2(f, dt);  */
-
-/*   cl_int status; */
-
-/*   // Loop on the elements */
-/*   MacroCell mcell[f->macromesh.nbelems]; */
-/*   for(int ie = 0; ie < f->macromesh.nbelems; ie++) { */
-/*     mcell[ie].field = f; */
-/*     mcell[ie].first = ie; */
-/*     mcell[ie].last_p1 = ie + 1; */
-/*   } */
-  
-/*   size_t numworkitems = param[0] */
-/*     * (param[1] + 1) * (param[2] + 1) * (param[3] + 1) */
-/*     * param[4] * param[5] * param[6]; */
-  
-/*   for(int ie = 0; ie < f->macromesh.nbelems; ++ie) { */
-/*     MacroCell *mcelli = mcell + ie; */
-
-/*     //for (int ie = mcell->first; ie < mcell->last_p1; ie++) { */
-    
-/*     // Kernel launch */
-/*     // The groupsize is the total number of glops */
-/*     // size_t groupsize = (param[1] + 1)*(param[2] + 1)*(param[3] + 1); */
-/*     // The total work items number is the number of glops in a subcell */
-/*     // * number of subcells */
-/*     printf("numworkitems=%zd\n", numworkitems); */
-/*     status = clEnqueueNDRangeKernel(f->cli.commandqueue, */
-/*   				    f->rk2, */
-/*   				    1, NULL, */
-/*   				    &numworkitems, */
-/*   				    NULL,//&groupsize, */
-/*   				    0, NULL, NULL); */
-/*     //printf("%d\n", status); */
-/*     assert(status == CL_SUCCESS); */
-/*     clFinish(f->cli.commandqueue);  // wait the end of the computation */
-/*     printf("numworkitems=%zd\n", numworkitems); */
-/*   } */
-/* } */
 
 // Time integration by a second order Runge-Kutta algorithm, OpenCL
 // version.
@@ -2210,15 +2156,14 @@ void RK2_CL(Field* f, double tmax) {
 
   double dt = f->model.cfl * f->hmin / vmax;
 
+  int itermax = tmax / dt;
+  int freq = (1 >= itermax / 10)? 1 : itermax / 10;
+  int sizew = f->macromesh.nbelems * f->model.m * NPG(f->interp_param + 1);
+  int iter = 0;
+
   // Set up kernels
   init_RK2_CL_stage1(f, dt);
   init_RK2_CL_stage2(f, dt);
-
-  int itermax = tmax / dt;
-  int freq = (1 >= itermax / 10)? 1 : itermax / 10;
-  //int param[8] = {f->model.m, _DEGX, _DEGY, _DEGZ, _RAFX, _RAFY, _RAFZ, 0};
-  int sizew = f->macromesh.nbelems * f->model.m * NPG(f->interp_param + 1);
-  int iter = 0;
 
   while(f->tnow < tmax) {
     if (iter % freq == 0)
@@ -2227,13 +2172,17 @@ void RK2_CL(Field* f, double tmax) {
 #if 0
     // OpenCL version
     dtField_CL(f);
-    RK2_CL_stage1(f);
+    RK2_CL_stage1(f, sizew);
+    clFinish(f->cli.commandqueue);
     swap_clmem(&(f->wnp1_cl), &(f->wn_cl));
+    swap_pdoubles(&f->wnp1, &f->wn);
 
     f->tnow += 0.5 * dt;
     dtField_CL(f);
-    RK2_CL_stage2(f);
+    RK2_CL_stage2(f, sizew);
     swap_clmem(&(f->wnp1_cl), &(f->wn_cl));
+    swap_pdoubles(&f->wnp1, &f->wn);
+    clFinish(f->cli.commandqueue);
 #else
     // Temporary non-OpenCL version
     dtField_CL(f);

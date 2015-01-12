@@ -6,9 +6,11 @@
 
 int main(void) {
   // Unit tests
-  int resu=TestFieldRK2_CL();
-  if (resu) printf("Field RK2_CL test OK !\n");
-  else printf("Field RK2_CL test failed !\n");
+  int resu = TestFieldRK2_CL();
+  if(resu) 
+    printf("Field RK2_CL test OK !\n");
+  else 
+    printf("Field RK2_CL test failed !\n");
   return !resu;
 } 
 
@@ -41,8 +43,9 @@ int TestFieldRK2_CL(void){
   CheckMacroMesh(&(f.macromesh), f.interp.interp_param + 1);
  
   printf("cfl param =%f\n", f.hmin);
+  double tmax = 0.1;
 
-  RK2_CL(&f, .1);
+  RK2_CL(&f, tmax);
  
   PlotField(0, false, &f, NULL, "dgvisu.msh");
   PlotField(0, true , &f, "error", "dgerror.msh");

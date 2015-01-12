@@ -479,7 +479,7 @@ void DGMacroCellInterface(__constant int* param,        // interp param
             codtau, NULL, vnds); // codtau, dpsi,vnds
   }
 
-  if (ieR >= 0) {  // the right element exists
+  if (ieR >= 0) {  // The right element exists
     double xrefL[3];
     {
       double xpg_in[3];
@@ -927,38 +927,21 @@ int ref_ipg(__constant int *param, double *xref) {
   return ix + (deg[0] + 1) * (iy + (deg[1] + 1) * iz) + offset;
 };
 
-
-// Compute the volume and subcell-interface terms on one macrocell
 __kernel
-void RK_in_CL(__constant int* param,    // interp param
-	      int ie,        // macrocel index
-	      double dt, // time step for the stage
-	      __global double* wn,       // field values
-	      __global double* wnp1,     // field values
-	      __global double* dtwn)    // time derivative
+void RK_in_CL(__global double *fwnp1, 
+	      __global double *fdtwn, 
+	      const double dt)
 {
   int ipg = get_global_id(0);
-
-  printf("ipg = %d\n", ipg);  
-  for(int iv=0; iv < param[0]; iv++) {
-    int imem = varindex(param, ie, ipg, iv);
-    printf("%d %d %d %d\n", ipg, ie, iv, imem);
-    wnp1[imem] = wn[imem] + dt * dtwn[imem];
-  }
+  fwnp1[ipg] += dt * fdtwn[ipg];
 }
 
-// Compute the volume and subcell-interface terms on one macrocell
 __kernel
-void RK_out_CL(__constant int* param,    // interp param
-	       int ie,        // macrocel index
-	       double dt, // time step divided
-	       __global double* wnp1,     // field values
-	       __global double* dtwn)    // time derivative
+void RK_out_CL(__global double *fwnp1, 
+	       __global double *fwn, 
+	       __global double *fdtwn, 
+	       const double dt)
 {
   int ipg = get_global_id(0);
-  
-  for(int iv=0; iv < param[0]; iv++) {
-    int imem = varindex(param, ie, ipg, iv);
-    wnp1[imem] += dt * dtwn[imem];
-  }
+  fwnp1[ipg] = fwn[ipg] + dt * fdtwn[ipg];
 }
