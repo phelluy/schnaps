@@ -309,10 +309,9 @@ void DisplayField(Field* f) {
   }
 };
 
-// Save the results in the gmsh format
-// typplot: index of the plotted variable
-// int compare == true -> compare with the exact value
-// If fieldname is NULL, then the fieldname is typpplot.
+// Save the results in the gmsh format typplot: index of the plotted
+// variable int compare == true -> compare with the exact value.  If
+// fieldname is NULL, then the fieldname is typpplot.
 void PlotField(int typplot, int compare, Field* f, char *fieldname,
 	       char *filename) {
 
@@ -1188,47 +1187,35 @@ void* DGMass(void* mc) {
 void init_DGMass_CL(Field *f)
 {
   cl_int status;
+  cl_kernel kernel = f->dgmass;
+  int argnum = 0;
 
-  // associates the param buffer to the 0th kernel argument
-  status = clSetKernelArg(f->dgmass,           // kernel name
-                          0,              // arg num
+  status = clSetKernelArg(kernel,
+                          argnum++,
                           sizeof(cl_mem),
-                          &(f->param_cl));     // opencl buffer
+                          &(f->param_cl));
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status == CL_SUCCESS);
 
-  // associates the dtwn buffer to the 3rd kernel argument
+  /* int ie, // macrocel index */
+  // Set in loop on call.
+  argnum++;
+      
+  /* __constant double* physnode,  // macrocell nodes */
   status = clSetKernelArg(f->dgmass,           // kernel name
-                          3,              // arg num
-                          sizeof(cl_mem),
-                          &(f->dtwn_cl));     // opencl buffer
-  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status == CL_SUCCESS);
-
-  // create constant opencl buffers for the running kernel
-
-
-  // associates physnode buffer to the 2th kernel argument
-  status = clSetKernelArg(f->dgmass,           // kernel name
-                          2,              // arg num
+                          argnum++,              // arg num
                           sizeof(cl_mem),
                           &f->physnode_cl);     // opencl buffer
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status == CL_SUCCESS);
 
-  // the same for element index
-  int ie_cpu = 0;
-  cl_mem ie_cl;
-  ie_cl =  clCreateBuffer(
-			  f->cli.context,
-			  CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR,
-			  sizeof(int),
-			  &ie_cpu,
-			  &status);
+  /* __global double* dtwn // time derivative */
+  status = clSetKernelArg(kernel,
+                          argnum++,
+                          sizeof(cl_mem),
+                          &(f->dtwn_cl));
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status == CL_SUCCESS);
-
-  // FIXME
 }
 
 // apply division by the mass matrix OpenCL version
