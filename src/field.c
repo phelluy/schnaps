@@ -955,20 +955,24 @@ void* DGMacroCellInterface_CL(void* mf) {
 
   // associates the param buffer to the 0th kernel argument
   status = clSetKernelArg(kernel,
-                          argnum++,              // arg num
+                          argnum++,
                           sizeof(cl_mem),
-                          &(f->param_cl));     // opencl buffer
+                          &(f->param_cl));
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status == CL_SUCCESS);
 
   // tnow
   argnum++;
+
   // ieL
   argnum++;
+
   // ieR
   argnum++;
+
   // locfaL
   argnum++;
+
   // locfaR
   argnum++;
 
@@ -982,10 +986,10 @@ void* DGMacroCellInterface_CL(void* mf) {
 			       &status);
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status == CL_SUCCESS);
-  status = clSetKernelArg(kernel,           // kernel name
-                          argnum++,              // arg num
+  status = clSetKernelArg(kernel,
+                          argnum++,
                           sizeof(cl_mem),
-                          &physnodeL_cl);     // opencl buffer
+                          &physnodeL_cl);
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status == CL_SUCCESS);
 
@@ -1000,24 +1004,24 @@ void* DGMacroCellInterface_CL(void* mf) {
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status == CL_SUCCESS);
 
-  status = clSetKernelArg(kernel,           // kernel name
-                          argnum++,              // arg num
+  status = clSetKernelArg(kernel,
+                          argnum++,
                           sizeof(cl_mem),
-                          &physnodeR_cl);     // opencl buffer
+                          &physnodeR_cl);
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status == CL_SUCCESS);
 
-  status = clSetKernelArg(kernel,           // kernel name
-                          argnum++,              // arg num
+  status = clSetKernelArg(kernel,
+                          argnum++,
                           sizeof(cl_mem),
-                          &(f->wn_cl));     // opencl buffer
+                          &(f->wn_cl));
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status == CL_SUCCESS);
 
-  status = clSetKernelArg(kernel,           // kernel name
-                          argnum++,              // arg num
+  status = clSetKernelArg(kernel,
+                          argnum++,
                           sizeof(cl_mem),
-                          &(f->dtwn_cl));     // opencl buffer
+                          &(f->dtwn_cl));
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status == CL_SUCCESS);
 
@@ -1144,7 +1148,7 @@ void* DGMacroCellInterface_CL(void* mf) {
   return NULL;
 }
 
-// apply division by the mass matrix
+// Apply division by the mass matrix
 void* DGMass(void* mc) {
   MacroCell* mcell = (MacroCell*) mc;
   Field *f = mcell->field;
@@ -1219,7 +1223,7 @@ void init_DGMass_CL(Field *f)
 }
 
 // apply division by the mass matrix OpenCL version
-void* DGMass_CL(void* mc) {
+void *DGMass_CL(void *mc) {
   MacroCell* mcell = (MacroCell*) mc;
   Field *f = mcell->field;
 
@@ -1235,7 +1239,7 @@ void* DGMass_CL(void* mc) {
   // loop on the elements
   for (int ie = mcell->first; ie < mcell->last_p1; ie++) {
 
-    // get the physical nodes of element ie
+    // Get the physical nodes of element ie
     // first: get the lock on the cpu side
     void* chkptr = clEnqueueMapBuffer(f->cli.commandqueue,
 				      f->physnode_cl, // buffer to copy from
@@ -1304,8 +1308,8 @@ void* DGMass_CL(void* mc) {
   return NULL;
 }
 
-// apply division by the mass matrix OpenCL version
-void* DGVolume_CL(void *mc) {
+// Apply division by the mass matrix OpenCL version
+void *DGVolume_CL(void *mc) {
   MacroCell *mcell = (MacroCell*) mc;
   Field *f = mcell->field;
   cl_kernel kernel = f->dgvolume;
@@ -1314,36 +1318,40 @@ void* DGVolume_CL(void *mc) {
   /* printf("&pf=%p\n", f); */
   /* printf("%f\n", f->dtwn[0]); */
   cl_int status;
+  int argnum = 0;
 
   // associates the param buffer to the 0th kernel argument
   status = clSetKernelArg(kernel,			  
-                          0,              // arg num
+                          argnum++,
                           sizeof(cl_mem),
-                          &(f->param_cl));     // opencl buffer
+                          &(f->param_cl));
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status == CL_SUCCESS);
 
-  // associates the dtwn buffer to the 3rd kernel argument
-  status = clSetKernelArg(kernel,
-                          3,              // arg num
-                          sizeof(cl_mem),
-                          &(f->wn_cl));     // opencl buffer
-  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status == CL_SUCCESS);
-
-  // associates the dtwn buffer to the 3rd kernel argument
-  status = clSetKernelArg(kernel,
-                          4,              // arg num
-                          sizeof(cl_mem),
-                          &(f->dtwn_cl));     // opencl buffer
-  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status == CL_SUCCESS);
+  // ie
+  argnum++;
 
   // associates physnode buffer to the 2th kernel argument
   status = clSetKernelArg(kernel,
-                          2,              // arg num
+                          argnum++,
                           sizeof(cl_mem),
-                          &f->physnode_cl);     // opencl buffer
+                          &f->physnode_cl);
+  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status == CL_SUCCESS);
+
+  // associates the dtwn buffer to the 3rd kernel argument
+  status = clSetKernelArg(kernel,
+                          argnum++,
+                          sizeof(cl_mem),
+                          &(f->wn_cl));
+  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status == CL_SUCCESS);
+
+  // associates the dtwn buffer to the 3rd kernel argument
+  status = clSetKernelArg(kernel,
+                          argnum++,
+                          sizeof(cl_mem),
+                          &(f->dtwn_cl));
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status == CL_SUCCESS);
 
@@ -1844,8 +1852,7 @@ void dtFieldSlow(Field* f) {
       	}
       }
 
-      // Loop on the glops (numerical integration)
-      // of the face ifa
+      // Loop on the glops (numerical integration) of the face ifa
       for(int ipgf = 0; ipgf < NPGF(f->interp_param + 1, ifa); ipgf++) {
   	double xpgref[3], xpgref_in[3], wpg;
   	//double xpgref2[3], wpg2;
