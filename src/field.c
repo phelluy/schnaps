@@ -20,16 +20,13 @@
 // param[5] = raf y
 // param[6] = raf z
 #pragma start_opencl
-// {{{ GenericVarindex
 int GenericVarindex(int* param, int elem, int ipg, int iv) {
   int npg = (param[1] + 1) * (param[2] + 1) * (param[3] + 1)
     * param[4] * param[5] * param[6];
   return iv + param[0] * (ipg + npg * elem);
 }
-// }}}
 #pragma end_opencl
 
-// {{{ CopyFieldtoCPU
 void CopyFieldtoCPU(Field* f) {
 #ifdef _WITH_OPENCL
   cl_int status;
@@ -62,9 +59,7 @@ void CopyFieldtoCPU(Field* f) {
   status = clFinish(f->cli.commandqueue);
 #endif
 }
-// }}}
 
-// {{{ InitField
 
 void InitField(Field* f) {
   //int param[8]={f->model.m,_DEGX,_DEGY,_DEGZ,_RAFX,_RAFY,_RAFZ,0};
@@ -245,9 +240,7 @@ void InitField(Field* f) {
 #endif
 };
 
-// }}}
 
-// {{{ DisplayField
 // Display the field on screen
 void DisplayField(Field* f) {
   printf("Display field...\n");
@@ -273,9 +266,7 @@ void DisplayField(Field* f) {
     }
   }
 };
-// }}}
 
-// {{{ PlotField
 // Save the results in the gmsh format
 // typplot: index of the plotted variable
 // int compare == true -> compare with the exact value
@@ -507,9 +498,7 @@ void PlotField(int typplot, int compare, Field* f, char *fieldname,
   fclose(gmshfile);
   free(value);
 }
-// }}}
 
-// {{{ DGSubcellInterface
 // Compute inter-subcell fluxes
 void* DGSubCellInterface(void* mc) {
   MacroCell* mcell = (MacroCell*) mc;
@@ -650,9 +639,7 @@ void* DGSubCellInterface(void* mc) {
   } // macro elem loop
   return NULL;
 }
-// }}}
 
-// {{{ DGMacroCellInterfaceSlow
 // compute the Discontinuous Galerkin inter-macrocells boundary terms
 void* DGMacroCellInterfaceSlow(void* mc) {
   MacroCell* mcell = (MacroCell*) mc;
@@ -775,9 +762,7 @@ void* DGMacroCellInterfaceSlow(void* mc) {
   }
   return NULL;
 }
-// }}}
 
-// {{{ DGMacroCellInterface
 // Compute the Discontinuous Galerkin inter-macrocells boundary terms.
 // Second implementation with a loop on the faces.
 void* DGMacroCellInterface(void* mc) {
@@ -915,9 +900,7 @@ void* DGMacroCellInterface(void* mc) {
   }
   return NULL;
 }
-// }}}
 
-// {{{ DGMacroCellInterface_CL
 void* DGMacroCellInterface_CL(void* mf) {
   MacroFace* mface = (MacroFace*) mf;
   Field* f = mface->field;
@@ -1106,9 +1089,7 @@ void* DGMacroCellInterface_CL(void* mf) {
 
   return NULL;
 }
-// }}}
 
-// {{{ DGMass
 // apply division by the mass matrix
 void* DGMass(void* mc) {
   MacroCell* mcell = (MacroCell*) mc;
@@ -1147,9 +1128,7 @@ void* DGMass(void* mc) {
   }
   return NULL;
 }
-// }}}
 
-// {{{ DGMass_CL
 // apply division by the mass matrix OpenCL version
 void* DGMass_CL(void* mc) {
   MacroCell* mcell = (MacroCell*) mc;
@@ -1317,9 +1296,7 @@ void* DGMass_CL(void* mc) {
 
   return NULL;
 }
-// }}}
 
-// {{{ DGVolume_CL
 // apply division by the mass matrix OpenCL version
 void* DGVolume_CL(void* mc) {
   MacroCell *mcell = (MacroCell*) mc;
@@ -1488,9 +1465,7 @@ void* DGVolume_CL(void* mc) {
 
   return NULL;
 }
-// }}}
 
-// {{{ DGVolume
 
 // compute the Discontinuous Galerkin volume terms
 // fast version
@@ -1637,9 +1612,7 @@ void* DGVolume(void* mc) {
   return NULL;
 }
 
-// }}}
 
-// {{{ DGVolumeSlow(Field* f)
 
 // Compute the Discontinuous Galerkin volume terms: slow version
 void DGVolumeSlow(Field* f) {
@@ -1711,9 +1684,7 @@ void DGVolumeSlow(Field* f) {
   }
 }
 
-// }}}
 
-// {{{ dtField_pthread
 
 void dtField_pthread(Field *f) 
 {
@@ -1801,9 +1772,7 @@ void dtField_pthread(Field *f)
 #endif
 }
 
-// }}}
 
-// {{{ dtField
 
 // Apply the Discontinuous Galerkin approximation for computing the
 // time derivative of the field
@@ -1848,10 +1817,8 @@ void dtField(Field* f) {
 #endif
 }
 
-// }}}
 
 
-// {{{ dtField_CL
 
 // Apply the Discontinuous Galerkin approximation for computing the
 // time derivative of the field. OpenCL version
@@ -1889,11 +1856,9 @@ void dtField_CL(Field* f) {
   }
 }
 
-// }}}
 
 
 
-// {{{ dtFieldSlow
 // Apply the Discontinuous Galerkin approximation for computing the
 // time derivative of the field
 void dtFieldSlow(Field* f) {
@@ -2087,9 +2052,7 @@ void dtFieldSlow(Field* f) {
 
   }
 };
-// }}}
 
-// {{{ swap_doubles
 void swap_pdoubles(double **a, double **b)
 {
   // exchange the field pointers
@@ -2098,21 +2061,21 @@ void swap_pdoubles(double **a, double **b)
   *a = *b;
   *b = temp;
 }
-// }}}
 
-// {{{ RK2_step1 and RK2_step2
-void RK2_step1(double *fwnp1, double *fwn, double *fdtwn, const double dt, const int sizew)
+// An out-of-place RK step
+void RK_out(double *fwnp1, double *fwn, double *fdtwn, const double dt, 
+	       const int sizew)
 {
-  double halfdt = 0.5 * dt;
 #ifdef _OPENMP
 #pragma omp parallel for
 #endif
   for(int iw = 0; iw < sizew; iw++) {
-    fwnp1[iw] = fwn[iw] + halfdt * fdtwn[iw];
+    fwnp1[iw] = fwn[iw] + dt * fdtwn[iw];
   }
 }
 
-void RK2_step2(double *fwnp1, double *fdtwn, const double dt, const int sizew)
+// An in-place RK step
+void RK_in(double *fwnp1, double *fdtwn, const double dt, const int sizew)
 {
 #ifdef _OPENMP
 #pragma omp parallel for
@@ -2121,9 +2084,7 @@ void RK2_step2(double *fwnp1, double *fdtwn, const double dt, const int sizew)
     fwnp1[iw] += dt * fdtwn[iw];
   }
 }
-// }}}
 
-// {{{ RK2
 // Time integration by a second order Runge-Kutta algorithm
 void RK2(Field* f, double tmax) {
   double vmax = 1; // to be changed for another model !!!!!!!!!
@@ -2140,13 +2101,13 @@ void RK2(Field* f, double tmax) {
       printf("t=%f iter=%d/%d dt=%f\n", f->tnow, iter, itermax, dt);
     // predictor
     dtField(f);
-    RK2_step1(f->wnp1, f->wn, f->dtwn, dt, sizew);
+    RK_out(f->wnp1, f->wn, f->dtwn, 0.5 * dt, sizew);
     swap_pdoubles(&f->wnp1, &f->wn);
 
     // corrector
     f->tnow += 0.5 * dt;
     dtField(f);
-    RK2_step2(f->wnp1, f->dtwn, dt, sizew);
+    RK_in(f->wnp1, f->dtwn, dt, sizew);
     swap_pdoubles(&f->wnp1, &f->wn);
 
     f->tnow += 0.5 * dt;
@@ -2154,14 +2115,9 @@ void RK2(Field* f, double tmax) {
   }
   printf("t=%f iter=%d/%d dt=%f\n", f->tnow, iter, itermax, dt);
 }
-// }}}
 
-
-
-
-// {{{ RK2_step1_CL
 // first step in the RK2 algorithm
-void* RK2_step1_CL(Field *f) {
+void RK2_step1_CL(Field *f) {
 
   int* param = f->interp_param;
 
@@ -2169,8 +2125,7 @@ void* RK2_step1_CL(Field *f) {
 
   cl_mem param_cl;
   cl_int status;
-  param_cl = clCreateBuffer(
-			    f->cli.context,
+  param_cl = clCreateBuffer(f->cli.context,
 			    CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR,
 			    sizeof(int) * 7,
 			    f->interp_param,
@@ -2268,10 +2223,11 @@ void* RK2_step1_CL(Field *f) {
 
     // kernel launch
     // the groupsize is the total number of glops
-    //size_t groupsize = (param[1] + 1)*(param[2] + 1)*(param[3] + 1);
+    // size_t groupsize = (param[1] + 1)*(param[2] + 1)*(param[3] + 1);
     // the total work items number is the number of glops
     // in a subcell * number of subcells
-    size_t numworkitems = param[0] * (param[1] + 1) * (param[2] + 1) * (param[3] + 1) 
+    size_t numworkitems = param[0] 
+      * (param[1] + 1) * (param[2] + 1) * (param[3] + 1) 
       * param[4] * param[5] * param[6];
     printf("numworkitems=%zd\n", numworkitems);
     status = clEnqueueNDRangeKernel(f->cli.commandqueue,
@@ -2285,14 +2241,10 @@ void* RK2_step1_CL(Field *f) {
     clFinish(f->cli.commandqueue);  // wait the end of the computation
     printf("numworkitems=%zd\n", numworkitems);
   }
-  return NULL;
 }
-// }}}
 
-
-// {{{ RK2_CL
-// Time integration by a second order Runge-Kutta algorithm.
-// OpenCL version
+// Time integration by a second order Runge-Kutta algorithm, OpenCL
+// version.
 void RK2_CL(Field* f, double tmax) {
   double vmax = 1; // to be changed for another model !!!!!!!!!
 
@@ -2309,13 +2261,13 @@ void RK2_CL(Field* f, double tmax) {
     // predictor
     dtField_CL(f);
     //RK2_step1_CL(f);
-    RK2_step1(f->wnp1, f->wn, f->dtwn, dt, sizew);
+    RK_out(f->wnp1, f->wn, f->dtwn, 0.5 * dt, sizew);
     swap_pdoubles(&f->wnp1, &f->wn);
 
     // corrector
     f->tnow += 0.5 * dt;
     dtField_CL(f);
-    RK2_step2(f->wnp1, f->dtwn, dt, sizew);
+    RK_in(f->wnp1, f->dtwn, dt, sizew);
     swap_pdoubles(&f->wnp1, &f->wn);
 
     f->tnow += 0.5 * dt;
@@ -2323,11 +2275,7 @@ void RK2_CL(Field* f, double tmax) {
   }
   printf("t=%f iter=%d/%d dt=%f\n", f->tnow, iter, itermax, dt);
 }
-// }}}
 
-
-
-// {{{ RK2Copy
 // Time integration by a second order Runge-Kutta algorithm with
 // memory copy instead of pointers exchange
 void RK2Copy(Field* f, double tmax) {
@@ -2368,9 +2316,7 @@ void RK2Copy(Field* f, double tmax) {
 
   }
 }
-// }}}
 
-// {{{ L2error
 // Compute the normalized L2 distance with the imposed data
 double L2error(Field* f) {
   //int param[8] = {f->model.m, _DEGX, _DEGY, _DEGZ, _RAFX, _RAFY, _RAFZ, 0};
@@ -2426,4 +2372,3 @@ double L2error(Field* f) {
   }
   return sqrt(error) / (sqrt(mean)  + 1e-16);
 }
-// }}}

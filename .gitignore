@@ -43,6 +43,7 @@ doc/html/
 doc/latex/
 doc/toto
 toto
+*.cl
 
 dgerror.msh
 dgvisu*.msh
@@ -70,3 +71,10 @@ testkernelinterface
 testkernelvolume
 testmanyv
 testmeq2
+
+#output files
+*.csv
+*.pdf
+*.log
+*.msh
+testfieldrk2_cl

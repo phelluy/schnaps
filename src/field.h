@@ -168,27 +168,28 @@ void* DGMass_CL(void *mcell);
 //! \param[inout] b second pointer
 void swap_pdoubles(double **a, double **b);
 
-//! \brief first step in the RK2 algorithm
+//! \brief An out-of-place RK stage
 //! \param[out] fwnp1 field at time n+1
 //! \param[in] fwn field at time n
 //! \param[in] fdtwn time derivative of the field
 //! \param[in] time step
 //! \param[in] size of the field buffer
-void RK2_step1(double *fwnp1, double *fwn, double *fdtwn, const double dt, const int sizew);
+void RK_out(double *fwnp1, double *fwn, double *fdtwn, const double dt, 
+	       const int sizew);
 
-//! \brief second step in the RK2 algorithm
+//! \brief An in-place RK stage
 //! \param[inout] fwnp1 field at time n+1
 //! \param[in] fdtwn time derivative of the field
 //! \param[in] time step
 //! \param[in] size of the field buffer
-void RK2_step2(double *fwnp1, double *fdtwn, const double dt, const int sizew);
+void RK_in(double *fwnp1, double *fdtwn, const double dt, const int sizew);
 
-//! \brief time integration by a second order Runge-Kutta algorithm
+//! \brief Time integration by a second order Runge-Kutta algorithm
 //! \param[inout] f a field
 //! \param[in] tmax physical duration of the simulation
 void RK2(Field *f,double tmax);
 
-void* RK2_step1_CL(Field *f);
+void RK2_step1_CL(Field *f);
 
 //! \brief OpenCL version of RK2
 //! time integration by a second order Runge-Kutta algorithm
