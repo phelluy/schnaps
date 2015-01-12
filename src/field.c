@@ -1273,29 +1273,10 @@ void* DGMass_CL(void* mc) {
     if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
     assert(status == CL_SUCCESS);
 
-    // update the constant parameter to be passed to the kernel
-    // first: get the lock on the cpu side
-    /* chkptr = clEnqueueMapBuffer(f->cli.commandqueue, */
-    /* 				ie_cl, // buffer to copy from */
-    /* 				CL_TRUE, // block until the buffer is available */
-    /* 				CL_MAP_WRITE, // we just want to copy ie */
-    /* 				0, // offset */
-    /* 				sizeof(int), // buffersize */
-    /* 				0, NULL, NULL, // events management */
-    /* 				&status); */
-    /* assert(status == CL_SUCCESS); */
-    /* assert(chkptr == &ie_cpu); */
-    /* // second: copy */
-    /* ie_cpu = ie; */
-    /* //third: unlock */
-    /* clEnqueueUnmapMemObject(f->cli.commandqueue, */
-    /* 			    ie_cl, */
-    /* 			    &ie_cpu, */
-    /* 			    0, NULL, NULL); */
-
     // ensures that all the buffers are mapped
     status = clFinish(f->cli.commandqueue);
-
+    if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
+    assert(status == CL_SUCCESS);
 
     // associates ie to  kernel argument #1
     status = clSetKernelArg(f->dgmass, 1, sizeof(int), (void *)&ie);
@@ -1359,28 +1340,11 @@ void* DGVolume_CL(void* mc) {
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status == CL_SUCCESS);
 
-  // FIXME: move to Field struct and initialization to init.
-  // Create constant opencl buffers for the running kernel
-  cl_mem physnode_cl;
-  cl_double* physnode = calloc(60, sizeof(cl_double));
-  /* for(int inoloc = 0; inoloc < 20; inoloc++) { */
-  /*   int ino = f->macromesh.elem2node[20*0+inoloc]; */
-  /*   physnode[3 * inoloc + 0] = f->macromesh.node[3 * ino + 0]; */
-  /*   physnode[3 * inoloc + 1] = f->macromesh.node[3 * ino + 1]; */
-  /*   physnode[3 * inoloc + 2] = f->macromesh.node[3 * ino + 2]; */
-  /* } */
-  physnode_cl = clCreateBuffer(f->cli.context,
-			       CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR,
-			       sizeof(double) * 60,
-			       physnode,
-			       &status);
-  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status == CL_SUCCESS);
   // associates physnode buffer to the 2th kernel argument
   status = clSetKernelArg(f->dgvolume,           // kernel name
                           2,              // arg num
                           sizeof(cl_mem),
-                          &physnode_cl);     // opencl buffer
+                          &f->physnode_cl);     // opencl buffer
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status == CL_SUCCESS);
 
@@ -1408,7 +1372,7 @@ void* DGVolume_CL(void* mc) {
     // get the physical nodes of element ie
     // first: get the lock on the cpu side
     void* chkptr = clEnqueueMapBuffer(f->cli.commandqueue,
-				      physnode_cl, // buffer to copy from
+				      f->physnode_cl, // buffer to copy from
 				      CL_TRUE, //block until buffer is available
 				      CL_MAP_WRITE, //we just want to copy
 				      0, // offset
@@ -1418,13 +1382,13 @@ void* DGVolume_CL(void* mc) {
     //printf("%d\n", status);
     if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
     assert(status == CL_SUCCESS);
-    assert(chkptr == physnode);
+    assert(chkptr == f->physnode);
 
     for(int inoloc = 0; inoloc < 20; inoloc++) {
       int ino = f->macromesh.elem2node[20*ie+inoloc];
-      physnode[3 * inoloc + 0] = f->macromesh.node[3 * ino + 0];
-      physnode[3 * inoloc + 1] = f->macromesh.node[3 * ino + 1];
-      physnode[3 * inoloc + 2] = f->macromesh.node[3 * ino + 2];
+      f->physnode[3 * inoloc + 0] = f->macromesh.node[3 * ino + 0];
+      f->physnode[3 * inoloc + 1] = f->macromesh.node[3 * ino + 1];
+      f->physnode[3 * inoloc + 2] = f->macromesh.node[3 * ino + 2];
     }
     // unlock physnode buffer
     /* status=clEnqueueWriteBuffer (f->cli.commandqueue, */
@@ -1436,8 +1400,8 @@ void* DGVolume_CL(void* mc) {
     /* 			  0, NULL, NULL); */
     /* assert(status == CL_SUCCESS); */
     status = clEnqueueUnmapMemObject (f->cli.commandqueue,
-				      physnode_cl,
-				      physnode,
+				      f->physnode_cl,
+				      f->physnode,
 				      0, NULL, NULL);
     if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
     assert(status == CL_SUCCESS);
@@ -1484,9 +1448,6 @@ void* DGVolume_CL(void* mc) {
     assert(status == CL_SUCCESS);
     clFinish(f->cli.commandqueue);  // wait the end of the computation
   }
-
-  free(physnode);
-  assert(clReleaseMemObject(physnode_cl)==CL_SUCCESS);
 
   return NULL;
 }
