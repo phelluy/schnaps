@@ -12,35 +12,35 @@
 //! \brief Data structure for managing a  discrete vector field
 //! solution of a DG approximation
 typedef struct Field{
-  //! underlying mesh
+  //! Underlying mesh
   MacroMesh macromesh;
-  //! physical and numerical model
+  //! Physical and numerical model
   Model model;
-  //! interpolation used for each component of the field
+  //! Interpolation used for each component of the field
   Interpolation interp;
-  //! a copy of the interpolation parameters
+  //! A copy of the interpolation parameters
   int interp_param[8];
-  //! current time
+  //! Current time
   double tnow;
-  //! cfl parameter min_i (vol_i / surf_i)
+  //! CFL parameter min_i (vol_i / surf_i)
   double hmin;
-  //! time step
+  //! Time step
   //! dt has to be smaller than hmin / vmax
   double dt;
 
-  //! activate or not 2D computations
+  //! Activate or not 2D computations
   bool is2d;
 
-  //! size of the field buffers
+  //! Size of the field buffers
   int wsize;
-  //! fields at time steps n
+  //! Fields at time steps n
   double* wn;
-  //! fields at time steps n+1
+  //! Fields at time steps n+1
   double* wnp1;
-  //! time derivative of the field
+  //! Time derivative of the field
   double* dtwn;
 
-  //! \brief memory arrangement of field components
+  //! \brief Memory arrangement of field components
   //! \param[in] param interpolation parameters
   //! \param[in] elem macro element index
   //! \param[in] ipg glop index
@@ -54,21 +54,21 @@ typedef struct Field{
   cl_mem wn_cl;
   cl_mem wnp1_cl;
   cl_mem dtwn_cl;
+  //! \brief copy of the params
+  cl_mem param_cl;
 
   //! opencl kernels for mass inversion
   cl_kernel dgmass;
   cl_kernel dgvolume;
   cl_kernel dginterface;
-  cl_kernel rk2step1;
-  cl_kernel rk2step2;
+  cl_kernel RK_out_CL;
+  cl_kernel RK_in_CL;
 
 #endif
 
-
 } Field;
 
-
-//! \brief a simple struct for packing a field
+//! \brief A simple struct for packing a field
 //! and a cells range.  To be passed to a thread
 //! as a void* pointer.
 typedef struct MacroCell {
@@ -77,7 +77,7 @@ typedef struct MacroCell {
   Field *field; //! pointer to a  field
 } MacroCell;
 
-//! \brief a simple struct for packing a field
+//! \brief A simple struct for packing a field
 //! and a faces range.  To be passed to a thread
 //! as a void* pointer.
 typedef struct MacroFace {
@@ -175,7 +175,7 @@ void swap_pdoubles(double **a, double **b);
 //! \param[in] time step
 //! \param[in] size of the field buffer
 void RK_out(double *fwnp1, double *fwn, double *fdtwn, const double dt, 
-	       const int sizew);
+	    const int sizew);
 
 //! \brief An in-place RK stage
 //! \param[inout] fwnp1 field at time n+1
@@ -187,7 +187,7 @@ void RK_in(double *fwnp1, double *fdtwn, const double dt, const int sizew);
 //! \brief Time integration by a second order Runge-Kutta algorithm
 //! \param[inout] f a field
 //! \param[in] tmax physical duration of the simulation
-void RK2(Field *f,double tmax);
+void RK2(Field *f, double tmax);
 
 void RK2_step1_CL(Field *f);
 

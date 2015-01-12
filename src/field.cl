@@ -8,7 +8,6 @@
 
 #define NULL 0
 
-
 // For each face, give the dimension index i
 __constant int axis_permut[6][4] = {
   {0, 2, 1, 0},
@@ -111,16 +110,16 @@ int ref_pg_face(__constant int* param, int ifa, int ipg,
   // Compute the global index of the
   // Gauss-Lobatto point in the volume
   int ipgv
-   = ipgxyz[0]
-   + (param[0] + 1)
-   * (ipgxyz[1] + (param[1] + 1)
-      * (ipgxyz[2] + (param[2] + 1)
-	 * (ncpgxyz[0] + param[3]
-	    * (ncpgxyz[1] + param[4]
-	       * ncpgxyz[2])
-	    )
-	 )
-      );
+    = ipgxyz[0]
+    + (param[0] + 1)
+    * (ipgxyz[1] + (param[1] + 1)
+       * (ipgxyz[2] + (param[2] + 1)
+	  * (ncpgxyz[0] + param[3]
+	     * (ncpgxyz[1] + param[4]
+		* ncpgxyz[2])
+	     )
+	  )
+       );
 
   // Compute the reference coordinates of the
   // Gauss-Lobatto point in the volume
@@ -932,35 +931,35 @@ int ref_ipg(__constant int *param, double *xref) {
 
 // Compute the volume and subcell-interface terms on one macrocell
 __kernel
-void RK2_step1_CL(__constant int* param,    // interp param
-	       __constant int* ie,        // macrocel index
-	       __constant double *halfdt, // time step divided by two
-	       __global double* wn,       // field values
-	       __global double* wnp1,     // field values
-	       __global double* dtwn) {   // time derivative
-
+void RK_in_CL(__constant int* param,    // interp param
+	      int ie,        // macrocel index
+	      double dt, // time step divided by two
+	      __global double* wn,       // field values
+	      __global double* wnp1,     // field values
+	      __global double* dtwn)    // time derivative
+{
   int ipg = get_global_id(0);
 
-  printf("ipg = %d\n",ipg);  
+  printf("ipg = %d\n", ipg);  
   for(int iv=0; iv < param[0]; iv++) {
-    int imem = varindex(param, *ie, ipg, iv);
-    printf("%d %d %d %d\n",ipg,*ie,iv,imem);
-    wnp1[imem] = wn[imem] + *halfdt * dtwn[imem];
+    int imem = varindex(param, ie, ipg, iv);
+    printf("%d %d %d %d\n", ipg, ie, iv, imem);
+    wnp1[imem] = wn[imem] + dt * dtwn[imem];
   }
 }
 
 // Compute the volume and subcell-interface terms on one macrocell
 __kernel
-void RK2_step2_CL(__constant int* param,    // interp param
-		  __constant int* ie,        // macrocel index
-		  __constant double *dt, // time step divided
-		  __global double* wnp1,     // field values
-		  __global double* dtwn) {   // time derivative
-  
+void RK_out_CL(__constant int* param,    // interp param
+	       int ie,        // macrocel index
+	       double dt, // time step divided
+	       __global double* wnp1,     // field values
+	       __global double* dtwn)    // time derivative
+{
   int ipg = get_global_id(0);
   
   for(int iv=0; iv < param[0]; iv++) {
-    int imem = varindex(param, *ie, ipg, iv);
-    wnp1[imem] += *dt * dtwn[imem];
+    int imem = varindex(param, ie, ipg, iv);
+    wnp1[imem] += dt * dtwn[imem];
   }
 }
