@@ -1096,17 +1096,7 @@ void *DGMacroCellInterface_CL(void *mf) {
   cl_int status;
   cl_kernel kernel = f->dginterface;
 
-  cl_mem physnodeL_cl;
-  cl_double* physnodeL = calloc(60, sizeof(cl_double));
-  assert(physnodeL);
-  physnodeL_cl= clCreateBuffer(f->cli.context,
-			       CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR,
-			       sizeof(cl_double) * 60,
-			       physnodeL,
-			       &status);
-  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status == CL_SUCCESS);
-
+  // TODO: leave allocated?
   cl_mem physnodeR_cl;
   cl_double *physnodeR = calloc(60, sizeof(cl_double));
   assert(physnodeR);
@@ -1119,7 +1109,7 @@ void *DGMacroCellInterface_CL(void *mf) {
   assert(status == CL_SUCCESS);
 
   // Set the kernel arguments
-  initDGMacroCellInterface_CL(f, physnodeL_cl, physnodeR_cl);
+  initDGMacroCellInterface_CL(f, f->physnode_cl, physnodeR_cl);
   
   // Loop on the macro faces
   const unsigned int nbfaces = f->macromesh.nbfaces;
@@ -1129,7 +1119,7 @@ void *DGMacroCellInterface_CL(void *mf) {
     int ieR =    f->macromesh.face2elem[4 * ifa + 2];
     int locfaR = f->macromesh.face2elem[4 * ifa + 3];
 
-    update_physnode_cl(f, ieL, physnodeL_cl, physnodeL);
+    update_physnode_cl(f, ieL, f->physnode_cl, f->physnode);
 
     if(ieR >= 0) 
       update_physnode_cl(f, ieR, physnodeR_cl, physnodeR);
@@ -1148,12 +1138,6 @@ void *DGMacroCellInterface_CL(void *mf) {
     assert(status == CL_SUCCESS);
     clFinish(f->cli.commandqueue);
   }
-
-  // TODO: one of these should use the physnode cl buffer
-  free(physnodeL);
-  status = clReleaseMemObject(physnodeL_cl);
-  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status == CL_SUCCESS);
 
   free(physnodeR);
   status = clReleaseMemObject(physnodeR_cl);
