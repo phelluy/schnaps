@@ -1036,6 +1036,8 @@ void initDGMacroCellInterface_CL(Field *f,
                           &(f->dtwn_cl));
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status == CL_SUCCESS);
+
+  clFinish(f->cli.commandqueue);
 }
 
 // Set the loop-dependant kernel arguments for DGMacroCellInterface_CL
@@ -1233,6 +1235,8 @@ void init_DGMass_CL(Field *f)
                           &(f->dtwn_cl));
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status == CL_SUCCESS);
+
+  clFinish(f->cli.commandqueue);
 }
 
 // apply division by the mass matrix OpenCL version
@@ -1322,6 +1326,8 @@ void init_DGVolume_CL(Field *f)
                           &(f->dtwn_cl));
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status == CL_SUCCESS);
+
+  clFinish(f->cli.commandqueue);
 }
 
 // Apply division by the mass matrix OpenCL version
@@ -2039,6 +2045,8 @@ void init_RK2_CL_stage1(Field *f, const double dt)
 			  &(halfdt));
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status == CL_SUCCESS);
+
+  clFinish(f->cli.commandqueue);
 }
 
 
@@ -2074,11 +2082,13 @@ void init_RK2_CL_stage2(Field *f, const double dt)
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status == CL_SUCCESS);
 
+  clFinish(f->cli.commandqueue);
 }
 
 void RK2_CL_stage1(Field *f, size_t numworkitems)
 {
   cl_int status;
+
   status = clEnqueueNDRangeKernel(f->cli.commandqueue,
 				  f->RK_out_CL,
 				  1, 
@@ -2090,12 +2100,14 @@ void RK2_CL_stage1(Field *f, size_t numworkitems)
 				  NULL);
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status == CL_SUCCESS);
+
   clFinish(f->cli.commandqueue);
 }
 
 void RK2_CL_stage2(Field *f, size_t numworkitems)
 {
   cl_int status;
+
   status = clEnqueueNDRangeKernel(f->cli.commandqueue,
 				  f->RK_in_CL,
 				  1, NULL,
@@ -2104,6 +2116,7 @@ void RK2_CL_stage2(Field *f, size_t numworkitems)
 				  0, NULL, NULL);
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status == CL_SUCCESS);
+
   clFinish(f->cli.commandqueue);
 }
 
@@ -2131,7 +2144,6 @@ void RK2_CL(Field* f, double tmax) {
     // OpenCL version
     dtField_CL(f);
     RK2_CL_stage1(f, sizew);
-    clFinish(f->cli.commandqueue);
     swap_clmem(&(f->wnp1_cl), &(f->wn_cl));
     swap_pdoubles(&f->wnp1, &f->wn);
 
@@ -2140,7 +2152,6 @@ void RK2_CL(Field* f, double tmax) {
     RK2_CL_stage2(f, sizew);
     swap_clmem(&(f->wnp1_cl), &(f->wn_cl));
     swap_pdoubles(&f->wnp1, &f->wn);
-    clFinish(f->cli.commandqueue);
 #else
     // Temporary non-OpenCL version
     dtField_CL(f);
