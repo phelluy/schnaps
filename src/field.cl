@@ -134,7 +134,7 @@ int ref_pg_face(__constant int* param, int ifa, int ipg,
   *wpg = h[0] * h[1] *
     gauss_lob_weight[offset[0]] * gauss_lob_weight[offset[1]];
 
-  // if xpgin exists, compute a point slightly INSIDE the opposite
+  // If xpgin exists, compute a point slightly INSIDE the opposite
   // subcell along the face.
   if(xpgin != NULL) {
     double small = 1e-3;//0.001
@@ -276,7 +276,7 @@ void DGVolume(__constant int* param,        // interp param
   /* double det=dtau[0][0]*dtau[1][1]*dtau[2][2]-dtau[0][0]*dtau[1][2]*dtau[2][1]-dtau[1][0]*dtau[0][1]*dtau[2][2]+ */
   /*   dtau[1][0]*dtau[0][2]*dtau[2][1]+dtau[2][0]*dtau[0][1]*dtau[1][2]-dtau[2][0]*dtau[0][2]*dtau[1][1]; */
 
-#define _M 1  /// to do let schnaps specify m !!!!!!!!
+#define _M 1  /// TODO let schnaps specify m !!!!!!!!
 
   double wL[_M];
   for(int iv = 0; iv < m; iv++) {
@@ -304,11 +304,11 @@ void DGVolume(__constant int* param,        // interp param
       }
 
       double flux[_M];
-      NumFlux(wL, wL, dphi, flux); // to do: let schnaps gives fluxnum
+      NumFlux(wL, wL, dphi, flux); // TODO: let schnaps gives fluxnum
 
       int ipgR = ipg(npg, q, icell);
       for(int iv=0; iv < m; iv++) {
-	int imemR = varindex(param, ie, ipgR, iv); // to do !
+	int imemR = varindex(param, ie, ipgR, iv); // TODO !
     	dtwn[imemR] += flux[iv] * wpg;
       }
     }
@@ -344,7 +344,7 @@ void DGVolume(__constant int* param,        // interp param
 
 	double wpgs = wglop(deg[dim1], p[dim1]) * wglop(deg[dim2], p[dim2]);
         double flux[_M];
-        NumFlux(wL, wR, vnds, flux); // to do: let schnaps gives fluxnum
+        NumFlux(wL, wR, vnds, flux); // TODO: let schnaps gives fluxnum
         for(int iv = 0; iv < m; iv++) {
           int ipgL = ipg(npg, p, icell);
           int imemL = varindex(param, ie, ipgL, iv);
@@ -479,6 +479,8 @@ void DGMacroCellInterface(__constant int* param,        // interp param
             codtau, NULL, vnds); // codtau, dpsi,vnds
   }
 
+  double wL[_M];
+  
   if (ieR >= 0) {  // The right element exists
     double xrefL[3];
     {
@@ -505,7 +507,7 @@ void DGMacroCellInterface(__constant int* param,        // interp param
     /*   assert(Dist(xpgR, xpg) < 1e-10); */
     /* }	 */
 
-    double wL[_M], wR[_M];
+    double wR[_M];
     for(int iv = 0; iv < _M; iv++) {
       int imemL = varindex(param, ieL, ipgL, iv);
       wL[iv] = wn[imemL];
@@ -527,7 +529,6 @@ void DGMacroCellInterface(__constant int* param,        // interp param
     }
 
   } else { // The point is on the boundary.
-    double wL[_M];
     for(int iv = 0; iv < _M; iv++) {
       int imemL = varindex(param, ieL, ipgL, iv);
       wL[iv] = wn[imemL];
@@ -927,6 +928,7 @@ int ref_ipg(__constant int *param, double *xref) {
   return ix + (deg[0] + 1) * (iy + (deg[1] + 1) * iz) + offset;
 };
 
+// In-place RK stage
 __kernel
 void RK_in_CL(__global double *fwnp1, 
 	      __global double *fdtwn, 
@@ -936,6 +938,7 @@ void RK_in_CL(__global double *fwnp1,
   fwnp1[ipg] += dt * fdtwn[ipg];
 }
 
+// Out-of-place RK stage
 __kernel
 void RK_out_CL(__global double *fwnp1, 
 	       __global double *fwn, 
