@@ -886,19 +886,15 @@ void Phy2Ref(__constant double* physnode, double xphy[3], double xref[3]) {
 }
 
 // From a reference point find the nearest gauss point
-// Warning: works only  degree 1,2 or 3
+// Warning: works only  degree 1, 2, or 3 (FIXME: why?)
 int ref_ipg(__constant int *param, double *xref) {
   // approximation degree in each direction
-  int deg[3] = {param[0],
-		param[1],
-		param[2]};
+  int deg[3] = {param[0], param[1], param[2]};
 
   // number of subcells in each direction
-  int nraf[3] = {param[3],
-		 param[4],
-		 param[5]};
+  int nraf[3] = {param[3], param[4], param[5]};
 
-  double hh[3] = {1. / nraf[0], 1. / nraf[1], 1. /nraf[2]};
+  double hh[3] = {1.0 / nraf[0], 1.0 / nraf[1], 1.0 / nraf[2]};
 
   // get the subcell id
   int ncx = floor(xref[0] * nraf[0]);
