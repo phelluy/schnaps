@@ -1280,17 +1280,13 @@ void *DGMass_CL(void *mc) {
   return NULL;
 }
 
-// Apply division by the mass matrix OpenCL version
-void *DGVolume_CL(void *mc) {
-  MacroCell *mcell = (MacroCell*) mc;
-  Field *f = mcell->field;
-  cl_kernel kernel = f->dgvolume;
-  int* param = f->interp_param;
-
-  /* printf("&pf=%p\n", f); */
-  /* printf("%f\n", f->dtwn[0]); */
+// Set kernel argument for DGVolume_CL
+void init_DGVolume_CL(Field *f)
+{
   cl_int status;
   int argnum = 0;
+
+  cl_kernel kernel = f->dgvolume;
 
   // associates the param buffer to the 0th kernel argument
   status = clSetKernelArg(kernel,			  
@@ -1326,17 +1322,27 @@ void *DGVolume_CL(void *mc) {
                           &(f->dtwn_cl));
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status == CL_SUCCESS);
+}
+
+// Apply division by the mass matrix OpenCL version
+void *DGVolume_CL(void *mc) {
+  MacroCell *mcell = (MacroCell*) mc;
+  Field *f = mcell->field;
+  cl_kernel kernel = f->dgvolume;
+  int* param = f->interp_param;
+
+  cl_int status;
+
+  init_DGVolume_CL(f);
 
   // Loop on the elements
   for (int ie = mcell->first; ie < mcell->last_p1; ie++) {
-
     update_physnode_cl(f, ie, f->physnode_cl, f->physnode);
 
-    // Pass value of ie to  kernel argument #1
     status = clSetKernelArg(kernel,
-			    1,   // arg num
+			    1,
 			    sizeof(int),
-			    &ie);     // opencl buffer
+			    &ie);
     if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
     assert(status == CL_SUCCESS);
 
@@ -1358,7 +1364,6 @@ void *DGVolume_CL(void *mc) {
     assert(status == CL_SUCCESS);
     clFinish(f->cli.commandqueue);  // wait the end of the computation
   }
-
   return NULL;
 }
 
