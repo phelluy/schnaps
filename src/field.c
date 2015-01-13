@@ -1136,6 +1136,7 @@ void *DGMacroCellInterface_CL(void *mf) {
         			    0, NULL, NULL);
     if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
     assert(status == CL_SUCCESS);
+
     clFinish(f->cli.commandqueue);
   }
 
@@ -1212,6 +1213,8 @@ void init_DGMass_CL(Field *f)
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status == CL_SUCCESS);
 
+  clFinish(f->cli.commandqueue);
+
   /* __global double* dtwn // time derivative */
   status = clSetKernelArg(kernel,
                           argnum++,
@@ -1223,29 +1226,28 @@ void init_DGMass_CL(Field *f)
   clFinish(f->cli.commandqueue);
 }
 
-// apply division by the mass matrix OpenCL version
+// Apply division by the mass matrix OpenCL version
 void *DGMass_CL(void *mc) {
-  MacroCell* mcell = (MacroCell*) mc;
+  MacroCell *mcell = (MacroCell*) mc;
   Field *f = mcell->field;
+  int *param = f->interp_param;
+  cl_int status;
 
   init_DGMass_CL(f);
 
-  int* param = f->interp_param;
-
-  /* printf("&pf = %p\n", f); */
-  /* printf("%f\n", f->dtwn[0]); */
-
-  cl_int status;
-
-  // loop on the elements
+  // Loop on the elements
   for (int ie = mcell->first; ie < mcell->last_p1; ie++) {
 
     update_physnode_cl(f, ie, f->physnode_cl, f->physnode);
 
-    // associates ie to  kernel argument #1
-    status = clSetKernelArg(f->dgmass, 1, sizeof(int), (void *)&ie);
+    status = clSetKernelArg(f->dgmass, 
+			    1, 
+			    sizeof(int), 
+			    (void *)&ie);
     if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
     assert(status == CL_SUCCESS);
+
+    clFinish(f->cli.commandqueue);
 
     // The groupsize is the number of glops in a subcell
     size_t groupsize = (param[1] + 1) * (param[2] + 1) * (param[3] + 1);
@@ -1253,8 +1255,6 @@ void *DGMass_CL(void *mc) {
     // subcell) * (number of subcells)
     size_t numworkitems = param[4] * param[5] * param[6] * groupsize;
 
-    // Mass kernel launch
-    // printf("groupsize = %zd numworkitems = %zd\n", groupsize, numworkitems);
     status = clEnqueueNDRangeKernel(f->cli.commandqueue,
 				    f->dgmass,
 				    1, NULL,
@@ -1263,7 +1263,8 @@ void *DGMass_CL(void *mc) {
 				    0, NULL, NULL);
     if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
     assert(status == CL_SUCCESS);
-    clFinish(f->cli.commandqueue);  // wait the end of the computation
+
+    clFinish(f->cli.commandqueue);
   }
   return NULL;
 }
@@ -1273,10 +1274,8 @@ void init_DGVolume_CL(Field *f)
 {
   cl_int status;
   int argnum = 0;
-
   cl_kernel kernel = f->dgvolume;
 
-  // associates the param buffer to the 0th kernel argument
   status = clSetKernelArg(kernel,			  
                           argnum++,
                           sizeof(cl_mem),
@@ -1287,7 +1286,6 @@ void init_DGVolume_CL(Field *f)
   // ie
   argnum++;
 
-  // associates physnode buffer to the 2th kernel argument
   status = clSetKernelArg(kernel,
                           argnum++,
                           sizeof(cl_mem),
@@ -1295,7 +1293,6 @@ void init_DGVolume_CL(Field *f)
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status == CL_SUCCESS);
 
-  // associates the dtwn buffer to the 3rd kernel argument
   status = clSetKernelArg(kernel,
                           argnum++,
                           sizeof(cl_mem),
@@ -1303,7 +1300,6 @@ void init_DGVolume_CL(Field *f)
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status == CL_SUCCESS);
 
-  // associates the dtwn buffer to the 3rd kernel argument
   status = clSetKernelArg(kernel,
                           argnum++,
                           sizeof(cl_mem),
@@ -1336,6 +1332,8 @@ void *DGVolume_CL(void *mc) {
     if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
     assert(status == CL_SUCCESS);
 
+    clFinish(f->cli.commandqueue);
+
     // Mass kernel launch
     // The groupsize is the number of glops in a subcell
     size_t groupsize = (param[1] + 1)* (param[2] + 1)*(param[3] + 1);
@@ -1352,7 +1350,8 @@ void *DGVolume_CL(void *mc) {
     //printf("%d\n", status);
     if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
     assert(status == CL_SUCCESS);
-    clFinish(f->cli.commandqueue);  // wait the end of the computation
+
+    clFinish(f->cli.commandqueue);
   }
   return NULL;
 }
@@ -1731,8 +1730,8 @@ void dtField_CL(Field* f) {
   for(int ie = 0; ie < f->macromesh.nbelems; ++ie) {
     MacroCell *mcelli = mcell + ie;
     //if(!facealgo) DGMacroCellInterfaceSlow(mcelli);
-    DGSubCellInterface(mcelli);           // FIXME : Must be deleted
-    DGVolume(mcelli);                       // FIXME : Must be _CL
+    DGSubCellInterface(mcelli); // FIXME : Must be deleted
+    DGVolume(mcelli); // FIXME : Must be _CL
     DGMass_CL(mcelli);
   }
 }
@@ -1999,6 +1998,7 @@ void RK2(Field* f, double tmax) {
   printf("t=%f iter=%d/%d dt=%f\n", f->tnow, iter, itermax, dt);
 }
 
+// Set kernel arguments for first stage of RK2
 void init_RK2_CL_stage1(Field *f, const double dt) 
 {
   cl_kernel kernel = f->RK_in_CL;
@@ -2009,7 +2009,7 @@ void init_RK2_CL_stage1(Field *f, const double dt)
   status = clSetKernelArg(kernel,
 			  argnum++, 
                           sizeof(cl_mem),
-                          &(f->wnp1_cl));     // opencl buffer
+                          &(f->wnp1_cl));
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status == CL_SUCCESS);
   
@@ -2033,7 +2033,7 @@ void init_RK2_CL_stage1(Field *f, const double dt)
   clFinish(f->cli.commandqueue);
 }
 
-
+// Set kernel arguments for second stage of RK2
 void init_RK2_CL_stage2(Field *f, const double dt) 
 {
   cl_kernel kernel = f->RK_out_CL;
@@ -2069,6 +2069,7 @@ void init_RK2_CL_stage2(Field *f, const double dt)
   clFinish(f->cli.commandqueue);
 }
 
+// Launch first stage of RK2 integration
 void RK2_CL_stage1(Field *f, size_t numworkitems)
 {
   cl_int status;
@@ -2088,6 +2089,7 @@ void RK2_CL_stage1(Field *f, size_t numworkitems)
   clFinish(f->cli.commandqueue);
 }
 
+// Launch second stage of RK2 integration
 void RK2_CL_stage2(Field *f, size_t numworkitems)
 {
   cl_int status;
