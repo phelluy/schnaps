@@ -21,14 +21,14 @@
 // param[5] = raf y
 // param[6] = raf z
 #pragma start_opencl
-int GenericVarindex(int* param, int elem, int ipg, int iv) {
+int GenericVarindex(int *param, int elem, int ipg, int iv) {
   int npg = (param[1] + 1) * (param[2] + 1) * (param[3] + 1)
     * param[4] * param[5] * param[6];
   return iv + param[0] * (ipg + npg * elem);
 }
 #pragma end_opencl
 
-void CopyFieldtoCPU(Field* f) {
+void CopyFieldtoCPU(Field *f) {
 #ifdef _WITH_OPENCL
   cl_int status;
 
@@ -86,6 +86,7 @@ void update_physnode_cl(Field *f, int ie, cl_mem physnode_cl, double *physnode)
       physnode[3 * inoloc + i] = f->macromesh.node[3 * ino + i];
     }
   }
+
   status = clEnqueueUnmapMemObject(f->cli.commandqueue,
 				   physnode_cl,
 				   physnode,

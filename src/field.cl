@@ -359,10 +359,10 @@ void DGVolume(__constant int* param,        // interp param
 
 // Apply division by the mass matrix on one macrocell
 __kernel
-void DGMass(__constant int* param,        // interp param
+void DGMass(__constant int *param,        // interp param
             int ie,            // macrocel index
-            __constant double* physnode,  // macrocell nodes
-            __global double* dtwn) {       // time derivative
+            __constant double *physnode,  // macrocell nodes
+            __global double *dtwn) {       // time derivative
 
   int ipg = get_global_id(0);
   const int m = param[0];
@@ -452,14 +452,15 @@ void DGMass(__constant int* param,        // interp param
 // Compute the Discontinuous Galerkin inter-macrocells boundary terms.
 // Second implementation with a loop on the faces.
 __kernel
-void DGMacroCellInterface(__constant int* param,        // interp param
+void DGMacroCellInterface(__constant int *param,        // interp param
                           double tnow,  // current time
                           int ieL, int ieR,  // left and right elem ids
                           int locfaL, int locfaR, // current face local indices
-                          __constant double* physnodeL, // left macrocell nodes
-                          __constant double* physnodeR, // right macrocell nodes
-                          __global double* wn,
-                          __global double* dtwn) {       // time derivative
+                          __constant double *physnodeL, // left macrocell nodes
+                          __constant double *physnodeR, // right macrocell nodes
+                          __global double *wn,
+                          __global double *dtwn) // time derivative
+{
   int ipgfL=get_global_id(0);
 
   double xpgref[3], xpgref_in[3], wpg;
@@ -548,7 +549,7 @@ void DGMacroCellInterface(__constant int* param,        // interp param
 }
 
 void get_dtau(double x, double y, double z,
-	      __constant double* p, double dtau[][3]) {
+	      __constant double *p, double dtau[][3]) {
 
   // gradient of the shape functions and value (4th component)
   // of the shape functions
@@ -853,7 +854,8 @@ void Ref2Phy(__constant double* physnode,
 
 }
 
-void Phy2Ref(__constant double* physnode, double xphy[3], double xref[3]) {
+void Phy2Ref(__constant double *physnode, double xphy[3], double xref[3]) 
+{
 #define ITERNEWTON 10
   double dxref[3], dxphy[3];
   xref[0] = 0.5;
@@ -887,7 +889,8 @@ void Phy2Ref(__constant double* physnode, double xphy[3], double xref[3]) {
 
 // From a reference point find the nearest gauss point
 // Warning: works only  degree 1, 2, or 3 (FIXME: why?)
-int ref_ipg(__constant int *param, double *xref) {
+int ref_ipg(__constant int *param, double *xref) 
+{
   // approximation degree in each direction
   int deg[3] = {param[0], param[1], param[2]};
 
