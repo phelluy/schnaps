@@ -300,6 +300,8 @@ void InitField(Field* f) {
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status == CL_SUCCESS);
 #endif
+  
+  printf("Field init done\n");
 };
 
 // This is the destructor for a field
@@ -729,8 +731,8 @@ void *DGMacroCellInterfaceSlow(void *mc) {
   for (int ie = mcell->first; ie < mcell->last_p1; ie++) {
     for(int ipg = 0; ipg < NPG(iparam + 1); ipg++) {
       for(int iv = 0; iv < f->model.m; iv++) {
-	int imem = f->varindex(iparam, ie, ipg, iv);
-	f->dtwn[imem] = 0;
+	//int imem = f->varindex(iparam, ie, ipg, iv);
+	//f->dtwn[imem] = 0;
       }
     }
   }
@@ -1671,11 +1673,12 @@ void dtField(Field* f) {
     mface[ifa].last_p1 = ifa + 1;
   }
   bool facealgo = true;
-  facealgo = false; // FIXME: temp
+  //facealgo = false; // FIXME: temp
+
+  for(int iw = 0; iw < f->wsize; iw++)
+    f->dtwn[iw] = 0;
 
   if(facealgo) {
-    for(int iw = 0; iw < f->wsize; iw++)
-      f->dtwn[iw] = 0;
     for(int ifa = 0; ifa < f->macromesh.nbfaces; ifa++) {
       DGMacroCellInterface((void*) (mface + ifa));
     }
@@ -1716,10 +1719,40 @@ void dtField_CL(Field* f) {
   if(facealgo) {
     for(int iw = 0; iw < f->wsize; iw++)
       f->dtwn[iw] = 0;
+
+    // FIXME!!!!  TODOM set to zero in CL
+    {
+      void* chkptr;
+      cl_int status;
+      chkptr=clEnqueueMapBuffer(f->cli.commandqueue,
+				f->dtwn_cl,  // buffer to copy from
+				CL_TRUE,  // block until the buffer is available
+				CL_MAP_WRITE,
+				0, // offset
+				sizeof(double)*(f->wsize),  // buffersize
+				0,NULL,NULL, // events management
+				&status);
+      assert(status == CL_SUCCESS);
+      assert(chkptr == f->dtwn);
+
+      for(int i=0;i<f->wsize;i++)
+	f->dtwn[i]=0;
+
+      status=clEnqueueUnmapMemObject (f->cli.commandqueue,
+				      f->dtwn_cl,
+				      f->dtwn,
+				      0,NULL,NULL);
+
+      assert(status == CL_SUCCESS);
+      status=clFinish(f->cli.commandqueue);
+      assert(status == CL_SUCCESS);
+    }
+
     for(int ifa = 0; ifa < f->macromesh.nbfaces; ifa++) {
-      DGMacroCellInterface((void*) (mface + ifa));  // FIXME : Must be _CL
+      DGMacroCellInterface_CL((void*) (mface + ifa));  // FIXME : Must be _CL
     }
   }
+
 
   MacroCell mcell[f->macromesh.nbelems];
   for(int ie = 0; ie < f->macromesh.nbelems; ie++) {
@@ -1731,8 +1764,8 @@ void dtField_CL(Field* f) {
   for(int ie = 0; ie < f->macromesh.nbelems; ++ie) {
     MacroCell *mcelli = mcell + ie;
     //if(!facealgo) DGMacroCellInterfaceSlow(mcelli);
-    DGSubCellInterface(mcelli); // FIXME : Must be deleted
-    DGVolume(mcelli); // FIXME : Must be _CL
+    //DGSubCellInterface(mcelli); // FIXME : Must be deleted
+    DGVolume_CL(mcelli); // FIXME : Must be _CL
     DGMass_CL(mcelli);
   }
 }

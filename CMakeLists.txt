@@ -210,3 +210,19 @@ add_executable(
   test/testfieldrk2_cl.c
 )
 target_link_libraries(testfieldrk2_cl _schnaps m pthread ${OPENCL_LIBRARY})
+
+add_test(testdtfield_cl testdtfield_cl)
+add_executable(
+  testdtfield_cl
+  test/test.h
+  test/testdtfield_cl.c
+)
+target_link_libraries(testdtfield_cl _schnaps m pthread ${OPENCL_LIBRARY})
+
+add_test(testmacrocellinterface testmacrocellinterface)
+add_executable(
+  testmacrocellinterface
+  test/test.h
+  test/testmacrocellinterface.c
+)
+target_link_libraries(testmacrocellinterface _schnaps m pthread ${OPENCL_LIBRARY})
