@@ -69,9 +69,9 @@ void update_physnode_cl(Field *f, int ie, cl_mem physnode_cl, double *physnode)
 {
   cl_int status;
   void* chkptr = clEnqueueMapBuffer(f->cli.commandqueue,
-				    physnode_cl, // buffer to copy from
-				    CL_TRUE, // block until buffer is free
-				    CL_MAP_WRITE, // we just want to copy
+				    physnode_cl,
+				    CL_TRUE,
+				    CL_MAP_WRITE,
 				    0, // offset
 				    sizeof(cl_double) * 60, // buffersize
 				    0, NULL, NULL, // events management
@@ -1720,11 +1720,11 @@ void dtField_CL(Field* f) {
     for(int iw = 0; iw < f->wsize; iw++)
       f->dtwn[iw] = 0;
 
-    // FIXME!!!!  TODOM set to zero in CL
+    // FIXME!!!!  TODO: set to zero in CL
     {
       void* chkptr;
       cl_int status;
-      chkptr=clEnqueueMapBuffer(f->cli.commandqueue,
+      chkptr = clEnqueueMapBuffer(f->cli.commandqueue,
 				f->dtwn_cl,  // buffer to copy from
 				CL_TRUE,  // block until the buffer is available
 				CL_MAP_WRITE,
@@ -1735,13 +1735,13 @@ void dtField_CL(Field* f) {
       assert(status == CL_SUCCESS);
       assert(chkptr == f->dtwn);
 
-      for(int i=0;i<f->wsize;i++)
-	f->dtwn[i]=0;
+      for(int i = 0; i < f->wsize; i++)
+	f->dtwn[i] = 0;
 
-      status=clEnqueueUnmapMemObject (f->cli.commandqueue,
-				      f->dtwn_cl,
-				      f->dtwn,
-				      0,NULL,NULL);
+      status=clEnqueueUnmapMemObject(f->cli.commandqueue,
+				     f->dtwn_cl,
+				     f->dtwn,
+				     0, NULL, NULL);
 
       assert(status == CL_SUCCESS);
       status=clFinish(f->cli.commandqueue);

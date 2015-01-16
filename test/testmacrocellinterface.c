@@ -4,14 +4,16 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <math.h>
+#include "clutils.h"
 
 int TestMacroFace(void);
 
 int main(void) {
-  // unit tests
-  int resu=TestMacroFace();
-  if (resu) printf("MacroFace test OK !\n");
-  else printf("MacroFace test failed !\n");
+  int resu = TestMacroFace();
+  if(resu) 
+    printf("MacroFace test OK !\n");
+  else 
+    printf("MacroFace test failed !\n");
   return !resu;
 } 
 
@@ -46,7 +48,6 @@ int TestMacroFace(void){
     mface[ifa].last_p1 = ifa + 1;
   }
   
-  printf("2");
   MacroCell mcell[f.macromesh.nbelems];
   for(int ie = 0; ie < f.macromesh.nbelems; ie++) {
     mcell[ie].field = &f;
@@ -54,35 +55,79 @@ int TestMacroFace(void){
     mcell[ie].last_p1 = ie + 1;
   }
 
+  // OpenCL
+  // NB: InitField expects a certain address for dtwn, so the OpenCL
+  // version must come before the other versions.
+  cl_int status;
+  void* chkptr = clEnqueueMapBuffer(f.cli.commandqueue,
+				    f.dtwn_cl,
+				    CL_TRUE,
+				    CL_MAP_WRITE,
+				    0, // offset
+				    sizeof(cl_double) * 60,
+				    0, NULL, NULL,
+				    &status);
+  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status == CL_SUCCESS);
+  assert(chkptr == f.dtwn);
+
   for(int iw = 0; iw < f.wsize; iw++)
     f.dtwn[iw] = 0;
 
-  for(int ifa = 0; ifa < f.macromesh.nbfaces; ifa++) {
-    DGMacroCellInterface((void*) (mface + ifa));
-  }
+  status = clEnqueueUnmapMemObject(f.cli.commandqueue,
+				   f.dtwn_cl,
+				   f.dtwn,
+				   0, NULL, NULL);
+  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status == CL_SUCCESS);
 
-  // save the dtwn pointer
-  double *saveptr = f.dtwn;
-  // malloc a new dtwn.
+  clFinish(f.cli.commandqueue);  // wait the end of the computation
+
+  CopyFieldtoCPU(&f);
+  double *fdtwn_opencl = f.dtwn;
+
+  // OpenMP, new method
+  for(int ifa = 0; ifa < f.macromesh.nbfaces; ifa++)
+    DGMacroCellInterface_CL((void*) (mface + ifa));
   f.dtwn = calloc(f.wsize, sizeof(double));
-
   for(int iw = 0; iw < f.wsize; iw++)
     f.dtwn[iw] = 0;
+  for(int ifa = 0; ifa < f.macromesh.nbfaces; ifa++)
+    DGMacroCellInterface((void*) (mface + ifa));
+  double *fdtwn_openmp = f.dtwn;
 
+  // OpenMP, slow method
+  f.dtwn = calloc(f.wsize, sizeof(double));
+  for(int iw = 0; iw < f.wsize; iw++)
+    f.dtwn[iw] = 0;
   for(int ie = 0; ie < f.macromesh.nbelems; ++ie) {
     MacroCell *mcelli = mcell + ie;
     DGMacroCellInterfaceSlow(mcelli);
   }
- 
-  // Check that the results are the same
-  double maxerr = 0;
-  for(int i = 0; i < f.wsize; i++){
-    printf("error=%f %f %f\n", f.dtwn[i] - saveptr[i], f.dtwn[i], saveptr[i]);
-    maxerr = fmax(fabs(f.dtwn[i] - saveptr[i]), maxerr);
-  }
-  printf("max error=%f\n", maxerr);
+  double *fdtwn_slow = f.dtwn;
 
-  test=(maxerr < 1e-8);
+
+   // Check that the results are the same
+  test = true;
+  double tolerance = 1e-8;
+
+  double maxerr = 0.0;
+  for(int i = 0; i < f.wsize; i++)
+    maxerr = fmax(fabs(fdtwn_openmp[i] - fdtwn_opencl[i]), maxerr);
+  printf("Max difference between OpenCL and OpenMP: %f\n", maxerr);
+  test = test && (maxerr < tolerance);
+
+  maxerr = 0.0;
+  for(int i = 0; i < f.wsize; i++)
+    maxerr = fmax(fabs(fdtwn_openmp[i] - fdtwn_slow[i]), maxerr);
+  printf("Max difference between OpenMP and OpenMP-slow: %f\n", maxerr);
+  test = test && (maxerr < tolerance);
+
+  maxerr = 0.0;
+  for(int i = 0; i < f.wsize; i++)
+    maxerr = fmax(fabs(fdtwn_opencl[i] - fdtwn_slow[i]), maxerr);
+  printf("Max difference between OpenCL and OpenMP-slow: %f\n", maxerr);
+  test = test && (maxerr < tolerance);
 
   return test;
 }
