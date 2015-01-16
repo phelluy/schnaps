@@ -35,7 +35,8 @@ int TestDtField_CL(void){
   f.interp.interp_param[5] = 1; // y direction refinement
   f.interp.interp_param[6] = 1; // z direction refinement
 
-  ReadMacroMesh(&(f.macromesh), "test/testdisque2.msh");
+  //ReadMacroMesh(&(f.macromesh), "test/testdisque2.msh");
+  ReadMacroMesh(&(f.macromesh), "test/testdisque2d.msh");
   BuildConnectivity(&(f.macromesh));
   InitField(&f);
 
