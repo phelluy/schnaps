@@ -47,16 +47,6 @@ int TestKernelVolume(void){
   InitField(&f);
   f.is2d=true;
 
-
-  //
-  MacroCell mcell[f.macromesh.nbelems];
-
-  for(int ie=0;ie<f.macromesh.nbelems;ie++){
-    mcell[ie].field=&f;
-    mcell[ie].first=ie;
-    mcell[ie].last_p1=ie+1;
-  }
-
   /* // set dtwn to 1 for testing */
   
   /* void* chkptr; */
@@ -90,7 +80,7 @@ int TestKernelVolume(void){
 
  
   for(int ie=0; ie < f.macromesh.nbelems; ++ie) {
-    DGVolume_CL((void*) &(mcell[ie]));
+    DGVolume_CL((void*) &(f.mcell[ie]), &f);
   }
 
   CopyFieldtoCPU(&f);
@@ -104,8 +94,8 @@ int TestKernelVolume(void){
   f.dtwn=calloc(f.wsize,sizeof(double));
  
   for(int ie=0; ie < f.macromesh.nbelems; ++ie) {
-    DGSubCellInterface((void*) &(mcell[ie]));
-    DGVolume((void*) &(mcell[ie]));
+    DGSubCellInterface((void*) &(f.mcell[ie]), &f);
+    DGVolume((void*) &(f.mcell[ie]), &f);
   }
 
   DisplayField(&f);

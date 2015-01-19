@@ -47,45 +47,37 @@ int TestKernel(void){
 
   printf("&f=%p\n",&f);
 
-  MacroCell mcell[f.macromesh.nbelems];
-
-  for(int ie = 0; ie < f.macromesh.nbelems; ie++){
-    mcell[ie].field = &f;
-    mcell[ie].first = ie;
-    mcell[ie].last_p1 = ie + 1;
-  }
-
   // Set dtwn to 1 for testing
-  
-  void* chkptr;
-  cl_int status;
-  chkptr=clEnqueueMapBuffer(f.cli.commandqueue,
-			    f.dtwn_cl,  // buffer to copy from
-			    CL_TRUE,  // block until the buffer is available
-			     CL_MAP_WRITE, 
-			    0, // offset
-			    sizeof(double)*(f.wsize),  // buffersize
-			    0,NULL,NULL, // events management
-			    &status);
+  { 
+    void* chkptr;
+    cl_int status;
+    chkptr=clEnqueueMapBuffer(f.cli.commandqueue,
+			      f.dtwn_cl,  // buffer to copy from
+			      CL_TRUE,  // block until the buffer is available
+			      CL_MAP_WRITE, 
+			      0, // offset
+			      sizeof(double)*(f.wsize),  // buffersize
+			      0,NULL,NULL, // events management
+			      &status);
     assert(status == CL_SUCCESS);
     assert(chkptr == f.dtwn);
 
-  for(int i = 0; i < f.wsize; i++){
-    f.dtwn[i] = 1;
+    for(int i = 0; i < f.wsize; i++){
+      f.dtwn[i] = 1;
+    }
+
+    status = clEnqueueUnmapMemObject (f.cli.commandqueue,
+				      f.dtwn_cl,
+				      f.dtwn,
+				      0,NULL,NULL);
+
+    assert(status == CL_SUCCESS);
+    status = clFinish(f.cli.commandqueue);
+    assert(status == CL_SUCCESS);
   }
-
-  status = clEnqueueUnmapMemObject (f.cli.commandqueue,
-				    f.dtwn_cl,
-				    f.dtwn,
-				    0,NULL,NULL);
-
-  assert(status == CL_SUCCESS);
-  status = clFinish(f.cli.commandqueue);
-  assert(status == CL_SUCCESS);
  
-  for(int ie=0; ie < f.macromesh.nbelems; ++ie) {
-    DGMass_CL((void*) &(mcell[ie]));
-  }
+  for(int ie=0; ie < f.macromesh.nbelems; ++ie)
+    DGMass_CL((void*) &(f.mcell[ie]), &f);
 
   CopyFieldtoCPU(&f);
 
@@ -100,9 +92,8 @@ int TestKernel(void){
     f.dtwn[i] = 1;
   }
 
-  for(int ie = 0; ie < f.macromesh.nbelems; ++ie) {
-    DGMass((void*) &(mcell[ie]));
-  }
+  for(int ie = 0; ie < f.macromesh.nbelems; ++ie)
+    DGMass((void*) &(f.mcell[ie]), &f);
 
   DisplayField(&f);
 

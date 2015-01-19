@@ -217,10 +217,17 @@ void InitField(Field* f) {
 
   printf("hmin=%f\n", f->hmin);
 
+  // Allocate and set MacroFaces
   f->mface = calloc(f->macromesh.nbfaces, sizeof(MacroFace*));
   for(int ifa = 0; ifa < f->macromesh.nbfaces; ifa++) {
     f->mface[ifa].first = ifa;
     f->mface[ifa].last_p1 = ifa + 1;
+  }
+  // Allocate and set MacroCells
+  f->mcell = calloc(f->macromesh.nbelems, sizeof(MacroCell*));
+  for(int ie = 0; ie < f->macromesh.nbelems; ie++) {
+    f->mcell[ie].first = ie;
+    f->mcell[ie].last_p1 = ie + 1;
   }
 
 #ifdef _WITH_OPENCL
@@ -313,6 +320,7 @@ void InitField(Field* f) {
 // This is the destructor for a field
 void FreeField(Field* f) 
 {
+  free(f->mcell);
   free(f->mface);
 
 #ifdef _WITH_OPENCL
@@ -585,9 +593,8 @@ void PlotField(int typplot, int compare, Field* f, char *fieldname,
 }
 
 // Compute inter-subcell fluxes
-void* DGSubCellInterface(void* mc) {
+void* DGSubCellInterface(void* mc, Field *f) {
   MacroCell* mcell = (MacroCell*) mc;
-  Field *f = mcell->field;
 
   // Loop on the elements
   for (int ie = mcell->first; ie < mcell->last_p1; ie++) {
@@ -726,9 +733,8 @@ void* DGSubCellInterface(void* mc) {
 }
 
 // compute the Discontinuous Galerkin inter-macrocells boundary terms
-void *DGMacroCellInterfaceSlow(void *mc) {
+void *DGMacroCellInterfaceSlow(void *mc, Field *f) {
   MacroCell *mcell = (MacroCell*) mc;
-  Field *f = mcell->field;
 
   // Local copy of the interpretation parameters
   int iparam[8];
@@ -1158,9 +1164,8 @@ void *DGMacroCellInterface_CL(void *mf, Field *f) {
 }
 
 // Apply division by the mass matrix
-void* DGMass(void* mc) {
+void* DGMass(void* mc, Field *f) {
   MacroCell* mcell = (MacroCell*) mc;
-  Field *f = mcell->field;
 
   // loop on the elements
   for (int ie = mcell->first; ie < mcell->last_p1; ie++) {
@@ -1236,9 +1241,8 @@ void init_DGMass_CL(Field *f)
 }
 
 // Apply division by the mass matrix OpenCL version
-void *DGMass_CL(void *mc) {
+void *DGMass_CL(void *mc, Field *f) {
   MacroCell *mcell = (MacroCell*) mc;
-  Field *f = mcell->field;
   int *param = f->interp_param;
   cl_int status;
 
@@ -1320,9 +1324,8 @@ void init_DGVolume_CL(Field *f)
 }
 
 // Apply division by the mass matrix OpenCL version
-void *DGVolume_CL(void *mc) {
+void *DGVolume_CL(void *mc, Field *f) {
   MacroCell *mcell = (MacroCell*) mc;
-  Field *f = mcell->field;
   cl_kernel kernel = f->dgvolume;
   int* param = f->interp_param;
 
@@ -1366,9 +1369,8 @@ void *DGVolume_CL(void *mc) {
 }
 
 // Compute the Discontinuous Galerkin volume terms, fast version
-void* DGVolume(void* mc) {
+void* DGVolume(void* mc, Field *f) {
   MacroCell* mcell = (MacroCell*) mc;
-  Field *f = mcell->field;
 
   // loop on the elements
   for (int ie = mcell->first; ie < mcell->last_p1; ie++) {
@@ -1581,21 +1583,13 @@ void DGVolumeSlow(Field* f) {
 
 void dtField_pthread(Field *f) 
 {
-  MacroCell mcell[f->macromesh.nbelems];
-  for(int ie = 0; ie < f->macromesh.nbelems; ie++) {
-    mcell[ie].field = f;
-    mcell[ie].first = ie;
-    mcell[ie].last_p1 = ie + 1;
-  }
-
   bool facealgo = true;
   //facealgo=false;
   if(facealgo) {
     for(int iw = 0; iw < f->wsize; iw++)
       f->dtwn[iw] = 0;
-    for(int ifa = 0; ifa < f->macromesh.nbfaces; ifa++) {
+    for(int ifa = 0; ifa < f->macromesh.nbfaces; ifa++)
       DGMacroCellInterface((void*) (f->mface + ifa), f);
-    }
   }
 
 #ifdef _WITH_PTHREAD
@@ -1670,27 +1664,19 @@ void dtField(Field* f) {
   for(int iw = 0; iw < f->wsize; iw++)
     f->dtwn[iw] = 0;
 
-  if(facealgo) {
-    for(int ifa = 0; ifa < f->macromesh.nbfaces; ifa++) {
+  if(facealgo)
+    for(int ifa = 0; ifa < f->macromesh.nbfaces; ifa++)
       DGMacroCellInterface((void*) (f->mface + ifa), f);
-    }
-  }
 
-  MacroCell mcell[f->macromesh.nbelems];
-  for(int ie = 0; ie < f->macromesh.nbelems; ie++) {
-    mcell[ie].field = f;
-    mcell[ie].first = ie;
-    mcell[ie].last_p1 = ie + 1;
-  }
 #ifdef _OPENMP
 #pragma omp parallel for schedule(dynamic, 1)
 #endif
   for(int ie = 0; ie < f->macromesh.nbelems; ++ie) {
-    MacroCell *mcelli = mcell + ie;
-    if(!facealgo) DGMacroCellInterfaceSlow(mcelli);
-    DGSubCellInterface(mcelli);
-    DGVolume(mcelli);
-    DGMass(mcelli);
+    MacroCell *mcelli = f->mcell + ie;
+    if(!facealgo) DGMacroCellInterfaceSlow(mcelli, f);
+    DGSubCellInterface(mcelli, f);
+    DGVolume(mcelli, f);
+    DGMass(mcelli, f);
   }
 #endif
 }
@@ -1698,14 +1684,6 @@ void dtField(Field* f) {
 // Apply the Discontinuous Galerkin approximation for computing the
 // time derivative of the field. OpenCL version.
 void dtField_CL(Field* f) {
-
-  MacroCell mcell[f->macromesh.nbelems];
-  for(int ie = 0; ie < f->macromesh.nbelems; ie++) {
-    mcell[ie].field = f;
-    mcell[ie].first = ie;
-    mcell[ie].last_p1 = ie + 1;
-  }
-
   // FIXME!!!!  TODO: set to zero in CL
   {
     void* chkptr;
@@ -1738,9 +1716,9 @@ void dtField_CL(Field* f) {
     DGMacroCellInterface_CL((void*) (f->mface + ifa), f);
 
   for(int ie = 0; ie < f->macromesh.nbelems; ++ie) {
-    MacroCell *mcelli = mcell + ie;
-    DGVolume_CL(mcelli);
-    DGMass_CL(mcelli);
+    MacroCell *mcelli = f->mcell + ie;
+    DGVolume_CL(mcelli, f);
+    DGMass_CL(mcelli, f);
   }
 }
 

@@ -18,6 +18,15 @@ typedef struct MacroFace {
   //Field *field; //! pointer to a  field
 } MacroFace;
 
+//! \brief A simple struct for packing a field
+//! and a cells range.  To be passed to a thread
+//! as a void* pointer.
+typedef struct MacroCell {
+  int first; //!< first cell/face index
+  int last_p1;  //!< last cell/face index + 1
+  //  Field *field; //! pointer to a  field
+} MacroCell;
+
 //! \brief Data structure for managing a  discrete vector field
 //! solution of a DG approximation
 typedef struct Field {
@@ -56,9 +65,11 @@ typedef struct Field {
   //! \param[in] iv field component index
   int (*varindex)(int* param, int elem, int ipg, int iv);
 
-  // Array of pointers to macrofaces used for DGMacroCellInterface
+  // Array of pointers to MacroFaces used for DGMacroCellInterface
   MacroFace *mface;
-  
+  // Array of pointers to MacroCell used for various DG routines
+  MacroCell *mcell;
+
 #ifdef _WITH_OPENCL
   //! \brief opencl data
   CLInfo cli;
@@ -81,15 +92,6 @@ typedef struct Field {
 #endif
 
 } Field;
-
-//! \brief A simple struct for packing a field
-//! and a cells range.  To be passed to a thread
-//! as a void* pointer.
-typedef struct MacroCell {
-  int first; //!< first cell/face index
-  int last_p1;  //!< last cell/face index + 1
-  Field *field; //! pointer to a  field
-} MacroCell;
 
 #pragma start_opencl
 //! \brief memory arrangement of field components.
@@ -141,7 +143,7 @@ void dtField_CL(Field *f);
 //! The argument has to be void* (for compatibility with pthread)
 //! but it is logically a MacroCell*
 //! \param[inout] mcell a MacroCell
-void* DGMacroCellInterfaceSlow(void *mcell);
+void* DGMacroCellInterfaceSlow(void *mcell, Field *f);
 
 //! \brief  compute the Discontinuous Galerkin inter-macrocells boundary terms second implementation with a loop on the faces
 //! The argument has to be void* (for compatibility with pthread)
@@ -155,21 +157,21 @@ void* DGMacroCellInterface_CL(void *mface, Field *f);
 //! The argument has to be void* (for compatibility with pthread)
 //! but it is logically a MacroCell*
 //! \param[inout] mcell a MacroCell
-void* DGVolume(void *mcell);
+void* DGVolume(void *mcell, Field *f);
 
-void* DGVolume_CL(void *mcell);
+void* DGVolume_CL(void *mcell, Field *f);
 
 //! \brief compute the Discontinuous Galerkin inter-subcells terms
 //! \param[inout] mcell a MacroCell
-void* DGSubCellInterface(void *mcell);
+void* DGSubCellInterface(void *mcell, Field *f);
 
 //! \brief  apply the DG mass term
 //! \param[inout] mcell a MacroCell
-void* DGMass(void *mcell);
+void* DGMass(void *mcell, Field *f);
 
 //! \brief  apply the DG mass term OpenCL version
 //! \param[inout] mcell a MacroCell
-void* DGMass_CL(void *mcell);
+void* DGMass_CL(void *mcell, Field *f);
 
 //! \brief exchange two pointers
 //! \param[inout] a first pointer
