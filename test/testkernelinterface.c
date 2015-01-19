@@ -51,7 +51,6 @@ int TestKernelInterface(void){
 
   MacroFace mface[f.macromesh.nbfaces];
   for(int ifa=0;ifa<f.macromesh.nbfaces;ifa++){
-    mface[ifa].field = &f;
     mface[ifa].first = ifa;
     mface[ifa].last_p1 = ifa + 1;
   }
@@ -83,7 +82,7 @@ int TestKernelInterface(void){
 
   // OpenCL version
   for(int ifa = 0; ifa < f.macromesh.nbfaces; ifa++)
-     DGMacroCellInterface_CL((void*) (mface + ifa));
+    DGMacroCellInterface_CL((void*) (mface + ifa), &f);
   CopyFieldtoCPU(&f);
   //DisplayField(&f);
   double *fdtwn_opencl = f.dtwn;
@@ -93,7 +92,7 @@ int TestKernelInterface(void){
   for(int iw = 0; iw < f.wsize; iw++)
     f.dtwn[iw] = 0;
   for(int ifa = 0; ifa < f.macromesh.nbfaces; ifa++)
-    DGMacroCellInterface((void*) (mface + ifa));
+    DGMacroCellInterface((void*) (mface + ifa), &f);
   //DisplayField(&f);
   double *fdtwn_openmp = f.dtwn;
 

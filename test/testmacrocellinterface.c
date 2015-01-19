@@ -100,7 +100,6 @@ int TestMacroFace(void){
 
   MacroFace mface[f.macromesh.nbfaces];
   for(int ifa = 0; ifa < f.macromesh.nbfaces; ifa++) {
-    mface[ifa].field = &f;
     mface[ifa].first = ifa;
     mface[ifa].last_p1 = ifa + 1;
   }
@@ -136,7 +135,7 @@ int TestMacroFace(void){
   clFinish(f.cli.commandqueue);
 
   for(int ifa = 0; ifa < f.macromesh.nbfaces; ifa++)
-     DGMacroCellInterface_CL((void*) (mface + ifa));
+    DGMacroCellInterface_CL((void*) (mface + ifa), &f);
 
   CopyFieldtoCPU(&f);
   double *fdtwn_opencl = f.dtwn;
@@ -146,7 +145,7 @@ int TestMacroFace(void){
   for(int iw = 0; iw < f.wsize; iw++)
     f.dtwn[iw] = 0;
   for(int ifa = 0; ifa < f.macromesh.nbfaces; ifa++)
-    DGMacroCellInterface((void*) (mface + ifa));
+    DGMacroCellInterface((void*) (mface + ifa), &f);
   double *fdtwn_openmp = f.dtwn;
 
   // Check that the results are the same

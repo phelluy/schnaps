@@ -9,9 +9,18 @@
 #include "clinfo.h"
 #endif
 
+//! \brief A simple struct for packing a field
+//! and a faces range.  To be passed to a thread
+//! as a void* pointer.
+typedef struct MacroFace {
+  int first; //!< first cell/face index
+  int last_p1;  //!< last cell/face index + 1
+  //Field *field; //! pointer to a  field
+} MacroFace;
+
 //! \brief Data structure for managing a  discrete vector field
 //! solution of a DG approximation
-typedef struct Field{
+typedef struct Field {
   //! Underlying mesh
   MacroMesh macromesh;
   //! Physical and numerical model
@@ -47,6 +56,9 @@ typedef struct Field{
   //! \param[in] iv field component index
   int (*varindex)(int* param, int elem, int ipg, int iv);
 
+  // Array of pointers to macrofaces used for DGMacroCellInterface
+  MacroFace *mface;
+  
 #ifdef _WITH_OPENCL
   //! \brief opencl data
   CLInfo cli;
@@ -66,8 +78,6 @@ typedef struct Field{
   cl_kernel dginterface;
   cl_kernel RK_out_CL;
   cl_kernel RK_in_CL;
-
-
 #endif
 
 } Field;
@@ -80,15 +90,6 @@ typedef struct MacroCell {
   int last_p1;  //!< last cell/face index + 1
   Field *field; //! pointer to a  field
 } MacroCell;
-
-//! \brief A simple struct for packing a field
-//! and a faces range.  To be passed to a thread
-//! as a void* pointer.
-typedef struct MacroFace {
-  int first; //!< first cell/face index
-  int last_p1;  //!< last cell/face index + 1
-  Field *field; //! pointer to a  field
-} MacroFace;
 
 #pragma start_opencl
 //! \brief memory arrangement of field components.
@@ -146,9 +147,9 @@ void* DGMacroCellInterfaceSlow(void *mcell);
 //! The argument has to be void* (for compatibility with pthread)
 //! but it is logically a MacroCell*
 //! \param[inout] mcell a MacroCell
-void* DGMacroCellInterface(void *mface);
+void* DGMacroCellInterface(void *mface, Field *f);
 
-void* DGMacroCellInterface_CL(void *mface);
+void* DGMacroCellInterface_CL(void *mface, Field *f);
 
 //! \brief compute the Discontinuous Galerkin volume terms
 //! The argument has to be void* (for compatibility with pthread)

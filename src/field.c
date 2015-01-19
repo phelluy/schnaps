@@ -217,6 +217,12 @@ void InitField(Field* f) {
 
   printf("hmin=%f\n", f->hmin);
 
+  f->mface = calloc(f->macromesh.nbfaces, sizeof(MacroFace*));
+  for(int ifa = 0; ifa < f->macromesh.nbfaces; ifa++) {
+    f->mface[ifa].first = ifa;
+    f->mface[ifa].last_p1 = ifa + 1;
+  }
+
 #ifdef _WITH_OPENCL
   // opencl inits
   InitCLInfo(&(f->cli), _CL_PLATFORM, _CL_DEVICE);
@@ -307,6 +313,8 @@ void InitField(Field* f) {
 // This is the destructor for a field
 void FreeField(Field* f) 
 {
+  free(f->mface);
+
 #ifdef _WITH_OPENCL
   cl_int status;
 
@@ -843,9 +851,8 @@ void *DGMacroCellInterfaceSlow(void *mc) {
 
 // Compute the Discontinuous Galerkin inter-macrocells boundary terms.
 // Second implementation with a loop on the faces.
-void* DGMacroCellInterface(void* mc) {
+void* DGMacroCellInterface(void* mc, Field *f) {
   MacroFace *mface = (MacroFace*) mc;
-  Field *f = mface->field;
   MacroMesh *msh = &(f->macromesh);
   const unsigned int m = f->model.m;
 
@@ -1045,7 +1052,7 @@ void initDGMacroCellInterface_CL(Field *f,
 
 // Set the loop-dependant kernel arguments for DGMacroCellInterface_CL
 void loop_initDGMacroCellInterface_CL(Field *f, 
-				     int ieL, int ieR, int locfaL, int locfaR)
+				      int ieL, int ieR, int locfaL, int locfaR)
 {
   cl_int status;
   cl_kernel kernel = f->dginterface;
@@ -1091,9 +1098,8 @@ void loop_initDGMacroCellInterface_CL(Field *f,
   clFinish(f->cli.commandqueue);
 }
 
-void *DGMacroCellInterface_CL(void *mf) {
+void *DGMacroCellInterface_CL(void *mf, Field *f) {
   MacroFace *mface = (MacroFace*) mf;
-  Field *f = mface->field;
   int *param = f->interp_param;
 
   cl_int status;
@@ -1576,18 +1582,10 @@ void DGVolumeSlow(Field* f) {
 void dtField_pthread(Field *f) 
 {
   MacroCell mcell[f->macromesh.nbelems];
-  MacroFace mface[f->macromesh.nbfaces];
-
   for(int ie = 0; ie < f->macromesh.nbelems; ie++) {
     mcell[ie].field = f;
     mcell[ie].first = ie;
     mcell[ie].last_p1 = ie + 1;
-  }
-
-  for(int ifa = 0; ifa < f->macromesh.nbfaces; ifa++) {
-    mface[ifa].field = f;
-    mface[ifa].first = ifa;
-    mface[ifa].last_p1 = ifa + 1;
   }
 
   bool facealgo = true;
@@ -1596,7 +1594,7 @@ void dtField_pthread(Field *f)
     for(int iw = 0; iw < f->wsize; iw++)
       f->dtwn[iw] = 0;
     for(int ifa = 0; ifa < f->macromesh.nbfaces; ifa++) {
-      DGMacroCellInterface((void*) (mface + ifa));
+      DGMacroCellInterface((void*) (f->mface + ifa), f);
     }
   }
 
@@ -1666,12 +1664,6 @@ void dtField(Field* f) {
   dtField_pthread(f);
 #else
 
-  MacroFace mface[f->macromesh.nbfaces];
-  for(int ifa = 0; ifa < f->macromesh.nbfaces; ifa++) {
-    mface[ifa].field = f;
-    mface[ifa].first = ifa;
-    mface[ifa].last_p1 = ifa + 1;
-  }
   bool facealgo = true;
   //facealgo = false; // FIXME: temp
 
@@ -1680,7 +1672,7 @@ void dtField(Field* f) {
 
   if(facealgo) {
     for(int ifa = 0; ifa < f->macromesh.nbfaces; ifa++) {
-      DGMacroCellInterface((void*) (mface + ifa));
+      DGMacroCellInterface((void*) (f->mface + ifa), f);
     }
   }
 
@@ -1706,53 +1698,6 @@ void dtField(Field* f) {
 // Apply the Discontinuous Galerkin approximation for computing the
 // time derivative of the field. OpenCL version.
 void dtField_CL(Field* f) {
-  MacroFace mface[f->macromesh.nbfaces];
-  for(int ifa = 0; ifa < f->macromesh.nbfaces; ifa++) {
-    mface[ifa].field = f;
-    mface[ifa].first = ifa;
-    mface[ifa].last_p1 = ifa + 1;
-  }
-  
-  bool facealgo = true;
-  //facealgo = false; // FIXME: temp
-
-  if(facealgo) {
-    for(int iw = 0; iw < f->wsize; iw++)
-      f->dtwn[iw] = 0;
-
-    // FIXME!!!!  TODO: set to zero in CL
-    {
-      void* chkptr;
-      cl_int status;
-      chkptr = clEnqueueMapBuffer(f->cli.commandqueue,
-				f->dtwn_cl,  // buffer to copy from
-				CL_TRUE,  // block until the buffer is available
-				CL_MAP_WRITE,
-				0, // offset
-				sizeof(double)*(f->wsize),  // buffersize
-				0,NULL,NULL, // events management
-				&status);
-      assert(status == CL_SUCCESS);
-      assert(chkptr == f->dtwn);
-
-      for(int i = 0; i < f->wsize; i++)
-	f->dtwn[i] = 0;
-
-      status=clEnqueueUnmapMemObject(f->cli.commandqueue,
-				     f->dtwn_cl,
-				     f->dtwn,
-				     0, NULL, NULL);
-
-      assert(status == CL_SUCCESS);
-      status=clFinish(f->cli.commandqueue);
-      assert(status == CL_SUCCESS);
-    }
-
-    for(int ifa = 0; ifa < f->macromesh.nbfaces; ifa++) {
-      DGMacroCellInterface_CL((void*) (mface + ifa));  // FIXME : Must be _CL
-    }
-  }
-
 
   MacroCell mcell[f->macromesh.nbelems];
   for(int ie = 0; ie < f->macromesh.nbelems; ie++) {
@@ -1761,11 +1706,40 @@ void dtField_CL(Field* f) {
     mcell[ie].last_p1 = ie + 1;
   }
 
+  // FIXME!!!!  TODO: set to zero in CL
+  {
+    void* chkptr;
+    cl_int status;
+    chkptr = clEnqueueMapBuffer(f->cli.commandqueue,
+				f->dtwn_cl,
+				CL_TRUE, // block until the buffer is available
+				CL_MAP_WRITE,
+				0, // offset
+				sizeof(double) * (f->wsize),
+				0, NULL, NULL, // events management
+				&status);
+    assert(status == CL_SUCCESS);
+    assert(chkptr == f->dtwn);
+
+    for(int i = 0; i < f->wsize; i++)
+      f->dtwn[i] = 0;
+
+    status=clEnqueueUnmapMemObject(f->cli.commandqueue,
+				   f->dtwn_cl,
+				   f->dtwn,
+				   0, NULL, NULL);
+
+    assert(status == CL_SUCCESS);
+    status=clFinish(f->cli.commandqueue);
+    assert(status == CL_SUCCESS);
+  }
+
+  for(int ifa = 0; ifa < f->macromesh.nbfaces; ifa++)
+    DGMacroCellInterface_CL((void*) (f->mface + ifa), f);
+
   for(int ie = 0; ie < f->macromesh.nbelems; ++ie) {
     MacroCell *mcelli = mcell + ie;
-    //if(!facealgo) DGMacroCellInterfaceSlow(mcelli);
-    //DGSubCellInterface(mcelli); // FIXME : Must be deleted
-    DGVolume_CL(mcelli); // FIXME : Must be _CL
+    DGVolume_CL(mcelli);
     DGMass_CL(mcelli);
   }
 }
