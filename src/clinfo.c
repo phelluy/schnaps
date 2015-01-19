@@ -23,7 +23,7 @@ void InitCLInfo(CLInfo* cli, int platform_id, int device_id)
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status == CL_SUCCESS);
   
-  printf("Available platforms:\n");
+  printf("\nAvailable OpenCL platforms:\n");
   
   char pbuf[2000];
   for(int i = 0; i < cli->nbplatforms; ++i) {
@@ -35,7 +35,7 @@ void InitCLInfo(CLInfo* cli, int platform_id, int device_id)
 			       NULL);
     if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
     assert(status == CL_SUCCESS);
-    printf("%s\n", pbuf);
+    printf("\t%s\n", pbuf);
 
     status = clGetPlatformInfo(platforms[i],
 			       CL_PLATFORM_VENDOR,
@@ -44,7 +44,7 @@ void InitCLInfo(CLInfo* cli, int platform_id, int device_id)
 			       NULL);
     if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
     assert(status == CL_SUCCESS);
-    printf("%s\n",pbuf);
+    printf("\t%s\n",pbuf);
 
     //  opencl version
     status = clGetPlatformInfo(platforms[i],
@@ -54,7 +54,7 @@ void InitCLInfo(CLInfo* cli, int platform_id, int device_id)
 			       NULL);
     if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
     assert(status == CL_SUCCESS);
-    printf("%s\n",cli->platformname);
+    printf("\t%s\n",cli->platformname);
   }
 
   cli->platformid=platform_id;
@@ -74,8 +74,9 @@ void InitCLInfo(CLInfo* cli, int platform_id, int device_id)
   cli->device = malloc(sizeof(cl_device_id) * cli->nbdevices);
   assert(cli->device);
 
-  printf("\nWe choose device %d/%d ",device_id,cli->nbdevices-1);
+  printf("\nWe choose device %d/%d ", device_id, cli->nbdevices-1);
   assert(device_id < cli->nbdevices);
+
   printf("of platform %d/%d\n",platform_id,cli->nbplatforms-1);
   status = clGetDeviceIDs(platforms[platform_id],
 			  CL_DEVICE_TYPE_ALL,
@@ -93,8 +94,33 @@ void InitCLInfo(CLInfo* cli, int platform_id, int device_id)
 			   NULL);
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status == CL_SUCCESS);
-  printf("%s\n",cli->devicename);
+  printf("%s\n", cli->devicename);
 
+  cl_device_type dtype;
+  status = clGetDeviceInfo(cli->device[device_id],
+			   CL_DEVICE_TYPE,
+			   sizeof(dtype), 
+			   &dtype, 
+			   NULL);
+  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status == CL_SUCCESS);
+  printf("\tDevice type: ");
+  switch(dtype) {
+  case CL_DEVICE_TYPE_CPU:
+    printf("CL_DEVICE_TYPE_CPU (%d)\n", (int)dtype);
+    break;
+  case CL_DEVICE_TYPE_GPU:
+    printf("CL_DEVICE_TYPE_GPU (%d)\n", (int)dtype);
+    break;
+  case CL_DEVICE_TYPE_ACCELERATOR:
+    printf("CL_DEVICE_TYPE_ACCELERATOR (%d)\n", (int)dtype);
+    break;
+  case CL_DEVICE_TYPE_DEFAULT:
+    printf("CL_DEVICE_TYPE_DEFAULT (%d)\n", (int)dtype);
+    break;
+  default:
+    printf("ERROR: unknown OpenCL device type %d\n", (int)dtype);
+  }
 
   // device memory
   status = clGetDeviceInfo(cli->device[device_id],
@@ -104,7 +130,7 @@ void InitCLInfo(CLInfo* cli, int platform_id, int device_id)
 			   NULL);
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status == CL_SUCCESS);
-  printf("Global memory: %f MB\n",cli->devicememsize/1024./1024.);
+  printf("\tGlobal memory: %f MB\n",cli->devicememsize/1024./1024.);
 
   status = clGetDeviceInfo(cli->device[device_id],
 			   CL_DEVICE_MAX_MEM_ALLOC_SIZE,
@@ -113,7 +139,7 @@ void InitCLInfo(CLInfo* cli, int platform_id, int device_id)
 			   NULL);
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status == CL_SUCCESS);
-  printf("Max buffer size: %f MB\n",cli->maxmembuffer/1024./1024.);
+  printf("\tMax buffer size: %f MB\n",cli->maxmembuffer/1024./1024.);
 
   // compute unit size cache
   status = clGetDeviceInfo(cli->device[device_id],
@@ -123,7 +149,7 @@ void InitCLInfo(CLInfo* cli, int platform_id, int device_id)
 			   NULL);
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status == CL_SUCCESS);
-  printf("Cache size: %f KB\n",cli->cachesize/1024.);
+  printf("\tCache size: %f KB\n",cli->cachesize/1024.);
 
   // get maxconstmem
   status = clGetDeviceInfo(cli->device[device_id],
@@ -133,7 +159,7 @@ void InitCLInfo(CLInfo* cli, int platform_id, int device_id)
 			   NULL);
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status == CL_SUCCESS);
-  printf("Const mem: %f KB\n",cli->maxconstmem/1024.);
+  printf("\tConst mem: %f KB\n",cli->maxconstmem/1024.);
 
   // get maxconst args
   int maxcstargs;
@@ -144,7 +170,7 @@ void InitCLInfo(CLInfo* cli, int platform_id, int device_id)
 			   NULL);
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status == CL_SUCCESS);
-  printf("Max Const args: %d \n",maxcstargs);
+  printf("\tMax Const args: %d \n",maxcstargs);
 
   // nb of compute units
   status = clGetDeviceInfo(cli->device[device_id],
@@ -154,7 +180,7 @@ void InitCLInfo(CLInfo* cli, int platform_id, int device_id)
 			   NULL);
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status == CL_SUCCESS);
-  printf("Nb of compute units: %d\n",cli->nbcomputeunits);
+  printf("\tNb of compute units: %d\n",cli->nbcomputeunits);
 
   // max workgroup size
   status = clGetDeviceInfo(cli->device[device_id],
@@ -164,7 +190,7 @@ void InitCLInfo(CLInfo* cli, int platform_id, int device_id)
 			   NULL);
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status == CL_SUCCESS);
-  printf("Max workgroup size: %zu\n",cli->maxworkgroupsize);
+  printf("\tMax workgroup size: %zu\n",cli->maxworkgroupsize);
 
   status = clGetDeviceInfo(cli->device[device_id],
 			   CL_DEVICE_EXTENSIONS,
@@ -173,9 +199,9 @@ void InitCLInfo(CLInfo* cli, int platform_id, int device_id)
 			   NULL);
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status == CL_SUCCESS);
-  printf("OpenCL extensions:\n%s\n",cli->clextensions);
+  printf("\tOpenCL extensions: %s\n", cli->clextensions);
 
-  // first opencl context
+  // First opencl context
   cli->context = clCreateContext(NULL, // no context properties
 				 1,         // only one device in the list
 				 &cli->device[device_id], // device list
