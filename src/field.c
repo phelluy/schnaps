@@ -94,7 +94,7 @@ void update_physnode_cl(Field *f, int ie, cl_mem physnode_cl, double *physnode)
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status == CL_SUCCESS);
 
-  clFinish(f->cli.commandqueue);  // wait the end of the computation
+  clFinish(f->cli.commandqueue);
 }
 
 void InitField(Field* f) {
@@ -102,9 +102,8 @@ void InitField(Field* f) {
   f->is2d = false;
 
   // a copy for avoiding too much "->"
-  for(int ip = 0; ip < 8; ip++) {
+  for(int ip = 0; ip < 8; ip++)
     f->interp_param[ip] = f->interp.interp_param[ip];
-  }
 
   int nmem = f->model.m * f->macromesh.nbelems * NPG(f->interp_param + 1);
   f->wsize = nmem;
@@ -601,7 +600,7 @@ void* DGSubCellInterface(void* mc, Field *f) {
     // get the physical nodes of element ie
     double physnode[20][3];
     for(int inoloc = 0; inoloc < 20; inoloc++) {
-      int ino = f->macromesh.elem2node[20*ie+inoloc];
+      int ino = f->macromesh.elem2node[20 * ie + inoloc];
       physnode[inoloc][0] = f->macromesh.node[3 * ino + 0];
       physnode[inoloc][1] = f->macromesh.node[3 * ino + 1];
       physnode[inoloc][2] = f->macromesh.node[3 * ino + 2];
@@ -758,7 +757,7 @@ void *DGMacroCellInterfaceSlow(void *mc, Field *f) {
     // get the physical nodes of element ie
     double physnode[20][3];
     for(int inoloc = 0; inoloc < 20; inoloc++) {
-      int ino = f->macromesh.elem2node[20*ie+inoloc];
+      int ino = f->macromesh.elem2node[20 * ie + inoloc];
       physnode[inoloc][0] = f->macromesh.node[3 * ino + 0];
       physnode[inoloc][1] = f->macromesh.node[3 * ino + 1];
       physnode[inoloc][2] = f->macromesh.node[3 * ino + 2];
@@ -774,7 +773,7 @@ void *DGMacroCellInterfaceSlow(void *mc, Field *f) {
       double physnodeR[20][3];
       if (ieR >= 0) {
       	for(int inoloc = 0; inoloc < 20; inoloc++) {
-      	  int ino = f->macromesh.elem2node[20*ieR+inoloc];
+      	  int ino = f->macromesh.elem2node[20 * ieR + inoloc];
       	  physnodeR[inoloc][0] = f->macromesh.node[3 * ino + 0];
       	  physnodeR[inoloc][1] = f->macromesh.node[3 * ino + 1];
       	  physnodeR[inoloc][2] = f->macromesh.node[3 * ino + 2];
@@ -1172,7 +1171,7 @@ void* DGMass(void* mc, Field *f) {
     // get the physical nodes of element ie
     double physnode[20][3];
     for(int inoloc = 0; inoloc < 20; inoloc++) {
-      int ino = f->macromesh.elem2node[20*ie+inoloc];
+      int ino = f->macromesh.elem2node[20 * ie + inoloc];
       physnode[inoloc][0] = f->macromesh.node[3 * ino + 0];
       physnode[inoloc][1] = f->macromesh.node[3 * ino + 1];
       physnode[inoloc][2] = f->macromesh.node[3 * ino + 2];
@@ -1746,11 +1745,9 @@ void dtFieldSlow(Field* f) {
       }
     }
   }
-  assert(sizew==f->macromesh.nbelems * f->model.m * NPG(f->interp_param + 1));
+  assert(sizew == f->macromesh.nbelems * f->model.m * NPG(f->interp_param + 1));
 
-  // assembly of the subrface terms
-  // loop on the elements
-  //#pragma omp parallel for
+  // assembly of the subrface terms loop on the elements
   for (int ie = 0; ie < f->macromesh.nbelems; ie++) {
     // get the physical nodes of element ie
     double physnode[20][3];
@@ -1771,7 +1768,7 @@ void dtFieldSlow(Field* f) {
       double physnodeR[20][3];
       if (ieR >= 0) {
       	for(int inoloc = 0; inoloc < 20; inoloc++) {
-      	  int ino = f->macromesh.elem2node[20*ieR+inoloc];
+      	  int ino = f->macromesh.elem2node[20 * ieR + inoloc];
       	  physnodeR[inoloc][0] = f->macromesh.node[3 * ino + 0];
       	  physnodeR[inoloc][1] = f->macromesh.node[3 * ino + 1];
       	  physnodeR[inoloc][2] = f->macromesh.node[3 * ino + 2];
