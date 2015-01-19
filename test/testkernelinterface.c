@@ -12,7 +12,7 @@ int main(void) {
   else 
     printf("Interface Kernel test failed !\n");
   return !resu;
-} 
+}
 
 int TestKernelInterface(void){
   bool test = true;
@@ -28,7 +28,7 @@ int TestKernelInterface(void){
   f.model.ImposedData = TransImposedData2d;
   f.varindex = GenericVarindex;
 
-  f.interp.interp_param[0] = 1; // _M
+  f.interp.interp_param[0] = f.model.m;
   f.interp.interp_param[1] = 2; // x direction degree
   f.interp.interp_param[2] = 2; // y direction degree
   f.interp.interp_param[3] = 0; // z direction degree
@@ -66,8 +66,8 @@ int TestKernelInterface(void){
 			      sizeof(double) * (f.wsize),
 			      0, NULL, NULL, // events management
 			      &status);
-    assert(status == CL_SUCCESS);
-    assert(chkptr == f.dtwn);
+  assert(status == CL_SUCCESS);
+  assert(chkptr == f.dtwn);
 
   for(int i = 0; i < f.wsize; i++)
     f.dtwn[i] = 0.0;

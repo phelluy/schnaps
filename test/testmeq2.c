@@ -7,8 +7,10 @@ int main(void) {
   // Unit tests
   int resu = TestmEq2();
  
-  if (resu) printf("m greater than 1 test OK !\n");
-  else printf("m greater than 1 test failed !\n");
+  if (resu) 
+    printf("m greater than 1 test OK!\n");
+  else 
+    printf("m greater than 1 test failed !\n");
   return !resu;
 }
 
@@ -29,7 +31,7 @@ int TestmEq2(void) {
   f.model.ImposedData = VecTransImposedData2d;
   f.varindex = GenericVarindex;
     
-  f.interp.interp_param[0] = f.model.m; // _M
+  f.interp.interp_param[0] = f.model.m;
   f.interp.interp_param[1] = 2; // x direction degree
   f.interp.interp_param[2] = 2; // y direction degree
   f.interp.interp_param[3] = 0; // z direction degree

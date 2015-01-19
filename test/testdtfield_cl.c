@@ -8,10 +8,13 @@
 int TestDtField_CL(void);
 
 int main(void) {
-  // unit tests
-  int resu=TestDtField_CL();
-  if (resu) printf("DtField_CL test OK !\n");
-  else printf("DtField_CL test failed !\n");
+  int resu = TestDtField_CL();
+
+  if (resu) 
+    printf("DtField_CL test OK !\n");
+  else 
+    printf("DtField_CL test failed !\n");
+
   return !resu;
 } 
 
@@ -19,48 +22,80 @@ int TestDtField_CL(void){
   bool test = true;
 
   Field f;
+  
+  // 2D meshes:
+  // test/disque2d.msh
+  // test/testdisque2d.msh
+  // test/testmacromesh.msh
+  // test/unit-cube.msh
+
+  char *mshname =  "test/disque2d.msh";
+  
+  ReadMacroMesh(&(f.macromesh), mshname);
+  bool is2d = Detect2DMacroMesh(&(f.macromesh));
+  BuildConnectivity(&(f.macromesh));
+
+#if 1
+  // 2D version
+  assert(is2d == true);
+
   f.model.cfl = 0.05;
-  f.model.m = 1; // only one conservative variable
+  f.model.m = 1;
+
+  f.model.NumFlux = TransNumFlux2d;
+  f.model.BoundaryFlux = TransBoundaryFlux2d;
+  f.model.InitData = TransInitData2d;
+  f.model.ImposedData = TransImposedData2d;
+  f.varindex = GenericVarindex;
+
+  f.interp.interp_param[0] = f.model.m;
+  f.interp.interp_param[1] = 2; // x direction degree
+  f.interp.interp_param[2] = 2; // y direction degree
+  f.interp.interp_param[3] = 0; // z direction degree
+  f.interp.interp_param[4] = 4; // x direction refinement
+  f.interp.interp_param[5] = 4; // y direction refinement
+  f.interp.interp_param[6] = 1; // z direction refinement
+
+#else
+  // 3D version
+  f.model.cfl = 0.05;
+  f.model.m = 1;
   f.model.NumFlux = TransNumFlux;
   f.model.BoundaryFlux = TestTransBoundaryFlux;
   f.model.InitData = TestTransInitData;
   f.model.ImposedData = TestTransImposedData;
   f.varindex = GenericVarindex;
 
-  f.interp.interp_param[0] = 1; // _M
-  f.interp.interp_param[1] = 3; // x direction degree
-  f.interp.interp_param[2] = 3; // y direction degree
-  f.interp.interp_param[3] = 3; // z direction degree
-  f.interp.interp_param[4] = 1; // x direction refinement
-  f.interp.interp_param[5] = 1; // y direction refinement
-  f.interp.interp_param[6] = 1; // z direction refinement
+  f.interp.interp_param[0] = f.model.m;
+  f.interp.interp_param[1] = 2; // x direction degree
+  f.interp.interp_param[2] = 2; // y direction degree
+  f.interp.interp_param[3] = 2; // z direction degree
+  f.interp.interp_param[4] = 3; // x direction refinement
+  f.interp.interp_param[5] = 3; // y direction refinement
+  f.interp.interp_param[6] = 3; // z direction refinement
+#endif
 
-  //ReadMacroMesh(&(f.macromesh), "test/testdisque2.msh");
-  ReadMacroMesh(&(f.macromesh), "test/testdisque2d.msh");
-  BuildConnectivity(&(f.macromesh));
   InitField(&f);
 
   dtField_CL(&f);
-    CopyFieldtoCPU(&f);
+  CopyFieldtoCPU(&f);
 
-  //  DisplayField(&f);
+  // DisplayField(&f);
 
-  // save the dtwn pointer
   double *saveptr = f.dtwn;
-  // malloc a new dtwn.
   f.dtwn = calloc(f.wsize, sizeof(double));
 
   dtField(&f);
  
-  //check that the results are the same
   double maxerr = 0;
-  for(int i = 0; i < f.wsize; i++){
-    printf("error=%f %f %f\n", f.dtwn[i] - saveptr[i], f.dtwn[i], saveptr[i]);
-    maxerr = fmax(fabs(f.dtwn[i] - saveptr[i]), maxerr);
+  for(int i = 0; i < f.wsize; i++) {
+    double error = f.dtwn[i] - saveptr[i];
+    //printf("error= \t%f\t%f\t%f\n", error, f.dtwn[i], saveptr[i]);
+    maxerr = fmax(fabs(error), maxerr);
   }
-  printf("max error=%f\n", maxerr);
+  printf("max error: %f\n", maxerr);
 
-  test=(maxerr < 1e-8);
+  test = (maxerr < 1e-8);
 
   return test;
 }

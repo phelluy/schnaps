@@ -22,42 +22,53 @@ int TestMacroFace(void){
 
   Field f;
 
-  ReadMacroMesh(&(f.macromesh),"test/testcube.msh");
-  //ReadMacroMesh(&(f.macromesh),"test/testmacromesh.msh");
-  //ReadMacroMesh(&(f.macromesh), "test/testdisque.msh");
+  // 2D meshes:
+  // test/disque2d.msh
+  // test/testdisque2d.msh
+  // test/testmacromesh.msh
+  // test/unit-cube.msh
+
+  // 3D meshes"
+  // test/testdisque.msh
+
+  char *mshname =  "test/disque2d.msh";
+  
+  ReadMacroMesh(&(f.macromesh), mshname);
+
   bool is2d = Detect2DMacroMesh(&(f.macromesh));
   BuildConnectivity(&(f.macromesh));
 
-#if 0
+#if 1
   // 2D version
   f.model.cfl = 0.05;
-  f.model.m = 1; // only one conservative variable
-  f.model.NumFlux = TransNumFlux;
-  f.model.BoundaryFlux = TestTransBoundaryFlux;
-  f.model.InitData = TestTransInitData;
-  f.model.ImposedData = TestTransImposedData;
-  f.varindex = GenericVarindex;
+  f.model.m = 1;
 
-  f.interp.interp_param[0] = 1; // _M
-  f.interp.interp_param[1] = 3; // x direction degree
-  f.interp.interp_param[2] = 3; // y direction degree
-  f.interp.interp_param[3] = 0; // z direction degree
-  f.interp.interp_param[4] = 2; // x direction refinement
-  f.interp.interp_param[5] = 2; // y direction refinement
-  f.interp.interp_param[6] = 1; // z direction refinement
-
-  assert(is2d == true);
-#else
-  // 3D version
-  f.model.cfl = 0.05;
-  f.model.m = 1; // only one conservative variable
   f.model.NumFlux = TransNumFlux2d;
   f.model.BoundaryFlux = TransBoundaryFlux2d;
   f.model.InitData = TransInitData2d;
   f.model.ImposedData = TransImposedData2d;
   f.varindex = GenericVarindex;
 
-  f.interp.interp_param[0] = 1; // _M
+  f.interp.interp_param[0] = f.model.m;
+  f.interp.interp_param[1] = 2; // x direction degree
+  f.interp.interp_param[2] = 2; // y direction degree
+  f.interp.interp_param[3] = 0; // z direction degree
+  f.interp.interp_param[4] = 4; // x direction refinement
+  f.interp.interp_param[5] = 4; // y direction refinement
+  f.interp.interp_param[6] = 1; // z direction refinement
+
+  assert(is2d == true);
+#else
+  // 3D version
+  f.model.cfl = 0.05;
+  f.model.m = 1;
+  f.model.NumFlux = TransNumFlux;
+  f.model.BoundaryFlux = TestTransBoundaryFlux;
+  f.model.InitData = TestTransInitData;
+  f.model.ImposedData = TestTransImposedData;
+  f.varindex = GenericVarindex;
+
+  f.interp.interp_param[0] = f.model.m;
   f.interp.interp_param[1] = 2; // x direction degree
   f.interp.interp_param[2] = 2; // y direction degree
   f.interp.interp_param[3] = 2; // z direction degree
@@ -66,6 +77,25 @@ int TestMacroFace(void){
   f.interp.interp_param[6] = 3; // z direction refinement
 #endif
 
+  // From testfieldrk2:
+  
+  //char *mshname =  "test/testdisque.msh";
+  /* f.model.cfl = 0.05; */
+  /* f.model.m = 1; */
+  /* f.model.NumFlux = TransNumFlux; */
+  /* f.model.BoundaryFlux = TestTransBoundaryFlux; */
+  /* f.model.InitData = TestTransInitData; */
+  /* f.model.ImposedData = TestTransImposedData; */
+  /* f.varindex = GenericVarindex; */
+
+  /* f.interp.interp_param[0] = f.model.m; */
+  /* f.interp.interp_param[1] = 3; // x direction degree */
+  /* f.interp.interp_param[2] = 3; // y direction degree */
+  /* f.interp.interp_param[3] = 3; // z direction degree */
+  /* f.interp.interp_param[4] = 1; // x direction refinement */
+  /* f.interp.interp_param[5] = 1; // y direction refinement */
+  /* f.interp.interp_param[6] = 1; // z direction refinement */
+  
   InitField(&f);
 
   MacroFace mface[f.macromesh.nbfaces];
@@ -126,7 +156,7 @@ int TestMacroFace(void){
   double maxerr = 0.0;
   for(int i = 0; i < f.wsize; i++) {
     double error = fabs(fdtwn_openmp[i] - fdtwn_opencl[i]);
-    printf("error: %f \t%f \t%f\n", error, fdtwn_openmp[i], fdtwn_opencl[i]);
+    //printf("error: %f \t%f \t%f\n", error, fdtwn_openmp[i], fdtwn_opencl[i]);
     maxerr = fmax(error, maxerr);
   }
   printf("Max difference between OpenCL and OpenMP: %f\n", maxerr);
