@@ -18,9 +18,12 @@ __constant int axis_permut[6][4] = {
   {1, 0, 2, 0}
 };
 
-__constant int h20_refnormal[6][3]={{0,-1,0},{1,0,0},
-				    {0,1,0},{-1,0,0},
-				    {0,0,1},{0,0,-1}};
+__constant int h20_refnormal[6][3]={{0,-1,0},
+				    {1,0,0},
+				    {0,1,0},
+				    {-1,0,0},
+				    {0,0,1},
+				    {0,0,-1}};
 
 double dlag(int deg, int ib, int ipg);
 
@@ -107,8 +110,7 @@ int ref_pg_face(__constant int* param, int ifa, int ipg,
   ncpgxyz[axis_permut[ifa][1]] = ncy;
   ncpgxyz[axis_permut[ifa][2]] = ncz;
 
-  // Compute the global index of the
-  // Gauss-Lobatto point in the volume
+  // Compute the global index of the Gauss-Lobatto point in the volume
   int ipgv
     = ipgxyz[0]
     + (param[0] + 1)
@@ -121,8 +123,8 @@ int ref_pg_face(__constant int* param, int ifa, int ipg,
 	  )
        );
 
-  // Compute the reference coordinates of the
-  // Gauss-Lobatto point in the volume
+  // Compute the reference coordinates of the Gauss-Lobatto point in
+  // the volume
   int offset[2] = {gauss_lob_offset[deg[0]] + ix,
 		   gauss_lob_offset[deg[1]] + iy};
   //printf("offset=%d\n",offset);
@@ -362,7 +364,8 @@ __kernel
 void DGMass(__constant int *param,        // interp param
             int ie,            // macrocel index
             __constant double *physnode,  // macrocell nodes
-            __global double *dtwn) {       // time derivative
+            __global double *dtwn)        // time derivative
+{
 
   int ipg = get_global_id(0);
   const int m = param[0];
@@ -927,23 +930,23 @@ int ref_ipg(__constant int *param, double *xref)
   return ix + (deg[0] + 1) * (iy + (deg[1] + 1) * iz) + offset;
 };
 
-// In-place RK stage
-__kernel
-void RK_in_CL(__global double *fwnp1, 
-	      __global double *fdtwn, 
-	      const double dt)
-{
-  int ipg = get_global_id(0);
-  fwnp1[ipg] += dt * fdtwn[ipg];
-}
-
 // Out-of-place RK stage
 __kernel
-void RK_out_CL(__global double *fwnp1, 
-	       __global double *fwn, 
-	       __global double *fdtwn, 
+void RK_out_CL(__global double *wnp1, 
+	       __global double *wn, 
+	       __global double *dtwn, 
 	       const double dt)
 {
   int ipg = get_global_id(0);
-  fwnp1[ipg] = fwn[ipg] + dt * fdtwn[ipg];
+  wnp1[ipg] = wn[ipg] + dt * dtwn[ipg];
+}
+
+// In-place RK stage
+__kernel
+void RK_in_CL(__global double *wnp1, 
+	      __global double *dtwn, 
+	      const double dt)
+{
+  int ipg = get_global_id(0);
+  wnp1[ipg] += dt * dtwn[ipg];
 }

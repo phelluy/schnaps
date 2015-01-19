@@ -1713,7 +1713,6 @@ void dtField_CL(Field* f) {
 
   for(int ifa = 0; ifa < f->macromesh.nbfaces; ifa++)
     DGMacroCellInterface_CL((void*) (f->mface + ifa), f);
-
   for(int ie = 0; ie < f->macromesh.nbelems; ++ie) {
     MacroCell *mcelli = f->mcell + ie;
     DGVolume_CL(mcelli, f);
@@ -1984,7 +1983,7 @@ void RK2(Field* f, double tmax) {
 // Set kernel arguments for first stage of RK2
 void init_RK2_CL_stage1(Field *f, const double dt) 
 {
-  cl_kernel kernel = f->RK_in_CL;
+  cl_kernel kernel = f->RK_out_CL;
   cl_int status;
   int argnum = 0;
 
@@ -1996,6 +1995,14 @@ void init_RK2_CL_stage1(Field *f, const double dt)
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status == CL_SUCCESS);
   
+  // __global double *wn, 
+  status = clSetKernelArg(kernel,
+			  argnum++, 
+                          sizeof(cl_mem),
+                          &(f->wn_cl));
+  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status == CL_SUCCESS);
+
   //__global double* dtwn // time derivative
   status = clSetKernelArg(kernel,
 			  argnum++, 
@@ -2009,43 +2016,7 @@ void init_RK2_CL_stage1(Field *f, const double dt)
   status = clSetKernelArg(kernel,
 			  argnum++,
 			  sizeof(double),
-			  &(halfdt));
-  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status == CL_SUCCESS);
-
-  clFinish(f->cli.commandqueue);
-}
-
-// Set kernel arguments for second stage of RK2
-void init_RK2_CL_stage2(Field *f, const double dt) 
-{
-  cl_kernel kernel = f->RK_out_CL;
-  cl_int status;
-  int argnum = 0;
-
-  status = clSetKernelArg(kernel,
-			  argnum++, 
-                          sizeof(cl_mem),
-                          &(f->wnp1_cl));
-  assert(status == CL_SUCCESS);
-
-  status = clSetKernelArg(kernel,
-			  argnum++, 
-                          sizeof(cl_mem),
-                          &(f->wn_cl));
-  assert(status == CL_SUCCESS);
-    
-  status = clSetKernelArg(kernel,
-			  argnum++,
-                          sizeof(cl_mem),
-                          &(f->dtwn_cl));
-  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status == CL_SUCCESS);
-
-  status = clSetKernelArg(kernel,
-			  argnum++,
-			  sizeof(double),
-			  &(dt));
+			  &halfdt);
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status == CL_SUCCESS);
 
@@ -2066,6 +2037,36 @@ void RK2_CL_stage1(Field *f, size_t numworkitems)
 				  0, 
 				  NULL, 
 				  NULL);
+  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status == CL_SUCCESS);
+
+  clFinish(f->cli.commandqueue);
+}
+
+// Set kernel arguments for second stage of RK2
+void init_RK2_CL_stage2(Field *f, const double dt) 
+{
+  cl_kernel kernel = f->RK_in_CL;
+  cl_int status;
+  int argnum = 0;
+
+  status = clSetKernelArg(kernel,
+			  argnum++, 
+                          sizeof(cl_mem),
+                          &(f->wn_cl));
+  assert(status == CL_SUCCESS);
+
+  status = clSetKernelArg(kernel,
+			  argnum++,
+                          sizeof(cl_mem),
+                          &(f->dtwn_cl));
+  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status == CL_SUCCESS);
+
+  status = clSetKernelArg(kernel,
+			  argnum++,
+			  sizeof(double),
+			  &(dt));
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status == CL_SUCCESS);
 
@@ -2109,18 +2110,18 @@ void RK2_CL(Field* f, double tmax) {
     if (iter % freq == 0)
       printf("t=%f iter=%d/%d dt=%f\n", f->tnow, iter, itermax, dt);
 
-#if 0
+#if 1
     // OpenCL version
     dtField_CL(f);
     RK2_CL_stage1(f, sizew);
     swap_clmem(&(f->wnp1_cl), &(f->wn_cl));
-    swap_pdoubles(&f->wnp1, &f->wn);
+    //swap_pdoubles(&f->wnp1, &f->wn);
 
     f->tnow += 0.5 * dt;
     dtField_CL(f);
     RK2_CL_stage2(f, sizew);
     swap_clmem(&(f->wnp1_cl), &(f->wn_cl));
-    swap_pdoubles(&f->wnp1, &f->wn);
+    //swap_pdoubles(&f->wnp1, &f->wn);
 #else
     // Temporary non-OpenCL version
     dtField_CL(f);
