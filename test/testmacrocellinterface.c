@@ -35,7 +35,7 @@ int TestMacroFace(void){
   
   ReadMacroMesh(&(f.macromesh), mshname);
 
-  bool is2d = Detect2DMacroMesh(&(f.macromesh));
+  Detect2DMacroMesh(&(f.macromesh));
   BuildConnectivity(&(f.macromesh));
 
 #if 1
@@ -57,7 +57,7 @@ int TestMacroFace(void){
   f.interp.interp_param[5] = 4; // y direction refinement
   f.interp.interp_param[6] = 1; // z direction refinement
 
-  assert(is2d == true);
+  assert(f.macromesh.is2d);
 #else
   // 3D version
   f.model.cfl = 0.05;
@@ -75,6 +75,8 @@ int TestMacroFace(void){
   f.interp.interp_param[4] = 3; // x direction refinement
   f.interp.interp_param[5] = 3; // y direction refinement
   f.interp.interp_param[6] = 3; // z direction refinement
+  
+  printf("is2d: %d\n", f.macromesh.is2d);
 #endif
 
   // From testfieldrk2:

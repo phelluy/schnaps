@@ -29,7 +29,7 @@ int TestFieldRK2_CL(void){
   char *mshname =  "test/disque2d.msh";
   
   ReadMacroMesh(&(f.macromesh), mshname);
-  bool is2d = Detect2DMacroMesh(&(f.macromesh));
+  Detect2DMacroMesh(&(f.macromesh));
   BuildConnectivity(&(f.macromesh));
 
   /* f.model.cfl = 0.05; */
@@ -50,7 +50,7 @@ int TestFieldRK2_CL(void){
 
 #if 1
   // 2D version
-  assert(is2d == true);
+  assert(f.macromesh.is2d);
 
   f.model.cfl = 0.05;
   f.model.m = 1;

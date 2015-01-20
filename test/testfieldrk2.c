@@ -29,7 +29,7 @@ int TestFieldRK2(void){
   char *mshname =  "test/disque2d.msh";
   
   ReadMacroMesh(&(f.macromesh), mshname);
-  bool is2d = Detect2DMacroMesh(&(f.macromesh));
+  Detect2DMacroMesh(&(f.macromesh));
   BuildConnectivity(&(f.macromesh));
 
 #if 1
@@ -51,7 +51,7 @@ int TestFieldRK2(void){
   f.interp.interp_param[5] = 4; // y direction refinement
   f.interp.interp_param[6] = 1; // z direction refinement
 
-  assert(is2d == true);
+  assert(f.macromesh.is2d);
 #else
   // 3D version
   f.model.cfl = 0.05;

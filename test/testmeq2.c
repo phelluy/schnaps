@@ -42,8 +42,8 @@ int TestmEq2(void) {
   // Read the gmsh file
   ReadMacroMesh(&(f.macromesh), "test/testcube.msh");
   // Try to detect a 2d mesh
-  bool is2d = Detect2DMacroMesh(&(f.macromesh));
-  assert(is2d);
+  Detect2DMacroMesh(&(f.macromesh));
+  assert(f.macromesh.is2d);
 
   // Mesh preparation
   BuildConnectivity(&(f.macromesh));

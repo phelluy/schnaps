@@ -8,12 +8,12 @@
 #include "interpolation.h"
 #include <math.h>
 
-void ReadMacroMesh(MacroMesh* m, char* filename)
+void ReadMacroMesh(MacroMesh *m, char *filename)
 {
   m->is2d = false;
 
-  FILE* f = NULL;
-  char* line = NULL;
+  FILE *f = NULL;
+  char *line = NULL;
   size_t linesize = 0;
   size_t ret;
 
@@ -160,6 +160,7 @@ void PrintMacroMesh(MacroMesh *m) {
     }
   }
 
+  // Output to command-line
   if(m->face2elem !=0) {
     for(int ifa = 0; ifa < m->nbfaces; ifa++) {
       printf("face %d, left: %d loc%d, right: %d loc%d\n",
@@ -184,12 +185,12 @@ void build_face(MacroMesh *m, Face4Sort *face)
 			     {0,4,7,3},
 			     {5,6,7,4},
 			     {0,3,2,1} };
-  Face4Sort* f;
+  
 
   // Loop over macroelements and their six faces
   for(int ie = 0; ie < m->nbelems; ie++) {
     for(int ifa = 0; ifa < 6; ifa++) {
-      f = face + ifa + 6 * ie;
+      Face4Sort *f = face + ifa + 6 * ie;
       for(int ino = 0; ino < 4; ino++) {
 	f->node[ino] = m->elem2node[face2locnode[ifa][ino] + 20 * ie];
       }
@@ -220,7 +221,7 @@ void build_face(MacroMesh *m, Face4Sort *face)
 }
 
 // Find the coordinates of the minimal bounding box for the MacroMesh
-void macromesh_bounds(MacroMesh *m, double *bounds) 
+void macromesh_bounds(MacroMesh *m, double *bounds)
 {
   double xmin = m->node[0];
   double xmax = xmin;
@@ -261,9 +262,10 @@ void build_elem2elem(MacroMesh *m, Face4Sort *face)
   assert(m->elem2elem == NULL);
   m->elem2elem = malloc(6 * m->nbelems * sizeof(int));
   assert(m->elem2elem);
-  for(int i = 0; i < 6 * m->nbelems; i++) {
+
+  // Initialize to -1 (value for faces on a boundary)
+  for(int i = 0; i < 6 * m->nbelems; i++)
     m->elem2elem[i] = -1;
-  }
 
   // Two successive equal faces correspond to two neighbours in the
   // element list
@@ -651,7 +653,7 @@ void CheckMacroMesh(MacroMesh* m, int* param) {
 
 // Detect if the mesh is 2D and then permut the nodes so that the z
 // direction coincides in the reference or physical frame
-bool Detect2DMacroMesh(MacroMesh* m)
+void Detect2DMacroMesh(MacroMesh *m)
 {
   m->is2d = true;
 
@@ -682,7 +684,7 @@ bool Detect2DMacroMesh(MacroMesh* m)
     if(fabs(zmil-0.5) > 1e-6) {
       // The mesh is not 2d
       m->is2d = false;
-      return m->is2d;
+      return;
     }
   }
 
@@ -747,5 +749,5 @@ bool Detect2DMacroMesh(MacroMesh* m)
     }
 
   }
-  return m->is2d;
+
 };

@@ -24,8 +24,8 @@ int main(void) {
   ReadMacroMesh(&(f.macromesh), "disque.msh");
   //ReadMacroMesh(&(f.macromesh), "geo/cube.msh");
   // Try to detect a 2d mesh
-  bool is2d = Detect2DMacroMesh(&(f.macromesh));
-  assert(is2d);
+  Detect2DMacroMesh(&(f.macromesh));
+  assert(f.macromesh.is2d);
   //PrintMacroMesh(&(f.macromesh));
 
   // Mesh preparation
@@ -35,7 +35,6 @@ int main(void) {
 
   // Prepare the initial fields
   InitField(&f);
-  f.is2d = true;
 
   // prudence...
   CheckMacroMesh(&(f.macromesh), f.interp.interp_param + 1);

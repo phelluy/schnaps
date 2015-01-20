@@ -35,15 +35,14 @@ int test_manyv(int deg, int nraf, double cfl, double tmax)
   // Read the gmsh file
   ReadMacroMesh(&(f.macromesh), "geo/square.msh");
   // Try to detect a 2d mesh
-  bool is2d = Detect2DMacroMesh(&(f.macromesh));
-  assert(is2d);
+  Detect2DMacroMesh(&(f.macromesh));
+  assert(f.macromesh.is2d);  
 
   // Mesh preparation
   BuildConnectivity(&(f.macromesh));
  
   // Prepare the initial fields
   InitField(&f);
-  f.is2d = true;
 
   // Prudence...
   CheckMacroMesh(&(f.macromesh), f.interp.interp_param + 1);
