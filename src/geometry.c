@@ -10,16 +10,27 @@ const int h20_refnormal[6][3]={{0,-1,0},
 			       {0,0,1},
 			       {0,0,-1} };
 
-double Dist(double x1[3],double x2[3]) 
+// Return the dot-product of the doubles a[3] and b[3]
+double dot_product(double a[3], double b[3])
 {
-  return sqrt(  (x1[0] - x2[0]) * (x1[0] - x2[0])
-              + (x1[1] - x2[1]) * (x1[1] - x2[1])
-              + (x1[2] - x2[2]) * (x1[2] - x2[2]) );
+  return a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+}
+
+// Return the dot-product of the doubles a[3] and b[3]
+double norm(double a[3])
+{
+  return sqrt(a[0] * a[0] + a[1] * a[1] + a[2] * a[2]);
+}
+
+double Dist(double a[3], double b[3]) 
+{
+  double d[3] = {a[0] - b[0], a[1] - b[1], a[2] - b[2]};
+  return norm(d);
 }
 
 void PrintPoint(double x[3]) 
 {
-  printf("%f %f %f\n",x[0],x[1],x[2]);
+  printf("%f %f %f\n", x[0], x[1], x[2]);
 }
 
 void GeomRef2Phy(Geom* g) 
@@ -109,9 +120,9 @@ void Ref2Phy(double physnode[20][3],
 
   if (vnds !=NULL) {
     assert(codtau != NULL);
-    assert(ifa >=0 );
+    assert(ifa >= 0);
     for(int ii = 0; ii < 3; ii++) {
-      vnds[ii] = 0;
+      vnds[ii] = 0.0;
       for(int jj = 0; jj < 3; jj++) {
         vnds[ii] += codtau[ii][jj] * h20_refnormal[ifa][jj];
       }
@@ -143,9 +154,7 @@ void Phy2Ref(double physnode[20][3], double xphy[3], double xref[3])
     dxphy[0] -= (xphy)[0];
     dxphy[1] -= (xphy)[1];
     dxphy[2] -= (xphy)[2];
-    det = dtau[0][0] * codtau[0][0] 
-      + dtau[0][1] * codtau[0][1]
-      + dtau[0][2] * codtau[0][2];
+    det = dot_product(dtau[0], codtau[0]);
     assert(det > 0);
 
     for(int ii = 0; ii < 3; ii ++ ) {

@@ -147,8 +147,7 @@ void PrintMacroMesh(MacroMesh* m) {
   for(int i = 0; i < m->nbelems; i++) {
     printf("elem %d -> ", i + start);
     for(int j = 0; j < 20; j++) {
-      printf("%d ", 
-	     m->elem2node[20 * i + j] + start);
+      printf("%d ", m->elem2node[20 * i + j] + start);
     }
     printf("\n");
   }
@@ -250,8 +249,10 @@ void macromesh_bounds(MacroMesh* m, double *bounds)
 
   bounds[0] = xmin;
   bounds[1] = xmax;
+
   bounds[2] = ymin;
   bounds[3] = ymax;
+
   bounds[4] = zmin;
   bounds[5] = zmax;
 }
@@ -429,9 +430,12 @@ int CompareFace4Sort(const void* a,const void* b) {
   Face4Sort *f2 = (Face4Sort*)b;
 
   int r = f1->node[0]-f2->node[0];
-  if(r == 0) r = f1->node[1] - f2->node[1];
-  if(r == 0) r = f1->node[2] - f2->node[2];
-  if(r == 0) r = f1->node[3] - f2->node[3];
+  if(r == 0) 
+    r = f1->node[1] - f2->node[1];
+  if(r == 0) 
+    r = f1->node[2] - f2->node[2];
+  if(r == 0) 
+    r = f1->node[3] - f2->node[3];
   return r;
 };
 
@@ -496,12 +500,12 @@ void CheckMacroMesh(MacroMesh* m, int* param) {
       // Check volume  orientation
       assert(g.det > 0);
 
-      double vec[3] = {g.xphy[0]-xphym[0],
-		       g.xphy[1]-xphym[1],
-		       g.xphy[2]-xphym[2]};
+      double vec[3] = {g.xphy[0] - xphym[0],
+		       g.xphy[1] - xphym[1],
+		       g.xphy[2] - xphym[2]};
 
       // Check face orientation
-      assert(g.vnds[0] * vec[0] + g.vnds[1] * vec[1] + g.vnds[2] * vec[2] > 0);
+      assert(0 < dot_product(g.vnds, vec));
 
       // Check compatibility between face and volume numbering
       for(int ipgf = 0; ipgf < NPGF(param, ifa); ipgf++) {
@@ -522,9 +526,8 @@ void CheckMacroMesh(MacroMesh* m, int* param) {
 	}
 
         if(m->is2d) { // in 2D do not check upper and lower face
-          if(ifa < 4) {
+          if(ifa < 4)
             assert(Dist(xpgref, xpgref2) < 1e-11);
-          }
         } else { // in 3D check all faces
 	  if(Dist(xpgref, xpgref2) >= 1e-11) {
 	    printf("ERROR: face and vol indices give different rev points:\n");
@@ -544,7 +547,7 @@ void CheckMacroMesh(MacroMesh* m, int* param) {
   // Check that the faces are defined by the same mapping with
   // opposite normals
   for (int ie = 0; ie < m->nbelems; ie++) {
-    //int param[8]={1,_DEGX,_DEGY,_DEGZ,_RAFX,_RAFY,_RAFZ,0};
+    // int param[8]={1,_DEGX,_DEGY,_DEGZ,_RAFX,_RAFY,_RAFZ,0};
     // Get the geometry for the macro element ie
     double physnode[20][3];
     for(int inoloc = 0; inoloc < 20; inoloc++) {
@@ -657,7 +660,7 @@ bool Detect2DMacroMesh(MacroMesh* m)
 
   // Do not permut the node if the connectivity is already built
   if(m->elem2elem != NULL)
-    printf("Cannot permut nodes before building connectivity\n");
+    printf("Cannot permute nodes before building connectivity\n");
   assert(m->elem2elem == 0);
 
   for(int ie = 0; ie < m->nbelems; ie++) {
@@ -702,12 +705,12 @@ bool Detect2DMacroMesh(MacroMesh* m)
     // If the mesh is 2d permut the nodes in order that the z^ and z
     // axis are the same
 
-    double face_centers[6][3] = { {0.5,0.0,0.5},
-				  {1.0,0.5,0.5},
-				  {0.5,1.0,0.5},
-				  {0.0,0.5,0.5},
-				  {0.5,0.5,1.0},
-				  {0.5,0.5,0.0} };
+    double face_centers[6][3] = { {0.5, 0.0, 0.5},
+				  {1.0, 0.5, 0.5},
+				  {0.5, 1.0, 0.5},
+				  {0.0, 0.5, 0.5},
+				  {0.5, 0.5, 1.0},
+				  {0.5, 0.5, 0.0} };
 
     // Rotation of the cube around the origin at most two rotations
     // are needed to put the cube in a correct position
@@ -720,13 +723,13 @@ bool Detect2DMacroMesh(MacroMesh* m)
 	      NULL, dtau,
 	      codtau, NULL, vnds); // codtau,dphi,vnds
 
-      double d = vnds[0] * vnds[0] + vnds[1] * vnds[1] + vnds[2] * vnds[2];
-      d = sqrt(d);
+      double d = norm(vnds);
       // If the normal is not up or down we have to permut the nodes
       if(fabs(vnds[2] / d) < 0.9) {
 	printf("irot=%d rotating the element %d\n", irot, ie);
 	int oldnum[20];
-	int newnum[20]={1,5,6,2,4,8,7,3,11,9,10,17,18,13,19,12,16,14,20,15};
+	int newnum[20] = {1, 5, 6, 2, 4, 8, 7, 3, 11, 9, 
+			  10, 17, 18, 13, 19, 12, 16, 14, 20, 15};
 	for(int inoloc = 0; inoloc < 20; inoloc++) {
 	  newnum[inoloc]--;
 	  oldnum[inoloc] = m->elem2node[20 * ie + inoloc];

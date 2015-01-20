@@ -84,10 +84,20 @@ void Phy2Ref(double physnode[20][3],double xphy[3],double xref[3]);
 //! \param[inout] g a Geom data structure
 void GeomPhy2Ref(Geom* g);
 
+//! \brief dot product between two vectors
+//! \param[in] a, b : the two points
+//! \return the dot product
+double dot_product(double a[3], double b[3]);
+
+//! \brief Length of a vector
+//! \param[in] a: the vector
+//! \return The length of the vector
+double norm(double a[3]);
+
 //! \brief distance between two points
-//! \param[in] x1,x2 : the two points
+//! \param[in] a, b : the two points
 //! \return the distance
-double Dist(double x1[3],double x2[3]);
+double Dist(double a[3], double b[3]);
 
 
 //! \brief point coordinates on standard output

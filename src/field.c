@@ -177,10 +177,7 @@ void InitField(Field* f) {
 	      NULL, -1, // dpsiref, ifa
 	      NULL, dtau, // xphy, dtau
 	      codtau, NULL, NULL); // codtau, dpsi, vnds
-      double det
-	= dtau[0][0] * codtau[0][0]
-	+ dtau[0][1] * codtau[0][1]
-	+ dtau[0][2] * codtau[0][2];
+      double det = dot_product(dtau[0], codtau[0]);
       vol += wpg * det;
     }
     for(int ifa = 0; ifa < 6; ifa++) {
@@ -198,9 +195,7 @@ void InitField(Field* f) {
 		  NULL, dtau,
 		  codtau, NULL, vnds); // codtau, dpsi, vnds
 	}
-	surf += sqrt(vnds[0] * vnds[0]
-		     + vnds[1] * vnds[1]
-		     + vnds[2] * vnds[2]) * wpg;
+	surf += norm(vnds) * wpg;
       }
     }
     f->hmin = f->hmin < vol/surf ? f->hmin : vol/surf;
@@ -625,9 +620,9 @@ void* DGSubCellInterface(void* mc, Field *f) {
 	  int icL[3] = {icL0, icL1, icL2};
 
 	  // Get the left subcell id
-	  int ncL = icL[0]+nraf[0]*(icL[1]+nraf[1]*icL[2]);
+	  int ncL = icL[0] + nraf[0] * (icL[1] + nraf[1] * icL[2]);
 	  // First glop index in the subcell
-	  int offsetL = npg[0]*npg[1]*npg[2]*ncL;
+	  int offsetL = npg[0] * npg[1] * npg[2] * ncL;
 
 	  // Sweeping subcell faces in the three directions
 	  for(int dim0 = 0; dim0 < 3; dim0++) {
@@ -649,7 +644,8 @@ void* DGSubCellInterface(void* mc, Field *f) {
 
 	      // now loop on the left glops of the subface
 	      //int dim1 = (dim0 + 1)%3, dim2 = (dim0+2)%3;
-	      int dim1 = altdim1[dim0], dim2 = altdim2[dim0];
+	      int dim1 = altdim1[dim0];
+	      int dim2 = altdim2[dim0];
 	      int iL[3];
 	      iL[dim0] = deg[dim0];
 	      for(iL[dim2] = 0; iL[dim2] < npg[dim2]; iL[dim2]++) {
@@ -1185,10 +1181,7 @@ void* DGMass(void* mc, Field *f) {
 	      NULL, -1, // dpsiref, ifa
 	      NULL, dtau, // xphy, dtau
 	      codtau, NULL, NULL); // codtau, dpsi, vnds
-      double det
-	= dtau[0][0]*codtau[0][0]
-	+ dtau[0][1]*codtau[0][1]
-	+ dtau[0][2]*codtau[0][2];
+      double det = dot_product(dtau[0], codtau[0]);
       for(int iv = 0; iv < f->model.m; iv++) {
 	int imem = f->varindex(f->interp_param, ie, ipg, iv);
 	f->dtwn[imem] /= (wpg * det);
@@ -1552,11 +1545,8 @@ void DGVolumeSlow(Field* f) {
 		codtau, dpsi, NULL); // codtau, dpsi, vnds
 	// remember the diagonal mass term
 	if (ib == ipg) {
-	  double det
-	    = dtau[0][0] * codtau[0][0]
-	    + dtau[0][1] * codtau[0][1]
-	    + dtau[0][2] * codtau[0][2];
-	  masspg[ipg] = wpg*det;
+	  double det = dot_product(dtau[0], codtau[0]);
+	  masspg[ipg] = wpg * det;
 	}
 	// int_L F(w, w, grad phi_ib )
 	double flux[f->model.m];
@@ -1573,7 +1563,7 @@ void DGVolumeSlow(Field* f) {
       // apply the inverse of the diagonal mass matrix
       for(int iv = 0; iv < f->model.m; iv++) {
 	int imem = f->varindex(f->interp_param, ie, ipg, iv);
-	(f->dtwn[imem])/=masspg[ipg];
+	f->dtwn[imem] /= masspg[ipg];
       }
     }
 
@@ -1883,10 +1873,7 @@ void dtFieldSlow(Field* f) {
 		codtau, dpsi, NULL); // codtau, dpsi, vnds
 	// remember the diagonal mass term
 	if (ib == ipg) {
-	  double det
-	    = dtau[0][0] * codtau[0][0]
-	    + dtau[0][1] * codtau[0][1]
-	    + dtau[0][2] * codtau[0][2];
+	  double det = dot_product(dtau[0], codtau[0]);
 	  masspg[ipg] = wpg * det;
 	}
 	// int_L F(w, w, grad phi_ib )
@@ -1904,7 +1891,7 @@ void dtFieldSlow(Field* f) {
       // apply the inverse of the diagonal mass matrix
       for(int iv = 0; iv < f->model.m; iv++) {
 	int imem = f->varindex(f->interp_param, ie, ipg, iv);
-	(f->dtwn[imem]) /= masspg[ipg];
+	f->dtwn[imem] /= masspg[ipg];
       }
     }
 
@@ -2219,9 +2206,7 @@ double L2error(Field* f) {
 		NULL, -1, // dpsiref, ifa
 		xphy, dtau, // xphy, dtau
 		codtau, NULL, NULL); // codtau, dpsi, vnds
-	det = dtau[0][0] * codtau[0][0] 
-	  + dtau[0][1] * codtau[0][1]
-	  + dtau[0][2] * codtau[0][2];
+	det = dot_product(dtau[0], codtau[0]);
 
 	// Get the exact value
 	f->model.ImposedData(xphy, f->tnow, wex);
