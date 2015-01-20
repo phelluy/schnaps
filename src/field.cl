@@ -77,10 +77,10 @@ int ref_pg_face(__constant int* param, int ifa, int ipg,
 
   // Compute permuted indices
   int ix = ipg % (deg[0] + 1);
-  ipg/=(deg[0] + 1);
+  ipg /= (deg[0] + 1);
 
   int iy = ipg % (deg[1] + 1);
-  ipg/=(deg[1] + 1);
+  ipg /= (deg[1] + 1);
 
   // Equals 0 or d depending on the face
   int iz = axis_permut[ifa][3] * deg[2];
@@ -329,9 +329,9 @@ void DGVolume(__constant int* param,        // interp param
       if(icR[dim0] >= 0 && icR[dim0] < nraf[dim0]) {
 	double vnds[3];
 	double h1h2 = 1. / nraf[dim1] / nraf[dim2];
-	vnds[0] = sgn*codtau[0][dim0] * h1h2;
-	vnds[1] = sgn*codtau[1][dim0] * h1h2;
-	vnds[2] = sgn*codtau[2][dim0] * h1h2;
+	vnds[0] = sgn * codtau[0][dim0] * h1h2;
+	vnds[1] = sgn * codtau[1][dim0] * h1h2;
+	vnds[2] = sgn * codtau[2][dim0] * h1h2;
 
         int ncR = icR[0] + nraf[0] * (icR[1] + nraf[1] * icR[2]);
         int q[3] = {p[0], p[1], p[2]};

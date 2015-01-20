@@ -102,28 +102,24 @@ void ReadMacroMesh(MacroMesh* m, char* filename)
   m->elem2elem = NULL;
 }
 
-void AffineMap(double* x)
+void AffineMap(double *x)
 {
   //double A[3][3]={{1,2,1},{0,-1,4},{7,8,-5}};
-  double A[3][3] = {{0,-1,0},{-2,0,0},{0,0,-1}};
+  double A[3][3] = {{0, -1, 0}, {-2, 0, 0}, {0, 0,- 1}};
   //double A[3][3]={1,0,0,0,2,0,0,0,1};
-  double x0[3] = {0,0,1};
+  double x0[3] = {0, 0, 1};
   //double x0[3]={0,0,0};
 
   double newx[3];
 
-  for(int i = 0; i < 3; i++) {
-    newx[i] = x0[i];
-    for(int j = 0; j < 3; j++) {
-      newx[i] += A[i][j] * x[j];
-    }
-  }
+  for(int i = 0; i < 3; i++)
+    newx[i] = x0[i] + dot_product(A[i], x);
   x[0] = newx[0];
   x[1] = newx[1];
   x[2] = newx[2];
 }
 
-void AffineMapMacroMesh(MacroMesh* m)
+void AffineMapMacroMesh(MacroMesh *m)
 {
   for(int ino = 0; ino < m->nbnodes; ino++) {
     AffineMap(&(m->node[ino * 3]));
@@ -131,7 +127,7 @@ void AffineMapMacroMesh(MacroMesh* m)
 }
 
 // Display macromesh data on standard output
-void PrintMacroMesh(MacroMesh* m) {
+void PrintMacroMesh(MacroMesh *m) {
   printf("Print macromesh...\n");
   int start = 1;
   printf("nbnodes=%d\n", m->nbnodes);
@@ -178,7 +174,7 @@ void PrintMacroMesh(MacroMesh* m) {
 }
 
 // Fill array of faces of subcells
-void build_face(MacroMesh* m, Face4Sort* face) 
+void build_face(MacroMesh *m, Face4Sort *face) 
 {
   assert(face != NULL);
 
@@ -224,7 +220,7 @@ void build_face(MacroMesh* m, Face4Sort* face)
 }
 
 // Find the coordinates of the minimal bounding box for the MacroMesh
-void macromesh_bounds(MacroMesh* m, double *bounds) 
+void macromesh_bounds(MacroMesh *m, double *bounds) 
 {
   double xmin = m->node[0];
   double xmax = xmin;
@@ -259,7 +255,7 @@ void macromesh_bounds(MacroMesh* m, double *bounds)
 
 // Allocate and fill the elem2elem array, which provides macrocell
 // interface connectivity.
-void build_elem2elem(MacroMesh* m, Face4Sort* face) 
+void build_elem2elem(MacroMesh *m, Face4Sort *face) 
 {
   // Allocate element connectivity array
   assert(m->elem2elem == NULL);
@@ -327,6 +323,7 @@ void build_elem2elem(MacroMesh* m, Face4Sort* face)
         m->face2elem[4 * facecount + 0] = ie;
         m->face2elem[4 * facecount + 1] = ifa;
         m->face2elem[4 * facecount + 2] = ie2;
+
         if(ie2 >= 0) {
 	  m->face2elem[4 * facecount + 3] = -1;
 	  for(int ifa2 = 0; ifa2 < 6; ++ifa2) {
@@ -357,7 +354,7 @@ void build_elem2elem(MacroMesh* m, Face4Sort* face)
 }
 
 // Remove the faces in the third z dimension form the list.
-void suppress_zfaces(MacroMesh* m)
+void suppress_zfaces(MacroMesh *m)
 {
   printf("Suppress 3d faces...\n");
   int newfacecount = 0;

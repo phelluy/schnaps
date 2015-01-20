@@ -905,6 +905,9 @@ void* DGMacroCellInterface(void* mc, Field *f) {
       // Recover the volume gauss point from the face index
       int ipgL = iparam[7];
 
+      double flux[m];
+      double wL[m];
+
       // Normal vector at gauss point ipgL
       double vnds[3], xpg[3];
       {
@@ -942,7 +945,7 @@ void* DGMacroCellInterface(void* mc, Field *f) {
 	/*   assert(Dist(xpgR, xpg) < 1e-10); */
 	/* }	 */
 
-	double wL[m], wR[m];
+	double wR[m];
         for(int iv = 0; iv < m; iv++) {
 	  int imemL = f->varindex(iparam, ieL, ipgL, iv);
 	  wL[iv] = f->wn[imemL];
@@ -951,7 +954,7 @@ void* DGMacroCellInterface(void* mc, Field *f) {
         }
 
         // int_dL F(wL, wR, grad phi_ib)
-	double flux[m];
+
         f->model.NumFlux(wL, wR, vnds, flux);
 
 	// Add flux to both sides
@@ -964,15 +967,12 @@ void* DGMacroCellInterface(void* mc, Field *f) {
 	}
 
       } else { // The point is on the boundary.
-	double wL[m];
 	for(int iv = 0; iv < m; iv++) {
 	  int imemL = f->varindex(iparam, ieL, ipgL, iv);
 	  wL[iv] = f->wn[imemL];
 	}
 
-	double flux[m];
         f->model.BoundaryFlux(xpg, f->tnow, wL, vnds, flux);
-        //printf("ipgL=%d tnow=%f wL=%f flux=%f\n",ipgL,f->tnow,wL[0],flux[0]);
 
 	for(int iv = 0; iv < m; iv++) {
 	  // The basis functions is also the gauss point index
