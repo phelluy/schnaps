@@ -438,7 +438,7 @@ int CompareFace4Sort(const void* a,const void* b) {
   return r;
 };
 
-void CheckMacroMesh(MacroMesh* m, int* param) {
+void CheckMacroMesh(MacroMesh *m, int *param) {
   Geom g;
   double face_centers[6][3]={ {0.5,0.0,0.5},
 			      {1.0,0.5,0.5},
