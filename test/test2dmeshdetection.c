@@ -62,7 +62,7 @@ int Test2DMeshDetection(void) {
   BuildConnectivity(&mm4);
   CheckMacroMesh(&mm4, param);
     
-  test = test && !mm3.is2d;
+  test = test && !mm4.is2d;
 
   return test;
 };
