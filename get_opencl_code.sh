@@ -2,6 +2,7 @@
 #!/bin/sh
 echo "#pragma start_opencl" > schnaps_temp.cl
 echo "\n/*-----------------------------src from .h files-----------------------------*/\n" >> schnaps_temp.cl
+echo "#pragma OPENCL EXTENSION cl_khr_fp64: enable" >> schnaps_temp.cl
 echo "#pragma end_opencl" >> schnaps_temp.cl
 
 cat src/*.h >> schnaps_temp.cl

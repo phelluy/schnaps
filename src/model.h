@@ -10,7 +10,7 @@ typedef struct Model {
   double cfl; // 0.05
 
   //! Number of conservative variables in each dimension (NB: their
-  //! prouduct must equal m).
+  //! product must equal m).
   int vlasov_mx, vlasov_my, vlasov_mz;
 
   //! The conservative variables have velocity in [-vlasov_vmax, vlasov_vmax]

@@ -68,6 +68,7 @@ int TestKernelInterface(void){
   assert(status == CL_SUCCESS);
   assert(chkptr == f.dtwn);
 
+
   for(int i = 0; i < f.wsize; i++)
     f.dtwn[i] = 0.0;
 

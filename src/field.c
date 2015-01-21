@@ -68,6 +68,10 @@ void CopyFieldtoCPU(Field *f) {
 void update_physnode_cl(Field *f, int ie, cl_mem physnode_cl, double *physnode)
 {
   cl_int status;
+  /* status = clFinish(f->cli.commandqueue); */
+  /* if(status != CL_SUCCESS) printf("%s\n", clErrorString(status)); */
+  /* assert(status == CL_SUCCESS); */
+
   void* chkptr = clEnqueueMapBuffer(f->cli.commandqueue,
 				    physnode_cl,
 				    CL_TRUE,
@@ -1129,6 +1133,7 @@ void *DGMacroCellInterface_CL(void *mf, Field *f) {
     int ieR =    f->macromesh.face2elem[4 * ifa + 2];
     int locfaR = f->macromesh.face2elem[4 * ifa + 3];
 
+    printf("coucou\n");
     update_physnode_cl(f, ieL, f->physnode_cl, f->physnode);
 
     if(ieR >= 0) 

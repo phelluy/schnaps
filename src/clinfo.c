@@ -271,7 +271,7 @@ void BuildKernels(CLInfo* cli, char* strprog){
     /* printf("%s\n", strprog); */
     if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
     printf("Compilation output:\n%s\n", 
-	   print_build_debug(cli->program, &cli->device[cli->deviceid]));
+	   print_build_debug(&(cli->program), &cli->device[cli->deviceid]));
   }
   assert(status == CL_SUCCESS);
 }

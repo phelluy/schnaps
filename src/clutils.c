@@ -200,17 +200,18 @@ const char* clErrorString(const cl_int err)
   return errString;
 }
 
-char* print_build_debug(cl_program program, cl_device_id *device) 
+char* print_build_debug(cl_program* program, cl_device_id *device) 
 {
-  size_t log_size;
-  clGetProgramBuildInfo(program, 
-			*device,
-			CL_PROGRAM_BUILD_LOG, 
-			0, 
-			NULL, 
-			&log_size);
+  size_t log_size=100000;
+  /* clGetProgramBuildInfo(program,  */
+  /* 			*device, */
+  /* 			CL_PROGRAM_BUILD_LOG,  */
+  /* 			0,  */
+  /* 			NULL,  */
+  /* 			&log_size); */
+  //char *log = (char*)calloc(log_size + 1 , sizeof(char));
   char *log = (char*)calloc(log_size + 1 , sizeof(char));
-  clGetProgramBuildInfo(program, 
+  clGetProgramBuildInfo(*program, 
 			*device, 
 			CL_PROGRAM_BUILD_LOG, 
 			log_size, 
