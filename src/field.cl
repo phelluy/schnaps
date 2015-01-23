@@ -168,9 +168,6 @@ int ref_pg_face(__constant int* param, int ifa, int ipg,
   return ipgv;
 };
 
-
-void NumFlux(double wL[], double wR[], double* vnorm, double* flux);
-
 void NumFlux(double wL[], double wR[], double* vnorm, double* flux) {
   double s2 = 0.707106781186547524400844362105;
   double vn = s2 * (vnorm[0] + vnorm[1]);
@@ -182,16 +179,13 @@ void NumFlux(double wL[], double wR[], double* vnorm, double* flux) {
 };
 
 void BoundaryFlux(double x[3], double t, double wL[], double* vnorm,
-                  double* flux);
-
-void BoundaryFlux(double x[3], double t, double wL[], double* vnorm,
                   double* flux) {
-  double wR[1];
+  double wR[_M];
   double s2 = 0.707106781186547524400844362105;
   double vx = s2 * (x[0] + x[1]);
   wR[0] = cos(vx - t);
 
-  NumFlux(wL, wR, vnorm, flux);
+  NUMFLUX(wL, wR, vnorm, flux);
 };
 
 //! \brief 1d GLOP weights for a given degree
@@ -310,7 +304,7 @@ void DGVolume(__constant int* param,        // interp param
       }
 
       double flux[_M];
-      NumFlux(wL, wL, dphi, flux); // TODO: let schnaps gives fluxnum
+      NUMFLUX(wL, wL, dphi, flux); // TODO: let schnaps gives fluxnum
 
       int ipgR = ipg(npg, q, icell);
       for(int iv=0; iv < m; iv++) {
@@ -350,7 +344,7 @@ void DGVolume(__constant int* param,        // interp param
 
 	double wpgs = wglop(deg[dim1], p[dim1]) * wglop(deg[dim2], p[dim2]);
         double flux[_M];
-        NumFlux(wL, wR, vnds, flux); // TODO: let schnaps gives fluxnum
+        NUMFLUX(wL, wR, vnds, flux);
         for(int iv = 0; iv < m; iv++) {
           int ipgL = ipg(npg, p, icell);
           int imemL = varindex(param, ie, ipgL, iv);
@@ -525,7 +519,7 @@ void DGMacroCellInterface(__constant int *param,        // interp param
 
     // int_dL F(wL, wR, grad phi_ib)
     double flux[_M];
-    NumFlux(wL, wR, vnds, flux);
+    NUMFLUX(wL, wR, vnds, flux);
 
     // Add flux to both sides
     for(int iv = 0; iv < _M; iv++) {

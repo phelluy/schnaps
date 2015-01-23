@@ -64,6 +64,7 @@ doxygen doxyschnaps
 #define _WITH_OPENCL
 int nplatform_cl;
 int ndevice_cl;
+char numflux_cl_name[1000];
 
 #define __constant const
 

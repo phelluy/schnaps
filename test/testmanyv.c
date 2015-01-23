@@ -156,7 +156,7 @@ int main(int argc, char* argv[]) {
 
   printf("cfl param: %f\n", f.hmin);
 
-  RK2(&f, tmax);
+  RK2_CL(&f, tmax);
  
   // Save the results and the error
   if(writemsh) {
