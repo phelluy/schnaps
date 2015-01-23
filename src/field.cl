@@ -214,6 +214,12 @@ int ipg(const int npg[], const int p[], const int icell) {
     + p[0] + npg[0] * (p[1] + npg[1] * p[2]);
 }
 
+__kernel
+void set_buffer_to_zero(__global double *w)
+{
+  w[get_global_id(0)] = 0.0;
+}
+
 // Compute the volume and subcell-interface terms on one macrocell
 __kernel
 void DGVolume(__constant int* param,        // interp param

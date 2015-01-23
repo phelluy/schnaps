@@ -310,6 +310,12 @@ void InitField(Field* f) {
 			       &status);
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status == CL_SUCCESS);
+
+  f->zero_buf = clCreateKernel(f->cli.program,
+			       "set_buffer_to_zero",
+			       &status);
+  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status == CL_SUCCESS);
 #endif
   
   printf("Field init done\n");
@@ -1133,7 +1139,6 @@ void *DGMacroCellInterface_CL(void *mf, Field *f) {
     int ieR =    f->macromesh.face2elem[4 * ifa + 2];
     int locfaR = f->macromesh.face2elem[4 * ifa + 3];
 
-    printf("coucou\n");
     update_physnode_cl(f, ieL, f->physnode_cl, f->physnode);
 
     if(ieR >= 0) 
@@ -1675,36 +1680,37 @@ void dtField(Field* f) {
 #endif
 }
 
+void set_buf_to_zero_cl(cl_mem *buf, int size, Field *f)
+{
+  cl_int status;
+
+  cl_kernel kernel = f->zero_buf;
+
+  // associates the param buffer to the 0th kernel argument
+  status = clSetKernelArg(kernel,
+                          0, 
+                          sizeof(cl_mem),
+                          buf);
+  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status == CL_SUCCESS);
+
+  size_t numworkitems = size;
+  status = clEnqueueNDRangeKernel(f->cli.commandqueue,
+				  kernel,
+				  1, NULL,
+				  &numworkitems,
+				  NULL,
+				  0, NULL, NULL);
+  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status == CL_SUCCESS);
+
+  clFinish(f->cli.commandqueue);
+}
+
 // Apply the Discontinuous Galerkin approximation for computing the
 // time derivative of the field. OpenCL version.
-void dtField_CL(Field* f) {
-  // FIXME!!!!  TODO: set to zero in CL
-  {
-    void* chkptr;
-    cl_int status;
-    chkptr = clEnqueueMapBuffer(f->cli.commandqueue,
-				f->dtwn_cl,
-				CL_TRUE, // block until the buffer is available
-				CL_MAP_WRITE,
-				0, // offset
-				sizeof(double) * (f->wsize),
-				0, NULL, NULL, // events management
-				&status);
-    assert(status == CL_SUCCESS);
-    assert(chkptr == f->dtwn);
-
-    for(int i = 0; i < f->wsize; i++)
-      f->dtwn[i] = 0;
-
-    status=clEnqueueUnmapMemObject(f->cli.commandqueue,
-				   f->dtwn_cl,
-				   f->dtwn,
-				   0, NULL, NULL);
-
-    assert(status == CL_SUCCESS);
-    status=clFinish(f->cli.commandqueue);
-    assert(status == CL_SUCCESS);
-  }
+void dtField_CL(Field *f) {
+  set_buf_to_zero_cl(&(f->dtwn_cl), f->wsize, f);
 
   for(int ifa = 0; ifa < f->macromesh.nbfaces; ifa++)
     DGMacroCellInterface_CL((void*) (f->mface + ifa), f);

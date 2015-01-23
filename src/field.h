@@ -89,6 +89,7 @@ typedef struct Field {
   cl_kernel dginterface;
   cl_kernel RK_out_CL;
   cl_kernel RK_in_CL;
+  cl_kernel zero_buf;
 #endif
 
 } Field;
