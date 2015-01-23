@@ -41,7 +41,7 @@ void cemcracs2014_imposed_data(double x[3], double t, double *w)
 void cemracs2014_TransInitData(double x[3], double w[]) 
 {
   double t = 0;
-  vlaTransImposedData2d(x, t, w);
+  cemcracs2014_imposed_data(x, t, w);
 }
 
 void cemracs2014_TransBoundaryFlux(double x[3], double t, 
