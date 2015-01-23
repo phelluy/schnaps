@@ -58,8 +58,8 @@ void VecTransNumFlux2d(double wL[], double wR[], double* vnorm, double* flux) {
   assert(fabs(vnorm[2]) < 1e-8);
 }
 
-void TransBoundaryFlux(double x[3], double t, double wL[], double* vnorm,
-		       double* flux) {
+void TransBoundaryFlux(double x[3], double t, double wL[], double *vnorm,
+		       double *flux) {
   double wR[1];
   TransImposedData(x, t, wR);
   TransNumFlux(wL, wR, vnorm, flux);
@@ -219,7 +219,7 @@ void vlaTransNumFlux2d(double wL[], double wR[], double* vnorm, double* flux)
 }
 
 void vlaTransBoundaryFlux2d(double x[3], double t, 
-			    double wL[], double* vnorm,
+			    double wL[], double *vnorm,
 			    double* flux) 
 {
   double wR[m];
@@ -228,17 +228,17 @@ void vlaTransBoundaryFlux2d(double x[3], double t,
 }
 
 // compact support bump (C-infinity, but not analytic):
-double bump(double r)
+double compact_bump(double r)
 {
   if(fabs(r) >= 0.5)
     return 0;
   return exp(-1.0/(1.0 - 4.0 * r * r));
 }
 
-double gaussian(double r)
+double icgaussian(double r, double sigma)
 {
-  double c = 0.1;
-  return exp(-r * r / (c * c));
+  double PI = 4.0 * atan(1.0);
+  return exp(-r * r / sigma) / (sigma * sqrt(2.0 * PI));
 }
 
 // 6th-degree polynomial with compact support
@@ -251,11 +251,12 @@ double compact_poly6(double r)
   return -35.0 / 16.0 * rrm1 * rrm1 * rrm1 * rrp1 * rrp1 * rrp1;
 }
 
-void vlaTransImposedData2d(double x[3], double t, double* w) 
+void vlaTransImposedData2d(double x[3], double t, double *w) 
 {
   double PI = 4.0 * atan(1.0);
   double s2pi = sqrt(2.0 * PI);
   double xval = 1.0;
+  double sigma = 0.1;
 
   for(int ix = 0; ix < vlasov_mx; ++ix) {
     double vx = vlasov_vel(ix, vlasov_mx, vlasov_vmax);
@@ -267,10 +268,10 @@ void vlaTransImposedData2d(double x[3], double t, double* w)
 
       double r = sqrt(px * px + py * py);
       double pi = 4.0 * atan(1.0);
-      double pr = gaussian(r);
+      double pr = icgaussian(r, sigma);
 
       double vr = sqrt(vx * vx + vy * vy);
-      double pvr = gaussian(vr);
+      double pvr = icgaussian(vr, sigma);
 
       // NB: assumes a certain memory distribution for the velocity
       // components at each point.

@@ -157,4 +157,7 @@ void vlaTransBoundaryFlux2d(double x[3], double t,
 			    double wL[], double* vnorm,
 			    double* flux);
 void vlaTransImposedData2d(double x[3], double t, double* w);
+double compact_bump(double r);
+double icgaussian(double r, double c);
+
 #endif
