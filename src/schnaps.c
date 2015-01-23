@@ -12,7 +12,7 @@ int main(void) {
   f.model.ImposedData = TransImposedData2d;
   f.varindex = GenericVarindex;
 
-  f.interp.interp_param[0] = 1; // _M
+  f.interp.interp_param[0] = f.model.m; // _M
   f.interp.interp_param[1] = 3; // x direction degree
   f.interp.interp_param[2] = 3; // y direction degree
   f.interp.interp_param[3] = 0; // z direction degree

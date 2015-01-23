@@ -63,7 +63,7 @@ int main(int argc, char* argv[]) {
   bool cemracs = false;
   bool writemsh = false;
   for (;;) {
-    int cc = getopt(argc, argv, "c:d:n:t:Cw");
+    int cc = getopt(argc, argv, "c:d:n:t:CwD:P:");
     if (cc == -1) break;
     switch (cc) {
     case 0:
@@ -87,10 +87,16 @@ int main(int argc, char* argv[]) {
     case 'w':
       writemsh = true;
       break;
+    case 'D':
+       ndevice_cl= atoi(optarg);
+      break;
+    case 'P':
+      nplatform_cl = atoi(optarg);
+      break;
     default:
       printf("Error: invalid option.\n");
       printf("Usage:\n");
-      printf("./testmanyv -c <cfl> -d <deg> -n <nraf> -t <tmax> -C\n");
+      printf("./testmanyv -c <cfl> -d <deg> -n <nraf> -t <tmax> -C\n -P <cl platform number> -D <cl device number>");
       exit(1);
     }
   }

@@ -1,23 +1,24 @@
 #include "test.h"
 #include "schnaps.h"
-#include<stdio.h>
+#include <stdio.h>
 #include <assert.h>
 #include <math.h>
 
 int main(void) {
-  // unit tests
-  int resu=TestCLInfo();
-  if (resu) printf("CLInfo test OK !\n");
-  else printf("CLInfo test failed !\n");
+  int resu = TestCLInfo();
+  if (resu) 
+    printf("CLInfo test OK !\n");
+  else 
+    printf("CLInfo test failed !\n");
   return !resu;
 } 
 
-int TestCLInfo(void){
+int TestCLInfo(void) {
   int test = true;
 
   CLInfo cli;
 
-  InitCLInfo(&cli, _CL_PLATFORM, _CL_DEVICE);
+  InitCLInfo(&cli, nplatform_cl, ndevice_cl);
   PrintCLInfo(&cli);
 
   char prog[]="#pragma OPENCL EXTENSION cl_khr_fp64: enable \n"
@@ -27,16 +28,14 @@ int TestCLInfo(void){
     "  a[i] += b[i]; \n"
     "}\n";
 
-  BuildKernels(&cli,prog);
+  BuildKernels(&cli, prog);
 
   GetOpenCLCode();
 
-  char* s;
+  char *s;
   ReadFile("schnaps.cl", &s);
 
-
   BuildKernels(&cli, s);
-
 
   return test;
 }
