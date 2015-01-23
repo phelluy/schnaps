@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <assert.h>
 #include <math.h>
+#include <string.h>
 
 int main(void) {
   int resu = TestCLInfo();
@@ -36,9 +37,14 @@ int TestCLInfo(void) {
   ReadFile("schnaps.cl", &s);
 
 
+
   // Pass the value of m to the OpenCL code via the preprocessor
   char buildoptions[1000];
   sprintf(buildoptions, "-D _M=%d", 1);
+  sprintf(numflux_cl_name, "%s", "NumFlux");
+  strcat(buildoptions," -D NUMFLUX=");
+  strcat(buildoptions, numflux_cl_name);
+  
   BuildKernels(&cli, s, buildoptions);
 
   return test;
