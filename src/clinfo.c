@@ -249,7 +249,8 @@ void PrintCLInfo(CLInfo* cli){
   printf("OpenCL extensions:\n%s\n",cli->clextensions);
 }
 
-void BuildKernels(CLInfo* cli, char* strprog){
+void BuildKernels(CLInfo *cli, char *strprog, char *buildoptions)
+{
   cl_int status;
 
   // kernels creation
@@ -268,7 +269,8 @@ void BuildKernels(CLInfo* cli, char* strprog){
   status = clBuildProgram(cli->program,
 			  0,               // one device
 			  NULL,
-			  NULL, NULL, NULL);
+			  buildoptions,//NULL, 
+			  NULL, NULL);
 
   /* cl_int clBuildProgram(	cl_program program, */
   /* 				cl_uint num_devices, */

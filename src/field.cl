@@ -284,8 +284,6 @@ void DGVolume(__constant int* param,        // interp param
   /* double det=dtau[0][0]*dtau[1][1]*dtau[2][2]-dtau[0][0]*dtau[1][2]*dtau[2][1]-dtau[1][0]*dtau[0][1]*dtau[2][2]+ */
   /*   dtau[1][0]*dtau[0][2]*dtau[2][1]+dtau[2][0]*dtau[0][1]*dtau[1][2]-dtau[2][0]*dtau[0][2]*dtau[1][1]; */
 
-#define _M 1  /// TODO let schnaps specify m !!!!!!!!
-
   double wL[_M];
   for(int iv = 0; iv < m; iv++) {
     // gauss point id in the macrocell

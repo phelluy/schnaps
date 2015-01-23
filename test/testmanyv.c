@@ -111,8 +111,6 @@ int main(int argc, char* argv[]) {
   if(cemracs) {
     f.model.vlasov_mx = 64;
     f.model.vlasov_my = 64;
-  
-    f.model.m = f.model.vlasov_mx * f.model.vlasov_my * f.model.vlasov_mz;
     f.model.vlasov_vmax = 1;
 
     f.model.BoundaryFlux = cemracs2014_TransBoundaryFlux;
@@ -122,14 +120,14 @@ int main(int argc, char* argv[]) {
   } else {
     f.model.vlasov_mx = 5;
     f.model.vlasov_my = 5;
-  
-    f.model.m = f.model.vlasov_mx * f.model.vlasov_my * f.model.vlasov_mz;
     f.model.vlasov_vmax = 0.5;
+
     f.model.BoundaryFlux = vlaTransBoundaryFlux2d;
     f.model.InitData = vlaTransInitData2d;
     f.model.ImposedData = vlaTransImposedData2d;
   }
 
+  f.model.m = f.model.vlasov_mx * f.model.vlasov_my * f.model.vlasov_mz;
   // Set the global parameters for the Vlasov equation
   f.interp.interp_param[0] = f.model.m; // _M
   f.interp.interp_param[1] = deg; // x direction degree

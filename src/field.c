@@ -276,10 +276,15 @@ void InitField(Field* f) {
   assert(status == CL_SUCCESS);
 
   // Program compilation
-  char* s;
+  char *s;
   GetOpenCLCode();
   ReadFile("schnaps.cl", &s);
-  BuildKernels(&(f->cli), s);
+
+  // Pass the value of m to the OpenCL code via the preprocessor
+  char buildoptions[1000];
+  sprintf(buildoptions, "-D _M=%d", f->model.m);
+
+  BuildKernels(&(f->cli), s, buildoptions);
 
   f->dgmass = clCreateKernel(f->cli.program,
 			     "DGMass",

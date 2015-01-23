@@ -28,14 +28,18 @@ int TestCLInfo(void) {
     "  a[i] += b[i]; \n"
     "}\n";
 
-  BuildKernels(&cli, prog);
+  BuildKernels(&cli, prog, NULL);
 
   GetOpenCLCode();
 
   char *s;
   ReadFile("schnaps.cl", &s);
 
-  BuildKernels(&cli, s);
+
+  // Pass the value of m to the OpenCL code via the preprocessor
+  char buildoptions[1000];
+  sprintf(buildoptions, "-D _M=%d", 1);
+  BuildKernels(&cli, s, buildoptions);
 
   return test;
 }
