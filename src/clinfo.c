@@ -211,7 +211,8 @@ void InitCLInfo(CLInfo* cli, int platform_id, int device_id)
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status == CL_SUCCESS);
 
-#ifdef CL_VERSION_2_0
+#if 0
+  //#ifdef CL_VERSION_2_0
   cl_queue_properties queue_properties = CL_QUEUE_PROFILING_ENABLE;
   cli->commandqueue 
     = clCreateCommandQueueWithProperties(cli->context,
