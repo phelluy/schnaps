@@ -12,7 +12,7 @@ INCLUDE_DIRECTORIES(${OPENCL_INCLUDE_DIR})
 set(CMAKE_C_FLAGS "-std=c99 -D_REENTRANT -O3 -g")
 
 if(CMAKE_COMPILER_IS_GNUCC)
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Werror")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Werror -Wno-deprecated-declarations")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror")
 endif()
 
