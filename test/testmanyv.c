@@ -7,52 +7,6 @@
 #include "model.h"
 #include <math.h>
 
-void cemcracs2014_imposed_data(double x[3], double t, double *w)
-{
-  double PI = 4.0 * atan(1.0);
-  double s2pi = sqrt(2.0 * PI);
-  double xval = 1.0;
-
-  double sigma = 1.0;
-
-  for(int ix = 0; ix < vlasov_mx; ++ix) {
-    double vx = vlasov_vel(ix, vlasov_mx, vlasov_vmax);
-    double px = x[0] - vx * t;
-
-
-    for(int iy = 0; iy < vlasov_my; ++iy) {
-      double vy = vlasov_vel(iy, vlasov_my, vlasov_vmax);
-      double py = x[1] - vy * t;
-
-      double r = sqrt(px * px + py * py);
-      double pr = compact_bump(r);
-      
-      double vr = sqrt(vx * vx + vy * vy);
-      double pvr = icgaussian(vr, sigma);
-
-      // NB: assumes a certain memory distribution for the velocity
-      // components at each point.
-      int im = ix * vlasov_my + iy;
-      w[im] = pr * pvr;
-    }
-  }
-}
-
-void cemracs2014_TransInitData(double x[3], double w[]) 
-{
-  double t = 0;
-  cemcracs2014_imposed_data(x, t, w);
-}
-
-void cemracs2014_TransBoundaryFlux(double x[3], double t, 
-			    double wL[], double *vnorm,
-			    double *flux) 
-{
-  double wR[m];
-  for(unsigned int i = 0; i < m; ++i) 
-    wR[i] = 0;
-  vlaTransNumFlux2d(wL, wR, vnorm, flux);
-}
 
 int main(int argc, char* argv[]) {
   // Unit tests
