@@ -232,7 +232,7 @@ double compact_bump(double r)
 {
   if(fabs(r) >= 0.5)
     return 0;
-  return exp(-1.0/(1.0 - 4.0 * r * r));
+  return exp(-1.0 / (1.0 - 4.0 * r * r));
 }
 
 double icgaussian(double r, double sigma)

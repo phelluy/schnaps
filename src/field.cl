@@ -1,5 +1,3 @@
-// -*- mode: c; -*-
-
 #pragma OPENCL EXTENSION cl_khr_fp64: enable
 
 //#define _FPREC
@@ -226,9 +224,19 @@ void vlaTransNumFlux2d(double wL[], double wR[], double *vnorm, double *flux)
 #define _M 1
 #endif
 
+void cemracs2014_TransBoundaryFlux(double x[3], double t, 
+				   double wL[], double *vnorm,
+				   double *flux) 
+{
+  double wR[_M];
+  for(unsigned int i = 0; i < _M; ++i)
+    wR[i] = 0;
+  vlaTransNumFlux2d(wL, wR, vnorm, flux);
+}
 
-void BoundaryFlux(double x[3], double t, double wL[], double* vnorm,
-                  double* flux) {
+
+void BoundaryFlux(double x[3], double t, double wL[], double *vnorm,
+                  double *flux) {
   double wR[_M];
   double s2 = 0.707106781186547524400844362105;
   double vx = s2 * (x[0] + x[1]);
@@ -262,6 +270,10 @@ void set_buffer_to_zero(__global double *w)
 {
   w[get_global_id(0)] = 0.0;
 }
+
+#ifndef BOUNDARYFLUX
+#define BOUNDARYFLUX BoundaryFlux
+#endif
 
 // Compute the volume and subcell-interface terms on one macrocell
 __kernel
@@ -586,7 +598,7 @@ void DGMacroCellInterface(__constant int *param,        // interp param
     }
 
     double flux[_M];
-    BoundaryFlux(xpg, tnow, wL, vnds, flux);
+    BOUNDARYFLUX(xpg, tnow, wL, vnds, flux);
 
     //printf("ipgfL=%d ipgL=%d tnow=%f wL=%f flux=%f\n", ipgfL, ipgL,tnow,wL[0],flux[0]);
 

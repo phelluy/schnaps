@@ -20,8 +20,9 @@ int main(int argc, char* argv[]) {
   double vmax = 1.0;
   int mx = 5;
   int my = 5;
+  bool usegpu = false;
   for (;;) {
-    int cc = getopt(argc, argv, "c:d:n:t:CwD:P:X:Y:V:");
+    int cc = getopt(argc, argv, "c:d:n:t:CwD:P:X:Y:V:g:");
     if (cc == -1) break;
     switch (cc) {
     case 0:
@@ -31,10 +32,12 @@ int main(int argc, char* argv[]) {
       break;
     case 'c':
       cfl = atof(optarg);
-      // set cfl
       break;
     case 'd':
       deg = atoi(optarg);
+      break;
+    case 'g':
+      usegpu = atoi(optarg);
       break;
     case 'n':
       nraf = atoi(optarg);
@@ -63,7 +66,7 @@ int main(int argc, char* argv[]) {
     default:
       printf("Error: invalid option.\n");
       printf("Usage:\n");
-      printf("./testmanyv -c <cfl> -d <deg> -n <nraf> -t <tmax> -C\n -P <cl platform number> -D <cl device number>");
+      printf("./testmanyv -c <cfl> -d <deg> -n <nraf> -t <tmax> -C\n -P <cl platform number> -D <cl device number> FIXME");
       exit(1);
     }
   }
@@ -84,24 +87,28 @@ int main(int argc, char* argv[]) {
   sprintf(buf, "-D _M=%d", f.model.m);
   strcat(cl_buildoptions, buf);
 
+  sprintf(buf," -D NUMFLUX=");
+  sprintf(numflux_cl_name, "%s", "vlaTransNumFlux2d");
+  strcat(buf, numflux_cl_name);
+  strcat(cl_buildoptions, buf);
+
+  sprintf(buf, " -D vlasov_mx=%d", f.model.vlasov_mx);
+  strcat(cl_buildoptions, buf);
+  sprintf(buf, " -D vlasov_my=%d", f.model.vlasov_my);
+  strcat(cl_buildoptions, buf);
+  sprintf(buf, " -D vlasov_vmax=%f", f.model.vlasov_vmax);
+  strcat(cl_buildoptions, buf);
 
   if(cemracs) {
     f.model.BoundaryFlux = cemracs2014_TransBoundaryFlux;
     f.model.InitData = cemracs2014_TransInitData;
     f.model.ImposedData = cemcracs2014_imposed_data;
 
-    sprintf(numflux_cl_name, "%s", "vlaTransNumFlux2d");
-    strcat(buf," -D NUMFLUX=");
-    strcat(buf, numflux_cl_name);
-
-    sprintf(buf, " -D vlasov_mx=%d",  f.model.vlasov_mx);
+    sprintf(buf, " -D BOUNDARYFLUX=%s", "cemracs2014_TransBoundaryFlux");
     strcat(cl_buildoptions, buf);
-    sprintf(buf, " -D vlasov_my=%d",  f.model.vlasov_my);
-    strcat(cl_buildoptions, buf);
-    sprintf(buf, " -D vlasov_vmax=%f",  f.model.vlasov_vmax);
-    strcat(cl_buildoptions, buf);
-    
+  
   } else {
+    // FIXME: set boundary flux.
     f.model.BoundaryFlux = vlaTransBoundaryFlux2d;
     f.model.InitData = vlaTransInitData2d;
     f.model.ImposedData = vlaTransImposedData2d;
@@ -135,8 +142,11 @@ int main(int argc, char* argv[]) {
 
   printf("cfl param: %f\n", f.hmin);
 
-  RK2_CL(&f, tmax);
- 
+  if(usegpu) 
+    RK2_CL(&f, tmax);
+  else 
+    RK2(&f, tmax);
+
   // Save the results and the error
   if(writemsh) {
     for(int ix = 0; ix < f.model.vlasov_mx; ++ix) {
