@@ -142,10 +142,13 @@ int main(int argc, char* argv[]) {
 
   printf("cfl param: %f\n", f.hmin);
 
-  if(usegpu) 
+  if(usegpu) {
+    printf("Using OpenCL:\n");
     RK2_CL(&f, tmax);
-  else 
+  } else { 
+    printf("Using C:\n");
     RK2(&f, tmax);
+  }
 
   // Save the results and the error
   if(writemsh) {
