@@ -14,7 +14,9 @@ real[][] a=fin.dimension(0,0);
 a = transpose(a);
 real[] deg = a[0];
 real[] nraf = a[1];
-real[] error = a[2];
+real[] dof = a[2];
+real[] error = a[3];
+
 
 // Find the dimensions in the file
 real[] dimlist;
@@ -37,10 +39,12 @@ for(int d = 0; d < dimlist.length; ++d) {
   real dim = dimlist[d];
   real[] derror = {};
   real[] dnraf = {};
+  real[] ddof = {};
   for(int i = 0; i < deg.length; ++i) {
     if(deg[i] == dim) {
       derror.push(error[i]);
       dnraf.push(nraf[i]);
+      ddof.push(dof[i]);
     }
   }
   //write(derror);
@@ -48,13 +52,13 @@ for(int d = 0; d < dimlist.length; ++d) {
   int last = derror.length-1;
   if(last >= 1) {
     real order = log(derror[last-1] / derror[last]) / log(2.0);
-    draw(graph(dnraf, derror), Pen(d), 
+    draw(graph(ddof, derror), Pen(d), 
 	 "deg " + string(dim) + " convergence rate: " + string(order, 3),
 	 MarkFill[0]);
   }
 }
 
-xaxis("nraf", BottomTop, LeftTicks);
-yaxis("error", LeftRight, RightTicks);
+xaxis("Degrees of Freedom", BottomTop, LeftTicks);
+yaxis("L2 error", LeftRight, RightTicks);
 
 attach(legend(),point(plain.E),20plain.E);
