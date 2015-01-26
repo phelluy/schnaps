@@ -173,6 +173,10 @@ int main(int argc, char* argv[]) {
 
   printf("tmax: %f, cfl: %f, deg: %d, nraf: %d\n", tmax, cfl, deg, nraf);
   double dd = L2error(&f) / (f.model.vlasov_mx * f.model.vlasov_my);
+
+  printf("DOF:\n");
+  printf("%d\n", f.wsize);
+
   printf("L2 error:\n");
   printf("%e\n", dd);
   
