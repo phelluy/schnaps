@@ -46,7 +46,7 @@ void cemracs2014_TransInitData(double x[3], double w[])
 
 void cemracs2014_TransBoundaryFlux(double x[3], double t, 
 			    double wL[], double *vnorm,
-			    double* flux) 
+			    double *flux) 
 {
   double wR[m];
   for(unsigned int i = 0; i < m; ++i) 
@@ -62,8 +62,11 @@ int main(int argc, char* argv[]) {
   double tmax = 1e-2;
   bool cemracs = false;
   bool writemsh = false;
+  double vmax = 1.0;
+  int mx = 5;
+  int my = 5;
   for (;;) {
-    int cc = getopt(argc, argv, "c:d:n:t:CwD:P:");
+    int cc = getopt(argc, argv, "c:d:n:t:CwD:P:X:Y:V:");
     if (cc == -1) break;
     switch (cc) {
     case 0:
@@ -93,6 +96,15 @@ int main(int argc, char* argv[]) {
     case 'P':
       nplatform_cl = atoi(optarg);
       break;
+    case 'X':
+      mx = atoi(optarg);
+      break;
+    case 'Y':
+      my = atoi(optarg);
+      break;
+    case 'V':
+      vmax = atof(optarg);
+      break;
     default:
       printf("Error: invalid option.\n");
       printf("Usage:\n");
@@ -108,20 +120,14 @@ int main(int argc, char* argv[]) {
   f.model.vlasov_mz = 1;
   f.model.cfl = 0.05;
   f.model.NumFlux = vlaTransNumFlux2d;
+  f.model.vlasov_mx = mx;
+  f.model.vlasov_my = my;
+  f.model.vlasov_vmax = vmax;
   if(cemracs) {
-    f.model.vlasov_mx = 64;
-    f.model.vlasov_my = 64;
-    f.model.vlasov_vmax = 1;
-
     f.model.BoundaryFlux = cemracs2014_TransBoundaryFlux;
     f.model.InitData = cemracs2014_TransInitData;
     f.model.ImposedData = cemcracs2014_imposed_data;
-    
   } else {
-    f.model.vlasov_mx = 5;
-    f.model.vlasov_my = 5;
-    f.model.vlasov_vmax = 0.5;
-
     f.model.BoundaryFlux = vlaTransBoundaryFlux2d;
     f.model.InitData = vlaTransInitData2d;
     f.model.ImposedData = vlaTransImposedData2d;
