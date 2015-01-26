@@ -196,7 +196,7 @@ double vlasov_vel(const int id, const int md, double vlasov_vmax)
   return (id - mid) * dv;
 }
 
-void vlaTransNumFlux2d(double wL[], double wR[], double* vnorm, double* flux) 
+void vlaTransNumFlux2d(double wL[], double wR[], double *vnorm, double *flux) 
 {
   for(int ix = 0; ix < vlasov_mx; ++ix) {
     double vx = vlasov_vel(ix, vlasov_mx, vlasov_vmax);

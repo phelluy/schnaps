@@ -168,7 +168,11 @@ int ref_pg_face(__constant int* param, int ifa, int ipg,
   return ipgv;
 };
 
-void NumFlux(double wL[], double wR[], double* vnorm, double* flux) {
+#ifndef NUMFLUX
+#define NUMFLUX NumFlux
+#endif
+
+void NumFlux(double wL[], double wR[], double *vnorm, double *flux) {
   double s2 = 0.707106781186547524400844362105;
   double vn = s2 * (vnorm[0] + vnorm[1]);
 
@@ -177,6 +181,51 @@ void NumFlux(double wL[], double wR[], double* vnorm, double* flux) {
 
   flux[0] = vnp * wL[0] + vnm * wR[0];
 };
+
+#ifndef vlasov_mx
+#define vlasov_mx 1
+#endif
+
+#ifndef vlasov_my
+#define vlasov_my 1
+#endif
+
+#ifndef vlasov_vmax
+#define vlasov_vmax 0.5
+#endif
+
+// Return the component of the vlasov velocity with index id.
+double vlasov_vel(const int id, const int md)
+{
+  int mid = md / 2;
+  double dv = vlasov_vmax / mid;
+  return (id - mid) * dv;
+}
+
+void vlaTransNumFlux2d(double wL[], double wR[], double *vnorm, double *flux)
+{
+  for(int ix = 0; ix < vlasov_mx; ++ix) {
+    double vx = vlasov_vel(ix, vlasov_mx);
+
+    for(int iy = 0; iy < vlasov_my; ++iy) {
+      double vy = vlasov_vel(iy, vlasov_my);
+      
+      double vn = vx * vnorm[0]	+ vy * vnorm[1];
+      double vnp = vn > 0 ? vn : 0;
+      double vnm = vn - vnp;
+      
+      // NB: assumes a certain memory distribution for the velocity
+      // components at each point.
+      int im = ix * vlasov_my + iy;
+      flux[im] = vnp * wL[im] + vnm * wR[im];
+    }
+  }
+}
+
+#ifndef _M
+#define _M 1
+#endif
+
 
 void BoundaryFlux(double x[3], double t, double wL[], double* vnorm,
                   double* flux) {

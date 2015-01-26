@@ -6,6 +6,7 @@
 #include <stdlib.h>     /* atoi */
 #include "model.h"
 #include <math.h>
+#include <string.h>
 
 
 int main(int argc, char* argv[]) {
@@ -77,17 +78,35 @@ int main(int argc, char* argv[]) {
   f.model.vlasov_mx = mx;
   f.model.vlasov_my = my;
   f.model.vlasov_vmax = vmax;
+  f.model.m = f.model.vlasov_mx * f.model.vlasov_my * f.model.vlasov_mz;
+
+  char buf[1000];
+  sprintf(buf, "-D _M=%d", f.model.m);
+  strcat(cl_buildoptions, buf);
+
+
   if(cemracs) {
     f.model.BoundaryFlux = cemracs2014_TransBoundaryFlux;
     f.model.InitData = cemracs2014_TransInitData;
     f.model.ImposedData = cemcracs2014_imposed_data;
+
+    sprintf(numflux_cl_name, "%s", "vlaTransNumFlux2d");
+    strcat(buf," -D NUMFLUX=");
+    strcat(buf, numflux_cl_name);
+
+    sprintf(buf, " -D vlasov_mx=%d",  f.model.vlasov_mx);
+    strcat(cl_buildoptions, buf);
+    sprintf(buf, " -D vlasov_my=%d",  f.model.vlasov_my);
+    strcat(cl_buildoptions, buf);
+    sprintf(buf, " -D vlasov_vmax=%f",  f.model.vlasov_vmax);
+    strcat(cl_buildoptions, buf);
+    
   } else {
     f.model.BoundaryFlux = vlaTransBoundaryFlux2d;
     f.model.InitData = vlaTransInitData2d;
     f.model.ImposedData = vlaTransImposedData2d;
   }
 
-  f.model.m = f.model.vlasov_mx * f.model.vlasov_my * f.model.vlasov_mz;
   // Set the global parameters for the Vlasov equation
   f.interp.interp_param[0] = f.model.m; // _M
   f.interp.interp_param[1] = deg; // x direction degree
@@ -116,7 +135,7 @@ int main(int argc, char* argv[]) {
 
   printf("cfl param: %f\n", f.hmin);
 
-  RK2(&f, tmax);
+  RK2_CL(&f, tmax);
  
   // Save the results and the error
   if(writemsh) {

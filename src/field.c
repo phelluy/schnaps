@@ -105,12 +105,7 @@ void update_physnode_cl(Field *f, int ie, cl_mem physnode_cl, double *physnode)
 void InitField(Field* f) {
   //int param[8]={f->model.m,_DEGX,_DEGY,_DEGZ,_RAFX,_RAFY,_RAFZ,0};
   f->is2d = false;
-#ifdef _WITH_OPENCL
-  // Initialize the names for functions in field.cl
-  sprintf(numflux_cl_name, "%s", "NumFlux");
-#endif
   
-
   // a copy for avoiding too much "->"
   for(int ip = 0; ip < 8; ip++)
     f->interp_param[ip] = f->interp.interp_param[ip];
@@ -286,19 +281,12 @@ void InitField(Field* f) {
   GetOpenCLCode();
   ReadFile("schnaps.cl", &s);
 
-  char buildoptions[1000];
-  // Pass the value of m to the OpenCL code via the preprocessor
-  sprintf(buildoptions, "-D _M=%d", f->model.m);
-  // Specify which flux is to be used in OpenCL
-  strcat(buildoptions," -D NUMFLUX=");
-  strcat(buildoptions, numflux_cl_name);
-  
   printf("\t%s\n", numflux_cl_name);
 
   printf("OpenCL preprocessor options:\n");
-  printf("\t%s\n", buildoptions);
+  printf("\t%s\n", cl_buildoptions);
   
-  BuildKernels(&(f->cli), s, buildoptions);
+  BuildKernels(&(f->cli), s, cl_buildoptions);
 
   f->dgmass = clCreateKernel(f->cli.program,
 			     "DGMass",
