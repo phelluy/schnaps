@@ -66,7 +66,10 @@ int TestmEq2(void) {
   // apply the DG scheme
   // time integration by RK2 scheme 
   // up to final time = 0.1
-  RK2(&f, 0.1);
+
+  double tmax = 0.1;
+  double dt = 0.0;
+  RK2(&f, tmax, dt);
  
   // Save the results and the error
   PlotField(0, false, &f, NULL, "dgvisu.msh");

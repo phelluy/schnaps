@@ -5,10 +5,11 @@
 #include <math.h>
 
 int main(void) {
-  // Unit tests
-  int resu=TestFieldRK2();
-  if (resu) printf("Field RK2 test OK !\n");
-  else printf("Field RK2 test failed !\n");
+  int resu = TestFieldRK2();
+  if(resu) 
+    printf("Field RK2 test OK !\n");
+  else 
+    printf("Field RK2 test failed !\n");
   return !resu;
 } 
 
@@ -98,7 +99,8 @@ int TestFieldRK2(void){
   CheckMacroMesh(&(f.macromesh), f.interp.interp_param + 1);
  
   double tmax = 0.1;
-  RK2(&f, tmax);
+  double dt = 0.0;
+  RK2(&f, tmax, dt);
  
   PlotField(0, false, &f, NULL, "dgvisu.msh");
   PlotField(0, true , &f, "error", "dgerror.msh");

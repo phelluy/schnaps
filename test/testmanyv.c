@@ -21,8 +21,9 @@ int main(int argc, char* argv[]) {
   int mx = 5;
   int my = 5;
   bool usegpu = false;
+  double dt = 0.0;
   for (;;) {
-    int cc = getopt(argc, argv, "c:d:n:t:CwD:P:X:Y:V:g:");
+    int cc = getopt(argc, argv, "c:d:n:t:CwD:P:X:Y:V:g:s:");
     if (cc == -1) break;
     switch (cc) {
     case 0:
@@ -62,6 +63,9 @@ int main(int argc, char* argv[]) {
       break;
     case 'V':
       vmax = atof(optarg);
+      break;
+    case 's':
+      dt = atof(optarg);
       break;
     default:
       printf("Error: invalid option.\n");
@@ -144,10 +148,10 @@ int main(int argc, char* argv[]) {
 
   if(usegpu) {
     printf("Using OpenCL:\n");
-    RK2_CL(&f, tmax);
+    RK2_CL(&f, tmax, dt);
   } else { 
     printf("Using C:\n");
-    RK2(&f, tmax);
+    RK2(&f, tmax, dt);
   }
 
   // Save the results and the error

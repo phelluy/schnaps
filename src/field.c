@@ -1956,10 +1956,11 @@ void RK_in(double *fwnp1, double *fdtwn, const double dt, const int sizew)
 }
 
 // Time integration by a second order Runge-Kutta algorithm
-void RK2(Field* f, double tmax) {
+void RK2(Field* f, double tmax, double dt) {
   double vmax = 1; // FIXME: to be changed for another model.
-
-  double dt = f->model.cfl * f->hmin / vmax;
+  
+  if(dt == 0.0)
+    dt = f->model.cfl * f->hmin / vmax;
   int itermax = tmax / dt;
   int freq = (1 >= itermax / 10)? 1 : itermax / 10;
   //int param[8] = {f->model.m, _DEGX, _DEGY, _DEGZ, _RAFX, _RAFY, _RAFZ, 0};
@@ -2097,10 +2098,11 @@ void RK2_CL_stage2(Field *f, size_t numworkitems)
 
 // Time integration by a second order Runge-Kutta algorithm, OpenCL
 // version.
-void RK2_CL(Field* f, double tmax) {
+void RK2_CL(Field* f, double tmax, double dt) {
   double vmax = 1; // FIXME: to be changed for another model.
 
-  double dt = f->model.cfl * f->hmin / vmax;
+  if(dt == 0.0)
+    dt = f->model.cfl * f->hmin / vmax;
 
   int itermax = tmax / dt;
   int freq = (1 >= itermax / 10)? 1 : itermax / 10;

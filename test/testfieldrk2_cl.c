@@ -94,8 +94,9 @@ int TestFieldRK2_CL(void){
   CheckMacroMesh(&(f.macromesh), f.interp.interp_param + 1);
  
   double tmax = 0.1;
+  double dt = 0.0;
 
-  RK2_CL(&f, tmax);
+  RK2_CL(&f, tmax, dt);
  
   PlotField(0, false, &f, NULL, "dgvisu.msh");
   PlotField(0, true , &f, "error", "dgerror.msh");

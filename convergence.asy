@@ -16,7 +16,7 @@ real[] deg = a[0];
 real[] nraf = a[1];
 real[] dof = a[2];
 real[] error = a[3];
-
+string xvals =  getstring("DOF or nraf");
 
 // Find the dimensions in the file
 real[] dimlist;
@@ -48,17 +48,22 @@ for(int d = 0; d < dimlist.length; ++d) {
     }
   }
   //write(derror);
+
+  real[] x = xvals == "DOF" ? ddof : dnraf;
   
   int last = derror.length-1;
   if(last >= 1) {
     real order = log(derror[last-1] / derror[last]) / log(2.0);
-    draw(graph(ddof, derror), Pen(d), 
+    draw(graph(x, derror), Pen(d), 
 	 "deg " + string(dim) + " convergence rate: " + string(order, 3),
 	 MarkFill[0]);
   }
 }
 
-xaxis("Degrees of Freedom", BottomTop, LeftTicks);
+if(xvals == "DOF")
+  xaxis("Degrees of Freedom", BottomTop, LeftTicks);
+else
+    xaxis("nraf", BottomTop, LeftTicks);
 yaxis("L2 error", LeftRight, RightTicks);
 
 attach(legend(),point(plain.E),20plain.E);

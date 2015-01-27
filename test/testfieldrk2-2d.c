@@ -46,7 +46,9 @@ int TestFieldRK2_2D(void) {
 
   printf("cfl param =%f\n",f.hmin);
 
-  RK2(&f, 0.2);
+  double tmax = 0.2;
+  double dt = 0.0;
+  RK2(&f, tmax, dt);
  
   PlotField(0, false, &f, NULL, "dgvisu.msh");
   PlotField(0, true, &f, "error", "dgerror.msh");
