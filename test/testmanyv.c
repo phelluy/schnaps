@@ -145,8 +145,6 @@ int main(int argc, char *argv[]) {
   // Prudence...
   CheckMacroMesh(&(f.macromesh), f.interp.interp_param + 1);
 
-  printf("cfl param: %f\n", f.hmin);
-
   if(usegpu) {
     printf("Using OpenCL:\n");
     RK2_CL(&f, tmax);
