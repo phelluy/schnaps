@@ -162,7 +162,9 @@ int main(int argc, char *argv[]) {
     executiontime = seconds() - executiontime;
   } else { 
     printf("Using C:\n");
+    executiontime = seconds();
     RK2(&f, tmax);
+    executiontime = seconds() - executiontime;
   }
 
   // Save the results and the error
