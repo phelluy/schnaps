@@ -44,8 +44,7 @@ int main(void) {
   // Apply the DG scheme time integration by RK2 scheme up to final
   // time tmax.
   double tmax = 1.0;
-  double dt = 0.0;
-  RK2(&f, tmax, dt);
+  RK2(&f, tmax);
 
   // Save the results and the error
   PlotField(0, false, &f, NULL, "dgvisu.msh");

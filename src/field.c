@@ -160,6 +160,7 @@ void InitField(Field* f) {
   // Compute cfl parameter min_i vol_i/surf_i
   f->hmin = FLT_MAX;
 
+
   for (int ie = 0; ie < f->macromesh.nbelems; ie++) {
     double vol = 0, surf = 0;
     // Get the physical nodes of element ie
@@ -207,6 +208,9 @@ void InitField(Field* f) {
 
   }
 
+  double vmax = 1.0; // FIXME: this needs to be made variable
+  f->dt = f->model.cfl * f->hmin / vmax;
+ 
   // Now take into account the polynomial degree and the refinement
   int maxd = f->interp_param[1];
   maxd = maxd > f->interp_param[2] ? maxd : f->interp_param[2];
@@ -1956,12 +1960,10 @@ void RK_in(double *fwnp1, double *fdtwn, const double dt, const int sizew)
 }
 
 // Time integration by a second order Runge-Kutta algorithm
-void RK2(Field* f, double tmax, double dt) {
+void RK2(Field* f, double tmax) {
   double vmax = 1; // FIXME: to be changed for another model.
   
-  if(dt == 0.0)
-    dt = f->model.cfl * f->hmin / vmax;
-  int itermax = tmax / dt;
+  int itermax = tmax / f->dt;
   int freq = (1 >= itermax / 10)? 1 : itermax / 10;
   //int param[8] = {f->model.m, _DEGX, _DEGY, _DEGZ, _RAFX, _RAFY, _RAFZ, 0};
   int sizew = f->macromesh.nbelems * f->model.m * NPG(f->interp_param + 1);
@@ -1969,21 +1971,21 @@ void RK2(Field* f, double tmax, double dt) {
 
   while(f->tnow < tmax) {
     if (iter % freq == 0)
-      printf("t=%f iter=%d/%d dt=%f\n", f->tnow, iter, itermax, dt);
+      printf("t=%f iter=%d/%d dt=%f\n", f->tnow, iter, itermax, f->dt);
 
     dtField(f);
-    RK_out(f->wnp1, f->wn, f->dtwn, 0.5 * dt, sizew);
+    RK_out(f->wnp1, f->wn, f->dtwn, 0.5 * f->dt, sizew);
     swap_pdoubles(&f->wnp1, &f->wn);
 
-    f->tnow += 0.5 * dt;
+    f->tnow += 0.5 * f->dt;
     dtField(f);
-    RK_in(f->wnp1, f->dtwn, dt, sizew);
+    RK_in(f->wnp1, f->dtwn, f->dt, sizew);
     swap_pdoubles(&f->wnp1, &f->wn);
 
-    f->tnow += 0.5 * dt;
+    f->tnow += 0.5 * f->dt;
     iter++;
   }
-  printf("t=%f iter=%d/%d dt=%f\n", f->tnow, iter, itermax, dt);
+  printf("t=%f iter=%d/%d dt=%f\n", f->tnow, iter, itermax, f->dt);
 }
 
 // Set kernel arguments for first stage of RK2
@@ -2098,24 +2100,20 @@ void RK2_CL_stage2(Field *f, size_t numworkitems)
 
 // Time integration by a second order Runge-Kutta algorithm, OpenCL
 // version.
-void RK2_CL(Field* f, double tmax, double dt) {
-  double vmax = 1; // FIXME: to be changed for another model.
+void RK2_CL(Field *f, double tmax) {
 
-  if(dt == 0.0)
-    dt = f->model.cfl * f->hmin / vmax;
-
-  int itermax = tmax / dt;
+  int itermax = tmax / f->dt;
   int freq = (1 >= itermax / 10)? 1 : itermax / 10;
   int sizew = f->macromesh.nbelems * f->model.m * NPG(f->interp_param + 1);
   int iter = 0;
 
   // Set up kernels
-  init_RK2_CL_stage1(f, dt);
-  init_RK2_CL_stage2(f, dt);
+  init_RK2_CL_stage1(f, f->dt);
+  init_RK2_CL_stage2(f, f->dt);
 
   while(f->tnow < tmax) {
     if (iter % freq == 0)
-      printf("t=%f iter=%d/%d dt=%f\n", f->tnow, iter, itermax, dt);
+      printf("t=%f iter=%d/%d dt=%f\n", f->tnow, iter, itermax, f->dt);
 
 #if 1
     // OpenCL version
@@ -2124,7 +2122,7 @@ void RK2_CL(Field* f, double tmax, double dt) {
     swap_clmem(&(f->wnp1_cl), &(f->wn_cl));
     //swap_pdoubles(&f->wnp1, &f->wn);
 
-    f->tnow += 0.5 * dt;
+    f->tnow += 0.5 * f->dt;
     dtField_CL(f);
     RK2_CL_stage2(f, sizew);
     swap_clmem(&(f->wnp1_cl), &(f->wn_cl));
@@ -2132,27 +2130,24 @@ void RK2_CL(Field* f, double tmax, double dt) {
 #else
     // Temporary non-OpenCL version
     dtField_CL(f);
-    RK_out(f->wnp1, f->wn, f->dtwn, 0.5 * dt, sizew);
+    RK_out(f->wnp1, f->wn, f->dtwn, 0.5 * f->dt, sizew);
     swap_pdoubles(&f->wnp1, &f->wn);
 
-    f->tnow += 0.5 * dt;
+    f->tnow += 0.5 * f->dt;
     dtField_CL(f);
-    RK_in(f->wnp1, f->dtwn, dt, sizew);
+    RK_in(f->wnp1, f->dtwn, f->dt, sizew);
     swap_pdoubles(&f->wnp1, &f->wn);
 #endif
 
-    f->tnow += 0.5 * dt;
+    f->tnow += 0.5 * f->dt;
     iter++;
   }
-  printf("t=%f iter=%d/%d dt=%f\n", f->tnow, iter, itermax, dt);
+  printf("t=%f iter=%d/%d dt=%f\n", f->tnow, iter, itermax, f->dt);
 }
 
 // Time integration by a second order Runge-Kutta algorithm with
 // memory copy instead of pointers exchange
 void RK2Copy(Field* f, double tmax) {
-  double vmax = 1; // FIXME: to be changed for another model.
-
-  double dt = f->model.cfl * f->hmin / vmax;
 
   //int param[8] = {f->model.m, _DEGX, _DEGY, _DEGZ, _RAFX, _RAFY, _RAFZ, 0};
   int sizew = f->macromesh.nbelems * f->model.m * NPG(f->interp_param + 1);
@@ -2160,11 +2155,11 @@ void RK2Copy(Field* f, double tmax) {
   int iter = 0;
 
   while(f->tnow < tmax) {
-    printf("t=%f iter=%d dt=%f\n", f->tnow, iter, dt);
+    printf("t=%f iter=%d dt=%f\n", f->tnow, iter, f->dt);
     // predictor
     dtField(f);
     for(int iw = 0; iw < sizew; iw++) {
-      f->wnp1[iw] = f->wn[iw]+ dt/2 * f->dtwn[iw];
+      f->wnp1[iw] = f->wn[iw]+ 0.5 * f->dt * f->dtwn[iw];
     }
     //exchange the field pointers
     for(int iw = 0; iw < sizew; iw++) {
@@ -2173,12 +2168,12 @@ void RK2Copy(Field* f, double tmax) {
       f->wnp1[iw] = temp;
     }
     // corrector
-    f->tnow+=dt/2;
+    f->tnow += 0.5 * f->dt;
     dtField(f);
     for(int iw = 0; iw < sizew; iw++) {
-      f->wnp1[iw] += dt * f->dtwn[iw];
+      f->wnp1[iw] += f->dt * f->dtwn[iw];
     }
-    f->tnow+=dt/2;
+    f->tnow += 05 * f->dt;
     iter++;
     //exchange the field pointers
     for(int iw = 0; iw < sizew; iw++) {

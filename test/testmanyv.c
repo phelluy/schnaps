@@ -9,7 +9,7 @@
 #include <string.h>
 
 
-int main(int argc, char* argv[]) {
+int main(int argc, char *argv[]) {
   // Unit tests
   double cfl = 0.05;
   int deg = 3;
@@ -91,8 +91,8 @@ int main(int argc, char* argv[]) {
   sprintf(buf, "-D _M=%d", f.model.m);
   strcat(cl_buildoptions, buf);
 
-  sprintf(buf," -D NUMFLUX=");
   sprintf(numflux_cl_name, "%s", "vlaTransNumFlux2d");
+  sprintf(buf," -D NUMFLUX=");
   strcat(buf, numflux_cl_name);
   strcat(cl_buildoptions, buf);
 
@@ -110,7 +110,6 @@ int main(int argc, char* argv[]) {
 
     sprintf(buf, " -D BOUNDARYFLUX=%s", "cemracs2014_TransBoundaryFlux");
     strcat(cl_buildoptions, buf);
-  
   } else {
     // FIXME: set boundary flux.
     f.model.BoundaryFlux = vlaTransBoundaryFlux2d;
@@ -140,6 +139,8 @@ int main(int argc, char* argv[]) {
  
   // Prepare the initial fields
   InitField(&f);
+  if(dt != 0.0)
+    f.dt = dt;
 
   // Prudence...
   CheckMacroMesh(&(f.macromesh), f.interp.interp_param + 1);
@@ -148,10 +149,10 @@ int main(int argc, char* argv[]) {
 
   if(usegpu) {
     printf("Using OpenCL:\n");
-    RK2_CL(&f, tmax, dt);
+    RK2_CL(&f, tmax);
   } else { 
     printf("Using C:\n");
-    RK2(&f, tmax, dt);
+    RK2(&f, tmax);
   }
 
   // Save the results and the error
@@ -178,13 +179,17 @@ int main(int argc, char* argv[]) {
   printf("tmax: %f, cfl: %f, deg: %d, nraf: %d\n", tmax, cfl, deg, nraf);
   double dd = L2error(&f) / (f.model.vlasov_mx * f.model.vlasov_my);
 
+  printf("deltax:\n");
+  printf("%f\n", f.hmin);
+
   printf("DOF:\n");
   printf("%d\n", f.wsize);
 
   printf("L2 error:\n");
   printf("%e\n", dd);
-  
-  test = test && (dd < 1e-2);
+
+  double tolerance = 1e-2;
+  test = test && (dd < tolerance);
 
   if(test) 
     printf("multiple velocity transport test OK !\n");

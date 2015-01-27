@@ -53,7 +53,8 @@ int TestmEq2(void) {
   // Prepare the initial fields
   InitField(&f);
   f.is2d = true;
-
+  //f.dt = 1e-3;
+  
   // Prudence...
   CheckMacroMesh(&(f.macromesh), f.interp.interp_param + 1);
 
@@ -62,22 +63,18 @@ int TestmEq2(void) {
   // time derivative
   //dtField(&f);
   //DisplayField(&f);
-  //assert(1==2);
-  // apply the DG scheme
-  // time integration by RK2 scheme 
-  // up to final time = 0.1
-
+ 
   double tmax = 0.1;
-  double dt = 0.0;
-  RK2(&f, tmax, dt);
+  RK2(&f, tmax);
  
   // Save the results and the error
   PlotField(0, false, &f, NULL, "dgvisu.msh");
   PlotField(0, true, &f, "error", "dgerror.msh");
 
   double dd = L2error(&f);
+  double tolerance = 1e-4;
+  test = test && (dd < tolerance);
+  printf("L2 error: %f\n", dd);
 
-  printf("erreur L2=%f\n", dd);
-  test = test && (dd < 1e-7);
   return test;
 };
