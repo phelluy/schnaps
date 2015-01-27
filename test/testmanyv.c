@@ -206,6 +206,9 @@ int main(int argc, char *argv[]) {
   printf("executiontime (s):\n");
   printf("%f\n", executiontime);
 
+  printf("time per RK2 (s):\n");
+  printf("%f\n", executiontime / (double)f.itermax);
+
   double tolerance = 1e-2;
   test = test && (dd < tolerance);
 

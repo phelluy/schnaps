@@ -1962,15 +1962,15 @@ void RK_in(double *fwnp1, double *fdtwn, const double dt, const int sizew)
 void RK2(Field* f, double tmax) {
   double vmax = 1; // FIXME: to be changed for another model.
   
-  int itermax = tmax / f->dt;
-  int freq = (1 >= itermax / 10)? 1 : itermax / 10;
+  f->itermax = tmax / f->dt;
+  int freq = (1 >= f->itermax / 10)? 1 : f->itermax / 10;
   //int param[8] = {f->model.m, _DEGX, _DEGY, _DEGZ, _RAFX, _RAFY, _RAFZ, 0};
   int sizew = f->macromesh.nbelems * f->model.m * NPG(f->interp_param + 1);
   int iter = 0;
 
   while(f->tnow < tmax) {
     if (iter % freq == 0)
-      printf("t=%f iter=%d/%d dt=%f\n", f->tnow, iter, itermax, f->dt);
+      printf("t=%f iter=%d/%d dt=%f\n", f->tnow, iter, f->itermax, f->dt);
 
     dtField(f);
     RK_out(f->wnp1, f->wn, f->dtwn, 0.5 * f->dt, sizew);
@@ -1984,7 +1984,7 @@ void RK2(Field* f, double tmax) {
     f->tnow += 0.5 * f->dt;
     iter++;
   }
-  printf("t=%f iter=%d/%d dt=%f\n", f->tnow, iter, itermax, f->dt);
+  printf("t=%f iter=%d/%d dt=%f\n", f->tnow, iter, f->itermax, f->dt);
 }
 
 // Set kernel arguments for first stage of RK2
@@ -2101,8 +2101,8 @@ void RK2_CL_stage2(Field *f, size_t numworkitems)
 // version.
 void RK2_CL(Field *f, double tmax) {
 
-  int itermax = tmax / f->dt;
-  int freq = (1 >= itermax / 10)? 1 : itermax / 10;
+  f->itermax = tmax / f->dt;
+  int freq = (1 >= f->itermax / 10)? 1 : f->itermax / 10;
   int sizew = f->macromesh.nbelems * f->model.m * NPG(f->interp_param + 1);
   int iter = 0;
 
@@ -2112,7 +2112,7 @@ void RK2_CL(Field *f, double tmax) {
 
   while(f->tnow < tmax) {
     if (iter % freq == 0)
-      printf("t=%f iter=%d/%d dt=%f\n", f->tnow, iter, itermax, f->dt);
+      printf("t=%f iter=%d/%d dt=%f\n", f->tnow, iter, f->itermax, f->dt);
 
 #if 1
     // OpenCL version
@@ -2141,7 +2141,7 @@ void RK2_CL(Field *f, double tmax) {
     f->tnow += 0.5 * f->dt;
     iter++;
   }
-  printf("t=%f iter=%d/%d dt=%f\n", f->tnow, iter, itermax, f->dt);
+  printf("t=%f iter=%d/%d dt=%f\n", f->tnow, iter, f->itermax, f->dt);
 }
 
 // Time integration by a second order Runge-Kutta algorithm with

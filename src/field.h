@@ -45,6 +45,8 @@ typedef struct Field {
   //! Time step
   //! dt has to be smaller than hmin / vmax
   double dt;
+  
+  int itermax;
 
   //! Activate or not 2D computations
   bool is2d;
