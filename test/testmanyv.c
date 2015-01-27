@@ -7,7 +7,16 @@
 #include "model.h"
 #include <math.h>
 #include <string.h>
+#include <unistd.h>
+#include <time.h>
+#define _XOPEN_SOURCE 700
 
+double seconds()
+{
+  struct timespec ts;
+  clock_gettime(CLOCK_MONOTONIC, &ts);
+  return (double)ts.tv_sec + 1e-9 * (double)ts.tv_nsec;
+}
 
 int main(int argc, char *argv[]) {
   // Unit tests
@@ -145,9 +154,12 @@ int main(int argc, char *argv[]) {
   // Prudence...
   CheckMacroMesh(&(f.macromesh), f.interp.interp_param + 1);
 
+  double executiontime;
   if(usegpu) {
     printf("Using OpenCL:\n");
+    executiontime = seconds();
     RK2_CL(&f, tmax);
+    executiontime = seconds() - executiontime;
   } else { 
     printf("Using C:\n");
     RK2(&f, tmax);
@@ -188,6 +200,9 @@ int main(int argc, char *argv[]) {
 
   printf("L2 error:\n");
   printf("%e\n", dd);
+
+  printf("executiontime (s):\n");
+  printf("%f\n", executiontime);
 
   double tolerance = 1e-2;
   test = test && (dd < tolerance);

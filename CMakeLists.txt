@@ -8,8 +8,8 @@ project(schnaps)
 SET(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 FIND_PACKAGE(OpenCL REQUIRED)
 INCLUDE_DIRECTORIES(${OPENCL_INCLUDE_DIR})
-
-set(CMAKE_C_FLAGS "-std=c99 -D_REENTRANT -O3 -g")
+set(CMAKE_C_FLAGS "-std=c99 -D_REENTRANT -O3 -g -D_POSIX_C_SOURCE=200112L")
+#set(CMAKE_C_FLAGS "-std=c99 -D_REENTRANT -O3 -g")
 
 if(CMAKE_COMPILER_IS_GNUCC)
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Werror -Wno-deprecated-declarations")
@@ -21,7 +21,6 @@ if(OPENMP_FOUND)
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
 endif()
-
 
 include_directories(src)
 
@@ -50,13 +49,15 @@ src/clutils.h
 
 #schnaps library
 add_library (_schnaps ${source_files})
+set(LIBS "")
+list(APPEND LIBS _schnaps pthread ${OPENCL_LIBRARY} rt m)
 
 # main program schnaps
 add_executable(
   schnaps
   src/schnaps.c
 )
-target_link_libraries(schnaps _schnaps m pthread ${OPENCL_LIBRARY})
+target_link_libraries(schnaps ${LIBS})
 
 # list of tests
 add_executable(
@@ -64,7 +65,7 @@ add_executable(
   test/test.h
   test/testmacromesh.c
 )
-target_link_libraries(testmacromesh _schnaps m pthread ${OPENCL_LIBRARY})
+target_link_libraries(testmacromesh ${LIBS})
 add_test(testmacromesh testmacromesh)
 
 add_executable(
@@ -72,7 +73,7 @@ add_executable(
   test/test.h
   test/testgeometry.c
 )
-target_link_libraries(testgeometry _schnaps m pthread ${OPENCL_LIBRARY})
+target_link_libraries(testgeometry ${LIBS})
 add_test(testgeometry testgeometry)
 
 add_executable(
@@ -80,7 +81,7 @@ add_executable(
   test/test.h
   test/testinterpolation.c
 )
-target_link_libraries(testinterpolation _schnaps m pthread ${OPENCL_LIBRARY})
+target_link_libraries(testinterpolation ${LIBS})
 add_test(testinterpolation testinterpolation)
 
 add_executable(
@@ -88,7 +89,7 @@ add_executable(
   test/test.h
   test/testmodel.c
 )
-target_link_libraries(testmodel _schnaps m pthread ${OPENCL_LIBRARY})
+target_link_libraries(testmodel ${LIBS})
 
 add_test(testfield testfield)
 add_executable(
@@ -96,7 +97,7 @@ add_executable(
   test/test.h
   test/testfield.c
 )
-target_link_libraries(testfield _schnaps m pthread ${OPENCL_LIBRARY})
+target_link_libraries(testfield ${LIBS})
 add_test(testfield testfield)
 
 add_test(testfielddg testfielddg)
@@ -105,7 +106,7 @@ add_executable(
   test/test.h
   test/testfielddg.c
 )
-target_link_libraries(testfielddg _schnaps m pthread ${OPENCL_LIBRARY})
+target_link_libraries(testfielddg ${LIBS})
 add_test(testfielddg testfielddg)
 
 add_test(testfieldrk2 testfieldrk2)
@@ -114,7 +115,7 @@ add_executable(
   test/test.h
   test/testfieldrk2.c
 )
-target_link_libraries(testfieldrk2 _schnaps m pthread ${OPENCL_LIBRARY})
+target_link_libraries(testfieldrk2 ${LIBS})
 add_test(testfieldrk2 testfieldrk2)
 
 add_test(test2dmeshdetection test2dmeshdetection)
@@ -123,7 +124,7 @@ add_executable(
   test/test.h
   test/test2dmeshdetection.c
 )
-target_link_libraries(test2dmeshdetection _schnaps m pthread ${OPENCL_LIBRARY})
+target_link_libraries(test2dmeshdetection ${LIBS})
 add_test(test2dmeshdetection test2dmeshdetection)
 
 add_test(testfieldrk2-2d testfieldrk2-2d)
@@ -132,7 +133,7 @@ add_executable(
   test/test.h
   test/testfieldrk2-2d.c
 )
-target_link_libraries(testfieldrk2-2d _schnaps m pthread ${OPENCL_LIBRARY})
+target_link_libraries(testfieldrk2-2d ${LIBS})
 add_test(testfieldrk2-2d testfieldrk2-2d)
 
 
@@ -142,7 +143,7 @@ add_executable(
   test/test.h
   test/testsubcelldgvol.c
 )
-target_link_libraries(testsubcelldgvol _schnaps m pthread ${OPENCL_LIBRARY})
+target_link_libraries(testsubcelldgvol ${LIBS})
 add_test(testsubcelldgvol testsubcelldgvol)
 
 add_test(testfieldrk2-2d-subcell testfieldrk2-2d-subcell)
@@ -152,7 +153,7 @@ add_executable(
   test/test.h
   test/testfieldrk2-2d-subcell.c
 )
-target_link_libraries(testfieldrk2-2d-subcell _schnaps m pthread ${OPENCL_LIBRARY})
+target_link_libraries(testfieldrk2-2d-subcell ${LIBS})
 add_test(testfieldrk2-2d-subcell testfieldrk2-2d-subcell)
 
 add_test(testmeq2 testmeq2)
@@ -161,7 +162,7 @@ add_executable(
   test/test.h
   test/testmeq2.c
 )
-target_link_libraries(testmeq2 _schnaps m pthread ${OPENCL_LIBRARY})
+target_link_libraries(testmeq2 ${LIBS})
 add_test(testmeq2 testmeq2)
 
 add_test(testmanyv testmanyv)
@@ -170,7 +171,7 @@ add_executable(
   test/test.h
   test/testmanyv.c
 )
-target_link_libraries(testmanyv _schnaps m pthread ${OPENCL_LIBRARY})
+target_link_libraries(testmanyv ${LIBS})
 add_test(testmanyv testmanyv)
 
 add_test(testclinfo testclinfo)
@@ -179,8 +180,7 @@ add_executable(
   test/test.h
   test/testclinfo.c
 )
-target_link_libraries(testclinfo _schnaps m pthread ${OPENCL_LIBRARY})
-
+target_link_libraries(testclinfo ${LIBS})
 
 add_test(testkernel testkernel)
 add_executable(
@@ -188,7 +188,7 @@ add_executable(
   test/test.h
   test/testkernel.c
 )
-target_link_libraries(testkernel _schnaps m pthread ${OPENCL_LIBRARY})
+target_link_libraries(testkernel ${LIBS})
 
 add_test(testkernelvolume testkernelvolume)
 add_executable(
@@ -196,7 +196,7 @@ add_executable(
   test/test.h
   test/testkernelvolume.c
 )
-target_link_libraries(testkernelvolume _schnaps m pthread ${OPENCL_LIBRARY})
+target_link_libraries(testkernelvolume ${LIBS})
 
 
 add_test(testkernelinterface testkernelinterface)
@@ -205,8 +205,7 @@ add_executable(
   test/test.h
   test/testkernelinterface.c
 )
-target_link_libraries(testkernelinterface _schnaps m pthread ${OPENCL_LIBRARY})
-
+target_link_libraries(testkernelinterface ${LIBS})
 
 add_test(testfieldrk2_cl testfieldrk2_cl)
 add_executable(
@@ -214,7 +213,7 @@ add_executable(
   test/test.h
   test/testfieldrk2_cl.c
 )
-target_link_libraries(testfieldrk2_cl _schnaps m pthread ${OPENCL_LIBRARY})
+target_link_libraries(testfieldrk2_cl ${LIBS})
 
 add_test(testdtfield_cl testdtfield_cl)
 add_executable(
@@ -222,7 +221,7 @@ add_executable(
   test/test.h
   test/testdtfield_cl.c
 )
-target_link_libraries(testdtfield_cl _schnaps m pthread ${OPENCL_LIBRARY})
+target_link_libraries(testdtfield_cl ${LIBS})
 
 add_test(testmacrocellinterface testmacrocellinterface)
 add_executable(
@@ -230,4 +229,4 @@ add_executable(
   test/test.h
   test/testmacrocellinterface.c
 )
-target_link_libraries(testmacrocellinterface _schnaps m pthread ${OPENCL_LIBRARY})
+target_link_libraries(testmacrocellinterface ${LIBS})
