@@ -2,6 +2,7 @@
 import os
 import sys
 import csv
+import numpy as np
 from subprocess import * # for popen, running processes
 import re # regexp package
 
@@ -58,6 +59,7 @@ while(nraf <= nrafmax):
         cmd.append("-n " + str(nraf))
         cmd.append("-t " + str(0.4))
         cmd.append("-C")
+        cmd.append("-g0")
         cmd.append("-X30")
         cmd.append("-Y30")
         cmd.append("-s" + str(dt))
@@ -65,7 +67,7 @@ while(nraf <= nrafmax):
         L2error = []
         DOF = 0
 
-        maxtests = 4
+        maxtests = 10
         i = 0
         while(i < maxtests):
             #print command0 + str(cfl) + command1
@@ -82,10 +84,18 @@ while(nraf <= nrafmax):
             if (prc == 0): # did the process succeed?
                 L2error.append(lineafter("L2", out))
                 DOF = lineafter("DOF", out)
+                print L2error[len(L2error) - 1]
+            else: 
+                print "cout:"
+                print out
+                print "cerr:"
+                print err
 
             cfl *= 0.5
-            if(i > 0):
-                if(L2error[i] == L2error[i-1]):
+            if(len(L2error) > 1):
+                err0 = np.abs(float(L2error[i]))
+                err1 = np.abs(float(L2error[i-1]))
+                if(np.abs(err0 - err1) / (err0 + err1) < 1e-2):
                     break;
 
             dt *= 0.5
