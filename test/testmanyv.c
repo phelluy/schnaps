@@ -11,7 +11,7 @@
 
 int main(int argc, char *argv[]) {
   // Unit tests
-  double cfl = 0.05;
+  double cfl = 0.5;
   int deg = 3;
   int nraf = 4;
   double tmax = 1e-2;
@@ -181,6 +181,9 @@ int main(int argc, char *argv[]) {
 
   printf("deltax:\n");
   printf("%f\n", f.hmin);
+
+  printf("deltat:\n");
+  printf("%f\n", f.dt);
 
   printf("DOF:\n");
   printf("%d\n", f.wsize);
