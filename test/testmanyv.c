@@ -188,7 +188,7 @@ int main(int argc, char *argv[]) {
     /* PlotField(mplot, true, &f, "dgerror.msh"); */
   }
 
-  printf("tmax: %f, cfl: %f, deg: %d, nraf: %d\n", tmax, cfl, deg, nraf);
+  printf("tmax: %f, cfl: %f, deg: %d, nraf: %d\n", tmax, f.model.cfl, deg, nraf);
   double dd = L2error(&f) / (f.model.vlasov_mx * f.model.vlasov_my);
 
   printf("deltax:\n");
