@@ -89,7 +89,7 @@ int main(int argc, char *argv[]) {
   
   f.varindex = GenericVarindex;
   f.model.vlasov_mz = 1;
-  f.model.cfl = 0.05;
+  f.model.cfl = cfl;
   f.model.NumFlux = vlaTransNumFlux2d;
   f.model.vlasov_mx = mx;
   f.model.vlasov_my = my;
