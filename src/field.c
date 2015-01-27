@@ -160,7 +160,6 @@ void InitField(Field* f) {
   // Compute cfl parameter min_i vol_i/surf_i
   f->hmin = FLT_MAX;
 
-
   for (int ie = 0; ie < f->macromesh.nbelems; ie++) {
     double vol = 0, surf = 0;
     // Get the physical nodes of element ie
@@ -207,9 +206,6 @@ void InitField(Field* f) {
     f->hmin = f->hmin < vol/surf ? f->hmin : vol/surf;
 
   }
-
-  double vmax = 1.0; // FIXME: this needs to be made variable
-  f->dt = f->model.cfl * f->hmin / vmax;
  
   // Now take into account the polynomial degree and the refinement
   int maxd = f->interp_param[1];
@@ -217,6 +213,9 @@ void InitField(Field* f) {
   maxd = maxd > f->interp_param[3] ? maxd : f->interp_param[3];
 
   f->hmin /= ((maxd + 1) * f->interp_param[4]);
+
+  double vmax = 1.0; // FIXME: this needs to be made variable
+  f->dt = f->model.cfl * f->hmin / vmax;
 
   printf("hmin=%f\n", f->hmin);
 
