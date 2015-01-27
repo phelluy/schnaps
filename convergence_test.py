@@ -30,8 +30,8 @@ def lineafter(searchstring, output):
         line = outlines[itline]
         #print line
         if re.search(searchstring, line) is not None:
-            print "\t"+str(outlines[itline])
-            print "\t"+str(outlines[itline + 1])
+            #print "\t"+str(outlines[itline])
+            #print "\t"+str(outlines[itline + 1])
             dataline = outlines[itline + 1]
             itline = len(outlines)
         itline += 1
@@ -51,7 +51,7 @@ while(nraf <= nrafmax):
         print "nraf: " + str(nraf)
 
         dt = 0.01
-        cfl = 1.0
+        cfl = 0.25
 
         cmd = []
         cmd.append("./" +  progname)
@@ -62,7 +62,7 @@ while(nraf <= nrafmax):
         cmd.append("-g0")
         cmd.append("-X30")
         cmd.append("-Y30")
-        cmd.append("-s" + str(dt))
+        cmd.append("-c" + str(cfl))
 
         L2error = []
         DOF = 0
@@ -71,11 +71,11 @@ while(nraf <= nrafmax):
         i = 0
         while(i < maxtests):
             #print command0 + str(cfl) + command1
-            print "\tdt: " + str(dt)
+            #print "\tdt: " + str(dt)
                         
-            cmd[len(cmd) - 1] = "-s" + str(dt)
+            cmd[len(cmd) - 1] = "-c" + str(cfl)
 
-            print cmd
+            print "\t" + str(cmd)
             p = Popen(cmd, stdout = PIPE, stderr = PIPE)
             p.wait() # sets the return code
             prc = p.returncode
@@ -84,7 +84,7 @@ while(nraf <= nrafmax):
             if (prc == 0): # did the process succeed?
                 L2error.append(lineafter("L2", out))
                 DOF = lineafter("DOF", out)
-                print L2error[len(L2error) - 1]
+                print "\t\terror: " + str(L2error[len(L2error) - 1])
             else: 
                 print "cout:"
                 print out
@@ -95,17 +95,17 @@ while(nraf <= nrafmax):
             if(len(L2error) > 1):
                 err0 = np.abs(float(L2error[i]))
                 err1 = np.abs(float(L2error[i-1]))
-                if(np.abs(err0 - err1) / (err0 + err1) < 1e-2):
+                d = np.abs(err0 - err1) / (err0 + err1)
+                if(d < 1e-2):
                     break;
 
             dt *= 0.5
             i += 1
 
         error = L2error[len(L2error) - 1]
-        print "\terror: " + str(error)
 
-        if(True or error < 1.0):
-            print "append!"
+        if(float(error) < 1.0):
+            print "append error: " + str(error)
             f = open(filename, 'a') # now we append
             datawriter = csv.writer(f, delimiter = '\t')
             datawriter.writerow([deg, nraf, DOF, error])
