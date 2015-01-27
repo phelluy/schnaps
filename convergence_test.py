@@ -49,6 +49,7 @@ while(nraf <= nrafmax):
         print "deg: " + str(deg)
         print "nraf: " + str(nraf)
 
+        dt = 0.01
         cfl = 1.0
 
         cmd = []
@@ -59,6 +60,7 @@ while(nraf <= nrafmax):
         cmd.append("-C")
         cmd.append("-X30")
         cmd.append("-Y30")
+        cmd.append("-s" + str(dt))
 
         L2error = []
         DOF = 0
@@ -67,9 +69,9 @@ while(nraf <= nrafmax):
         i = 0
         while(i < maxtests):
             #print command0 + str(cfl) + command1
-            print "\tcfl: " + str(cfl)
-            
-            cmd[len(cmd) - 1] = "-c" + str(cfl)
+            print "\tdt: " + str(dt)
+                        
+            cmd[len(cmd) - 1] = "-s" + str(dt)
 
             print cmd
             p = Popen(cmd, stdout = PIPE, stderr = PIPE)
@@ -85,7 +87,8 @@ while(nraf <= nrafmax):
             if(i > 0):
                 if(L2error[i] == L2error[i-1]):
                     break;
-                    
+
+            dt *= 0.5
             i += 1
 
         error = L2error[len(L2error) - 1]
