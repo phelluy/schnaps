@@ -68,12 +68,9 @@ while(deg <= degmax):
         cmd.append("-n " + str(nraf))
         cmd.append("-t " + str(0.4))
         cmd.append("-C")
-        cmd.append("-g1")
+        cmd.append("-g0")
         cmd.append("-X30")
         cmd.append("-Y30")
-
-        L2error = []
-        DOF = 0
 
         print "\t" + str(cmd)
         p = Popen(cmd, stdout = PIPE, stderr = PIPE)
@@ -82,7 +79,7 @@ while(deg <= degmax):
         out, err = p.communicate()
             
         if (prc == 0):
-            L2error.append(lineafter("L2", out))
+            error = lineafter("L2", out)
             DOF = lineafter("DOF", out)
             deltax = lineafter("deltax", out)
             deltat = lineafter("deltat", out)
@@ -90,10 +87,9 @@ while(deg <= degmax):
             perRK2time = lineafter("perRK2time", out)
             itermax = lineafter("itermax", out)
 
-            print "\t\terror: " + str(L2error[len(L2error) - 1])
             f = open(filename, 'a') # now we append
             datawriter = csv.writer(f, delimiter = '\t')
-            datawriter.writerow([deg, nraf, DOF, exectime, itermax, perRK2time, deltat, deltax])
+            datawriter.writerow([deg, nraf, DOF, exectime, itermax, perRK2time, error, deltat, deltax])
             f.close()
 
         else: 
