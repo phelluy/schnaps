@@ -40,24 +40,24 @@ def lineafter(searchstring, output):
             #print dataline
             return dataline
     return ""
-    
-nraf = 1
-while(nraf <= nrafmax):
 
-    deg = 1
-    while(deg <= degmax):
+deg = 1
+while(deg <= degmax):
+
+    if(deg == 1):
+        nrafmax = 32
+    if(deg == 2):
+        nrafmax = 16
+    if(deg == 3):
+        nrafmax = 8
+    if(deg == 4):
+        nrafmax = 8
+    
+    nraf = 1
+    while(nraf <= nrafmax):
 
         print "deg: " + str(deg)
         print "nraf: " + str(nraf)
-
-        if(deg == 1):
-            nraf = 32
-        if(deg == 2):
-            nraf = 16
-        if(deg == 3):
-            nraf = 8
-        if(deg == 4):
-            nraf = 8
 
         dt = 0.01
         cfl = 0.25
@@ -68,7 +68,7 @@ while(nraf <= nrafmax):
         cmd.append("-n " + str(nraf))
         cmd.append("-t " + str(0.4))
         cmd.append("-C")
-        cmd.append("-g0")
+        cmd.append("-g1")
         cmd.append("-X30")
         cmd.append("-Y30")
 
@@ -102,7 +102,7 @@ while(nraf <= nrafmax):
             print "cerr:"
             print err
 
-        deg += 1
-    nraf *= 2
-        
+
+        nraf *= 2
+    deg += 1        
 
