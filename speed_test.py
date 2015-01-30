@@ -41,6 +41,9 @@ def lineafter(searchstring, output):
             return dataline
     return ""
 
+nvx = 3
+nvy = 3
+
 deg = 1
 while(deg <= degmax):
 
@@ -52,13 +55,20 @@ while(deg <= degmax):
         nrafmax = 8
     if(deg == 4):
         nrafmax = 8
+
+    tmax = 2.0
     
     nraf = 1
-    while(nraf <= nrafmax):
+    dof = 4 * (deg + 1)^2 * nraf^2 * nvx * nvy
+    while(dof < 1e7):
+        dof = 4 * (deg + 1) * (deg + 1) * nraf * nraf * nvx * nvy
+
 
         print "deg: " + str(deg)
         print "nraf: " + str(nraf)
-
+        print "dof: " + str(dof)
+        
+        
         dt = 0.01
         cfl = 0.25
 
@@ -66,11 +76,12 @@ while(deg <= degmax):
         cmd.append("./" +  progname)
         cmd.append("-d " + str(deg))
         cmd.append("-n " + str(nraf))
-        cmd.append("-t " + str(0.4))
+        cmd.append("-t " + str(tmax))
+        tmax /= 2
         cmd.append("-C")
         cmd.append("-g0")
-        cmd.append("-X30")
-        cmd.append("-Y30")
+        cmd.append("-X" + str(nvx))
+        cmd.append("-Y" + str(nvy))
 
         print "\t" + str(cmd)
         p = Popen(cmd, stdout = PIPE, stderr = PIPE)

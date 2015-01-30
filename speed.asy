@@ -63,10 +63,15 @@ for(int d = 0; d < dimlist.length; ++d) {
     y = dtime;
   if(yvals == "err")
     y = derr;
+
+  pen p = Pen(d);
+  if(d == 1) p += dashed;
+  if(d == 2) p += Dotted;
+  if(d == 3) p += longdashdotted;
   
   int last = dtimeperrk.length-1;
   if(last >= 1) {
-    draw(graph(x, y), Pen(d), "deg " + string(dim), MarkFill[0]);
+    draw(graph(x, y), p, "deg " + string(dim), MarkFill[0]);
   }
 }
 
@@ -78,7 +83,7 @@ if(yvals == "timeperrk")
   yaxis("Computation time", LeftRight, RightTicks);
 if(yvals == "time")
   yaxis("Computation time", LeftRight, RightTicks);
-if(yvals == "timeperrk")
+if(yvals == "err")
   yaxis("L2 error", LeftRight, RightTicks);
 
-attach(legend(),point(plain.E),20plain.E);
+//attach(legend(),point(plain.E),20plain.E);
