@@ -50,7 +50,7 @@ src/clutils.h
 #schnaps library
 add_library (_schnaps ${source_files})
 set(LIBS "")
-list(APPEND LIBS _schnaps pthread ${OPENCL_LIBRARY} rt m)
+list(APPEND LIBS _schnaps pthread ${OPENCL_LIBRARIES} rt m)
 
 # main program schnaps
 add_executable(
