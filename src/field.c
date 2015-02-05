@@ -2229,7 +2229,7 @@ double L2error(Field* f) {
       for(int iv = 0; iv < f->model.m; iv++) {
 	double diff = w[iv] - wex[iv];
         error += diff * diff * wpg * det;
-        mean += w[iv] * w[iv] * wpg * det;
+        mean += wex[iv] * wex[iv] * wpg * det;
       }
     }
   }

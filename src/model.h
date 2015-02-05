@@ -160,11 +160,12 @@ void vlaTransImposedData2d(double x[3], double t, double* w);
 double compact_bump(double r);
 double icgaussian(double r, double c);
 
-
-void cemracs2014_TransInitData(double x[3], double w[]);
 void cemracs2014_TransBoundaryFlux(double x[3], double t, 
 				   double wL[], double *vnorm,
 				   double *flux);
+void cemracs2014_TransInitData(double x[3], double w[]);
 void cemcracs2014_imposed_data(double x[3], double t, double *w); 
+void cemracs2014a_TransInitData(double x[3], double w[]);
+void cemcracs2014a_imposed_data(double x[3], double t, double *w); 
 
 #endif

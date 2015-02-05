@@ -11,7 +11,7 @@ import re # regexp package
 filename = sys.argv[1]
 progname = "testmanyv"
 
-degmax = 4
+degmax = 3
 nrafmax = 4
 
 f = open(filename, 'wb') # erase file
@@ -41,10 +41,10 @@ def lineafter(searchstring, output):
             return dataline
     return ""
 
-nvx = 3
-nvy = 3
+nvx = 30
+nvy = 30
 
-deg = 1
+deg = 3
 while(deg <= degmax):
 
     if(deg == 1):
@@ -52,13 +52,13 @@ while(deg <= degmax):
     if(deg == 2):
         nrafmax = 16
     if(deg == 3):
-        nrafmax = 8
+        nrafmax = 32
     if(deg == 4):
         nrafmax = 8
 
-    tmax = 2.0
+    tmax = 0.4
     
-    nraf = 1
+    nraf = 4
     dof = 4 * (deg + 1)^2 * nraf^2 * nvx * nvy
     while(dof < 1e7):
         dof = 4 * (deg + 1) * (deg + 1) * nraf * nraf * nvx * nvy
@@ -77,8 +77,8 @@ while(deg <= degmax):
         cmd.append("-d " + str(deg))
         cmd.append("-n " + str(nraf))
         cmd.append("-t " + str(tmax))
-        tmax /= 2
-        cmd.append("-C1")
+#        tmax /= 2
+        cmd.append("-C2")
         cmd.append("-g0")
         cmd.append("-X" + str(nvx))
         cmd.append("-Y" + str(nvy))

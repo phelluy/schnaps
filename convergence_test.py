@@ -58,7 +58,7 @@ while(nraf <= nrafmax):
         cmd.append("-d " + str(deg))
         cmd.append("-n " + str(nraf))
         cmd.append("-t " + str(0.4))
-        cmd.append("-C")
+        cmd.append("-C1")
         cmd.append("-g0")
         cmd.append("-X30")
         cmd.append("-Y30")

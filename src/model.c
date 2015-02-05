@@ -295,6 +295,34 @@ void cemcracs2014_imposed_data(double x[3], double t, double *w)
 
       double r = sqrt(px * px + py * py);
       double pr = compact_bump(r);
+      //double pr = compact_poly6(r);
+      
+      double vr = sqrt(vx * vx + vy * vy);
+      double pvr = icgaussian(vr, sigma);
+
+      // NB: assumes a certain memory distribution for the velocity
+      // components at each point.
+      int im = ix * vlasov_my + iy;
+      w[im] = pr * pvr;
+    }
+  }
+}
+
+void cemcracs2014a_imposed_data(double x[3], double t, double *w)
+{
+  double sigma = 1.0;
+
+  for(int ix = 0; ix < vlasov_mx; ++ix) {
+    double vx = vlasov_vel(ix, vlasov_mx, vlasov_vmax);
+    double px = x[0] - vx * t;
+
+    for(int iy = 0; iy < vlasov_my; ++iy) {
+      double vy = vlasov_vel(iy, vlasov_my, vlasov_vmax);
+      double py = x[1] - vy * t;
+
+      double r = sqrt(px * px + py * py);
+      //double pr = compact_bump(r);
+      double pr = compact_poly6(r);
       
       double vr = sqrt(vx * vx + vy * vy);
       double pvr = icgaussian(vr, sigma);
@@ -311,6 +339,12 @@ void cemracs2014_TransInitData(double x[3], double w[])
 {
   double t = 0;
   cemcracs2014_imposed_data(x, t, w);
+}
+
+void cemracs2014a_TransInitData(double x[3], double w[]) 
+{
+  double t = 0;
+  cemcracs2014a_imposed_data(x, t, w);
 }
 
 void cemracs2014_TransBoundaryFlux(double x[3], double t, 

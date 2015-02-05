@@ -11,16 +11,7 @@
 #include <time.h>
 #define _XOPEN_SOURCE 700
 
-
-double seconds()
-{
-  struct timespec ts;
-  clock_gettime(CLOCK_MONOTONIC, &ts);
-  return (double)ts.tv_sec + 1e-9 * (double)ts.tv_nsec;
-}
-
-double dseconds(struct timespec ta, struct timespec tb)
-{
+double seconds(struct timespec ta, struct timespec tb) {
   return (double)(ta.tv_sec - tb.tv_sec) 
     + 1e-9 * (double)(ta.tv_nsec - tb.tv_nsec);
 }
@@ -31,7 +22,7 @@ int main(int argc, char *argv[]) {
   int deg = 3;
   int nraf = 4;
   double tmax = 1e-2;
-  bool cemracs = false;
+  int cemracs = 0;
   bool writemsh = false;
   double vmax = 1.0;
   int mx = 5;
@@ -39,7 +30,7 @@ int main(int argc, char *argv[]) {
   bool usegpu = false;
   double dt = 0.0;
   for (;;) {
-    int cc = getopt(argc, argv, "c:d:n:t:CwD:P:X:Y:V:g:s:");
+    int cc = getopt(argc, argv, "c:d:n:t:C:wD:P:X:Y:V:g:s:");
     if (cc == -1) break;
     switch (cc) {
     case 0:
@@ -119,10 +110,16 @@ int main(int argc, char *argv[]) {
   sprintf(buf, " -D vlasov_vmax=%f", f.model.vlasov_vmax);
   strcat(cl_buildoptions, buf);
 
-  if(cemracs) {
+  if(cemracs > 0) {
     f.model.BoundaryFlux = cemracs2014_TransBoundaryFlux;
-    f.model.InitData = cemracs2014_TransInitData;
-    f.model.ImposedData = cemcracs2014_imposed_data;
+    if(cemracs == 1) {
+      f.model.InitData = cemracs2014_TransInitData;
+      f.model.ImposedData = cemcracs2014_imposed_data;
+    }
+    if(cemracs == 2) {
+      f.model.InitData = cemracs2014a_TransInitData;
+      f.model.ImposedData = cemcracs2014a_imposed_data;
+    }
 
     sprintf(buf, " -D BOUNDARYFLUX=%s", "cemracs2014_TransBoundaryFlux");
     strcat(cl_buildoptions, buf);
@@ -165,18 +162,17 @@ int main(int argc, char *argv[]) {
   struct timespec tstart, tend;
   if(usegpu) {
     printf("Using OpenCL:\n");
-    //executiontime = seconds();
     clock_gettime(CLOCK_MONOTONIC, &tstart);
     RK2_CL(&f, tmax);
     clock_gettime(CLOCK_MONOTONIC, &tend);
-    executiontime = seconds() - executiontime;
-    executiontime = dseconds(tstart, tend);
+
   } else { 
     printf("Using C:\n");
-    executiontime = seconds();
+    clock_gettime(CLOCK_MONOTONIC, &tstart);
     RK2(&f, tmax);
-    executiontime = seconds() - executiontime;
+    clock_gettime(CLOCK_MONOTONIC, &tend);
   }
+  executiontime = seconds(tend, tstart);
 
   // Save the results and the error
   if(writemsh) {
