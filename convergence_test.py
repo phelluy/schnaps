@@ -15,7 +15,7 @@ degmax = 4
 nrafmax = 64
 
 f = open(filename, 'wb') # erase file
-f.write("#deg\tnraf\tDOF\terror\n");
+f.write("#deg\tnraf\tDOF\terror\tdx\n");
 f.close()
 
 def lineafter(searchstring, output):
@@ -66,6 +66,7 @@ while(nraf <= nrafmax):
 
         L2error = []
         DOF = 0
+        dx = 0
 
         maxtests = 10
         i = 0
@@ -84,7 +85,8 @@ while(nraf <= nrafmax):
             if (prc == 0): # did the process succeed?
                 L2error.append(lineafter("L2", out))
                 DOF = lineafter("DOF", out)
-                dx = lineafter("dx", out)
+                dx = lineafter("deltax", out)
+                print "\t\tdx: " + str(dx)
                 print "\t\terror: " + str(L2error[len(L2error) - 1])
             else: 
                 print "cout:"
@@ -109,7 +111,7 @@ while(nraf <= nrafmax):
             print "append error: " + str(error)
             f = open(filename, 'a') # now we append
             datawriter = csv.writer(f, delimiter = '\t')
-            datawriter.writerow([deg, nraf, DOF, error])
+            datawriter.writerow([deg, nraf, DOF, error, dx])
             f.close()
 
         deg += 1

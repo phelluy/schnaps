@@ -36,8 +36,6 @@ if(a.length > 4) {
     dx.push(val);
   }
 }
-write(dx);
-write(error);
 
 
 // Find the dimensions in the file
