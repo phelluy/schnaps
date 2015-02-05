@@ -84,6 +84,7 @@ while(nraf <= nrafmax):
             if (prc == 0): # did the process succeed?
                 L2error.append(lineafter("L2", out))
                 DOF = lineafter("DOF", out)
+                dx = lineafter("dx", out)
                 print "\t\terror: " + str(L2error[len(L2error) - 1])
             else: 
                 print "cout:"

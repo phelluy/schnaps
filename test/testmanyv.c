@@ -11,11 +11,18 @@
 #include <time.h>
 #define _XOPEN_SOURCE 700
 
+
 double seconds()
 {
   struct timespec ts;
   clock_gettime(CLOCK_MONOTONIC, &ts);
   return (double)ts.tv_sec + 1e-9 * (double)ts.tv_nsec;
+}
+
+double dseconds(struct timespec ta, struct timespec tb)
+{
+  return (double)(ta.tv_sec - tb.tv_sec) 
+    + 1e-9 * (double)(ta.tv_nsec - tb.tv_nsec);
 }
 
 int main(int argc, char *argv[]) {
@@ -155,11 +162,15 @@ int main(int argc, char *argv[]) {
   CheckMacroMesh(&(f.macromesh), f.interp.interp_param + 1);
 
   double executiontime;
+  struct timespec tstart, tend;
   if(usegpu) {
     printf("Using OpenCL:\n");
-    executiontime = seconds();
+    //executiontime = seconds();
+    clock_gettime(CLOCK_MONOTONIC, &tstart);
     RK2_CL(&f, tmax);
+    clock_gettime(CLOCK_MONOTONIC, &tend);
     executiontime = seconds() - executiontime;
+    executiontime = dseconds(tstart, tend);
   } else { 
     printf("Using C:\n");
     executiontime = seconds();
