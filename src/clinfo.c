@@ -7,7 +7,7 @@
 
 void InitCLInfo(CLInfo* cli, int platform_id, int device_id)
 {
-  cl_int status;   /* for checking OpenCL errors */
+  cl_int status;
   
   /* numbers of platforms */
   status = clGetPlatformIDs(0, NULL, &(cli->nbplatforms));
@@ -192,6 +192,7 @@ void InitCLInfo(CLInfo* cli, int platform_id, int device_id)
   assert(status == CL_SUCCESS);
   printf("\tMax workgroup size: %zu\n",cli->maxworkgroupsize);
 
+  // OpenCL extensions
   status = clGetDeviceInfo(cli->device[device_id],
 			   CL_DEVICE_EXTENSIONS,
 			   sizeof(cli->clextensions),
@@ -228,44 +229,40 @@ void InitCLInfo(CLInfo* cli, int platform_id, int device_id)
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status == CL_SUCCESS);
 
-
-
-  printf("Init OK\n\n");
+  printf("\tOpenCL Init OK\n\n");
 }
 
-void PrintCLInfo(CLInfo* cli){
+void PrintCLInfo(CLInfo *cli){
   cl_int status;  // for checking OpenCL errors
   char pbuf[2000];
 
-  printf("%s\n",cli->platformname);
-  printf("%s\n",cli->devicename);
+  printf("%sPlatform: \n",cli->platformname);
+  printf("\tDevice: %s\n",cli->devicename);
 
   // device memory
-  printf("Global memory: %f MB\n",cli->devicememsize/1024./1024.);
-  printf("Max buffer size: %f MB\n",cli->maxmembuffer/1024./1024.);
-  printf("Cache size: %f KB\n",cli->cachesize/1024.);
-  printf("Nb of compute units: %d\n",cli->nbcomputeunits);
-  printf("Max workgroup size: %zu\n",cli->maxworkgroupsize);
-  printf("OpenCL extensions:\n%s\n",cli->clextensions);
+  printf("\tGlobal memory: %f MB\n", cli->devicememsize/1024./1024.);
+  printf("\tMax buffer size: %f MB\n", cli->maxmembuffer/1024./1024.);
+  printf("\tCache size: %f KB\n", cli->cachesize/1024.);
+  printf("\tNb of compute units: %d\n", cli->nbcomputeunits);
+  printf("\tMax workgroup size: %zu\n", cli->maxworkgroupsize);
+  printf("\tOpenCL extensions:\n%s\n", cli->clextensions);
 }
 
 void BuildKernels(CLInfo *cli, char *strprog, char *buildoptions)
 {
   cl_int status;
 
-  // kernels creation
   cli->program = clCreateProgramWithSource(cli->context,
 					   1,
 					   (const char **) &strprog,
 					   NULL,
 					   &status);
-  //printf("%s\n",strprog);
-  //assert(1==2);
-  if(!(cli->program)) {
+  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status == CL_SUCCESS);
+  
+  if(!(cli->program)) 
     printf("Failed to create program.\n");
-  }
 
-  // compilation
   status = clBuildProgram(cli->program,
 			  0,               // one device
 			  NULL,
@@ -279,21 +276,20 @@ void BuildKernels(CLInfo *cli, char *strprog, char *buildoptions)
   /* 				void(CL_CALLBACK *pfn_notify)(cl_program program, void *user_data), */
   /* 				void *user_data) */
 
-  // if not successfull: display the errors
   if(status != CL_SUCCESS) {
     /* printf("%s\n", strprog); */
-    if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
+    printf("%s\n", clErrorString(status));
     printf("Compilation output:\n%s\n", 
 	   print_build_debug(&(cli->program), &cli->device[cli->deviceid]));
   }
   assert(status == CL_SUCCESS);
 }
 
-void ReadFile(char filename[],char** s){
-  FILE* f = fopen( filename , "r" );
+void ReadFile(char filename[], char **s){
+  FILE *f = fopen(filename , "r");
   assert(f);
 
-  fseek( f , 0L , SEEK_END);
+  fseek(f , 0L, SEEK_END);
   int size = ftell(f);
   rewind(f);
 
@@ -307,17 +303,13 @@ void ReadFile(char filename[],char** s){
   fclose(f);
 }
 
-
 //! \brief scan all *.h and *.c in order to find the code
 //! to be shared with opencl
 //! such code is enclosed between #pragma start_opencl and 
 //! #pragma end_opencl
 void GetOpenCLCode(void){
-
   int status;
-
   status = system("sh get_opencl_code.sh");
   assert(!status);
- 
 }
-  
+
