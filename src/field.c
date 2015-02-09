@@ -105,6 +105,8 @@ void Initfield(field* f) {
   //int param[8]={f->model.m,_DEGX,_DEGY,_DEGZ,_RAFX,_RAFY,_RAFZ,0};
   f->is2d = false;
   
+  f->vmax = 1.0; // FIXME: make this variable
+
   // a copy for avoiding too much "->"
   for(int ip = 0; ip < 8; ip++)
     f->interp_param[ip] = f->interp.interp_param[ip];
@@ -213,8 +215,7 @@ void Initfield(field* f) {
 
   f->hmin /= ((maxd + 1) * f->interp_param[4]);
 
-  double vmax = 1.0; // FIXME: this needs to be made variable
-  f->dt = f->model.cfl * f->hmin / vmax;
+  f->dt = f->model.cfl * f->hmin / f->vmax;
 
   printf("hmin=%f\n", f->hmin);
 
@@ -1959,7 +1960,6 @@ void RK_in(double *fwnp1, double *fdtwn, const double dt, const int sizew)
 
 // Time integration by a second order Runge-Kutta algorithm
 void RK2(field* f, double tmax) {
-  double vmax = 1; // FIXME: to be changed for another model.
   
   f->itermax = tmax / f->dt;
   int freq = (1 >= f->itermax / 10)? 1 : f->itermax / 10;

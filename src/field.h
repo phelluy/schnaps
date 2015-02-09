@@ -54,11 +54,13 @@ typedef struct field {
   //! Size of the field buffers
   int wsize;
   //! fields at time steps n
-  double* wn;
+  double *wn;
   //! fields at time steps n+1
-  double* wnp1;
+  double *wnp1;
   //! Time derivative of the field
-  double* dtwn;
+  double *dtwn;
+  //! vmax
+  double vmax;
 
   //! \brief Memory arrangement of field components
   //! \param[in] param interpolation parameters
