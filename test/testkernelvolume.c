@@ -86,8 +86,8 @@ int TestKernelVolume(void){
   f.dtwn=calloc(f.wsize,sizeof(double));
  
   for(int ie=0; ie < f.macromesh.nbelems; ++ie) {
-    DGSubCellInterface((void*) &(f.mcell[ie]), &f);
-    DGVolume((void*) &(f.mcell[ie]), &f);
+    DGSubCellInterface((void*) &(f.mcell[ie]), &f, f.wn, f.dtwn);
+    DGVolume((void*) &(f.mcell[ie]), &f, f.wn, f.dtwn);
   }
 
   Displayfield(&f);

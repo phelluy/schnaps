@@ -85,7 +85,7 @@ int TestKernel(void){
   }
 
   for(int ie = 0; ie < f.macromesh.nbelems; ++ie)
-    DGMass((void*) &(f.mcell[ie]), &f);
+    DGMass((void*) &(f.mcell[ie]), &f, f.wn, f.dtwn);
 
   Displayfield(&f);
 

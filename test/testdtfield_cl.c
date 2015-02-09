@@ -85,7 +85,7 @@ int TestDtfield_CL(void){
   double *saveptr = f.dtwn;
   f.dtwn = calloc(f.wsize, sizeof(double));
 
-  dtfield(&f);
+  dtfield(&f, f.wn, f.dtwn);
  
   double maxerr = 0;
   for(int i = 0; i < f.wsize; i++) {

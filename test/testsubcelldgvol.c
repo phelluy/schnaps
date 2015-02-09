@@ -36,11 +36,11 @@ int TestfieldSubCellDGVol(void){
   CheckMacroMesh(&(f.macromesh), f.interp.interp_param + 1);
 
   for(int ie = 0;ie < f.macromesh.nbelems; ie++)
-    DGMacroCellInterfaceSlow((void*) (f.mcell+ie), &f);
+    DGMacroCellInterfaceSlow((void*) (f.mcell+ie), &f, f.wn, f.dtwn);
   for(int ie = 0; ie < f.macromesh.nbelems; ie++) {
-    DGSubCellInterface((void*) (f.mcell+ie), &f);
-    DGVolume((void*) (f.mcell+ie), &f);
-    DGMass((void*) (f.mcell+ie), &f);
+    DGSubCellInterface((void*) (f.mcell+ie), &f, f.wn, f.dtwn);
+    DGVolume((void*) (f.mcell+ie), &f, f.wn, f.dtwn);
+    DGMass((void*) (f.mcell+ie), &f, f.wn, f.dtwn);
   }
 
   /* DGMacroCellInterfaceSlow(&f); */

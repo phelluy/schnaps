@@ -136,7 +136,7 @@ int TestMacroFace(void){
   for(int iw = 0; iw < f.wsize; iw++)
     f.dtwn[iw] = 0;
   for(int ifa = 0; ifa < f.macromesh.nbfaces; ifa++)
-    DGMacroCellInterface((void*) (mface + ifa), &f);
+    DGMacroCellInterface((void*) (mface + ifa), &f, f.wn, f.dtwn);
   double *fdtwn_openmp = f.dtwn;
 
   // Check that the results are the same

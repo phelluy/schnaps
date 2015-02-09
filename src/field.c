@@ -607,7 +607,7 @@ void Plotfield(int typplot, int compare, field* f, char *fieldname,
 }
 
 // Compute inter-subcell fluxes
-void* DGSubCellInterface(void* mc, field *f) {
+void* DGSubCellInterface(void* mc, field *f, double *w, double *dtw) {
   MacroCell* mcell = (MacroCell*) mc;
 
   // Loop on the elements
@@ -748,7 +748,7 @@ void* DGSubCellInterface(void* mc, field *f) {
 }
 
 // compute the Discontinuous Galerkin inter-macrocells boundary terms
-void *DGMacroCellInterfaceSlow(void *mc, field *f) {
+void *DGMacroCellInterfaceSlow(void *mc, field *f, double *w, double *dtw) {
   MacroCell *mcell = (MacroCell*) mc;
 
   // Local copy of the interpretation parameters
@@ -872,7 +872,7 @@ void *DGMacroCellInterfaceSlow(void *mc, field *f) {
 
 // Compute the Discontinuous Galerkin inter-macrocells boundary terms.
 // Second implementation with a loop on the faces.
-void* DGMacroCellInterface(void* mc, field *f) {
+void* DGMacroCellInterface(void* mc, field *f, double *w, double *dtw) {
   MacroFace *mface = (MacroFace*) mc;
   MacroMesh *msh = &(f->macromesh);
   const unsigned int m = f->model.m;
@@ -1179,7 +1179,7 @@ void *DGMacroCellInterface_CL(void *mf, field *f) {
 }
 
 // Apply division by the mass matrix
-void* DGMass(void* mc, field *f) {
+void* DGMass(void* mc, field *f, double *w, double *dtw) {
   MacroCell* mcell = (MacroCell*) mc;
 
   // loop on the elements
@@ -1381,7 +1381,7 @@ void *DGVolume_CL(void *mc, field *f) {
 }
 
 // Compute the Discontinuous Galerkin volume terms, fast version
-void* DGVolume(void* mc, field *f) {
+void* DGVolume(void* mc, field *f, double *w, double *dtw) {
   MacroCell* mcell = (MacroCell*) mc;
 
   // loop on the elements
@@ -1598,7 +1598,7 @@ void dtfield_pthread(field *f)
     for(int iw = 0; iw < f->wsize; iw++)
       f->dtwn[iw] = 0;
     for(int ifa = 0; ifa < f->macromesh.nbfaces; ifa++)
-      DGMacroCellInterface((void*) (f->mface + ifa), f);
+      DGMacroCellInterface((void*) (f->mface + ifa), f, f->wn, f->dtwn);
   }
 
 #ifdef _WITH_PTHREAD
@@ -1662,31 +1662,31 @@ void dtfield_pthread(field *f)
 
 // Apply the Discontinuous Galerkin approximation for computing the
 // time derivative of the field
-void dtfield(field* f) {
+void dtfield(field *f, double *w, double *dtw) {
 #ifdef _WITH_PTHREAD
-  dtfield_pthread(f);
+  dtfield_pthread(f, w, dtw);
 #else
 
 #ifdef _OPENMP
 #pragma omp parallel
 #endif
   for(int iw = 0; iw < f->wsize; iw++)
-    f->dtwn[iw] = 0;
+    dtw[iw] = 0;
 
   bool facealgo = true;
   if(facealgo)
     for(int ifa = 0; ifa < f->macromesh.nbfaces; ifa++)
-      DGMacroCellInterface((void*) (f->mface + ifa), f);
+      DGMacroCellInterface((void*) (f->mface + ifa), f, w, dtw);
 
 #ifdef _OPENMP
 #pragma omp parallel for schedule(dynamic, 1)
 #endif
   for(int ie = 0; ie < f->macromesh.nbelems; ++ie) {
     MacroCell *mcelli = f->mcell + ie;
-    if(!facealgo) DGMacroCellInterfaceSlow(mcelli, f);
-    DGSubCellInterface(mcelli, f);
-    DGVolume(mcelli, f);
-    DGMass(mcelli, f);
+    if(!facealgo) DGMacroCellInterfaceSlow(mcelli, f, w, dtw);
+    DGSubCellInterface(mcelli, f, w, dtw);
+    DGVolume(mcelli, f, w, dtw);
+    DGMass(mcelli, f, w, dtw);
   }
 #endif
 }
@@ -1937,14 +1937,14 @@ void swap_pdoubles(double **a, double **b)
 }
 
 // An out-of-place RK step
-void RK_out(double *fwnp1, double *fwn, double *fdtwn, const double dt, 
+void RK_out(double *dest, double *fwn, double *fdtwn, const double dt, 
 	    const int sizew)
 {
 #ifdef _OPENMP
 #pragma omp parallel for
 #endif
   for(int iw = 0; iw < sizew; iw++) {
-    fwnp1[iw] = fwn[iw] + dt * fdtwn[iw];
+    dest[iw] = fwn[iw] + dt * fdtwn[iw];
   }
 }
 
@@ -1970,12 +1970,12 @@ void RK2(field *f, double tmax) {
     if (iter % freq == 0)
       printf("t=%f iter=%d/%d dt=%f\n", f->tnow, iter, f->itermax, f->dt);
 
-    dtfield(f);
+    dtfield(f, f->wn, f->dtwn);
     RK_out(f->wnp1, f->wn, f->dtwn, 0.5 * f->dt, sizew);
     swap_pdoubles(&f->wnp1, &f->wn);
 
     f->tnow += 0.5 * f->dt;
-    dtfield(f);
+    dtfield(f, f->wn, f->dtwn);
     RK_in(f->wnp1, f->dtwn, f->dt, sizew);
     swap_pdoubles(&f->wnp1, &f->wn);
 
@@ -1984,6 +1984,37 @@ void RK2(field *f, double tmax) {
   }
   printf("t=%f iter=%d/%d dt=%f\n", f->tnow, iter, f->itermax, f->dt);
 }
+
+/* // Time integration by a second order Runge-Kutta algorithm */
+/* void RK4(field *f, double tmax) { */
+/*   f->itermax = tmax / f->dt; */
+/*   int freq = (1 >= f->itermax / 10)? 1 : f->itermax / 10; */
+/*   int sizew = f->macromesh.nbelems * f->model.m * NPG(f->interp_param + 1); */
+/*   int iter = 0; */
+
+/*   // Allocate memory for RK time-stepping */
+/*   double *k1, *k2, *k3, *k4; */
+/*   k1 = calloc(sizew, sizeof(double)); */
+/*   k2 = calloc(sizew, sizeof(double)); */
+/*   k3 = calloc(sizew, sizeof(double)); */
+/*   k4 = calloc(sizew, sizeof(double)); */
+
+/*   while(f->tnow < tmax) { */
+
+/*     dtfield(f); */
+/*     RK_out(k1, f->wn, f->dtwn, 0.5 * f->dt, sizew); */
+
+    
+    
+    
+
+    
+/*     f->tnow += f->dt; // FIXME: this should be updated stage-by-stage */
+/*     iter++; */
+/*   } */
+/*   printf("t=%f iter=%d/%d dt=%f\n", f->tnow, iter, f->itermax, f->dt); */
+/*   // FIXME: free k1, k2, k3, k4 */
+/* } */
 
 // Set kernel arguments for first stage of RK2
 void init_RK2_CL_stage1(field *f, const double dt) 
@@ -2154,7 +2185,7 @@ void RK2Copy(field* f, double tmax) {
   while(f->tnow < tmax) {
     printf("t=%f iter=%d dt=%f\n", f->tnow, iter, f->dt);
     // predictor
-    dtfield(f);
+    dtfield(f, f->wn, f->dtwn);
     for(int iw = 0; iw < sizew; iw++) {
       f->wnp1[iw] = f->wn[iw]+ 0.5 * f->dt * f->dtwn[iw];
     }
@@ -2166,7 +2197,7 @@ void RK2Copy(field* f, double tmax) {
     }
     // corrector
     f->tnow += 0.5 * f->dt;
-    dtfield(f);
+    dtfield(f, f->wn, f->dtwn);
     for(int iw = 0; iw < sizew; iw++) {
       f->wnp1[iw] += f->dt * f->dtwn[iw];
     }

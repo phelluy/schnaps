@@ -37,7 +37,7 @@ int TestfieldDG(void){
   Initfield(&f);
   CheckMacroMesh(&(f.macromesh), f.interp.interp_param + 1);
 
-  dtfield(&f);
+  dtfield(&f, f.wn, f.dtwn);
   
   Displayfield(&f);
 
