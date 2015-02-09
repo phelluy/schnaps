@@ -215,12 +215,6 @@ void RK4(field *f, double tmax);
 //! \param[in] tmax physical duration of the simulation
 void RK2_CL(field *f, double tmax);
 
-//! \brief time integration by a second order Runge-Kutta algorithm.
-//! slow version
-//! \param[inout] f a field
-//! \param[in] tmax physical duration of the simulation
-void RK2Copy(field *f,double tmax);
-
 //! \brief save the results in the gmsh format
 //! \param[in] typplot index of the field variable to plot.
 //! \param[in] compare if true, the numerical solution is compared

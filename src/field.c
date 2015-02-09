@@ -1957,8 +1957,9 @@ void RK_in(double *fwnp1, double *fdtwn, const double dt, const int sizew)
   }
 }
 
-// Time integration by a second order Runge-Kutta algorithm
-void RK2(field *f, double tmax) {
+// Time integration by a second-order Runge-Kutta algorithm
+void RK2(field *f, double tmax) 
+{
   f->itermax = tmax / f->dt;
   int freq = (1 >= f->itermax / 10)? 1 : f->itermax / 10;
   int sizew = f->macromesh.nbelems * f->model.m * NPG(f->interp_param + 1);
@@ -1982,61 +1983,69 @@ void RK2(field *f, double tmax) {
   printf("t=%f iter=%d/%d dt=%f\n", f->tnow, iter, f->itermax, f->dt);
 }
 
-// Time integration by a second order Runge-Kutta algorithm
-void RK4(field *f, double tmax) {
+
+void RK4_final_inplace(double *w, double *l1, double *l2, double *l3, 
+		       double *dtw, const double dt, const int sizew)
+{
+  const double a[] = {1.0 / 3.0, 2.0 / 3.0, 1.0 / 3.0, dt / 6.0};
+  const double b = -1.0 / 3.0;
+#ifdef _OPENMP
+#pragma omp parallel for
+#endif
+  for(int i = 0; i < sizew; ++i) {
+    w[i] = 
+      b * w[i] +
+      a[0] * l1[i] +
+      a[1] * l2[i] +
+      a[2] * l3[i] +
+      a[3] * dtw[i];
+  }
+}
+
+// Time integration by a fourth-order Runge-Kutta algorithm
+void RK4(field *f, double tmax) 
+{
   f->itermax = tmax / f->dt;
   int freq = (1 >= f->itermax / 10)? 1 : f->itermax / 10;
   int sizew = f->macromesh.nbelems * f->model.m * NPG(f->interp_param + 1);
   int iter = 0;
 
   // Allocate memory for RK time-stepping
-  double *l1, *l2, *l3, *l4;
+  double *l1, *l2, *l3;
   l1 = calloc(sizew, sizeof(double));
   l2 = calloc(sizew, sizeof(double));
   l3 = calloc(sizew, sizeof(double));
-  l4 = calloc(sizew, sizeof(double));
 
   while(f->tnow < tmax) {
 
-    // l_1 = w_n + 0.5dt * S(w_n) 
+    // l_1 = w_n + 0.5dt * S(w_n, t_0)
     dtfield(f, f->wn, f->dtwn);
     RK_out(l1, f->wn, f->dtwn, 0.5 * f->dt, sizew);
 
-    // l_2 = w_n + 0.5dt * S(l_1) 
+    f->tnow += 0.5 * f->dt;
+
+    // l_2 = w_n + 0.5dt * S(l_1, t_0 + 0.5 * dt)
     dtfield(f, l1, f->dtwn);
     RK_out(l2, f->wn, f->dtwn, 0.5 * f->dt, sizew);
 
-    // l_3 = w_n + dt * S(l_2) 
+    // l_3 = w_n + dt * S(l_2, t_0 + 0.5 * dt)
     dtfield(f, l2, f->dtwn);
     RK_out(l3, f->wn, f->dtwn, f->dt, sizew);
 
-    // Compute S(l_3)
-    dtfield(f, l3, f->dtwn);
+    f->tnow += 0.5 * f->dt;
 
-    double *w = f->wn;
-    double *dtw = f->dtwn;
-    double dt = f->dt;
-    double *wp = f->wnp1;
-    // FIXME: this should clearly go into a separate function
-    const double a[] = {1.0 / 3.0, 2.0 / 3.0, 1.0 / 3.0, dt / 6.0};
-    const double b = -1.0 / 3.0;
-#ifdef _OPENMP
-#pragma omp parallel for
-#endif
-    for(int i = 0; i < sizew; ++i) {
-      w[i] = 
-	b * w[i] +
-	a[0] * l1[i] +
-	a[1] * l2[i] +
-	a[2] * l3[i] +
-	a[3] * dtw[i];
-    }
-    
-    f->tnow += f->dt; // FIXME: this should be updated stage-by-stage
+    // Compute S(l_3, t_0 + dt)
+    dtfield(f, l3, f->dtwn);
+    RK4_final_inplace(f->wn, l1, l2, l3, f->dtwn, f->dt, sizew);
+
+
     iter++;
   }
   printf("t=%f iter=%d/%d dt=%f\n", f->tnow, iter, f->itermax, f->dt);
-  // FIXME: free l1, l2, l3, l4
+
+  free(l3);
+  free(l2);
+  free(l1);
 }
 
 // Set kernel arguments for first stage of RK2
@@ -2149,7 +2158,7 @@ void RK2_CL_stage2(field *f, size_t numworkitems)
   clFinish(f->cli.commandqueue);
 }
 
-// Time integration by a second order Runge-Kutta algorithm, OpenCL
+// Time integration by a second-order Runge-Kutta algorithm, OpenCL
 // version.
 void RK2_CL(field *f, double tmax) {
 
@@ -2166,72 +2175,19 @@ void RK2_CL(field *f, double tmax) {
     if (iter % freq == 0)
       printf("t=%f iter=%d/%d dt=%f\n", f->tnow, iter, f->itermax, f->dt);
 
-#if 1
-    // OpenCL version
     dtfield_CL(f);
     RK2_CL_stage1(f, sizew);
     swap_clmem(&(f->wnp1_cl), &(f->wn_cl));
-    //swap_pdoubles(&f->wnp1, &f->wn);
 
     f->tnow += 0.5 * f->dt;
     dtfield_CL(f);
     RK2_CL_stage2(f, sizew);
     swap_clmem(&(f->wnp1_cl), &(f->wn_cl));
-    //swap_pdoubles(&f->wnp1, &f->wn);
-#else
-    // Temporary non-OpenCL version
-    dtfield_CL(f);
-    RK_out(f->wnp1, f->wn, f->dtwn, 0.5 * f->dt, sizew);
-    swap_pdoubles(&f->wnp1, &f->wn);
-
-    f->tnow += 0.5 * f->dt;
-    dtfield_CL(f);
-    RK_in(f->wnp1, f->dtwn, f->dt, sizew);
-    swap_pdoubles(&f->wnp1, &f->wn);
-#endif
 
     f->tnow += 0.5 * f->dt;
     iter++;
   }
   printf("t=%f iter=%d/%d dt=%f\n", f->tnow, iter, f->itermax, f->dt);
-}
-
-// Time integration by a second order Runge-Kutta algorithm with
-// memory copy instead of pointers exchange
-void RK2Copy(field* f, double tmax) {
-
-  //int param[8] = {f->model.m, _DEGX, _DEGY, _DEGZ, _RAFX, _RAFY, _RAFZ, 0};
-  int sizew = f->macromesh.nbelems * f->model.m * NPG(f->interp_param + 1);
-
-  int iter = 0;
-
-  while(f->tnow < tmax) {
-    printf("t=%f iter=%d dt=%f\n", f->tnow, iter, f->dt);
-    // predictor
-    dtfield(f, f->wn, f->dtwn);
-    for(int iw = 0; iw < sizew; iw++) {
-      f->wnp1[iw] = f->wn[iw]+ 0.5 * f->dt * f->dtwn[iw];
-    }
-    //exchange the field pointers
-    for(int iw = 0; iw < sizew; iw++) {
-      double temp = f->wn[iw];
-      f->wn[iw] = f->wnp1[iw];
-      f->wnp1[iw] = temp;
-    }
-    // corrector
-    f->tnow += 0.5 * f->dt;
-    dtfield(f, f->wn, f->dtwn);
-    for(int iw = 0; iw < sizew; iw++) {
-      f->wnp1[iw] += f->dt * f->dtwn[iw];
-    }
-    f->tnow += 05 * f->dt;
-    iter++;
-    //exchange the field pointers
-    for(int iw = 0; iw < sizew; iw++) {
-      f->wn[iw] = f->wnp1[iw];
-    }
-
-  }
 }
 
 // Compute the normalized L2 distance with the imposed data
