@@ -97,7 +97,7 @@ int TestfieldRK4(void){
 
   double dd = L2error(&f);
 
-  printf("erreur L2=%f\n", dd);
+  printf("L2 error: %f\n", dd);
 
   double tolerance = 0.001;
 
