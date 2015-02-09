@@ -204,6 +204,11 @@ void RK_in(double *fwnp1, double *fdtwn, const double dt, const int sizew);
 //! \param[in] tmax physical duration of the simulation
 void RK2(field *f, double tmax);
 
+//! \brief Time integration by a second order Runge-Kutta algorithm
+//! \param[inout] f a field
+//! \param[in] tmax physical duration of the simulation
+void RK4(field *f, double tmax);
+
 //! \brief OpenCL version of RK2
 //! time integration by a second order Runge-Kutta algorithm
 //! \param[inout] f a field

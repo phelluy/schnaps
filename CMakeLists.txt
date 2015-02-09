@@ -120,6 +120,15 @@ add_executable(
 target_link_libraries(testfieldrk2 ${LIBS})
 add_test(testfieldrk2 testfieldrk2)
 
+add_test(testfieldrk4 testfieldrk4)
+add_executable(
+  testfieldrk4
+  test/test.h
+  test/testfieldrk4.c
+)
+target_link_libraries(testfieldrk4 ${LIBS})
+add_test(testfieldrk4 testfieldrk4)
+
 add_test(test2dmeshdetection test2dmeshdetection)
 add_executable(
   test2dmeshdetection

@@ -1982,31 +1982,62 @@ void RK2(field *f, double tmax) {
   printf("t=%f iter=%d/%d dt=%f\n", f->tnow, iter, f->itermax, f->dt);
 }
 
-/* // Time integration by a second order Runge-Kutta algorithm */
-/* void RK4(field *f, double tmax) { */
-/*   f->itermax = tmax / f->dt; */
-/*   int freq = (1 >= f->itermax / 10)? 1 : f->itermax / 10; */
-/*   int sizew = f->macromesh.nbelems * f->model.m * NPG(f->interp_param + 1); */
-/*   int iter = 0; */
+// Time integration by a second order Runge-Kutta algorithm
+void RK4(field *f, double tmax) {
+  f->itermax = tmax / f->dt;
+  int freq = (1 >= f->itermax / 10)? 1 : f->itermax / 10;
+  int sizew = f->macromesh.nbelems * f->model.m * NPG(f->interp_param + 1);
+  int iter = 0;
 
-/*   // Allocate memory for RK time-stepping */
-/*   double *k1, *k2, *k3, *k4; */
-/*   k1 = calloc(sizew, sizeof(double)); */
-/*   k2 = calloc(sizew, sizeof(double)); */
-/*   k3 = calloc(sizew, sizeof(double)); */
-/*   k4 = calloc(sizew, sizeof(double)); */
+  // Allocate memory for RK time-stepping
+  double *l1, *l2, *l3, *l4;
+  l1 = calloc(sizew, sizeof(double));
+  l2 = calloc(sizew, sizeof(double));
+  l3 = calloc(sizew, sizeof(double));
+  l4 = calloc(sizew, sizeof(double));
 
-/*   while(f->tnow < tmax) { */
+  while(f->tnow < tmax) {
 
-/*     dtfield(f); */
-/*     RK_out(k1, f->wn, f->dtwn, 0.5 * f->dt, sizew); */
+    // l_1 = w_n + 0.5dt * S(w_n) 
+    dtfield(f, f->wn, f->dtwn);
+    RK_out(l1, f->wn, f->dtwn, 0.5 * f->dt, sizew);
+
+    // l_2 = w_n + 0.5dt * S(l_1) 
+    dtfield(f, l1, f->dtwn);
+    RK_out(l2, f->wn, f->dtwn, 0.5 * f->dt, sizew);
+
+    // l_3 = w_n + dt * S(l_2) 
+    dtfield(f, l2, f->dtwn);
+    RK_out(l3, f->wn, f->dtwn, f->dt, sizew);
+
+    // Compute S(l_3)
+    dtfield(f, l3, f->dtwn);
+
+    double *w = f->wn;
+    double *dtw = f->dtwn;
+    double dt = f->dt;
+    double *wp = f->wnp1;
+    // FIXME: this should clearly go into a separate function
+    const double a[] = {1.0 / 3.0, 2.0 / 3.0, 1.0 / 3.0, dt / 6.0};
+    const double b = -1.0 / 3.0;
+#ifdef _OPENMP
+#pragma omp parallel for
+#endif
+    for(int i = 0; i < sizew; ++i) {
+      w[i] = 
+	b * w[i] +
+	a[0] * l1[i] +
+	a[1] * l2[i] +
+	a[2] * l3[i] +
+	a[3] * dtw[i];
+    }
     
-/*     f->tnow += f->dt; // FIXME: this should be updated stage-by-stage */
-/*     iter++; */
-/*   } */
-/*   printf("t=%f iter=%d/%d dt=%f\n", f->tnow, iter, f->itermax, f->dt); */
-/*   // FIXME: free k1, k2, k3, k4 */
-/* } */
+    f->tnow += f->dt; // FIXME: this should be updated stage-by-stage
+    iter++;
+  }
+  printf("t=%f iter=%d/%d dt=%f\n", f->tnow, iter, f->itermax, f->dt);
+  // FIXME: free l1, l2, l3, l4
+}
 
 // Set kernel arguments for first stage of RK2
 void init_RK2_CL_stage1(field *f, const double dt) 
