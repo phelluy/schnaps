@@ -62,11 +62,13 @@ doxygen doxyschnaps
 #endif
 
 #define _WITH_OPENCL
-int nplatform_cl;
-int ndevice_cl;
+
+extern int nplatform_cl;
+extern int ndevice_cl;
+
 char numflux_cl_name[1024];
 char cl_buildoptions[1024];
 
-#define __constant const
+#define __constant
 
 #endif

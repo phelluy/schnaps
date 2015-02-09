@@ -33,6 +33,7 @@ src/clinfo.h
 src/field.h
 src/schnaps.h
 src/geometry.h
+src/global.c
 src/global.h
 src/h20phi.h
 src/interpolation.h

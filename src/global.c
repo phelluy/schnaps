@@ -1,4 +1,4 @@
-#include global.h
+#include "global.h"
 
-nplatform_cl = 1;
-ndevice_cl = 0;
+int ndevice_cl = 0;
+int nplatform_cl = 0;
