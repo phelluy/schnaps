@@ -1667,12 +1667,13 @@ void dtfield(field* f) {
   dtfield_pthread(f);
 #else
 
-  bool facealgo = true;
-  //facealgo = false; // FIXME: temp
-
+#ifdef _OPENMP
+#pragma omp parallel
+#endif
   for(int iw = 0; iw < f->wsize; iw++)
     f->dtwn[iw] = 0;
 
+  bool facealgo = true;
   if(facealgo)
     for(int ifa = 0; ifa < f->macromesh.nbfaces; ifa++)
       DGMacroCellInterface((void*) (f->mface + ifa), f);
@@ -1959,11 +1960,9 @@ void RK_in(double *fwnp1, double *fdtwn, const double dt, const int sizew)
 }
 
 // Time integration by a second order Runge-Kutta algorithm
-void RK2(field* f, double tmax) {
-  
+void RK2(field *f, double tmax) {
   f->itermax = tmax / f->dt;
   int freq = (1 >= f->itermax / 10)? 1 : f->itermax / 10;
-  //int param[8] = {f->model.m, _DEGX, _DEGY, _DEGZ, _RAFX, _RAFY, _RAFZ, 0};
   int sizew = f->macromesh.nbelems * f->model.m * NPG(f->interp_param + 1);
   int iter = 0;
 
