@@ -147,7 +147,6 @@ add_executable(
 target_link_libraries(testfieldrk2-2d ${LIBS})
 add_test(testfieldrk2-2d testfieldrk2-2d)
 
-
 add_test(testsubcelldgvol testsubcelldgvol)
 add_executable(
   testsubcelldgvol
