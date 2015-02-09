@@ -5,19 +5,10 @@
 #include <assert.h>
 #include <math.h>
 
-int main(void) {
-  int resu = TestKernelInterface();
-  if(resu) 
-    printf("Interface Kernel test OK !\n");
-  else 
-    printf("Interface Kernel test failed !\n");
-  return !resu;
-}
-
 int TestKernelInterface(void){
   bool test = true;
 
-  Field f;
+  field f;
 
   // Original:
   f.model.cfl = 0.05;
@@ -46,7 +37,7 @@ int TestKernelInterface(void){
 
   //AffineMapMacroMesh(&(f.macromesh));
  
-  InitField(&f);
+  Initfield(&f);
   f.is2d = true;
 
   MacroFace mface[f.macromesh.nbfaces];
@@ -84,8 +75,8 @@ int TestKernelInterface(void){
   // OpenCL version
   for(int ifa = 0; ifa < f.macromesh.nbfaces; ifa++)
     DGMacroCellInterface_CL((void*) (mface + ifa), &f);
-  CopyFieldtoCPU(&f);
-  //DisplayField(&f);
+  CopyfieldtoCPU(&f);
+  //Displayfield(&f);
   double *fdtwn_opencl = f.dtwn;
 
   // OpenMP version
@@ -94,7 +85,7 @@ int TestKernelInterface(void){
     f.dtwn[iw] = 0;
   for(int ifa = 0; ifa < f.macromesh.nbfaces; ifa++)
     DGMacroCellInterface((void*) (mface + ifa), &f);
-  //DisplayField(&f);
+  //Displayfield(&f);
   double *fdtwn_openmp = f.dtwn;
 
   double maxerr = 0.0;
@@ -109,4 +100,13 @@ int TestKernelInterface(void){
   test = (maxerr < 1e-8);
 
   return test;
+}
+
+int main(void) {
+  int resu = TestKernelInterface();
+  if(resu) 
+    printf("Interface Kernel test OK !\n");
+  else 
+    printf("Interface Kernel test failed !\n");
+  return !resu;
 }

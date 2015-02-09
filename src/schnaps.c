@@ -3,7 +3,7 @@
 #include <assert.h>
 
 int main(void) {
-  Field f;
+  field f;
   f.model.cfl = 0.05;
   f.model.m = 1; // only one conservative variable
   f.model.NumFlux = TransNumFlux2d;
@@ -34,7 +34,7 @@ int main(void) {
   // AffineMapMacroMesh(&(f.macromesh));
 
   // Prepare the initial fields
-  InitField(&f);
+  Initfield(&f);
 
   // prudence...
   CheckMacroMesh(&(f.macromesh), f.interp.interp_param + 1);
@@ -47,8 +47,8 @@ int main(void) {
   RK2(&f, tmax);
 
   // Save the results and the error
-  PlotField(0, false, &f, NULL, "dgvisu.msh");
-  PlotField(0, true, &f, "Error", "dgerror.msh");
+  Plotfield(0, false, &f, NULL, "dgvisu.msh");
+  Plotfield(0, true, &f, "Error", "dgerror.msh");
 
   double dd = L2error(&f);
  

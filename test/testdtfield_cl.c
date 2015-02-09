@@ -5,23 +5,23 @@
 #include <assert.h>
 #include <math.h>
 
-int TestDtField_CL(void);
+int TestDtfield_CL(void);
 
 int main(void) {
-  int resu = TestDtField_CL();
+  int resu = TestDtfield_CL();
 
   if (resu) 
-    printf("DtField_CL test OK !\n");
+    printf("Dtfield_CL test OK !\n");
   else 
-    printf("DtField_CL test failed !\n");
+    printf("Dtfield_CL test failed !\n");
 
   return !resu;
 } 
 
-int TestDtField_CL(void){
+int TestDtfield_CL(void){
   bool test = true;
 
-  Field f;
+  field f;
   
   // 2D meshes:
   // test/disque2d.msh
@@ -75,17 +75,17 @@ int TestDtField_CL(void){
   f.interp.interp_param[6] = 3; // z direction refinement
 #endif
 
-  InitField(&f);
+  Initfield(&f);
 
-  dtField_CL(&f);
-  CopyFieldtoCPU(&f);
+  dtfield_CL(&f);
+  CopyfieldtoCPU(&f);
 
-  // DisplayField(&f);
+  // Displayfield(&f);
 
   double *saveptr = f.dtwn;
   f.dtwn = calloc(f.wsize, sizeof(double));
 
-  dtField(&f);
+  dtfield(&f);
  
   double maxerr = 0;
   for(int i = 0; i < f.wsize; i++) {

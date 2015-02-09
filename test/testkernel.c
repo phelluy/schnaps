@@ -5,19 +5,11 @@
 #include <assert.h>
 #include <math.h>
 
-int main(void) {
-  // Unit tests
-  int resu = TestKernel();
-  if (resu) printf("Kernel test OK !\n");
-  else printf("Kernel test failed !\n");
-  return !resu;
-} 
-
 int TestKernel(void){
 
   bool test = true;
 
-  Field f;
+  field f;
   f.model.cfl = 0.05;
   f.model.m = 1; // only one conservative variable
   f.model.NumFlux = TransNumFlux2d;
@@ -42,7 +34,7 @@ int TestKernel(void){
 
   //AffineMapMacroMesh(&(f.macromesh));
  
-  InitField(&f);
+  Initfield(&f);
   f.is2d=true;
 
   printf("&f=%p\n",&f);
@@ -79,9 +71,9 @@ int TestKernel(void){
   for(int ie=0; ie < f.macromesh.nbelems; ++ie)
     DGMass_CL((void*) &(f.mcell[ie]), &f);
 
-  CopyFieldtoCPU(&f);
+  CopyfieldtoCPU(&f);
 
-  DisplayField(&f);
+  Displayfield(&f);
 
   // save the dtwn pointer
   double* saveptr = f.dtwn;
@@ -95,7 +87,7 @@ int TestKernel(void){
   for(int ie = 0; ie < f.macromesh.nbelems; ++ie)
     DGMass((void*) &(f.mcell[ie]), &f);
 
-  DisplayField(&f);
+  Displayfield(&f);
 
   //check that the results are the same
   double maxerr = 0;
@@ -109,3 +101,13 @@ int TestKernel(void){
 
   return test;
 }
+
+int main(void) {
+  // Unit tests
+  int resu = TestKernel();
+  if (resu) 
+    printf("Kernel test OK !\n");
+  else 
+    printf("Kernel test failed !\n");
+  return !resu;
+} 

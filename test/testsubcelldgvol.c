@@ -4,18 +4,10 @@
 #include <assert.h>
 #include <math.h>
 
-int main(void) {
-  // unit tests
-  int resu=TestFieldSubCellDGVol();
-  if (resu) printf("Field DG Subcell Vol test OK !\n");
-  else printf("Field DG Subcell Vol test failed !\n");
-  return !resu;
-} 
-
-int TestFieldSubCellDGVol(void){
+int TestfieldSubCellDGVol(void){
   int test = true;
 
-  Field f;
+  field f;
   f.model.cfl = 0.05;
   f.model.m = 1; // only one conservative variable
   f.model.NumFlux = TransNumFlux;
@@ -40,7 +32,7 @@ int TestFieldSubCellDGVol(void){
   //AffineMapMacroMesh(&(f.macromesh));
   PrintMacroMesh(&(f.macromesh));
 
-  InitField(&f);
+  Initfield(&f);
   CheckMacroMesh(&(f.macromesh), f.interp.interp_param + 1);
 
   for(int ie = 0;ie < f.macromesh.nbelems; ie++)
@@ -56,10 +48,10 @@ int TestFieldSubCellDGVol(void){
   /* DGVolume(&f); */
   /* DGMass(&f); */
   
-  DisplayField(&f);  
+  Displayfield(&f);  
 
-  PlotField(0, false, &f, NULL, "visu.msh");
-  PlotField(0, true, &f, "error", "error.msh");
+  Plotfield(0, false, &f, NULL, "visu.msh");
+  Plotfield(0, true, &f, "error", "error.msh");
 
   // test the time derivative with the exact solution
   for(int i=0;
@@ -70,4 +62,13 @@ int TestFieldSubCellDGVol(void){
   }
   
   return test;
-};
+}
+
+int main(void) {
+  int resu = TestfieldSubCellDGVol();
+  if(resu) 
+    printf("field DG Subcell Vol test OK !\n");
+  else 
+    printf("field DG Subcell Vol test failed !\n");
+  return !resu;
+} 

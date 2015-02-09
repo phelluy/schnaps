@@ -5,19 +5,11 @@
 #include <assert.h>
 #include <math.h>
 
-int main(void) {
-  // Unit tests
-  int resu = TestKernelVolume();
-  if (resu) printf("Volume Kernel test OK !\n");
-  else printf("Volume Kernel test failed !\n");
-  return !resu;
-} 
-
 int TestKernelVolume(void){
 
   bool test=true;
 
-  Field f;
+  field f;
   f.model.cfl = 0.05;
   f.model.m = 1; // only one conservative variable
   f.model.NumFlux = TransNumFlux2d;
@@ -44,7 +36,7 @@ int TestKernelVolume(void){
 
   //AffineMapMacroMesh(&(f.macromesh));
  
-  InitField(&f);
+  Initfield(&f);
   f.is2d=true;
 
   /* // set dtwn to 1 for testing */
@@ -83,9 +75,9 @@ int TestKernelVolume(void){
     DGVolume_CL((void*) &(f.mcell[ie]), &f);
   }
 
-  CopyFieldtoCPU(&f);
+  CopyfieldtoCPU(&f);
 
-  DisplayField(&f);
+  Displayfield(&f);
 
   // save the dtwn pointer
   double* saveptr=f.dtwn;
@@ -98,7 +90,7 @@ int TestKernelVolume(void){
     DGVolume((void*) &(f.mcell[ie]), &f);
   }
 
-  DisplayField(&f);
+  Displayfield(&f);
 
   //check that the results are the same
   double maxerr=0;
@@ -112,3 +104,11 @@ int TestKernelVolume(void){
 
   return test;
 }
+
+int main(void) {
+  // Unit tests
+  int resu = TestKernelVolume();
+  if (resu) printf("Volume Kernel test OK !\n");
+  else printf("Volume Kernel test failed !\n");
+  return !resu;
+} 

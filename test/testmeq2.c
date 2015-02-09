@@ -3,20 +3,9 @@
 #include <assert.h>
 #include "test.h"
 
-int main(void) {
-  // Unit tests
-  int resu = TestmEq2();
- 
-  if (resu) 
-    printf("m greater than 1 test OK!\n");
-  else 
-    printf("m greater than 1 test failed !\n");
-  return !resu;
-}
-
 int TestmEq2(void) {
   bool test = true;
-  Field f;
+  field f;
   int vec = 2;
 
   f.model.cfl = 0.05;  
@@ -51,7 +40,7 @@ int TestmEq2(void) {
   //AffineMapMacroMesh(&(f.macromesh));
  
   // Prepare the initial fields
-  InitField(&f);
+  Initfield(&f);
   f.is2d = true;
   //f.dt = 1e-3;
   
@@ -61,15 +50,15 @@ int TestmEq2(void) {
   printf("cfl param =%f\n", f.hmin);
 
   // time derivative
-  //dtField(&f);
-  //DisplayField(&f);
+  //dtfield(&f);
+  //Displayfield(&f);
  
   double tmax = 0.1;
   RK2(&f, tmax);
  
   // Save the results and the error
-  PlotField(0, false, &f, NULL, "dgvisu.msh");
-  PlotField(0, true, &f, "error", "dgerror.msh");
+  Plotfield(0, false, &f, NULL, "dgvisu.msh");
+  Plotfield(0, true, &f, "error", "dgerror.msh");
 
   double dd = L2error(&f);
   double tolerance = 1e-4;
@@ -78,3 +67,12 @@ int TestmEq2(void) {
 
   return test;
 };
+
+int main(void) {
+  int resu = TestmEq2();
+  if (resu) 
+    printf("m greater than 1 test OK!\n");
+  else 
+    printf("m greater than 1 test failed !\n");
+  return !resu;
+}

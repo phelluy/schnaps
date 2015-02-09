@@ -6,21 +6,10 @@
 #include <math.h>
 #include "clutils.h"
 
-int TestMacroFace(void);
-
-int main(void) {
-  int resu = TestMacroFace();
-  if(resu) 
-    printf("MacroFace test OK\n");
-  else 
-    printf("MacroFace test FAILED\n");
-  return !resu;
-} 
-
 int TestMacroFace(void){
   bool test = true;
 
-  Field f;
+  field f;
 
   // 2D meshes:
   // test/disque2d.msh
@@ -98,7 +87,7 @@ int TestMacroFace(void){
   /* f.interp.interp_param[5] = 1; // y direction refinement */
   /* f.interp.interp_param[6] = 1; // z direction refinement */
   
-  InitField(&f);
+  Initfield(&f);
 
   MacroFace mface[f.macromesh.nbfaces];
   for(int ifa = 0; ifa < f.macromesh.nbfaces; ifa++) {
@@ -109,7 +98,7 @@ int TestMacroFace(void){
   //f.is2d = true;
 
   // OpenCL method
-  // NB: InitField expects a certain address for dtwn, so the OpenCL
+  // NB: Initfield expects a certain address for dtwn, so the OpenCL
   // version must come before the other versions.
   cl_int status;
   void* chkptr = clEnqueueMapBuffer(f.cli.commandqueue,
@@ -139,7 +128,7 @@ int TestMacroFace(void){
   for(int ifa = 0; ifa < f.macromesh.nbfaces; ifa++)
     DGMacroCellInterface_CL((void*) (mface + ifa), &f);
 
-  CopyFieldtoCPU(&f);
+  CopyfieldtoCPU(&f);
   double *fdtwn_opencl = f.dtwn;
 
   // OpenMP, new method
@@ -195,3 +184,12 @@ int TestMacroFace(void){
 
   return test;
 }
+
+int main(void) {
+  int resu = TestMacroFace();
+  if(resu) 
+    printf("MacroFace test OK\n");
+  else 
+    printf("MacroFace test FAILED\n");
+  return !resu;
+} 

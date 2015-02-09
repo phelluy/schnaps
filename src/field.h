@@ -15,7 +15,7 @@
 typedef struct MacroFace {
   int first; //!< first cell/face index
   int last_p1;  //!< last cell/face index + 1
-  //Field *field; //! pointer to a  field
+  //field *field; //! pointer to a  field
 } MacroFace;
 
 //! \brief A simple struct for packing a field
@@ -24,12 +24,12 @@ typedef struct MacroFace {
 typedef struct MacroCell {
   int first; //!< first cell/face index
   int last_p1;  //!< last cell/face index + 1
-  //  Field *field; //! pointer to a  field
+  //  field *field; //! pointer to a  field
 } MacroCell;
 
 //! \brief Data structure for managing a  discrete vector field
 //! solution of a DG approximation
-typedef struct Field {
+typedef struct field {
   //! Underlying mesh
   MacroMesh macromesh;
   //! Physical and numerical model
@@ -53,9 +53,9 @@ typedef struct Field {
 
   //! Size of the field buffers
   int wsize;
-  //! Fields at time steps n
+  //! fields at time steps n
   double* wn;
-  //! Fields at time steps n+1
+  //! fields at time steps n+1
   double* wnp1;
   //! Time derivative of the field
   double* dtwn;
@@ -94,7 +94,7 @@ typedef struct Field {
   cl_kernel zero_buf;
 #endif
 
-} Field;
+} field;
 
 #pragma start_opencl
 //! \brief memory arrangement of field components.
@@ -109,72 +109,72 @@ int GenericVarindex(int *param, int elem, int ipg, int iv);
 
 //! field initialization. Computation of the initial at each glop.
 //! \param[inout] f a field
-void InitField(Field *f);
+void Initfield(field *f);
 
-//! free the buffers created in InitField.
+//! free the buffers created in Initfield.
 //! \param[inout] f a field
-void FreeField(Field *f);
+void Freefield(field *f);
 
 //! copy back the field to host memory
 //! \param[inout] f a field
-void CopyFieldtoCPU(Field *f);
+void CopyfieldtoCPU(field *f);
 
 //! \brief compute the Discontinuous Galerkin volume terms
 //! slow version (no optimization using the tensors products)
 //! \param[inout] f a field
-void DGVolumeSlow(Field *f);
+void DGVolumeSlow(field *f);
 
 //! \brief apply the Discontinuous Galerkin approximation for computing
 //! the time derivative of the field. One subcell implementation.
 //! \param[inout] f a field
-void dtFieldSlow(Field *f);
+void dtfieldSlow(field *f);
 
 //! \brief apply the Discontinuous Galerkin approximation for computing
 //! the time derivative of the field. Works with several subcells.
 //! Fast version: multithreaded and with tensor products optimizations
 //! \param[inout] f a field
-void dtField(Field *f);
+void dtfield(field *f);
 
-//! \brief OpenCL version of dtField : 
+//! \brief OpenCL version of dtfield : 
 //! apply the Discontinuous Galerkin approximation for computing
 //! the time derivative of the field. Works with several subcells.
 //! Fast version: multithreaded and with tensor products optimizations
 //! \param[inout] f a field
-void dtField_CL(Field *f);
+void dtfield_CL(field *f);
 
 //! \brief  compute the Discontinuous Galerkin inter-macrocells boundary terms
 //! The argument has to be void* (for compatibility with pthread)
 //! but it is logically a MacroCell*
 //! \param[inout] mcell a MacroCell
-void* DGMacroCellInterfaceSlow(void *mcell, Field *f);
+void* DGMacroCellInterfaceSlow(void *mcell, field *f);
 
 //! \brief  compute the Discontinuous Galerkin inter-macrocells boundary terms second implementation with a loop on the faces
 //! The argument has to be void* (for compatibility with pthread)
 //! but it is logically a MacroCell*
 //! \param[inout] mcell a MacroCell
-void* DGMacroCellInterface(void *mface, Field *f);
+void* DGMacroCellInterface(void *mface, field *f);
 
-void* DGMacroCellInterface_CL(void *mface, Field *f);
+void* DGMacroCellInterface_CL(void *mface, field *f);
 
 //! \brief compute the Discontinuous Galerkin volume terms
 //! The argument has to be void* (for compatibility with pthread)
 //! but it is logically a MacroCell*
 //! \param[inout] mcell a MacroCell
-void* DGVolume(void *mcell, Field *f);
+void* DGVolume(void *mcell, field *f);
 
-void* DGVolume_CL(void *mcell, Field *f);
+void* DGVolume_CL(void *mcell, field *f);
 
 //! \brief compute the Discontinuous Galerkin inter-subcells terms
 //! \param[inout] mcell a MacroCell
-void* DGSubCellInterface(void *mcell, Field *f);
+void* DGSubCellInterface(void *mcell, field *f);
 
 //! \brief  apply the DG mass term
 //! \param[inout] mcell a MacroCell
-void* DGMass(void *mcell, Field *f);
+void* DGMass(void *mcell, field *f);
 
 //! \brief  apply the DG mass term OpenCL version
 //! \param[inout] mcell a MacroCell
-void* DGMass_CL(void *mcell, Field *f);
+void* DGMass_CL(void *mcell, field *f);
 
 //! \brief exchange two pointers
 //! \param[inout] a first pointer
@@ -200,19 +200,19 @@ void RK_in(double *fwnp1, double *fdtwn, const double dt, const int sizew);
 //! \brief Time integration by a second order Runge-Kutta algorithm
 //! \param[inout] f a field
 //! \param[in] tmax physical duration of the simulation
-void RK2(Field *f, double tmax);
+void RK2(field *f, double tmax);
 
 //! \brief OpenCL version of RK2
 //! time integration by a second order Runge-Kutta algorithm
 //! \param[inout] f a field
 //! \param[in] tmax physical duration of the simulation
-void RK2_CL(Field *f, double tmax);
+void RK2_CL(field *f, double tmax);
 
 //! \brief time integration by a second order Runge-Kutta algorithm.
 //! slow version
 //! \param[inout] f a field
 //! \param[in] tmax physical duration of the simulation
-void RK2Copy(Field *f,double tmax);
+void RK2Copy(field *f,double tmax);
 
 //! \brief save the results in the gmsh format
 //! \param[in] typplot index of the field variable to plot.
@@ -220,16 +220,16 @@ void RK2Copy(Field *f,double tmax);
 //! \param[in] f a field
 //! with the analytical solution
 //! \param[in] filename the path to the gmsh visualization file.
-void PlotField(int typplot, int compare, Field *f, char *fieldname, 
+void Plotfield(int typplot, int compare, field *f, char *fieldname, 
 	       char *filename);
 
 //! \brief  display the field on screen
 //! \param[in] f the field.
-void DisplayField(Field *f);
+void Displayfield(field *f);
 
 //! \brief compute the normalized L2 distance with the imposed data
 //! \param[in] f the field.
 //! \returns the error.
-double L2error(Field *f);
+double L2error(field *f);
 
 #endif

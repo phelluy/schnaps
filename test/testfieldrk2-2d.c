@@ -4,17 +4,9 @@
 #include <assert.h>
 #include <math.h>
 
-int main(void) {
-  // Unit tests
-  int resu=TestFieldRK2_2D();
-  if (resu) printf("Field RK2 2D test OK !\n");
-  else printf("Field RK2 2D test failed !\n");
-  return !resu;
-} 
-
-int TestFieldRK2_2D(void) {
+int TestfieldRK2_2D(void) {
   bool test = true;
-  Field f;
+  field f;
   f.model.cfl = 0.05;
   f.model.m = 1; // only one conservative variable
   f.model.NumFlux = TransNumFlux2d;
@@ -38,7 +30,7 @@ int TestFieldRK2_2D(void) {
 
   //AffineMapMacroMesh(&(f.macromesh));
  
-  InitField(&f);
+  Initfield(&f);
   // require a 2d computation
   f.is2d=true;
 
@@ -49,8 +41,8 @@ int TestFieldRK2_2D(void) {
   double tmax = 0.2;
   RK2(&f, tmax);
  
-  PlotField(0, false, &f, NULL, "dgvisu.msh");
-  PlotField(0, true, &f, "error", "dgerror.msh");
+  Plotfield(0, false, &f, NULL, "dgvisu.msh");
+  Plotfield(0, true, &f, "error", "dgerror.msh");
 
   double dd = L2error(&f);
 
@@ -59,4 +51,13 @@ int TestFieldRK2_2D(void) {
   test = test && (dd < 0.01);
 
   return test;
-};
+}
+
+int main(void) {
+  int resu = TestfieldRK2_2D();
+  if (resu) 
+    printf("field RK2 2D test OK !\n");
+  else 
+    printf("field RK2 2D test failed !\n");
+  return !resu;
+} 

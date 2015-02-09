@@ -29,7 +29,7 @@ int GenericVarindex(int *param, int elem, int ipg, int iv) {
 }
 #pragma end_opencl
 
-void CopyFieldtoCPU(Field *f) {
+void CopyfieldtoCPU(field *f) {
 #ifdef _WITH_OPENCL
   cl_int status;
 
@@ -66,14 +66,14 @@ void CopyFieldtoCPU(Field *f) {
 
 // Update the cl buffer with physnode data depending in the
 // macroelement with index ie
-void update_physnode_cl(Field *f, int ie, cl_mem physnode_cl, double *physnode)
+void update_physnode_cl(field *f, int ie, cl_mem physnode_cl, double *physnode)
 {
   cl_int status;
   /* status = clFinish(f->cli.commandqueue); */
   /* if(status != CL_SUCCESS) printf("%s\n", clErrorString(status)); */
   /* assert(status == CL_SUCCESS); */
 
-  void* chkptr = clEnqueueMapBuffer(f->cli.commandqueue,
+  void *chkptr = clEnqueueMapBuffer(f->cli.commandqueue,
 				    physnode_cl,
 				    CL_TRUE,
 				    CL_MAP_WRITE,
@@ -85,11 +85,10 @@ void update_physnode_cl(Field *f, int ie, cl_mem physnode_cl, double *physnode)
   assert(status == CL_SUCCESS);
   assert(chkptr == physnode);
 
-  for(int inoloc = 0; inoloc < 20; inoloc++) {
+  for(int inoloc = 0; inoloc < 20; ++inoloc) {
     int ino = f->macromesh.elem2node[20 * ie + inoloc];
-    for(unsigned int i = 0; i < 3; ++i) {
+    for(unsigned int i = 0; i < 3; ++i)
       physnode[3 * inoloc + i] = f->macromesh.node[3 * ino + i];
-    }
   }
 
   status = clEnqueueUnmapMemObject(f->cli.commandqueue,
@@ -102,7 +101,7 @@ void update_physnode_cl(Field *f, int ie, cl_mem physnode_cl, double *physnode)
   clFinish(f->cli.commandqueue);
 }
 
-void InitField(Field* f) {
+void Initfield(field* f) {
   //int param[8]={f->model.m,_DEGX,_DEGY,_DEGZ,_RAFX,_RAFY,_RAFZ,0};
   f->is2d = false;
   
@@ -328,11 +327,11 @@ void InitField(Field* f) {
   assert(status == CL_SUCCESS);
 #endif
   
-  printf("Field init done\n");
+  printf("field init done\n");
 };
 
 // This is the destructor for a field
-void FreeField(Field* f) 
+void free_field(field* f) 
 {
   free(f->mcell);
   free(f->mface);
@@ -350,7 +349,7 @@ void FreeField(Field* f)
 }
 
 // Display the field on screen
-void DisplayField(Field* f) {
+void Displayfield(field* f) {
   printf("Display field...\n");
   for(int ie = 0; ie < f->macromesh.nbelems; ie++) {
     printf("elem %d\n", ie);
@@ -378,7 +377,7 @@ void DisplayField(Field* f) {
 // Save the results in the gmsh format typplot: index of the plotted
 // variable int compare == true -> compare with the exact value.  If
 // fieldname is NULL, then the fieldname is typpplot.
-void PlotField(int typplot, int compare, Field* f, char *fieldname,
+void Plotfield(int typplot, int compare, field* f, char *fieldname,
 	       char *filename) {
 
   double hexa64ref[3 * 64] = { 
@@ -528,9 +527,9 @@ void PlotField(int typplot, int compare, Field* f, char *fieldname,
   fprintf(gmshfile, "$NodeData\n");
   fprintf(gmshfile, "1\n");
   if(fieldname == NULL)
-    fprintf(gmshfile, "\"Field %d\"\n", typplot);
+    fprintf(gmshfile, "\"field %d\"\n", typplot);
   else 
-    fprintf(gmshfile, "\"Field: %s\"\n", fieldname);
+    fprintf(gmshfile, "\"field: %s\"\n", fieldname);
 
   double t = 0;
   fprintf(gmshfile, "1\n%f\n3\n0\n1\n", t);
@@ -607,7 +606,7 @@ void PlotField(int typplot, int compare, Field* f, char *fieldname,
 }
 
 // Compute inter-subcell fluxes
-void* DGSubCellInterface(void* mc, Field *f) {
+void* DGSubCellInterface(void* mc, field *f) {
   MacroCell* mcell = (MacroCell*) mc;
 
   // Loop on the elements
@@ -748,7 +747,7 @@ void* DGSubCellInterface(void* mc, Field *f) {
 }
 
 // compute the Discontinuous Galerkin inter-macrocells boundary terms
-void *DGMacroCellInterfaceSlow(void *mc, Field *f) {
+void *DGMacroCellInterfaceSlow(void *mc, field *f) {
   MacroCell *mcell = (MacroCell*) mc;
 
   // Local copy of the interpretation parameters
@@ -872,7 +871,7 @@ void *DGMacroCellInterfaceSlow(void *mc, Field *f) {
 
 // Compute the Discontinuous Galerkin inter-macrocells boundary terms.
 // Second implementation with a loop on the faces.
-void* DGMacroCellInterface(void* mc, Field *f) {
+void* DGMacroCellInterface(void* mc, field *f) {
   MacroFace *mface = (MacroFace*) mc;
   MacroMesh *msh = &(f->macromesh);
   const unsigned int m = f->model.m;
@@ -1008,7 +1007,7 @@ void* DGMacroCellInterface(void* mc, Field *f) {
 }
 
 // Set OpenCL kernel arguments for DGMacroCellInterface
-void initDGMacroCellInterface_CL(Field *f, 
+void initDGMacroCellInterface_CL(field *f, 
 				 cl_mem physnodeL_cl, cl_mem physnodeR_cl)
 {  
   cl_int status;
@@ -1072,7 +1071,7 @@ void initDGMacroCellInterface_CL(Field *f,
 }
 
 // Set the loop-dependant kernel arguments for DGMacroCellInterface_CL
-void loop_initDGMacroCellInterface_CL(Field *f, 
+void loop_initDGMacroCellInterface_CL(field *f, 
 				      int ieL, int ieR, int locfaL, int locfaR)
 {
   cl_int status;
@@ -1119,7 +1118,7 @@ void loop_initDGMacroCellInterface_CL(Field *f,
   clFinish(f->cli.commandqueue);
 }
 
-void *DGMacroCellInterface_CL(void *mf, Field *f) {
+void *DGMacroCellInterface_CL(void *mf, field *f) {
   MacroFace *mface = (MacroFace*) mf;
   int *param = f->interp_param;
 
@@ -1179,7 +1178,7 @@ void *DGMacroCellInterface_CL(void *mf, Field *f) {
 }
 
 // Apply division by the mass matrix
-void* DGMass(void* mc, Field *f) {
+void* DGMass(void* mc, field *f) {
   MacroCell* mcell = (MacroCell*) mc;
 
   // loop on the elements
@@ -1214,7 +1213,7 @@ void* DGMass(void* mc, Field *f) {
 }
 
 // Set up kernel arguments, etc, for DGMass_CL.
-void init_DGMass_CL(Field *f)
+void init_DGMass_CL(field *f)
 {
   cl_int status;
   cl_kernel kernel = f->dgmass;
@@ -1253,7 +1252,7 @@ void init_DGMass_CL(Field *f)
 }
 
 // Apply division by the mass matrix OpenCL version
-void *DGMass_CL(void *mc, Field *f) {
+void *DGMass_CL(void *mc, field *f) {
   MacroCell *mcell = (MacroCell*) mc;
   int *param = f->interp_param;
   cl_int status;
@@ -1295,7 +1294,7 @@ void *DGMass_CL(void *mc, Field *f) {
 }
 
 // Set kernel argument for DGVolume_CL
-void init_DGVolume_CL(Field *f)
+void init_DGVolume_CL(field *f)
 {
   cl_int status;
   int argnum = 0;
@@ -1336,7 +1335,7 @@ void init_DGVolume_CL(Field *f)
 }
 
 // Apply division by the mass matrix OpenCL version
-void *DGVolume_CL(void *mc, Field *f) {
+void *DGVolume_CL(void *mc, field *f) {
   MacroCell *mcell = (MacroCell*) mc;
   cl_kernel kernel = f->dgvolume;
   int* param = f->interp_param;
@@ -1381,7 +1380,7 @@ void *DGVolume_CL(void *mc, Field *f) {
 }
 
 // Compute the Discontinuous Galerkin volume terms, fast version
-void* DGVolume(void* mc, Field *f) {
+void* DGVolume(void* mc, field *f) {
   MacroCell* mcell = (MacroCell*) mc;
 
   // loop on the elements
@@ -1524,7 +1523,7 @@ void* DGVolume(void* mc, Field *f) {
 }
 
 // Compute the Discontinuous Galerkin volume terms: slow version
-void DGVolumeSlow(Field* f) {
+void DGVolumeSlow(field* f) {
   // Assembly of the volume terms
 
   // Loop on the elements
@@ -1590,7 +1589,7 @@ void DGVolumeSlow(Field* f) {
   }
 }
 
-void dtField_pthread(Field *f) 
+void dtfield_pthread(field *f) 
 {
   bool facealgo = true;
   //facealgo=false;
@@ -1662,9 +1661,9 @@ void dtField_pthread(Field *f)
 
 // Apply the Discontinuous Galerkin approximation for computing the
 // time derivative of the field
-void dtField(Field* f) {
+void dtfield(field* f) {
 #ifdef _WITH_PTHREAD
-  dtField_pthread(f);
+  dtfield_pthread(f);
 #else
 
   bool facealgo = true;
@@ -1690,7 +1689,7 @@ void dtField(Field* f) {
 #endif
 }
 
-void set_buf_to_zero_cl(cl_mem *buf, int size, Field *f)
+void set_buf_to_zero_cl(cl_mem *buf, int size, field *f)
 {
   cl_int status;
 
@@ -1719,7 +1718,7 @@ void set_buf_to_zero_cl(cl_mem *buf, int size, Field *f)
 
 // Apply the Discontinuous Galerkin approximation for computing the
 // time derivative of the field. OpenCL version.
-void dtField_CL(Field *f) {
+void dtfield_CL(field *f) {
   set_buf_to_zero_cl(&(f->dtwn_cl), f->wsize, f);
 
   for(int ifa = 0; ifa < f->macromesh.nbfaces; ifa++)
@@ -1733,7 +1732,7 @@ void dtField_CL(Field *f) {
 
 // Apply the Discontinuous Galerkin approximation for computing the
 // time derivative of the field
-void dtFieldSlow(Field* f) {
+void dtfieldSlow(field* f) {
   // Interpolation params
   // Warning: this is ugly, but the last parameter is used for
   // computing the volume GLOP index from the face GLOP index...
@@ -1959,7 +1958,7 @@ void RK_in(double *fwnp1, double *fdtwn, const double dt, const int sizew)
 }
 
 // Time integration by a second order Runge-Kutta algorithm
-void RK2(Field* f, double tmax) {
+void RK2(field* f, double tmax) {
   double vmax = 1; // FIXME: to be changed for another model.
   
   f->itermax = tmax / f->dt;
@@ -1972,12 +1971,12 @@ void RK2(Field* f, double tmax) {
     if (iter % freq == 0)
       printf("t=%f iter=%d/%d dt=%f\n", f->tnow, iter, f->itermax, f->dt);
 
-    dtField(f);
+    dtfield(f);
     RK_out(f->wnp1, f->wn, f->dtwn, 0.5 * f->dt, sizew);
     swap_pdoubles(&f->wnp1, &f->wn);
 
     f->tnow += 0.5 * f->dt;
-    dtField(f);
+    dtfield(f);
     RK_in(f->wnp1, f->dtwn, f->dt, sizew);
     swap_pdoubles(&f->wnp1, &f->wn);
 
@@ -1988,7 +1987,7 @@ void RK2(Field* f, double tmax) {
 }
 
 // Set kernel arguments for first stage of RK2
-void init_RK2_CL_stage1(Field *f, const double dt) 
+void init_RK2_CL_stage1(field *f, const double dt) 
 {
   cl_kernel kernel = f->RK_out_CL;
   cl_int status;
@@ -2031,7 +2030,7 @@ void init_RK2_CL_stage1(Field *f, const double dt)
 }
 
 // Launch first stage of RK2 integration
-void RK2_CL_stage1(Field *f, size_t numworkitems)
+void RK2_CL_stage1(field *f, size_t numworkitems)
 {
   cl_int status;
 
@@ -2051,7 +2050,7 @@ void RK2_CL_stage1(Field *f, size_t numworkitems)
 }
 
 // Set kernel arguments for second stage of RK2
-void init_RK2_CL_stage2(Field *f, const double dt) 
+void init_RK2_CL_stage2(field *f, const double dt) 
 {
   cl_kernel kernel = f->RK_in_CL;
   cl_int status;
@@ -2081,7 +2080,7 @@ void init_RK2_CL_stage2(Field *f, const double dt)
 }
 
 // Launch second stage of RK2 integration
-void RK2_CL_stage2(Field *f, size_t numworkitems)
+void RK2_CL_stage2(field *f, size_t numworkitems)
 {
   cl_int status;
 
@@ -2099,7 +2098,7 @@ void RK2_CL_stage2(Field *f, size_t numworkitems)
 
 // Time integration by a second order Runge-Kutta algorithm, OpenCL
 // version.
-void RK2_CL(Field *f, double tmax) {
+void RK2_CL(field *f, double tmax) {
 
   f->itermax = tmax / f->dt;
   int freq = (1 >= f->itermax / 10)? 1 : f->itermax / 10;
@@ -2116,24 +2115,24 @@ void RK2_CL(Field *f, double tmax) {
 
 #if 1
     // OpenCL version
-    dtField_CL(f);
+    dtfield_CL(f);
     RK2_CL_stage1(f, sizew);
     swap_clmem(&(f->wnp1_cl), &(f->wn_cl));
     //swap_pdoubles(&f->wnp1, &f->wn);
 
     f->tnow += 0.5 * f->dt;
-    dtField_CL(f);
+    dtfield_CL(f);
     RK2_CL_stage2(f, sizew);
     swap_clmem(&(f->wnp1_cl), &(f->wn_cl));
     //swap_pdoubles(&f->wnp1, &f->wn);
 #else
     // Temporary non-OpenCL version
-    dtField_CL(f);
+    dtfield_CL(f);
     RK_out(f->wnp1, f->wn, f->dtwn, 0.5 * f->dt, sizew);
     swap_pdoubles(&f->wnp1, &f->wn);
 
     f->tnow += 0.5 * f->dt;
-    dtField_CL(f);
+    dtfield_CL(f);
     RK_in(f->wnp1, f->dtwn, f->dt, sizew);
     swap_pdoubles(&f->wnp1, &f->wn);
 #endif
@@ -2146,7 +2145,7 @@ void RK2_CL(Field *f, double tmax) {
 
 // Time integration by a second order Runge-Kutta algorithm with
 // memory copy instead of pointers exchange
-void RK2Copy(Field* f, double tmax) {
+void RK2Copy(field* f, double tmax) {
 
   //int param[8] = {f->model.m, _DEGX, _DEGY, _DEGZ, _RAFX, _RAFY, _RAFZ, 0};
   int sizew = f->macromesh.nbelems * f->model.m * NPG(f->interp_param + 1);
@@ -2156,7 +2155,7 @@ void RK2Copy(Field* f, double tmax) {
   while(f->tnow < tmax) {
     printf("t=%f iter=%d dt=%f\n", f->tnow, iter, f->dt);
     // predictor
-    dtField(f);
+    dtfield(f);
     for(int iw = 0; iw < sizew; iw++) {
       f->wnp1[iw] = f->wn[iw]+ 0.5 * f->dt * f->dtwn[iw];
     }
@@ -2168,7 +2167,7 @@ void RK2Copy(Field* f, double tmax) {
     }
     // corrector
     f->tnow += 0.5 * f->dt;
-    dtField(f);
+    dtfield(f);
     for(int iw = 0; iw < sizew; iw++) {
       f->wnp1[iw] += f->dt * f->dtwn[iw];
     }
@@ -2183,7 +2182,7 @@ void RK2Copy(Field* f, double tmax) {
 }
 
 // Compute the normalized L2 distance with the imposed data
-double L2error(Field* f) {
+double L2error(field* f) {
   //int param[8] = {f->model.m, _DEGX, _DEGY, _DEGZ, _RAFX, _RAFY, _RAFZ, 0};
   double error = 0;
   double mean = 0;

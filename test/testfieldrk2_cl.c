@@ -4,21 +4,10 @@
 #include <assert.h>
 #include <math.h>
 
-int main(void) {
-  int resu = TestFieldRK2_CL();
-
-  if(resu) 
-    printf("Field RK2_CL test OK !\n");
-  else 
-    printf("Field RK2_CL test failed !\n");
-
-  return !resu;
-} 
-
-int TestFieldRK2_CL(void){
+int TestfieldRK2_CL(void){
   int test = true;
 
-  Field f;
+  field f;
 
   // 2D meshes:
   // test/disque2d.msh
@@ -89,15 +78,15 @@ int TestFieldRK2_CL(void){
 #endif
 
   //AffineMapMacroMesh(&(f.macromesh));
-  InitField(&f);
+  Initfield(&f);
 
   CheckMacroMesh(&(f.macromesh), f.interp.interp_param + 1);
  
   double tmax = 0.1;
   RK2_CL(&f, tmax);
  
-  PlotField(0, false, &f, NULL, "dgvisu.msh");
-  PlotField(0, true , &f, "error", "dgerror.msh");
+  Plotfield(0, false, &f, NULL, "dgvisu.msh");
+  Plotfield(0, true , &f, "error", "dgerror.msh");
 
   double dd = L2error(&f);
 
@@ -110,5 +99,13 @@ int TestFieldRK2_CL(void){
   return test;
 };
 
+int main(void) {
+  int resu = TestfieldRK2_CL();
 
+  if(resu) 
+    printf("field RK2_CL test OK !\n");
+  else 
+    printf("field RK2_CL test failed !\n");
 
+  return !resu;
+} 

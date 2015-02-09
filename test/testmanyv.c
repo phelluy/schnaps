@@ -83,7 +83,7 @@ int main(int argc, char *argv[]) {
   }
 
   bool test = true;
-  Field f;
+  field f;
   
   f.varindex = GenericVarindex;
   f.model.vlasov_mz = 1;
@@ -151,7 +151,7 @@ int main(int argc, char *argv[]) {
   BuildConnectivity(&(f.macromesh));
  
   // Prepare the initial fields
-  InitField(&f);
+  Initfield(&f);
   if(dt != 0.0)
     f.dt = dt;
 
@@ -189,10 +189,10 @@ int main(int argc, char *argv[]) {
 	char filename[100];
 	sprintf(filename, "dgvisuix%diy%d.msh", ix, iy);
 	//printf("ix: %d, iy: %d, fieldname: %s\n", ix, iy, fieldname);
-	PlotField(mplot, false, &f, fieldname, filename);
+	Plotfield(mplot, false, &f, fieldname, filename);
       }
     }
-    /* PlotField(mplot, true, &f, "dgerror.msh"); */
+    /* Plotfield(mplot, true, &f, "dgerror.msh"); */
   }
 
   printf("tmax: %f, cfl: %f, deg: %d, nraf: %d\n", tmax, f.model.cfl, deg, nraf);

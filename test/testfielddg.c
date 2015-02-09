@@ -4,19 +4,12 @@
 #include <assert.h>
 #include <math.h>
 
-int main(void) {
-  // Unit tests
-  int resu = TestFieldDG();
-  if (resu) printf("Field DG test OK !\n");
-  else printf("Field DG test failed !\n");
-  return !resu;
-} 
 
-int TestFieldDG(void){
+int TestfieldDG(void){
 
   int test = true;
 
-  Field f;
+  field f;
   f.model.cfl = 0.05;
   f.model.m = 1; // only one conservative variable
   f.model.NumFlux = TransNumFlux;
@@ -41,15 +34,15 @@ int TestFieldDG(void){
   //AffineMapMacroMesh(&(f.macromesh));
   PrintMacroMesh(&(f.macromesh));
 
-  InitField(&f);
+  Initfield(&f);
   CheckMacroMesh(&(f.macromesh), f.interp.interp_param + 1);
 
-  dtField(&f);
+  dtfield(&f);
   
-  DisplayField(&f);
+  Displayfield(&f);
 
-  PlotField(0, false, &f, NULL, "visu.msh");
-  PlotField(0, true, &f, "error", "error.msh");
+  Plotfield(0, false, &f, NULL, "visu.msh");
+  Plotfield(0, true, &f, "error", "error.msh");
 
   // Test the time derivative with the exact solution
   for(int i = 0; 
@@ -61,3 +54,11 @@ int TestFieldDG(void){
   
   return test;
 };
+
+int main(void) {
+  // Unit tests
+  int resu = TestfieldDG();
+  if (resu) printf("field DG test OK !\n");
+  else printf("field DG test failed !\n");
+  return !resu;
+} 

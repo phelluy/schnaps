@@ -4,18 +4,10 @@
 #include <assert.h>
 #include <math.h>
 
-int main(void) {
-  // Unit tests
-  int resu=TestField();
-  if (resu) printf("Field test OK !\n");
-  else printf("Field test failed !\n");
-  return !resu;
-} 
-
-int TestField(void){
+int Testfield(void){
   int test = true;
 
-  Field f;
+  field f;
   f.model.cfl = 0.05;
   f.model.m = 1; // only one conservative variable
   f.model.NumFlux = TransNumFlux;
@@ -35,10 +27,20 @@ int TestField(void){
   ReadMacroMesh(&(f.macromesh),"test/testmacromesh.msh");
   BuildConnectivity(&(f.macromesh));
 
-  InitField(&f);
+  Initfield(&f);
   CheckMacroMesh(&(f.macromesh), f.interp.interp_param + 1);
 
-  PlotField(0, false, &f, NULL, "testvisufield.msh");
+  Plotfield(0, false, &f, NULL, "testvisufield.msh");
   
   return test;
-};
+}
+
+int main(void) {
+  // Unit tests
+  int resu = Testfield();
+  if (resu)
+    printf("field test OK !\n");
+  else 
+    printf("field test failed !\n");
+  return !resu;
+} 
