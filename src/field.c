@@ -713,8 +713,8 @@ void* DGSubCellInterface(void* mc, field *f, double *w, double *dtw) {
 		  for(int iv = 0; iv < m; iv++) {
 		    int imemL = f->varindex(f->interp_param, ie, ipgL, iv);
 		    int imemR = f->varindex(f->interp_param, ie, ipgR, iv);
-		    wL[iv] = f->wn[imemL];
-		    wR[iv] = f->wn[imemR];
+		    wL[iv] = w[imemL];
+		    wR[iv] = w[imemR];
 		  }
 		  f->model.NumFlux(wL, wR, vnds, flux);
 
@@ -731,8 +731,8 @@ void* DGSubCellInterface(void* mc, field *f, double *w, double *dtw) {
 		  for(int iv = 0; iv < m; iv++) {
 		    int imemL = f->varindex(f->interp_param, ie, ipgL, iv);
 		    int imemR = f->varindex(f->interp_param, ie, ipgR, iv);
-		    f->dtwn[imemL] -= flux[iv] * wpg;
-		    f->dtwn[imemR] += flux[iv] * wpg;
+		    dtw[imemL] -= flux[iv] * wpg;
+		    dtw[imemR] += flux[iv] * wpg;
 		  }
 
 		}  // face yhat loop
@@ -968,9 +968,9 @@ void* DGMacroCellInterface(void* mc, field *f, double *w, double *dtw) {
 	double wR[m];
         for(int iv = 0; iv < m; iv++) {
 	  int imemL = f->varindex(iparam, ieL, ipgL, iv);
-	  wL[iv] = f->wn[imemL];
+	  wL[iv] = w[imemL];
           int imemR = f->varindex(iparam, ieR, ipgR, iv);
-          wR[iv] = f->wn[imemR];
+          wR[iv] = w[imemR];
         }
 
         // int_dL F(wL, wR, grad phi_ib)
@@ -982,14 +982,14 @@ void* DGMacroCellInterface(void* mc, field *f, double *w, double *dtw) {
 	  // The basis functions is also the gauss point index
 	  int imemL = f->varindex(iparam, ieL, ipgL, iv);
           int imemR = f->varindex(iparam, ieR, ipgR, iv);
-	  f->dtwn[imemL] -= flux[iv] * wpg;
-          f->dtwn[imemR] += flux[iv] * wpg;
+	  dtw[imemL] -= flux[iv] * wpg;
+          dtw[imemR] += flux[iv] * wpg;
 	}
 
       } else { // The point is on the boundary.
 	for(int iv = 0; iv < m; iv++) {
 	  int imemL = f->varindex(iparam, ieL, ipgL, iv);
-	  wL[iv] = f->wn[imemL];
+	  wL[iv] = w[imemL];
 	}
 
         f->model.BoundaryFlux(xpg, f->tnow, wL, vnds, flux);
@@ -997,7 +997,7 @@ void* DGMacroCellInterface(void* mc, field *f, double *w, double *dtw) {
 	for(int iv = 0; iv < m; iv++) {
 	  // The basis functions is also the gauss point index
 	  int imemL = f->varindex(iparam, ieL, ipgL, iv);
-	  f->dtwn[imemL] -= flux[iv] * wpg;
+	  dtw[imemL] -= flux[iv] * wpg;
 	}
       }
 
@@ -1204,7 +1204,7 @@ void* DGMass(void* mc, field *f, double *w, double *dtw) {
       double det = dot_product(dtau[0], codtau[0]);
       for(int iv = 0; iv < f->model.m; iv++) {
 	int imem = f->varindex(f->interp_param, ie, ipg, iv);
-	f->dtwn[imem] /= (wpg * det);
+	dtw[imem] /= (wpg * det);
         //printf("det2=%f wpg=%f imem = %d\n", det, wpg, imem);
 
       }
@@ -1463,9 +1463,7 @@ void* DGVolume(void* mc, field *f, double *w, double *dtw) {
 		  int ipgL = offsetL + p[0] + npg[0] * (p[1] + npg[1] * p[2]);
 		  for(int iv = 0; iv < m; iv++) {
 		    ///int imemL = f->varindex(f_interp_param, ie, ipgL, iv);
-		    wL[iv] = f->wn[imems[m * (ipgL - offsetL) + iv]];
-
-		    //wL[iv] = f->wn[imemL];
+		    wL[iv] = w[imems[m * (ipgL - offsetL) + iv]];
 		  }
 		  int q[3] = {p[0], p[1], p[2]};
 		  // loop on the direction dim0 on the "cross"
@@ -1501,7 +1499,7 @@ void* DGVolume(void* mc, field *f, double *w, double *dtw) {
 		    for(int iv = 0; iv < m; iv++) {
 		      int imemR = f->varindex(f_interp_param, ie, ipgR, iv);
 		      assert(imemR == imems[m * (ipgR - offsetL) + iv]);
-		      f->dtwn[imems[m*(ipgR-offsetL)+iv]]+=flux[iv]*wpgL;
+		      dtw[imems[m*(ipgR-offsetL)+iv]]+=flux[iv]*wpgL;
 		    }
 		  } // iq
 		} // p2
@@ -1972,12 +1970,11 @@ void RK2(field *f, double tmax) {
 
     dtfield(f, f->wn, f->dtwn);
     RK_out(f->wnp1, f->wn, f->dtwn, 0.5 * f->dt, sizew);
-    swap_pdoubles(&f->wnp1, &f->wn);
 
     f->tnow += 0.5 * f->dt;
-    dtfield(f, f->wn, f->dtwn);
-    RK_in(f->wnp1, f->dtwn, f->dt, sizew);
-    swap_pdoubles(&f->wnp1, &f->wn);
+
+    dtfield(f, f->wnp1, f->dtwn);
+    RK_in(f->wn, f->dtwn, f->dt, sizew);
 
     f->tnow += 0.5 * f->dt;
     iter++;
@@ -2003,11 +2000,6 @@ void RK2(field *f, double tmax) {
 
 /*     dtfield(f); */
 /*     RK_out(k1, f->wn, f->dtwn, 0.5 * f->dt, sizew); */
-
-    
-    
-    
-
     
 /*     f->tnow += f->dt; // FIXME: this should be updated stage-by-stage */
 /*     iter++; */
