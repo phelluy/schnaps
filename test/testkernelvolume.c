@@ -69,18 +69,15 @@ int TestKernelVolume(void){
   /* status=clFinish(f.cli.commandqueue); */
   /* assert(status == CL_SUCCESS); */
 
-
- 
-  for(int ie=0; ie < f.macromesh.nbelems; ++ie) {
-    DGVolume_CL((void*) &(f.mcell[ie]), &f);
-  }
+  for(int ie=0; ie < f.macromesh.nbelems; ++ie)
+    DGVolume_CL((void*) &(f.mcell[ie]), &f, &(f.wn_cl));
 
   CopyfieldtoCPU(&f);
 
   Displayfield(&f);
 
   // save the dtwn pointer
-  double* saveptr=f.dtwn;
+  double *saveptr=f.dtwn;
 
   // malloc a new dtwn.
   f.dtwn=calloc(f.wsize,sizeof(double));
@@ -100,7 +97,9 @@ int TestKernelVolume(void){
   }
   printf("max error=%f\n",maxerr);
 
-  test=(maxerr < 1e-8);
+  double tolerance = 1e-8;
+
+  test = (maxerr < tolerance);
 
   return test;
 }

@@ -607,7 +607,7 @@ void Plotfield(int typplot, int compare, field* f, char *fieldname,
 }
 
 // Compute inter-subcell fluxes
-void* DGSubCellInterface(void* mc, field *f, double *w, double *dtw) {
+void DGSubCellInterface(void* mc, field *f, double *w, double *dtw) {
   MacroCell* mcell = (MacroCell*) mc;
 
   // Loop on the elements
@@ -744,11 +744,10 @@ void* DGSubCellInterface(void* mc, field *f, double *w, double *dtw) {
     } // subcell icl0 loop
 
   } // macro elem loop
-  return NULL;
 }
 
 // compute the Discontinuous Galerkin inter-macrocells boundary terms
-void *DGMacroCellInterfaceSlow(void *mc, field *f, double *w, double *dtw) {
+void DGMacroCellInterfaceSlow(void *mc, field *f, double *w, double *dtw) {
   MacroCell *mcell = (MacroCell*) mc;
 
   // Local copy of the interpretation parameters
@@ -867,12 +866,11 @@ void *DGMacroCellInterfaceSlow(void *mc, field *f, double *w, double *dtw) {
 
     }
   }
-  return NULL;
 }
 
 // Compute the Discontinuous Galerkin inter-macrocells boundary terms.
 // Second implementation with a loop on the faces.
-void* DGMacroCellInterface(void* mc, field *f, double *w, double *dtw) {
+void DGMacroCellInterface(void *mc, field *f, double *w, double *dtw) {
   MacroFace *mface = (MacroFace*) mc;
   MacroMesh *msh = &(f->macromesh);
   const unsigned int m = f->model.m;
@@ -1004,7 +1002,6 @@ void* DGMacroCellInterface(void* mc, field *f, double *w, double *dtw) {
     }
 
   }
-  return NULL;
 }
 
 // Set OpenCL kernel arguments for DGMacroCellInterface
@@ -1054,12 +1051,8 @@ void initDGMacroCellInterface_CL(field *f,
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status == CL_SUCCESS);
 
-  status = clSetKernelArg(kernel,
-                          argnum++,
-                          sizeof(cl_mem),
-                          &(f->wn_cl));
-  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status == CL_SUCCESS);
+  // wn_cl
+  argnum++;
 
   status = clSetKernelArg(kernel,
                           argnum++,
@@ -1119,7 +1112,7 @@ void loop_initDGMacroCellInterface_CL(field *f,
   clFinish(f->cli.commandqueue);
 }
 
-void *DGMacroCellInterface_CL(void *mf, field *f) {
+void DGMacroCellInterface_CL(void *mf, field *f, cl_mem *wn_cl) {
   MacroFace *mface = (MacroFace*) mf;
   int *param = f->interp_param;
 
@@ -1138,6 +1131,14 @@ void *DGMacroCellInterface_CL(void *mf, field *f) {
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status == CL_SUCCESS);
 
+  status = clSetKernelArg(kernel,
+                          8,
+                          sizeof(cl_mem),
+                          wn_cl);
+  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status == CL_SUCCESS);
+
+
   // Set the kernel arguments
   initDGMacroCellInterface_CL(f, f->physnode_cl, physnodeR_cl);
   
@@ -1151,7 +1152,7 @@ void *DGMacroCellInterface_CL(void *mf, field *f) {
 
     update_physnode_cl(f, ieL, f->physnode_cl, f->physnode);
 
-    if(ieR >= 0) 
+    if(ieR >= 0)
       update_physnode_cl(f, ieR, physnodeR_cl, physnodeR);
 
     // Set the remaining, loop-dependant kernel arguments
@@ -1174,12 +1175,10 @@ void *DGMacroCellInterface_CL(void *mf, field *f) {
   status = clReleaseMemObject(physnodeR_cl);
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status == CL_SUCCESS);
-
-  return NULL;
 }
 
 // Apply division by the mass matrix
-void* DGMass(void* mc, field *f, double *w, double *dtw) {
+void DGMass(void *mc, field *f, double *w, double *dtw) {
   MacroCell* mcell = (MacroCell*) mc;
 
   // loop on the elements
@@ -1210,7 +1209,6 @@ void* DGMass(void* mc, field *f, double *w, double *dtw) {
       }
     }
   }
-  return NULL;
 }
 
 // Set up kernel arguments, etc, for DGMass_CL.
@@ -1253,7 +1251,7 @@ void init_DGMass_CL(field *f)
 }
 
 // Apply division by the mass matrix OpenCL version
-void *DGMass_CL(void *mc, field *f) {
+void DGMass_CL(void *mc, field *f) {
   MacroCell *mcell = (MacroCell*) mc;
   int *param = f->interp_param;
   cl_int status;
@@ -1291,11 +1289,10 @@ void *DGMass_CL(void *mc, field *f) {
 
     clFinish(f->cli.commandqueue);
   }
-  return NULL;
 }
 
 // Set kernel argument for DGVolume_CL
-void init_DGVolume_CL(field *f)
+void init_DGVolume_CL(field *f, cl_mem *wn_cl)
 {
   cl_int status;
   int argnum = 0;
@@ -1321,7 +1318,7 @@ void init_DGVolume_CL(field *f)
   status = clSetKernelArg(kernel,
                           argnum++,
                           sizeof(cl_mem),
-                          &(f->wn_cl));
+                          wn_cl);
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status == CL_SUCCESS);
 
@@ -1336,14 +1333,14 @@ void init_DGVolume_CL(field *f)
 }
 
 // Apply division by the mass matrix OpenCL version
-void *DGVolume_CL(void *mc, field *f) {
+void DGVolume_CL(void *mc, field *f, cl_mem *wn_cl) {
   MacroCell *mcell = (MacroCell*) mc;
   cl_kernel kernel = f->dgvolume;
   int* param = f->interp_param;
 
   cl_int status;
 
-  init_DGVolume_CL(f);
+  init_DGVolume_CL(f, wn_cl);
 
   // Loop on the elements
   for (int ie = mcell->first; ie < mcell->last_p1; ie++) {
@@ -1377,11 +1374,10 @@ void *DGVolume_CL(void *mc, field *f) {
 
     clFinish(f->cli.commandqueue);
   }
-  return NULL;
 }
 
 // Compute the Discontinuous Galerkin volume terms, fast version
-void* DGVolume(void* mc, field *f, double *w, double *dtw) {
+void DGVolume(void *mc, field *f, double *w, double *dtw) {
   MacroCell* mcell = (MacroCell*) mc;
 
   // loop on the elements
@@ -1518,7 +1514,6 @@ void* DGVolume(void* mc, field *f, double *w, double *dtw) {
       } //icl1
     } // icl0
   }
-  return NULL;
 }
 
 // Compute the Discontinuous Galerkin volume terms: slow version
@@ -1718,14 +1713,14 @@ void set_buf_to_zero_cl(cl_mem *buf, int size, field *f)
 
 // Apply the Discontinuous Galerkin approximation for computing the
 // time derivative of the field. OpenCL version.
-void dtfield_CL(field *f) {
+void dtfield_CL(field *f, cl_mem *wn_cl) {
   set_buf_to_zero_cl(&(f->dtwn_cl), f->wsize, f);
 
   for(int ifa = 0; ifa < f->macromesh.nbfaces; ifa++)
-    DGMacroCellInterface_CL((void*) (f->mface + ifa), f);
+    DGMacroCellInterface_CL((void*) (f->mface + ifa), f, wn_cl);
   for(int ie = 0; ie < f->macromesh.nbelems; ++ie) {
     MacroCell *mcelli = f->mcell + ie;
-    DGVolume_CL(mcelli, f);
+    DGVolume_CL(mcelli, f, wn_cl);
     DGMass_CL(mcelli, f);
   }
 }
@@ -2175,12 +2170,12 @@ void RK2_CL(field *f, double tmax) {
     if (iter % freq == 0)
       printf("t=%f iter=%d/%d dt=%f\n", f->tnow, iter, f->itermax, f->dt);
 
-    dtfield_CL(f);
+    dtfield_CL(f, &(f->wnp1_cl));
     RK2_CL_stage1(f, sizew);
     swap_clmem(&(f->wnp1_cl), &(f->wn_cl));
 
     f->tnow += 0.5 * f->dt;
-    dtfield_CL(f);
+    dtfield_CL(f, &(f->wnp1_cl));
     RK2_CL_stage2(f, sizew);
     swap_clmem(&(f->wnp1_cl), &(f->wn_cl));
 

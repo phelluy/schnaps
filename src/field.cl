@@ -516,8 +516,10 @@ void DGMass(__constant int *param,        // interp param
 __kernel
 void DGMacroCellInterface(__constant int *param,        // interp param
                           double tnow,  // current time
-                          int ieL, int ieR,  // left and right elem ids
-                          int locfaL, int locfaR, // current face local indices
+                          int ieL, 
+			  int ieR,  // left and right elem ids
+                          int locfaL, 
+			  int locfaR, // current face local indices
                           __constant double *physnodeL, // left macrocell nodes
                           __constant double *physnodeR, // right macrocell nodes
                           __global double *wn,

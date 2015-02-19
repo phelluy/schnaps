@@ -77,7 +77,7 @@ int TestDtfield_CL(void){
 
   Initfield(&f);
 
-  dtfield_CL(&f);
+  dtfield_CL(&f, &(f.wn_cl));
   CopyfieldtoCPU(&f);
 
   // Displayfield(&f);

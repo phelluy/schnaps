@@ -142,46 +142,41 @@ void dtfield(field *f, double *w, double *dtw);
 //! the time derivative of the field. Works with several subcells.
 //! Fast version: multithreaded and with tensor products optimizations
 //! \param[inout] f a field
-void dtfield_CL(field *f);
+void dtfield_CL(field *f, cl_mem *dtwn_cl);
 
 //! \brief  compute the Discontinuous Galerkin inter-macrocells boundary terms
 //! The argument has to be void* (for compatibility with pthread)
 //! but it is logically a MacroCell*
 //! \param[inout] mcell a MacroCell
-void* DGMacroCellInterfaceSlow(void *mcell, field *f, double *w, double *dtw);
+void DGMacroCellInterfaceSlow(void *mcell, field *f, double *w, double *dtw);
 
 //! \brief  compute the Discontinuous Galerkin inter-macrocells boundary terms second implementation with a loop on the faces
 //! The argument has to be void* (for compatibility with pthread)
 //! but it is logically a MacroCell*
 //! \param[inout] mcell a MacroCell
-void* DGMacroCellInterface(void *mface, field *f, double *w, double *dtw);
+void DGMacroCellInterface(void *mface, field *f, double *w, double *dtw);
 
-void* DGMacroCellInterface_CL(void *mface, field *f);
+void DGMacroCellInterface_CL(void *mface, field *f, cl_mem *wn_cl);
 
 //! \brief compute the Discontinuous Galerkin volume terms
 //! The argument has to be void* (for compatibility with pthread)
 //! but it is logically a MacroCell*
 //! \param[inout] mcell a MacroCell
-void* DGVolume(void *mcell, field *f, double *w, double *dtw);
+void DGVolume(void *mcell, field *f, double *w, double *dtw);
 
-void* DGVolume_CL(void *mcell, field *f);
+void DGVolume_CL(void *mcell, field *f, cl_mem *dtwn_cl);
 
 //! \brief compute the Discontinuous Galerkin inter-subcells terms
 //! \param[inout] mcell a MacroCell
-void* DGSubCellInterface(void *mcell, field *f, double *w, double *dtw);
+void DGSubCellInterface(void *mcell, field *f, double *w, double *dtw);
 
 //! \brief  apply the DG mass term
 //! \param[inout] mcell a MacroCell
-void* DGMass(void *mcell, field *f, double *w, double *dtw);
+void DGMass(void *mcell, field *f, double *w, double *dtw);
 
 //! \brief  apply the DG mass term OpenCL version
 //! \param[inout] mcell a MacroCell
-void* DGMass_CL(void *mcell, field *f);
-
-//! \brief exchange two pointers
-//! \param[inout] a first pointer
-//! \param[inout] b second pointer
-void swap_pdoubles(double **a, double **b);
+void DGMass_CL(void *mcell, field *f);
 
 //! \brief An out-of-place RK stage
 //! \param[out] fwnp1 field at time n+1

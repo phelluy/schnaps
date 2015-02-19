@@ -74,7 +74,7 @@ int TestKernelInterface(void){
 
   // OpenCL version
   for(int ifa = 0; ifa < f.macromesh.nbfaces; ifa++)
-    DGMacroCellInterface_CL((void*) (mface + ifa), &f);
+    DGMacroCellInterface_CL((void*) (mface + ifa), &f, &(f.wn_cl));
   CopyfieldtoCPU(&f);
   //Displayfield(&f);
   double *fdtwn_opencl = f.dtwn;
