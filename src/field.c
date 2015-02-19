@@ -116,8 +116,6 @@ void Initfield(field* f) {
   printf("allocate %d doubles\n", nmem);
   f->wn = calloc(nmem, sizeof(double));
   assert(f->wn);
-  f->wnp1 = calloc(nmem, sizeof(double));
-  assert(f->wnp1);
   f->dtwn = calloc(nmem, sizeof(double));
   assert(f->dtwn);
 
@@ -242,14 +240,6 @@ void Initfield(field* f) {
                             sizeof(double) * f->wsize,
                             f->wn,
                             &status);
-  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status == CL_SUCCESS);
-
-  f->wnp1_cl = clCreateBuffer(f->cli.context,
-			      CL_MEM_READ_WRITE | CL_MEM_USE_HOST_PTR,
-			      sizeof(double) * f->wsize,
-			      f->wnp1,
-			      &status);
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status == CL_SUCCESS);
 
@@ -1944,30 +1934,33 @@ void RK2(field *f, double tmax)
   int sizew = f->macromesh.nbelems * f->model.m * NPG(f->interp_param + 1);
   int iter = 0;
 
+  double *wnp1 = calloc(f->wsize, sizeof(double));
+  assert(wnp1);
+
   while(f->tnow < tmax) {
     if (iter % freq == 0)
       printf("t=%f iter=%d/%d dt=%f\n", f->tnow, iter, f->itermax, f->dt);
 
     dtfield(f, f->wn, f->dtwn);
-    RK_out(f->wnp1, f->wn, f->dtwn, 0.5 * f->dt, sizew);
+    RK_out(wnp1, f->wn, f->dtwn, 0.5 * f->dt, sizew);
 
     f->tnow += 0.5 * f->dt;
 
-    dtfield(f, f->wnp1, f->dtwn);
+    dtfield(f, wnp1, f->dtwn);
     RK_in(f->wn, f->dtwn, f->dt, sizew);
 
     f->tnow += 0.5 * f->dt;
     iter++;
   }
   printf("t=%f iter=%d/%d dt=%f\n", f->tnow, iter, f->itermax, f->dt);
+  free(wnp1);
 }
-
 
 void RK4_final_inplace(double *w, double *l1, double *l2, double *l3, 
 		       double *dtw, const double dt, const int sizew)
 {
-  const double a[] = {1.0 / 3.0, 2.0 / 3.0, 1.0 / 3.0, dt / 6.0};
   const double b = -1.0 / 3.0;
+  const double a[] = {1.0 / 3.0, 2.0 / 3.0, 1.0 / 3.0, dt / 6.0};
 #ifdef _OPENMP
 #pragma omp parallel for
 #endif
@@ -1996,7 +1989,6 @@ void RK4(field *f, double tmax)
   l3 = calloc(sizew, sizeof(double));
 
   while(f->tnow < tmax) {
-
     // l_1 = w_n + 0.5dt * S(w_n, t_0)
     dtfield(f, f->wn, f->dtwn);
     RK_out(l1, f->wn, f->dtwn, 0.5 * f->dt, sizew);
@@ -2028,7 +2020,7 @@ void RK4(field *f, double tmax)
 }
 
 // Set kernel arguments for first stage of RK2
-void init_RK2_CL_stage1(field *f, const double dt)
+void init_RK2_CL_stage1(field *f, const double dt, cl_mem *wnp1_cl)
 {
   cl_kernel kernel = f->RK_out_CL;
   cl_int status;
@@ -2038,7 +2030,7 @@ void init_RK2_CL_stage1(field *f, const double dt)
   status = clSetKernelArg(kernel,
 			  argnum++, 
                           sizeof(cl_mem),
-                          &(f->wnp1_cl));
+                          wnp1_cl);
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status == CL_SUCCESS);
   
@@ -2133,17 +2125,71 @@ void RK2_CL_stage2(field *f, size_t numworkitems)
   clFinish(f->cli.commandqueue);
 }
 
+void RK4_stage1(field *f, cl_mem *l1, cl_mem *wn, cl_mem *dtw, 
+		const double dt, const int sizew)
+{
+  // l_1 = w_n + 0.5dt * S(w_n, t_0)
+  
+  cl_kernel kernel = f->RK_out_CL;
+  cl_int status;
+  int argnum = 0;
+
+  //__global double *wnp1 // field values
+  status = clSetKernelArg(kernel,
+			  argnum++, 
+                          sizeof(cl_mem),
+                          &l1);
+  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status == CL_SUCCESS);
+  
+  // __global double *wn, 
+  status = clSetKernelArg(kernel,
+			  argnum++, 
+                          sizeof(cl_mem),
+                          &(f->wn_cl));
+  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status == CL_SUCCESS);
+
+  //__global double* dtwn // time derivative
+  status = clSetKernelArg(kernel,
+			  argnum++, 
+                          sizeof(cl_mem),
+                          &(f->dtwn_cl));
+  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status == CL_SUCCESS);
+
+  //double dt, // time step for the stage
+  double halfdt = 0.5 * dt;
+  status = clSetKernelArg(kernel,
+			  argnum++,
+			  sizeof(double),
+			  &halfdt);
+  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status == CL_SUCCESS);
+
+  clFinish(f->cli.commandqueue);
+}
+
 // Time integration by a second-order Runge-Kutta algorithm, OpenCL
 // version.
-void RK2_CL(field *f, double tmax) {
-
+void RK2_CL(field *f, double tmax) 
+{
   f->itermax = tmax / f->dt;
   int freq = (1 >= f->itermax / 10)? 1 : f->itermax / 10;
   int sizew = f->macromesh.nbelems * f->model.m * NPG(f->interp_param + 1);
   int iter = 0;
 
+  cl_int status;
+  cl_mem wnp1_cl = clCreateBuffer(f->cli.context,
+				  0, // no flags
+				  sizeof(double) * f->wsize,
+				  NULL, // do not use a host pointer
+				  &status);
+  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status == CL_SUCCESS);
+
   // Set up kernels
-  init_RK2_CL_stage1(f, f->dt);
+  init_RK2_CL_stage1(f, f->dt, &wnp1_cl);
   init_RK2_CL_stage2(f, f->dt);
 
   while(f->tnow < tmax) {
@@ -2154,10 +2200,59 @@ void RK2_CL(field *f, double tmax) {
     RK2_CL_stage1(f, sizew);
 
     f->tnow += 0.5 * f->dt;
-    dtfield_CL(f, &(f->wnp1_cl));
+    dtfield_CL(f, &wnp1_cl);
     RK2_CL_stage2(f, sizew);
 
     f->tnow += 0.5 * f->dt;
+    iter++;
+  }
+  printf("t=%f iter=%d/%d dt=%f\n", f->tnow, iter, f->itermax, f->dt);
+}
+
+// Time integration by a fourth-order Runge-Kutta algorithm, OpenCL
+// version.
+void RK4_CL(field *f, double tmax) 
+{
+  f->itermax = tmax / f->dt;
+  int freq = (1 >= f->itermax / 10)? 1 : f->itermax / 10;
+  int sizew = f->macromesh.nbelems * f->model.m * NPG(f->interp_param + 1);
+  int iter = 0;
+
+  cl_int status;  
+  cl_mem l1 = clCreateBuffer(f->cli.context,
+			     0,
+			     sizeof(double) * f->wsize,
+			     NULL,
+			     &status);
+  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status == CL_SUCCESS);
+
+  cl_mem l2 = clCreateBuffer(f->cli.context,
+			     0,
+			     sizeof(double) * f->wsize,
+			     NULL,
+			     &status);
+  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status == CL_SUCCESS);
+  cl_mem l3 = clCreateBuffer(f->cli.context,
+			     0,
+			     sizeof(double) * f->wsize,
+			     NULL,
+			     &status);
+  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status == CL_SUCCESS);
+
+
+  while(f->tnow < tmax) {
+    if (iter % freq == 0)
+      printf("t=%f iter=%d/%d dt=%f\n", f->tnow, iter, f->itermax, f->dt);
+
+    dtfield_CL(f, &(f->wn_cl));
+    //RK4_stage1(&l1, f->wn, f->dtwn, 0.5 * f->dt, sizew);
+
+    // TODO: this needs completion
+
+    f->tnow += f->dt;
     iter++;
   }
   printf("t=%f iter=%d/%d dt=%f\n", f->tnow, iter, f->itermax, f->dt);

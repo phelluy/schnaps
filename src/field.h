@@ -55,8 +55,6 @@ typedef struct field {
   int wsize;
   //! fields at time steps n
   double *wn;
-  //! fields at time steps n+1
-  double *wnp1;
   //! Time derivative of the field
   double *dtwn;
   //! vmax
@@ -79,7 +77,6 @@ typedef struct field {
   CLInfo cli;
   //! \brief copy of the dtwn array
   cl_mem wn_cl;
-  cl_mem wnp1_cl;
   cl_mem dtwn_cl;
   //! \brief copy of the params
   cl_mem param_cl;
@@ -209,6 +206,7 @@ void RK4(field *f, double tmax);
 //! \param[inout] f a field
 //! \param[in] tmax physical duration of the simulation
 void RK2_CL(field *f, double tmax);
+void RK4_CL(field *f, double tmax);
 
 //! \brief save the results in the gmsh format
 //! \param[in] typplot index of the field variable to plot.

@@ -225,6 +225,14 @@ add_executable(
 )
 target_link_libraries(testfieldrk2_cl ${LIBS})
 
+add_test(testfieldrk4_cl testfieldrk4_cl)
+add_executable(
+  testfieldrk4_cl
+  test/test.h
+  test/testfieldrk4_cl.c
+)
+target_link_libraries(testfieldrk4_cl ${LIBS})
+
 add_test(testdtfield_cl testdtfield_cl)
 add_executable(
   testdtfield_cl
