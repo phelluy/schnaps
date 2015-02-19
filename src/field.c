@@ -1913,22 +1913,6 @@ void dtfieldSlow(field* f) {
   }
 };
 
-#ifdef _WITH_OPENCL
-void swap_clmem(cl_mem *a, cl_mem *b)
-{
-  cl_mem *temp = a;
-  a = b;
-  b = temp;
-}
-#endif
-
-void swap_pdoubles(double **a, double **b)
-{
-  double *temp = *a;
-  *a = *b;
-  *b = temp;
-}
-
 // An out-of-place RK step
 void RK_out(double *dest, double *fwn, double *fdtwn, const double dt, 
 	    const int sizew)
@@ -2044,13 +2028,13 @@ void RK4(field *f, double tmax)
 }
 
 // Set kernel arguments for first stage of RK2
-void init_RK2_CL_stage1(field *f, const double dt) 
+void init_RK2_CL_stage1(field *f, const double dt)
 {
   cl_kernel kernel = f->RK_out_CL;
   cl_int status;
   int argnum = 0;
 
-  //__global double* wnp1 // field values
+  //__global double *wnp1 // field values
   status = clSetKernelArg(kernel,
 			  argnum++, 
                           sizeof(cl_mem),
@@ -2090,7 +2074,6 @@ void init_RK2_CL_stage1(field *f, const double dt)
 void RK2_CL_stage1(field *f, size_t numworkitems)
 {
   cl_int status;
-
   status = clEnqueueNDRangeKernel(f->cli.commandqueue,
 				  f->RK_out_CL,
 				  1, 
@@ -2102,7 +2085,6 @@ void RK2_CL_stage1(field *f, size_t numworkitems)
 				  NULL);
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status == CL_SUCCESS);
-
   clFinish(f->cli.commandqueue);
 }
 
@@ -2140,7 +2122,6 @@ void init_RK2_CL_stage2(field *f, const double dt)
 void RK2_CL_stage2(field *f, size_t numworkitems)
 {
   cl_int status;
-
   status = clEnqueueNDRangeKernel(f->cli.commandqueue,
 				  f->RK_in_CL,
 				  1, NULL,
@@ -2149,7 +2130,6 @@ void RK2_CL_stage2(field *f, size_t numworkitems)
 				  0, NULL, NULL);
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status == CL_SUCCESS);
-
   clFinish(f->cli.commandqueue);
 }
 
@@ -2170,14 +2150,12 @@ void RK2_CL(field *f, double tmax) {
     if (iter % freq == 0)
       printf("t=%f iter=%d/%d dt=%f\n", f->tnow, iter, f->itermax, f->dt);
 
-    dtfield_CL(f, &(f->wnp1_cl));
+    dtfield_CL(f, &(f->wn_cl));
     RK2_CL_stage1(f, sizew);
-    swap_clmem(&(f->wnp1_cl), &(f->wn_cl));
 
     f->tnow += 0.5 * f->dt;
     dtfield_CL(f, &(f->wnp1_cl));
     RK2_CL_stage2(f, sizew);
-    swap_clmem(&(f->wnp1_cl), &(f->wn_cl));
 
     f->tnow += 0.5 * f->dt;
     iter++;

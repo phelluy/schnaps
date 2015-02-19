@@ -30,15 +30,13 @@ double dlag(int deg, int ib, int ipg) {
   return gauss_lob_dpsi[gauss_lob_dpsi_offset[deg] + ib * (deg + 1) + ipg];
 }
 
-int varindex(__constant int* param, int elem, int ipg, int iv);
-
 // Memory location of w : component iv, macrocell elem and gauss point
 // id in the macrocell ipg
 int varindex(__constant int *param, int elem, int ipg, int iv) {
   int npg
     = (param[1] + 1) * (param[2] + 1) * (param[3] + 1)
     * param[4] * param[5] * param[6];
-  return iv + param[0] * ( ipg + npg * elem);
+  return iv + param[0] * (ipg + npg * elem);
 }
 
 int ref_ipg(__constant int* param, double* xref);
@@ -53,14 +51,12 @@ void Ref2Phy(__constant double* physnode,
              double dphi[3],
              double vnds[3]);
 
-void Phy2Ref(__constant double* physnode,
+void Phy2Ref(__constant double *physnode,
              double xphy[3], double xref[3]);
 
 int ref_pg_face(__constant int* param, int ifa, int ipg,
-                double* xpg, double* wpg, double* xpgin);
-
-int ref_pg_face(__constant int* param, int ifa, int ipg,
-                double* xpg, double* wpg, double* xpgin) {
+                double* xpg, double* wpg, double* xpgin) 
+{
   //int ipgf=ipg;
 
   // approximation degree in each direction
@@ -164,7 +160,7 @@ int ref_pg_face(__constant int* param, int ifa, int ipg,
   }
 
   return ipgv;
-};
+}
 
 #ifndef NUMFLUX
 #define NUMFLUX NumFlux
@@ -234,24 +230,23 @@ void cemracs2014_TransBoundaryFlux(double x[3], double t,
   vlaTransNumFlux2d(wL, wR, vnorm, flux);
 }
 
-
 void BoundaryFlux(double x[3], double t, double wL[], double *vnorm,
-                  double *flux) {
+                  double *flux) 
+{
   double wR[_M];
   double s2 = 0.707106781186547524400844362105;
   double vx = s2 * (x[0] + x[1]);
   wR[0] = cos(vx - t);
 
   NUMFLUX(wL, wR, vnorm, flux);
-};
+}
 
 //! \brief 1d GLOP weights for a given degree
 //! \param[in] deg degree
 //! \param[in] i glop index
 //! \returns the glop weight
-double wglop(int deg, int i);
-
-double wglop(int deg, int i) {
+double wglop(int deg, int i) 
+{
   return gauss_lob_weight[gauss_lob_offset[deg] + i];
 }
 
@@ -260,7 +255,8 @@ void get_dtau(double x, double y, double z,
 
 // Get the logical index of the gaussian point given the coordinate
 // p[] of the point in the subcell and the index of the subcell icell.
-int ipg(const int npg[], const int p[], const int icell) {
+int ipg(const int npg[], const int p[], const int icell) 
+{
   return npg[0] * npg[1] * npg[2] * icell
     + p[0] + npg[0] * (p[1] + npg[1] * p[2]);
 }
@@ -281,8 +277,8 @@ void DGVolume(__constant int* param,        // interp param
 	      int ie,            // macrocel index
 	      __constant double* physnode,  // macrocell nodes
               __global double* wn,       // field values
-	      __global double* dtwn) {       // time derivative
-
+	      __global double* dtwn) // time derivative
+{       
   const int m = param[0];
   const int deg[3] = {param[1],param[2], param[3]};
   const int npg[3] = {deg[0] + 1, deg[1] + 1, deg[2] + 1};
@@ -415,7 +411,6 @@ void DGVolume(__constant int* param,        // interp param
     }
 
   } // dim0 loop
-
 }
 
 // Apply division by the mass matrix on one macrocell
@@ -423,9 +418,8 @@ __kernel
 void DGMass(__constant int *param,        // interp param
             int ie,            // macrocel index
             __constant double *physnode,  // macrocell nodes
-            __global double *dtwn)        // time derivative
+            __global double *dtwn) // time derivative
 {
-
   int ipg = get_global_id(0);
   const int m = param[0];
   const int npg[3] = {param[1] + 1, param[2] + 1, param[3] + 1};
@@ -613,10 +607,11 @@ void DGMacroCellInterface(__constant int *param,        // interp param
 }
 
 void get_dtau(double x, double y, double z,
-	      __constant double *p, double dtau[][3]) {
+	      __constant double *p, double dtau[][3]) 
+{
+  // Gradient of the shape functions and value (4th component) of the
+  // shape functions
 
-  // gradient of the shape functions and value (4th component)
-  // of the shape functions
   /* double gradphi[20][3]; */
   /* //double x,y,z; */
   /* // this fills the values of gradphi */
@@ -720,8 +715,8 @@ void Ref2Phy(__constant double* physnode,
              double dtau[3][3],
              double codtau[3][3],
              double dphi[3],
-             double vnds[3]) {
-
+             double vnds[3]) 
+{
   // compute the mapping and its jacobian
   double x = xref[0];
   double y = xref[1];
@@ -915,7 +910,6 @@ void Ref2Phy(__constant double* physnode,
       }
     }
   }
-
 }
 
 void Phy2Ref(__constant double *physnode, double xphy[3], double xref[3]) 
@@ -989,7 +983,7 @@ int ref_ipg(__constant int *param, double *xref)
   //	 xref[0],xref[1],xref[2], ix, iy, iz);
 
   return ix + (deg[0] + 1) * (iy + (deg[1] + 1) * iz) + offset;
-};
+}
 
 // Out-of-place RK stage
 __kernel
