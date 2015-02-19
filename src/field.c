@@ -305,6 +305,12 @@ void Initfield(field* f) {
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status == CL_SUCCESS);
 
+  f->RK4_final_stage = clCreateKernel(f->cli.program,
+				"RK4_final_stage",
+				&status);
+  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status == CL_SUCCESS);
+
   f->RK_in_CL = clCreateKernel(f->cli.program,
 			       "RK_in_CL",
 			       &status);
@@ -2009,7 +2015,6 @@ void RK4(field *f, double tmax)
     dtfield(f, l3, f->dtwn);
     RK4_final_inplace(f->wn, l1, l2, l3, f->dtwn, f->dt, sizew);
 
-
     iter++;
   }
   printf("t=%f iter=%d/%d dt=%f\n", f->tnow, iter, f->itermax, f->dt);
@@ -2125,50 +2130,6 @@ void RK2_CL_stage2(field *f, size_t numworkitems)
   clFinish(f->cli.commandqueue);
 }
 
-void RK4_stage1(field *f, cl_mem *l1, cl_mem *wn, cl_mem *dtw, 
-		const double dt, const int sizew)
-{
-  // l_1 = w_n + 0.5dt * S(w_n, t_0)
-  
-  cl_kernel kernel = f->RK_out_CL;
-  cl_int status;
-  int argnum = 0;
-
-  //__global double *wnp1 // field values
-  status = clSetKernelArg(kernel,
-			  argnum++, 
-                          sizeof(cl_mem),
-                          &l1);
-  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status == CL_SUCCESS);
-  
-  // __global double *wn, 
-  status = clSetKernelArg(kernel,
-			  argnum++, 
-                          sizeof(cl_mem),
-                          &(f->wn_cl));
-  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status == CL_SUCCESS);
-
-  //__global double* dtwn // time derivative
-  status = clSetKernelArg(kernel,
-			  argnum++, 
-                          sizeof(cl_mem),
-                          &(f->dtwn_cl));
-  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status == CL_SUCCESS);
-
-  //double dt, // time step for the stage
-  double halfdt = 0.5 * dt;
-  status = clSetKernelArg(kernel,
-			  argnum++,
-			  sizeof(double),
-			  &halfdt);
-  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status == CL_SUCCESS);
-
-  clFinish(f->cli.commandqueue);
-}
 
 // Time integration by a second-order Runge-Kutta algorithm, OpenCL
 // version.
@@ -2209,6 +2170,138 @@ void RK2_CL(field *f, double tmax)
   printf("t=%f iter=%d/%d dt=%f\n", f->tnow, iter, f->itermax, f->dt);
 }
 
+void RK4_CL_stageA(field *f, 
+		   cl_mem *wnp1, cl_mem *wn, cl_mem *dtw, 
+		   const double dt, const int sizew, size_t numworkitems)
+{
+  // l_1 = w_n + 0.5dt * S(w_n, t_0)
+  
+  cl_kernel kernel = f->RK_out_CL;
+  cl_int status;
+  int argnum = 0;
+
+  //__global double *wnp1 // field values
+  status = clSetKernelArg(kernel,
+			  argnum++, 
+                          sizeof(cl_mem),
+                          wnp1);
+  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status == CL_SUCCESS);
+  
+  // __global double *wn, 
+  status = clSetKernelArg(kernel,
+			  argnum++, 
+                          sizeof(cl_mem),
+                          wn);
+  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status == CL_SUCCESS);
+
+  //__global double* dtwn // time derivative
+  status = clSetKernelArg(kernel,
+			  argnum++, 
+                          sizeof(cl_mem),
+                          dtw);
+  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status == CL_SUCCESS);
+
+  //double dt,
+  status = clSetKernelArg(kernel,
+			  argnum++,
+			  sizeof(double),
+			  &dt);
+  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status == CL_SUCCESS);
+
+  clFinish(f->cli.commandqueue);
+
+  status = clEnqueueNDRangeKernel(f->cli.commandqueue,
+  				  kernel,
+  				  1,
+  				  NULL,
+  				  &numworkitems,
+  				  NULL,
+  				  0,
+  				  NULL,
+  				  NULL);
+  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status == CL_SUCCESS);
+  clFinish(f->cli.commandqueue);
+}
+
+void RK4_final_inplace_CL(field *f, 
+			  cl_mem *w_cl, cl_mem *l1, cl_mem *l2, cl_mem *l3, 
+			  cl_mem *dtw_cl, const double dt, 
+			  const size_t numworkitems)
+{
+  cl_kernel kernel = f->RK4_final_stage;
+  cl_int status;
+  int argnum = 0;
+
+  // __global double *w,
+  status = clSetKernelArg(kernel,
+			  argnum++, 
+                          sizeof(cl_mem),
+                          w_cl);
+  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status == CL_SUCCESS);
+
+  // __global double *l1,
+  status = clSetKernelArg(kernel,
+			  argnum++, 
+                          sizeof(cl_mem),
+                          l1);
+  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status == CL_SUCCESS);
+
+  // __global double *l2,
+  status = clSetKernelArg(kernel,
+			  argnum++, 
+                          sizeof(cl_mem),
+                          l2);
+  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status == CL_SUCCESS);
+
+  // __global double *l3,
+  status = clSetKernelArg(kernel,
+			  argnum++, 
+                          sizeof(cl_mem),
+                          l3);
+  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status == CL_SUCCESS);
+
+  // __global double *dtw, 
+  status = clSetKernelArg(kernel,
+			  argnum++, 
+                          sizeof(cl_mem),
+                          dtw_cl);
+  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status == CL_SUCCESS);
+
+  // const double dt
+  double halfdt = 0.5 * dt;
+  status = clSetKernelArg(kernel,
+			  argnum++,
+			  sizeof(double),
+			  &dt);
+  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status == CL_SUCCESS);
+
+  clFinish(f->cli.commandqueue);
+
+  status = clEnqueueNDRangeKernel(f->cli.commandqueue,
+  				  kernel,
+  				  1,
+  				  NULL,
+  				  &numworkitems,
+  				  NULL,
+  				  0,
+  				  NULL,
+  				  NULL);
+  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status == CL_SUCCESS);
+  clFinish(f->cli.commandqueue);
+}
+
 // Time integration by a fourth-order Runge-Kutta algorithm, OpenCL
 // version.
 void RK4_CL(field *f, double tmax) 
@@ -2242,15 +2335,31 @@ void RK4_CL(field *f, double tmax)
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status == CL_SUCCESS);
 
+  size_t numworkitems = f->wsize;
+
+
+  cl_mem *w = &(f->wn_cl);
+  cl_mem *dtw = &(f->dtwn_cl);
 
   while(f->tnow < tmax) {
     if (iter % freq == 0)
       printf("t=%f iter=%d/%d dt=%f\n", f->tnow, iter, f->itermax, f->dt);
 
-    dtfield_CL(f, &(f->wn_cl));
-    //RK4_stage1(&l1, f->wn, f->dtwn, 0.5 * f->dt, sizew);
-
-    // TODO: this needs completion
+    dtfield_CL(f, w);
+    RK4_CL_stageA(f, &l1, w, dtw,
+    		  0.5 * f->dt, sizew, numworkitems);
+    
+    dtfield_CL(f, &l1);
+    RK4_CL_stageA(f, &l2, w, dtw,
+    		  0.5 * f->dt, sizew, numworkitems);
+    
+    dtfield_CL(f, &l2);
+    RK4_CL_stageA(f, &l3, w, dtw,
+    		  f->dt, sizew, numworkitems);
+    
+    dtfield_CL(f, &l3);
+    RK4_final_inplace_CL(f, w, &l1, &l2, &l3, 
+			 dtw, f->dt, numworkitems);
 
     f->tnow += f->dt;
     iter++;

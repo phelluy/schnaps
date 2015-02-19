@@ -90,6 +90,7 @@ typedef struct field {
   cl_kernel dginterface;
   cl_kernel RK_out_CL;
   cl_kernel RK_in_CL;
+  cl_kernel RK4_final_stage;
   cl_kernel zero_buf;
 #endif
 

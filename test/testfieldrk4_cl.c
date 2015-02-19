@@ -83,6 +83,7 @@ int TestfieldRK4_CL(void){
   CheckMacroMesh(&(f.macromesh), f.interp.interp_param + 1);
  
   double tmax = 0.1;
+  //RK4(&f, tmax);
   RK4_CL(&f, tmax);
  
   Plotfield(0, false, &f, NULL, "dgvisu.msh");

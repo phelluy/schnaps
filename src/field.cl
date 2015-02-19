@@ -1005,3 +1005,24 @@ void RK_in_CL(__global double *wnp1,
   int ipg = get_global_id(0);
   wnp1[ipg] += dt * dtwn[ipg];
 }
+
+
+// RK4 final stage
+__kernel
+void RK4_final_stage(__global double *w,
+		     __global double *l1,
+		     __global double *l2,
+		     __global double *l3,
+		     __global double *dtw, 
+		     const double dt)
+{
+  const double b = -1.0 / 3.0;
+  const double a[] = {1.0 / 3.0, 2.0 / 3.0, 1.0 / 3.0, dt / 6.0};
+  int i = get_global_id(0);
+  w[i] = 
+    b * w[i] +
+    a[0] * l1[i] +
+    a[1] * l2[i] +
+    a[2] * l3[i] +
+    a[3] * dtw[i];
+}
