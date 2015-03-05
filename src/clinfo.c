@@ -4,6 +4,7 @@
 #include <assert.h>
 #include <string.h>
 #include "clutils.h"
+#include <stdbool.h>
 
 void InitCLInfo(CLInfo* cli, int platform_id, int device_id)
 {
@@ -201,7 +202,13 @@ void InitCLInfo(CLInfo* cli, int platform_id, int device_id)
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status == CL_SUCCESS);
   printf("\tOpenCL extensions: %s\n", cli->clextensions);
-
+  if(strstr(cli->clextensions, "cl_khr_fp64") != NULL) {
+    printf("\t\tDouble-precision enabled (cl_khr_fp64).\n");
+  } else {
+    printf("\t\tDouble-precision not enabled (cl_khr_fp64): ABORT!\n");
+    assert(false);
+  }
+  
   // First opencl context
   cli->context = clCreateContext(NULL, // no context properties
 				 1,         // only one device in the list
