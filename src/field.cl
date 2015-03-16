@@ -992,8 +992,8 @@ int ref_ipg(__constant int *param, double *xref)
 // Out-of-place RK stage
 __kernel
 void RK_out_CL(__global double *wnp1, 
-	       __global double *wn, 
-	       __global double *dtwn, 
+	       __global const double *wn, 
+	       __global const double *dtwn, 
 	       const double dt)
 {
   int ipg = get_global_id(0);

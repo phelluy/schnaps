@@ -2054,7 +2054,7 @@ void init_RK2_CL_stage1(field *f, const double dt, cl_mem *wnp1_cl)
                           &(f->dtwn_cl));
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status == CL_SUCCESS);
-
+  
   //double dt, // time step for the stage
   double halfdt = 0.5 * dt;
   status = clSetKernelArg(kernel,
@@ -2130,14 +2130,12 @@ void RK2_CL_stage2(field *f, size_t numworkitems)
   clFinish(f->cli.commandqueue);
 }
 
-
 // Time integration by a second-order Runge-Kutta algorithm, OpenCL
 // version.
 void RK2_CL(field *f, double tmax) 
 {
   f->itermax = tmax / f->dt;
   int freq = (1 >= f->itermax / 10)? 1 : f->itermax / 10;
-  int sizew = f->macromesh.nbelems * f->model.m * NPG(f->interp_param + 1);
   int iter = 0;
 
   cl_int status;
@@ -2158,11 +2156,12 @@ void RK2_CL(field *f, double tmax)
       printf("t=%f iter=%d/%d dt=%f\n", f->tnow, iter, f->itermax, f->dt);
 
     dtfield_CL(f, &(f->wn_cl));
-    RK2_CL_stage1(f, sizew);
+    RK2_CL_stage1(f, f->wsize);
 
     f->tnow += 0.5 * f->dt;
+
     dtfield_CL(f, &wnp1_cl);
-    RK2_CL_stage2(f, sizew);
+    RK2_CL_stage2(f, f->wsize);
 
     f->tnow += 0.5 * f->dt;
     iter++;
@@ -2368,7 +2367,7 @@ void RK4_CL(field *f, double tmax)
 }
 
 // Compute the normalized L2 distance with the imposed data
-double L2error(field* f) {
+double L2error(field *f) {
   //int param[8] = {f->model.m, _DEGX, _DEGY, _DEGZ, _RAFX, _RAFY, _RAFZ, 0};
   double error = 0;
   double mean = 0;

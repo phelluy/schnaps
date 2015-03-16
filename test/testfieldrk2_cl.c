@@ -84,13 +84,15 @@ int TestfieldRK2_CL(void){
  
   double tmax = 0.1;
   RK2_CL(&f, tmax);
+  
+  CopyfieldtoCPU(&f);
  
   Plotfield(0, false, &f, NULL, "dgvisu.msh");
   Plotfield(0, true , &f, "error", "dgerror.msh");
 
   double dd = L2error(&f);
 
-  printf("erreur L2: %f\n", dd);
+  printf("L2 error: %f\n", dd);
 
   double tolerance = 0.002;
 

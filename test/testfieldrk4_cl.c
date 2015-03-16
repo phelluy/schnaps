@@ -86,6 +86,8 @@ int TestfieldRK4_CL(void){
   //RK4(&f, tmax);
   RK4_CL(&f, tmax);
  
+  CopyfieldtoCPU(&f);
+
   Plotfield(0, false, &f, NULL, "dgvisu.msh");
   Plotfield(0, true , &f, "error", "dgerror.msh");
 

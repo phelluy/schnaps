@@ -57,7 +57,7 @@ int main(int argc, char *argv[]) {
       writemsh = true;
       break;
     case 'D':
-       ndevice_cl= atoi(optarg);
+      ndevice_cl= atoi(optarg);
       break;
     case 'P':
       nplatform_cl = atoi(optarg);
