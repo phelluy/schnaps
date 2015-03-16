@@ -71,6 +71,10 @@ testkernelinterface
 testkernelvolume
 testmanyv
 testmeq2
+testdtfield_cl
+testfieldrk4
+testfieldrk4_cl
+testmacrocellinterface
 
 #output files
 *.csv

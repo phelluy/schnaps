@@ -5,9 +5,11 @@
 #include "interpolation.h"
 #include "model.h"
 
+//FIXME: move to field_cl
 #ifdef _WITH_OPENCL
 #include "clinfo.h"
 #endif
+
 
 //! \brief A simple struct for packing a field
 //! and a faces range.  To be passed to a thread
@@ -115,10 +117,6 @@ void Initfield(field *f);
 //! \param[inout] f a field
 void Freefield(field *f);
 
-//! copy back the field to host memory
-//! \param[inout] f a field
-void CopyfieldtoCPU(field *f);
-
 //! \brief compute the Discontinuous Galerkin volume terms
 //! slow version (no optimization using the tensors products)
 //! \param[inout] f a field
@@ -135,13 +133,6 @@ void dtfieldSlow(field *f);
 //! \param[inout] f a field
 void dtfield(field *f, double *w, double *dtw);
 
-//! \brief OpenCL version of dtfield : 
-//! apply the Discontinuous Galerkin approximation for computing
-//! the time derivative of the field. Works with several subcells.
-//! Fast version: multithreaded and with tensor products optimizations
-//! \param[inout] f a field
-void dtfield_CL(field *f, cl_mem *dtwn_cl);
-
 //! \brief  compute the Discontinuous Galerkin inter-macrocells boundary terms
 //! The argument has to be void* (for compatibility with pthread)
 //! but it is logically a MacroCell*
@@ -154,15 +145,11 @@ void DGMacroCellInterfaceSlow(void *mcell, field *f, double *w, double *dtw);
 //! \param[inout] mcell a MacroCell
 void DGMacroCellInterface(void *mface, field *f, double *w, double *dtw);
 
-void DGMacroCellInterface_CL(void *mface, field *f, cl_mem *wn_cl);
-
 //! \brief compute the Discontinuous Galerkin volume terms
 //! The argument has to be void* (for compatibility with pthread)
 //! but it is logically a MacroCell*
 //! \param[inout] mcell a MacroCell
 void DGVolume(void *mcell, field *f, double *w, double *dtw);
-
-void DGVolume_CL(void *mcell, field *f, cl_mem *dtwn_cl);
 
 //! \brief compute the Discontinuous Galerkin inter-subcells terms
 //! \param[inout] mcell a MacroCell
@@ -171,10 +158,6 @@ void DGSubCellInterface(void *mcell, field *f, double *w, double *dtw);
 //! \brief  apply the DG mass term
 //! \param[inout] mcell a MacroCell
 void DGMass(void *mcell, field *f, double *w, double *dtw);
-
-//! \brief  apply the DG mass term OpenCL version
-//! \param[inout] mcell a MacroCell
-void DGMass_CL(void *mcell, field *f);
 
 //! \brief An out-of-place RK stage
 //! \param[out] fwnp1 field at time n+1
