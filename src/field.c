@@ -33,7 +33,6 @@ int GenericVarindex(int *param, int elem, int ipg, int iv) {
 }
 #pragma end_opencl
 
-
 void Initfield(field* f) {
   //int param[8]={f->model.m,_DEGX,_DEGY,_DEGZ,_RAFX,_RAFY,_RAFZ,0};
   f->is2d = false;
@@ -163,7 +162,7 @@ void Initfield(field* f) {
     f->mcell[ie].last_p1 = ie + 1;
   }
 
-#ifdef _WITH_OPENCL
+#ifndef NO_OPENCL
   // opencl inits
   InitCLInfo(&(f->cli), nplatform_cl, ndevice_cl);
   cl_int status;
@@ -266,7 +265,7 @@ void free_field(field* f)
   free(f->mcell);
   free(f->mface);
 
-#ifdef _WITH_OPENCL
+#ifndef NO_OPENCL
   cl_int status;
 
   status = clReleaseMemObject(f->physnode_cl);
@@ -1184,6 +1183,7 @@ void DGVolumeSlow(field* f)
 
 void dtfield_pthread(field *f) 
 {
+#ifdef _WITH_PTHREAD
   bool facealgo = true;
   //facealgo=false;
   if(facealgo) {
@@ -1193,7 +1193,7 @@ void dtfield_pthread(field *f)
       DGMacroCellInterface((void*) (f->mface + ifa), f, f->wn, f->dtwn);
   }
 
-#ifdef _WITH_PTHREAD
+
   // One flying thread per macrocell
   pthread_t tmcell[f->macromesh.nbelems];
   int status;

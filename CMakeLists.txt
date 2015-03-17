@@ -7,15 +7,20 @@ project(schnaps)
 #set(CMAKE_C_COMPILER "/opt/local/bin/gcc-mp-4.8")
 SET(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 
-#FIND_PACKAGE(OpenCL REQUIRE)D
-find_package (OpenCL)
-if (OPENCL_FOUND)
-  INCLUDE_DIRECTORIES(${OPENCL_INCLUDE_DIR})
-endif (OPENCL_FOUND)
 
 #set(CMAKE_C_FLAGS "-std=c99 -D_REENTRANT -O3 -g -D_POSIX_C_SOURCE=200112L")
 set(CMAKE_C_FLAGS "-std=gnu99 -D_REENTRANT -O3 -g")
 #set(CMAKE_C_FLAGS "-std=c99 -D_REENTRANT -O3 -g")
+
+#FIND_PACKAGE(OpenCL REQUIRED)
+find_package (OpenCL)
+#set(OPENCL_FOUND FALSE) # code for testing.
+
+if(OPENCL_FOUND)
+  INCLUDE_DIRECTORIES(${OPENCL_INCLUDE_DIR})
+else()
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DNO_OPENCL")
+endif(OPENCL_FOUND)
 
 if(CMAKE_COMPILER_IS_GNUCC)
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Werror -Wno-deprecated-declarations")
@@ -50,7 +55,6 @@ list(APPEND
   src/h20phi.h
   )
 
-##########  OpenCL Only  ##########
 if (OPENCL_FOUND)
   list(APPEND
     source_files
@@ -189,83 +193,80 @@ add_executable(
 target_link_libraries(testmeq2 ${LIBS})
 add_test(testmeq2 testmeq2)
 
-add_test(testmanyv testmanyv)
-add_executable(
-  testmanyv
-  test/test.h
-  test/testmanyv.c
-  )
-target_link_libraries(testmanyv ${LIBS})
-add_test(testmanyv testmanyv)
+##########  OpenCL unit tests  ##########
+if(OPENCL_FOUND)
+  add_test(testclinfo testclinfo)
+  add_executable(
+    testclinfo
+    test/test.h
+    test/testclinfo.c
+    )
+  target_link_libraries(testclinfo ${LIBS})
 
-##########  OpenCL Only  ##########
-add_test(testclinfo testclinfo)
-add_executable(
-  testclinfo
-  test/test.h
-  test/testclinfo.c
-  )
-target_link_libraries(testclinfo ${LIBS})
+  add_test(testmanyv testmanyv)
+  add_executable(
+    testmanyv
+    test/test.h
+    test/testmanyv.c
+    )
+  target_link_libraries(testmanyv ${LIBS})
+  add_test(testmanyv testmanyv)
 
-##########  OpenCL Only  ##########
-add_test(testkernel testkernel)
-add_executable(
-  testkernel
-  test/test.h
-  test/testkernel.c
-  )
-target_link_libraries(testkernel ${LIBS})
 
-##########  OpenCL Only  ##########
-add_test(testkernelvolume testkernelvolume)
-add_executable(
-  testkernelvolume
-  test/test.h
-  test/testkernelvolume.c
-  )
-target_link_libraries(testkernelvolume ${LIBS})
+  add_test(testdtfield_cl testdtfield_cl)
+  add_executable(
+    testdtfield_cl
+    test/test.h
+    test/testdtfield_cl.c
+    )
+  target_link_libraries(testdtfield_cl ${LIBS})
 
-##########  OpenCL Only  ##########
-add_test(testkernelinterface testkernelinterface)
-add_executable(
-  testkernelinterface
-  test/test.h
-  test/testkernelinterface.c
-  )
-target_link_libraries(testkernelinterface ${LIBS})
+  add_test(testmacrocellinterface testmacrocellinterface)
+  add_executable(
+    testmacrocellinterface
+    test/test.h
+    test/testmacrocellinterface.c
+    )
+  target_link_libraries(testmacrocellinterface ${LIBS})
 
-##########  OpenCL Only  ##########
-add_test(testfieldrk2_cl testfieldrk2_cl)
-add_executable(
-  testfieldrk2_cl
-  test/test.h
-  test/testfieldrk2_cl.c
-  )
-target_link_libraries(testfieldrk2_cl ${LIBS})
+  add_test(testfieldrk4_cl testfieldrk4_cl)
+  add_executable(
+    testfieldrk4_cl
+    test/test.h
+    test/testfieldrk4_cl.c
+    )
+  target_link_libraries(testfieldrk4_cl ${LIBS})
 
-##########  OpenCL Only  ##########
-add_test(testfieldrk4_cl testfieldrk4_cl)
-add_executable(
-  testfieldrk4_cl
-  test/test.h
-  test/testfieldrk4_cl.c
-  )
-target_link_libraries(testfieldrk4_cl ${LIBS})
+  add_test(testkernelinterface testkernelinterface)
+  add_executable(
+    testkernelinterface
+    test/test.h
+    test/testkernelinterface.c
+    )
+  target_link_libraries(testkernelinterface ${LIBS})
 
-##########  OpenCL Only  ##########
-add_test(testdtfield_cl testdtfield_cl)
-add_executable(
-  testdtfield_cl
-  test/test.h
-  test/testdtfield_cl.c
-  )
-target_link_libraries(testdtfield_cl ${LIBS})
+  add_test(testfieldrk2_cl testfieldrk2_cl)
+  add_executable(
+    testfieldrk2_cl
+    test/test.h
+    test/testfieldrk2_cl.c
+    )
+  target_link_libraries(testfieldrk2_cl ${LIBS})
 
-##########  OpenCL Only  ##########
-add_test(testmacrocellinterface testmacrocellinterface)
-add_executable(
-  testmacrocellinterface
-  test/test.h
-  test/testmacrocellinterface.c
-  )
-target_link_libraries(testmacrocellinterface ${LIBS})
+  add_test(testkernel testkernel)
+  add_executable(
+    testkernel
+    test/test.h
+    test/testkernel.c
+    )
+  target_link_libraries(testkernel ${LIBS})
+
+  add_test(testkernelvolume testkernelvolume)
+  add_executable(
+    testkernelvolume
+    test/test.h
+    test/testkernelvolume.c
+    )
+  target_link_libraries(testkernelvolume ${LIBS})
+
+endif(OPENCL_FOUND)
