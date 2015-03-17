@@ -4,19 +4,16 @@
 #include <assert.h>
 #include <math.h>
 
-int TestfieldRK2(void){
+int TestfieldRK4_CL(void){
   int test = true;
 
   field f;
-  
+
   // 2D meshes:
   // test/disque2d.msh
   // test/testdisque2d.msh
   // test/testmacromesh.msh
   // test/unit-cube.msh
-
-  // 3D meshes"
-  // test/testdisque.msh
 
   char *mshname =  "test/disque2d.msh";
   
@@ -24,8 +21,26 @@ int TestfieldRK2(void){
   Detect2DMacroMesh(&(f.macromesh));
   BuildConnectivity(&(f.macromesh));
 
+  /* f.model.cfl = 0.05; */
+  /* f.model.m = 1; */
+  /* f.model.NumFlux = TransNumFlux; */
+  /* f.model.BoundaryFlux = TestTransBoundaryFlux; */
+  /* f.model.InitData = TestTransInitData; */
+  /* f.model.ImposedData = TestTransImposedData; */
+  /* f.varindex = GenericVarindex; */
+
+  /* f.interp.interp_param[0] = f.model.m; */
+  /* f.interp.interp_param[1] = 3; // x direction degree */
+  /* f.interp.interp_param[2] = 3; // y direction degree */
+  /* f.interp.interp_param[3] = 3; // z direction degree */
+  /* f.interp.interp_param[4] = 1; // x direction refinement */
+  /* f.interp.interp_param[5] = 1; // y direction refinement */
+  /* f.interp.interp_param[6] = 1; // z direction refinement */
+
 #if 1
   // 2D version
+  assert(f.macromesh.is2d);
+
   f.model.cfl = 0.05;
   f.model.m = 1;
 
@@ -43,7 +58,6 @@ int TestfieldRK2(void){
   f.interp.interp_param[5] = 4; // y direction refinement
   f.interp.interp_param[6] = 1; // z direction refinement
 
-  assert(f.macromesh.is2d);
 #else
   // 3D version
   f.model.cfl = 0.05;
@@ -63,54 +77,38 @@ int TestfieldRK2(void){
   f.interp.interp_param[6] = 3; // z direction refinement
 #endif
 
-  // 2015-01-19: the below parameters fail with testmacrocellinterface
-  // but pass the test here (perhaps because the error is hidden by
-  // the RK error?)
-  /*
-  f.model.cfl = 0.05;
-  f.model.m = 1;
-  f.model.NumFlux = TransNumFlux;
-  f.model.BoundaryFlux = TestTransBoundaryFlux;
-  f.model.InitData = TestTransInitData;
-  f.model.ImposedData = TestTransImposedData;
-  f.varindex = GenericVarindex;
-
-  f.interp.interp_param[0] = f.model.m;
-  f.interp.interp_param[1] = 3; // x direction degree
-  f.interp.interp_param[2] = 3; // y direction degree
-  f.interp.interp_param[3] = 3; // z direction degree
-  f.interp.interp_param[4] = 1; // x direction refinement
-  f.interp.interp_param[5] = 1; // y direction refinement
-  f.interp.interp_param[6] = 1; // z direction refinement
-  */
-
   //AffineMapMacroMesh(&(f.macromesh));
   Initfield(&f);
 
   CheckMacroMesh(&(f.macromesh), f.interp.interp_param + 1);
  
   double tmax = 0.1;
-  RK4(&f, tmax);
+  //RK4(&f, tmax);
+  RK4_CL(&f, tmax);
  
+  CopyfieldtoCPU(&f);
+
   Plotfield(0, false, &f, NULL, "dgvisu.msh");
   Plotfield(0, true , &f, "error", "dgerror.msh");
 
   double dd = L2error(&f);
 
-  printf("erreur L2=%f\n", dd);
+  printf("erreur L2: %f\n", dd);
 
-  double tolerance = 0.001;
+  double tolerance = 0.002;
 
   test = dd < tolerance;
   
   return test;
-}
+};
 
 int main(void) {
-  int resu = TestfieldRK2();
+  int resu = TestfieldRK4_CL();
+
   if(resu) 
-    printf("field RK2 test OK !\n");
+    printf("field RK4_CL test OK !\n");
   else 
-    printf("field RK2 test failed !\n");
+    printf("field RK4_CL test failed !\n");
+
   return !resu;
 } 

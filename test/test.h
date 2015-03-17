@@ -27,4 +27,14 @@ int TestFieldRK2_2D_SubCell(void);
 
 int TestmEq2(void);
 
+int TestCLInfo(void);
+
+int TestKernel(void);
+
+int TestKernelVolume(void);
+
+int TestKernelInterface(void);
+
+int TestFieldRK2_CL(void);
+
 #endif

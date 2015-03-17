@@ -4,7 +4,7 @@
 #include <assert.h>
 #include <math.h>
 
-int TestfieldRK2(void){
+int TestfieldRK4(void){
   int test = true;
 
   field f;
@@ -97,7 +97,7 @@ int TestfieldRK2(void){
 
   double dd = L2error(&f);
 
-  printf("erreur L2=%f\n", dd);
+  printf("L2 error: %f\n", dd);
 
   double tolerance = 0.001;
 
@@ -107,10 +107,10 @@ int TestfieldRK2(void){
 }
 
 int main(void) {
-  int resu = TestfieldRK2();
+  int resu = TestfieldRK4();
   if(resu) 
-    printf("field RK2 test OK !\n");
+    printf("field RK4 test OK !\n");
   else 
-    printf("field RK2 test failed !\n");
+    printf("field RK4 test failed !\n");
   return !resu;
 } 

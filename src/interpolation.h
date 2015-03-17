@@ -52,15 +52,15 @@ typedef struct Interpolation{
 
 // in all these functions
 // param is an input integer array
-// param[0..2] : approximation degree in the 3 directions on 
+// param[0..2] : approximation degree in the 3 directions on
 // the reference cube
-// param[3..5] : number of subcells in the 3 directions on 
+// param[3..5] : number of subcells in the 3 directions on
 // the reference cube
 // param[6..nparam]: can be used for returning
 // parameters (the user has to ensure that enough memory is reserved
 
-//! \brief number of Gauss-LObatto Points (GLOPs) on the macro cell 
-//! \param[in] param the param list 
+//! \brief number of Gauss-LObatto Points (GLOPs) on the macro cell
+//! \param[in] param the param list
 int NPG(int param[]);
 
 //! \brief number of GLOPs on the face ifa of the macrocell
@@ -97,10 +97,10 @@ int ref_ipg(int* param,double* xref);
 //! that the resulting point is in the interior of the ref. element
 void ref_pg_face(int* param,int ifa,int ipgf,double* xpg,double* wpg,
 		 double* xpgin);
-//! \brief return the value and the gradient of the basis 
+//! \brief return the value and the gradient of the basis
 //! functions.
 //! Warning: the value of the gradient is
-//! not reliable if xref is on the boundary 
+//! not reliable if xref is on the boundary
 //! of a subcell (because the gradient is discontinuous)
 //! \param[in] param interpolation parammeters (degrees and refinements)
 //! \param[in] ib basis function index

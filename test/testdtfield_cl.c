@@ -1,11 +1,25 @@
 #include "test.h"
 #include "schnaps.h"
 #include<stdio.h>
+#include <stdlib.h>
 #include <assert.h>
 #include <math.h>
 
-int TestfieldRK2(void){
-  int test = true;
+int TestDtfield_CL(void);
+
+int main(void) {
+  int resu = TestDtfield_CL();
+
+  if (resu) 
+    printf("Dtfield_CL test OK !\n");
+  else 
+    printf("Dtfield_CL test failed !\n");
+
+  return !resu;
+} 
+
+int TestDtfield_CL(void){
+  bool test = true;
 
   field f;
   
@@ -15,9 +29,6 @@ int TestfieldRK2(void){
   // test/testmacromesh.msh
   // test/unit-cube.msh
 
-  // 3D meshes"
-  // test/testdisque.msh
-
   char *mshname =  "test/disque2d.msh";
   
   ReadMacroMesh(&(f.macromesh), mshname);
@@ -26,6 +37,8 @@ int TestfieldRK2(void){
 
 #if 1
   // 2D version
+  assert(f.macromesh.is2d);
+
   f.model.cfl = 0.05;
   f.model.m = 1;
 
@@ -43,7 +56,6 @@ int TestfieldRK2(void){
   f.interp.interp_param[5] = 4; // y direction refinement
   f.interp.interp_param[6] = 1; // z direction refinement
 
-  assert(f.macromesh.is2d);
 #else
   // 3D version
   f.model.cfl = 0.05;
@@ -63,54 +75,27 @@ int TestfieldRK2(void){
   f.interp.interp_param[6] = 3; // z direction refinement
 #endif
 
-  // 2015-01-19: the below parameters fail with testmacrocellinterface
-  // but pass the test here (perhaps because the error is hidden by
-  // the RK error?)
-  /*
-  f.model.cfl = 0.05;
-  f.model.m = 1;
-  f.model.NumFlux = TransNumFlux;
-  f.model.BoundaryFlux = TestTransBoundaryFlux;
-  f.model.InitData = TestTransInitData;
-  f.model.ImposedData = TestTransImposedData;
-  f.varindex = GenericVarindex;
-
-  f.interp.interp_param[0] = f.model.m;
-  f.interp.interp_param[1] = 3; // x direction degree
-  f.interp.interp_param[2] = 3; // y direction degree
-  f.interp.interp_param[3] = 3; // z direction degree
-  f.interp.interp_param[4] = 1; // x direction refinement
-  f.interp.interp_param[5] = 1; // y direction refinement
-  f.interp.interp_param[6] = 1; // z direction refinement
-  */
-
-  //AffineMapMacroMesh(&(f.macromesh));
   Initfield(&f);
 
-  CheckMacroMesh(&(f.macromesh), f.interp.interp_param + 1);
+  dtfield_CL(&f, &(f.wn_cl));
+  CopyfieldtoCPU(&f);
+
+  // Displayfield(&f);
+
+  double *saveptr = f.dtwn;
+  f.dtwn = calloc(f.wsize, sizeof(double));
+
+  dtfield(&f, f.wn, f.dtwn);
  
-  double tmax = 0.1;
-  RK4(&f, tmax);
- 
-  Plotfield(0, false, &f, NULL, "dgvisu.msh");
-  Plotfield(0, true , &f, "error", "dgerror.msh");
+  double maxerr = 0;
+  for(int i = 0; i < f.wsize; i++) {
+    double error = f.dtwn[i] - saveptr[i];
+    //printf("error= \t%f\t%f\t%f\n", error, f.dtwn[i], saveptr[i]);
+    maxerr = fmax(fabs(error), maxerr);
+  }
+  printf("max error: %f\n", maxerr);
 
-  double dd = L2error(&f);
+  test = (maxerr < 1e-8);
 
-  printf("erreur L2=%f\n", dd);
-
-  double tolerance = 0.001;
-
-  test = dd < tolerance;
-  
   return test;
 }
-
-int main(void) {
-  int resu = TestfieldRK2();
-  if(resu) 
-    printf("field RK2 test OK !\n");
-  else 
-    printf("field RK2 test failed !\n");
-  return !resu;
-} 

@@ -28,6 +28,9 @@
 *.x86_64
 *.hex
 
+#editor temp files
+*~
+
 #schnaps files
 .DS_Store
 CMakeCache.txt
@@ -40,41 +43,42 @@ doc/html/
 doc/latex/
 doc/toto
 toto
+*.cl
 
 dgerror.msh
-
-dgvisu.msh
-
+dgvisu*.msh
 error.msh
-
 geo/disque.msh
+visu.msh
 
 schnaps
-
 test2dmeshdetection
-
 testfield
-
 testfielddg
-
 testfieldrk2
-
 testfieldrk2-2d
-
 testfieldrk2-2d-subcell
-
 testgeometry
-
 testinterpolation
-
 testmacromesh
-
 testmodel
-
 testsubcelldgvol
-
 testvisufield.msh
-
 testvisufield.msh.opt
+testclinfo
+testkernel
+testkernelinterface
+testkernelvolume
+testmanyv
+testmeq2
+testdtfield_cl
+testfieldrk4
+testfieldrk4_cl
+testmacrocellinterface
 
-visu.msh
+#output files
+*.csv
+*.pdf
+*.log
+*.msh
+testfieldrk2_cl

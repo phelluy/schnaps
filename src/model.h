@@ -2,116 +2,170 @@
 #define _MODEL_H
 
 //! \brief a unified framework for all physical models
-typedef struct Model{
-  //! number of conservative variables
+typedef struct Model {
+  //! Number of conservative variables
   int m;
-  //! \brief a pointer to the numflux function
-  //! \param[in] wL,wR : left and right states
+
+  //! CFL coefficient for time-stepping
+  double cfl; // 0.05
+
+  //! Number of conservative variables in each dimension (NB: their
+  //! product must equal m).
+  int vlasov_mx, vlasov_my, vlasov_mz;
+
+  //! The conservative variables have velocity in [-vlasov_vmax, vlasov_vmax]
+  double vlasov_vmax;
+
+  //! \brief A pointer to the numflux function
+  //! \param[in] wL, wR : left and right states
   //! \param[in] vn : normal vector
   //! \param[out] flux : the flux
-  void (*NumFlux)(double wL[],double wR[],double vn[3],double flux[]);
+  void (*NumFlux)(double wL[], double wR[], double vn[3], double flux[]);
 
-  //! \brief a pointer to the boundary flux function
+  //! \briefA pointer to the boundary flux function
   //! \param[in] x : space position
   //! \param[in] t : time
   //! \param[in] wL : left state
   //! \param[in] vn : normal vector
   //! \param[out] flux : the flux
-  void (*BoundaryFlux)(double x[3],double t,double wL[],double vn[3],double flux[]);
+  void (*BoundaryFlux)(double x[3], double t, double wL[], double vn[3],
+		       double flux[]);
 
-  //! \brief a pointer to the init data function
+  //! \brief A pointer to the init data function
   // !\param[in] x : space position
   //! \param[out] w : init state at point x
-  void (*InitData)(double x[3],double w[]);
+  void (*InitData)(double x[3], double w[]);
 
-  //! \brief a pointer to the imposed data function
-  //!\param[in] x,t : space and time position
+  //! \brief A pointer to the imposed data function
+  //!\param[in] x, t : space and time position
   //! \param[out] w : imposed state at point x and time t
-  void (*ImposedData)(double x[3],double t,double w[]);
+  void (*ImposedData)(double x[3], double t, double w[]);
 
 } Model;
 
+//! \brief The particular flux for the transport model
+//! \param[in] wL, wR : left and right states
+//! \param[in] vn : normal vector
+//! \param[out] flux : the flux
+void TransNumFlux(double wL[], double wR[], double vn[3], double* flux);
 
-//! \brief particular flux for the transport model
-//! \param[in] wL,wR : left and right states
+//! \brief The particular flux for the 2d transport model
+//! \param[in] wL, wR : left and right states
 //! \param[in] vn : normal vector
 //! \param[out] flux : the flux
-void TransportNumFlux(double wL[],double wR[],double vn[3],double* flux);
-//! \brief particular flux for the 2d transport model
-//! \param[in] wL,wR : left and right states
-//! \param[in] vn : normal vector
-//! \param[out] flux : the flux
-void TransportNumFlux2d(double wL[],double wR[],double vn[3],double* flux);
-void VecTransNumFlux2d(double wL[],double wR[],double vn[3],double* flux);
-//! \brief particular boundary flux for the transport model
+void TransNumFlux2d(double wL[], double wR[], double vn[3], double* flux);
+
+void VecTransNumFlux2d(double wL[], double wR[], double vn[3], double* flux);
+
+//! \brief The particular boundary flux for the transport model
 //! \param[in] x : space position
 //! \param[in] t : time
 //! \param[in] wL : left state
 //! \param[in] vn : normal vector
 //! \param[out] flux : the flux
-void TransportBoundaryFlux(double* x,double t,double* wL,double* vn,
+void TransBoundaryFlux(double* x, double t, double* wL, double* vn,
+		       double* flux);
+
+//! \brief The particular boundary flux for the 2d transport model
+//! \param[in] x : space position
+//! \param[in] t : time
+//! \param[in] wL : left state
+//! \param[in] vn : normal vector
+//! \param[out] flux : the flux
+void TransBoundaryFlux2d(double* x, double t, double* wL, double* vn,
+			 double* flux);
+
+//! \brief The particular init data for the transport model
+//! \param[in] x : space position
+//! \param[out] w : init state at point x
+void TransInitData(double* x, double* w);
+
+//! \brief The particular init data for the 2d transport model
+//! \param[in] x : space position
+//! \param[out] w : init state at point x
+void TransInitData2d(double *x, double *w);
+
+void VecTransInitData2d(double *x, double *w);
+
+void vTransImposedData2d(double *x, double t, double *w);
+
+//! \brief The particular imposed data for the transport model
+//! \param[in] x, t : space and time position
+//! \param[out] w : imposed state at point x and time t
+void TransImposedData(double* x, double t, double* w);
+
+//! \brief The particular imposed data for the 2d transport model
+//! \param[in] x, t : space and time position
+//! \param[out] w : imposed state at point x and time t
+void TransImposedData2d(double* x, double t, double* w);
+
+void VecTransImposedData2d(double* x, double t, double* w);
+
+//! \brief The particular flux for testing the transport model
+//! \param[in] x : space position
+//! \param[in] t : time
+//! \param[in] wL : left state
+//! \param[in] vn : normal vector
+//! \param[out] flux : the flux
+void TestTransBoundaryFlux(double* x, double t, double* wL, double* vn,
 			   double* flux);
-//! \brief particular boundary flux for the 2d transport model
+
+//! \brief The particular flux for testing the 2d transport model
 //! \param[in] x : space position
 //! \param[in] t : time
 //! \param[in] wL : left state
 //! \param[in] vn : normal vector
 //! \param[out] flux : the flux
-void TransportBoundaryFlux2d(double* x,double t,double* wL,double* vn,
+void TestTransBoundaryFlux2d(double* x, double t, double* wL, double* vn,
 			     double* flux);
-//! \brief particular init data for the transport model
-//! \param[in] x : space position
-//! \param[out] w : init state at point x
-void TransportInitData(double* x,double* w);
-//! \brief particular init data for the 2d transport model
-//! \param[in] x : space position
-//! \param[out] w : init state at point x
-void TransportInitData2d(double* x,double* w);
-void VecTransInitData2d(double* x,double* w);
-//! \brief particular imposed data for the transport model
-//! \param[in] x,t : space and time position
-//! \param[out] w : imposed state at point x and time t
-void TransportImposedData(double* x,double t,double* w);
-//! \brief particular imposed data for the 2d transport model
-//! \param[in] x,t : space and time position
-//! \param[out] w : imposed state at point x and time t
-void TransportImposedData2d(double* x,double t,double* w);
-void VecTransImposedData2d(double* x,double t,double* w);
 
-//! \brief particular flux for testing the transport model
-//! \param[in] x : space position
-//! \param[in] t : time
-//! \param[in] wL : left state
-//! \param[in] vn : normal vector
-//! \param[out] flux : the flux
-void TestTransportBoundaryFlux(double* x,double t,double* wL,double* vn,
-			       double* flux);
-//! \brief particular flux for testing the 2d transport model
-//! \param[in] x : space position
-//! \param[in] t : time
-//! \param[in] wL : left state
-//! \param[in] vn : normal vector
-//! \param[out] flux : the flux
-void TestTransportBoundaryFlux2d(double* x,double t,double* wL,double* vn,
-				 double* flux);
-void VecTransBoundaryFlux2d(double* x,double t,double* wL,double* vn,
-				 double* flux);
-//! \brief particular init data for the transport model
-//! \param[in] x : space position
-//! \param[out] w : init state at point x
-void TestTransportInitData(double* x,double* w);
-//! \brief particular init data for the 2d transport model
-//! \param[in] x : space position
-//! \param[out] w : init state at point x
-void TestTransportInitData2d(double* x,double* w);
-//! \brief particular imposed data for the transport model
-//! \param[in] x,t : space and time position
-//! \param[out] w : imposed state at point x and time t
-void TestTransportImposedData(double* x,double t,double* w);
-//! \brief particular imposed data for the 2d transport model
-//! \param[in] x,t : space and time position
-//! \param[out] w : imposed state at point x and time t
-void TestTransportImposedData2d(double* x,double t,double* w);
+void VecTransBoundaryFlux2d(double* x, double t, double* wL, double* vn,
+			    double* flux);
 
+//! \brief The particular init data for the transport model
+//! \param[in] x : space position
+//! \param[out] w : init state at point x
+void TestTransInitData(double* x, double* w);
+
+//! \brief The particular init data for the 2d transport model
+//! \param[in] x : space position
+//! \param[out] w : init state at point x
+void TestTransInitData2d(double* x, double* w);
+
+//! \brief The particular imposed data for the transport model
+//! \param[in] x, t : space and time position
+//! \param[out] w : imposed state at point x and time t
+void TestTransImposedData(double* x, double t, double* w);
+
+//! \brief The particular imposed data for the 2d transport model
+//! \param[in] x, t : space and time position
+//! \param[out] w : imposed state at point x and time t
+void TestTransImposedData2d(double* x, double t, double* w);
+
+//! Parameters used for computing the velocity for the Vlasov equation.
+static int m;
+static int vlasov_mx;
+static int vlasov_my;
+static int vlasov_mz;
+static double vlasov_vmax;
+
+void set_vlasov_params(Model *mod);
+double vlasov_vel(const int id, const int md, double vlasov_vmax);
+void vlaTransInitData2d(double x[3], double w[]);
+void vlaTransNumFlux2d(double wL[], double wR[], double* vnorm, double* flux);
+void vlaTransBoundaryFlux2d(double x[3], double t, 
+			    double wL[], double* vnorm,
+			    double* flux);
+void vlaTransImposedData2d(double x[3], double t, double* w);
+double compact_bump(double r);
+double icgaussian(double r, double c);
+
+void cemracs2014_TransBoundaryFlux(double x[3], double t, 
+				   double wL[], double *vnorm,
+				   double *flux);
+void cemracs2014_TransInitData(double x[3], double w[]);
+void cemcracs2014_imposed_data(double x[3], double t, double *w); 
+void cemracs2014a_TransInitData(double x[3], double w[]);
+void cemcracs2014a_imposed_data(double x[3], double t, double *w); 
 
 #endif

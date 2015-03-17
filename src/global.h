@@ -1,4 +1,4 @@
-// \mainpage 
+// \mainpage
 //\f$\sqrt{(x_2-x_1)^2+(y_2-y_1)^2}\f$
 // global variables for the SCHNAPS project
 /*! \mainpage SCHNAPS: Solveur Conservatif Hyperbolique Non-linéaire Appliqué aux PlasmaS
@@ -49,8 +49,8 @@ Génération de la documentation (avec doxygen):
 
 cd doc/
 doxygen doxyschnaps
- *  
- * 
+ *
+ *
  */
 #ifndef _GLOBAL_H
 #define _GLOBAL_H
@@ -58,7 +58,17 @@ doxygen doxyschnaps
 //! brief global variables and defs
 #ifndef _OPENMP
 // activate pthread if openmp is not here
-#define _WITH_PTHREAD
+//#define _WITH_PTHREAD
 #endif
+
+#define _WITH_OPENCL
+
+extern int nplatform_cl;
+extern int ndevice_cl;
+
+char numflux_cl_name[1024];
+char cl_buildoptions[1024];
+
+#define __constant
 
 #endif

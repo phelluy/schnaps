@@ -3,70 +3,61 @@
 #include<stdio.h>
 #include <assert.h>
 #include <math.h>
-int main(void) {
-  
-  // unit tests
-    
-  int resu=TestFieldRK2_2D();
-	 
-  if (resu) printf("Field RK2 2D test OK !\n");
-  else printf("Field RK2 2D test failed !\n");
 
-  return !resu;
-} 
+int TestfieldRK2_2D(void) {
+  bool test = true;
+  field f;
+  f.model.cfl = 0.05;
+  f.model.m = 1; // only one conservative variable
+  f.model.NumFlux = TransNumFlux2d;
+  f.model.BoundaryFlux = TransBoundaryFlux2d;
+  f.model.InitData = TransInitData2d;
+  f.model.ImposedData = TransImposedData2d;
+  f.varindex = GenericVarindex;
 
+  f.interp.interp_param[0] = 1; // _M
+  f.interp.interp_param[1] = 2; // x direction degree
+  f.interp.interp_param[2] = 2; // y direction degree
+  f.interp.interp_param[3] = 0; // z direction degree
+  f.interp.interp_param[4] = 1; // x direction refinement
+  f.interp.interp_param[5] = 1; // y direction refinement
+  f.interp.interp_param[6] = 1; // z direction refinement
 
-
-int TestFieldRK2_2D(void) {
-
-  bool test=true;
-
-  Field f;
-  f.model.m=1; // only one conservative variable
-  f.model.NumFlux=TransportNumFlux2d;
-  f.model.BoundaryFlux=TransportBoundaryFlux2d;
-  f.model.InitData=TransportInitData2d;
-  f.model.ImposedData=TransportImposedData2d;
-  f.varindex=GenericVarindex;
-
-
-  f.interp.interp_param[0]=1;  // _M
-  f.interp.interp_param[1]=2;  // x direction degree
-  f.interp.interp_param[2]=2;  // y direction degree
-  f.interp.interp_param[3]=0;  // z direction degree
-  f.interp.interp_param[4]=1;  // x direction refinement
-  f.interp.interp_param[5]=1;  // y direction refinement
-  f.interp.interp_param[6]=1;  // z direction refinement
-
-
-  ReadMacroMesh(&(f.macromesh),"test/testdisque2d.msh");
-  bool is2d=Detect2DMacroMesh(&(f.macromesh));
-  assert(is2d);
+  ReadMacroMesh(&(f.macromesh), "test/testdisque2d.msh");
+  Detect2DMacroMesh(&(f.macromesh));
+  assert(f.macromesh.is2d);
   BuildConnectivity(&(f.macromesh));
 
   //AffineMapMacroMesh(&(f.macromesh));
  
-  InitField(&f);
+  Initfield(&f);
   // require a 2d computation
   f.is2d=true;
 
-
-  CheckMacroMesh(&(f.macromesh),f.interp.interp_param+1);
+  CheckMacroMesh(&(f.macromesh), f.interp.interp_param + 1);
 
   printf("cfl param =%f\n",f.hmin);
 
-
-  RK2(&f,0.2);
+  double tmax = 0.2;
+  RK2(&f, tmax);
  
-  PlotField(0,(1==0),&f,"dgvisu.msh");
-  PlotField(0,(1==1),&f,"dgerror.msh");
+  Plotfield(0, false, &f, NULL, "dgvisu.msh");
+  Plotfield(0, true, &f, "error", "dgerror.msh");
 
-  double dd=L2error(&f);
+  double dd = L2error(&f);
 
-  printf("erreur L2=%f\n",dd);
+  printf("erreur L2=%f\n", dd);
 
-  test = test && (dd<0.01);
+  test = test && (dd < 0.01);
 
   return test;
+}
 
-};
+int main(void) {
+  int resu = TestfieldRK2_2D();
+  if (resu) 
+    printf("field RK2 2D test OK !\n");
+  else 
+    printf("field RK2 2D test failed !\n");
+  return !resu;
+} 
