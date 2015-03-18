@@ -5,7 +5,11 @@
 #ifndef CLUTILS_H_INC
 #define CLUTILS_H_INC
 
+#ifdef __APPLE__
+#include <OpenCL/opencl.h>
+#else
 #include <CL/cl.h>
+#endif
 
 const char* clErrorString(const cl_int err);
 
