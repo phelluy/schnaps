@@ -5,7 +5,9 @@
 #include "interpolation.h"
 #include "model.h"
 
-
+#ifndef NO_OPENCL
+#include "clinfo.h"
+#endif
 
 //! \brief A simple struct for packing a field
 //! and a faces range.  To be passed to a thread
