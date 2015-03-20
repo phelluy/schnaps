@@ -21,6 +21,7 @@ find_package (OpenCL)
 if(OPENCL_FOUND)
   INCLUDE_DIRECTORIES(${OPENCL_INCLUDE_DIR})
 else()
+  INCLUDE_DIRECTORIES(".")
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DNO_OPENCL")
 endif(OPENCL_FOUND)
 
@@ -72,7 +73,12 @@ endif (OPENCL_FOUND)
 #schnaps library
 add_library (_schnaps ${source_files})
 set(LIBS "")
+
+if (OPENCL_FOUND)
 list(APPEND LIBS _schnaps pthread ${OPENCL_LIBRARIES} rt m)
+else()
+list(APPEND LIBS _schnaps pthread rt m)
+endif (OPENCL_FOUND)
 
 # main program schnaps
 add_executable(

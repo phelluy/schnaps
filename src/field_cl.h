@@ -2,6 +2,11 @@
 #define _FIELD_CL_H
 
 #ifdef _WITH_OPENCL
+
+#ifdef _WITH_OPENCL
+#include "clinfo.h"
+#endif
+
 #include "field.h"
 #include "clinfo.h"
 

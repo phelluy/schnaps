@@ -9,7 +9,7 @@
 #include <float.h>
 #include <string.h>
 
-#ifdef _WITH_OPENCL
+#ifndef NO_OPENCL 
 #include "clutils.h"
 #endif
 

@@ -5,10 +5,6 @@
 #include "interpolation.h"
 #include "model.h"
 
-//FIXME: move to field_cl
-#ifdef _WITH_OPENCL
-#include "clinfo.h"
-#endif
 
 
 //! \brief A simple struct for packing a field
@@ -74,7 +70,7 @@ typedef struct field {
   // Array of pointers to MacroCell used for various DG routines
   MacroCell *mcell;
 
-#ifdef _WITH_OPENCL
+#ifndef NO_OPENCL
   //! \brief opencl data
   CLInfo cli;
   //! \brief copy of the dtwn array
