@@ -27,6 +27,8 @@ int TestFieldRK2_2D_SubCell(void);
 
 int TestmEq2(void);
 
+int TestMaxwell2D(void);
+
 int TestCLInfo(void);
 
 int TestKernel(void);

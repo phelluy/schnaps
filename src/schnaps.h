@@ -8,5 +8,6 @@
 #include "field.h"
 #include "field_cl.h"
 #include "clinfo.h"
+#include "maxwell.h"
 
 #endif
