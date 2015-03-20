@@ -15,6 +15,8 @@ puis:
 
 cmake .
 
+(ou "cmake . -DUSE_OPENCL:BOOL=ON" pour activer OpenCL)
+
 make
 
 ctest
