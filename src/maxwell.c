@@ -1,4 +1,4 @@
-#include "maxwell2d.h"
+#include "maxwell.h"
 #include <math.h>
 #include <stdio.h>
 #include <assert.h>
