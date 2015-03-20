@@ -5,7 +5,7 @@
 #include "interpolation.h"
 #include "model.h"
 
-#ifndef NO_OPENCL
+#ifdef _WITH_OPENCL
 #include "clinfo.h"
 #endif
 
@@ -72,7 +72,7 @@ typedef struct field {
   // Array of pointers to MacroCell used for various DG routines
   MacroCell *mcell;
 
-#ifndef NO_OPENCL
+#ifdef _WITH_OPENCL
   //! \brief opencl data
   CLInfo cli;
   //! \brief copy of the dtwn array

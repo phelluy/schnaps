@@ -9,8 +9,9 @@
 #include <float.h>
 #include <string.h>
 
-#ifndef NO_OPENCL 
+#ifdef _WITH_OPENCL 
 #include "clutils.h"
+#include "clinfo.h"
 #endif
 
 #ifdef _WITH_PTHREAD
@@ -162,7 +163,7 @@ void Initfield(field* f) {
     f->mcell[ie].last_p1 = ie + 1;
   }
 
-#ifndef NO_OPENCL
+#ifdef _WITH_OPENCL
   // opencl inits
   InitCLInfo(&(f->cli), nplatform_cl, ndevice_cl);
   cl_int status;
@@ -265,7 +266,7 @@ void free_field(field* f)
   free(f->mcell);
   free(f->mface);
 
-#ifndef NO_OPENCL
+#ifdef _WITH_OPENCL
   cl_int status;
 
   status = clReleaseMemObject(f->physnode_cl);

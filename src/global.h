@@ -61,7 +61,7 @@ doxygen doxyschnaps
 //#define _WITH_PTHREAD
 #endif
 
-#define _WITH_OPENCL
+#ifdef _WITH_OPENCL
 
 extern int nplatform_cl;
 extern int ndevice_cl;
@@ -70,5 +70,6 @@ char numflux_cl_name[1024];
 char cl_buildoptions[1024];
 
 #define __constant
+#endif //_WITH_OPENCL
 
 #endif
