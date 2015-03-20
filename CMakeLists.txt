@@ -16,7 +16,7 @@ set(CMAKE_C_FLAGS "-std=gnu99 -D_REENTRANT -O3 -g")
 
 #FIND_PACKAGE(OpenCL REQUIRED)
 find_package (OpenCL)
-#set(OPENCL_FOUND FALSE) # code for testing.
+set(OPENCL_FOUND FALSE) # code for testing.
 
 if(OPENCL_FOUND)
   INCLUDE_DIRECTORIES(${OPENCL_INCLUDE_DIR})

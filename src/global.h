@@ -69,7 +69,7 @@ extern int ndevice_cl;
 char numflux_cl_name[1024];
 char cl_buildoptions[1024];
 
-#define __constant
-#endif //_WITH_OPENCL
 
+#endif //_WITH_OPENCL
+#define __constant
 #endif
