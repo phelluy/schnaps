@@ -75,9 +75,9 @@ add_library (_schnaps ${source_files})
 set(LIBS "")
 
 if (OPENCL_FOUND)
-list(APPEND LIBS _schnaps pthread ${OPENCL_LIBRARIES} rt m)
+list(APPEND LIBS _schnaps pthread ${OPENCL_LIBRARIES} m)
 else()
-list(APPEND LIBS _schnaps pthread rt m)
+list(APPEND LIBS _schnaps pthread m)
 endif (OPENCL_FOUND)
 
 # main program schnaps
