@@ -158,6 +158,7 @@ int main(int argc, char *argv[]) {
   // Prudence...
   CheckMacroMesh(&(f.macromesh), f.interp.interp_param + 1);
 
+  /*
   double executiontime;
   struct timespec tstart, tend;
   if(usegpu) {
@@ -173,6 +174,7 @@ int main(int argc, char *argv[]) {
     clock_gettime(CLOCK_MONOTONIC, &tend);
   }
   executiontime = seconds(tend, tstart);
+  */
 
   // Save the results and the error
   if(writemsh) {
@@ -210,14 +212,18 @@ int main(int argc, char *argv[]) {
   printf("L2 error:\n");
   printf("%e\n", dd);
 
+  /*
   printf("executiontime (s):\n");
   printf("%f\n", executiontime);
+  */
 
   printf("itermax (s):\n");
   printf("%d\n", f.itermax);
 
+  /*
   printf("perRK2time (s):\n");
   printf("%f\n", executiontime / (double)f.itermax);
+  */
 
   double tolerance = 1e-2;
   test = test && (dd < tolerance);

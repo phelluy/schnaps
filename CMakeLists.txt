@@ -16,12 +16,13 @@ set(CMAKE_C_FLAGS "-std=gnu99 -D_REENTRANT -O3 -g")
 
 #FIND_PACKAGE(OpenCL REQUIRED)
 find_package (OpenCL)
-#set(OPENCL_FOUND FALSE) # code for testing.
+set(OPENCL_FOUND FALSE) # code for testing.
 
 if(OPENCL_FOUND)
   INCLUDE_DIRECTORIES(${OPENCL_INCLUDE_DIR})
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -D_WITH_OPENCL")
 else()
-  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DNO_OPENCL")
+  INCLUDE_DIRECTORIES(".")
 endif(OPENCL_FOUND)
 
 if(CMAKE_COMPILER_IS_GNUCC)
@@ -74,7 +75,12 @@ endif (OPENCL_FOUND)
 #schnaps library
 add_library (_schnaps ${source_files})
 set(LIBS "")
-list(APPEND LIBS _schnaps pthread ${OPENCL_LIBRARIES} rt m)
+
+if (OPENCL_FOUND)
+list(APPEND LIBS _schnaps pthread ${OPENCL_LIBRARIES} m)
+else()
+list(APPEND LIBS _schnaps pthread m)
+endif (OPENCL_FOUND)
 
 # main program schnaps
 add_executable(
