@@ -1,5 +1,6 @@
 #ifndef _CLINFO_H
 #define _CLINFO_H
+#include <stdbool.h>
 
 #ifdef __APPLE__
 #include <OpenCL/opencl.h>
@@ -12,7 +13,7 @@
 //! \brief Data structure for managing the OpenCL
 //! system informations
 typedef struct CLInfo{
-  cl_device_id* device; //!< devices list
+  cl_device_id *device; //!< devices list
   cl_ulong devicememsize;  //!< GPU global memory size
   cl_ulong maxmembuffer;  //!< maximal size of a GPU buffer
   cl_ulong maxconstmem;  //!< maximal GPU constant memory
@@ -41,11 +42,11 @@ typedef struct CLInfo{
 //! \param[inout] cli pointer to a CLInfo
 //! \param[in] platform_id  Platform ID
 //! \param[in] device_id  Compute device ID
-void InitCLInfo(CLInfo* cli, int platform_id, int device_id);
+void InitCLInfo(CLInfo *cli, int platform_id, int device_id);
 
 //! \brief Display OpenCL informations
 //! \param[in] cli pointer to a CLInfo
-void PrintCLInfo(CLInfo* cli);
+void PrintCLInfo(CLInfo *cli);
 
 //! \brief Compile kernels source
 //! \param[inout] cli pointer to a CLInfo
@@ -62,5 +63,9 @@ void GetOpenCLCode(void);
 
 //! \brief allocates and fills a string with a file content
 void ReadFile(char filename[], char** s);
+
+
+bool cldevice_is_acceptable(cl_uint ndevice, cl_uint nplatform);
+
 
 #endif

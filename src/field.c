@@ -165,6 +165,12 @@ void Initfield(field* f) {
 
 #ifdef _WITH_OPENCL
   // opencl inits
+  if(!cldevice_is_acceptable(nplatform_cl, ndevice_cl)) {
+    printf("\n");
+    exit(1);
+  }
+  
+
   InitCLInfo(&(f->cli), nplatform_cl, ndevice_cl);
   cl_int status;
 

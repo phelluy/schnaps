@@ -6,20 +6,157 @@
 #include "clutils.h"
 #include <stdbool.h>
 
-void InitCLInfo(CLInfo* cli, int platform_id, int device_id)
+bool cldevice_exists(cl_platform_id *platform, cl_uint ndevice)
+{
+  cl_int status;
+  cl_uint ndevices;
+  status = clGetDeviceIDs(*platform,
+			  CL_DEVICE_TYPE_ALL,
+			  0,
+			  NULL,
+			  &ndevices);
+  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status == CL_SUCCESS);
+  printf("ndevices:%d\n",ndevices);
+printf("ndevice:%d\n",ndevice);
+  if(ndevice < ndevices)
+    return true;
+  return false;
+}
+
+cl_uint get_nbplatforms()
+{
+  cl_int status;
+  cl_uint nbplatforms;
+  status = clGetPlatformIDs(0, NULL, &(nbplatforms));
+  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status == CL_SUCCESS);
+  return nbplatforms;
+}
+
+bool clplatform_exists(cl_uint nplatform)
+{ 
+  cl_uint nbplatforms = get_nbplatforms();
+  if(nplatform < nbplatforms)
+    return true;
+  else
+    return false;
+}
+
+cl_platform_id get_platform_id(cl_uint nplatform)
+{
+  cl_uint nbplatforms = get_nbplatforms();
+  cl_platform_id *platforms = malloc(sizeof(cl_platform_id[nbplatforms]));
+  
+  cl_int status;
+  status = clGetPlatformIDs(nbplatforms, platforms, NULL);
+  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status == CL_SUCCESS);
+  
+  cl_platform_id the_platform = platforms[nplatform];
+
+  free(platforms);
+
+  return the_platform;
+}
+
+cl_uint get_nbdevices(cl_platform_id *platform_id)
+{
+  cl_uint nbdevices;
+  cl_int status;
+  status = clGetDeviceIDs(*platform_id,
+			  CL_DEVICE_TYPE_ALL,
+			  0,
+			  NULL,
+			  &nbdevices);
+  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status == CL_SUCCESS);
+  return nbdevices;
+}
+
+cl_device_id get_device_id(cl_platform_id platform, cl_uint ndevice)
+{
+  cl_uint nbdevices = get_nbdevices(&platform);
+  cl_device_id *devices;
+  devices = malloc(sizeof(cl_device_id) * nbdevices);
+
+  cl_int status;
+  status = clGetDeviceIDs(platform,
+			  CL_DEVICE_TYPE_ALL,
+			  nbdevices,
+			  devices,
+			  NULL);
+  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status == CL_SUCCESS);
+
+  cl_device_id device = devices[ndevice];
+
+  free(devices);
+
+  return device;
+}
+
+void get_cldevice_extensions(cl_device_id device, char * buf, size_t bufsize)
+{
+  cl_int status;
+  status = clGetDeviceInfo(device,
+			   CL_DEVICE_EXTENSIONS,
+			   bufsize,
+			   buf,
+			   NULL);
+  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status == CL_SUCCESS);
+}
+
+bool cldevice_supports_double(cl_device_id *device)
+{
+  char clextensions[1000];
+  get_cldevice_extensions(*device, clextensions, sizeof(clextensions));
+  printf("\tOpenCL extensions: %s\n", clextensions);
+  if(strstr(clextensions, "cl_khr_fp64") != NULL) {
+    printf("\t\tDouble-precision enabled (cl_khr_fp64).\n");
+    return true;
+  } else {
+    printf("\t\tDouble-precision not enabled (cl_khr_fp64): ABORT!\n");
+    return false;
+  }
+}
+
+bool cldevice_is_acceptable(cl_uint nplatform, cl_uint ndevice)
+{
+  if(!clplatform_exists(nplatform)) {
+    printf("Invalid clplatform\n");
+    return false;
+  }
+
+  cl_platform_id platform = get_platform_id(nplatform);
+  if(!cldevice_exists(&platform, ndevice)) {
+    printf("Invalid cldevice\n");
+    return false;
+  }
+
+  cl_device_id device = get_device_id(platform, ndevice);
+  if(!cldevice_supports_double(&device)) {
+    printf("cldevice does not support double\n");
+    return false;
+  }
+
+  return true;
+}
+
+void InitCLInfo(CLInfo *cli, int platform_id, int device_id)
 {
   cl_int status;
   
   /* numbers of platforms */
-  status = clGetPlatformIDs(0, NULL, &(cli->nbplatforms));
-  assert(status == CL_SUCCESS);
-  
+  cli->nbplatforms = get_nbplatforms();
   assert(cli->nbplatforms > 0);
  
   /* platform array construction */
-  cl_platform_id* platforms = malloc(sizeof(cl_platform_id[cli->nbplatforms]));
+  cl_platform_id *platforms = malloc(sizeof(cl_platform_id[cli->nbplatforms]));
   assert(platforms);
-  
+
+  // Store the platform_ids in platforms
   status = clGetPlatformIDs(cli->nbplatforms, platforms, NULL);
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status == CL_SUCCESS);
@@ -58,17 +195,13 @@ void InitCLInfo(CLInfo* cli, int platform_id, int device_id)
     printf("\t%s\n",cli->platformname);
   }
 
-  cli->platformid=platform_id;
+  cli->platformid = platform_id;
   assert(cli->platformid < cli->nbplatforms);
 
+  cl_platform_id platform = get_platform_id(platform_id);
+
   // devices count
-  status = clGetDeviceIDs(platforms[platform_id],
-			  CL_DEVICE_TYPE_ALL,
-			  0,
-			  NULL,
-			  &(cli->nbdevices));
-  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status == CL_SUCCESS);
+  cli->nbdevices = get_nbdevices(&platform);
   assert(cli->nbdevices > 0);
 
   // devices array construction
@@ -77,9 +210,10 @@ void InitCLInfo(CLInfo* cli, int platform_id, int device_id)
 
   printf("\nWe choose device %d/%d ", device_id, cli->nbdevices-1);
   assert(device_id < cli->nbdevices);
-
   printf("of platform %d/%d\n",platform_id,cli->nbplatforms-1);
-  status = clGetDeviceIDs(platforms[platform_id],
+
+  // Get all of the device_ids and store them in cli->device 
+  status = clGetDeviceIDs(platform,
 			  CL_DEVICE_TYPE_ALL,
 			  cli->nbdevices,
 			  cli->device,
@@ -194,20 +328,9 @@ void InitCLInfo(CLInfo* cli, int platform_id, int device_id)
   printf("\tMax workgroup size: %zu\n",cli->maxworkgroupsize);
 
   // OpenCL extensions
-  status = clGetDeviceInfo(cli->device[device_id],
-			   CL_DEVICE_EXTENSIONS,
-			   sizeof(cli->clextensions),
-			   cli->clextensions,
-			   NULL);
-  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status == CL_SUCCESS);
+  get_cldevice_extensions(cli->device[device_id], cli->clextensions,
+			  sizeof(cli->clextensions));
   printf("\tOpenCL extensions: %s\n", cli->clextensions);
-  if(strstr(cli->clextensions, "cl_khr_fp64") != NULL) {
-    printf("\t\tDouble-precision enabled (cl_khr_fp64).\n");
-  } else {
-    printf("\t\tDouble-precision not enabled (cl_khr_fp64): ABORT!\n");
-    assert(false);
-  }
   
   // First opencl context
   cli->context = clCreateContext(NULL, // no context properties
