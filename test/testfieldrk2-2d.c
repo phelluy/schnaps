@@ -30,6 +30,13 @@ int TestfieldRK2_2D(void) {
 
   //AffineMapMacroMesh(&(f.macromesh));
  
+#ifdef _WITH_OPENCL
+  if(!cldevice_is_acceptable(nplatform_cl, ndevice_cl)) {
+    printf("OpenCL device not acceptable.\n");
+    return true;
+  }
+#endif
+  
   Initfield(&f);
   // require a 2d computation
   f.is2d=true;

@@ -5,17 +5,13 @@
 #include <math.h>
 #include <string.h>
 
-int main(void) {
-  int resu = TestCLInfo();
-  if (resu) 
-    printf("CLInfo test OK !\n");
-  else 
-    printf("CLInfo test failed !\n");
-  return !resu;
-} 
-
 int TestCLInfo(void) {
   int test = true;
+
+  if(!cldevice_is_acceptable(nplatform_cl, ndevice_cl)) {
+    printf("OpenCL device not acceptable.\n");
+    return true;
+  }
 
   CLInfo cli;
 
@@ -36,8 +32,6 @@ int TestCLInfo(void) {
   char *s;
   ReadFile("schnaps.cl", &s);
 
-
-
   // Pass the value of m to the OpenCL code via the preprocessor
   char buildoptions[1000];
   sprintf(buildoptions, "-D _M=%d", 1);
@@ -49,3 +43,12 @@ int TestCLInfo(void) {
 
   return test;
 }
+
+int main(void) {
+  int resu = TestCLInfo();
+  if (resu) 
+    printf("CLInfo test OK !\n");
+  else 
+    printf("CLInfo test failed !\n");
+  return !resu;
+} 

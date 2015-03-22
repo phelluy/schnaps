@@ -82,6 +82,11 @@ int main(int argc, char *argv[]) {
     }
   }
 
+  if(!cldevice_is_acceptable(nplatform_cl, ndevice_cl)) {
+    printf("OpenCL device not acceptable.\n");
+    return 0;
+  }
+
   bool test = true;
   field f;
   
@@ -197,7 +202,8 @@ int main(int argc, char *argv[]) {
     /* Plotfield(mplot, true, &f, "dgerror.msh"); */
   }
 
-  printf("tmax: %f, cfl: %f, deg: %d, nraf: %d\n", tmax, f.model.cfl, deg, nraf);
+  printf("tmax: %f, cfl: %f, deg: %d, nraf: %d\n", 
+	 tmax, f.model.cfl, deg, nraf);
   double dd = L2error(&f) / (f.model.vlasov_mx * f.model.vlasov_my);
 
   printf("deltax:\n");
