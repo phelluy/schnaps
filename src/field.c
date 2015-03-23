@@ -34,63 +34,9 @@ int GenericVarindex(int *param, int elem, int ipg, int iv) {
 }
 #pragma end_opencl
 
-void Initfield(field* f) {
-  //int param[8]={f->model.m,_DEGX,_DEGY,_DEGZ,_RAFX,_RAFY,_RAFZ,0};
-  f->is2d = false;
-  
-  f->vmax = 1.0; // FIXME: make this variable
-
-  // a copy for avoiding too much "->"
-  for(int ip = 0; ip < 8; ip++)
-    f->interp_param[ip] = f->interp.interp_param[ip];
-
-  int nmem = f->model.m * f->macromesh.nbelems * NPG(f->interp_param + 1);
-  f->wsize = nmem;
-  printf("allocate %d doubles\n", nmem);
-  f->wn = calloc(nmem, sizeof(double));
-  assert(f->wn);
-  f->dtwn = calloc(nmem, sizeof(double));
-  assert(f->dtwn);
-
-  f->tnow = 0;
-
-  for(int ie = 0; ie < f->macromesh.nbelems; ie++) {
-    
-    double physnode[20][3];
-    for(int inoloc = 0; inoloc < 20; inoloc++) {
-      int ino = f->macromesh.elem2node[20 * ie + inoloc];
-      physnode[inoloc][0] = f->macromesh.node[3 * ino + 0];
-      physnode[inoloc][1] = f->macromesh.node[3 * ino + 1];
-      physnode[inoloc][2] = f->macromesh.node[3 * ino + 2];
-    }
-    
-    for(int ipg = 0; ipg < NPG(f->interp_param + 1); ipg++) {
-      double xpg[3];
-      double xref[3], omega;
-      ref_pg_vol(f->interp_param + 1, ipg, xref, &omega, NULL);
-      double dtau[3][3];
-      Ref2Phy(physnode,
-	      xref,
-	      0, -1, // dphiref, ifa
-              xpg, dtau,
-	      NULL, NULL, NULL); // codtau, dphi, vnds
-      { // Check the reverse transform at all the GLOPS
- 	double xref2[3];
-	Phy2Ref(physnode, xpg, xref2);
-	assert(Dist(xref, xref2) < 1e-8);
-      }
-
-      double w[f->model.m];
-      f->model.InitData(xpg, w);
-      for(int iv = 0; iv < f->model.m; iv++) {
-	int imem = f->varindex(f->interp_param, ie, ipg, iv);
-	f->wn[imem] = w[iv];
-      }
-    }
-  }
-
-  // Compute cfl parameter min_i vol_i/surf_i
-  f->hmin = FLT_MAX;
+double min_grid_spacing(field *f)
+{
+  double hmin = FLT_MAX;
 
   for (int ie = 0; ie < f->macromesh.nbelems; ie++) {
     double vol = 0, surf = 0;
@@ -135,7 +81,7 @@ void Initfield(field* f) {
 	surf += norm(vnds) * wpg;
       }
     }
-    f->hmin = f->hmin < vol/surf ? f->hmin : vol/surf;
+    hmin = hmin < vol/surf ? hmin : vol/surf;
 
   }
  
@@ -144,7 +90,73 @@ void Initfield(field* f) {
   maxd = maxd > f->interp_param[2] ? maxd : f->interp_param[2];
   maxd = maxd > f->interp_param[3] ? maxd : f->interp_param[3];
 
-  f->hmin /= ((maxd + 1) * f->interp_param[4]);
+  hmin /= ((maxd + 1) * f->interp_param[4]);
+
+  return hmin;
+}
+
+void init_data(field *f)
+{
+  for(int ie = 0; ie < f->macromesh.nbelems; ie++) {
+    
+    double physnode[20][3];
+    for(int inoloc = 0; inoloc < 20; inoloc++) {
+      int ino = f->macromesh.elem2node[20 * ie + inoloc];
+      physnode[inoloc][0] = f->macromesh.node[3 * ino + 0];
+      physnode[inoloc][1] = f->macromesh.node[3 * ino + 1];
+      physnode[inoloc][2] = f->macromesh.node[3 * ino + 2];
+    }
+    
+    for(int ipg = 0; ipg < NPG(f->interp_param + 1); ipg++) {
+      double xpg[3];
+      double xref[3], omega;
+      ref_pg_vol(f->interp_param + 1, ipg, xref, &omega, NULL);
+      double dtau[3][3];
+      Ref2Phy(physnode,
+	      xref,
+	      0, -1, // dphiref, ifa
+              xpg, dtau,
+	      NULL, NULL, NULL); // codtau, dphi, vnds
+      { // Check the reverse transform at all the GLOPS
+ 	double xref2[3];
+	Phy2Ref(physnode, xpg, xref2);
+	assert(Dist(xref, xref2) < 1e-8);
+      }
+
+      double w[f->model.m];
+      f->model.InitData(xpg, w);
+      for(int iv = 0; iv < f->model.m; iv++) {
+	int imem = f->varindex(f->interp_param, ie, ipg, iv);
+	f->wn[imem] = w[iv];
+      }
+    }
+  }
+}
+
+void Initfield(field *f) {
+  //int param[8]={f->model.m,_DEGX,_DEGY,_DEGZ,_RAFX,_RAFY,_RAFZ,0};
+  f->is2d = false;
+  
+  f->vmax = 1.0; // FIXME: make this variable
+
+  // a copy for avoiding too much "->"
+  for(int ip = 0; ip < 8; ip++)
+    f->interp_param[ip] = f->interp.interp_param[ip];
+
+  int nmem = f->model.m * f->macromesh.nbelems * NPG(f->interp_param + 1);
+  f->wsize = nmem;
+  printf("allocate %d doubles\n", nmem);
+  f->wn = calloc(nmem, sizeof(double));
+  assert(f->wn);
+  f->dtwn = calloc(nmem, sizeof(double));
+  assert(f->dtwn);
+
+  f->tnow = 0;
+
+  init_data(f);
+
+  // Compute cfl parameter min_i vol_i/surf_i
+  f->hmin = min_grid_spacing(f);
 
   f->dt = f->model.cfl * f->hmin / f->vmax;
 
@@ -156,6 +168,7 @@ void Initfield(field* f) {
     f->mface[ifa].first = ifa;
     f->mface[ifa].last_p1 = ifa + 1;
   }
+
   // Allocate and set MacroCells
   f->mcell = calloc(f->macromesh.nbelems, sizeof(MacroCell*));
   for(int ie = 0; ie < f->macromesh.nbelems; ie++) {
@@ -166,101 +179,100 @@ void Initfield(field* f) {
 #ifdef _WITH_OPENCL
   // opencl inits
   if(!cldevice_is_acceptable(nplatform_cl, ndevice_cl)) {
-    printf("\n");
-    exit(1);
-  }
-  
+    printf("OpenCL device not acceptable; OpenCL initialization disabled.\n");
+  } else {
 
-  InitCLInfo(&(f->cli), nplatform_cl, ndevice_cl);
-  cl_int status;
+    InitCLInfo(&(f->cli), nplatform_cl, ndevice_cl);
+    cl_int status;
 
-  f->wn_cl = clCreateBuffer(f->cli.context,
-                            CL_MEM_READ_WRITE | CL_MEM_USE_HOST_PTR,
-                            sizeof(double) * f->wsize,
-                            f->wn,
-                            &status);
-  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status == CL_SUCCESS);
-
-  f->dtwn_cl = clCreateBuffer(f->cli.context,
+    f->wn_cl = clCreateBuffer(f->cli.context,
 			      CL_MEM_READ_WRITE | CL_MEM_USE_HOST_PTR,
 			      sizeof(double) * f->wsize,
-			      f->dtwn,
+			      f->wn,
 			      &status);
-  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status == CL_SUCCESS);
+    if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
+    assert(status == CL_SUCCESS);
 
-  f->param_cl = clCreateBuffer(f->cli.context,
-			       CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR,
-			       sizeof(int) * 7,
-			       f->interp_param,
-			       &status);
-  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status == CL_SUCCESS);
+    f->dtwn_cl = clCreateBuffer(f->cli.context,
+				CL_MEM_READ_WRITE | CL_MEM_USE_HOST_PTR,
+				sizeof(double) * f->wsize,
+				f->dtwn,
+				&status);
+    if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
+    assert(status == CL_SUCCESS);
 
-  f->physnode = calloc(60, sizeof(cl_double));
+    f->param_cl = clCreateBuffer(f->cli.context,
+				 CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR,
+				 sizeof(int) * 7,
+				 f->interp_param,
+				 &status);
+    if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
+    assert(status == CL_SUCCESS);
 
-  f->physnode_cl = clCreateBuffer(f->cli.context,
-				  CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR,
-				  sizeof(cl_double) * 60,
-				  f->physnode,
-				  &status);
-  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status == CL_SUCCESS);
+    f->physnode = calloc(60, sizeof(cl_double));
 
-  // Program compilation
-  char *s;
-  GetOpenCLCode();
-  ReadFile("schnaps.cl", &s);
+    f->physnode_cl = clCreateBuffer(f->cli.context,
+				    CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR,
+				    sizeof(cl_double) * 60,
+				    f->physnode,
+				    &status);
+    if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
+    assert(status == CL_SUCCESS);
 
-  printf("\t%s\n", numflux_cl_name);
+    // Program compilation
+    char *s;
+    GetOpenCLCode();
+    ReadFile("schnaps.cl", &s);
 
-  printf("OpenCL preprocessor options:\n");
-  printf("\t%s\n", cl_buildoptions);
+    printf("\t%s\n", numflux_cl_name);
+
+    printf("OpenCL preprocessor options:\n");
+    printf("\t%s\n", cl_buildoptions);
   
-  BuildKernels(&(f->cli), s, cl_buildoptions);
+    BuildKernels(&(f->cli), s, cl_buildoptions);
 
-  f->dgmass = clCreateKernel(f->cli.program,
-			     "DGMass",
-			     &status);
-  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status == CL_SUCCESS);
-
-  f->dgvolume = clCreateKernel(f->cli.program,
-			       "DGVolume",
+    f->dgmass = clCreateKernel(f->cli.program,
+			       "DGMass",
 			       &status);
-  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status == CL_SUCCESS);
+    if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
+    assert(status == CL_SUCCESS);
 
-  f->dginterface = clCreateKernel(f->cli.program,
-				  "DGMacroCellInterface",
+    f->dgvolume = clCreateKernel(f->cli.program,
+				 "DGVolume",
+				 &status);
+    if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
+    assert(status == CL_SUCCESS);
+
+    f->dginterface = clCreateKernel(f->cli.program,
+				    "DGMacroCellInterface",
+				    &status);
+    if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
+    assert(status == CL_SUCCESS);
+
+    f->RK_out_CL = clCreateKernel(f->cli.program,
+				  "RK_out_CL",
 				  &status);
-  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status == CL_SUCCESS);
+    if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
+    assert(status == CL_SUCCESS);
 
-  f->RK_out_CL = clCreateKernel(f->cli.program,
-				"RK_out_CL",
-				&status);
-  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status == CL_SUCCESS);
+    f->RK4_final_stage = clCreateKernel(f->cli.program,
+					"RK4_final_stage",
+					&status);
+    if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
+    assert(status == CL_SUCCESS);
 
-  f->RK4_final_stage = clCreateKernel(f->cli.program,
-				"RK4_final_stage",
-				&status);
-  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status == CL_SUCCESS);
+    f->RK_in_CL = clCreateKernel(f->cli.program,
+				 "RK_in_CL",
+				 &status);
+    if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
+    assert(status == CL_SUCCESS);
 
-  f->RK_in_CL = clCreateKernel(f->cli.program,
-			       "RK_in_CL",
-			       &status);
-  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status == CL_SUCCESS);
-
-  f->zero_buf = clCreateKernel(f->cli.program,
-			       "set_buffer_to_zero",
-			       &status);
-  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status == CL_SUCCESS);
+    f->zero_buf = clCreateKernel(f->cli.program,
+				 "set_buffer_to_zero",
+				 &status);
+    if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
+    assert(status == CL_SUCCESS);
+  }
 #endif // _WITH_OPENCL
   
   printf("field init done\n");

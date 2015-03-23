@@ -40,13 +40,6 @@ int TestmEq2(void) {
   //AffineMapMacroMesh(&(f.macromesh));
  
   // Prepare the initial fields
-
-#ifdef _WITH_OPENCL
-  if(!cldevice_is_acceptable(nplatform_cl, ndevice_cl)) {
-    printf("OpenCL device not acceptable.\n");
-    return true;
-  }
-#endif
   
   Initfield(&f);
   f.is2d = true;
