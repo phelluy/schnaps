@@ -133,6 +133,103 @@ void init_data(field *f)
   }
 }
 
+#ifdef _WITH_OPENCL
+void init_field_cl(field *f)
+{
+  InitCLInfo(&(f->cli), nplatform_cl, ndevice_cl);
+  cl_int status;
+
+  f->wn_cl = clCreateBuffer(f->cli.context,
+			    CL_MEM_READ_WRITE | CL_MEM_USE_HOST_PTR,
+			    sizeof(double) * f->wsize,
+			    f->wn,
+			    &status);
+  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status == CL_SUCCESS);
+
+  f->dtwn_cl = clCreateBuffer(f->cli.context,
+			      CL_MEM_READ_WRITE | CL_MEM_USE_HOST_PTR,
+			      sizeof(double) * f->wsize,
+			      f->dtwn,
+			      &status);
+  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status == CL_SUCCESS);
+
+  f->param_cl = clCreateBuffer(f->cli.context,
+			       CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR,
+			       sizeof(int) * 7,
+			       f->interp_param,
+			       &status);
+  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status == CL_SUCCESS);
+
+  f->physnode = calloc(60, sizeof(cl_double));
+
+  f->physnode_cl = clCreateBuffer(f->cli.context,
+				  CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR,
+				  sizeof(cl_double) * 60,
+				  f->physnode,
+				  &status);
+  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status == CL_SUCCESS);
+
+  // Program compilation
+  char *s;
+  GetOpenCLCode();
+  ReadFile("schnaps.cl", &s);
+
+  printf("\t%s\n", numflux_cl_name);
+
+  printf("OpenCL preprocessor options:\n");
+  printf("\t%s\n", cl_buildoptions);
+  
+  BuildKernels(&(f->cli), s, cl_buildoptions);
+
+  f->dgmass = clCreateKernel(f->cli.program,
+			     "DGMass",
+			     &status);
+  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status == CL_SUCCESS);
+
+  f->dgvolume = clCreateKernel(f->cli.program,
+			       "DGVolume",
+			       &status);
+  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status == CL_SUCCESS);
+
+  f->dginterface = clCreateKernel(f->cli.program,
+				  "DGMacroCellInterface",
+				  &status);
+  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status == CL_SUCCESS);
+
+  f->RK_out_CL = clCreateKernel(f->cli.program,
+				"RK_out_CL",
+				&status);
+  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status == CL_SUCCESS);
+
+  f->RK4_final_stage = clCreateKernel(f->cli.program,
+				      "RK4_final_stage",
+				      &status);
+  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status == CL_SUCCESS);
+
+  f->RK_in_CL = clCreateKernel(f->cli.program,
+			       "RK_in_CL",
+			       &status);
+  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status == CL_SUCCESS);
+
+  f->zero_buf = clCreateKernel(f->cli.program,
+			       "set_buffer_to_zero",
+			       &status);
+  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status == CL_SUCCESS);
+}
+#endif
+
+
 void Initfield(field *f) {
   //int param[8]={f->model.m,_DEGX,_DEGY,_DEGZ,_RAFX,_RAFY,_RAFZ,0};
   f->is2d = false;
@@ -181,97 +278,7 @@ void Initfield(field *f) {
   if(!cldevice_is_acceptable(nplatform_cl, ndevice_cl)) {
     printf("OpenCL device not acceptable; OpenCL initialization disabled.\n");
   } else {
-
-    InitCLInfo(&(f->cli), nplatform_cl, ndevice_cl);
-    cl_int status;
-
-    f->wn_cl = clCreateBuffer(f->cli.context,
-			      CL_MEM_READ_WRITE | CL_MEM_USE_HOST_PTR,
-			      sizeof(double) * f->wsize,
-			      f->wn,
-			      &status);
-    if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
-    assert(status == CL_SUCCESS);
-
-    f->dtwn_cl = clCreateBuffer(f->cli.context,
-				CL_MEM_READ_WRITE | CL_MEM_USE_HOST_PTR,
-				sizeof(double) * f->wsize,
-				f->dtwn,
-				&status);
-    if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
-    assert(status == CL_SUCCESS);
-
-    f->param_cl = clCreateBuffer(f->cli.context,
-				 CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR,
-				 sizeof(int) * 7,
-				 f->interp_param,
-				 &status);
-    if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
-    assert(status == CL_SUCCESS);
-
-    f->physnode = calloc(60, sizeof(cl_double));
-
-    f->physnode_cl = clCreateBuffer(f->cli.context,
-				    CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR,
-				    sizeof(cl_double) * 60,
-				    f->physnode,
-				    &status);
-    if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
-    assert(status == CL_SUCCESS);
-
-    // Program compilation
-    char *s;
-    GetOpenCLCode();
-    ReadFile("schnaps.cl", &s);
-
-    printf("\t%s\n", numflux_cl_name);
-
-    printf("OpenCL preprocessor options:\n");
-    printf("\t%s\n", cl_buildoptions);
-  
-    BuildKernels(&(f->cli), s, cl_buildoptions);
-
-    f->dgmass = clCreateKernel(f->cli.program,
-			       "DGMass",
-			       &status);
-    if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
-    assert(status == CL_SUCCESS);
-
-    f->dgvolume = clCreateKernel(f->cli.program,
-				 "DGVolume",
-				 &status);
-    if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
-    assert(status == CL_SUCCESS);
-
-    f->dginterface = clCreateKernel(f->cli.program,
-				    "DGMacroCellInterface",
-				    &status);
-    if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
-    assert(status == CL_SUCCESS);
-
-    f->RK_out_CL = clCreateKernel(f->cli.program,
-				  "RK_out_CL",
-				  &status);
-    if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
-    assert(status == CL_SUCCESS);
-
-    f->RK4_final_stage = clCreateKernel(f->cli.program,
-					"RK4_final_stage",
-					&status);
-    if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
-    assert(status == CL_SUCCESS);
-
-    f->RK_in_CL = clCreateKernel(f->cli.program,
-				 "RK_in_CL",
-				 &status);
-    if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
-    assert(status == CL_SUCCESS);
-
-    f->zero_buf = clCreateKernel(f->cli.program,
-				 "set_buffer_to_zero",
-				 &status);
-    if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
-    assert(status == CL_SUCCESS);
+    init_field_cl(f);
   }
 #endif // _WITH_OPENCL
   

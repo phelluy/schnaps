@@ -18,7 +18,7 @@ bool cldevice_exists(cl_platform_id *platform, cl_uint ndevice)
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status == CL_SUCCESS);
   printf("ndevices:%d\n",ndevices);
-printf("ndevice:%d\n",ndevice);
+  printf("ndevice:%d\n",ndevice);
   if(ndevice < ndevices)
     return true;
   return false;
@@ -351,7 +351,7 @@ void InitCLInfo(CLInfo *cli, int platform_id, int device_id)
 					 &queue_properties,
 					 &status);
 #else
-    cli->commandqueue = clCreateCommandQueue(cli->context,
+  cli->commandqueue = clCreateCommandQueue(cli->context,
 					   cli->device[device_id],
 					   CL_QUEUE_PROFILING_ENABLE,
 					   &status);
