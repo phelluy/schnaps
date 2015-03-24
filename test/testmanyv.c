@@ -11,10 +11,10 @@
 #include <time.h>
 #define _XOPEN_SOURCE 700
 
-double seconds(struct timespec ta, struct timespec tb) {
-  return (double)(ta.tv_sec - tb.tv_sec) 
-    + 1e-9 * (double)(ta.tv_nsec - tb.tv_nsec);
-}
+/* double seconds(struct timespec ta, struct timespec tb) { */
+/*   return (double)(ta.tv_sec - tb.tv_sec)  */
+/*     + 1e-9 * (double)(ta.tv_nsec - tb.tv_nsec); */
+/* } */
 
 int main(int argc, char *argv[]) {
   // Unit tests
