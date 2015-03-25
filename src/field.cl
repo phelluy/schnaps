@@ -34,14 +34,21 @@ double dlag(int deg, int ib, int ipg) {
   return gauss_lob_dpsi[gauss_lob_dpsi_offset[deg] + ib * (deg + 1) + ipg];
 }
 
+
+#ifndef VARINDEX
+#define VARINDEX GenericVarindex
+#endif
+
+
+
 // Memory location of w : component iv, macrocell elem and gauss point
 // id in the macrocell ipg
-int varindex(__constant int *param, int elem, int ipg, int iv) {
-  int npg
-    = (param[1] + 1) * (param[2] + 1) * (param[3] + 1)
-    * param[4] * param[5] * param[6];
-  return iv + param[0] * (ipg + npg * elem);
-}
+/* int VARINDEX(__constant int *param, int elem, int ipg, int iv) { */
+/*   int npg */
+/*     = (param[1] + 1) * (param[2] + 1) * (param[3] + 1) */
+/*     * param[4] * param[5] * param[6]; */
+/*   return iv + param[0] * (ipg + npg * elem); */
+/* } */
 
 int ref_ipg(__constant int* param, double* xref);
 
@@ -343,7 +350,7 @@ void DGVolume(__constant int* param,        // interp param
   for(int iv = 0; iv < m; iv++) {
     // gauss point id in the macrocell
     int ipgL = ipg(npg, p, icell);
-    int imemL = varindex(param, ie, ipgL, iv);
+    int imemL = VARINDEX(param, ie, ipgL, iv);
     //int imemL= iv + m * ( get_global_id(0) + nnpg * *ie);
     wL[iv] = wn[imemL];
   }
@@ -369,7 +376,7 @@ void DGVolume(__constant int* param,        // interp param
 
       int ipgR = ipg(npg, q, icell);
       for(int iv=0; iv < m; iv++) {
-	int imemR = varindex(param, ie, ipgR, iv); // TODO !
+	int imemR = VARINDEX(param, ie, ipgR, iv); // TODO !
     	dtwn[imemR] += flux[iv] * wpg;
       }
     }
@@ -399,7 +406,7 @@ void DGVolume(__constant int* param,        // interp param
 
 	double wR[_M];
         for(int iv = 0; iv < m; iv++) {
-          int imemR = varindex(param, ie, ipgR, iv);
+          int imemR = VARINDEX(param, ie, ipgR, iv);
           wR[iv] = wn[imemR];
         }
 
@@ -408,7 +415,7 @@ void DGVolume(__constant int* param,        // interp param
         NUMFLUX(wL, wR, vnds, flux);
         for(int iv = 0; iv < m; iv++) {
           int ipgL = ipg(npg, p, icell);
-          int imemL = varindex(param, ie, ipgL, iv);
+          int imemL = VARINDEX(param, ie, ipgL, iv);
           dtwn[imemL] -= flux[iv] * wpgs;
         }
       }
@@ -498,9 +505,9 @@ void DGMass(__constant int *param,        // interp param
     - dtau[2][0] * dtau[0][2] * dtau[1][1];
 
   for(int iv = 0; iv < m; iv++) {
-    // varindex
+    // VARINDEX
     int imem = iv + m * (get_global_id(0) + npgie * ie);
-    // end of varindex
+    // end of VARINDEX
     /////////////////////////////////////
     //printf("imem=%d dtw=%f\n", imem, dtwn[imem]);
     //printf("det=%f wpg=%f imem=%d h=%f %f %f\n", det,wpg, imem,hx,hy,hz);
@@ -572,9 +579,9 @@ void DGMacroCellInterface(__constant int *param,        // interp param
 
     double wR[_M];
     for(int iv = 0; iv < _M; iv++) {
-      int imemL = varindex(param, ieL, ipgL, iv);
+      int imemL = VARINDEX(param, ieL, ipgL, iv);
       wL[iv] = wn[imemL];
-      int imemR = varindex(param, ieR, ipgR, iv);
+      int imemR = VARINDEX(param, ieR, ipgR, iv);
       wR[iv] = wn[imemR];
     }
 
@@ -585,15 +592,15 @@ void DGMacroCellInterface(__constant int *param,        // interp param
     // Add flux to both sides
     for(int iv = 0; iv < _M; iv++) {
       // The basis functions is also the gauss point index
-      int imemL = varindex(param, ieL, ipgL, iv);
-      int imemR = varindex(param, ieR, ipgR, iv);
+      int imemL = VARINDEX(param, ieL, ipgL, iv);
+      int imemR = VARINDEX(param, ieR, ipgR, iv);
       dtwn[imemL] -= flux[iv] * wpg;
       dtwn[imemR] += flux[iv] * wpg;
     }
 
   } else { // The point is on the boundary.
     for(int iv = 0; iv < _M; iv++) {
-      int imemL = varindex(param, ieL, ipgL, iv);
+      int imemL = VARINDEX(param, ieL, ipgL, iv);
       wL[iv] = wn[imemL];
     }
 
@@ -604,7 +611,7 @@ void DGMacroCellInterface(__constant int *param,        // interp param
 
     for(int iv = 0; iv < _M; iv++) {
       // The basis functions is also the gauss point index
-      int imemL = varindex(param, ieL, ipgL, iv);
+      int imemL = VARINDEX(param, ieL, ipgL, iv);
       dtwn[imemL] -= flux[iv] * wpg;
     }
   }

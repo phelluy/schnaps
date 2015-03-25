@@ -27,7 +27,7 @@
 // param[6] = raf z
 
 #pragma start_opencl
-int GenericVarindex(int *param, int elem, int ipg, int iv) {
+int GenericVarindex(__constant int *param, int elem, int ipg, int iv) {
   int npg = (param[1] + 1) * (param[2] + 1) * (param[3] + 1)
     * param[4] * param[5] * param[6];
   return iv + param[0] * (ipg + npg * elem);

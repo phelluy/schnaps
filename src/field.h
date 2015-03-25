@@ -104,7 +104,7 @@ typedef struct field {
 //! \param[in] ipg glop index
 //! \param[in] iv field component index
 //! \returns the memory position in the arrays wn wnp1 or dtwn.
-int GenericVarindex(int *param, int elem, int ipg, int iv);
+int GenericVarindex(__constant int *param, int elem, int ipg, int iv);
 #pragma end_opencl
 
 //! field initialization. Computation of the initial at each glop.
