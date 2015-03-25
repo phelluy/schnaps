@@ -666,8 +666,10 @@ void DGSubCellInterface(void *mc, field *f, double *w, double *dtw)
 		  // normal vector
 		  double wL[m], wR[m], flux[m];
 		  for(int iv = 0; iv < m; iv++) {
-		    int imemL = f->varindex(f->interp_param, ie, ipgL, iv);
+		    // TO DO change the varindex signature
+		    int imemL = f->varindex(f->interp_param, ie, ipgL, iv); 
 		    int imemR = f->varindex(f->interp_param, ie, ipgR, iv);
+		    // end TO DO
 		    wL[iv] = w[imemL];
 		    wR[iv] = w[imemR];
 		  }
@@ -684,8 +686,10 @@ void DGSubCellInterface(void *mc, field *f, double *w, double *dtw)
 
 		  // finally distribute the flux on the two sides
 		  for(int iv = 0; iv < m; iv++) {
+		    // TO DO change the varindex signature
 		    int imemL = f->varindex(f->interp_param, ie, ipgL, iv);
 		    int imemR = f->varindex(f->interp_param, ie, ipgR, iv);
+		    // end TO DO
 		    dtw[imemL] -= flux[iv] * wpg;
 		    dtw[imemR] += flux[iv] * wpg;
 		  }

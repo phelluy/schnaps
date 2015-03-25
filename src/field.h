@@ -100,6 +100,13 @@ typedef struct field {
 //! \brief memory arrangement of field components.
 //! Generic implementation.
 //! \param[in] param interpolation parameters
+//! param[0] = M
+//! param[1] = deg x
+//! param[2] = deg y
+//! param[3] = deg z
+//! param[4] = raf x
+//! param[5] = raf y
+//! param[6] = raf z
 //! \param[in] elem macro element index
 //! \param[in] ipg glop index
 //! \param[in] iv field component index
