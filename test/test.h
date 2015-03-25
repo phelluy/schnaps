@@ -15,8 +15,6 @@ int TestField(void);
 
 int TestFieldDG(void);
 
-int TestFieldSource(void);
-
 int TestFieldRK2(void);
 
 int Test2DMeshDetection(void);
