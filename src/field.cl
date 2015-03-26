@@ -11,22 +11,7 @@
 
 #define NULL 0
 
-// For each face, give the dimension index i
-__constant int axis_permut[6][4] = {
-  {0, 2, 1, 0},
-  {1, 2, 0, 1},
-  {2, 0, 1, 1},
-  {2, 1, 0, 0},
-  {0, 1, 2, 1},
-  {1, 0, 2, 0}
-};
 
-__constant int h20_refnormal[6][3]={{0,-1,0},
-				    {1,0,0},
-				    {0,1,0},
-				    {-1,0,0},
-				    {0,0,1},
-				    {0,0,-1}};
 
 // Return the 1d derivative of lagrange polynomial ib at glop ipg
 double dlag(int deg, int ib, int ipg) {
@@ -56,9 +41,20 @@ int ref_pg_face(int *ndeg, int *nraf0,
 		int ifa, int ipg,
                 double *xpg, double *wpg, double *xpgin)
 {
-  int paxis[3] = {axis_permut[ifa][0],
+  // For each face, give the dimension index i
+  int axis_permut[6][4] = {
+    {0, 2, 1, 0},
+    {1, 2, 0, 1},
+    {2, 0, 1, 1},
+    {2, 1, 0, 0},
+    {0, 1, 2, 1},
+    {1, 0, 2, 0}
+  };
+
+  int paxis[4] = {axis_permut[ifa][0],
 		  axis_permut[ifa][1],
-		  axis_permut[ifa][2]};
+		  axis_permut[ifa][2],
+		  axis_permut[ifa][3]};
   
   // approximation degree in each direction
   int deg[3] = {ndeg[paxis[0]],	ndeg[paxis[1]],	ndeg[paxis[2]]};
@@ -74,7 +70,7 @@ int ref_pg_face(int *ndeg, int *nraf0,
   ipg /= (deg[1] + 1);
 
   // Equals 0 or d depending on the face
-  int iz = axis_permut[ifa][3] * deg[2];
+  int iz = paxis[3] * deg[2];
 
   // Compute permuted indices of the subface
   int ncx = ipg % nraf[0];
@@ -87,7 +83,7 @@ int ref_pg_face(int *ndeg, int *nraf0,
   h[1] = 1.0 / (double) nraf[1];
 
   // Equals 0 or nraf-1 depending on the face
-  int ncz = axis_permut[ifa][3] * (nraf[2] - 1);
+  int ncz = paxis[3] * (nraf[2] - 1);
   h[2] = 1.0 / (double) nraf[2];
 
   // Compute non permuted indices for points and subfaces
@@ -97,9 +93,9 @@ int ref_pg_face(int *ndeg, int *nraf0,
   ipgxyz[paxis[2]] = iz;
 
   int ncpgxyz[3];
-  ncpgxyz[axis_permut[ifa][0]] = ncx;
-  ncpgxyz[axis_permut[ifa][1]] = ncy;
-  ncpgxyz[axis_permut[ifa][2]] = ncz;
+  ncpgxyz[paxis[0]] = ncx;
+  ncpgxyz[paxis[1]] = ncy;
+  ncpgxyz[paxis[2]] = ncz;
 
   // Compute the global index of the Gauss-Lobatto point in the volume
   int ipgv
@@ -120,9 +116,9 @@ int ref_pg_face(int *ndeg, int *nraf0,
 		   gauss_lob_offset[deg[1]] + iy};
   //printf("offset=%d\n",offset);
 
-  xpg[axis_permut[ifa][0]] = h[0] * (ncx + gauss_lob_point[offset[0]]);
-  xpg[axis_permut[ifa][1]] = h[1] * (ncy + gauss_lob_point[offset[1]]);
-  xpg[axis_permut[ifa][2]] = axis_permut[ifa][3];
+  xpg[paxis[0]] = h[0] * (ncx + gauss_lob_point[offset[0]]);
+  xpg[paxis[1]] = h[1] * (ncy + gauss_lob_point[offset[1]]);
+  xpg[paxis[2]] = paxis[3];
 
   *wpg = h[0] * h[1] *
     gauss_lob_weight[offset[0]] * gauss_lob_weight[offset[1]];
@@ -133,26 +129,26 @@ int ref_pg_face(int *ndeg, int *nraf0,
     double small = 1e-3;//0.001
     double vsmall = 1e-6;//0.000001;
 
-    xpgin[axis_permut[ifa][0]] = h[0] * (ncx + gauss_lob_point[offset[0]]);
-    xpgin[axis_permut[ifa][1]] = h[1] * (ncy + gauss_lob_point[offset[1]]);
+    xpgin[paxis[0]] = h[0] * (ncx + gauss_lob_point[offset[0]]);
+    xpgin[paxis[1]] = h[1] * (ncy + gauss_lob_point[offset[1]]);
 
-    if(axis_permut[ifa][3] == 0)
-      xpgin[axis_permut[ifa][2]] = -vsmall;
-    if(axis_permut[ifa][3] == 1)
-      xpgin[axis_permut[ifa][2]] = 1 + vsmall;
+    if(paxis[3] == 0)
+      xpgin[paxis[2]] = -vsmall;
+    if(paxis[3] == 1)
+      xpgin[paxis[2]] = 1 + vsmall;
 
     if(ix == 0)
-      xpgin[axis_permut[ifa][0]]
+      xpgin[paxis[0]]
 	= h[0] * (ncx + gauss_lob_point[offset[0]] + small);
     if(ix == deg[0])
-      xpgin[axis_permut[ifa][0]]
+      xpgin[paxis[0]]
 	= h[0] * (ncx + gauss_lob_point[offset[0]] - small);
 
     if(iy == 0)
-      xpgin[axis_permut[ifa][1]]
+      xpgin[paxis[1]]
 	= h[1] * (ncy + gauss_lob_point[offset[1]] + small);
     if(iy == deg[1])
-      xpgin[axis_permut[ifa][1]]
+      xpgin[paxis[1]]
 	= h[1] * (ncy + gauss_lob_point[offset[1]] - small);
   }
 
@@ -907,7 +903,15 @@ void Ref2Phy(__constant double* physnode,
     }
   }
 
-  if (vnds !=NULL) {
+  if (vnds != NULL) {
+
+    int h20_refnormal[6][3]={{0,-1,0},
+			     {1,0,0},
+			     {0,1,0},
+			     {-1,0,0},
+			     {0,0,1},
+			     {0,0,-1}};
+
     //assert(codtau != NULL);
     //assert(ifa >=0);
     for(int ii = 0; ii < 3; ii++) {
