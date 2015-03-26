@@ -360,10 +360,9 @@ void DGVolume(__constant int* param,        // interp param
       NUMFLUX(wL, wL, dphi, flux);
 
       int ipgR = ipg(npg, q, icell);
-      for(int iv=0; iv < m; iv++) {
-	int imemR = VARINDEX(param, ie, ipgR, iv);
-    	dtwn[imemR] += flux[iv] * wpg;
-      }
+      int imemR0 = VARINDEX(param, ie, ipgR, 0);
+      for(int iv = 0; iv < m; iv++)
+    	dtwn[imemR0 + iv] += flux[iv] * wpg;
     }
 
     // Compute the inter-subcell fluxes if needed
@@ -390,24 +389,27 @@ void DGVolume(__constant int* param,        // interp param
 	int ipgR = ipg(npg, q, ncR);
 
 	double wR[_M]; // FIXME: make local
+	int imemR0 = GenericVarindex3d(m, npg, nraf,  
+				      ie, 
+				      0, q, icR);
+	
         for(int iv = 0; iv < m; iv++) {
           //int imemR = VARINDEX(param, ie, ipgR, iv);
-          int imemR = GenericVarindex3d(m, npg, nraf,  
-					ie, 
-					iv, q, icR);
-          wR[iv] = wn[imemR];
+          wR[iv] = wn[imemR0 + iv];
         }
 
 	double wpgs = wglop(deg[dim1], p[dim1]) * wglop(deg[dim2], p[dim2]);
         double flux[_M]; // FIXME: make local
         NUMFLUX(wL, wR, vnds, flux);
+
+	int imemL0 = GenericVarindex3d(m, npg, nraf, 
+				      ie, 
+				      0, p, icL);
+
         for(int iv = 0; iv < m; iv++) {
           //int ipgL = ipg(npg, p, icell);
           //int imemL = VARINDEX(param, ie, ipgL, iv);
-          int imemL = GenericVarindex3d(m, npg, nraf, 
-					ie, 
-					iv, p, icL);
-          dtwn[imemL] -= flux[iv] * wpgs;
+          dtwn[imemL0 + iv] -= flux[iv] * wpgs;
         }
       }
     }
@@ -495,14 +497,9 @@ void DGMass(__constant int *param,        // interp param
     + dtau[2][0] * dtau[0][1] * dtau[1][2]
     - dtau[2][0] * dtau[0][2] * dtau[1][1];
 
+  int imem0 = m * (get_global_id(0) + npgie * ie); //VARINDEX
   for(int iv = 0; iv < m; iv++) {
-    // VARINDEX
-    int imem = iv + m * (get_global_id(0) + npgie * ie);
-    // end of VARINDEX
-    /////////////////////////////////////
-    //printf("imem=%d dtw=%f\n", imem, dtwn[imem]);
-    //printf("det=%f wpg=%f imem=%d h=%f %f %f\n", det,wpg, imem,hx,hy,hz);
-
+    int imem = iv + imem0;
     dtwn[imem] /= (wpg * det);
   }
 }
@@ -572,39 +569,36 @@ void DGMacroCellInterface(__constant int *param,        // interp param
     /* }	 */
 
     double wR[_M]; // FIXME: make local
-    for(int iv = 0; iv < _M; iv++) {
-      int imemL = VARINDEX(param, ieL, ipgL, iv);
-      wL[iv] = wn[imemL];
-      int imemR = VARINDEX(param, ieR, ipgR, iv);
-      wR[iv] = wn[imemR];
-    }
+    int imemL0 = VARINDEX(param, ieL, ipgL, 0);
+    int imemR0 = VARINDEX(param, ieR, ipgR, 0);
+    for(int iv = 0; iv < _M; iv++)
+      wL[iv] = wn[imemL0 + iv];
+    for(int iv = 0; iv < _M; iv++)
+      wR[iv] = wn[imemR0 + iv];
 
     // int_dL F(wL, wR, grad phi_ib)
     double flux[_M];
     NUMFLUX(wL, wR, vnds, flux);
 
     // Add flux to both sides
-    for(int iv = 0; iv < _M; iv++) {
-      // The basis functions is also the gauss point index
-      int imemL = VARINDEX(param, ieL, ipgL, iv);
-      int imemR = VARINDEX(param, ieR, ipgR, iv);
-      dtwn[imemL] -= flux[iv] * wpg;
-      dtwn[imemR] += flux[iv] * wpg;
-    }
+    // The basis functions is also the gauss point index
+    for(int iv = 0; iv < _M; iv++)
+      dtwn[imemL0 + iv] -= flux[iv] * wpg;
+    for(int iv = 0; iv < _M; iv++)
+      dtwn[imemR0 + iv] += flux[iv] * wpg;
 
   } else { // The point is on the boundary.
+    int imemL0 = VARINDEX(param, ieL, ipgL, 0);
     for(int iv = 0; iv < _M; iv++) {
-      int imemL = VARINDEX(param, ieL, ipgL, iv);
-      wL[iv] = wn[imemL];
+      wL[iv] = wn[imemL0 + iv];
     }
 
     double flux[_M];
     BOUNDARYFLUX(xpg, tnow, wL, vnds, flux);
 
+    // The basis functions is also the gauss point index
     for(int iv = 0; iv < _M; iv++) {
-      // The basis functions is also the gauss point index
-      int imemL = VARINDEX(param, ieL, ipgL, iv);
-      dtwn[imemL] -= flux[iv] * wpg;
+      dtwn[imemL0 + iv] -= flux[iv] * wpg;
     }
   }
 }
