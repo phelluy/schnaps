@@ -407,7 +407,8 @@ void DGVolume(__constant int* param,        // interp param
 
 	double wR[_M];
         for(int iv = 0; iv < m; iv++) {
-          int imemR = VARINDEX(param, ie, ipgR, iv);
+          //int imemR = VARINDEX(param, ie, ipgR, iv);
+          int imemR = GenericVarindex3d(param, ie, q,icR, iv);
           wR[iv] = wn[imemR];
         }
 
@@ -415,8 +416,9 @@ void DGVolume(__constant int* param,        // interp param
         double flux[_M];
         NUMFLUX(wL, wR, vnds, flux);
         for(int iv = 0; iv < m; iv++) {
-          int ipgL = ipg(npg, p, icell);
-          int imemL = VARINDEX(param, ie, ipgL, iv);
+          //int ipgL = ipg(npg, p, icell);
+          //int imemL = VARINDEX(param, ie, ipgL, iv);
+          int imemL = GenericVarindex3d(param, ie, p,icL, iv);
           dtwn[imemL] -= flux[iv] * wpgs;
         }
       }

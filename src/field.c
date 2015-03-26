@@ -34,6 +34,22 @@ int GenericVarindex(__constant int *param, int elem, int ipg, int iv) {
 }
 #pragma end_opencl
 
+#pragma start_opencl
+int GenericVarindex3d(__constant int *param, int elem,
+		      int *ix, int *ic, int iv) {
+  int nx[3] = {param[1] + 1, param[2] + 1, param[3] + 1};
+  int nc[3] = {param[4], param[5], param[6]};
+  int npgc = nx[0] * nx[1] * nx[2]; // number of glops in subcell
+  int npg = nc[0] * nc[1] * nc[2] * npgc; // number of glops in macrocell
+  
+  int ipgc = ix[0] + nx[0] * (ix[1] + nx[1] * ix[2]); // index in subcell
+  int nsubcell = ic[0] + nc[0] * (ic[1] + nc[1] * ic[2]); // index of subcell in macrocell
+
+  int ipg = ipgc + npgc * nsubcell; // index of point in macrocell
+  return iv + param[0] * (ipg + npg * elem);
+}
+#pragma end_opencl
+
 double min_grid_spacing(field *f)
 {
   double hmin = FLT_MAX;
