@@ -52,18 +52,19 @@ void Ref2Phy(__constant double* physnode,
 void Phy2Ref(__constant double *physnode,
              double xphy[3], double xref[3]);
 
-int ref_pg_face(__constant int *param, int ifa, int ipg,
-                double *xpg, double *wpg, double *xpgin) 
+int ref_pg_face(int *ndeg, int *nraf0,
+		int ifa, int ipg,
+                double *xpg, double *wpg, double *xpgin)
 {
+  int paxis[3] = {axis_permut[ifa][0],
+		  axis_permut[ifa][1],
+		  axis_permut[ifa][2]};
+  
   // approximation degree in each direction
-  int deg[3] = {param[axis_permut[ifa][0]],
-		param[axis_permut[ifa][1]],
-		param[axis_permut[ifa][2]]};
+  int deg[3] = {ndeg[paxis[0]],	ndeg[paxis[1]],	ndeg[paxis[2]]};
 
   // number of subcells in each direction
-  int nraf[3] = {param[3 + axis_permut[ifa][0]],
-		 param[3 + axis_permut[ifa][1]],
-		 param[3 + axis_permut[ifa][2]]};
+  int nraf[3] = {nraf0[paxis[0]], nraf0[paxis[1]], nraf0[paxis[2]]};
 
   // Compute permuted indices
   int ix = ipg % (deg[0] + 1);
@@ -91,9 +92,9 @@ int ref_pg_face(__constant int *param, int ifa, int ipg,
 
   // Compute non permuted indices for points and subfaces
   int ipgxyz[3];
-  ipgxyz[axis_permut[ifa][0]] = ix;
-  ipgxyz[axis_permut[ifa][1]] = iy;
-  ipgxyz[axis_permut[ifa][2]] = iz;
+  ipgxyz[paxis[0]] = ix;
+  ipgxyz[paxis[1]] = iy;
+  ipgxyz[paxis[2]] = iz;
 
   int ncpgxyz[3];
   ncpgxyz[axis_permut[ifa][0]] = ncx;
@@ -103,11 +104,11 @@ int ref_pg_face(__constant int *param, int ifa, int ipg,
   // Compute the global index of the Gauss-Lobatto point in the volume
   int ipgv
     = ipgxyz[0]
-    + (param[0] + 1)
-    * (ipgxyz[1] + (param[1] + 1)
-       * (ipgxyz[2] + (param[2] + 1)
-	  * (ncpgxyz[0] + param[3]
-	     * (ncpgxyz[1] + param[4]
+    + (ndeg[0] + 1)
+    * (ipgxyz[1] + (ndeg[1] + 1)
+       * (ipgxyz[2] + (ndeg[2] + 1)
+	  * (ncpgxyz[0] + nraf0[0]
+	     * (ncpgxyz[1] + nraf0[1]
 		* ncpgxyz[2])
 	     )
 	  )
@@ -524,13 +525,16 @@ void DGMacroCellInterface(__constant int *param,        // interp param
                           __global double *wn,
                           __global double *dtwn) // time derivative
 {
-  int ipgfL=get_global_id(0);
+  int ipgfL = get_global_id(0);
+
+  int ndeg[3] = {param[1], param[2], param[3]};
+  int nraf[3] = {param[4], param[5], param[6]};
 
   double xpgref[3], xpgref_in[3], wpg;
   // Get the coordinates of the Gauss point and coordinates of a
   // point slightly inside the opposite element in xref_in
-  int ipgL = ref_pg_face(param + 1, locfaL, ipgfL,
-			 xpgref, &wpg, xpgref_in);
+  int ipgL =ref_pg_face(ndeg, nraf, locfaL, ipgfL,
+  	       		 xpgref, &wpg, xpgref_in);
 
   // Normal vector at gauss point ipg
   double vnds[3], xpg[3];
