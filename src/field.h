@@ -129,10 +129,12 @@ int GenericVarindex(__constant int *param, int elem, int ipg, int iv);
 //! \param[in] ix components of the glop in its subcell
 //! \param[in] ic components of the subcell in the macrocell
 //! \param[in] iv component of the conservative variable
-//! \returns the memory position in the arrays wn wnp1 or dtwn.
-int GenericVarindex3d(__constant int *param, int elem,
-		    int *ix,int *ic, int iv);
-#pragma end_opencl
+/* //! \returns the memory position in the arrays wn wnp1 or dtwn. */
+/* int GenericVarindex3d(int m, */
+/* 		      int nx0, int nx1, int nx2,  */
+/* 		      int nc0, int nc1, int nc2,  */
+/* 		      int elem, int *ix,int *ic, int iv); */
+/* #pragma end_opencl */
 
 //! field initialization. Computation of the initial at each glop.
 //! \param[inout] f a field
