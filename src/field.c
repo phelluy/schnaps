@@ -1521,6 +1521,9 @@ void RK4(field *f, double tmax)
   l3 = calloc(sizew, sizeof(double));
 
   while(f->tnow < tmax) {
+    if (iter % freq == 0)
+      printf("t=%f iter=%d/%d dt=%f\n", f->tnow, iter, f->itermax, f->dt);
+
     // l_1 = w_n + 0.5dt * S(w_n, t_0)
     dtfield(f, f->wn, f->dtwn);
     RK_out(l1, f->wn, f->dtwn, 0.5 * f->dt, sizew);

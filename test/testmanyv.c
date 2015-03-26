@@ -33,7 +33,7 @@ int main(int argc, char *argv[]) {
 \n\t-c <float> set CFL\
 \n\t-d <int> set interpolation degree\
 \n\t-n <int> set number of subcells\
-\n\t-g use GPU instead of CPU \
+\n\t-g <1 or 0> GPU(1) instead of CPU(0) \
 \n\t-t <float> set tmax\
 \n\t-w write mesh output \
 \n\t-P <int> set OpenCL platform number \
@@ -180,23 +180,22 @@ int main(int argc, char *argv[]) {
   // Prudence...
   CheckMacroMesh(&(f.macromesh), f.interp.interp_param + 1);
 
-  /*
-  double executiontime;
-  struct timespec tstart, tend;
+
+  /* double executiontime; */
+  /* struct timespec tstart, tend; */
   if(usegpu) {
     printf("Using OpenCL:\n");
-    clock_gettime(CLOCK_MONOTONIC, &tstart);
+    //clock_gettime(CLOCK_MONOTONIC, &tstart);
     RK2_CL(&f, tmax);
-    clock_gettime(CLOCK_MONOTONIC, &tend);
+    //clock_gettime(CLOCK_MONOTONIC, &tend);
 
   } else { 
     printf("Using C:\n");
-    clock_gettime(CLOCK_MONOTONIC, &tstart);
+    //clock_gettime(CLOCK_MONOTONIC, &tstart);
     RK2(&f, tmax);
-    clock_gettime(CLOCK_MONOTONIC, &tend);
+    //clock_gettime(CLOCK_MONOTONIC, &tend);
   }
-  executiontime = seconds(tend, tstart);
-  */
+  /* executiontime = seconds(tend, tstart); */
 
   // Save the results and the error
   if(writemsh) {
