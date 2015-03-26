@@ -42,14 +42,12 @@ int ref_pg_face(int *ndeg, int *nraf0,
                 double *xpg, double *wpg, double *xpgin)
 {
   // For each face, give the dimension index i
-  int axis_permut[6][4] = {
-    {0, 2, 1, 0},
-    {1, 2, 0, 1},
-    {2, 0, 1, 1},
-    {2, 1, 0, 0},
-    {0, 1, 2, 1},
-    {1, 0, 2, 0}
-  };
+  int axis_permut[6][4] = { {0, 2, 1, 0},
+			    {1, 2, 0, 1},
+			    {2, 0, 1, 1},
+			    {2, 1, 0, 0},
+			    {0, 1, 2, 1},
+			    {1, 0, 2, 0} };
 
   int paxis[4] = {axis_permut[ifa][0],
 		  axis_permut[ifa][1],
