@@ -925,27 +925,20 @@ void Phy2Ref(__constant double *physnode, double xphy[3], double xref[3])
   for(int iter = 0; iter < ITERNEWTON; ++iter ) {
     double dtau[3][3], codtau[3][3];
     int ifa =- 1;
-    Ref2Phy(physnode, xref, 0, ifa, dxphy, dtau, codtau, 0,0);
-    dxphy[0] -= (xphy)[0];
-    dxphy[1] -= (xphy)[1];
-    dxphy[2] -= (xphy)[2];
-    double det
-      = dtau[0][0] * codtau[0][0]
-      + dtau[0][1] * codtau[0][1]
-      + dtau[0][2] * codtau[0][2];
-    //assert(det>0);
+    Ref2Phy(physnode, xref, 0, ifa, dxphy, dtau, codtau, 0, 0);
+    dxphy[0] -= xphy[0];
+    dxphy[1] -= xphy[1];
+    dxphy[2] -= xphy[2];
+    double overdet = 1.0 / (  dtau[0][0] * codtau[0][0]
+			    + dtau[0][1] * codtau[0][1]
+			    + dtau[0][2] * codtau[0][2] );
     for(int ii = 0; ii < 3; ++ii) {
-      dxref[ii] = 0;
-      for(int jj = 0; jj < 3; ++jj) {
-        dxref[ii] += codtau[jj][ii] * dxphy[jj];
-      }
-      xref[ii] -= dxref[ii] / det;
+      dxref[ii] = codtau[0][ii] * dxphy[0] 
+	+ codtau[1][ii] * dxphy[1] 
+	+ codtau[2][ii] * dxphy[2];
+      xref[ii] -= dxref[ii] * overdet;
     }
   }
-  //double eps=1e-2;  // may be to constraining...
-  //assert(xref[0]<1+eps && xref[0]>-eps);
-  //assert(xref[1]<1+eps && xref[1]>-eps);
-  //assert(xref[2]<1+eps && xref[2]>-eps);
 }
 
 // From a reference point find the nearest gauss point
