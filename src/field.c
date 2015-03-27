@@ -34,63 +34,9 @@ int GenericVarindex(int *param, int elem, int ipg, int iv) {
 }
 #pragma end_opencl
 
-void Initfield(field* f) {
-  //int param[8]={f->model.m,_DEGX,_DEGY,_DEGZ,_RAFX,_RAFY,_RAFZ,0};
-  f->is2d = false;
-  
-  f->vmax = 1.0; // FIXME: make this variable
-
-  // a copy for avoiding too much "->"
-  for(int ip = 0; ip < 8; ip++)
-    f->interp_param[ip] = f->interp.interp_param[ip];
-
-  int nmem = f->model.m * f->macromesh.nbelems * NPG(f->interp_param + 1);
-  f->wsize = nmem;
-  printf("allocate %d doubles\n", nmem);
-  f->wn = calloc(nmem, sizeof(double));
-  assert(f->wn);
-  f->dtwn = calloc(nmem, sizeof(double));
-  assert(f->dtwn);
-
-  f->tnow = 0;
-
-  for(int ie = 0; ie < f->macromesh.nbelems; ie++) {
-    
-    double physnode[20][3];
-    for(int inoloc = 0; inoloc < 20; inoloc++) {
-      int ino = f->macromesh.elem2node[20 * ie + inoloc];
-      physnode[inoloc][0] = f->macromesh.node[3 * ino + 0];
-      physnode[inoloc][1] = f->macromesh.node[3 * ino + 1];
-      physnode[inoloc][2] = f->macromesh.node[3 * ino + 2];
-    }
-    
-    for(int ipg = 0; ipg < NPG(f->interp_param + 1); ipg++) {
-      double xpg[3];
-      double xref[3], omega;
-      ref_pg_vol(f->interp_param + 1, ipg, xref, &omega, NULL);
-      double dtau[3][3];
-      Ref2Phy(physnode,
-	      xref,
-	      0, -1, // dphiref, ifa
-              xpg, dtau,
-	      NULL, NULL, NULL); // codtau, dphi, vnds
-      { // Check the reverse transform at all the GLOPS
- 	double xref2[3];
-	Phy2Ref(physnode, xpg, xref2);
-	assert(Dist(xref, xref2) < 1e-8);
-      }
-
-      double w[f->model.m];
-      f->model.InitData(xpg, w);
-      for(int iv = 0; iv < f->model.m; iv++) {
-	int imem = f->varindex(f->interp_param, ie, ipg, iv);
-	f->wn[imem] = w[iv];
-      }
-    }
-  }
-
-  // Compute cfl parameter min_i vol_i/surf_i
-  f->hmin = FLT_MAX;
+double min_grid_spacing(field *f)
+{
+  double hmin = FLT_MAX;
 
   for (int ie = 0; ie < f->macromesh.nbelems; ie++) {
     double vol = 0, surf = 0;
@@ -135,7 +81,7 @@ void Initfield(field* f) {
 	surf += norm(vnds) * wpg;
       }
     }
-    f->hmin = f->hmin < vol/surf ? f->hmin : vol/surf;
+    hmin = hmin < vol/surf ? hmin : vol/surf;
 
   }
  
@@ -144,35 +90,60 @@ void Initfield(field* f) {
   maxd = maxd > f->interp_param[2] ? maxd : f->interp_param[2];
   maxd = maxd > f->interp_param[3] ? maxd : f->interp_param[3];
 
-  f->hmin /= ((maxd + 1) * f->interp_param[4]);
+  hmin /= ((maxd + 1) * f->interp_param[4]);
 
-  f->dt = f->model.cfl * f->hmin / f->vmax;
+  return hmin;
+}
 
-  printf("hmin=%f\n", f->hmin);
-
-  // Allocate and set MacroFaces
-  f->mface = calloc(f->macromesh.nbfaces, sizeof(MacroFace*));
-  for(int ifa = 0; ifa < f->macromesh.nbfaces; ifa++) {
-    f->mface[ifa].first = ifa;
-    f->mface[ifa].last_p1 = ifa + 1;
-  }
-  // Allocate and set MacroCells
-  f->mcell = calloc(f->macromesh.nbelems, sizeof(MacroCell*));
+void init_data(field *f)
+{
   for(int ie = 0; ie < f->macromesh.nbelems; ie++) {
-    f->mcell[ie].first = ie;
-    f->mcell[ie].last_p1 = ie + 1;
+    
+    double physnode[20][3];
+    for(int inoloc = 0; inoloc < 20; inoloc++) {
+      int ino = f->macromesh.elem2node[20 * ie + inoloc];
+      physnode[inoloc][0] = f->macromesh.node[3 * ino + 0];
+      physnode[inoloc][1] = f->macromesh.node[3 * ino + 1];
+      physnode[inoloc][2] = f->macromesh.node[3 * ino + 2];
+    }
+    
+    for(int ipg = 0; ipg < NPG(f->interp_param + 1); ipg++) {
+      double xpg[3];
+      double xref[3], omega;
+      ref_pg_vol(f->interp_param + 1, ipg, xref, &omega, NULL);
+      double dtau[3][3];
+      Ref2Phy(physnode,
+	      xref,
+	      0, -1, // dphiref, ifa
+              xpg, dtau,
+	      NULL, NULL, NULL); // codtau, dphi, vnds
+      { // Check the reverse transform at all the GLOPS
+ 	double xref2[3];
+	Phy2Ref(physnode, xpg, xref2);
+	assert(Dist(xref, xref2) < 1e-8);
+      }
+
+      double w[f->model.m];
+      f->model.InitData(xpg, w);
+      for(int iv = 0; iv < f->model.m; iv++) {
+	int imem = f->varindex(f->interp_param, ie, ipg, iv);
+	f->wn[imem] = w[iv];
+      }
+    }
   }
+}
 
 #ifdef _WITH_OPENCL
-  // opencl inits
+void init_field_cl(field *f)
+{
   InitCLInfo(&(f->cli), nplatform_cl, ndevice_cl);
   cl_int status;
 
   f->wn_cl = clCreateBuffer(f->cli.context,
-                            CL_MEM_READ_WRITE | CL_MEM_USE_HOST_PTR,
-                            sizeof(double) * f->wsize,
-                            f->wn,
-                            &status);
+			    CL_MEM_READ_WRITE | CL_MEM_USE_HOST_PTR,
+			    sizeof(double) * f->wsize,
+			    f->wn,
+			    &status);
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status == CL_SUCCESS);
 
@@ -239,8 +210,8 @@ void Initfield(field* f) {
   assert(status == CL_SUCCESS);
 
   f->RK4_final_stage = clCreateKernel(f->cli.program,
-				"RK4_final_stage",
-				&status);
+				      "RK4_final_stage",
+				      &status);
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status == CL_SUCCESS);
 
@@ -255,6 +226,60 @@ void Initfield(field* f) {
 			       &status);
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status == CL_SUCCESS);
+}
+#endif
+
+
+void Initfield(field *f) {
+  //int param[8]={f->model.m,_DEGX,_DEGY,_DEGZ,_RAFX,_RAFY,_RAFZ,0};
+  f->is2d = false;
+  
+  f->vmax = 1.0; // FIXME: make this variable
+
+  // a copy for avoiding too much "->"
+  for(int ip = 0; ip < 8; ip++)
+    f->interp_param[ip] = f->interp.interp_param[ip];
+
+  int nmem = f->model.m * f->macromesh.nbelems * NPG(f->interp_param + 1);
+  f->wsize = nmem;
+  printf("allocate %d doubles\n", nmem);
+  f->wn = calloc(nmem, sizeof(double));
+  assert(f->wn);
+  f->dtwn = calloc(nmem, sizeof(double));
+  assert(f->dtwn);
+
+  f->tnow = 0;
+
+  init_data(f);
+
+  // Compute cfl parameter min_i vol_i/surf_i
+  f->hmin = min_grid_spacing(f);
+
+  f->dt = f->model.cfl * f->hmin / f->vmax;
+
+  printf("hmin=%f\n", f->hmin);
+
+  // Allocate and set MacroFaces
+  f->mface = calloc(f->macromesh.nbfaces, sizeof(MacroFace*));
+  for(int ifa = 0; ifa < f->macromesh.nbfaces; ifa++) {
+    f->mface[ifa].first = ifa;
+    f->mface[ifa].last_p1 = ifa + 1;
+  }
+
+  // Allocate and set MacroCells
+  f->mcell = calloc(f->macromesh.nbelems, sizeof(MacroCell*));
+  for(int ie = 0; ie < f->macromesh.nbelems; ie++) {
+    f->mcell[ie].first = ie;
+    f->mcell[ie].last_p1 = ie + 1;
+  }
+
+#ifdef _WITH_OPENCL
+  // opencl inits
+  if(!cldevice_is_acceptable(nplatform_cl, ndevice_cl)) {
+    printf("OpenCL device not acceptable; OpenCL initialization disabled.\n");
+  } else {
+    init_field_cl(f);
+  }
 #endif // _WITH_OPENCL
   
   printf("field init done\n");

@@ -9,6 +9,11 @@
 int TestMacroFace(void){
   bool test = true;
 
+  if(!cldevice_is_acceptable(nplatform_cl, ndevice_cl)) {
+    printf("OpenCL device not acceptable.\n");
+    return true;
+  }
+
   field f;
 
   // 2D meshes:

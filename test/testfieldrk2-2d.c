@@ -29,10 +29,10 @@ int TestfieldRK2_2D(void) {
   BuildConnectivity(&(f.macromesh));
 
   //AffineMapMacroMesh(&(f.macromesh));
- 
+  
   Initfield(&f);
   // require a 2d computation
-  f.is2d=true;
+  f.is2d = true;
 
   CheckMacroMesh(&(f.macromesh), f.interp.interp_param + 1);
 

@@ -16,11 +16,13 @@ cat src/*.c >> schnaps_temp.cl
 echo "// -*- mode: c; -*-\n" > schnaps.cl
 
 sed -n '/#pragma start_opencl/,/#pragma end_opencl/p' schnaps_temp.cl >> schnaps.cl
-sed -i '/start_opencl/d' schnaps.cl
-sed -i '/end_opencl/d' schnaps.cl
+
+# behaviour different between MacOSX and Linux, so we leave the pragmas.
+#sed -i .bak '/start_opencl/d' schnaps.cl
+#sed -i .bak '/end_opencl/d' schnaps.cl
 
 echo "\n/*-----------------------------src from .cl files----------------------------*/\n" >> schnaps.cl
 
 cat src/field.cl >> schnaps.cl
 #rm schnaps_temp.cl
-return 0
+exit 0

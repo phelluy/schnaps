@@ -40,6 +40,7 @@ int TestmEq2(void) {
   //AffineMapMacroMesh(&(f.macromesh));
  
   // Prepare the initial fields
+  
   Initfield(&f);
   f.is2d = true;
   //f.dt = 1e-3;

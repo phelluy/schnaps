@@ -11,10 +11,10 @@
 #include <time.h>
 #define _XOPEN_SOURCE 700
 
-double seconds(struct timespec ta, struct timespec tb) {
-  return (double)(ta.tv_sec - tb.tv_sec) 
-    + 1e-9 * (double)(ta.tv_nsec - tb.tv_nsec);
-}
+/* double seconds(struct timespec ta, struct timespec tb) { */
+/*   return (double)(ta.tv_sec - tb.tv_sec)  */
+/*     + 1e-9 * (double)(ta.tv_nsec - tb.tv_nsec); */
+/* } */
 
 int main(int argc, char *argv[]) {
   // Unit tests
@@ -80,6 +80,11 @@ int main(int argc, char *argv[]) {
       printf("./testmanyv -c <cfl> -d <deg> -n <nraf> -t <tmax> -C\n -P <cl platform number> -D <cl device number> FIXME");
       exit(1);
     }
+  }
+
+  if(!cldevice_is_acceptable(nplatform_cl, ndevice_cl)) {
+    printf("OpenCL device not acceptable.\n");
+    return 0;
   }
 
   bool test = true;
@@ -197,7 +202,8 @@ int main(int argc, char *argv[]) {
     /* Plotfield(mplot, true, &f, "dgerror.msh"); */
   }
 
-  printf("tmax: %f, cfl: %f, deg: %d, nraf: %d\n", tmax, f.model.cfl, deg, nraf);
+  printf("tmax: %f, cfl: %f, deg: %d, nraf: %d\n", 
+	 tmax, f.model.cfl, deg, nraf);
   double dd = L2error(&f) / (f.model.vlasov_mx * f.model.vlasov_my);
 
   printf("deltax:\n");

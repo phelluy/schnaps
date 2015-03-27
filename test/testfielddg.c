@@ -33,7 +33,7 @@ int TestfieldDG(void){
   PrintMacroMesh(&(f.macromesh));
   //AffineMapMacroMesh(&(f.macromesh));
   PrintMacroMesh(&(f.macromesh));
-
+  
   Initfield(&f);
   CheckMacroMesh(&(f.macromesh), f.interp.interp_param + 1);
 

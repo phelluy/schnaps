@@ -85,6 +85,7 @@ int TestfieldRK4(void){
   */
 
   //AffineMapMacroMesh(&(f.macromesh));
+ 
   Initfield(&f);
 
   CheckMacroMesh(&(f.macromesh), f.interp.interp_param + 1);

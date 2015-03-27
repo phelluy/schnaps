@@ -1,4 +1,3 @@
-
 set(CMAKE_LEGACY_CYGWIN_WIN32 0) # Remove when CMake >= 2.8.4 is required
 cmake_minimum_required(VERSION 2.8)
 
@@ -9,22 +8,21 @@ project(schnaps)
 #set(CMAKE_C_COMPILER "/opt/local/bin/gcc-mp-4.8")
 SET(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 
-
 #set(CMAKE_C_FLAGS "-std=c99 -D_REENTRANT -O3 -g -D_POSIX_C_SOURCE=200112L")
-set(CMAKE_C_FLAGS "-std=gnu99 -D_REENTRANT -O3 -g")
-#set(CMAKE_C_FLAGS "-std=c99 -D_REENTRANT -O3 -g")
-
-set(OPENCL_FOUND FALSE) # disabled by default for compatibility reasons.
+#set(CMAKE_C_FLAGS "-std=gnu99 -D_REENTRANT -O3 -g")
+set(CMAKE_C_FLAGS "-std=c99 -D_REENTRANT -O3 -g")
 
 OPTION(USE_OPENCL
   "Compile with the OpenCL library"
-  OFF)
+  ON)
 
 IF(USE_OPENCL)# set with: cmake . -DUSE_OPENCL:BOOL=ON
   MESSAGE("Compiling with OpenCL Library")
   find_package (OpenCL)
   if(OPENCL_FOUND)
     MESSAGE("OpenCL found")
+  else()
+    MESSAGE("OpenCL not found")
   endif(OPENCL_FOUND)
 ENDIF(USE_OPENCL)
 
