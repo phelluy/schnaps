@@ -92,6 +92,12 @@ typedef struct field {
   cl_kernel RK_in_CL;
   cl_kernel RK4_final_stage;
   cl_kernel zero_buf;
+
+  // OpenCL events
+  cl_event clv_zbuf; // set_buf_to_zero
+  cl_event *clv_mci; // Macro cell interface events
+  cl_event *clv_volume; // Subcell volume events
+  cl_event *clv_mass; // Subcell mass events
 #endif
 
 } field;

@@ -73,7 +73,7 @@ int TestKernel(void){
   }
  
   for(int ie=0; ie < f.macromesh.nbelems; ++ie)
-    DGMass_CL((void*) &(f.mcell[ie]), &f);
+    DGMass_CL((void*) &(f.mcell[ie]), &f, 0, NULL, NULL);
 
   CopyfieldtoCPU(&f);
 

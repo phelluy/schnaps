@@ -74,7 +74,7 @@ int TestKernelVolume(void){
   /* assert(status == CL_SUCCESS); */
 
   for(int ie=0; ie < f.macromesh.nbelems; ++ie)
-    DGVolume_CL((void*) &(f.mcell[ie]), &f, &(f.wn_cl));
+    DGVolume_CL((void*) &(f.mcell[ie]), &f, &(f.wn_cl), 0, NULL, NULL);
 
   CopyfieldtoCPU(&f);
 

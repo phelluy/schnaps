@@ -264,6 +264,20 @@ void init_field_cl(field *f)
 			       &status);
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status == CL_SUCCESS);
+
+  // Allocate an initialize event lists. // FIXME: free on exit
+  f->clv_zbuf = clCreateUserEvent(f->cli.context, NULL);
+  f->clv_mci = calloc(f->macromesh.nbfaces, sizeof(cl_event));
+  for(unsigned int i = 0; i < f->macromesh.nbfaces; ++i) {
+     f->clv_mci[i] = clCreateUserEvent(f->cli.context, NULL);
+  }
+  f->clv_volume = calloc(f->macromesh.nbelems, sizeof(cl_event));
+  f->clv_mass = calloc(f->macromesh.nbelems, sizeof(cl_event));
+  for(unsigned int i = 0; i < f->macromesh.nbelems; ++i) {
+    f->clv_volume[i] = clCreateUserEvent(f->cli.context, NULL);
+    f->clv_mass[i] = clCreateUserEvent(f->cli.context, NULL);
+  }  
+  
 }
 #endif
 

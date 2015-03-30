@@ -264,7 +264,8 @@ void update_physnode_cl(field *f, int ie, cl_mem physnode_cl, double *physnode)
   clFinish(f->cli.commandqueue);
 }
 
-void DGMacroCellInterface_CL(void *mf, field *f, cl_mem *wn_cl) 
+void DGMacroCellInterface_CL(void *mf, field *f, cl_mem *wn_cl,
+			     cl_uint nwait, cl_event *wait, cl_event *done) 
 {
   MacroFace *mface = (MacroFace*) mf;
   int *param = f->interp_param;
@@ -291,7 +292,6 @@ void DGMacroCellInterface_CL(void *mf, field *f, cl_mem *wn_cl)
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status == CL_SUCCESS);
 
-
   // Set the kernel arguments
   initDGMacroCellInterface_CL(f, f->physnode_cl, physnodeR_cl);
   
@@ -314,14 +314,17 @@ void DGMacroCellInterface_CL(void *mf, field *f, cl_mem *wn_cl)
     size_t numworkitems = NPGF(f->interp_param + 1, locfaL);
     status = clEnqueueNDRangeKernel(f->cli.commandqueue,
         			    kernel,
-        			    1, NULL,
-        			    &numworkitems,
-        			    NULL,
-        			    0, NULL, NULL);
+        			    1, // cl_uint work_dim,
+				    NULL, // const size_t *global_work_offset,
+        			    &numworkitems, // size_t *global_work_size, 
+        			    NULL, // size_t *local_work_size, 
+        			    nwait,  // cl_uint num_events_in_wait_list, 
+				    wait, // cl_event *event_wait_list,
+				    done); // cl_event *event
     if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
     assert(status == CL_SUCCESS);
 
-    clFinish(f->cli.commandqueue);
+    //clFinish(f->cli.commandqueue);
   }
 
   free(physnodeR);
@@ -331,7 +334,8 @@ void DGMacroCellInterface_CL(void *mf, field *f, cl_mem *wn_cl)
 }
 
 // Apply division by the mass matrix OpenCL version
-void DGMass_CL(void *mc, field *f) 
+void DGMass_CL(void *mc, field *f,
+	       cl_uint nwait, cl_event *wait, cl_event *done) 
 {
   MacroCell *mcell = (MacroCell*) mc;
   int *param = f->interp_param;
@@ -351,7 +355,7 @@ void DGMass_CL(void *mc, field *f)
     if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
     assert(status == CL_SUCCESS);
 
-    clFinish(f->cli.commandqueue);
+    //clFinish(f->cli.commandqueue);
 
     // The groupsize is the number of glops in a subcell
     size_t groupsize = (param[1] + 1) * (param[2] + 1) * (param[3] + 1);
@@ -361,19 +365,23 @@ void DGMass_CL(void *mc, field *f)
 
     status = clEnqueueNDRangeKernel(f->cli.commandqueue,
 				    f->dgmass,
-				    1, NULL,
-				    &numworkitems,
-				    &groupsize,
-				    0, NULL, NULL);
+				    1, // cl_uint work_dim,
+				    NULL, // size_t *global_work_offset, 
+				    &numworkitems, // size_t *global_work_size,
+				    &groupsize, // size_t *local_work_size, 
+				    nwait, // cl_uint num_events_in_wait_list, 
+				    wait, //  cl_event *event_wait_list, 
+				    done); // cl_event *event
     if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
     assert(status == CL_SUCCESS);
 
-    clFinish(f->cli.commandqueue);
+    //clFinish(f->cli.commandqueue);
   }
 }
 
 // Apply division by the mass matrix OpenCL version
-void DGVolume_CL(void *mc, field *f, cl_mem *wn_cl) {
+void DGVolume_CL(void *mc, field *f, cl_mem *wn_cl,
+		cl_uint nwait, cl_event *wait, cl_event *done) {
   MacroCell *mcell = (MacroCell*) mc;
   cl_kernel kernel = f->dgvolume;
   int* param = f->interp_param;
@@ -393,7 +401,7 @@ void DGVolume_CL(void *mc, field *f, cl_mem *wn_cl) {
     if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
     assert(status == CL_SUCCESS);
 
-    clFinish(f->cli.commandqueue);
+    //clFinish(f->cli.commandqueue);
 
     // Mass kernel launch
     // The groupsize is the number of glops in a subcell
@@ -404,19 +412,23 @@ void DGVolume_CL(void *mc, field *f, cl_mem *wn_cl) {
     //printf("groupsize=%zd numworkitems=%zd\n", groupsize, numworkitems);
     status = clEnqueueNDRangeKernel(f->cli.commandqueue,
 				    kernel,
-				    1, NULL,
+				    1, 
+				    NULL,
 				    &numworkitems,
 				    &groupsize,
-				    0, NULL, NULL);
+				    nwait, 
+				    wait, 
+				    done);
     //printf("%d\n", status);
     if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
     assert(status == CL_SUCCESS);
 
-    clFinish(f->cli.commandqueue);
+    //clFinish(f->cli.commandqueue);
   }
 }
 
-void set_buf_to_zero_cl(cl_mem *buf, int size, field *f)
+void set_buf_to_zero_cl(cl_mem *buf, int size, field *f,
+			cl_uint nwait, cl_event *wait,  cl_event *done)
 {
   cl_int status;
 
@@ -436,7 +448,9 @@ void set_buf_to_zero_cl(cl_mem *buf, int size, field *f)
 				  1, NULL,
 				  &numworkitems,
 				  NULL,
-				  0, NULL, NULL);
+				  nwait, 
+				  wait, 
+				  done);
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status == CL_SUCCESS);
 
@@ -445,15 +459,37 @@ void set_buf_to_zero_cl(cl_mem *buf, int size, field *f)
 
 // Apply the Discontinuous Galerkin approximation for computing the
 // time derivative of the field. OpenCL version.
-void dtfield_CL(field *f, cl_mem *wn_cl) {
-  set_buf_to_zero_cl(&(f->dtwn_cl), f->wsize, f);
+void dtfield_CL(field *f, cl_mem *wn_cl,
+		cl_uint nwait, cl_event *wait, cl_event *done) {
+  
+  set_buf_to_zero_cl(&(f->dtwn_cl), f->wsize, f, 
+		     nwait, wait, &(f->clv_zbuf));
 
-  for(int ifa = 0; ifa < f->macromesh.nbfaces; ifa++)
-    DGMacroCellInterface_CL((void*) (f->mface + ifa), f, wn_cl);
-  for(int ie = 0; ie < f->macromesh.nbelems; ++ie) {
+/* #ifdef _OPENMP */
+/* #pragma omp parallel for */
+/* #endif */
+  for(int ifa = 0; ifa < f->macromesh.nbfaces; ifa++) {
+    DGMacroCellInterface_CL((void*) (f->mface + ifa), f, wn_cl,
+			    1,
+			    ifa == 0 ? &(f->clv_zbuf) : &(f->clv_mci[ifa - 1]),
+			    &(f->clv_mci[ifa]));
+  }
+
+  int lastelem = f->macromesh.nbelems - 1;
+/* #ifdef _OPENMP */
+/* #pragma omp parallel for */
+/* #endif */
+  for(int ie = 0; ie <= lastelem; ++ie) {
     MacroCell *mcelli = f->mcell + ie;
-    DGVolume_CL(mcelli, f, wn_cl);
-    DGMass_CL(mcelli, f);
+    DGVolume_CL(mcelli, f, wn_cl,
+		1,
+		ie == 0 ? &(f->clv_mci[f->macromesh.nbelems]): 
+		&(f->clv_mass[ie - 1]),
+		&(f->clv_volume[ie]));
+    DGMass_CL(mcelli, f,
+	      1,
+	      &(f->clv_volume[ie]),
+	      ie < lastelem ? &(f->clv_mass[ie]) : done);
   }
 }
 
@@ -589,7 +625,7 @@ void RK4_CL_stageA(field *f,
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status == CL_SUCCESS);
 
-  //__global double* dtwn // time derivative
+  //__global double *dtwn // time derivative
   status = clSetKernelArg(kernel,
 			  argnum++, 
                           sizeof(cl_mem),
@@ -737,19 +773,19 @@ void RK4_CL(field *f, double tmax)
     if (iter % freq == 0)
       printf("t=%f iter=%d/%d dt=%f\n", f->tnow, iter, f->itermax, f->dt);
 
-    dtfield_CL(f, w);
+    dtfield_CL(f, w, 0, NULL, NULL);
     RK4_CL_stageA(f, &l1, w, dtw,
     		  0.5 * f->dt, sizew, numworkitems);
     
-    dtfield_CL(f, &l1);
+    dtfield_CL(f, &l1, 0, NULL, NULL);
     RK4_CL_stageA(f, &l2, w, dtw,
     		  0.5 * f->dt, sizew, numworkitems);
     
-    dtfield_CL(f, &l2);
+    dtfield_CL(f, &l2, 0, NULL, NULL);
     RK4_CL_stageA(f, &l3, w, dtw,
     		  f->dt, sizew, numworkitems);
     
-    dtfield_CL(f, &l3);
+    dtfield_CL(f, &l3, 0, NULL, NULL);
     RK4_final_inplace_CL(f, w, &l1, &l2, &l3, 
 			 dtw, f->dt, numworkitems);
 
@@ -785,12 +821,12 @@ void RK2_CL(field *f, double tmax)
     if (iter % freq == 0)
       printf("t=%f iter=%d/%d dt=%f\n", f->tnow, iter, f->itermax, f->dt);
 
-    dtfield_CL(f, &(f->wn_cl));
+    dtfield_CL(f, &(f->wn_cl), 0, NULL, NULL);
     RK2_CL_stage1(f, f->wsize);
 
     f->tnow += 0.5 * f->dt;
 
-    dtfield_CL(f, &wnp1_cl);
+    dtfield_CL(f, &wnp1_cl, 0, NULL, NULL);
     RK2_CL_stage2(f, f->wsize);
 
     f->tnow += 0.5 * f->dt;
