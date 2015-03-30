@@ -45,16 +45,18 @@ int TestKernel(void){
 
   // Set dtwn to 1 for testing
   { 
-    void* chkptr;
+    void *chkptr;
     cl_int status;
-    chkptr=clEnqueueMapBuffer(f.cli.commandqueue,
-			      f.dtwn_cl,  // buffer to copy from
-			      CL_TRUE,  // block until the buffer is available
-			      CL_MAP_WRITE, 
-			      0, // offset
-			      sizeof(double)*(f.wsize),  // buffersize
-			      0,NULL,NULL, // events management
-			      &status);
+    chkptr = clEnqueueMapBuffer(f.cli.commandqueue,
+				f.dtwn_cl,  // buffer to copy from
+				CL_TRUE,  // block until the buffer is available
+				CL_MAP_WRITE, 
+				0, // offset
+				sizeof(double) * (f.wsize), // buffersize
+				0,
+				NULL,
+				NULL, // events management
+				&status);
     assert(status == CL_SUCCESS);
     assert(chkptr == f.dtwn);
 
@@ -65,22 +67,26 @@ int TestKernel(void){
     status = clEnqueueUnmapMemObject (f.cli.commandqueue,
 				      f.dtwn_cl,
 				      f.dtwn,
-				      0,NULL,NULL);
+				      0,
+				      NULL,
+				      NULL);
 
     assert(status == CL_SUCCESS);
     status = clFinish(f.cli.commandqueue);
     assert(status == CL_SUCCESS);
   }
  
-  for(int ie=0; ie < f.macromesh.nbelems; ++ie)
+  for(int ie = 0; ie < f.macromesh.nbelems; ++ie) {
+    printf("ie: %d\n", ie);
     DGMass_CL((void*) &(f.mcell[ie]), &f, 0, NULL, NULL);
+  }
 
   CopyfieldtoCPU(&f);
 
   Displayfield(&f);
 
   // save the dtwn pointer
-  double* saveptr = f.dtwn;
+  double *saveptr = f.dtwn;
 
   // malloc a new dtwn.
   f.dtwn = calloc(f.wsize,sizeof(double));

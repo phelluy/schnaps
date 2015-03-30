@@ -43,6 +43,8 @@ void CopyfieldtoCPU(field *f) {
 void initDGMacroCellInterface_CL(field *f, 
 				 cl_mem physnodeL_cl, cl_mem physnodeR_cl)
 {
+  //  printf("initDGMacroCellInterface_CL\n");
+
   cl_int status;
   cl_kernel kernel = f->dginterface;
 
@@ -95,6 +97,7 @@ void initDGMacroCellInterface_CL(field *f,
                           &(f->dtwn_cl));
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status == CL_SUCCESS);
+  //printf("... initDGMacroCellInterface_CL done.\n");
 }
 
 // Set the loop-dependant kernel arguments for DGMacroCellInterface_CL
@@ -219,12 +222,10 @@ void init_DGVolume_CL(field *f, cl_mem *wn_cl)
 
 // Update the cl buffer with physnode data depending in the
 // macroelement with index ie
-void update_physnode_cl(field *f, int ie, cl_mem physnode_cl, double *physnode)
+void update_physnode_cl(field *f, int ie, cl_mem physnode_cl, double *physnode,
+			cl_uint nwait, cl_event *wait, cl_event *done)
 {
   cl_int status;
-  /* status = clFinish(f->cli.commandqueue); */
-  /* if(status != CL_SUCCESS) printf("%s\n", clErrorString(status)); */
-  /* assert(status == CL_SUCCESS); */
 
   void *chkptr = clEnqueueMapBuffer(f->cli.commandqueue,
 				    physnode_cl,
@@ -232,7 +233,9 @@ void update_physnode_cl(field *f, int ie, cl_mem physnode_cl, double *physnode)
 				    CL_MAP_WRITE,
 				    0, // offset
 				    sizeof(cl_double) * 60, // buffersize
-				    0, NULL, NULL, // events management
+				    nwait, 
+				    wait, 
+				    &(f->clv_mapdone),
 				    &status);
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status == CL_SUCCESS);
@@ -247,7 +250,7 @@ void update_physnode_cl(field *f, int ie, cl_mem physnode_cl, double *physnode)
   status = clEnqueueUnmapMemObject(f->cli.commandqueue,
 				   physnode_cl,
 				   physnode,
-				   0, NULL, NULL);
+				   1, &(f->clv_mapdone), done);
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status == CL_SUCCESS);
 }
@@ -255,6 +258,8 @@ void update_physnode_cl(field *f, int ie, cl_mem physnode_cl, double *physnode)
 void DGMacroCellInterface_CL(void *mf, field *f, cl_mem *wn_cl,
 			     cl_uint nwait, cl_event *wait, cl_event *done) 
 {
+  clWaitForEvents(nwait, wait);
+  
   MacroFace *mface = (MacroFace*) mf;
   int *param = f->interp_param;
 
@@ -270,19 +275,28 @@ void DGMacroCellInterface_CL(void *mf, field *f, cl_mem *wn_cl,
 
   // Set the kernel arguments
   initDGMacroCellInterface_CL(f, f->physnode_cl, f->physnodeR_cl);
-  
+
+  status = clSetUserEventStatus(f->clv_kernel, CL_COMPLETE);
+  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status == CL_SUCCESS);
+
   // Loop on the macro faces
   const unsigned int nbfaces = f->macromesh.nbfaces;
   for(int ifa = mface->first; ifa < mface->last_p1; ifa++) {
-    int ieL =    f->macromesh.face2elem[4 * ifa + 0];
+    int ieL =    f->macromesh.face2elem[4 * ifa];
     int locfaL = f->macromesh.face2elem[4 * ifa + 1];
     int ieR =    f->macromesh.face2elem[4 * ifa + 2];
     int locfaR = f->macromesh.face2elem[4 * ifa + 3];
 
-    update_physnode_cl(f, ieL, f->physnode_cl, f->physnode);
+    update_physnode_cl(f, ieL, f->physnode_cl, f->physnode,
+		       1, &f->clv_kernel, &f->clv_physnode);
 
-    if(ieR >= 0)
-      update_physnode_cl(f, ieR, f->physnodeR_cl, f->physnodeR);
+    if(ieR >= 0) {
+      update_physnode_cl(f, ieR, f->physnodeR_cl, f->physnodeR,
+			 1, &f->clv_physnode, &f->clv_physnodeR);
+    } else {
+      status = clSetUserEventStatus(f->clv_physnodeR, CL_COMPLETE);
+    }
 
     // Set the remaining, loop-dependant kernel arguments
     loop_initDGMacroCellInterface_CL(f, ieL, ieR, locfaL, locfaR);
@@ -294,12 +308,14 @@ void DGMacroCellInterface_CL(void *mf, field *f, cl_mem *wn_cl,
 				    NULL, // const size_t *global_work_offset,
         			    &numworkitems, // size_t *global_work_size, 
         			    NULL, // size_t *local_work_size, 
-        			    nwait,  // cl_uint num_events_in_wait_list, 
-				    wait, // cl_event *event_wait_list,
-				    done); // cl_event *event
+        			    1,  // cl_uint num_events_in_wait_list, 
+				    &f->clv_physnodeR, // *event_wait_list,
+				    &f->clv_kernel); // cl_event *event
     if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
     assert(status == CL_SUCCESS);
   }
+  if(done != NULL)
+    status = clSetUserEventStatus(*done, CL_COMPLETE);
 }
 
 // Apply division by the mass matrix OpenCL version
@@ -312,10 +328,17 @@ void DGMass_CL(void *mc, field *f,
 
   init_DGMass_CL(f);
 
+  clWaitForEvents(nwait, wait);
+ 
+  status = clSetUserEventStatus(f->clv_kernel, CL_COMPLETE); 
+  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status == CL_SUCCESS);
+
   // Loop on the elements
   for (int ie = mcell->first; ie < mcell->last_p1; ie++) {
 
-    update_physnode_cl(f, ie, f->physnode_cl, f->physnode);
+    update_physnode_cl(f, ie, f->physnode_cl, f->physnode,
+		       1, &f->clv_kernel, &f->clv_physnode);
 
     status = clSetKernelArg(f->dgmass, 
 			    1, 
@@ -336,12 +359,14 @@ void DGMass_CL(void *mc, field *f,
 				    NULL, // size_t *global_work_offset, 
 				    &numworkitems, // size_t *global_work_size,
 				    &groupsize, // size_t *local_work_size, 
-				    nwait, // cl_uint num_events_in_wait_list, 
-				    wait, //  cl_event *event_wait_list, 
-				    done); // cl_event *event
+				    1, // cl_uint num_events_in_wait_list, 
+				    &f->clv_physnode, // *event_wait_list, 
+				    &f->clv_kernel); // cl_event *event
     if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
     assert(status == CL_SUCCESS);
   }
+  if(done != NULL)
+    status = clSetUserEventStatus(*done, CL_COMPLETE);
 }
 
 // Apply division by the mass matrix OpenCL version
@@ -355,9 +380,16 @@ void DGVolume_CL(void *mc, field *f, cl_mem *wn_cl,
 
   init_DGVolume_CL(f, wn_cl);
 
+  clWaitForEvents(nwait, wait);
+
+  status = clSetUserEventStatus(f->clv_kernel, CL_COMPLETE); 
+  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status == CL_SUCCESS);
+
   // Loop on the elements
   for (int ie = mcell->first; ie < mcell->last_p1; ie++) {
-    update_physnode_cl(f, ie, f->physnode_cl, f->physnode);
+    update_physnode_cl(f, ie, f->physnode_cl, f->physnode,
+		       1, &f->clv_kernel, &f->clv_physnode);
 
     status = clSetKernelArg(kernel,
 			    1,
@@ -379,13 +411,15 @@ void DGVolume_CL(void *mc, field *f, cl_mem *wn_cl,
 				    NULL,
 				    &numworkitems,
 				    &groupsize,
-				    nwait, 
-				    wait, 
-				    done);
+				    1, 
+				    &f->clv_physnode, 
+				    &f->clv_kernel);
     //printf("%d\n", status);
     if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
     assert(status == CL_SUCCESS);
   }
+  if(done != NULL)
+    status = clSetUserEventStatus(*done, CL_COMPLETE);
 }
 
 void set_buf_to_zero_cl(cl_mem *buf, int size, field *f,
@@ -591,8 +625,6 @@ void RK4_CL_stageA(field *f,
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status == CL_SUCCESS);
 
-  clFinish(f->cli.commandqueue);
-
   status = clEnqueueNDRangeKernel(f->cli.commandqueue,
   				  kernel,
   				  1,
@@ -604,7 +636,6 @@ void RK4_CL_stageA(field *f,
   				  done);
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status == CL_SUCCESS);
-  clFinish(f->cli.commandqueue);
 }
 
 void RK4_final_inplace_CL(field *f, 
@@ -665,8 +696,6 @@ void RK4_final_inplace_CL(field *f,
 			  &dt);
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status == CL_SUCCESS);
-
-  clFinish(f->cli.commandqueue);
 
   status = clEnqueueNDRangeKernel(f->cli.commandqueue,
   				  kernel,
@@ -738,7 +767,7 @@ void RK4_CL(field *f, double tmax,
 
     // stage 0
     dtfield_CL(f, w, 
-	       1, &stage[3], &source[0]); // FIXME: use events
+	       1, &stage[3], &source[0]);
     RK4_CL_stageA(f, &l1, w, dtw,
     		  0.5 * f->dt, sizew, numworkitems,
 		  1, &source[0], &stage[0]);
@@ -778,8 +807,6 @@ void RK4_CL(field *f, double tmax,
 void RK2_CL(field *f, double tmax,
 	    cl_uint nwait, cl_event *wait, cl_event *done) 
 {
-  clWaitForEvents(nwait, wait);
-
   f->itermax = tmax / f->dt;
   int freq = (1 >= f->itermax / 10)? 1 : f->itermax / 10;
   int iter = 0;
@@ -803,7 +830,9 @@ void RK2_CL(field *f, double tmax,
   cl_event stage2 = clCreateUserEvent(f->cli.context, &status);
   status = clSetUserEventStatus(stage2, CL_COMPLETE);
 
+  clWaitForEvents(nwait, wait);
   while(f->tnow < tmax) {
+    //printf("iter: %d\n", iter);
     if (iter % freq == 0)
       printf("t=%f iter=%d/%d dt=%f\n", f->tnow, iter, f->itermax, f->dt);
 

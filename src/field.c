@@ -285,6 +285,10 @@ void init_field_cl(field *f)
     f->clv_volume[i] = clCreateUserEvent(f->cli.context, NULL);
     f->clv_mass[i] = clCreateUserEvent(f->cli.context, NULL);
   }  
+  f->clv_mapdone = clCreateUserEvent(f->cli.context, NULL);
+  f->clv_physnode = clCreateUserEvent(f->cli.context, NULL);
+  f->clv_physnodeR = clCreateUserEvent(f->cli.context, NULL);
+  f->clv_kernel = clCreateUserEvent(f->cli.context, NULL);
   
 }
 #endif

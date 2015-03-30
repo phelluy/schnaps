@@ -101,6 +101,11 @@ typedef struct field {
   cl_event *clv_mci; // Macro cell interface events
   cl_event *clv_volume; // Subcell volume events
   cl_event *clv_mass; // Subcell mass events
+  cl_event clv_mapdone;
+  cl_event clv_physnode;
+  cl_event clv_physnodeR;
+  cl_event clv_kernel;
+
 #endif
 
 } field;
