@@ -3,6 +3,7 @@
 #include<stdio.h>
 #include <stdlib.h>
 #include <assert.h>
+#include "clutils.h"
 #include <math.h>
 
 int TestDtfield_CL(void);
@@ -81,6 +82,10 @@ int TestDtfield_CL(void){
 #endif
 
   Initfield(&f);
+
+  cl_int status = clFinish(f.cli.commandqueue);
+  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status == CL_SUCCESS);
 
   dtfield_CL(&f, &(f.wn_cl), 0, NULL, NULL);
   clFinish(f.cli.commandqueue);

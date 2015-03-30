@@ -97,14 +97,31 @@ typedef struct field {
   cl_kernel zero_buf;
 
   // OpenCL events
+
+  cl_event clv_mapdone; // used in update_physnode_cl
+  
   cl_event clv_zbuf; // set_buf_to_zero
+  
   cl_event *clv_mci; // Macro cell interface events
-  cl_event *clv_volume; // Subcell volume events
-  cl_event *clv_mass; // Subcell mass events
-  cl_event clv_mapdone;
+
+
+
+  // FIXME: delete
   cl_event clv_physnode;
   cl_event clv_physnodeR;
-  cl_event clv_kernel;
+
+  cl_event *clv_mass; // Subcell mass events
+  cl_event *clv_masskernel;
+  cl_event *clv_massupdate;
+  cl_event *clv_massupdateR;
+
+  cl_event *clv_volume; // Subcell volume events
+  cl_event *clv_volkernel;
+  cl_event *clv_volupdate;
+
+  cl_event *clv_interkernel;
+  cl_event *clv_interupdate;
+  cl_event *clv_interupdateR;
 
 #endif
 

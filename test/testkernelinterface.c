@@ -46,7 +46,7 @@ int TestKernelInterface(void){
   f.is2d = true;
 
   MacroFace mface[f.macromesh.nbfaces];
-  for(int ifa=0;ifa<f.macromesh.nbfaces;ifa++){
+  for(int ifa = 0; ifa < f.macromesh.nbfaces; ++ifa){
     mface[ifa].first = ifa;
     mface[ifa].last_p1 = ifa + 1;
   }
@@ -64,7 +64,6 @@ int TestKernelInterface(void){
   assert(status == CL_SUCCESS);
   assert(chkptr == f.dtwn);
 
-
   for(int i = 0; i < f.wsize; i++)
     f.dtwn[i] = 0.0;
 
@@ -79,9 +78,12 @@ int TestKernelInterface(void){
 
   // OpenCL version
   for(int ifa = 0; ifa < f.macromesh.nbfaces; ifa++) {
+    printf("ifa: %d\n", ifa);
     DGMacroCellInterface_CL((void*) (mface + ifa), &f, &(f.wn_cl), 
 			    0, NULL, NULL);
+    //clFinish(f.cli.commandqueue);
   }
+  clFinish(f.cli.commandqueue);
   CopyfieldtoCPU(&f);
   //Displayfield(&f);
   double *fdtwn_opencl = f.dtwn;

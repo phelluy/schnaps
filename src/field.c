@@ -274,25 +274,50 @@ void init_field_cl(field *f)
   assert(status == CL_SUCCESS);
 
   // Allocate an initialize event lists. // FIXME: free on exit
-  f->clv_zbuf = clCreateUserEvent(f->cli.context, NULL);
+  f->clv_zbuf = clCreateUserEvent(f->cli.context,  &status);
+  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status == CL_SUCCESS);
+
   f->clv_mci = calloc(f->macromesh.nbfaces, sizeof(cl_event));
+  f->clv_interkernel = calloc(f->macromesh.nbfaces, sizeof(cl_event));
+  f->clv_interupdate = calloc(f->macromesh.nbfaces, sizeof(cl_event));
+  f->clv_interupdateR = calloc(f->macromesh.nbfaces, sizeof(cl_event));
   for(unsigned int i = 0; i < f->macromesh.nbfaces; ++i) {
-     f->clv_mci[i] = clCreateUserEvent(f->cli.context, NULL);
+     f->clv_mci[i] = clCreateUserEvent(f->cli.context, &status);
+     f->clv_interkernel[i] = clCreateUserEvent(f->cli.context, &status);
+     f->clv_interupdate[i] = clCreateUserEvent(f->cli.context, &status);
+     f->clv_interupdateR[i] = clCreateUserEvent(f->cli.context, &status);
   }
+  printf("f->macromesh.nbfaces: %d\n", f->macromesh.nbfaces); 
+
+  f->clv_masskernel = calloc(f->macromesh.nbelems, sizeof(cl_event));
+  f->clv_massupdate = calloc(f->macromesh.nbelems, sizeof(cl_event));
+  f->clv_massupdateR = calloc(f->macromesh.nbelems, sizeof(cl_event));
+
+  f->clv_volkernel = calloc(f->macromesh.nbelems, sizeof(cl_event));
+  f->clv_volupdate = calloc(f->macromesh.nbelems, sizeof(cl_event));
   f->clv_volume = calloc(f->macromesh.nbelems, sizeof(cl_event));
   f->clv_mass = calloc(f->macromesh.nbelems, sizeof(cl_event));
   for(unsigned int i = 0; i < f->macromesh.nbelems; ++i) {
-    f->clv_volume[i] = clCreateUserEvent(f->cli.context, NULL);
-    f->clv_mass[i] = clCreateUserEvent(f->cli.context, NULL);
-  }  
-  f->clv_mapdone = clCreateUserEvent(f->cli.context, NULL);
-  f->clv_physnode = clCreateUserEvent(f->cli.context, NULL);
-  f->clv_physnodeR = clCreateUserEvent(f->cli.context, NULL);
-  f->clv_kernel = clCreateUserEvent(f->cli.context, NULL);
+    f->clv_mass[i] = clCreateUserEvent(f->cli.context, &status);
+    f->clv_masskernel[i] = clCreateUserEvent(f->cli.context, &status);
+    f->clv_massupdate[i] = clCreateUserEvent(f->cli.context, &status);
+    f->clv_massupdateR[i] = clCreateUserEvent(f->cli.context, &status);
+
+    f->clv_volume[i] = clCreateUserEvent(f->cli.context, &status);
+    f->clv_volkernel[i] = clCreateUserEvent(f->cli.context, &status);
+    f->clv_volupdate[i] = clCreateUserEvent(f->cli.context, &status);
+  }
+
+  f->clv_mapdone = clCreateUserEvent(f->cli.context, &status);
+
+  // FIXME: remove these.
+  f->clv_physnode = clCreateUserEvent(f->cli.context, &status);
+  f->clv_physnodeR = clCreateUserEvent(f->cli.context, &status);
+
   
 }
 #endif
-
 
 void Initfield(field *f) {
   //int param[8]={f->model.m,_DEGX,_DEGY,_DEGZ,_RAFX,_RAFY,_RAFZ,0};
@@ -368,7 +393,7 @@ void free_field(field* f)
 }
 
 // Display the field on screen
-void Displayfield(field* f) {
+void Displayfield(field *f) {
   printf("Display field...\n");
   for(int ie = 0; ie < f->macromesh.nbelems; ie++) {
     printf("elem %d\n", ie);
