@@ -95,8 +95,6 @@ void initDGMacroCellInterface_CL(field *f,
                           &(f->dtwn_cl));
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status == CL_SUCCESS);
-
-  clFinish(f->cli.commandqueue);
 }
 
 // Set the loop-dependant kernel arguments for DGMacroCellInterface_CL
@@ -143,8 +141,6 @@ void loop_initDGMacroCellInterface_CL(field *f,
 			  &locfaR);
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status == CL_SUCCESS);
-
-  clFinish(f->cli.commandqueue);
 }
 
 // Set up kernel arguments, etc, for DGMass_CL.
@@ -173,8 +169,6 @@ void init_DGMass_CL(field *f)
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status == CL_SUCCESS);
 
-  clFinish(f->cli.commandqueue);
-
   /* __global double* dtwn // time derivative */
   status = clSetKernelArg(kernel,
                           argnum++,
@@ -182,8 +176,6 @@ void init_DGMass_CL(field *f)
                           &(f->dtwn_cl));
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status == CL_SUCCESS);
-
-  clFinish(f->cli.commandqueue);
 }
 
 // Set kernel argument for DGVolume_CL
@@ -223,8 +215,6 @@ void init_DGVolume_CL(field *f, cl_mem *wn_cl)
                           &(f->dtwn_cl));
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status == CL_SUCCESS);
-
-  clFinish(f->cli.commandqueue);
 }
 
 // Update the cl buffer with physnode data depending in the
@@ -260,8 +250,6 @@ void update_physnode_cl(field *f, int ie, cl_mem physnode_cl, double *physnode)
 				   0, NULL, NULL);
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status == CL_SUCCESS);
-
-  clFinish(f->cli.commandqueue);
 }
 
 void DGMacroCellInterface_CL(void *mf, field *f, cl_mem *wn_cl,
@@ -311,8 +299,6 @@ void DGMacroCellInterface_CL(void *mf, field *f, cl_mem *wn_cl,
 				    done); // cl_event *event
     if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
     assert(status == CL_SUCCESS);
-
-    //clFinish(f->cli.commandqueue);
   }
 }
 
@@ -338,8 +324,6 @@ void DGMass_CL(void *mc, field *f,
     if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
     assert(status == CL_SUCCESS);
 
-    //clFinish(f->cli.commandqueue);
-
     // The groupsize is the number of glops in a subcell
     size_t groupsize = (param[1] + 1) * (param[2] + 1) * (param[3] + 1);
     // The total work items number is (the number of glops in a
@@ -357,8 +341,6 @@ void DGMass_CL(void *mc, field *f,
 				    done); // cl_event *event
     if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
     assert(status == CL_SUCCESS);
-
-    //clFinish(f->cli.commandqueue);
   }
 }
 
@@ -384,8 +366,6 @@ void DGVolume_CL(void *mc, field *f, cl_mem *wn_cl,
     if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
     assert(status == CL_SUCCESS);
 
-    //clFinish(f->cli.commandqueue);
-
     // Mass kernel launch
     // The groupsize is the number of glops in a subcell
     size_t groupsize = (param[1] + 1)* (param[2] + 1)*(param[3] + 1);
@@ -405,8 +385,6 @@ void DGVolume_CL(void *mc, field *f, cl_mem *wn_cl,
     //printf("%d\n", status);
     if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
     assert(status == CL_SUCCESS);
-
-    //clFinish(f->cli.commandqueue);
   }
 }
 
@@ -436,8 +414,6 @@ void set_buf_to_zero_cl(cl_mem *buf, int size, field *f,
 				  done);
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status == CL_SUCCESS);
-
-  //clFinish(f->cli.commandqueue);
 }
 
 // Apply the Discontinuous Galerkin approximation for computing the
@@ -448,9 +424,6 @@ void dtfield_CL(field *f, cl_mem *wn_cl,
   set_buf_to_zero_cl(&(f->dtwn_cl), f->wsize, f, 
 		     nwait, wait, &(f->clv_zbuf));
 
-/* #ifdef _OPENMP */
-/* #pragma omp parallel for */
-/* #endif */
   for(int ifa = 0; ifa < f->macromesh.nbfaces; ifa++) {
     DGMacroCellInterface_CL((void*) (f->mface + ifa), f, wn_cl,
 			    1,
@@ -459,9 +432,6 @@ void dtfield_CL(field *f, cl_mem *wn_cl,
   }
 
   int lastelem = f->macromesh.nbelems - 1;
-/* #ifdef _OPENMP */
-/* #pragma omp parallel for */
-/* #endif */
   for(int ie = 0; ie <= lastelem; ++ie) {
     MacroCell *mcelli = f->mcell + ie;
     DGVolume_CL(mcelli, f, wn_cl,
@@ -515,12 +485,11 @@ void init_RK2_CL_stage1(field *f, const double dt, cl_mem *wnp1_cl)
 			  &halfdt);
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status == CL_SUCCESS);
-
-  clFinish(f->cli.commandqueue);
 }
 
 // Launch first stage of RK2 integration
-void RK2_CL_stage1(field *f, size_t numworkitems)
+void RK2_CL_stage1(field *f, size_t numworkitems,
+		   cl_uint nwait, cl_event *wait, cl_event *done)
 {
   cl_int status;
   status = clEnqueueNDRangeKernel(f->cli.commandqueue,
@@ -529,12 +498,11 @@ void RK2_CL_stage1(field *f, size_t numworkitems)
 				  NULL,
 				  &numworkitems,
 				  NULL,
-				  0, 
-				  NULL, 
-				  NULL);
+				  nwait, 
+				  wait, 
+				  done);
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status == CL_SUCCESS);
-  clFinish(f->cli.commandqueue);
 }
 
 // Set kernel arguments for second stage of RK2
@@ -563,12 +531,11 @@ void init_RK2_CL_stage2(field *f, const double dt)
 			  &(dt));
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status == CL_SUCCESS);
-
-  clFinish(f->cli.commandqueue);
 }
 
 // Launch second stage of RK2 integration
-void RK2_CL_stage2(field *f, size_t numworkitems)
+void RK2_CL_stage2(field *f, size_t numworkitems,
+		   cl_uint nwait, cl_event *wait, cl_event *done)
 {
   cl_int status;
   status = clEnqueueNDRangeKernel(f->cli.commandqueue,
@@ -576,10 +543,9 @@ void RK2_CL_stage2(field *f, size_t numworkitems)
 				  1, NULL,
 				  &numworkitems,
 				  NULL,
-				  0, NULL, NULL);
+				  nwait, wait, done);
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status == CL_SUCCESS);
-  clFinish(f->cli.commandqueue);
 }
 
 void RK4_CL_stageA(field *f, 
@@ -781,8 +747,11 @@ void RK4_CL(field *f, double tmax)
 
 // Time integration by a second-order Runge-Kutta algorithm, OpenCL
 // version.
-void RK2_CL(field *f, double tmax) 
+void RK2_CL(field *f, double tmax,
+	    cl_uint nwait, cl_event *wait, cl_event *done) 
 {
+  clWaitForEvents(nwait, wait);
+
   f->itermax = tmax / f->dt;
   int freq = (1 >= f->itermax / 10)? 1 : f->itermax / 10;
   int iter = 0;
@@ -799,29 +768,31 @@ void RK2_CL(field *f, double tmax)
   // Set up kernels
   init_RK2_CL_stage1(f, f->dt, &wnp1_cl);
   init_RK2_CL_stage2(f, f->dt);
-  clFinish(f->cli.commandqueue);
+
+  cl_event source1 = clCreateUserEvent(f->cli.context, &status);
+  cl_event stage1 = clCreateUserEvent(f->cli.context, &status);
+  cl_event source2 = clCreateUserEvent(f->cli.context, &status);
+  cl_event stage2 = clCreateUserEvent(f->cli.context, &status);
+  status = clSetUserEventStatus(stage2, CL_COMPLETE);
 
   while(f->tnow < tmax) {
     if (iter % freq == 0)
       printf("t=%f iter=%d/%d dt=%f\n", f->tnow, iter, f->itermax, f->dt);
 
-    dtfield_CL(f, &(f->wn_cl), 0, NULL, NULL);
-    clFinish(f->cli.commandqueue);
-
-    RK2_CL_stage1(f, f->wsize);
-    clFinish(f->cli.commandqueue);
+    dtfield_CL(f, &(f->wn_cl), 1, &stage2, &source1);
+    RK2_CL_stage1(f, f->wsize, 1, &source1, &stage1);
 
     f->tnow += 0.5 * f->dt;
 
-    dtfield_CL(f, &wnp1_cl, 0, NULL, NULL);
-    clFinish(f->cli.commandqueue);
-    RK2_CL_stage2(f, f->wsize);
-    clFinish(f->cli.commandqueue);
+    dtfield_CL(f, &wnp1_cl, 1, &stage1, &source2);
+    RK2_CL_stage2(f, f->wsize, 1, &source2, &stage2);
 
     f->tnow += 0.5 * f->dt;
     iter++;
   }
   printf("t=%f iter=%d/%d dt=%f\n", f->tnow, iter, f->itermax, f->dt);
+  if(done != NULL) 
+    status = clSetUserEventStatus(*done, CL_COMPLETE);
 }
 
 #endif // _WITH_OPENCL

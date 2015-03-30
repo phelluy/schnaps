@@ -186,7 +186,7 @@ int main(int argc, char *argv[]) {
   if(usegpu) {
     printf("Using OpenCL:\n");
     //clock_gettime(CLOCK_MONOTONIC, &tstart);
-    RK2_CL(&f, tmax);
+    RK2_CL(&f, tmax, 0, NULL, NULL);
     //clock_gettime(CLOCK_MONOTONIC, &tend);
 
   } else { 

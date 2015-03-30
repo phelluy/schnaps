@@ -88,7 +88,7 @@ int TestfieldRK2_CL(void){
   CheckMacroMesh(&(f.macromesh), f.interp.interp_param + 1);
  
   double tmax = 0.1;
-  RK2_CL(&f, tmax);
+  RK2_CL(&f, tmax, 0, NULL, NULL);
   
   CopyfieldtoCPU(&f);
  
