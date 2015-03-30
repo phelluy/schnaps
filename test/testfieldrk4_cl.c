@@ -89,8 +89,9 @@ int TestfieldRK4_CL(void){
  
   double tmax = 0.1;
   //RK4(&f, tmax);
-  RK4_CL(&f, tmax);
- 
+  RK4_CL(&f, tmax, 0, NULL, NULL);
+  clFinish(f.cli.commandqueue); 
+
   CopyfieldtoCPU(&f);
 
   Plotfield(0, false, &f, NULL, "dgvisu.msh");

@@ -550,7 +550,8 @@ void RK2_CL_stage2(field *f, size_t numworkitems,
 
 void RK4_CL_stageA(field *f, 
 		   cl_mem *wnp1, cl_mem *wn, cl_mem *dtw, 
-		   const double dt, const int sizew, size_t numworkitems)
+		   const double dt, const int sizew, size_t numworkitems, 
+		   cl_uint nwait, cl_event *wait, cl_event *done)
 {
   // l_1 = w_n + 0.5dt * S(w_n, t_0)
   
@@ -598,9 +599,9 @@ void RK4_CL_stageA(field *f,
   				  NULL,
   				  &numworkitems,
   				  NULL,
-  				  0,
-  				  NULL,
-  				  NULL);
+  				  nwait,
+  				  wait,
+  				  done);
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status == CL_SUCCESS);
   clFinish(f->cli.commandqueue);
@@ -609,7 +610,8 @@ void RK4_CL_stageA(field *f,
 void RK4_final_inplace_CL(field *f, 
 			  cl_mem *w_cl, cl_mem *l1, cl_mem *l2, cl_mem *l3, 
 			  cl_mem *dtw_cl, const double dt, 
-			  const size_t numworkitems)
+			  const size_t numworkitems, 
+			  cl_uint nwait, cl_event *wait, cl_event *done)
 {
   cl_kernel kernel = f->RK4_final_stage;
   cl_int status;
@@ -672,18 +674,20 @@ void RK4_final_inplace_CL(field *f,
   				  NULL,
   				  &numworkitems,
   				  NULL,
-  				  0,
-  				  NULL,
-  				  NULL);
+  				  nwait,
+  				  wait,
+  				  done);
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status == CL_SUCCESS);
-  clFinish(f->cli.commandqueue);
 }
 
 // Time integration by a fourth-order Runge-Kutta algorithm, OpenCL
 // version.
-void RK4_CL(field *f, double tmax) 
+void RK4_CL(field *f, double tmax, 
+	    cl_uint nwait, cl_event *wait, cl_event *done) 
 {
+  clWaitForEvents(nwait, wait);
+
   f->itermax = tmax / f->dt;
   int freq = (1 >= f->itermax / 10)? 1 : f->itermax / 10;
   int sizew = f->macromesh.nbelems * f->model.m * NPG(f->interp_param + 1);
@@ -718,29 +722,53 @@ void RK4_CL(field *f, double tmax)
   cl_mem *w = &(f->wn_cl);
   cl_mem *dtw = &(f->dtwn_cl);
 
+  int nstages = 4;
+  cl_event source[nstages];
+  cl_event stage[nstages];
+  for(int i = 0; i < nstages; ++i) {
+    source[i] = clCreateUserEvent(f->cli.context, &status);
+    stage[i] = clCreateUserEvent(f->cli.context, &status);
+  }
+
+  status = clSetUserEventStatus(stage[nstages - 1], CL_COMPLETE);
+
   while(f->tnow < tmax) {
     if (iter % freq == 0)
       printf("t=%f iter=%d/%d dt=%f\n", f->tnow, iter, f->itermax, f->dt);
 
-    dtfield_CL(f, w, 0, NULL, NULL);
+    // stage 0
+    dtfield_CL(f, w, 
+	       1, &stage[3], &source[0]); // FIXME: use events
     RK4_CL_stageA(f, &l1, w, dtw,
-    		  0.5 * f->dt, sizew, numworkitems);
+    		  0.5 * f->dt, sizew, numworkitems,
+		  1, &source[0], &stage[0]);
     
-    dtfield_CL(f, &l1, 0, NULL, NULL);
+    // stage 1
+    dtfield_CL(f, &l1, 1, &stage[0], &source[1]);
     RK4_CL_stageA(f, &l2, w, dtw,
-    		  0.5 * f->dt, sizew, numworkitems);
+    		  0.5 * f->dt, sizew, numworkitems,
+		  1, &source[1], &stage[1]);
     
-    dtfield_CL(f, &l2, 0, NULL, NULL);
+    // stage 2
+    dtfield_CL(f, &l2, 
+	       1, &stage[1], &source[2]);
     RK4_CL_stageA(f, &l3, w, dtw,
-    		  f->dt, sizew, numworkitems);
+    		  f->dt, sizew, numworkitems,
+		  1, &source[2], &stage[2]);
     
-    dtfield_CL(f, &l3, 0, NULL, NULL);
+    // stage 3
+    dtfield_CL(f, &l3, 
+	       0, &stage[2], &source[3]);
     RK4_final_inplace_CL(f, w, &l1, &l2, &l3, 
-			 dtw, f->dt, numworkitems);
+			 dtw, f->dt, numworkitems,
+			 1, &source[3], &stage[3]);
 
     f->tnow += f->dt;
     iter++;
   }
+  if(done != NULL)
+    status = clSetUserEventStatus(*done, CL_COMPLETE);
+
   printf("t=%f iter=%d/%d dt=%f\n", f->tnow, iter, f->itermax, f->dt);
 }
 
@@ -790,9 +818,10 @@ void RK2_CL(field *f, double tmax,
     f->tnow += 0.5 * f->dt;
     iter++;
   }
-  printf("t=%f iter=%d/%d dt=%f\n", f->tnow, iter, f->itermax, f->dt);
   if(done != NULL) 
     status = clSetUserEventStatus(*done, CL_COMPLETE);
+
+  printf("t=%f iter=%d/%d dt=%f\n", f->tnow, iter, f->itermax, f->dt);
 }
 
 #endif // _WITH_OPENCL

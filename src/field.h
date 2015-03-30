@@ -227,7 +227,8 @@ void RK4(field *f, double tmax);
 //! \param[in] tmax physical duration of the simulation
 void RK2_CL(field *f, double tmax, 
 	    cl_uint nwait, cl_event *wait, cl_event *done);
-void RK4_CL(field *f, double tmax);
+void RK4_CL(field *f, double tmax, 
+	    cl_uint nwait, cl_event *wait, cl_event *done);
 
 //! \brief save the results in the gmsh format
 //! \param[in] typplot index of the field variable to plot.
