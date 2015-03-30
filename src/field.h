@@ -84,6 +84,9 @@ typedef struct field {
   cl_mem physnode_cl;
   cl_double *physnode;
 
+  cl_mem physnodeR_cl;
+  cl_double *physnodeR;
+
   //! opencl kernels for mass inversion
   cl_kernel dgmass;
   cl_kernel dgvolume;

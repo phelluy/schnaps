@@ -211,6 +211,14 @@ void init_field_cl(field *f)
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status == CL_SUCCESS);
 
+  f->physnodeR = calloc(60, sizeof(cl_double));
+
+  f->physnodeR_cl = clCreateBuffer(f->cli.context,
+				   CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR,
+				   sizeof(cl_double) * 60,
+				   f->physnodeR,
+				   &status);
+
   // Program compilation
   char *s;
   GetOpenCLCode();

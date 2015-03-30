@@ -83,6 +83,7 @@ int TestDtfield_CL(void){
   Initfield(&f);
 
   dtfield_CL(&f, &(f.wn_cl), 0, NULL, NULL);
+  clFinish(f.cli.commandqueue);
   CopyfieldtoCPU(&f);
 
   // Displayfield(&f);

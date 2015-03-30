@@ -273,18 +273,6 @@ void DGMacroCellInterface_CL(void *mf, field *f, cl_mem *wn_cl,
   cl_int status;
   cl_kernel kernel = f->dginterface;
 
-  // TODO: leave allocated?
-  cl_mem physnodeR_cl;
-  cl_double *physnodeR = calloc(60, sizeof(cl_double));
-  assert(physnodeR);
-  physnodeR_cl = clCreateBuffer(f->cli.context,
-				CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR,
-				sizeof(cl_double) * 60,
-				physnodeR,
-				&status);
-  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status == CL_SUCCESS);
-
   status = clSetKernelArg(kernel,
                           8,
                           sizeof(cl_mem),
@@ -293,7 +281,7 @@ void DGMacroCellInterface_CL(void *mf, field *f, cl_mem *wn_cl,
   assert(status == CL_SUCCESS);
 
   // Set the kernel arguments
-  initDGMacroCellInterface_CL(f, f->physnode_cl, physnodeR_cl);
+  initDGMacroCellInterface_CL(f, f->physnode_cl, f->physnodeR_cl);
   
   // Loop on the macro faces
   const unsigned int nbfaces = f->macromesh.nbfaces;
@@ -306,7 +294,7 @@ void DGMacroCellInterface_CL(void *mf, field *f, cl_mem *wn_cl,
     update_physnode_cl(f, ieL, f->physnode_cl, f->physnode);
 
     if(ieR >= 0)
-      update_physnode_cl(f, ieR, physnodeR_cl, physnodeR);
+      update_physnode_cl(f, ieR, f->physnodeR_cl, f->physnodeR);
 
     // Set the remaining, loop-dependant kernel arguments
     loop_initDGMacroCellInterface_CL(f, ieL, ieR, locfaL, locfaR);
@@ -326,11 +314,6 @@ void DGMacroCellInterface_CL(void *mf, field *f, cl_mem *wn_cl,
 
     //clFinish(f->cli.commandqueue);
   }
-
-  free(physnodeR);
-  status = clReleaseMemObject(physnodeR_cl);
-  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status == CL_SUCCESS);
 }
 
 // Apply division by the mass matrix OpenCL version
@@ -454,7 +437,7 @@ void set_buf_to_zero_cl(cl_mem *buf, int size, field *f,
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status == CL_SUCCESS);
 
-  clFinish(f->cli.commandqueue);
+  //clFinish(f->cli.commandqueue);
 }
 
 // Apply the Discontinuous Galerkin approximation for computing the
@@ -816,18 +799,24 @@ void RK2_CL(field *f, double tmax)
   // Set up kernels
   init_RK2_CL_stage1(f, f->dt, &wnp1_cl);
   init_RK2_CL_stage2(f, f->dt);
+  clFinish(f->cli.commandqueue);
 
   while(f->tnow < tmax) {
     if (iter % freq == 0)
       printf("t=%f iter=%d/%d dt=%f\n", f->tnow, iter, f->itermax, f->dt);
 
     dtfield_CL(f, &(f->wn_cl), 0, NULL, NULL);
+    clFinish(f->cli.commandqueue);
+
     RK2_CL_stage1(f, f->wsize);
+    clFinish(f->cli.commandqueue);
 
     f->tnow += 0.5 * f->dt;
 
     dtfield_CL(f, &wnp1_cl, 0, NULL, NULL);
+    clFinish(f->cli.commandqueue);
     RK2_CL_stage2(f, f->wsize);
+    clFinish(f->cli.commandqueue);
 
     f->tnow += 0.5 * f->dt;
     iter++;
