@@ -226,6 +226,7 @@ void RK2(field *f, double tmax);
 //! \param[in] tmax physical duration of the simulation
 void RK4(field *f, double tmax);
 
+#ifdef _WITH_OPENCL
 //! \brief OpenCL version of RK2
 //! time integration by a second order Runge-Kutta algorithm
 //! \param[inout] f a field
@@ -234,6 +235,7 @@ void RK2_CL(field *f, double tmax,
 	    cl_uint nwait, cl_event *wait, cl_event *done);
 void RK4_CL(field *f, double tmax, 
 	    cl_uint nwait, cl_event *wait, cl_event *done);
+#endif
 
 //! \brief save the results in the gmsh format
 //! \param[in] typplot index of the field variable to plot.
