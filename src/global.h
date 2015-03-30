@@ -5,11 +5,20 @@
  *
  * \section intro_sec Introduction
  *
+
+SCHNAPS est sous licence CeCILL:
+
+http://www.cecill.info/licences/Licence_CeCILL_V1.1-US.html
+
 Mode d'emploi
 
 téléchargement (nécessite git)
 
-git clone https://github.com/phelluy/SCHNAPS.git
+Accès développeur:
+git clone git+ssh://<gforge_account_name>\@scm.gforge.inria.fr//gitroot/schnaps/schnaps.git
+
+Accès lecture seule:
+git clone https://gforge.inria.fr/git/schnaps/schnaps.git
 
 se placer dans le dossier SCHNAPS
 
