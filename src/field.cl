@@ -22,7 +22,7 @@ double dlag(int deg, int ib, int ipg) {
 #define VARINDEX GenericVarindex
 #endif
 
-int ref_ipg(__constant int* param, double* xref);
+int ref_ipg(__constant int *param, double *xref);
 
 void Ref2Phy(__constant double* physnode,
              double xref[3],
@@ -243,7 +243,7 @@ double wglop(int deg, int i)
 }
 
 void get_dtau(double x, double y, double z,
-	      __constant double* physnode, double dtau[][3]);
+	      __constant double *physnode, double dtau[][3]);
 
 // Get the logical index of the gaussian point given the coordinate
 // p[] of the point in the subcell and the index of the subcell icell.

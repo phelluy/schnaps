@@ -134,7 +134,7 @@ int GenericVarindex(__constant int *param, int elem, int ipg, int iv);
 /* 		      int nx0, int nx1, int nx2,  */
 /* 		      int nc0, int nc1, int nc2,  */
 /* 		      int elem, int *ix,int *ic, int iv); */
-/* #pragma end_opencl */
+#pragma end_opencl
 
 //! field initialization. Computation of the initial at each glop.
 //! \param[inout] f a field

@@ -12,7 +12,7 @@ void CopyfieldtoCPU(field *f) {
   // ensures that all the buffers are mapped
   status = clFinish(f->cli.commandqueue);
 
-  void* chkptr;
+  void *chkptr;
   chkptr = clEnqueueMapBuffer(f->cli.commandqueue,
 			      f->dtwn_cl, // buffer to copy from
 			      CL_TRUE, // block until the buffer is available
