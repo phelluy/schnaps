@@ -78,7 +78,6 @@ testmacrocellinterface
 
 #output files
 *.csv
-*.pdf
 *.log
 *.msh
 testfieldrk2_cl
