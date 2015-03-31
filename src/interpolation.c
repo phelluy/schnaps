@@ -241,8 +241,8 @@ int ref_ipg(int* param,double* xref) {
   assert(ic[2] >=0 && ic[2]<nraf[2]);
 
   // subcell index in the macrocell
-  int nc = ic[0] + nraf[0] * (ic[1] + nraf[1] * ic[2]);
-  int offset = (deg[0] + 1) * (deg[1] + 1) * (deg[2] + 1)*nc;
+  //int nc = ic[0] + nraf[0] * (ic[1] + nraf[1] * ic[2]);
+  //int offset = (deg[0] + 1) * (deg[1] + 1) * (deg[2] + 1)*nc;
 
   // round to the nearest integer
   ix[0] = floor((xref[0] - ic[0] * hh[0]) / hh[0] * deg[0] + 0.5);
@@ -253,7 +253,11 @@ int ref_ipg(int* param,double* xref) {
   //printf("xref %f %f %f ix[0]=%d ix[1]=%d ix[2]=%d\n",
   //	 xref[0],xref[1],xref[2],ix[0],ix[1],ix[2]);
 
-  return ix[0] + (deg[0] + 1) * (ix[1] + (deg[1] + 1) * ix[2]) + offset;
+  int ipg;
+  xyz_to_ipg(nraf,deg,ic,ix,&ipg);
+
+  //return ix[0] + (deg[0] + 1) * (ix[1] + (deg[1] + 1) * ix[2]) + offset;
+  return ipg;
 };
 // ncx ncy ncz ix iy iz
 // Return the reference coordinates xpg[3] and weight wpg of the GLOP ipg
@@ -270,35 +274,24 @@ void ref_pg_vol(int *param, int ipg,
   nraf[1] = param[4];
   nraf[2] = param[5];
 
-  int ix = ipg % (deg[0] + 1);
-  ipg /= (deg[0] + 1);
+  int ix[3],ic[3];
 
-  int iy = ipg % (deg[1] + 1);
-  ipg /= (deg[1] + 1);
 
-  int iz = ipg % (deg[2] + 1);
-  ipg /= (deg[2] + 1);
+  ipg_to_xyz(nraf,deg,ic,ix,&ipg);
 
-  int ncx = ipg % nraf[0];
   double hx = 1 / (double) nraf[0];
-  ipg /= nraf[0];
-
-  int ncy = ipg % nraf[1];
   double hy =1 / (double) nraf[1];
-  ipg /= nraf[1];
-
-  int ncz = ipg;
   double hz = 1 / (double) nraf[2];
 
   //printf("h=%f %f %f\n",hx,hy,hz);
 
-  offset[0] = gauss_lob_offset[deg[0]] + ix;
-  offset[1] = gauss_lob_offset[deg[1]] + iy;
-  offset[2] = gauss_lob_offset[deg[2]] + iz;
+  offset[0] = gauss_lob_offset[deg[0]] + ix[0];
+  offset[1] = gauss_lob_offset[deg[1]] + ix[1];
+  offset[2] = gauss_lob_offset[deg[2]] + ix[2];
 
-  xpg[0] = hx * (ncx + gauss_lob_point[offset[0]]);
-  xpg[1] = hy * (ncy + gauss_lob_point[offset[1]]);
-  xpg[2] = hz * (ncz + gauss_lob_point[offset[2]]);
+  xpg[0] = hx * (ic[0] + gauss_lob_point[offset[0]]);
+  xpg[1] = hy * (ic[1] + gauss_lob_point[offset[1]]);
+  xpg[2] = hz * (ic[2] + gauss_lob_point[offset[2]]);
 
   *wpg = hx * hy * hz *
     gauss_lob_weight[offset[0]]*
@@ -311,12 +304,12 @@ void ref_pg_vol(int *param, int ipg,
     xpg_in[1] = xpg[1];
     xpg_in[2] = xpg[2];
 
-    if (ix == 0) xpg_in[0] += hx * small;
-    if (ix == deg[0]) xpg_in[0] -= hx * small;
-    if (iy == 0) xpg_in[1] += hy * small;
-    if (iy == deg[1]) xpg_in[1] -= hy * small;
-    if (iz == 0) xpg_in[2] += hz * small;
-    if (iz == deg[2]) xpg_in[2] -= hz * small;
+    if (ix[0] == 0) xpg_in[0] += hx * small;
+    if (ix[0] == deg[0]) xpg_in[0] -= hx * small;
+    if (ix[1] == 0) xpg_in[1] += hy * small;
+    if (ix[1] == deg[1]) xpg_in[1] -= hy * small;
+    if (ix[2] == 0) xpg_in[2] += hz * small;
+    if (ix[2] == deg[2]) xpg_in[2] -= hz * small;
 
     /* printf("xpg %f %f %f\n",xpg[0],xpg[1],xpg[2]); */
     /*  printf("xpg_in %f %f %f %d %d %d\n",xpg_in[0],xpg_in[1],xpg_in[2], */
@@ -464,25 +457,28 @@ void psi_ref(int *param, int ib, double *xref, double *psi, double *dpsi)
   offset[1] = gauss_lob_offset[deg[1]];
   offset[2] = gauss_lob_offset[deg[2]];
 
-  // basis functions indices
-  int ibx = ib % (deg[0] + 1);
-  ib /= (deg[0] + 1);
+  int ix[3],ic[3];
 
-  int iby = ib % (deg[1] + 1);
-  ib /= (deg[1] + 1);
+  ipg_to_xyz(nraf,deg,ic,ix,&ib); 
 
-  int ibz = ib % (deg[2] + 1);
-  ib /= (deg[2] + 1);
+  /* int ibx = ib % (deg[0] + 1); */
+  /* ib /= (deg[0] + 1); */
 
-  int ncbx= ib % nraf[0];
+  /* int iby = ib % (deg[1] + 1); */
+  /* ib /= (deg[1] + 1); */
+
+  /* int ibz = ib % (deg[2] + 1); */
+  /* ib /= (deg[2] + 1); */
+
+  /* int ncbx= ib % nraf[0]; */
   double hx=1 / (double) nraf[0];
-  ib /= nraf[0];
+  //ib /= nraf[0];
 
-  int ncby= ib % nraf[1];
+  //int ncby= ib % nraf[1];
   double hy=1 / (double) nraf[1];
-  ib /= nraf[1];
+  //ib /= nraf[1];
 
-  int ncbz= ib;
+  //int ncbz= ib;
   double hz=1 / (double) nraf[2];
 
   double psibx = 0;
@@ -490,11 +486,11 @@ void psi_ref(int *param, int ib, double *xref, double *psi, double *dpsi)
   double psibz = 0;
 
   lagrange_polynomial(&psibx, gauss_lob_point + offset[0],
-                      deg[0], ibx, xref[0]/hx-ncbx);
+                      deg[0], ix[0], xref[0]/hx-ic[0]);
   lagrange_polynomial(&psiby, gauss_lob_point + offset[1],
-                      deg[1], iby, xref[1]/hy-ncby);
+                      deg[1], ix[1], xref[1]/hy-ic[1]);
   lagrange_polynomial(&psibz, gauss_lob_point + offset[2],
-                      deg[2], ibz, xref[2]/hz-ncbz);
+                      deg[2], ix[2], xref[2]/hz-ic[2]);
 
   assert(nraf[0] == 1 && nraf[1] == 1 && nraf[2] == 1);
 
@@ -503,17 +499,19 @@ void psi_ref(int *param, int ib, double *xref, double *psi, double *dpsi)
   if (dpsi != NULL) {
 
     dlagrange_polynomial(&dpsibx, gauss_lob_point + offset[0],
-                         deg[0], ibx, xref[0]);
+                         deg[0], ix[0], xref[0]);
     dlagrange_polynomial(&dpsiby, gauss_lob_point + offset[1],
-                         deg[1], iby, xref[1]);
+                         deg[1], ix[1], xref[1]);
     dlagrange_polynomial(&dpsibz, gauss_lob_point + offset[2],
-                         deg[2], ibz, xref[2]);
+                         deg[2], ix[2], xref[2]);
 
     dpsi[0] = dpsibx * psiby * psibz;
     dpsi[1] = psibx * dpsiby * psibz;
     dpsi[2] = psibx * psiby * dpsibz;
   }
 };
+
+// ibx iby ibz ncbx ncby ncbz
 
 // Return the value psi and the gradient dpsi[3] of the basis function
 // ib at point xref[3] given the subcell indices is[3].
@@ -539,39 +537,28 @@ void psi_ref_subcell(int *param, int *is, int ib,
   offset[1] = gauss_lob_offset[deg[1]];
   offset[2] = gauss_lob_offset[deg[2]];
 
-  // basis functions indices
-  int ibx = ib % (deg[0] + 1);
-  ib /= (deg[0] + 1);
 
-  int iby = ib % (deg[1] + 1);
-  ib /= (deg[1] + 1);
+  int ix[3],ic[3];
 
-  int ibz = ib % (deg[2] + 1);
-  ib /= (deg[2] + 1);
+  ipg_to_xyz(nraf,deg,ic,ix,&ib);
 
-  int ncbx= ib % nraf[0];
   double hx=1 / (double) nraf[0];
-  ib /= nraf[0];
-
-  int ncby= ib % nraf[1];
   double hy=1 / (double) nraf[1];
-  ib /= nraf[1];
-
-  int ncbz= ib;
   double hz=1 / (double) nraf[2];
 
-  int is_in_subcell= (ncbx == is[0]) && (ncby == is[1]) && (ncbz == is[2]);
+  int is_in_subcell= (ic[0] == is[0]) && (ic[1] == is[1])
+    && (ic[2] == is[2]);
 
   double psibx = 0;
   double psiby = 0;
   double psibz = 0;
 
   lagrange_polynomial(&psibx, gauss_lob_point + offset[0],
-                      deg[0], ibx, xref[0]/hx-ncbx);
+                      deg[0], ix[0], xref[0]/hx-ic[0]);
   lagrange_polynomial(&psiby, gauss_lob_point + offset[1],
-                      deg[1], iby, xref[1]/hy-ncby);
+                      deg[1], ix[1], xref[1]/hy-ic[1]);
   lagrange_polynomial(&psibz, gauss_lob_point + offset[2],
-                      deg[2], ibz, xref[2]/hz-ncbz);
+                      deg[2], ix[2], xref[2]/hz-ic[2]);
 
   // might be useful for the future subcell case
   /* psibx *= (xref[0] <= (ncbx + 1) * hx)&&(xref[0] > ncbx * hx); */
@@ -583,11 +570,11 @@ void psi_ref_subcell(int *param, int *is, int ib,
   if (dpsi != NULL) {
 
     dlagrange_polynomial(&dpsibx, gauss_lob_point + offset[0],
-                         deg[0], ibx, xref[0]);
+                         deg[0], ix[0], xref[0]);
     dlagrange_polynomial(&dpsiby, gauss_lob_point + offset[1],
-                         deg[1], iby, xref[1]);
+                         deg[1], ix[1], xref[1]);
     dlagrange_polynomial(&dpsibz, gauss_lob_point + offset[2],
-                         deg[2], ibz, xref[2]);
+                         deg[2], ix[2], xref[2]);
 
     dpsi[0] = dpsibx *  psiby *  psibz * is_in_subcell;
     dpsi[1] =  psibx * dpsiby *  psibz * is_in_subcell;
@@ -609,45 +596,53 @@ void grad_psi_pg(int* param,int ib,int ipg,double* dpsi) {
   nraf[1] = param[4];
   nraf[2] = param[5];
 
-  // indices of Gauss-Lobatto points in each subcell
-  int ipgx = ipg % (deg[0] + 1);
-  ipg /= (deg[0] + 1);
+  // glop 3d indices
+  int ix[3],ic[3];
+  ipg_to_xyz(nraf,deg,ic,ix,&ipg);
 
-  int ipgy = ipg % (deg[1] + 1);
-  ipg /= (deg[1] + 1);
+  // basis function 3d indices
+  int ibx[3],ibc[3];
+  ipg_to_xyz(nraf,deg,ibc,ibx,&ib);
 
-  int ipgz = ipg % (deg[2] + 1);
-  ipg /= (deg[2] + 1);
+  // // indices of Gauss-Lobatto points in each subcell
+  // int ipgx = ipg % (deg[0] + 1);
+  // ipg /= (deg[0] + 1);
 
-  // indices of each subcell and space step in each direction
-  int ncpgx= ipg % nraf[0];
+  // int ipgy = ipg % (deg[1] + 1);
+  // ipg /= (deg[1] + 1);
+
+  // int ipgz = ipg % (deg[2] + 1);
+  // ipg /= (deg[2] + 1);
+
+  // // indices of each subcell and space step in each direction
+  // int ncpgx= ipg % nraf[0];
   double hx=1 / (double) nraf[0];
-  ipg /= nraf[0];
+  // ipg /= nraf[0];
 
-  int ncpgy= ipg % nraf[1];
+  // int ncpgy= ipg % nraf[1];
   double hy=1 / (double) nraf[1];
-  ipg /= nraf[1];
+  // ipg /= nraf[1];
 
-  int ncpgz= ipg;
+  // int ncpgz= ipg;
   double hz=1 / (double) nraf[2];
 
   // basis functions indices
-  int ibx = ib % (deg[0] + 1);
-  ib /= (deg[0] + 1);
+  // int ibx = ib % (deg[0] + 1);
+  // ib /= (deg[0] + 1);
 
-  int iby = ib % (deg[1] + 1);
-  ib /= (deg[1] + 1);
+  // int iby = ib % (deg[1] + 1);
+  // ib /= (deg[1] + 1);
 
-  int ibz = ib % (deg[2] + 1);
-  ib /= (deg[2] + 1);
+  // int ibz = ib % (deg[2] + 1);
+  // ib /= (deg[2] + 1);
 
-  int ncbx= ib % nraf[0];
-  ib /= nraf[0];
+  // int ncbx= ib % nraf[0];
+  // ib /= nraf[0];
 
-  int ncby= ib % nraf[1];
-  ib /= nraf[1];
+  // int ncby= ib % nraf[1];
+  // ib /= nraf[1];
 
-  int ncbz= ib;
+  // int ncbz= ib;
 
   // Number of Gauss-Lobatto points in each direction
   offset[0] = gauss_lob_dpsi_offset[deg[0]];
@@ -657,14 +652,14 @@ void grad_psi_pg(int* param,int ib,int ipg,double* dpsi) {
   // Computation of the value of the interpollation polynomial gradient
   double psibx,psiby,psibz,dpsibx,dpsiby,dpsibz;
 
-  psibx = (ipgx == ibx) * (ncpgx == ncbx);
-  dpsibx = (ncpgx == ncbx) * gauss_lob_dpsi[offset[0]+ibx*(deg[0]+1)+ipgx] / hx;
+  psibx = (ix[0] == ibx[0]) * (ic[0] == ibc[0]);
+  dpsibx = (ix[0] == ibx[0]) * gauss_lob_dpsi[offset[0]+ibx[0]*(deg[0]+1)+ix[0]] / hx;
 
-  psiby = (ipgy == iby) * (ncpgy == ncby);
-  dpsiby = (ncpgy == ncby) * gauss_lob_dpsi[offset[1]+iby*(deg[1]+1)+ipgy] / hy;
+  psiby = (ix[1] == ibx[1]) * (ic[1] == ibc[1]);
+  dpsiby = (ix[1] == ibx[1]) * gauss_lob_dpsi[offset[1]+ibx[1]*(deg[1]+1)+ix[1]] / hy;
 
-  psibz = (ipgz == ibz) * (ncpgz == ncbz);
-  dpsibz = (ncpgz == ncbz) * gauss_lob_dpsi[offset[2]+ibz*(deg[2]+1)+ipgz] / hz;
+  psibz = (ix[2] == ibx[2]) * (ic[2] == ibc[2]);
+  dpsibz = (ix[2] == ibx[2]) * gauss_lob_dpsi[offset[2]+ibx[2]*(deg[2]+1)+ix[2]] / hz;
 
   dpsi[0] = dpsibx*psiby*psibz;
   dpsi[1] = psibx*dpsiby*psibz;
