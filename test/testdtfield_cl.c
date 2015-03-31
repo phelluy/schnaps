@@ -54,11 +54,11 @@ int TestDtfield_CL(void){
   f.varindex = GenericVarindex;
 
   f.interp.interp_param[0] = f.model.m;
-  f.interp.interp_param[1] = 4; // x direction degree
-  f.interp.interp_param[2] = 4; // y direction degree
+  f.interp.interp_param[1] = 2; // x direction degree
+  f.interp.interp_param[2] = 2; // y direction degree
   f.interp.interp_param[3] = 0; // z direction degree
-  f.interp.interp_param[4] = 32; // x direction refinement
-  f.interp.interp_param[5] = 32; // y direction refinement
+  f.interp.interp_param[4] = 4; // x direction refinement
+  f.interp.interp_param[5] = 4; // y direction refinement
   f.interp.interp_param[6] = 1; // z direction refinement
 
 #else
