@@ -296,6 +296,17 @@ void InitCLInfo(CLInfo *cli, int platform_id, int device_id)
   assert(status == CL_SUCCESS);
   printf("\tConst mem: %f KB\n",cli->maxconstmem/1024.);
 
+  // get global cache size
+  cl_ulong global_mem_cache_size;
+  status = clGetDeviceInfo(cli->device[device_id],
+			   CL_DEVICE_GLOBAL_MEM_CACHE_SIZE,
+			   sizeof(cl_ulong),
+			   &global_mem_cache_size,
+			   NULL);
+  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status == CL_SUCCESS);
+  printf("\tGlobal memory cache size: %d bytes\n", (int)global_mem_cache_size);
+
   // get maxconst args
   int maxcstargs;
   status = clGetDeviceInfo(cli->device[device_id],
