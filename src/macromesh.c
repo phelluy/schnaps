@@ -172,6 +172,18 @@ void PrintMacroMesh(MacroMesh *m) {
              );
     }
   }
+
+  // list of nodes neighbours
+  for(int ino=0;ino<m->nbnodes;ino++){
+    printf("node %d touches elems ",ino+start);
+    int ii=0;
+    while(m->node2elem[ii+ m->max_node2elem * ino] != -1){
+      printf("%d ",m->node2elem[ii+ m->max_node2elem * ino]+start);
+      ii++;
+      assert(ii < m->max_node2elem);
+    }
+    printf("\n");
+  }
 }
 
 // Fill array of faces of subcells
@@ -392,6 +404,54 @@ void suppress_zfaces(MacroMesh *m)
   free(oldf);
 }
 
+// Build the node 2 elems connectivity
+void build_node2elem(MacroMesh* m)
+{
+  // first pass: count the maximal number of elems
+  // attached to a given node
+  {
+    int count[m->nbnodes];
+    for(int ino=0;ino<m->nbnodes;ino++){
+      count[ino]=0;
+    }
+    for(int ie = 0; ie < m->nbelems; ie++) {
+      for(int iloc=0;iloc<20;iloc++){
+	count[m->elem2node[iloc+20*ie]]++;
+      }
+    }  
+    m-> max_node2elem=0;
+    for(int ino=0;ino<m->nbnodes;ino++){
+      m-> max_node2elem= m->max_node2elem > count[ino] ?
+	m->max_node2elem : count[ino];
+    }
+  } // end of block: count is deallocated...
+
+  // add a column of -1's for marking the ends of neighbours list
+  (m->max_node2elem)++;
+  printf("max number of elems touching a node: %d\n",m->max_node2elem - 1);
+
+  m->node2elem=malloc((m->max_node2elem+1) * m->nbnodes * sizeof(int));
+  assert(m->node2elem);
+
+  // fill the array with -1's for marking the end of neighbours
+  for(int i=0;i < m->max_node2elem * m->nbnodes;i++) m->node2elem[i]=-1;
+  
+  // second pass: fill the neighbours list
+  for(int ie = 0; ie < m->nbelems; ie++) {
+    for(int iloc=0;iloc<20;iloc++){
+      int ino=m->elem2node[iloc+20*ie];
+      int ii=0;
+      while(m->node2elem[ii+ m->max_node2elem * ino] != -1) ii++;
+      assert(ii < m->max_node2elem);
+      if (ii < m->max_node2elem - 1) 
+	m->node2elem[ii+ m->max_node2elem * ino]=ie;
+    }
+  }  
+    
+
+
+}
+
 // Build other connectivity arrays
 void BuildConnectivity(MacroMesh* m) 
 {
@@ -410,6 +470,8 @@ void BuildConnectivity(MacroMesh* m)
   build_elem2elem(m, face);
   free(face);
 
+  build_node2elem(m);
+
   // check
   /* for(int ie = 0;ie<m->nbelems;ie++) { */
   /*   for(int ifa = 0;ifa<6;ifa++) { */
@@ -420,6 +482,7 @@ void BuildConnectivity(MacroMesh* m)
 
   if(m->is2d) suppress_zfaces(m);
 }
+
 
 // Compare two integers
 int CompareInt(const void* a, const void* b) {

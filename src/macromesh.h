@@ -15,6 +15,13 @@ typedef struct MacroMesh{
   int *elem2node; //!< elems to nodes connectivity (20 nodes/elem)
   int *elem2elem; //!< elems to elems connectivity (along 6 faces)
   int *face2elem; //!< faces to elems connectivity (Left and Right)
+
+  //! max numbers of elems that touch a node
+  int max_node2elem;
+  //! nodes to elems connectivity (size = max_node2elem * nbelems)
+  //! the list for a given node ends with -1
+  int* node2elem;
+
   double *node; //!< nodes coordinates array
   bool is2d; //!< 2d computation detection
 
