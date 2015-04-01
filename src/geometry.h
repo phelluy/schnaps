@@ -73,11 +73,18 @@ void GeomRef2Phy(Geom* g);
 
 
 //! \brief inverse mapping tau from the physical point to the reference point.
-//!
+//! solution by the Newton's method.
 //! \param[in] physnode : coordinates of physical nodes
 //! \param[in] xphy : coordinates of the mapped point in the physical frame
 //! \param[out] xref: coordinates of the mapped point in the reference frame
 void Phy2Ref(double physnode[20][3],double xphy[3],double xref[3]);
+
+//! \brief inverse mapping tau from the physical point to the reference point.
+//! more robust version of the function (Newton's method + homotopy)
+//! \param[in] physnode : coordinates of physical nodes
+//! \param[in] xphy : coordinates of the mapped point in the physical frame
+//! \param[out] xref: coordinates of the mapped point in the reference frame
+void RobustPhy2Ref(double physnode[20][3],double xphy[3],double xref[3]);
 
 //! \brief inverse mapping tau from the physical point to the reference point.
 //! Function with encapsulation

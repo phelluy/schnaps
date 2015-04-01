@@ -10,6 +10,30 @@ const int h20_refnormal[6][3]={{0,-1,0},
 			       {0,0,1},
 			       {0,0,-1} };
 
+// 20 nodes of the reference element
+const double h20_ref_node[20][3]={
+  0  ,0  ,0  ,
+  1  ,0  ,0  ,
+  1  ,1  ,0  ,
+  0  ,1  ,0  ,
+  0  ,0  ,1  ,
+  1  ,0  ,1  ,
+  1  ,1  ,1  ,
+  0  ,1  ,1  ,
+  0.5,0  ,0  ,
+  0  ,0.5,0  ,
+  0  ,0  ,0.5,
+  1  ,0.5,0  ,
+  1  ,0  ,0.5,
+  0.5,1  ,0  ,
+  1  ,1  ,0.5,
+  0  ,1  ,0.5,
+  0.5,0  ,1  ,
+  0  ,0.5,1  ,
+  1  ,0.5,1  ,
+  0.5,1  ,1
+};
+
 // Return the dot-product of the doubles a[3] and b[3]
 double dot_product(double a[3], double b[3])
 {
@@ -170,4 +194,68 @@ void Phy2Ref(double physnode[20][3], double xphy[3], double xref[3])
   assert(xref[0] < 1 + eps && xref[0] > -eps);
   assert(xref[1] < 1 + eps && xref[1] > -eps);
   assert(xref[2] < 1 + eps && xref[2] > -eps);
+}
+
+void RobustPhy2Ref(double physnode[20][3], double xphy[3], double xref[3]) 
+{
+#define _ITERNEWTON 10
+#define _NTHETA 10
+
+  double dtau[3][3], codtau[3][3];
+  double dxref[3], dxphy[3];
+  int ifa =- 1;
+  xref[0] = 0.5;
+  xref[1] = 0.5;
+  xref[2] = 0.5;
+
+  // compute a linear transformation
+  // from nodes 0,1,3,4
+  double M[3][3]={
+    physnode[1][0]-physnode[0][0],physnode[3][0]-physnode[0][0],physnode[4][0]-physnode[0][0],
+    physnode[1][1]-physnode[0][1],physnode[3][1]-physnode[0][1],physnode[4][1]-physnode[0][1],
+    physnode[1][2]-physnode[0][2],physnode[3][2]-physnode[0][2],physnode[4][2]-physnode[0][2],
+  };
+  
+  /* double v[3]={xphy[0]-physnode[0][0], */
+  /*              xphy[1]-physnode[0][1], */
+  /*              xphy[2]-physnode[0][2]}; */
+
+  // initial affine hexaedron 
+  double physnode0[20][3];
+  for(int ino=0;ino<20;ino++){
+    for(int ii=0;ii<3;ii++){
+      physnode0[ino][ii]=physnode[0][ii];
+      for (int jj=0;jj<3;jj++){
+	physnode0[ino][ii]+=M[ii][jj]*physnode[ino][jj];
+      }
+    }
+  }
+
+  // intermediate curved hexaedron
+  double physnode1[20][3];
+  double theta=1;
+  for(int ino=0;ino<20;ino++){
+    for(int ii=0;ii<3;ii++){
+      physnode1[ino][ii]=theta*physnode[ino][ii]+(1-theta)*physnode0[ino][ii];
+    }
+  }
+  
+
+  for(int iter = 0; iter < _ITERNEWTON; ++iter) {
+    Ref2Phy(physnode1, xref, 0,ifa, dxphy, dtau, codtau, 0,0);
+    dxphy[0] -= (xphy)[0];
+    dxphy[1] -= (xphy)[1];
+    dxphy[2] -= (xphy)[2];
+    double det = dot_product(dtau[0], codtau[0]);
+    assert(det > 0);
+
+    for(int ii = 0; ii < 3; ii ++ ) {
+      dxref[ii] = 0;
+      for(int jj = 0; jj < 3; jj ++ ) {
+        dxref[ii] += codtau[jj][ii] * dxphy[jj];
+      }
+      xref[ii] -= dxref[ii] / det;
+    }
+  }
+
 }

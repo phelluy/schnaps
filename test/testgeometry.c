@@ -40,6 +40,7 @@ int TestGeometry(void){
 
   printf("xphy= %f %f %f \n", xphy[0], xphy[1], xphy[2]);
 
+  //RobustPhy2Ref(physnode, xphy, xref);
   Phy2Ref(physnode, xphy, xref);
 
   printf("xref= %f %f %f \n", xref[0], xref[1], xref[2]);
