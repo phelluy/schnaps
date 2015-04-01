@@ -252,6 +252,14 @@ void macromesh_bounds(MacroMesh *m, double *bounds)
 
   bounds[4] = zmin;
   bounds[5] = zmax;
+
+  m->xmin[0]=xmin;
+  m->xmax[0]=xmax;
+  m->xmin[1]=ymin;
+  m->xmax[1]=ymax;
+  m->xmin[2]=zmin;
+  m->xmax[2]=zmax;
+
 }
 
 // Allocate and fill the elem2elem array, which provides macrocell

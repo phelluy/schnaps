@@ -17,6 +17,9 @@ typedef struct MacroMesh{
   int *face2elem; //!< faces to elems connectivity (Left and Right)
   double *node; //!< nodes coordinates array
   bool is2d; //!< 2d computation detection
+
+  //! a box containing the mesh
+  double xmin[3],xmax[3];
 } MacroMesh;
 
 //! \brief a simple struct for modelling a four
