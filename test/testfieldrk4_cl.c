@@ -93,14 +93,15 @@ int TestfieldRK4_CL(void){
   clFinish(f.cli.commandqueue); 
 
   CopyfieldtoCPU(&f);
-  show_cl_timing(&f);
     
   Plotfield(0, false, &f, NULL, "dgvisu.msh");
   Plotfield(0, true , &f, "error", "dgerror.msh");
 
   double dd = L2error(&f);
 
-  printf("erreur L2: %f\n", dd);
+  printf("L2 error: %f\n", dd);
+
+  show_cl_timing(&f);
 
   double tolerance = 0.002;
 

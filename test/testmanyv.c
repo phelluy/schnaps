@@ -189,6 +189,8 @@ int main(int argc, char *argv[]) {
     RK2_CL(&f, tmax, 0, NULL, NULL);
     //clock_gettime(CLOCK_MONOTONIC, &tend);
 
+    show_cl_timing(&f);
+
   } else { 
     printf("Using C:\n");
     //clock_gettime(CLOCK_MONOTONIC, &tstart);

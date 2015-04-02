@@ -99,6 +99,8 @@ int TestfieldRK2_CL(void){
 
   printf("L2 error: %f\n", dd);
 
+  show_cl_timing(&f);
+
   double tolerance = 0.002;
 
   test = dd < tolerance;
