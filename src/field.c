@@ -295,7 +295,6 @@ void init_field_cl(field *f)
   f->mass_time = 0;
   f->vol_time = 0;
   f->minter_time = 0;
-  f->updatephysnode_time = 0;
   f->rk_time = 0;
 }
 #endif

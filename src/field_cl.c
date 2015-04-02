@@ -258,10 +258,11 @@ void init_DGVolume_CL(field *f, cl_mem *wn_cl)
 // Update the cl buffer with physnode data depending in the
 // macroelement with index ie
 void update_physnode_cl(field *f, int ie, cl_mem physnode_cl, double *physnode,
+			cl_ulong *time,
 			cl_uint nwait, cl_event *wait, cl_event *done)
 {
   cl_int status;
-
+  
   void *chkptr = clEnqueueMapBuffer(f->cli.commandqueue,
 				    physnode_cl,
 				    CL_TRUE,
@@ -276,7 +277,7 @@ void update_physnode_cl(field *f, int ie, cl_mem physnode_cl, double *physnode,
   assert(status >= CL_SUCCESS);
   assert(chkptr == physnode);
 
-  f->updatephysnode_time += clv_duration(f->clv_mapdone);
+  *time += clv_duration(f->clv_mapdone);
 
   int ie20 = 20 * ie;
   for(int inoloc = 0; inoloc < 20; ++inoloc) {
@@ -295,7 +296,7 @@ void update_physnode_cl(field *f, int ie, cl_mem physnode_cl, double *physnode,
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 
-  f->updatephysnode_time += clv_duration(f->clv_mapdone);
+  *time += clv_duration(f->clv_mapdone);
 }
 
 void DGMacroCellInterface_CL(void *mf, field *f, cl_mem *wn_cl,
@@ -333,14 +334,14 @@ void DGMacroCellInterface_CL(void *mf, field *f, cl_mem *wn_cl,
     int ieR =    f->macromesh.face2elem[4 * ifa + 2];
     int locfaR = f->macromesh.face2elem[4 * ifa + 3];
 
-    update_physnode_cl(f, ieL, f->physnode_cl, f->physnode,
+    update_physnode_cl(f, ieL, f->physnode_cl, f->physnode, &(f->minter_time),
 		       0, 
 		       NULL,
 		       &(f->clv_interupdate));
-    f->minter_time += clv_duration(f->clv_interupdate);
 
     if(ieR >= 0) {
-      update_physnode_cl(f, ieR, f->physnodeR_cl, f->physnodeR,
+      update_physnode_cl(f, ieR, f->physnodeR_cl, f->physnodeR, 
+			 &(f->minter_time),
 			 1, 
 			 &(f->clv_interupdate),
 			 &(f->clv_interupdateR));
@@ -401,7 +402,7 @@ void DGMass_CL(void *mc, field *f,
   const int end = mcell->last_p1;
   for(int ie = start; ie < end; ie++) {
     
-    update_physnode_cl(f, ie, f->physnode_cl, f->physnode,
+    update_physnode_cl(f, ie, f->physnode_cl, f->physnode, &(f->mass_time),
 		       1,
 		       &(f->clv_masskernel), 
 		       &(f->clv_massupdate));
@@ -459,7 +460,7 @@ void DGVolume_CL(void *mc, field *f, cl_mem *wn_cl,
   
   // Loop on the elements
   for(int ie = start; ie < end; ie++) {
-    update_physnode_cl(f, ie, f->physnode_cl, f->physnode,
+    update_physnode_cl(f, ie, f->physnode_cl, f->physnode, &(f->vol_time),
 		       1,
 		       &(f->clv_volkernel),
 		       &(f->clv_volupdate));
@@ -951,7 +952,7 @@ void RK2_CL(field *f, double tmax,
 void show_cl_timing(field *f)
 {
   cl_ulong total = f->zbuf_time + f->minter_time + f->vol_time 
-    + f->mass_time + f->updatephysnode_time + f->rk_time;
+    + f->mass_time + f->rk_time;
   double N = 1.0 / total;
 
   cl_ulong ns;
@@ -970,10 +971,6 @@ void show_cl_timing(field *f)
 
   ns = f->mass_time;
   printf("DGMass_CL time:               %f%% \t%luns \t%fs\n", 
-	 ns*N, ns, 1e-9 * ns);
-
-  ns = f->updatephysnode_time;
-  printf("update_physnode_cl time:      %f%% \t%luns \t%fs\n", 
 	 ns*N, ns, 1e-9 * ns);
 
   ns = f->rk_time;
