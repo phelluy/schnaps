@@ -289,6 +289,14 @@ void init_field_cl(field *f)
   f->clv_volume = clCreateUserEvent(f->cli.context, &status);
   f->clv_volupdate = clCreateUserEvent(f->cli.context, &status);
   f->clv_volkernel = clCreateUserEvent(f->cli.context, &status);
+
+  // Set timers to zero
+  f->zbuf_time = 0;
+  f->mass_time = 0;
+  f->vol_time = 0;
+  f->minter_time = 0;
+  f->updatephysnode_time = 0;
+  f->rk_time = 0;
 }
 #endif
 

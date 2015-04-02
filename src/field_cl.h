@@ -22,7 +22,7 @@ void DGMacroCellInterface_CL(void *mface, field *f, cl_mem *wn_cl,
 			     cl_uint nwait, cl_event *wait, cl_event *done);
 void DGMass_CL(void *mcell, field *f,
 	       cl_uint nwait, cl_event *wait, cl_event *done);
-
+void show_cl_timing(field *f);
 #endif // _WITH_OPENCL
 
 #endif // _FIELD_CL_H

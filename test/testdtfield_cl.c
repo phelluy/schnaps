@@ -88,19 +88,8 @@ int TestDtfield_CL(void){
   clWaitForEvents(1, &clv_dtfield);
   CopyfieldtoCPU(&f);
 
-  cl_ulong time_start, time_end;
-  clGetEventProfilingInfo(clv_dtfield,
-			  CL_PROFILING_COMMAND_START,
-			  sizeof(time_start),
-			  &time_start, NULL);
-  clGetEventProfilingInfo(clv_dtfield,
-			  CL_PROFILING_COMMAND_END,
-			  sizeof(time_end), 
-			  &time_end, NULL);
-
-  double time = 1e-6 * (time_end - time_start);
-  printf("OpenCL execution time: %f\n", time);
   // Displayfield(&f);
+  show_cl_timing(&f);
 
   double *saveptr = f.dtwn;
   f.dtwn = calloc(f.wsize, sizeof(double));

@@ -104,11 +104,6 @@ typedef struct field {
   // event for set_buf_to_zero
   cl_event clv_zbuf; 
   
-
-  // FIXME: delete
-  cl_event clv_physnode;
-  cl_event clv_physnodeR;
-
   // Subcell mass events
   cl_event clv_mass; 
   cl_event clv_masskernel;
@@ -125,6 +120,9 @@ typedef struct field {
   cl_event clv_interupdate;
   cl_event clv_interupdateR;
 
+  // OpenCL timing
+  cl_ulong zbuf_time, mass_time, vol_time, minter_time, updatephysnode_time;
+  cl_ulong rk_time;
 #endif
 
 } field;

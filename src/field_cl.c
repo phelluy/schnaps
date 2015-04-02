@@ -44,6 +44,31 @@ void CopyfieldtoCPU(field *f) {
   assert(status == CL_SUCCESS);
 }
 
+cl_ulong clv_startime(cl_event clv) 
+{
+  cl_ulong time;
+  clGetEventProfilingInfo(clv,
+			  CL_PROFILING_COMMAND_START,
+			  sizeof(time),
+			  &time, NULL);
+  return time;
+}
+
+cl_ulong clv_endtime(cl_event clv) 
+{
+  cl_ulong time;
+  clGetEventProfilingInfo(clv,
+			  CL_PROFILING_COMMAND_END,
+			  sizeof(time),
+			  &time, NULL);
+  return time;
+}
+
+cl_ulong clv_duration(cl_event clv_first, cl_event clv_last)
+{
+  return clv_endtime(clv_last) - clv_startime(clv_first);
+}
+
 // Set OpenCL kernel arguments for DGMacroCellInterface
 void initDGMacroCellInterface_CL(field *f, 
 				 cl_mem physnodeL_cl, cl_mem physnodeR_cl)
@@ -248,11 +273,16 @@ void update_physnode_cl(field *f, int ie, cl_mem physnode_cl, double *physnode,
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status == CL_SUCCESS);
   assert(chkptr == physnode);
+  f->updatephysnode_time += clv_duration(f->clv_mapdone, f->clv_mapdone);
 
+  int ie20 = 20 * ie;
   for(int inoloc = 0; inoloc < 20; ++inoloc) {
-    int ino = f->macromesh.elem2node[20 * ie + inoloc];
-    for(unsigned int i = 0; i < 3; ++i)
-      physnode[3 * inoloc + i] = f->macromesh.node[3 * ino + i];
+    int ino = 3 * f->macromesh.elem2node[ie20 + inoloc];
+    double *iphysnode = physnode + 3 * inoloc;
+    double *nodeino = f->macromesh.node + ino;
+    iphysnode[0] = nodeino[0];
+    iphysnode[1] = nodeino[1];
+    iphysnode[2] = nodeino[2];
   }
 
   status = clEnqueueUnmapMemObject(f->cli.commandqueue,
@@ -261,6 +291,7 @@ void update_physnode_cl(field *f, int ie, cl_mem physnode_cl, double *physnode,
 				   1, &(f->clv_mapdone), done);
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status == CL_SUCCESS);
+  f->updatephysnode_time += clv_duration(f->clv_mapdone, f->clv_mapdone);
 }
 
 void DGMacroCellInterface_CL(void *mf, field *f, cl_mem *wn_cl,
@@ -269,6 +300,9 @@ void DGMacroCellInterface_CL(void *mf, field *f, cl_mem *wn_cl,
   //printf("DGMacroCellInterface_CL\n");
 
   clWaitForEvents(nwait, wait);
+
+  /* if(done != NULL) { */
+  /*   status = clSetUserEventStatus(*done, CL_); */
   
   MacroFace *mface = (MacroFace*) mf;
   int *param = f->interp_param;
@@ -283,11 +317,9 @@ void DGMacroCellInterface_CL(void *mf, field *f, cl_mem *wn_cl,
   assert(status == CL_SUCCESS);
 
   // Loop on the macro faces
-  //const unsigned int nbfaces = f->macromesh.nbfaces;
-  const unsigned int nbfaces =  mface->last_p1 - mface->first; 
-   int first = mface->first;
-  int last = mface->last_p1 - 1;
-  for(int ifa = mface->first; ifa < mface->last_p1; ++ifa) {
+  int start = mface->first;
+  int end = mface->last_p1;
+  for(int ifa = start; ifa < end; ++ifa) {
     //printf("ifa: %d\n", ifa);
     
     initDGMacroCellInterface_CL(f, f->physnode_cl, f->physnodeR_cl);
@@ -301,12 +333,14 @@ void DGMacroCellInterface_CL(void *mf, field *f, cl_mem *wn_cl,
 		       0, 
 		       NULL,
 		       &(f->clv_interupdate));
+    f->minter_time += clv_duration(f->clv_interupdate, f->clv_interupdate);
 
     if(ieR >= 0) {
       update_physnode_cl(f, ieR, f->physnodeR_cl, f->physnodeR,
 			 1, 
 			 &(f->clv_interupdate),
 			 &(f->clv_interupdateR));
+      f->minter_time += clv_duration(f->clv_interupdateR, f->clv_interupdateR);
     } else {
       clWaitForEvents(1, &(f->clv_interupdate));
       status = clSetUserEventStatus(f->clv_interupdateR, CL_COMPLETE);
@@ -327,12 +361,16 @@ void DGMacroCellInterface_CL(void *mf, field *f, cl_mem *wn_cl,
 				    &(f->clv_interkernel)); // *event
     if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
     assert(status == CL_SUCCESS);
+    f->minter_time += clv_duration(f->clv_interkernel, f->clv_interkernel);
   }
   
   clWaitForEvents(1, &(f->clv_interkernel));
 
-  if(done != NULL)
+  if(done != NULL) {
     status = clSetUserEventStatus(*done, CL_COMPLETE);
+    f->zbuf_time += clv_duration(*done, *done);
+  }
+
   //printf("... DGMacroCellInterface_CL done.\n");
 }
 
@@ -388,6 +426,7 @@ void DGMass_CL(void *mc, field *f,
 				    &(f->clv_masskernel)); // cl_event *event
     if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
     assert(status == CL_SUCCESS);
+    f->mass_time += clv_duration(f->clv_masskernel, f->clv_masskernel);
   }
   
   clWaitForEvents(1, &(f->clv_masskernel));
@@ -407,8 +446,7 @@ void DGVolume_CL(void *mc, field *f, cl_mem *wn_cl,
   cl_int status;
 
   init_DGVolume_CL(f, wn_cl);
-  
-  
+    
   const int start = mcell->first;
   const int end = mcell->last_p1;
   
@@ -447,6 +485,7 @@ void DGVolume_CL(void *mc, field *f, cl_mem *wn_cl,
 				    &(f->clv_volkernel));
     if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
     assert(status == CL_SUCCESS);
+    f->vol_time += clv_duration(f->clv_volkernel, f->clv_volkernel);
   }
   clWaitForEvents(1,  &(f->clv_volkernel));
   if(done != NULL)
@@ -479,6 +518,7 @@ void set_buf_to_zero_cl(cl_mem *buf, int size, field *f,
 				  done);
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status == CL_SUCCESS);
+  f->zbuf_time += clv_duration(f->clv_zbuf, f->clv_zbuf);  
 }
 
 // Apply the Discontinuous Galerkin approximation for computing the
@@ -487,7 +527,7 @@ void dtfield_CL(field *f, cl_mem *wn_cl,
 		cl_uint nwait, cl_event *wait, cl_event *done) {
   set_buf_to_zero_cl(&(f->dtwn_cl), f->wsize, f,
   		     nwait, wait, &(f->clv_zbuf));
-
+  
   //printf("f->macromesh.nbfaces: %d\n", f->macromesh.nbfaces);
   for(int ifa = 0; ifa < f->macromesh.nbfaces; ifa++) {
     //printf("ifa: %d\n", ifa);
@@ -496,6 +536,7 @@ void dtfield_CL(field *f, cl_mem *wn_cl,
     			    &(f->clv_zbuf),
     			    &(f->clv_mci));
   }
+  f->minter_time += clv_duration(f->clv_mci,  f->clv_mci);
 
   //printf("f->macromesh.nbelems: %d\n", f->macromesh.nbelems);
 
@@ -507,10 +548,12 @@ void dtfield_CL(field *f, cl_mem *wn_cl,
   		1,
   		&(f->clv_mass),
   		&(f->clv_volume));
+    f->vol_time += clv_duration(f->clv_volume, f->clv_volume);
     DGMass_CL(mcelli, f,
   	      1,
   	      &(f->clv_volume),
   	      &(f->clv_mass));
+    f->mass_time += clv_duration(f->clv_mass, f->clv_mass);
   }
   clWaitForEvents(1, &(f->clv_mass));
   if(done != NULL)
@@ -574,6 +617,8 @@ void RK2_CL_stage1(field *f, size_t numworkitems,
 				  done);
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status == CL_SUCCESS);
+  if(done != NULL)
+    f->rk_time += clv_duration(*done, *done);
 }
 
 // Set kernel arguments for second stage of RK2
@@ -617,6 +662,8 @@ void RK2_CL_stage2(field *f, size_t numworkitems,
 				  nwait, wait, done);
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status == CL_SUCCESS);
+  if(done != NULL)
+    f->rk_time += clv_duration(*done, *done);
 }
 
 void RK4_CL_stageA(field *f, 
@@ -673,6 +720,8 @@ void RK4_CL_stageA(field *f,
   				  done);
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status == CL_SUCCESS);
+  if(done != NULL)
+    f->rk_time += clv_duration(*done, *done);
 }
 
 void RK4_final_inplace_CL(field *f, 
@@ -745,6 +794,8 @@ void RK4_final_inplace_CL(field *f,
   				  done);
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status == CL_SUCCESS);
+  if(done != NULL)
+    f->rk_time += clv_duration(*done, *done);
 }
 
 // Time integration by a fourth-order Runge-Kutta algorithm, OpenCL
@@ -889,6 +940,23 @@ void RK2_CL(field *f, double tmax,
     status = clSetUserEventStatus(*done, CL_COMPLETE);
 
   printf("t=%f iter=%d/%d dt=%f\n", f->tnow, iter, f->itermax, f->dt);
+}
+
+void show_cl_timing(field *f)
+{
+  printf("set_buf_to_zero_cl time:      %luns\t%fs\n", 
+	 f->zbuf_time, 1e-9 * f->zbuf_time);
+  printf("DGMacroCellInterface_CL time: %luns\t%fs\n", 
+	 f->minter_time, 1e-9 * f->minter_time);
+  printf("DGVolume_CL time:             %luns\t%fs\n", 
+	 f->vol_time, 1e-9 * f->vol_time);
+  printf("DGMass_CL time:               %luns\t%fs\n", 
+	 f->mass_time, 1e-9 * f->mass_time);
+  printf("update_physnode_cl time:      %luns\t%fs\n", 
+	 f->updatephysnode_time, 1e-9 * f->updatephysnode_time);
+  printf("rk time:                      %luns\t%fs\n", 
+	 f->rk_time, 1e-9 * f->rk_time);
+
 }
 
 #endif // _WITH_OPENCL
