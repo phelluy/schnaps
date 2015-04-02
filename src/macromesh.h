@@ -99,12 +99,25 @@ void CheckMacroMesh(MacroMesh *m, int param[7]);
 void PrintMacroMesh(MacroMesh *m);
 
 //! \brief test if a physical point is in a given element
-//! for  given interpolation parameters.
-//! The function simply aborts if the mesh is bad because
-//! going on with computations has no meaning.
 //! \param[in] m a macromesh
-//! \param[in] param interpolation parameters (m, degrees and refinements)
-int IsInElem(MacroMesh *m, double* xphy, int ie, double* xref);
+//! \param[in] ie a macrocell index
+//! \param[in] xphy a point in physical space
+//! \param[out] xref the corresponding ref coordinates (optional if NULL) 
+//! \returns true or false
+bool IsInElem(MacroMesh *m,int ie, double* xphy, double* xref);
+
+//! \brief find the nearest node to xphy in the mesh
+//! \param[in] m a macromesh
+//! \param[in] xphy a point in physical space
+//! \returns the index of the nearest node
+int NearestNode(MacroMesh *m,double* xphy);
+
+//! \brief find the cell containing a physical point
+//! \param[in] m a macromesh
+//! \param[in] xphy a point in physical space
+//! \param[out] xref the corresponding ref coordinates (optional if NULL) 
+//! \returns the index of the macrocell containing xphy or -1 if none found
+int NumElemFromPoint(MacroMesh *m,double* xphy, double* xref);
 
 
 #endif

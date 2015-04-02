@@ -8,6 +8,13 @@
 #include "interpolation.h"
 #include <math.h>
 
+// if we use flann (fast finding of neighbours)
+#define _WITH_FLANN
+
+#ifdef _WITH_FLANN
+#include </usr/local/Cellar/flann/1.8.4/include/flann/flann.h>
+#endif
+
 void ReadMacroMesh(MacroMesh *m, char *filename)
 {
   m->is2d = false;
@@ -822,3 +829,130 @@ void Detect2DMacroMesh(MacroMesh *m)
   }
 
 };
+
+bool IsInElem(MacroMesh *m,int ie, double* xphy, double* xref0)
+{
+    double physnode[20][3];
+    for(int inoloc = 0; inoloc < 20; inoloc++) {
+      int ino = m->elem2node[20 * ie + inoloc];
+      physnode[inoloc][0] = m->node[3 * ino + 0];
+      physnode[inoloc][1] = m->node[3 * ino + 1];
+      physnode[inoloc][2] = m->node[3 * ino + 2];
+    }
+    
+    double xref[3];
+    
+    RobustPhy2Ref(physnode,xphy,xref);
+    
+    bool is_in_elem = (xref[0] >=0) && (xref[0]<= 1)
+      && (xref[1] >=0) && (xref[1]<= 1)
+      && (xref[2] >=0) && (xref[2]<= 1);  
+
+    if (xref0 != NULL){
+      xref0[0]=xref[0];
+      xref0[1]=xref[1];
+      xref0[2]=xref[2];
+    }
+
+    return is_in_elem;
+    
+}
+
+int NumElemFromPoint(MacroMesh *m,double* xphy, double* xref0)
+{
+  int num=-1;
+
+  int ino=NearestNode(m,xphy);
+
+  double xref[3];
+
+  int ii=0;
+  while(m->node2elem[ii+ m->max_node2elem * ino] != -1){
+    int ie=m->node2elem[ii+ m->max_node2elem * ino];
+    if (IsInElem(m,ie,xphy,xref)) {
+      if (xref0 != NULL){
+	xref0[0]=xref[0];
+	xref0[1]=xref[1];
+	xref0[2]=xref[2];
+      }
+      return ie;
+    }
+    ii++;
+  }
+  
+  return num;
+}
+
+int NearestNode(MacroMesh *m,double* xphy){
+
+#ifdef _WITH_FLANN
+
+  // use of flann library: faster  ???
+  static bool is_ready=false;
+  static struct FLANNParameters p;
+
+  static float speedup;
+  static flann_index_t findex;
+
+  // at first call: construct the index
+  if (!is_ready){
+    printf("Using flann: build search index...\n");
+    p = DEFAULT_FLANN_PARAMETERS;
+    p.algorithm = FLANN_INDEX_AUTOTUNED;
+    p.target_precision = 0.9; /* want 90% target precision */
+    findex=flann_build_index_double(m->node,
+				    m->nbnodes,
+				    3,
+				    &speedup,
+				    &p);
+    is_ready=true;
+  }
+
+
+  // number of nearest neighbors to search 
+  int nn = 1;
+  int result[nn];
+  double dists[nn];
+
+  // compute the nn nearest-neighbors of each point in xphy
+  // with index construction
+  // flann_find_nearest_neighbors_double(m->node,     // nodes list
+  // 				      m->nbnodes,  // number of nodes
+  // 				      3,           // space dim
+  // 				      xphy,
+  // 				      1,           // number of points in xphy
+  // 				      result,      // nearest points indices
+  // 				      dists,       // distances
+  // 				      nn,
+  // 				      &p);         // flan struct
+  
+  flann_find_nearest_neighbors_index_double(findex,// index
+				      xphy, 
+				      1,           // number of points in xphy
+				      result,      // nearest points indices
+				      dists,       // distances
+				      nn, 
+				      &p);         // flan struct 
+  int nearest = result[0];
+  // printf("xphy=%f %f %f nearest=%d %f %f %f \n",
+  // 	 xphy[0],xphy[1],xphy[2],nearest+1,
+  // 	 m->node[0+nearest*3],m->node[1+nearest*3],m->node[2+nearest*3]);
+#else
+
+  // slow version: loops on all the points
+  double d=1e20;
+  double nearest=-1;
+
+  for(int ino=0;ino<m->nbnodes;ino++){
+    double d2=Dist(xphy,m->node + 3 * ino);
+    if (d2 < d) {
+      nearest=ino;
+      d=d2;
+    }
+  }
+
+#endif
+
+  return nearest;
+
+}

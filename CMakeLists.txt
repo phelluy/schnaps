@@ -90,6 +90,10 @@ else()
 list(APPEND LIBS _schnaps pthread m)
 endif (OPENCL_FOUND)
 
+# nearest neighbour fast search library
+list(APPEND LIBS flann)
+
+
 # main program schnaps
 add_executable(
   schnaps
