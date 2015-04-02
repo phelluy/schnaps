@@ -183,7 +183,7 @@ void init_field_cl(field *f)
 			    f->wn,
 			    &status);
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status == CL_SUCCESS);
+  assert(status >= CL_SUCCESS);
 
   f->dtwn_cl = clCreateBuffer(f->cli.context,
 			      CL_MEM_READ_WRITE | CL_MEM_USE_HOST_PTR,
@@ -191,7 +191,7 @@ void init_field_cl(field *f)
 			      f->dtwn,
 			      &status);
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status == CL_SUCCESS);
+  assert(status >= CL_SUCCESS);
 
   f->param_cl = clCreateBuffer(f->cli.context,
 			       CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR,
@@ -199,7 +199,7 @@ void init_field_cl(field *f)
 			       f->interp_param,
 			       &status);
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status == CL_SUCCESS);
+  assert(status >= CL_SUCCESS);
 
   f->physnode = calloc(60, sizeof(cl_double));
 
@@ -209,7 +209,7 @@ void init_field_cl(field *f)
 				  f->physnode,
 				  &status);
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status == CL_SUCCESS);
+  assert(status >= CL_SUCCESS);
 
   f->physnodeR = calloc(60, sizeof(cl_double));
 
@@ -235,43 +235,43 @@ void init_field_cl(field *f)
 			     "DGMass",
 			     &status);
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status == CL_SUCCESS);
+  assert(status >= CL_SUCCESS);
 
   f->dgvolume = clCreateKernel(f->cli.program,
 			       "DGVolume",
 			       &status);
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status == CL_SUCCESS);
+  assert(status >= CL_SUCCESS);
 
   f->dginterface = clCreateKernel(f->cli.program,
 				  "DGMacroCellInterface",
 				  &status);
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status == CL_SUCCESS);
+  assert(status >= CL_SUCCESS);
 
   f->RK_out_CL = clCreateKernel(f->cli.program,
 				"RK_out_CL",
 				&status);
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status == CL_SUCCESS);
+  assert(status >= CL_SUCCESS);
 
   f->RK4_final_stage = clCreateKernel(f->cli.program,
 				      "RK4_final_stage",
 				      &status);
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status == CL_SUCCESS);
+  assert(status >= CL_SUCCESS);
 
   f->RK_in_CL = clCreateKernel(f->cli.program,
 			       "RK_in_CL",
 			       &status);
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status == CL_SUCCESS);
+  assert(status >= CL_SUCCESS);
 
   f->zero_buf = clCreateKernel(f->cli.program,
 			       "set_buffer_to_zero",
 			       &status);
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status == CL_SUCCESS);
+  assert(status >= CL_SUCCESS);
 
   // Initialize events. // FIXME: free on exit
   f->clv_zbuf = clCreateUserEvent(f->cli.context, &status);
@@ -366,7 +366,7 @@ void free_field(field* f)
 
   status = clReleaseMemObject(f->physnode_cl);
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status == CL_SUCCESS);
+  assert(status >= CL_SUCCESS);
 
   free(f->physnode);
 
