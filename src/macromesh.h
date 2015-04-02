@@ -98,5 +98,13 @@ void CheckMacroMesh(MacroMesh *m, int param[7]);
 //! \param[in] m a macromesh
 void PrintMacroMesh(MacroMesh *m);
 
+//! \brief test if a physical point is in a given element
+//! for  given interpolation parameters.
+//! The function simply aborts if the mesh is bad because
+//! going on with computations has no meaning.
+//! \param[in] m a macromesh
+//! \param[in] param interpolation parameters (m, degrees and refinements)
+int IsInElem(MacroMesh *m, double* xphy, int ie, double* xref);
+
 
 #endif
