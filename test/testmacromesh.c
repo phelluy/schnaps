@@ -20,6 +20,7 @@ int TestMacroMesh(void)
 
   int param[]={4, 4, 4, 1, 1, 1, 0};
   
+  // test gmsh file reading
   ReadMacroMesh(&m, "test/testmacromesh.msh");
   BuildConnectivity(&m);
   CheckMacroMesh(&m, param);
@@ -28,6 +29,8 @@ int TestMacroMesh(void)
   int test = (m.nbelems == 5);
   test = (test && m.nbnodes == 50);
 
+
+  // test search methods
   double xphy[3]={1,1,0.5};
   double xref[3];
 
@@ -53,7 +56,6 @@ int TestMacroMesh(void)
   num=NumElemFromPoint(&m,xphy2,NULL);
   printf("xphy=%f %f %f is in elem=%d\n",xphy[0],xphy[1],xphy[2],num);
   test=test && (num == 3);
-
 
   return test;
 }

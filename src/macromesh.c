@@ -8,7 +8,7 @@
 #include "interpolation.h"
 #include <math.h>
 
-// if we use flann (fast finding of neighbours)
+// macro for activating flann (fast finding of neighbours)
 #define _WITH_FLANN
 
 #ifdef _WITH_FLANN
