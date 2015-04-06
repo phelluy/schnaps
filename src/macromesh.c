@@ -12,7 +12,7 @@
 #define _WITH_FLANN
 
 #ifdef _WITH_FLANN
-#include </usr/local/Cellar/flann/1.8.4/include/flann/flann.h>
+#include <flann/flann.h>
 #endif
 
 void ReadMacroMesh(MacroMesh *m, char *filename)
