@@ -885,6 +885,10 @@ int NumElemFromPoint(MacroMesh *m,double* xphy, double* xref0)
 
 int NearestNode(MacroMesh *m,double* xphy){
 
+
+  int nearest=-1;
+
+
 #ifdef _WITH_FLANN
 
   // use of flann library: faster  ???
@@ -895,6 +899,7 @@ int NearestNode(MacroMesh *m,double* xphy){
   static flann_index_t findex;
 
   // at first call: construct the index
+  // TO DO free the index when finished
   if (!is_ready){
     printf("Using flann: build search index...\n");
     p = DEFAULT_FLANN_PARAMETERS;
@@ -933,7 +938,7 @@ int NearestNode(MacroMesh *m,double* xphy){
 				      dists,       // distances
 				      nn, 
 				      &p);         // flan struct 
-  int nearest = result[0];
+  nearest = result[0];
   // printf("xphy=%f %f %f nearest=%d %f %f %f \n",
   // 	 xphy[0],xphy[1],xphy[2],nearest+1,
   // 	 m->node[0+nearest*3],m->node[1+nearest*3],m->node[2+nearest*3]);
@@ -941,7 +946,6 @@ int NearestNode(MacroMesh *m,double* xphy){
 
   // slow version: loops on all the points
   double d=1e20;
-  double nearest=-1;
 
   for(int ino=0;ino<m->nbnodes;ino++){
     double d2=Dist(xphy,m->node + 3 * ino);
