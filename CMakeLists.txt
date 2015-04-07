@@ -239,6 +239,14 @@ if(OPENCL_FOUND)
     )
   target_link_libraries(testdtfield_cl ${LIBS})
 
+  add_test(testcache_cl testcache_cl)
+  add_executable(
+    testcache_cl
+    test/test.h
+    test/testcache_cl.c
+    )
+  target_link_libraries(testcache_cl ${LIBS})
+
   add_test(testmacrocellinterface testmacrocellinterface)
   add_executable(
     testmacrocellinterface
