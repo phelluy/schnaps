@@ -207,7 +207,6 @@ void vlaTransNumFlux2d(double wL[], double wR[], double *vnorm, double *flux)
   }
 }
 
-// FIXME: pass m
 #ifndef _M
 #define _M 1
 #endif
@@ -265,11 +264,11 @@ void set_buffer_to_zero(__global double *w)
 
 // Compute the volume and subcell-interface terms on one macrocell
 __kernel
-void DGVolume(__constant int* param,        // interp param
+void DGVolume(__constant int *param,        // interp param
 	      int ie,            // macrocel index
-	      __constant double* physnode,  // macrocell nodes
-              __global double* wn,       // field values
-	      __global double* dtwn) // time derivative
+	      __constant double *physnode,  // macrocell nodes
+              __global double *wn,       // field values
+	      __global double *dtwn) // time derivative
 {
   const int m = param[0];
   const int deg[3] = {param[1],param[2], param[3]};
@@ -294,9 +293,9 @@ void DGVolume(__constant int* param,        // interp param
   }
 
   // ref coordinates
-  double hx = 1. / (double) nraf[0];
-  double hy = 1. / (double) nraf[1];
-  double hz = 1. / (double) nraf[2];
+  double hx = 1.0 / (double) nraf[0];
+  double hy = 1.0 / (double) nraf[1];
+  double hz = 1.0 / (double) nraf[2];
 
   int offset[3] = {gauss_lob_offset[deg[0]] + p[0],
 		   gauss_lob_offset[deg[1]] + p[1],
@@ -311,21 +310,23 @@ void DGVolume(__constant int* param,        // interp param
     * gauss_lob_weight[offset[1]]
     * gauss_lob_weight[offset[2]];
 
-  double dtau[3][3];
-  get_dtau(x, y, z, physnode, dtau);
-
   double codtau[3][3];
-  codtau[0][0] =  dtau[1][1] * dtau[2][2] - dtau[1][2] * dtau[2][1];
-  codtau[0][1] = -dtau[1][0] * dtau[2][2] + dtau[1][2] * dtau[2][0];
-  codtau[0][2] =  dtau[1][0] * dtau[2][1] - dtau[1][1] * dtau[2][0];
-  codtau[1][0] = -dtau[0][1] * dtau[2][2] + dtau[0][2] * dtau[2][1];
-  codtau[1][1] =  dtau[0][0] * dtau[2][2] - dtau[0][2] * dtau[2][0];
-  codtau[1][2] = -dtau[0][0] * dtau[2][1] + dtau[0][1] * dtau[2][0];
-  codtau[2][0] =  dtau[0][1] * dtau[1][2] - dtau[0][2] * dtau[1][1];
-  codtau[2][1] = -dtau[0][0] * dtau[1][2] + dtau[0][2] * dtau[1][0];
-  codtau[2][2] =  dtau[0][0] * dtau[1][1] - dtau[0][1] * dtau[1][0];
+  {
+    double dtau[3][3];
+    get_dtau(x, y, z, physnode, dtau);
+    
+    codtau[0][0] =  dtau[1][1] * dtau[2][2] - dtau[1][2] * dtau[2][1];
+    codtau[0][1] = -dtau[1][0] * dtau[2][2] + dtau[1][2] * dtau[2][0];
+    codtau[0][2] =  dtau[1][0] * dtau[2][1] - dtau[1][1] * dtau[2][0];
+    codtau[1][0] = -dtau[0][1] * dtau[2][2] + dtau[0][2] * dtau[2][1];
+    codtau[1][1] =  dtau[0][0] * dtau[2][2] - dtau[0][2] * dtau[2][0];
+    codtau[1][2] = -dtau[0][0] * dtau[2][1] + dtau[0][1] * dtau[2][0];
+    codtau[2][0] =  dtau[0][1] * dtau[1][2] - dtau[0][2] * dtau[1][1];
+    codtau[2][1] = -dtau[0][0] * dtau[1][2] + dtau[0][2] * dtau[1][0];
+    codtau[2][2] =  dtau[0][0] * dtau[1][1] - dtau[0][1] * dtau[1][0];
+  }
 
-  double wL[_M]; // FIXME: make __local
+  double wL[_M];
   int ipgL = ipg(npg, p, icell);
   int imemL0 = VARINDEX(param, ie, ipgL, 0);
   for(int iv = 0; iv < m; iv++) {
@@ -335,9 +336,10 @@ void DGVolume(__constant int* param,        // interp param
     //int imemL= iv + m * ( get_global_id(0) + nnpg * *ie);
     //wL[iv] = wn[imemL];
 
-    wL[iv] = wn[imemL0 + iv]; // FIXME: make the others like this too.
+    wL[iv] = wn[imemL0 + iv];
   }
 
+  double flux[_M];
   for(int dim0 = 0; dim0 < 3; dim0++) {
     int q[3] = {p[0], p[1], p[2]};
 
@@ -348,19 +350,25 @@ void DGVolume(__constant int* param,        // interp param
       dphiref[dim0] = dlag(deg[dim0], q[dim0], p[dim0]) * nraf[dim0];
       double dphi[3];
       for(int ii = 0; ii < 3; ii++) {
-	dphi[ii] = 0;
-	for(int jj = 0; jj < 3; jj++) {
-	  dphi[ii] += codtau[ii][jj] * dphiref[jj];
-	}
+	/* dphi[ii] = 0; */
+	/* for(int jj = 0; jj < 3; jj++) { */
+	/*   dphi[ii] += codtau[ii][jj] * dphiref[jj]; */
+	/* } */
+	double *codtauii = codtau[ii];
+	dphi[ii] 
+	  = codtauii[0] * dphiref[0]
+	  + codtauii[1] * dphiref[1]
+	  + codtauii[2] * dphiref[2];
       }
 
-      double flux[_M]; // FIXME: make __local
       NUMFLUX(wL, wL, dphi, flux);
 
       int ipgR = ipg(npg, q, icell);
       int imemR0 = VARINDEX(param, ie, ipgR, 0);
-      for(int iv = 0; iv < m; iv++)
-    	dtwn[imemR0 + iv] += flux[iv] * wpg;
+      __global double *dtwn0 = dtwn + imemR0; 
+      for(int iv = 0; iv < m; iv++) {
+     	dtwn0[iv] += flux[iv] * wpg;
+      }
     }
 
     // Compute the inter-subcell fluxes if needed
@@ -386,28 +394,29 @@ void DGVolume(__constant int* param,        // interp param
         q[dim0] = (sgn == -1) ? npg[dim0] - 1 : 0;
 	int ipgR = ipg(npg, q, ncR);
 
-	double wR[_M]; // FIXME: make local
-	int imemR0 = GenericVarindex3d(m, npg, nraf,  
-				      ie, 
+	double wR[_M];
+	int imemR0 = GenericVarindex3d(m, npg, nraf,
+				      ie,
 				      0, q, icR);
-	
+	__global double *wn0 = wn + imemR0;
         for(int iv = 0; iv < m; iv++) {
           //int imemR = VARINDEX(param, ie, ipgR, iv);
-          wR[iv] = wn[imemR0 + iv];
+          //wR[iv] = wn[imemR0 + iv];
+          wR[iv] = wn0[iv];
         }
 
 	double wpgs = wglop(deg[dim1], p[dim1]) * wglop(deg[dim2], p[dim2]);
-        double flux[_M]; // FIXME: make local
+        //double flux[_M];
         NUMFLUX(wL, wR, vnds, flux);
 
 	int imemL0 = GenericVarindex3d(m, npg, nraf, 
-				      ie, 
+				      ie,
 				      0, p, icL);
-
+	__global double *dtwn0 =  dtwn + imemL0;
         for(int iv = 0; iv < m; iv++) {
           //int ipgL = ipg(npg, p, icell);
           //int imemL = VARINDEX(param, ie, ipgL, iv);
-          dtwn[imemL0 + iv] -= flux[iv] * wpgs;
+          dtwn0[iv] -= flux[iv] * wpgs;
         }
       }
     }
@@ -460,32 +469,8 @@ void DGMass(__constant int *param,        // interp param
     * gauss_lob_weight[offset[1]]
     * gauss_lob_weight[offset[2]];
 
-  // end of ref_pg_vol
-  //////////////////////////////////////////////
-
-  //Ref2Phy(physnode, // phys. nodes
-  //        xpgref,  // xref
-  //        NULL,-1, // dpsiref, ifa
-  //        NULL, dtau,  // xphy, dtau
-  //        codtau,NULL,NULL); // codtau, dpsi,vnds
-
   double dtau[3][3];
   get_dtau(x, y, z, physnode, dtau);
-
-  //codtau[0][0] = dtau[1][1] * dtau[2][2] - dtau[1][2] * dtau[2][1];
-  //codtau[0][1] = -dtau[1][0] * dtau[2][2] + dtau[1][2] * dtau[2][0];
-  //codtau[0][2] = dtau[1][0] * dtau[2][1] - dtau[1][1] * dtau[2][0];
-  //codtau[1][0] = -dtau[0][1] * dtau[2][2] + dtau[0][2] * dtau[2][1];
-  //codtau[1][1] = dtau[0][0] * dtau[2][2] - dtau[0][2] * dtau[2][0];
-  //codtau[1][2] = -dtau[0][0] * dtau[2][1] + dtau[0][1] * dtau[2][0];
-  //codtau[2][0] = dtau[0][1] * dtau[1][2] - dtau[0][2] * dtau[1][1];
-  //codtau[2][1] = -dtau[0][0] * dtau[1][2] + dtau[0][2] * dtau[1][0];
-  //codtau[2][2] = dtau[0][0] * dtau[1][1] - dtau[0][1] * dtau[1][0];
-  //double det=dtau[0][0]*codtau[0][0]+dtau[0][1]*codtau[0][1]+
-  // dtau[0][2]*codtau[0][2];
-
-  // end of Ref2Phy
-  //////////////////////////////////////////////////////////
 
   double det
     = dtau[0][0] * dtau[1][1] * dtau[2][2]
@@ -495,10 +480,12 @@ void DGMass(__constant int *param,        // interp param
     + dtau[2][0] * dtau[0][1] * dtau[1][2]
     - dtau[2][0] * dtau[0][2] * dtau[1][1];
 
+  double overwpgget = 1.0 / (wpg * det);
   int imem0 = m * (get_global_id(0) + npgie * ie); //VARINDEX
+  __global double *dtwn0 = dtwn + imem0; 
   for(int iv = 0; iv < m; iv++) {
-    int imem = iv + imem0;
-    dtwn[imem] /= (wpg * det);
+    //int imem = iv + imem0;
+    dtwn0[iv] *= overwpgget;
   }
 }
 
@@ -538,7 +525,7 @@ void DGMacroCellInterface(__constant int *param,        // interp param
             codtau, NULL, vnds); // codtau, dpsi,vnds
   }
 
-  double wL[_M]; // FIXME: make local
+  double wL[_M];
   
   if (ieR >= 0) {  // The right element exists
     double xrefL[3];
@@ -566,7 +553,7 @@ void DGMacroCellInterface(__constant int *param,        // interp param
     /*   assert(Dist(xpgR, xpg) < 1e-10); */
     /* }	 */
 
-    double wR[_M]; // FIXME: make local
+    double wR[_M];
     int imemL0 = VARINDEX(param, ieL, ipgL, 0);
     int imemR0 = VARINDEX(param, ieR, ipgR, 0);
     for(int iv = 0; iv < _M; iv++)
@@ -845,7 +832,7 @@ void Ref2Phy(__constant double* physnode,
     for(int ii = 0; ii < 3; ++ii) {
       xphy[ii] = 0;
       for(int i = 0; i < 20; ++i) {
-	xphy[ii] += physnode[ 3 * i + ii] * gradphi[i][3];
+	xphy[ii] += physnode[3 * i + ii] * gradphi[i][3];
       }
     }
   }
@@ -933,7 +920,8 @@ void Phy2Ref(__constant double *physnode, double xphy[3], double xref[3])
 			    + dtau[0][1] * codtau[0][1]
 			    + dtau[0][2] * codtau[0][2] );
     for(int ii = 0; ii < 3; ++ii) {
-      dxref[ii] = codtau[0][ii] * dxphy[0] 
+      dxref[ii] 
+	= codtau[0][ii] * dxphy[0] 
 	+ codtau[1][ii] * dxphy[1] 
 	+ codtau[2][ii] * dxphy[2];
       xref[ii] -= dxref[ii] * overdet;
