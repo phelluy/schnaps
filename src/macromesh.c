@@ -412,51 +412,50 @@ void suppress_zfaces(MacroMesh *m)
 }
 
 // Build the node 2 elems connectivity
-void build_node2elem(MacroMesh* m)
+void build_node2elem(MacroMesh *m)
 {
-  // first pass: count the maximal number of elems
-  // attached to a given node
+  // first pass: count the maximal number of elems attached to a given
+  // node
   {
     int count[m->nbnodes];
-    for(int ino=0;ino<m->nbnodes;ino++){
-      count[ino]=0;
+    for(int ino = 0; ino < m->nbnodes; ino++){
+      count[ino] = 0;
     }
     for(int ie = 0; ie < m->nbelems; ie++) {
-      for(int iloc=0;iloc<20;iloc++){
-	count[m->elem2node[iloc+20*ie]]++;
+      for(int iloc = 0; iloc < 20; iloc++){
+	count[m->elem2node[iloc + 20 * ie]]++;
       }
     }  
-    m-> max_node2elem=0;
-    for(int ino=0;ino<m->nbnodes;ino++){
-      m-> max_node2elem= m->max_node2elem > count[ino] ?
+    m->max_node2elem = 0;
+    for(int ino = 0; ino < m->nbnodes; ino++){
+      m->max_node2elem = m->max_node2elem > count[ino] ?
 	m->max_node2elem : count[ino];
     }
   } // end of block: count is deallocated...
 
   // add a column of -1's for marking the ends of neighbours list
   (m->max_node2elem)++;
-  printf("max number of elems touching a node: %d\n",m->max_node2elem - 1);
+  printf("max number of elems touching a node: %d\n", m->max_node2elem - 1);
 
-  m->node2elem=malloc((m->max_node2elem+1) * m->nbnodes * sizeof(int));
+  m->node2elem = malloc((m->max_node2elem + 1) * m->nbnodes * sizeof(int));
   assert(m->node2elem);
 
   // fill the array with -1's for marking the end of neighbours
-  for(int i=0;i < m->max_node2elem * m->nbnodes;i++) m->node2elem[i]=-1;
+  for(int i = 0; i < m->max_node2elem * m->nbnodes; i++) 
+    m->node2elem[i] = -1;
   
   // second pass: fill the neighbours list
   for(int ie = 0; ie < m->nbelems; ie++) {
-    for(int iloc=0;iloc<20;iloc++){
-      int ino=m->elem2node[iloc+20*ie];
-      int ii=0;
-      while(m->node2elem[ii+ m->max_node2elem * ino] != -1) ii++;
+    for(int iloc = 0; iloc < 20; iloc++){
+      int ino = m->elem2node[iloc + 20 * ie];
+      int ii = 0;
+      while(m->node2elem[ii + m->max_node2elem * ino] != -1) 
+	ii++;
       assert(ii < m->max_node2elem);
       if (ii < m->max_node2elem - 1) 
-	m->node2elem[ii+ m->max_node2elem * ino]=ie;
+	m->node2elem[ii + m->max_node2elem * ino] = ie;
     }
   }  
-    
-
-
 }
 
 // Build other connectivity arrays
@@ -858,22 +857,20 @@ bool IsInElem(MacroMesh *m,int ie, double* xphy, double* xref0)
     
 }
 
-int NumElemFromPoint(MacroMesh *m,double* xphy, double* xref0)
+int NumElemFromPoint(MacroMesh *m, double *xphy, double *xref0)
 {
-  int num=-1;
-
-  int ino=NearestNode(m,xphy);
-
+  int num = -1;
+  int ino = NearestNode(m, xphy);
   double xref[3];
 
-  int ii=0;
-  while(m->node2elem[ii+ m->max_node2elem * ino] != -1){
-    int ie=m->node2elem[ii+ m->max_node2elem * ino];
-    if (IsInElem(m,ie,xphy,xref)) {
-      if (xref0 != NULL){
-	xref0[0]=xref[0];
-	xref0[1]=xref[1];
-	xref0[2]=xref[2];
+  int ii = 0;
+  while(m->node2elem[ii + m->max_node2elem * ino] != -1) {
+    int ie = m->node2elem[ii + m->max_node2elem * ino];
+    if(IsInElem(m, ie, xphy, xref)) {
+      if(xref0 != NULL){
+	xref0[0] = xref[0];
+	xref0[1] = xref[1];
+	xref0[2] = xref[2];
       }
       return ie;
     }
@@ -883,16 +880,13 @@ int NumElemFromPoint(MacroMesh *m,double* xphy, double* xref0)
   return num;
 }
 
-int NearestNode(MacroMesh *m,double* xphy){
-
-
-  int nearest=-1;
-
+int NearestNode(MacroMesh *m, double *xphy) {
+  int nearest = -1;
 
 #ifdef _WITH_FLANN
 
   // use of flann library: faster  ???
-  static bool is_ready=false;
+  static bool is_ready = false;
   static struct FLANNParameters p;
 
   static float speedup;
@@ -913,7 +907,6 @@ int NearestNode(MacroMesh *m,double* xphy){
     is_ready=true;
   }
 
-
   // number of nearest neighbors to search 
   int nn = 1;
   int result[nn];
@@ -932,31 +925,30 @@ int NearestNode(MacroMesh *m,double* xphy){
   // 				      &p);         // flan struct
   
   flann_find_nearest_neighbors_index_double(findex,// index
-				      xphy, 
-				      1,           // number of points in xphy
-				      result,      // nearest points indices
-				      dists,       // distances
-				      nn, 
-				      &p);         // flan struct 
+					    xphy, 
+					    1,      // number of points in xphy
+					    result, // nearest points indices
+					    dists,  // distances
+					    nn, 
+					    &p);     // flan struct 
   nearest = result[0];
   // printf("xphy=%f %f %f nearest=%d %f %f %f \n",
   // 	 xphy[0],xphy[1],xphy[2],nearest+1,
   // 	 m->node[0+nearest*3],m->node[1+nearest*3],m->node[2+nearest*3]);
+
 #else
 
   // slow version: loops on all the points
-  double d=1e20;
+  double d = 1e20;
 
-  for(int ino=0;ino<m->nbnodes;ino++){
-    double d2=Dist(xphy,m->node + 3 * ino);
+  for(int ino = 0; ino < m->nbnodes; ino++){
+    double d2 = Dist(xphy, m->node + 3 * ino);
     if (d2 < d) {
-      nearest=ino;
-      d=d2;
+      nearest = ino;
+      d = d2;
     }
   }
-
 #endif
 
   return nearest;
-
 }
