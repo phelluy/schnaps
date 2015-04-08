@@ -250,8 +250,8 @@ void macromesh_bounds(MacroMesh *m, double *bounds)
   double zmax = zmin;
   
   // Loop over all the points in all the subcells of the macrocell
-  const int nbelems = m->nbelems;
-  for(int i = 0; i < m->nbelems; i++) {
+  const int nbnodes = m->nbnodes;
+  for(int i = 0; i < nbnodes; i++) {
     double x = m->node[3 * i];
     double y = m->node[3 * i + 1];
     double z = m->node[3 * i + 2];
@@ -456,6 +456,12 @@ void build_node2elem(MacroMesh *m)
 	m->node2elem[ii + m->max_node2elem * ino] = ie;
     }
   }  
+
+  // send to infinity nodes that does not belong to any element
+  for(int ino = 0; ino < m->nbnodes; ino++){
+    if (m->node2elem[0 + m->max_node2elem * ino] == -1) m->node[0+3*ino]=1e10;
+  }
+
 }
 
 // Build other connectivity arrays
@@ -862,6 +868,9 @@ int NumElemFromPoint(MacroMesh *m, double *xphy, double *xref0)
   int num = -1;
   int ino = NearestNode(m, xphy);
   double xref[3];
+
+  // TO DO: remove nodes that do not belong to any element 
+  assert(m->node2elem[0 + m->max_node2elem * ino] != -1);
 
   int ii = 0;
   while(m->node2elem[ii + m->max_node2elem * ino] != -1) {

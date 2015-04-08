@@ -57,5 +57,16 @@ int TestMacroMesh(void)
   printf("xphy=%f %f %f is in elem=%d\n",xphy[0],xphy[1],xphy[2],num);
   test=test && (num == 3);
 
+
+
+  PIC pic;
+
+  InitPIC(&pic,10000); 
+  CreateParticles(&pic,&m);
+  PlotParticles(&pic);
+
+  assert(1==2);
+
+
   return test;
 }

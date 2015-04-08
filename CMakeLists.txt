@@ -68,6 +68,8 @@ list(APPEND
   src/h20phi.h
   src/maxwell.h
   src/maxwell.c
+  src/pic.h
+  src/pic.c
   )
 
 if (OPENCL_FOUND)
