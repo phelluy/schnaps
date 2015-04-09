@@ -174,7 +174,7 @@ void PushParticles(field *f,PIC* pic){
     pic->xv[6*i+4]+=pic->dt * (w[1]-w[2]*pic->xv[6*i+3]);
 
     // TO DO: transform the velocity in the reference coordinates
-
+    // TO DO: check if the particle is in a new element
     pic->xv[6*i+0]+=pic->dt * pic->xv[6*i+3];
     pic->xv[6*i+1]+=pic->dt * pic->xv[6*i+4];
 
