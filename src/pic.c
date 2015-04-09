@@ -59,14 +59,19 @@ int r = rand();
 	(m->xmax[idim]-m->xmin[idim]);
     }
 
-    int num_elem=NumElemFromPoint(m,xp,NULL);
+    double xref[3];
+
+    int num_elem=NumElemFromPoint(m,xp,xref);
     //printf("numelem=%d %f %f %f\n",num_elem,xp[0],xp[1],xp[2]);
     
     if (num_elem != -1) {
 
-      pic->xv[np*6+0]=xp[0];
-      pic->xv[np*6+1]=xp[1];
-      pic->xv[np*6+2]=xp[2];
+      /* pic->xv[np*6+0]=xp[0]; */
+      /* pic->xv[np*6+1]=xp[1]; */
+      /* pic->xv[np*6+2]=xp[2]; */
+      pic->xv[np*6+0]=xref[0];
+      pic->xv[np*6+1]=xref[1];
+      pic->xv[np*6+2]=xref[2];
 
       for(int idim=0;idim<3;idim++){
 	vp[idim]=vt*(corput(n,k1[idim+3],k2[idim+3])-0.5);
@@ -85,12 +90,12 @@ int r = rand();
 
     
   }
-
+  
 
 }
 
 
-void PlotParticles(PIC* pic){
+void PlotParticles(PIC* pic,MacroMesh *m){
   
   FILE * gmshfile;
   FILE * gnufile;
@@ -110,9 +115,33 @@ void PlotParticles(PIC* pic){
 
   for(int i=0;i<pic->nbparts;i++) {
 
-    x=pic->xv[6*i+0];
-    y=pic->xv[6*i+1];
-    z=pic->xv[6*i+2];
+    int ie=pic->cell_id[i];
+    
+    // Get the physical nodes of element ie
+    double physnode[20][3];
+    for(int inoloc = 0; inoloc < 20; inoloc++) {
+      int ino = m->elem2node[20*ie+inoloc];
+      physnode[inoloc][0] = m->node[3 * ino + 0];
+      physnode[inoloc][1] = m->node[3 * ino + 1];
+      physnode[inoloc][2] = m->node[3 * ino + 2];
+    }
+   
+    double xphy[3];
+    Ref2Phy(physnode, // phys. nodes
+	    &(pic->xv[6*i]), // xref
+	    NULL, -1, // dpsiref, ifa
+	    xphy, NULL, // xphy, dtau
+	    NULL, NULL, NULL); // codtau, dpsi, vnds
+
+    
+    /* x=pic->xv[6*i+0]; */
+    /* y=pic->xv[6*i+1]; */
+    /* z=pic->xv[6*i+2]; */
+
+    x=xphy[0];
+    y=xphy[1];
+    z=xphy[2];
+
     vx=pic->xv[6*i+3];
     vy=pic->xv[6*i+4];
     vz=pic->xv[6*i+5];
@@ -128,5 +157,27 @@ void PlotParticles(PIC* pic){
   fclose(gnufile);
 
 }
+
+void PushParticles(field *f,PIC* pic){
+
+  for(int i=0;i<pic->nbparts;i++) {
+    
+    double w[f->model.m];
+    InterpField(f,pic->cell_id[i],&(pic->xv[6*i]),w);
+    
+    
+    // 2D motion
+
+    pic->xv[6*i+3]+=pic->dt * (w[0]+w[2]*pic->xv[6*i+4]);
+    pic->xv[6*i+4]+=pic->dt * (w[1]-w[2]*pic->xv[6*i+3]);
+
+    pic->xv[6*i+0]+=pic->dt * pic->xv[6*i+3];
+    pic->xv[6*i+1]+=pic->dt * pic->xv[6*i+4];
+
+  }
+  
+
+}
+
   
 

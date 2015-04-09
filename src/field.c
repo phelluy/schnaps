@@ -1666,3 +1666,41 @@ double L2error(field *f) {
   }
   return sqrt(error) / (sqrt(mean)  + 1e-16);
 }
+
+
+void InterpField(field* f,int ie,double* xref,double* w){
+
+  const int nraf[3] = {f->interp_param[4],
+		       f->interp_param[5],
+		       f->interp_param[6]};
+  const int deg[3] = {f->interp_param[1],
+		      f->interp_param[2],
+		      f->interp_param[3]};
+
+  for(int iv=0;iv<f->model.m;iv++){
+    w[iv]=0;
+  }
+
+  int is[3];
+
+  for(int ii=0;ii<3;ii++){
+    is[ii]=xref[ii]*nraf[ii];
+    assert(is[ii] < nraf[ii] && is[ii]>= 0);
+  }
+  
+
+  int npgv=NPG(f->interp_param + 1);
+  // TO DO: loop only on non zero basis function
+  for(int ib = 0; ib < npgv; ib++) { 
+    double psi;
+    psi_ref_subcell(f->interp_param + 1,is,ib,xref,&psi,NULL);
+    
+    for(int iv=0;iv<f->model.m;iv++){
+      int imem = f->varindex(f->interp_param, ie, ib, iv);
+      w[iv] += psi * f->wn[imem];
+    }
+  }
+
+
+}
+

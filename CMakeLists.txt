@@ -228,6 +228,15 @@ add_executable(
 target_link_libraries(testmaxwell2d ${LIBS})
 add_test(testmaxwell2d testmaxwell2d)
 
+#add_test(testpic testpic)
+add_executable(
+  testpic
+  test/test.h
+  test/testpic.c
+  )
+target_link_libraries(testpic ${LIBS})
+add_test(testpic testpic)
+
 ##########  OpenCL unit tests  ##########
 if(OPENCL_FOUND)
   add_test(testclinfo testclinfo)

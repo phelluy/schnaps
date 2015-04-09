@@ -16,6 +16,9 @@ typedef struct PIC {
   //! list of cell ids for each particles
   int* cell_id;
 
+  //! time step
+  double dt; 
+
 } PIC;
 
 
@@ -47,6 +50,12 @@ double corput(int n,int k1,int k2);
 
 //! brief create a gmsh file for plotting the particles
 //! \param[in] pic a PIC struct
-void PlotParticles(PIC* pic);
+//! \param[in] m a macromesh
+void PlotParticles(PIC* pic,MacroMesh *m);
+
+//! brief push particles with a given field
+//! \param[inout] pic a struct PIC describing the particles
+//! \param[in] f a field
+void PushParticles(field *f,PIC* pic);
 
 #endif

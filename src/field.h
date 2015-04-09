@@ -199,6 +199,13 @@ void RK4_CL(field *f, double tmax);
 void Plotfield(int typplot, int compare, field *f, char *fieldname, 
 	       char *filename);
 
+//! \brief interpolate field at a reference point a macrocell
+//! \param[in] f a field
+//! \param[in] ie the macrocell index
+//! \param[in] xref reference coordinates
+//! \param[out] w the m field values
+void InterpField(field *f,int ie,double* xref,double* w);
+
 //! \brief  display the field on screen
 //! \param[in] f the field.
 void Displayfield(field *f);

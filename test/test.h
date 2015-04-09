@@ -29,6 +29,8 @@ int TestmEq2(void);
 
 int TestMaxwell2D(void);
 
+int TestPIC(void);
+
 int TestCLInfo(void);
 
 int TestKernel(void);
