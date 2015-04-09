@@ -9,7 +9,7 @@ int Testfield(void){
 
   double cfl = 0.5;
   int degx = 2;
-  int nraf = 4;
+  int nraf = 1;
   double vmax = 1.0;
   int mx = 2;
   int my = 4;
@@ -30,7 +30,7 @@ int Testfield(void){
   f.interp.interp_param[0] = f.model.m; // _M
   f.interp.interp_param[1] = degx; // x direction degree
   f.interp.interp_param[2] = degx; // y direction degree
-  f.interp.interp_param[3] = 1; // z direction degree
+  f.interp.interp_param[3] = 0; // z direction degree
   f.interp.interp_param[4] = nraf; // x direction refinement
   f.interp.interp_param[5] = nraf; // y direction refinement
   f.interp.interp_param[6] = 1; // z direction refinement
@@ -38,14 +38,17 @@ int Testfield(void){
   set_vlasov_params(&(f.model));
 
   ReadMacroMesh(&(f.macromesh),"test/testmacromesh.msh");
+  // Try to detect a 2d mesh
+  Detect2DMacroMesh(&(f.macromesh));
+  assert(f.macromesh.is2d);  
   BuildConnectivity(&(f.macromesh));
 
   Initfield(&f);
   CheckMacroMesh(&(f.macromesh), f.interp.interp_param + 1);
 
   int raf[3]={nraf,nraf,1};
-  int deg[3]={degx,degx,1};
-  int ic[3]={1,0,3};
+  int deg[3]={degx,degx,0};
+  int ic[3]={0,0,0};
   int ix[3]={1,2,0};
 
   int ipg,ic0[3],ix0[3];
@@ -95,18 +98,29 @@ int Testfield(void){
   int prec=4;
   printf("memory usage=%d\n",(cache_size_out+cache_size_in)*prec);
  
-  int group_id=4;
+  int group_id=0;
   assert(group_id < worksize/groupsize);
   // kernel simulation
   for(int local_id=0;  local_id < groupsize;local_id++){
     int global_id=local_id+group_id*groupsize;
 
+    // get the central cell indices
+    int ic0[3],ix0[3];
+    ipg_to_xyz(raf,deg,ic0,ix0,&global_id);
+
     // prefetching
     int nfetch=(f.model.m * cache_size_in) / cache_size_out;
+    printf("nfetch=%d\n",nfetch);
+
     
     int ifetch;
     for(ifetch=0;ifetch<nfetch;ifetch++){
+
       // (local_id,ifetch)->(ic[3],ix[3],iw)-> imem (varindex)
+      int cache_in=local_id+ifetch*groupsize;
+      int iw = local_id % f.model.m;
+      int ipg_in= cache_in / nfetch ;
+
       // (local_id,ifetch)-> imem2 (varindex_local)
       
       // wnloc[imem2]=wn[imem];
