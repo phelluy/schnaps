@@ -30,6 +30,13 @@ int TestMacroMesh(void)
   test = (test && m.nbnodes == 50);
 
 
+  PIC pic;
+
+  InitPIC(&pic,10000); 
+  CreateParticles(&pic,&m);
+  PlotParticles(&pic);
+
+
   // test search methods
   double xphy[3]={1,1,0.5};
   double xref[3];
@@ -59,11 +66,6 @@ int TestMacroMesh(void)
 
 
 
-  PIC pic;
-
-  InitPIC(&pic,10000); 
-  CreateParticles(&pic,&m);
-  PlotParticles(&pic);
 
   assert(1==2);
 

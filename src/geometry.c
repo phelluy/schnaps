@@ -214,15 +214,14 @@ void RobustPhy2Ref(double physnode[20][3], double xphy[3], double xref[3])
     physnode[1][0]-physnode[0][0],
     physnode[3][0]-physnode[0][0],
     physnode[4][0]-physnode[0][0],
-
+    
     physnode[1][1]-physnode[0][1],
     physnode[3][1]-physnode[0][1],
     physnode[4][1]-physnode[0][1],
-
+    
     physnode[1][2]-physnode[0][2],
     physnode[3][2]-physnode[0][2],
-    physnode[4][2]-physnode[0][2],
-
+    physnode[4][2]-physnode[0][2]
   };
   
 
@@ -255,6 +254,7 @@ void RobustPhy2Ref(double physnode[20][3], double xphy[3], double xref[3])
   double dtheta=1./_NTHETA;
 
   for(int itheta=0;itheta<=_NTHETA;itheta++){
+    printf("itheta=%d\n",itheta);
     double theta=itheta*dtheta;
     theta=1; // TO DO: find the bug in homotopy
     // intermediate curved hexaedron
@@ -271,7 +271,7 @@ void RobustPhy2Ref(double physnode[20][3], double xphy[3], double xref[3])
       dxphy[1] -= (xphy)[1];
       dxphy[2] -= (xphy)[2];
       double det = dot_product(dtau[0], codtau[0]);
-      //assert(det > 0);
+      assert(det > 0);
 
       for(int ii = 0; ii < 3; ii ++ ) {
 	dxref[ii] = 0;
@@ -280,7 +280,7 @@ void RobustPhy2Ref(double physnode[20][3], double xphy[3], double xref[3])
 	}
 	xref[ii] -= dxref[ii] / det;
       }
-      //printf("iter= %d dxref=%f %f %f\n",iter,dxref[0],dxref[1],dxref[2]);
+      printf("iter= %d dxref=%f %f %f xref=%f %f %f\n",iter,dxref[0],dxref[1],dxref[2],xref[0],xref[1],xref[2]);
     }
   }
 
