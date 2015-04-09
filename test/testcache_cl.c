@@ -4,15 +4,16 @@
 #include <assert.h>
 #include <math.h>
 
-int Testfield(void){
+int TestCache(void){
   int test = true;
 
   double cfl = 0.5;
-  int degx = 2;
+  int degx = 1;
   int nraf = 1;
+  int nrafx = 2;
   double vmax = 1.0;
   int mx = 2;
-  int my = 4;
+  int my = 1;
 
   field f;
   f.varindex = GenericVarindex;
@@ -31,7 +32,7 @@ int Testfield(void){
   f.interp.interp_param[1] = degx; // x direction degree
   f.interp.interp_param[2] = degx; // y direction degree
   f.interp.interp_param[3] = 0; // z direction degree
-  f.interp.interp_param[4] = nraf; // x direction refinement
+  f.interp.interp_param[4] = nrafx; // x direction refinement
   f.interp.interp_param[5] = nraf; // y direction refinement
   f.interp.interp_param[6] = 1; // z direction refinement
 
@@ -44,12 +45,13 @@ int Testfield(void){
   BuildConnectivity(&(f.macromesh));
 
   Initfield(&f);
-  CheckMacroMesh(&(f.macromesh), f.interp.interp_param + 1);
+  f.is2d = true;
+  //CheckMacroMesh(&(f.macromesh), f.interp.interp_param + 1);
 
-  int raf[3]={nraf,nraf,1};
+  int raf[3]={nrafx,nraf,1};
   int deg[3]={degx,degx,0};
   int ic[3]={0,0,0};
-  int ix[3]={1,2,0};
+  int ix[3]={0,1,0};
 
   int ipg,ic0[3],ix0[3];
 
@@ -154,7 +156,7 @@ int Testfield(void){
 
 int main(void) {
   // Unit tests
-  int resu = Testfield();
+  int resu = TestCache();
   if (resu)
     printf("field test OK !\n");
   else 
