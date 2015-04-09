@@ -39,7 +39,7 @@ int TestPIC(void)
 
   PIC pic;
 
-  InitPIC(&pic,10000); 
+  InitPIC(&pic,10); 
   CreateParticles(&pic,&(f.macromesh));
   PlotParticles(&pic,&(f.macromesh));
 
@@ -61,7 +61,12 @@ int TestPIC(void)
 
   Initfield(&f);
 
-
+  pic.dt=0.01;
+  for(int iter=0;iter<100;iter++){
+    PushParticles(&f,&pic);
+  }
+   PlotParticles(&pic,&(f.macromesh));
+ 
 
   return test;
 }

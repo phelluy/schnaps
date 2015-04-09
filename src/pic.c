@@ -57,6 +57,7 @@ int r = rand();
       //r/=RAND_MAX;
       xp[idim]=m->xmin[idim]+r*
 	(m->xmax[idim]-m->xmin[idim]);
+      xp[idim]=0; // !!!!!!!!!!!!!!!!!!!!!
     }
 
     double xref[3];
@@ -75,6 +76,7 @@ int r = rand();
 
       for(int idim=0;idim<3;idim++){
 	vp[idim]=vt*(corput(n,k1[idim+3],k2[idim+3])-0.5);
+	vp[idim]=0;  //!!!!!!!!!!!!!!!!!!
       }
 
       pic->xv[np*6+3]=vp[0];
@@ -170,6 +172,8 @@ void PushParticles(field *f,PIC* pic){
 
     pic->xv[6*i+3]+=pic->dt * (w[0]+w[2]*pic->xv[6*i+4]);
     pic->xv[6*i+4]+=pic->dt * (w[1]-w[2]*pic->xv[6*i+3]);
+
+    // TO DO: transform the velocity in the reference coordinates
 
     pic->xv[6*i+0]+=pic->dt * pic->xv[6*i+3];
     pic->xv[6*i+1]+=pic->dt * pic->xv[6*i+4];
