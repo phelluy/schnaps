@@ -205,13 +205,13 @@ const char* clErrorString(const cl_int err)
 
 char *print_build_debug(cl_program* program, cl_device_id *device) 
 {
-  size_t log_size = 100000;
-  clGetProgramBuildInfo(*program,
-  			*device,
-  			CL_PROGRAM_BUILD_LOG,
-  			0,
-  			NULL,
-  			&log_size);
+  size_t log_size = 1000000;
+  /* clGetProgramBuildInfo(*program, */
+  /* 			*device, */
+  /* 			CL_PROGRAM_BUILD_LOG, */
+  /* 			0, */
+  /* 			NULL, */
+  /* 			&log_size); */
   char *log = (char*)calloc(log_size + 1 , sizeof(char));
   //char *log = (char*)malloc((log_size + 1) * sizeof(char));
   clGetProgramBuildInfo(*program, 
@@ -220,5 +220,6 @@ char *print_build_debug(cl_program* program, cl_device_id *device)
 			log_size, 
 			log, 
 			NULL);
+  printf("%s\n",log);
   return log;
 }

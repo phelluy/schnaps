@@ -252,6 +252,119 @@ int ipg(const int npg[], const int p[], const int icell)
     + p[0] + npg[0] * (p[1] + npg[1] * p[2]);
 }
 
+
+// Compute the surface terms inside one macrocell
+__kernel
+void DGFlux(__constant int *param,        // interp param
+	    int dim0, // face direction
+	    int ie,            // macrocel index
+	    __constant double *physnode,  // macrocell nodes
+	    __global double *wn,       // field values
+	    __global double *dtwn) // time derivative
+{
+  const int m = param[0];
+  const int deg[3] = {param[1],param[2], param[3]};
+  const int npg[3] = {deg[0] + 1, deg[1] + 1, deg[2] + 1};
+  const int nraf[3] = {param[4], param[5], param[6]};
+
+  int dim1=(dim0+1)%3;
+  int dim2=(dim1+1)%3;
+
+  // subcell id
+  int icL[3],icR[3];
+  int icell = get_group_id(0);
+  icL[dim0]= icell % (nraf[dim0]-1);
+  icL[dim1] = (icell / nraf[dim0]) % nraf[dim1];
+  icL[dim2]= icell / nraf[dim0] / nraf[dim1];
+
+  icR[dim0]=icL[dim0]+1;
+  icR[dim1]=icL[dim1];
+  icR[dim2]=icL[dim2]
+
+ 
+
+  /* // gauss point id where we compute the jacobian */
+  /* int pL[3],pR[3]; */
+  /* //ipg_to_xyz(get_local_id(0), p, npg */
+  /* { */
+  /*   int ipg = get_local_id(0); */
+  /*   pL[dim0] = deg[dim0]; */
+  /*   pL[dim1] = ipg % npg[dim1]; */
+  /*   pL[dim2] = (ipg / npg[dim1]); */
+  /*   pR[dim0] = 0; */
+  /*   pR[dim1] = pL[dim1]; */
+  /*   pR[dim2] = pL[dim2]; */
+  /* } */
+
+  /* // ref coordinates */
+  /* double hx = 1.0 / (double) nraf[0]; */
+  /* double hy = 1.0 / (double) nraf[1]; */
+  /* double hz = 1.0 / (double) nraf[2]; */
+
+  /* int offset[3] = {gauss_lob_offset[deg[0]] + pL[0], */
+  /* 		   gauss_lob_offset[deg[1]] + pL[1], */
+  /* 		   gauss_lob_offset[deg[2]] + pL[2]}; */
+
+  /* double x = hx * (icL[0] + gauss_lob_point[offset[0]]); */
+  /* double y = hy * (icL[1] + gauss_lob_point[offset[1]]); */
+  /* double z = hz * (icL[2] + gauss_lob_point[offset[2]]); */
+
+  /* double wpg = hx * hy * hz */
+  /*   * gauss_lob_weight[offset[0]] */
+  /*   * gauss_lob_weight[offset[1]] */
+  /*   * gauss_lob_weight[offset[2]]; */
+
+  /* double codtau[3][3]; */
+  /* { */
+  /*   double dtau[3][3]; */
+  /*   get_dtau(x, y, z, physnode, dtau); */
+    
+  /*   codtau[0][0] =  dtau[1][1] * dtau[2][2] - dtau[1][2] * dtau[2][1]; */
+  /*   codtau[0][1] = -dtau[1][0] * dtau[2][2] + dtau[1][2] * dtau[2][0]; */
+  /*   codtau[0][2] =  dtau[1][0] * dtau[2][1] - dtau[1][1] * dtau[2][0]; */
+  /*   codtau[1][0] = -dtau[0][1] * dtau[2][2] + dtau[0][2] * dtau[2][1]; */
+  /*   codtau[1][1] =  dtau[0][0] * dtau[2][2] - dtau[0][2] * dtau[2][0]; */
+  /*   codtau[1][2] = -dtau[0][0] * dtau[2][1] + dtau[0][1] * dtau[2][0]; */
+  /*   codtau[2][0] =  dtau[0][1] * dtau[1][2] - dtau[0][2] * dtau[1][1]; */
+  /*   codtau[2][1] = -dtau[0][0] * dtau[1][2] + dtau[0][2] * dtau[1][0]; */
+  /*   codtau[2][2] =  dtau[0][0] * dtau[1][1] - dtau[0][1] * dtau[1][0]; */
+  /* } */
+
+  /* double wL[_M],wR[_M]; */
+  /* int ipgL,ipgR; */
+  /* xyz_to_ipg(raf,deg,icL,pL,&ipgL); */
+  /* xyz_to_ipg(raf,deg,icR,pR,&ipgR); */
+  /* for(int iv = 0; iv < m; iv++) { */
+  /*   int imemL=VARINDEX(param, ie, ipgL, iv); */
+  /*   wL[iv] = wn[imemL]; */
+  /*   int imemR = VARINDEX(param, ie, ipgR, iv); */
+  /*   wR[iv] = wn[imemR]; */
+  /* } */
+
+  /* double flux[_M]; */
+
+  /* double vnds[3]; */
+  /* double h1h2 = 1. / nraf[dim1] / nraf[dim2]; */
+  /* vnds[0] =  codtau[0][dim0] * h1h2; */
+  /* vnds[1] =  codtau[1][dim0] * h1h2; */
+  /* vnds[2] =  codtau[2][dim0] * h1h2; */
+
+
+  /* double wpgs = wglop(deg[dim1], p[dim1]) * wglop(deg[dim2], p[dim2]);  */
+  /* NUMFLUX(wL, wR, vnds, flux); */
+
+  /* for(int iv = 0; iv < m; iv++) { */
+  /*   //int ipgL = ipg(npg, p, icell); */
+  /*   //int imemL = VARINDEX(param, ie, ipgL, iv); */
+  /*   int imemL=VARINDEX(param, ie, ipgL, iv); */
+  /*   dtwn[imemL] -= flux[iv] * wpgs; */
+  /*   int imemR = VARINDEX(param, ie, ipgR, iv); */
+  /*   dtwn[imemR] += flux[iv] * wpgs; */
+  /* } */
+}
+
+
+
 __kernel
 void set_buffer_to_zero(__global double *w)
 {
@@ -262,7 +375,7 @@ void set_buffer_to_zero(__global double *w)
 #define BOUNDARYFLUX BoundaryFlux
 #endif
 
-// Compute the volume and subcell-interface terms on one macrocell
+// Compute the volume  terms inside  one macrocell
 __kernel
 void DGVolume(__constant int *param,        // interp param
 	      int ie,            // macrocel index
@@ -372,57 +485,59 @@ void DGVolume(__constant int *param,        // interp param
     }
 
     // Compute the inter-subcell fluxes if needed
-    if(p[dim0] == 0 || p[dim0] == npg[dim0] - 1) {
-      int sgn = (p[dim0] > 0) ? 1 : -1;
-      int dim1 = (dim0 + 1) % 3;
-      int dim2 = (dim1 + 1) % 3;
+    /*if(p[dim0] == 0 || p[dim0] == npg[dim0] - 1)*/ /* { */
+    /*   int sgn = (p[dim0] > 0) ? 1 : -1; */
+    /*   int dim1 = (dim0 + 1) % 3; */
+    /*   int dim2 = (dim1 + 1) % 3; */
 
-      // Logical coordinates of the right subcell
-      int icR[3] = {icL[0], icL[1], icL[2]};
-      icR[dim0] += sgn;
+    /*   // Logical coordinates of the right subcell */
+    /*   int icR[3] = {icL[0], icL[1], icL[2]}; */
+    /*   icR[dim0] += sgn; */
       
-      // if we are not at the boundary of the macrocell
-      if(icR[dim0] >= 0 && icR[dim0] < nraf[dim0]) {
-	double vnds[3];
-	double h1h2 = 1. / nraf[dim1] / nraf[dim2];
-	vnds[0] = sgn * codtau[0][dim0] * h1h2;
-	vnds[1] = sgn * codtau[1][dim0] * h1h2;
-	vnds[2] = sgn * codtau[2][dim0] * h1h2;
+    /*   // if we are not at the boundary of the macrocell */
+    /*   if(icR[dim0] >= 0 && icR[dim0] < nraf[dim0]) { */
+    /* 	double vnds[3]; */
+    /* 	double h1h2 = 1. / nraf[dim1] / nraf[dim2]; */
+    /* 	vnds[0] = sgn * codtau[0][dim0] * h1h2; */
+    /* 	vnds[1] = sgn * codtau[1][dim0] * h1h2; */
+    /* 	vnds[2] = sgn * codtau[2][dim0] * h1h2; */
 
-        int ncR = icR[0] + nraf[0] * (icR[1] + nraf[1] * icR[2]);
-        int q[3] = {p[0], p[1], p[2]};
-        q[dim0] = (sgn == -1) ? npg[dim0] - 1 : 0;
-	int ipgR = ipg(npg, q, ncR);
+    /*     int ncR = icR[0] + nraf[0] * (icR[1] + nraf[1] * icR[2]); */
+    /*     int q[3] = {p[0], p[1], p[2]}; */
+    /*     q[dim0] = (sgn == -1) ? npg[dim0] - 1 : 0; */
+    /* 	int ipgR = ipg(npg, q, ncR); */
 
-	double wR[_M];
-	int imemR0 = GenericVarindex3d(m, npg, nraf,
-				      ie,
-				      0, q, icR);
-	__global double *wn0 = wn + imemR0;
-        for(int iv = 0; iv < m; iv++) {
-          //int imemR = VARINDEX(param, ie, ipgR, iv);
-          //wR[iv] = wn[imemR0 + iv];
-          wR[iv] = wn0[iv];
-        }
+    /* 	double wR[_M]; */
+    /* 	int imemR0 = GenericVarindex3d(m, npg, nraf, */
+    /* 				      ie, */
+    /* 				      0, q, icR); */
+    /* 	__global double *wn0 = wn + imemR0; */
+    /*     for(int iv = 0; iv < m; iv++) { */
+    /*       //int imemR = VARINDEX(param, ie, ipgR, iv); */
+    /*       //wR[iv] = wn[imemR0 + iv]; */
+    /*       wR[iv] = wn0[iv]; */
+    /*     } */
 
-	double wpgs = wglop(deg[dim1], p[dim1]) * wglop(deg[dim2], p[dim2]);
-        //double flux[_M];
-        NUMFLUX(wL, wR, vnds, flux);
+    /* 	double wpgs = wglop(deg[dim1], p[dim1]) * wglop(deg[dim2], p[dim2]); */
+    /*     //double flux[_M]; */
+    /*     NUMFLUX(wL, wR, vnds, flux); */
 
-	int imemL0 = GenericVarindex3d(m, npg, nraf, 
-				      ie,
-				      0, p, icL);
-	__global double *dtwn0 =  dtwn + imemL0;
-        for(int iv = 0; iv < m; iv++) {
-          //int ipgL = ipg(npg, p, icell);
-          //int imemL = VARINDEX(param, ie, ipgL, iv);
-          dtwn0[iv] -= flux[iv] * wpgs;
-        }
-      }
-    }
+    /* 	int imemL0 = GenericVarindex3d(m, npg, nraf,  */
+    /* 				      ie, */
+    /* 				      0, p, icL); */
+    /* 	__global double *dtwn0 =  dtwn + imemL0; */
+    /*     for(int iv = 0; iv < m; iv++) { */
+    /*       //int ipgL = ipg(npg, p, icell); */
+    /*       //int imemL = VARINDEX(param, ie, ipgL, iv); */
+    /*       dtwn0[iv] -= flux[iv] * wpgs; */
+    /*     } */
+    /*   } */
+    /* } */
 
   } // dim0 loop
 }
+
+
 
 // Apply division by the mass matrix on one macrocell
 __kernel

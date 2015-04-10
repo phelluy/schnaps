@@ -407,7 +407,8 @@ void BuildKernels(CLInfo *cli, char *strprog, char *buildoptions)
   status = clBuildProgram(cli->program,
 			  0,               // one device
 			  NULL,
-			  buildoptions,//NULL, 
+			  NULL, 
+			  //			  buildoptions,//NULL, 
 			  NULL, NULL);
 
   /* cl_int clBuildProgram(	cl_program program, */
@@ -418,12 +419,14 @@ void BuildKernels(CLInfo *cli, char *strprog, char *buildoptions)
   /* 				void *user_data) */
 
   if(status != CL_SUCCESS) {
-    /* printf("%s\n", strprog); */
+
+    //printf("%s\n", strprog);
     printf("%s\n", clErrorString(status));
-    printf("Compilation output:\n%s\n", 
-	   print_build_debug(&(cli->program), &cli->device[cli->deviceid]));
+    printf("Compilation output:\n%s\n",
+  	   print_build_debug(&(cli->program), &cli->device[cli->deviceid]));
   }
   assert(status >= CL_SUCCESS);
+
 }
 
 void ReadFile(char filename[], char **s){
