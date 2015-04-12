@@ -278,8 +278,7 @@ void DGFlux(__constant int *param,        // interp param
 
   icR[dim0]=icL[dim0]+1;
   icR[dim1]=icL[dim1];
-  icR[dim2]=icL[dim2]
-
+  icR[dim2]=icL[dim2];
  
 
   /* // gauss point id where we compute the jacobian */
