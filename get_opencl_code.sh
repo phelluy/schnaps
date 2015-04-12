@@ -23,6 +23,11 @@ sed -n '/#pragma start_opencl/,/#pragma end_opencl/p' schnaps_temp.cl >> schnaps
 #sed -i .bak '/start_opencl/d' schnaps.cl
 #sed -i .bak '/end_opencl/d' schnaps.cl
 
+cat schnaps.cl | sed 's/\#pragma\ end_opencl//' > schnaps0.cl
+mv schnaps0.cl schnaps.cl
+cat schnaps.cl | sed 's/\#pragma\ start_opencl//' > schnaps0.cl
+mv schnaps0.cl schnaps.cl
+
 #echo "\n/*-----------------------------src from .cl files----------------------------*/\n" >> schnaps.cl
 
 cat src/field.cl >> schnaps.cl
