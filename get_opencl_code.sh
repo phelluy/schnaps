@@ -1,33 +1,32 @@
 #!/bin/sh
 
-rm -f schnaps_temp.cl
-touch schnaps_temp.cl
+rm -f schnaps.cl
+touch schnaps.cl
 
-echo "#pragma start_opencl" >> schnaps_temp.cl
-echo "#ifdef cl_khr_fp64" >> schnaps_temp.cl
-echo "#pragma OPENCL EXTENSION cl_khr_fp64: enable" >> schnaps_temp.cl
-echo "#else" >> schnaps_temp.cl
-echo "#error" >> schnaps_temp.cl
-echo "#endif" >> schnaps_temp.cl
-echo "#pragma end_opencl" >> schnaps_temp.cl
+echo "#ifdef cl_khr_fp64" >> schnaps.cl
+echo "#pragma OPENCL EXTENSION cl_khr_fp64: enable" >> schnaps.cl
+echo "#else" >> schnaps.cl
+echo "#error" >> schnaps.cl
+echo "#endif" >> schnaps.cl
+
+echo >> schnaps.cl
+
+echo "#define NULL 0" >> schnaps.cl
 
 # NB: echo "\n/* does not work on the mesocentre.
 
-cat src/*.h >> schnaps_temp.cl
-cat src/*.c >> schnaps_temp.cl
-
 # Copy everything between "#pragma start_opencl" and "#pragma end_opencl"
-sed -n '/#pragma start_opencl/,/#pragma end_opencl/p' schnaps_temp.cl > schnaps.cl
+sed -n '/#pragma start_opencl/,/#pragma end_opencl/p' src/*.h  >> schnaps.cl
+sed -n '/#pragma start_opencl/,/#pragma end_opencl/p' src/*.c  >> schnaps.cl
 
-## Remove undefined pragmas
+# Remove undefined pragmas
 cat schnaps.cl | sed 's/\#pragma\ end_opencl//' > schnaps0.cl
 mv schnaps0.cl schnaps.cl
-
 cat schnaps.cl | sed 's/\#pragma\ start_opencl//' > schnaps0.cl
 mv schnaps0.cl schnaps.cl
 
 cat src/field.cl >> schnaps.cl
 
-rm -f schnaps_temp.cl
+rm -f schnaps0.cl
 
 exit 0

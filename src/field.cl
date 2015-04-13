@@ -1,17 +1,3 @@
-/* #ifdef cl_khr_fp64 */
-/* #pragma OPENCL EXTENSION cl_khr_fp64: enable */
-/* #else  */
-/* #error  */
-/* #endif */
-
-//#define _FPREC
-// for single precision computations
-//#define _FPREC f
-
-#define NULL 0
-
-
-
 // Return the 1d derivative of lagrange polynomial ib at glop ipg
 double dlag(int deg, int ib, int ipg) {
   return gauss_lob_dpsi[gauss_lob_dpsi_offset[deg] + ib * (deg + 1) + ipg];
