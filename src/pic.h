@@ -15,6 +15,7 @@ typedef struct PIC {
 
   //! list of cell ids for each particles
   int* cell_id;
+  int* old_cell_id;
 
   //! time step
   double dt; 

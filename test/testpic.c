@@ -61,8 +61,8 @@ int TestPIC(void)
 
   Initfield(&f);
 
-  pic.dt=0.01;
-  for(int iter=0;iter<100;iter++){
+  pic.dt=0.001;
+  for(int iter=0;iter<2000;iter++){
     PushParticles(&f,&pic);
   }
    PlotParticles(&pic,&(f.macromesh));

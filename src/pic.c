@@ -9,6 +9,7 @@ void InitPIC(PIC* pic,int n){
   pic->xv=malloc(sizeof(double) * 6 * n);
   assert(pic->xv);
   pic->cell_id=malloc(sizeof(int)  * n);
+  pic->old_cell_id=malloc(sizeof(int)  * n);
   assert(pic->cell_id);
 }
 
@@ -18,6 +19,7 @@ void FreePIC(PIC* pic){
   
   if (pic->xv != NULL) free(pic->xv );
   if (pic->cell_id != NULL) free(pic->cell_id);
+  if (pic->old_cell_id != NULL) free(pic->old_cell_id);
 }
 
 double corput(int n,int k1,int k2){
@@ -84,6 +86,7 @@ int r = rand();
       pic->xv[np*6+5]=vp[2];
       
       pic->cell_id[np]=num_elem;
+      pic->old_cell_id[np]=num_elem;
 
       np++;
     }
@@ -117,7 +120,8 @@ void PlotParticles(PIC* pic,MacroMesh *m){
 
   for(int i=0;i<pic->nbparts;i++) {
 
-    int ie=pic->cell_id[i];
+    int ie=pic->old_cell_id[i];
+    
     
     // Get the physical nodes of element ie
     double physnode[20][3];
@@ -166,18 +170,78 @@ void PushParticles(field *f,PIC* pic){
     
     double w[f->model.m];
     InterpField(f,pic->cell_id[i],&(pic->xv[6*i]),w);
+
+    // jacobian of tau at the particle
+    double physnode[20][3];
+    int ie=pic->cell_id[i];
+    if (ie >=0) {
+      for(int inoloc = 0; inoloc < 20; inoloc++) {
+	int ino = f->macromesh.elem2node[20*ie+inoloc];
+	physnode[inoloc][0] = f->macromesh.node[3 * ino + 0];
+	physnode[inoloc][1] = f->macromesh.node[3 * ino + 1];
+	physnode[inoloc][2] = f->macromesh.node[3 * ino + 2];
+      }
+
+      double dtau[3][3],codtau[3][3];
+      
+      double xphy[3];
+      Ref2Phy(physnode, // phys. nodes
+	      &(pic->xv[6*i]), // xref
+	      NULL, -1, // dpsiref, ifa
+	      xphy, dtau, // xphy, dtau
+	      codtau, NULL, NULL); // codtau, dpsi, vnds
+      double det = dot_product(dtau[0], codtau[0]);
+      
+      
+      //printf("w=%f %f %f %f\n",w[0],w[1],w[2],w[3]);
+      
+      // 2D motion
+      
+      double vref[3];
+      pic->xv[6*i+3+0] +=pic->dt * (w[0]+w[2]*pic->xv[6*i+4]);
+      pic->xv[6*i+3+1] +=pic->dt * (w[1]-w[2]*pic->xv[6*i+3]);
+      pic->xv[6*i+3+2] +=0;
+
+
+      for(int ii=0;ii<3;ii++){
+	vref[ii]=0;
+	for(int jj=0;jj<3;jj++){
+	  vref[ii] += codtau[jj][ii] * pic->xv[6*i+3+jj] / det ;
+	}
+      }
+
+      // TO DO: check if the particle is in a new element
+      pic->xv[6*i+0]+=pic->dt * vref[0];
+      pic->xv[6*i+1]+=pic->dt * vref[1];
+      pic->xv[6*i+2]+=pic->dt * vref[2];
+
+      bool is_out = (pic->xv[6*i+0] < 0 || pic->xv[6*i+0] > 1) ||
+	(pic->xv[6*i+1] < 0 || pic->xv[6*i+1] > 1)  ||
+	(pic->xv[6*i+2] < 0 || pic->xv[6*i+2] > 1);
+      
+      //is_out = false;
+
+      if (is_out) {
+	Ref2Phy(physnode, // phys. nodes
+		&(pic->xv[6*i]), // xref
+		NULL, -1, // dpsiref, ifa
+		xphy, NULL, // xphy, dtau
+		NULL, NULL, NULL); // codtau, dpsi, vnds
+	int old=pic->cell_id[i];
+	printf("oldref=%f %f %f \n",pic->xv[6*i+0],
+	       pic->xv[6*i+1],pic->xv[6*i+2]);
+	pic->cell_id[i]= NumElemFromPoint(&(f->macromesh),
+					  xphy,
+					  &(pic->xv[6*i]));
+	if (pic->cell_id[i] != -1) pic->old_cell_id[i]=pic->cell_id[i]; 
+	printf("newref=%f %f %f \n",pic->xv[6*i+0],
+	       pic->xv[6*i+1],pic->xv[6*i+2]);
+	printf("change elem: %d -> %d \n",old,pic->cell_id[i]);
+      }
+
     
-    
-    // 2D motion
 
-    pic->xv[6*i+3]+=pic->dt * (w[0]+w[2]*pic->xv[6*i+4]);
-    pic->xv[6*i+4]+=pic->dt * (w[1]-w[2]*pic->xv[6*i+3]);
-
-    // TO DO: transform the velocity in the reference coordinates
-    // TO DO: check if the particle is in a new element
-    pic->xv[6*i+0]+=pic->dt * pic->xv[6*i+3];
-    pic->xv[6*i+1]+=pic->dt * pic->xv[6*i+4];
-
+    } // if ie >= 0
   }
   
 
