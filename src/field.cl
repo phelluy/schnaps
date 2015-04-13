@@ -281,84 +281,84 @@ void DGFlux(__constant int *param,        // interp param
   icR[dim2]=icL[dim2];
  
 
-  /* // gauss point id where we compute the jacobian */
-  /* int pL[3],pR[3]; */
-  /* //ipg_to_xyz(get_local_id(0), p, npg */
-  /* { */
-  /*   int ipg = get_local_id(0); */
-  /*   pL[dim0] = deg[dim0]; */
-  /*   pL[dim1] = ipg % npg[dim1]; */
-  /*   pL[dim2] = (ipg / npg[dim1]); */
-  /*   pR[dim0] = 0; */
-  /*   pR[dim1] = pL[dim1]; */
-  /*   pR[dim2] = pL[dim2]; */
-  /* } */
+  // gauss point id where we compute the jacobian
+  int pL[3],pR[3];
+  //ipg_to_xyz(get_local_id(0), p, npg
+  {
+    int ipg = get_local_id(0);
+    pL[dim0] = deg[dim0];
+    pL[dim1] = ipg % npg[dim1];
+    pL[dim2] = (ipg / npg[dim1]);
+    pR[dim0] = 0;
+    pR[dim1] = pL[dim1];
+    pR[dim2] = pL[dim2];
+  }
 
-  /* // ref coordinates */
-  /* double hx = 1.0 / (double) nraf[0]; */
-  /* double hy = 1.0 / (double) nraf[1]; */
-  /* double hz = 1.0 / (double) nraf[2]; */
+  // ref coordinates
+  double hx = 1.0 / (double) nraf[0];
+  double hy = 1.0 / (double) nraf[1];
+  double hz = 1.0 / (double) nraf[2];
 
-  /* int offset[3] = {gauss_lob_offset[deg[0]] + pL[0], */
-  /* 		   gauss_lob_offset[deg[1]] + pL[1], */
-  /* 		   gauss_lob_offset[deg[2]] + pL[2]}; */
+  int offset[3] = {gauss_lob_offset[deg[0]] + pL[0],
+  		   gauss_lob_offset[deg[1]] + pL[1],
+  		   gauss_lob_offset[deg[2]] + pL[2]};
 
-  /* double x = hx * (icL[0] + gauss_lob_point[offset[0]]); */
-  /* double y = hy * (icL[1] + gauss_lob_point[offset[1]]); */
-  /* double z = hz * (icL[2] + gauss_lob_point[offset[2]]); */
+  double x = hx * (icL[0] + gauss_lob_point[offset[0]]);
+  double y = hy * (icL[1] + gauss_lob_point[offset[1]]);
+  double z = hz * (icL[2] + gauss_lob_point[offset[2]]);
 
-  /* double wpg = hx * hy * hz */
-  /*   * gauss_lob_weight[offset[0]] */
-  /*   * gauss_lob_weight[offset[1]] */
-  /*   * gauss_lob_weight[offset[2]]; */
+  double wpg = hx * hy * hz
+    * gauss_lob_weight[offset[0]]
+    * gauss_lob_weight[offset[1]]
+    * gauss_lob_weight[offset[2]];
 
-  /* double codtau[3][3]; */
-  /* { */
-  /*   double dtau[3][3]; */
-  /*   get_dtau(x, y, z, physnode, dtau); */
+  double codtau[3][3];
+  {
+    double dtau[3][3];
+    get_dtau(x, y, z, physnode, dtau);
     
-  /*   codtau[0][0] =  dtau[1][1] * dtau[2][2] - dtau[1][2] * dtau[2][1]; */
-  /*   codtau[0][1] = -dtau[1][0] * dtau[2][2] + dtau[1][2] * dtau[2][0]; */
-  /*   codtau[0][2] =  dtau[1][0] * dtau[2][1] - dtau[1][1] * dtau[2][0]; */
-  /*   codtau[1][0] = -dtau[0][1] * dtau[2][2] + dtau[0][2] * dtau[2][1]; */
-  /*   codtau[1][1] =  dtau[0][0] * dtau[2][2] - dtau[0][2] * dtau[2][0]; */
-  /*   codtau[1][2] = -dtau[0][0] * dtau[2][1] + dtau[0][1] * dtau[2][0]; */
-  /*   codtau[2][0] =  dtau[0][1] * dtau[1][2] - dtau[0][2] * dtau[1][1]; */
-  /*   codtau[2][1] = -dtau[0][0] * dtau[1][2] + dtau[0][2] * dtau[1][0]; */
-  /*   codtau[2][2] =  dtau[0][0] * dtau[1][1] - dtau[0][1] * dtau[1][0]; */
-  /* } */
+    codtau[0][0] =  dtau[1][1] * dtau[2][2] - dtau[1][2] * dtau[2][1];
+    codtau[0][1] = -dtau[1][0] * dtau[2][2] + dtau[1][2] * dtau[2][0];
+    codtau[0][2] =  dtau[1][0] * dtau[2][1] - dtau[1][1] * dtau[2][0];
+    codtau[1][0] = -dtau[0][1] * dtau[2][2] + dtau[0][2] * dtau[2][1];
+    codtau[1][1] =  dtau[0][0] * dtau[2][2] - dtau[0][2] * dtau[2][0];
+    codtau[1][2] = -dtau[0][0] * dtau[2][1] + dtau[0][1] * dtau[2][0];
+    codtau[2][0] =  dtau[0][1] * dtau[1][2] - dtau[0][2] * dtau[1][1];
+    codtau[2][1] = -dtau[0][0] * dtau[1][2] + dtau[0][2] * dtau[1][0];
+    codtau[2][2] =  dtau[0][0] * dtau[1][1] - dtau[0][1] * dtau[1][0];
+  }
 
-  /* double wL[_M],wR[_M]; */
-  /* int ipgL,ipgR; */
-  /* xyz_to_ipg(raf,deg,icL,pL,&ipgL); */
-  /* xyz_to_ipg(raf,deg,icR,pR,&ipgR); */
-  /* for(int iv = 0; iv < m; iv++) { */
-  /*   int imemL=VARINDEX(param, ie, ipgL, iv); */
-  /*   wL[iv] = wn[imemL]; */
-  /*   int imemR = VARINDEX(param, ie, ipgR, iv); */
-  /*   wR[iv] = wn[imemR]; */
-  /* } */
+  double wL[_M],wR[_M];
+  int ipgL,ipgR;
+  xyz_to_ipg(nraf,deg,icL,pL,&ipgL);
+  xyz_to_ipg(nraf,deg,icR,pR,&ipgR);
+  for(int iv = 0; iv < m; iv++) {
+    int imemL=VARINDEX(param, ie, ipgL, iv);
+    wL[iv] = wn[imemL];
+    int imemR = VARINDEX(param, ie, ipgR, iv);
+    wR[iv] = wn[imemR];
+  }
 
-  /* double flux[_M]; */
+  double flux[_M];
 
-  /* double vnds[3]; */
-  /* double h1h2 = 1. / nraf[dim1] / nraf[dim2]; */
-  /* vnds[0] =  codtau[0][dim0] * h1h2; */
-  /* vnds[1] =  codtau[1][dim0] * h1h2; */
-  /* vnds[2] =  codtau[2][dim0] * h1h2; */
+  double vnds[3];
+  double h1h2 = 1. / nraf[dim1] / nraf[dim2];
+  vnds[0] =  codtau[0][dim0] * h1h2;
+  vnds[1] =  codtau[1][dim0] * h1h2;
+  vnds[2] =  codtau[2][dim0] * h1h2;
 
 
-  /* double wpgs = wglop(deg[dim1], p[dim1]) * wglop(deg[dim2], p[dim2]);  */
-  /* NUMFLUX(wL, wR, vnds, flux); */
+  double wpgs = wglop(deg[dim1], pL[dim1]) * wglop(deg[dim2], pL[dim2]);
+  NUMFLUX(wL, wR, vnds, flux);
 
-  /* for(int iv = 0; iv < m; iv++) { */
-  /*   //int ipgL = ipg(npg, p, icell); */
-  /*   //int imemL = VARINDEX(param, ie, ipgL, iv); */
-  /*   int imemL=VARINDEX(param, ie, ipgL, iv); */
-  /*   dtwn[imemL] -= flux[iv] * wpgs; */
-  /*   int imemR = VARINDEX(param, ie, ipgR, iv); */
-  /*   dtwn[imemR] += flux[iv] * wpgs; */
-  /* } */
+  for(int iv = 0; iv < m; iv++) {
+    //int ipgL = ipg(npg, p, icell);
+    //int imemL = VARINDEX(param, ie, ipgL, iv);
+    int imemL=VARINDEX(param, ie, ipgL, iv);
+    dtwn[imemL] -= flux[iv] * wpgs;
+    int imemR = VARINDEX(param, ie, ipgR, iv);
+    dtwn[imemR] += flux[iv] * wpgs;
+  }
 }
 
 

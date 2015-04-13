@@ -177,7 +177,7 @@ int NPGF(int param[], int ifa) {
   int i1 = permut[ifa][1];
   return (param[i0] + 1) * (param[i1] + 1) * param[i0+3] * param[i1+3];
 }
-
+#pragma start_opencl
 void xyz_to_ipg(int* raf,int* deg,int* ic,int* ix,int *ipg){
   
   int nc = ic[0] + raf[0] * (ic[1] + raf[1] * ic[2]);
@@ -185,7 +185,9 @@ void xyz_to_ipg(int* raf,int* deg,int* ic,int* ix,int *ipg){
 
   *ipg= ix[0] + (deg[0] + 1) * (ix[1] + (deg[1] + 1) * ix[2]) + offset;
 }
+#pragma end_opencl
 
+#pragma start_opencl
 void ipg_to_xyz(int* raf,int* deg,int* ic,int* ix,int *pipg){
   
   int ipg=*pipg;
@@ -207,6 +209,7 @@ void ipg_to_xyz(int* raf,int* deg,int* ic,int* ix,int *pipg){
 
   ic[2] = ipg;
 }
+#pragma end_opencl
 
 
 // From a reference point find the nearest gauss point
