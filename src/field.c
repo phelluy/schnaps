@@ -286,6 +286,11 @@ void init_field_cl(field *f)
   f->clv_massupdate = clCreateUserEvent(f->cli.context, &status);
   f->clv_masskernel = clCreateUserEvent(f->cli.context, &status);
 
+  f->clv_flux = calloc(3, sizeof(cl_event));
+  f->clv_flux[0] = clCreateUserEvent(f->cli.context, &status);
+  f->clv_flux[1] = clCreateUserEvent(f->cli.context, &status);
+  f->clv_flux[2] = clCreateUserEvent(f->cli.context, &status);
+
   f->clv_volume = clCreateUserEvent(f->cli.context, &status);
   f->clv_volupdate = clCreateUserEvent(f->cli.context, &status);
   f->clv_volkernel = clCreateUserEvent(f->cli.context, &status);

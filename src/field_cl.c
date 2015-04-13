@@ -441,9 +441,42 @@ void DGMass_CL(void *mc, field *f,
   //printf("... DGMass_CL done.\n");
 }
 
+void DGFlux_CL(field *f, int d,
+	    cl_uint nwait, cl_event *wait, cl_event *done) 
+{
+  clWaitForEvents(nwait,  wait);
+
+  // Unpack the parameters
+  int *param = f->interp_param;
+  int deg[3] = {param[1], param[2], param[2]}; 
+  int nraf[3] = {param[3], param[4], param[5]}; 
+
+  // Number of points on per face
+  unsigned int npgf = deg[0] * deg[1] * deg[2] / deg[d];
+ 
+  
+  int dim[3];
+  dim[0] = d;
+  dim[1] = (dim[0] + 1) % 3;
+  dim[1] = (dim[1] + 1) % 3;
+  
+  // Number of faces
+  int nf = (nraf[dim[0]] - 1) * nraf[dim[1]] * nraf[dim[2]];
+
+  // FIXME: set kernel args
+
+  // FIXME: launch kernel
+
+  // FIXME: add to flux time "profiling".
+
+  if(done != NULL)
+    clSetUserEventStatus(*done, CL_COMPLETE);
+}
+
 // Apply division by the mass matrix OpenCL version
 void DGVolume_CL(void *mc, field *f, cl_mem *wn_cl,
-		cl_uint nwait, cl_event *wait, cl_event *done) {
+		cl_uint nwait, cl_event *wait, cl_event *done) 
+{
   MacroCell *mcell = (MacroCell*) mc;
   cl_kernel kernel = f->dgvolume;
   int *param = f->interp_param;
@@ -534,16 +567,25 @@ void dtfield_CL(field *f, cl_mem *wn_cl,
   		     nwait, wait, &(f->clv_zbuf));
   
   //printf("f->macromesh.nbfaces: %d\n", f->macromesh.nbfaces);
-  for(int ifa = 0; ifa < f->macromesh.nbfaces; ifa++) {
+  for(int ifa = 0; ifa < f->macromesh.nbfaces; ++ifa) {
     //printf("ifa: %d\n", ifa);
     DGMacroCellInterface_CL((void*) (f->mface + ifa), f, wn_cl,
     			    1,
     			    &(f->clv_zbuf),
     			    &(f->clv_mci));
   }
-  f->minter_time += clv_duration(f->clv_mci);
 
   //printf("f->macromesh.nbelems: %d\n", f->macromesh.nbelems);
+  
+  unsigned int ndim = f->macromesh.is2d ? 2 : 3;
+  clSetUserEventStatus(f->clv_flux[ndim - 1], CL_COMPLETE);
+  for(int ie = 0; ie < f->macromesh.nbelems; ++ie) {
+    DGFlux_CL(f, 0, 1, &(f->clv_mci), f->clv_flux);
+    for(unsigned int d = 1; d < ndim; ++d) {
+      DGFlux_CL(f, d, 1,  f->clv_flux + (d - 1) % ndim,  f->clv_flux + d);
+    }
+  }
+  clWaitForEvents(1, f->clv_flux + ndim - 1);
 
   clSetUserEventStatus(f->clv_mass, CL_COMPLETE);
   for(int ie = 0; ie < f->macromesh.nbelems; ++ie) {

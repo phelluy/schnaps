@@ -109,6 +109,9 @@ typedef struct field {
   cl_event clv_masskernel;
   cl_event clv_massupdate;
 
+  // Subcell flux events
+  cl_event *clv_flux;
+
   // Subcell volume events
   cl_event clv_volume; 
   cl_event clv_volkernel;

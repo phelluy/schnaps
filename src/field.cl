@@ -237,7 +237,6 @@ int ipg(const int npg[], const int p[], const int icell)
     + p[0] + npg[0] * (p[1] + npg[1] * p[2]);
 }
 
-
 // Compute the surface terms inside one macrocell
 __kernel
 void DGFlux(__constant int *param,        // interp param
@@ -248,27 +247,26 @@ void DGFlux(__constant int *param,        // interp param
 	    __global double *dtwn) // time derivative
 {
   const int m = param[0];
-  const int deg[3] = {param[1],param[2], param[3]};
+  const int deg[3] = {param[1], param[2], param[3]};
   const int npg[3] = {deg[0] + 1, deg[1] + 1, deg[2] + 1};
   const int nraf[3] = {param[4], param[5], param[6]};
 
-  int dim1=(dim0+1)%3;
-  int dim2=(dim1+1)%3;
+  int dim1 =(dim0 + 1) % 3;
+  int dim2 =(dim1 + 1) % 3;
 
   // subcell id
-  int icL[3],icR[3];
+  int icL[3], icR[3];
   int icell = get_group_id(0);
-  icL[dim0]= icell % (nraf[dim0]-1);
+  icL[dim0]= icell % (nraf[dim0] - 1);
   icL[dim1] = (icell / nraf[dim0]) % nraf[dim1];
   icL[dim2]= icell / nraf[dim0] / nraf[dim1];
 
-  icR[dim0]=icL[dim0]+1;
-  icR[dim1]=icL[dim1];
-  icR[dim2]=icL[dim2];
+  icR[dim0] = icL[dim0] + 1;
+  icR[dim1] = icL[dim1];
+  icR[dim2] = icL[dim2];
  
-
-  // gauss point id where we compute the jacobian
-  int pL[3],pR[3];
+  // Gauss point id where we compute the jacobian
+  int pL[3], pR[3];
   //ipg_to_xyz(get_local_id(0), p, npg
   {
     int ipg = get_local_id(0);
@@ -314,40 +312,36 @@ void DGFlux(__constant int *param,        // interp param
     codtau[2][2] =  dtau[0][0] * dtau[1][1] - dtau[0][1] * dtau[1][0];
   }
 
-  double wL[_M],wR[_M];
-  int ipgL,ipgR;
-  xyz_to_ipg(nraf,deg,icL,pL,&ipgL);
-  xyz_to_ipg(nraf,deg,icR,pR,&ipgR);
+  double wL[_M], wR[_M];
+  int ipgL, ipgR;
+  xyz_to_ipg(nraf, deg, icL, pL, &ipgL);
+  xyz_to_ipg(nraf, deg, icR, pR, &ipgR);
   for(int iv = 0; iv < m; iv++) {
-    int imemL=VARINDEX(param, ie, ipgL, iv);
+    int imemL = VARINDEX(param, ie, ipgL, iv);
     wL[iv] = wn[imemL];
     int imemR = VARINDEX(param, ie, ipgR, iv);
     wR[iv] = wn[imemR];
   }
 
-  double flux[_M];
-
   double vnds[3];
-  double h1h2 = 1. / nraf[dim1] / nraf[dim2];
+  double h1h2 = 1.0 / nraf[dim1] / nraf[dim2];
   vnds[0] =  codtau[0][dim0] * h1h2;
   vnds[1] =  codtau[1][dim0] * h1h2;
   vnds[2] =  codtau[2][dim0] * h1h2;
 
-
-  double wpgs = wglop(deg[dim1], pL[dim1]) * wglop(deg[dim2], pL[dim2]);
+  double flux[_M];
   NUMFLUX(wL, wR, vnds, flux);
 
-  for(int iv = 0; iv < m; iv++) {
+  double wpgs = wglop(deg[dim1], pL[dim1]) * wglop(deg[dim2], pL[dim2]);
+  for(int iv = 0; iv < m; ++iv) {
     //int ipgL = ipg(npg, p, icell);
     //int imemL = VARINDEX(param, ie, ipgL, iv);
-    int imemL=VARINDEX(param, ie, ipgL, iv);
+    int imemL = VARINDEX(param, ie, ipgL, iv);
     dtwn[imemL] -= flux[iv] * wpgs;
     int imemR = VARINDEX(param, ie, ipgR, iv);
     dtwn[imemR] += flux[iv] * wpgs;
   }
 }
-
-
 
 __kernel
 void set_buffer_to_zero(__global double *w)
