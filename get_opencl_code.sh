@@ -1,5 +1,16 @@
 #!/bin/sh
 
+rm -f schnaps_temp.cl
+touch schnaps_temp.cl
+
+echo "#pragma start_opencl" >> schnaps_temp.cl
+echo "#ifdef cl_khr_fp64" >> schnaps_temp.cl
+echo "#pragma OPENCL EXTENSION cl_khr_fp64: enable" >> schnaps_temp.cl
+echo "#else" >> schnaps_temp.cl
+echo "#error" >> schnaps_temp.cl
+echo "#endif" >> schnaps_temp.cl
+echo "#pragma end_opencl" >> schnaps_temp.cl
+
 # NB: echo "\n/* does not work on the mesocentre.
 
 cat src/*.h >> schnaps_temp.cl

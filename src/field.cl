@@ -1,8 +1,8 @@
-#ifdef cl_khr_fp64
-#pragma OPENCL EXTENSION cl_khr_fp64: enable
-#else 
-#error 
-#endif
+/* #ifdef cl_khr_fp64 */
+/* #pragma OPENCL EXTENSION cl_khr_fp64: enable */
+/* #else  */
+/* #error  */
+/* #endif */
 
 //#define _FPREC
 // for single precision computations
