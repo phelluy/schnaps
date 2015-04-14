@@ -20,7 +20,8 @@ void update_physnode_cl(field *f, int ie, cl_mem physnode_cl, double *physnode,
 
 void dtfield_CL(field *f, cl_mem *dtwn_cl,
 		cl_uint nwait, cl_event *wait, cl_event *done);
-
+void DGFlux_CL(field *f, int d, int ie, cl_mem *wn_cl,
+	       cl_uint nwait, cl_event *wait, cl_event *done);
 void DGVolume_CL(void *mcell, field *f, cl_mem *dtwn_cl,
 		 cl_uint nwait, cl_event *wait, cl_event *done);
 void DGMacroCellInterface_CL(void *mface, field *f, cl_mem *wn_cl,

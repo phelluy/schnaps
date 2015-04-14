@@ -516,14 +516,14 @@ void DGFlux_CL(field *f, int d, int ie, cl_mem *wn_cl,
   size_t groupsize = npgf;
   cl_int status;
   status = clEnqueueNDRangeKernel(f->cli.commandqueue,
-				  f->dgflux,
-				  1,
-				  NULL,
-				  &numworkitems,
-				  &groupsize,
-				  nwait,
-				  wait,
-				  done);
+  				  f->dgflux,
+  				  1,
+  				  NULL,
+  				  &numworkitems,
+  				  &groupsize,
+  				  nwait,
+  				  wait,
+  				  done);
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 }
