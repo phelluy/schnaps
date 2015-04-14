@@ -492,17 +492,15 @@ void init_DGFlux_CL(field *f, int ie, int dim0, cl_mem *wn_cl)
 void DGFlux_CL(field *f, int d, int ie, cl_mem *wn_cl,
 	       cl_uint nwait, cl_event *wait, cl_event *done) 
 {
-  clWaitForEvents(nwait, wait);
-
   // Unpack the parameters
   int *param = f->interp_param;
-  int deg[3] = {param[1], param[2], param[2]}; 
-  int nraf[3] = {param[3], param[4], param[5]}; 
+  int deg[3] = {param[1], param[2], param[2]};
+  int nraf[3] = {param[3], param[4], param[5]};
 
   int dim[3];
   dim[0] = d;
   dim[1] = (dim[0] + 1) % 3;
-  dim[1] = (dim[1] + 1) % 3;
+  dim[2] = (dim[1] + 1) % 3;
 
   // Number of points on per face
   unsigned int npgf = deg[dim[1]] * deg[dim[2]];
@@ -513,12 +511,21 @@ void DGFlux_CL(field *f, int d, int ie, cl_mem *wn_cl,
   // Set kernel args
   init_DGFlux_CL(f, ie, d, wn_cl);
      
- 
-  // FIXME: launch kernel
-
-  // FIXME: add to flux time "profiling".
-  if(done != NULL)
-    clSetUserEventStatus(*done, CL_COMPLETE); // FIXME: replace with kernel
+  // Launch the kernel
+  size_t numworkitems = nf * npgf;
+  size_t groupsize = npgf;
+  cl_int status;
+  status = clEnqueueNDRangeKernel(f->cli.commandqueue,
+				  f->dgflux,
+				  1,
+				  NULL,
+				  &numworkitems,
+				  &groupsize,
+				  nwait,
+				  wait,
+				  done);
+  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status >= CL_SUCCESS);
 }
 
 // Apply division by the mass matrix OpenCL version
@@ -536,7 +543,7 @@ void DGVolume_CL(void *mc, field *f, cl_mem *wn_cl,
   const int start = mcell->first;
   const int end = mcell->last_p1;
   
-  printf("DGVolume_CL loop: %d\n", end - start); // This is always 1!!!
+  //printf("DGVolume_CL loop: %d\n", end - start); // This is always 1!!!
 
   // Loop on the elements
   for(int ie = start; ie < end; ie++) {

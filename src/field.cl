@@ -336,8 +336,10 @@ void DGFlux(__constant int *param,       // 0: interp param
   for(int iv = 0; iv < m; ++iv) {
     //int ipgL = ipg(npg, p, icell);
     //int imemL = VARINDEX(param, ie, ipgL, iv);
+
     int imemL = VARINDEX(param, ie, ipgL, iv);
     dtwn[imemL] -= flux[iv] * wpgs;
+
     int imemR = VARINDEX(param, ie, ipgR, iv);
     dtwn[imemR] += flux[iv] * wpgs;
   }
