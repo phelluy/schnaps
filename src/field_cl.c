@@ -489,43 +489,58 @@ void init_DGFlux_CL(field *f, int ie, int dim0, cl_mem *wn_cl)
   assert(status >= CL_SUCCESS);
 }
 
-void DGFlux_CL(field *f, int d, int ie, cl_mem *wn_cl,
+void DGFlux_CL(field *f, int dim0, int ie, cl_mem *wn_cl,
 	       cl_uint nwait, cl_event *wait, cl_event *done) 
 {
   // Unpack the parameters
   int *param = f->interp_param;
-  int deg[3] = {param[1], param[2], param[2]};
-  int nraf[3] = {param[3], param[4], param[5]};
+  int deg[3] = {param[1], param[2], param[3]};
+  int nraf[3] = {param[4], param[5], param[6]};
+
 
   int dim[3];
-  dim[0] = d;
+  dim[0] = dim0;
   dim[1] = (dim[0] + 1) % 3;
   dim[2] = (dim[1] + 1) % 3;
 
+
   // Number of points on per face
-  unsigned int npgf = deg[dim[1]] * deg[dim[2]];
-     
+  int npgf = (deg[dim[1]] + 1) * (deg[dim[2]] + 1);
+
   // Number of faces
   int nf = (nraf[dim[0]] - 1) * nraf[dim[1]] * nraf[dim[2]];
 
-  // Set kernel args
-  init_DGFlux_CL(f, ie, d, wn_cl);
+  /* printf("\ndim0: %d\n", dim0); */
+  /* printf("dim: %d %d %d\n", dim[0], dim[1], dim[2]); */
+  /* printf("deg: %d %d %d\n", deg[0], deg[1], deg[2]); */
+  /* printf("nraf: %d %d %d\n", nraf[0], nraf[1], nraf[2]); */
+  /* printf("npgf: %d\n", npgf); */
+  /* printf("nf: %d\n", nf); */
+
+  if(nf > 0) { // If there are faces to work on, launch the kernel
+    // Set kernel args
+    init_DGFlux_CL(f, ie, dim0, wn_cl);
      
-  // Launch the kernel
-  size_t numworkitems = nf * npgf;
-  size_t groupsize = npgf;
-  cl_int status;
-  status = clEnqueueNDRangeKernel(f->cli.commandqueue,
-  				  f->dgflux,
-  				  1,
-  				  NULL,
-  				  &numworkitems,
-  				  &groupsize,
-  				  nwait,
-  				  wait,
-  				  done);
-  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status >= CL_SUCCESS);
+    // Launch the kernel
+    size_t numworkitems = nf * npgf;
+    size_t groupsize = npgf;
+    cl_int status;
+    status = clEnqueueNDRangeKernel(f->cli.commandqueue,
+				    f->dgflux,
+				    1,
+				    NULL,
+				    &numworkitems,
+				    &groupsize,
+				    nwait,
+				    wait,
+				    done);
+    if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
+    assert(status >= CL_SUCCESS);
+  } else {
+    if(done != NULL)
+      clSetUserEventStatus(*done, CL_COMPLETE);
+  }
+
 }
 
 // Apply division by the mass matrix OpenCL version
@@ -633,12 +648,12 @@ void dtfield_CL(field *f, cl_mem *wn_cl,
     //f->???_time += clv_duration(f->clv_physnodeupdate);
 
     unsigned int ndim = f->macromesh.is2d ? 2 : 3;
-    DGFlux_CL(f, ie, 0, wn_cl, 
+    DGFlux_CL(f, 0, ie, wn_cl, 
 	      1, &(f->clv_physnodeupdate), 
 	      f->clv_flux);
     //f->flux_time += clv_duration(f->clv_flux[0]);
     for(unsigned int d = 1; d < ndim; ++d) {
-      DGFlux_CL(f, ie, d, wn_cl, 
+      DGFlux_CL(f, d, ie, wn_cl, 
 		1, f->clv_flux + (d - 1) % ndim,  f->clv_flux + d);
       //f->flux_time += clv_duration(f->clv_flux[d]);
     }
