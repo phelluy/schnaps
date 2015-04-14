@@ -251,15 +251,16 @@ void DGFlux(__constant int *param,       // 0: interp param
   const int npg[3] = {deg[0] + 1, deg[1] + 1, deg[2] + 1};
   const int nraf[3] = {param[4], param[5], param[6]};
 
-  int dim1 =(dim0 + 1) % 3;
-  int dim2 =(dim1 + 1) % 3;
+  int dim1 = (dim0 + 1) % 3;
+  int dim2 = (dim1 + 1) % 3;
 
   // subcell id
   int icL[3], icR[3];
   int icell = get_group_id(0);
-  icL[dim0]= icell % (nraf[dim0] - 1);
+
+  icL[dim0] = icell % (nraf[dim0] - 1);
   icL[dim1] = (icell / nraf[dim0]) % nraf[dim1];
-  icL[dim2]= icell / nraf[dim0] / nraf[dim1];
+  icL[dim2] = icell / nraf[dim0] / nraf[dim1];
 
   icR[dim0] = icL[dim0] + 1;
   icR[dim1] = icL[dim1];
@@ -273,12 +274,12 @@ void DGFlux(__constant int *param,       // 0: interp param
     pL[dim0] = deg[dim0];
     pL[dim1] = ipg % npg[dim1];
     pL[dim2] = (ipg / npg[dim1]);
+
     pR[dim0] = 0;
     pR[dim1] = pL[dim1];
     pR[dim2] = pL[dim2];
   }
 
-  // ref coordinates
   double hx = 1.0 / (double) nraf[0];
   double hy = 1.0 / (double) nraf[1];
   double hz = 1.0 / (double) nraf[2];

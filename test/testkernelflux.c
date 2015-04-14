@@ -37,7 +37,7 @@ int TestKernelFlux()
   assert(f.macromesh.is2d);
   BuildConnectivity(&(f.macromesh));
 
-  PrintMacroMesh(&(f.macromesh));
+  //PrintMacroMesh(&(f.macromesh));
 
   //AffineMapMacroMesh(&(f.macromesh));
  
@@ -93,7 +93,7 @@ int TestKernelFlux()
   }
   CopyfieldtoCPU(&f);
 
-  Displayfield(&f);
+  //Displayfield(&f);
 
   // save the dtwn pointer
   double *dtwn_cl = f.dtwn;
@@ -106,7 +106,7 @@ int TestKernelFlux()
     //DGVolume((void*) &(f.mcell[ie]), &f, f.wn, f.dtwn);
   }
 
-  Displayfield(&f);
+  //Displayfield(&f);
 
   //check that the results are the same
   double maxerr = 0.0;
