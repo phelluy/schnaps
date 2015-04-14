@@ -239,12 +239,12 @@ int ipg(const int npg[], const int p[], const int icell)
 
 // Compute the surface terms inside one macrocell
 __kernel
-void DGFlux(__constant int *param,        // interp param
-	    int dim0, // face direction
-	    int ie,            // macrocel index
-	    __constant double *physnode,  // macrocell nodes
-	    __global double *wn,       // field values
-	    __global double *dtwn) // time derivative
+void DGFlux(__constant int *param,       // 0: interp param
+	    int ie,                      // 1: macrocel index
+	    int dim0,                    // 2: face direction
+	    __constant double *physnode, // 3: macrocell nodes
+	    __global double *wn,         // 4: field values
+	    __global double *dtwn)       // 5: time derivative
 {
   const int m = param[0];
   const int deg[3] = {param[1], param[2], param[3]};

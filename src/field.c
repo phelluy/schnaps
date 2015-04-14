@@ -237,6 +237,12 @@ void init_field_cl(field *f)
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 
+  f->dgflux = clCreateKernel(f->cli.program,
+			     "DGFlux",
+			     &status);
+  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status >= CL_SUCCESS);
+
   f->dgvolume = clCreateKernel(f->cli.program,
 			       "DGVolume",
 			       &status);
@@ -276,15 +282,16 @@ void init_field_cl(field *f)
   // Initialize events. // FIXME: free on exit
   f->clv_zbuf = clCreateUserEvent(f->cli.context, &status);
   
-  f->clv_mci = clCreateUserEvent(f->cli.context, &status);
+  f->clv_mapdone = clCreateUserEvent(f->cli.context, &status);
 
+  f->clv_physnodeupdate = clCreateUserEvent(f->cli.context, &status);
+
+  f->clv_mci = clCreateUserEvent(f->cli.context, &status);
   f->clv_interkernel = clCreateUserEvent(f->cli.context, &status);
   f->clv_interupdate = clCreateUserEvent(f->cli.context, &status);
   f->clv_interupdateR = clCreateUserEvent(f->cli.context, &status);
 
   f->clv_mass = clCreateUserEvent(f->cli.context, &status);
-  f->clv_massupdate = clCreateUserEvent(f->cli.context, &status);
-  f->clv_masskernel = clCreateUserEvent(f->cli.context, &status);
 
   f->clv_flux = calloc(3, sizeof(cl_event));
   f->clv_flux[0] = clCreateUserEvent(f->cli.context, &status);
@@ -292,8 +299,6 @@ void init_field_cl(field *f)
   f->clv_flux[2] = clCreateUserEvent(f->cli.context, &status);
 
   f->clv_volume = clCreateUserEvent(f->cli.context, &status);
-  f->clv_volupdate = clCreateUserEvent(f->cli.context, &status);
-  f->clv_volkernel = clCreateUserEvent(f->cli.context, &status);
 
   // Set timers to zero
   f->zbuf_time = 0;

@@ -87,8 +87,9 @@ typedef struct field {
   cl_mem physnodeR_cl;
   cl_double *physnodeR;
 
-  //! opencl kernels for mass inversion
+  //! opencl kernels
   cl_kernel dgmass;
+  cl_kernel dgflux;
   cl_kernel dgvolume;
   cl_kernel dginterface;
   cl_kernel RK_out_CL;
@@ -101,21 +102,19 @@ typedef struct field {
   // used in update_physnode_cl
   cl_event clv_mapdone; 
   
-  // event for set_buf_to_zero
+  // set_buf_to_zero event
   cl_event clv_zbuf; 
   
+  cl_event clv_physnodeupdate;
+
   // Subcell mass events
   cl_event clv_mass; 
-  cl_event clv_masskernel;
-  cl_event clv_massupdate;
 
   // Subcell flux events
   cl_event *clv_flux;
 
   // Subcell volume events
   cl_event clv_volume; 
-  cl_event clv_volkernel;
-  cl_event clv_volupdate;
 
   // Macrocell interface events
   cl_event clv_mci;
