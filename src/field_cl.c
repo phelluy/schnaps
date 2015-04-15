@@ -497,12 +497,10 @@ void DGFlux_CL(field *f, int dim0, int ie, cl_mem *wn_cl,
   int deg[3] = {param[1], param[2], param[3]};
   int nraf[3] = {param[4], param[5], param[6]};
 
-
   int dim[3];
   dim[0] = dim0;
   dim[1] = (dim[0] + 1) % 3;
   dim[2] = (dim[1] + 1) % 3;
-
 
   // Number of points on per face
   int npgf = (deg[dim[1]] + 1) * (deg[dim[2]] + 1);
@@ -510,13 +508,13 @@ void DGFlux_CL(field *f, int dim0, int ie, cl_mem *wn_cl,
   // Number of faces
   int nf = (nraf[dim[0]] - 1) * nraf[dim[1]] * nraf[dim[2]];
 
-  // FIXME: temp debugging output
-  printf("\ndim0: %d\n", dim0);
-  printf("dim: %d %d %d\n", dim[0], dim[1], dim[2]);
-  printf("deg: %d %d %d\n", deg[0], deg[1], deg[2]);
-  printf("nraf: %d %d %d\n", nraf[0], nraf[1], nraf[2]);
-  printf("npgf: %d\n", npgf);
-  printf("nf: %d\n", nf);
+  // debugging output
+  /* printf("\ndim0: %d\n", dim0); */
+  /* printf("dim: %d %d %d\n", dim[0], dim[1], dim[2]); */
+  /* printf("deg: %d %d %d\n", deg[0], deg[1], deg[2]); */
+  /* printf("nraf: %d %d %d\n", nraf[0], nraf[1], nraf[2]); */
+  /* printf("npgf: %d\n", npgf); */
+  /* printf("nf: %d\n", nf); */
 
   if(nf > 0) { // If there are faces to work on, launch the kernel
     // Set kernel args
