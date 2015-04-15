@@ -14,9 +14,9 @@ int main(void) {
 } 
 
 void Maxwell2DConstInitData(double x[3], double w[]) {
-  w[0]=1;
+  w[0]=0;
   w[1]=0;
-  w[2]=0;
+  w[2]=1;
   w[3]=0;
 }
 
@@ -39,7 +39,7 @@ int TestPIC(void)
 
   PIC pic;
 
-  InitPIC(&pic,10); 
+  InitPIC(&pic,1); 
   CreateParticles(&pic,&(f.macromesh));
   PlotParticles(&pic,&(f.macromesh));
 
@@ -61,12 +61,36 @@ int TestPIC(void)
 
   Initfield(&f);
 
+  // place the particle at (0,1,0) and v=(1,0,0)
+  pic.xv[0]=0;
+  pic.xv[1]=1;
+  pic.xv[2]=0.5;
+  double xref[3];
+  pic.cell_id[0]=NumElemFromPoint(&f.macromesh,pic.xv,xref);
+  pic.xv[0]=xref[0];  
+  pic.xv[1]=xref[1];  
+  pic.xv[2]=xref[2];  
+  pic.xv[3]=1;
+  pic.xv[4]=0;
+  pic.xv[5]=0;
+
+  double final_pos_phy[3]={0,-1,0.5};
+  double final_pos[3];
+  int final_cell=NumElemFromPoint(&f.macromesh,
+				  final_pos_phy,final_pos);
+
   pic.dt=0.001;
-  for(int iter=0;iter<2000;iter++){
+  for(int iter=0;iter<3141;iter++){
     PushParticles(&f,&pic);
   }
-   PlotParticles(&pic,&(f.macromesh));
+  PlotParticles(&pic,&(f.macromesh));
  
+
+  printf("Dist=%f\n",Dist(pic.xv,final_pos));
+
+  test = test && (Dist(pic.xv,final_pos) < 1e-3);
+
+  test = test && (final_cell == pic.cell_id[0]);
 
   return test;
 }

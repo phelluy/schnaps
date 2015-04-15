@@ -2,6 +2,7 @@
 #define _PIC_H
 
 #include "schnaps.h"
+#include <math.h>
 
 //! \brief struct for managing a set of particles
 //! and the Particle-In-Cell (PIC) method
@@ -28,6 +29,14 @@ typedef struct PIC {
 //! \param[in] n number of particles
 //! \param[inout] pic PIC object
 void InitPIC(PIC* pic,int n);
+
+//! \brief generate a 3d gaussian distribution of velocities
+// ! Box-Muller algorithm
+//! \param[in] k1 4 van der Corput parameters
+//! \param[in] k2 4 van der Corput parameters
+//! \param[out] v a pseudo-random gaussian vector 
+void BoxMuller3d(double *v,int* k1, int* k2);
+
 
 
 //! \brief free the allocated arrays

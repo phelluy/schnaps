@@ -33,21 +33,24 @@ double corput(int n,int k1,int k2){
   return corput;
 }
 
-double* boxm3d()
+void BoxMuller3d(double *xx,int* k1, int* k2)
 {
-  double *xx=(double *) malloc(3*sizeof(double));
   double x1, x2, rsq;
   
   static int iset=0;
+  static int n[4]={0,0,0,0};
+  static int n2=0;
   static double gset;
   
   if (iset == 0)
     {
       do {
-	x1=2.0*rand()/RAND_MAX -1.0;
-	x2=2.0*rand()/RAND_MAX -1.0;
+	x1=2.0*corput(n[0]++,k1[0],k2[0]) -1.0;
+	x2=2.0*corput(n[1]++,k1[1],k2[1]) -1.0;
+	/* x1=2.0*rand()/RAND_MAX -1.0; */
+	/* x2=2.0*rand()/RAND_MAX -1.0; */
 	rsq=x1*x1+x2*x2;
-      } while (rsq >= 1.0 || rsq == 0.0);
+      } while (rsq >= 1.0 || rsq == 0);
       rsq = sqrt(-2.0*log(rsq)/rsq);
       xx[2]=x1*rsq;
       iset=1;
@@ -58,23 +61,24 @@ double* boxm3d()
       xx[2] = gset;
     } 
   do {
-    x1 = 2.0 * rand()/RAND_MAX - 1.0;
-    x2 = 2.0 * rand()/RAND_MAX - 1.0;
+    x1 = 2.0 * corput(n[2]++,k1[2],k2[2]) - 1.0;
+    x2 = 2.0 * corput(n[3]++,k1[3],k2[3]) - 1.0;
+    /* x1 = 2.0 * rand()/RAND_MAX - 1.0; */
+    /* x2 = 2.0 * rand()/RAND_MAX - 1.0; */
     rsq = x1*x1 + x2*x2;
-  } while ( rsq >= 1.0 );
+  } while ( rsq >= 1.0 || rsq == 0);
   
   rsq = sqrt( -2.0 * log(rsq)/rsq );
   xx[0] = x1 * rsq;
   xx[1] = x2 * rsq;
 
-  return xx;
 }
 
 
 void CreateParticles(PIC* pic,MacroMesh *m){
 
-  const int k1[6]={3,5,7,11,13,17};
-  const int k2[6]={2,3,5,7,11,13};
+  int k1[7]={3,5,7,11,13,17,19};
+  int k2[7]={2,3,5,7,11,13,17};
 
   int n=0;
   int np=0;
@@ -85,7 +89,7 @@ void CreateParticles(PIC* pic,MacroMesh *m){
   double vp[3];
 
   //srand(time(NULL));
-int r = rand();
+  //int r = rand();
 
 
   while(np < pic->nbparts){
@@ -96,7 +100,6 @@ int r = rand();
       //r/=RAND_MAX;
       xp[idim]=m->xmin[idim]+r*
 	(m->xmax[idim]-m->xmin[idim]);
-      xp[idim]=0; // !!!!!!!!!!!!!!!!!!!!!
     }
 
     double xref[3];
@@ -113,7 +116,8 @@ int r = rand();
       pic->xv[np*6+1]=xref[1];
       pic->xv[np*6+2]=xref[2];
 
-      double* vp = boxm3d();
+      double vp[3]={1,0,0};
+      BoxMuller3d(vp,k1+3,k2+3);
 
 	/*      for(int idim=0;idim<3;idim++){
 	vp[idim]=vt*(corput(n,k1[idim+3],k2[idim+3])-0.5);
@@ -123,7 +127,6 @@ int r = rand();
       pic->xv[np*6+3]=vp[0];
       pic->xv[np*6+4]=vp[1];
       pic->xv[np*6+5]=vp[2];
-      free(vp);
 
       pic->cell_id[np]=num_elem;
       pic->old_cell_id[np]=num_elem;
@@ -193,7 +196,7 @@ void PlotParticles(PIC* pic,MacroMesh *m){
     vz=pic->xv[6*i+5];
     fprintf(gmshfile,"%d %f %f %f \n",i+1,x,y,z);
     /* fic << i+1 << " "<<x<<" "<<y<<" "<<0<<endl;	 */
-    fprintf(gnufile,"%f %f %f \n",x,y,z);
+    fprintf(gnufile,"%f %f %f %f %f %f  \n",x,y,z,vx,vy,vz);
   }
   
   fprintf(gmshfile, "$EndNodes\n");
@@ -208,13 +211,14 @@ void PushParticles(field *f,PIC* pic){
 
   for(int i=0;i<pic->nbparts;i++) {
     
-    double w[f->model.m];
-    InterpField(f,pic->cell_id[i],&(pic->xv[6*i]),w);
 
     // jacobian of tau at the particle
     double physnode[20][3];
     int ie=pic->cell_id[i];
     if (ie >=0) {
+      double w[f->model.m];
+      InterpField(f,pic->cell_id[i],&(pic->xv[6*i]),w);
+
       for(int inoloc = 0; inoloc < 20; inoloc++) {
 	int ino = f->macromesh.elem2node[20*ie+inoloc];
 	physnode[inoloc][0] = f->macromesh.node[3 * ino + 0];
