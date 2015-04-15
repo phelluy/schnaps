@@ -259,8 +259,8 @@ void DGFlux(__constant int *param,       // 0: interp param
   int icell = get_group_id(0);
 
   icL[dim0] = icell % (nraf[dim0] - 1);
-  icL[dim1] = (icell / nraf[dim0]) % nraf[dim1];
-  icL[dim2] = icell / nraf[dim0] / nraf[dim1];
+  icL[dim1] = (icell / (nraf[dim0]-1)) % nraf[dim1];
+  icL[dim2] = icell / (nraf[dim0]-1) / nraf[dim1];
 
   icR[dim0] = icL[dim0] + 1;
   icR[dim1] = icL[dim1];

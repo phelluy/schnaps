@@ -679,7 +679,8 @@ void DGSubCellInterface(void *mc, field *f, double *w, double *dtw)
 	  int offsetL = npg[0] * npg[1] * npg[2] * ncL;
 
 	  // Sweeping subcell faces in the three directions
-	  for(int dim0 = 0; dim0 < 3; dim0++) {
+	  for(int dim0 = 0; dim0 < 3; dim0++) { 
+	    
 	    // Compute the subface flux only if we do not touch the
 	    // subcell boundary along the current direction dim0
 	    if (icL[dim0] != nraf[dim0] - 1) {
