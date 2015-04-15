@@ -33,6 +33,43 @@ double corput(int n,int k1,int k2){
   return corput;
 }
 
+double* boxm3d()
+{
+  double *xx=(double *) malloc(3*sizeof(double));
+  double x1, x2, rsq;
+  
+  static int iset=0;
+  static double gset;
+  
+  if (iset == 0)
+    {
+      do {
+	x1=2.0*rand()/RAND_MAX -1.0;
+	x2=2.0*rand()/RAND_MAX -1.0;
+	rsq=x1*x1+x2*x2;
+      } while (rsq >= 1.0 || rsq == 0.0);
+      rsq = sqrt(-2.0*log(rsq)/rsq);
+      xx[2]=x1*rsq;
+      iset=1;
+      gset = x2*rsq;
+    } else
+    {
+      iset=0;
+      xx[2] = gset;
+    } 
+  do {
+    x1 = 2.0 * rand()/RAND_MAX - 1.0;
+    x2 = 2.0 * rand()/RAND_MAX - 1.0;
+    rsq = x1*x1 + x2*x2;
+  } while ( rsq >= 1.0 );
+  
+  rsq = sqrt( -2.0 * log(rsq)/rsq );
+  xx[0] = x1 * rsq;
+  xx[1] = x2 * rsq;
+
+  return xx;
+}
+
 
 void CreateParticles(PIC* pic,MacroMesh *m){
 
@@ -76,15 +113,18 @@ int r = rand();
       pic->xv[np*6+1]=xref[1];
       pic->xv[np*6+2]=xref[2];
 
-      for(int idim=0;idim<3;idim++){
+      double* vp = boxm3d();
+
+	/*      for(int idim=0;idim<3;idim++){
 	vp[idim]=vt*(corput(n,k1[idim+3],k2[idim+3])-0.5);
 	vp[idim]=0;  //!!!!!!!!!!!!!!!!!!
-      }
+	}*/
 
       pic->xv[np*6+3]=vp[0];
       pic->xv[np*6+4]=vp[1];
       pic->xv[np*6+5]=vp[2];
-      
+      free(vp);
+
       pic->cell_id[np]=num_elem;
       pic->old_cell_id[np]=num_elem;
 
