@@ -31,6 +31,9 @@ void Maxwell2DNumFlux(double wL[], double wR[], double* vnorm, double* flux) {
   flux[1]/=2;
   flux[2]/=2;
   flux[3]/=2;
+  flux[4]=0;
+  flux[5]=0;
+  flux[6]=0;
 
 
 
@@ -61,13 +64,15 @@ void Maxwell2DImposedData(double x[3], double t, double w[]) {
     w[1]= u * c/r;
     w[2]= c/r;
     w[3]= 0;
-
+    w[4]=0;
+    w[5]=0;
+    w[6]=0;
 }
 
 
 void Maxwell2DBoundaryFlux(double x[3], double t, double wL[], double *vnorm,
 		       double *flux) {
-  double wR[4];
+  double wR[7];
   Maxwell2DImposedData(x, t, wR);
   Maxwell2DNumFlux(wL, wR, vnorm, flux);
 }

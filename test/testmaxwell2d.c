@@ -8,7 +8,7 @@ int TestMaxwell2D(void) {
   field f;
 
   f.model.cfl = 0.05;  
-  f.model.m = 4; // num of conservative variables
+  f.model.m = 7; // num of conservative variables
 
   f.model.NumFlux = Maxwell2DNumFlux;
   f.model.BoundaryFlux = Maxwell2DBoundaryFlux;

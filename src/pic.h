@@ -50,6 +50,11 @@ void FreePIC(PIC* pic);
 //! \param[inout] pic PIC object
 void CreateParticles(PIC* pic,MacroMesh *m);
 
+//! \brief compute charge and current associated to particles
+//! \param[in] pic a PIC struct containing the particles
+//! \param[inout] f a maxwell field updated with charge and current sources
+void AccumulateParticles(PIC* pic,field *f);
+
 
 //! brief pseudo-random van der corput number generator
 //! \param[in] n index of the number in the sequence
