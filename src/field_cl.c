@@ -553,7 +553,7 @@ void DGFlux_CL(field *f, int dim0, int ie, cl_mem *wn_cl,
     // Set kernel args
     size_t numworkitems = nf * npgf;
     size_t groupsize = npgf;
-    init_DGFlux_CL(f, ie, dim0, wn_cl, m * groupsize);
+    init_DGFlux_CL(f, ie, dim0, wn_cl, 2 * m * groupsize);
      
     // Launch the kernel
     cl_int status;

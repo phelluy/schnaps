@@ -246,8 +246,7 @@ void DGFlux(__constant int *param,       // 0: interp param
 	    __global double *wn,         // 4: field values
 	    __global double *dtwn,       // 5: time derivative
 	    __local double* wnloc,       // 6: wn local memory
-	    __local double* dtwnloc      // 7: dtwn local memory
-	    )
+	    __local double* dtwnloc)      // 7: dtwn local memory
 {
   const int m = param[0];
   const int deg[3] = {param[1], param[2], param[3]};
@@ -269,13 +268,13 @@ void DGFlux(__constant int *param,       // 0: interp param
   icR[dim1] = icL[dim1];
   icR[dim2] = icL[dim2];
 
-
+  // Prefetch
   for(int i = 0; i < m; i++) {
     int pL[3], pR[3];
-    int iread= get_local_id(0) + i * get_local_size(0); 
+    int iread = get_local_id(0) + i * get_local_size(0); 
     int iv = iread % _M;
     int ipg = iread / _M;  
-    pL[dim0]=deg[dim0];
+    pL[dim0] = deg[dim0];
     pL[dim1] = ipg % npg[dim1];
     pL[dim2] = (ipg / npg[dim1]);
     int ipgL;
@@ -287,9 +286,9 @@ void DGFlux(__constant int *param,       // 0: interp param
     pR[dim2] = pL[dim2];
     int ipgR;
     int imemR = VARINDEX(param, ie, ipgR, iv);
-    wnloc[iread+get_local_size(0)*_M] = wn[imemR];
+    wnloc[iread + get_local_size(0) * _M] = wn[imemR];
   }
-  
+  barrier(CLK_LOCAL_MEM_FENCE | CLK_GLOBAL_MEM_FENCE);
  
   // Gauss point id where we compute the jacobian
   int pL[3], pR[3];
