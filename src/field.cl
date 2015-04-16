@@ -243,10 +243,10 @@ void DGFlux(__constant int *param,       // 0: interp param
 	    int ie,                      // 1: macrocel index
 	    int dim0,                    // 2: face direction
 	    __constant double *physnode, // 3: macrocell nodes
-	    __global double *wn,         // 4: field values
-	    __global double *dtwn,       // 5: time derivative
-	    __local double* wnloc,       // 6: wn local memory
-	    __local double* dtwnloc)      // 7: dtwn local memory
+	    __global   double *wn,       // 4: field values
+	    __global   double *dtwn,     // 5: time derivative
+	    __local    double *wnloc,    // 6: wn local memory
+	    __local    double *dtwnloc)  // 7: dtwn local memory
 {
   const int m = param[0];
   const int deg[3] = {param[1], param[2], param[3]};
@@ -346,26 +346,31 @@ void DGFlux(__constant int *param,       // 0: interp param
     codtau[2][2] =  dtau[0][0] * dtau[1][1] - dtau[0][1] * dtau[1][0];
   }
 
-  double wL[_M], wR[_M];
-  for(int iv = 0; iv < m; iv++) {
-    /* int imemL = VARINDEX(param, ie, ipgL, iv); */
-    /* wL[iv] = wn[imemL]; */
-    wL[iv] = wnlocL[get_local_id(0) * m + iv];
-
-    /* int imemR = VARINDEX(param, ie, ipgR, iv); */
-    /* wR[iv] = wn[imemR]; */
-    wR[iv] = wnlocR[get_local_id(0) * m + iv];
-  }
-
-  double vnds[3];
   double h1h2 = 1.0 / nraf[dim1] / nraf[dim2];
+  double vnds[3];
   vnds[0] = codtau[0][dim0] * h1h2;
   vnds[1] = codtau[1][dim0] * h1h2;
   vnds[2] = codtau[2][dim0] * h1h2;
 
+  double wL[_M], wR[_M]; // TODO: remove?
+  __local double *wnL = wnlocL + get_local_id(0) * m;
+  __local double *wnR = wnlocR + get_local_id(0) * m;
+  for(int iv = 0; iv < m; iv++) {
+    /* int imemL = VARINDEX(param, ie, ipgL, iv); */
+    /* wL[iv] = wn[imemL]; */
+    //wL[iv] = wnlocL[get_local_id(0) * m + iv];
+    wL[iv] = wnL[iv];
+
+    /* int imemR = VARINDEX(param, ie, ipgR, iv); */
+    /* wR[iv] = wn[imemR]; */
+    //wR[iv] = wnlocR[get_local_id(0) * m + iv];
+    wR[iv] = wnR[iv];
+  }
+
   // TODO: wL and wR could be passed without a copy to __private.
+  // (ie we can just pass *wnL and *wnR).
   double flux[_M];
-  NUMFLUX(wL, wR, vnds, flux); 
+  NUMFLUX(wL, wR, vnds, flux);
 
   int ipgL, ipgR;
   xyz_to_ipg(nraf, deg, icL, pL, &ipgL);
