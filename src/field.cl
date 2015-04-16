@@ -245,8 +245,8 @@ void DGFlux(__constant int *param,       // 0: interp param
 	    __constant double *physnode, // 3: macrocell nodes
 	    __global double *wn,         // 4: field values
 	    __global double *dtwn,       // 5: time derivative
-	    __local double* wnloc,
-	    __local double* dtwnloc
+	    __local double* wnloc,       // 6: wn local memory
+	    __local double* dtwnloc      // 7: dtwn local memory
 	    )
 {
   const int m = param[0];
