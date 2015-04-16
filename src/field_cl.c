@@ -510,15 +510,6 @@ void init_DGFlux_CL(field *f, int ie, int dim0, cl_mem *wn_cl,
                           NULL);
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
-
-  // __local double* dtwnloc      // 7: dtwn local memory
-
-  status = clSetKernelArg(kernel,
-                          argnum++,
-                          sizeof(cl_double) * cachesize,
-                          NULL);
-  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status >= CL_SUCCESS);
 }
 
 void DGFlux_CL(field *f, int dim0, int ie, cl_mem *wn_cl,
@@ -553,7 +544,7 @@ void DGFlux_CL(field *f, int dim0, int ie, cl_mem *wn_cl,
     // Set kernel args
     size_t numworkitems = nf * npgf;
     size_t groupsize = npgf;
-    init_DGFlux_CL(f, ie, dim0, wn_cl, 2 * m * groupsize);
+    init_DGFlux_CL(f, ie, dim0, wn_cl, 4 * m * groupsize);
      
     // Launch the kernel
     cl_int status;

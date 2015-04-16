@@ -245,8 +245,7 @@ void DGFlux(__constant int *param,       // 0: interp param
 	    __constant double *physnode, // 3: macrocell nodes
 	    __global   double *wn,       // 4: field values
 	    __global   double *dtwn,     // 5: time derivative
-	    __local    double *wnloc,    // 6: wn local memory
-	    __local    double *dtwnloc)  // 7: dtwn local memory
+	    __local    double *wnloc)    // 6: wn and dtwn in local memory
 {
   const int m = param[0];
   const int deg[3] = {param[1], param[2], param[3]};
@@ -270,6 +269,8 @@ void DGFlux(__constant int *param,       // 0: interp param
 
   __local double *wnlocL = wnloc;
   __local double *wnlocR = wnloc + get_local_size(0) * _M;
+  __local double *dtwnlocL = wnloc + 2 * get_local_size(0) * _M;
+  __local double *dtwnlocR = wnloc + 3 * get_local_size(0) * _M;
 
   // Prefetch
   for(int i = 0; i < m; i++) {
@@ -292,10 +293,10 @@ void DGFlux(__constant int *param,       // 0: interp param
     // Right point
     p[dim0] = 0;
     int ipgR;
-    xyz_to_ipg(nraf, deg, icL, p, &ipgR);
+    xyz_to_ipg(nraf, deg, icR, p, &ipgR);
     int imemR = VARINDEX(param, ie, ipgR, iv);
     // wnlocR[iread] = wn[imemR];
-    wnlocR[ipg * m + iv] = wn[imemL];
+    wnlocR[ipg * m + iv] = wn[imemR];
   }
   barrier(CLK_LOCAL_MEM_FENCE | CLK_GLOBAL_MEM_FENCE);
  
@@ -334,7 +335,7 @@ void DGFlux(__constant int *param,       // 0: interp param
   {
     double dtau[3][3];
     get_dtau(x, y, z, physnode, dtau);
-    
+    // FIXME: we do not need all of these values
     codtau[0][0] =  dtau[1][1] * dtau[2][2] - dtau[1][2] * dtau[2][1];
     codtau[0][1] = -dtau[1][0] * dtau[2][2] + dtau[1][2] * dtau[2][0];
     codtau[0][2] =  dtau[1][0] * dtau[2][1] - dtau[1][1] * dtau[2][0];
@@ -377,15 +378,50 @@ void DGFlux(__constant int *param,       // 0: interp param
   xyz_to_ipg(nraf, deg, icR, pR, &ipgR);
 
   double wpgs = wglop(deg[dim1], pL[dim1]) * wglop(deg[dim2], pL[dim2]);
+
+  __local double *dtwnL = dtwnlocL + get_local_id(0) * m;
+  __local double *dtwnR = dtwnlocR + get_local_id(0) * m;
+  
+ 
   for(int iv = 0; iv < m; ++iv) {
-    //int ipgL = ipg(npg, p, icell);
-    //int imemL = VARINDEX(param, ie, ipgL, iv);
+    /* int ipgL = ipg(npg, pL, icell); */
 
+    /* int imemL = VARINDEX(param, ie, ipgL, iv); */
+    /* dtwn[imemL] -= flux[iv] * wpgs; */
+
+    /* int imemR = VARINDEX(param, ie, ipgR, iv); */
+    /* dtwn[imemR] += flux[iv] * wpgs; */
+    
+    dtwnL[iv] = -flux[iv] * wpgs;
+    dtwnR[iv] =  flux[iv] * wpgs;
+  }
+
+  barrier(CLK_LOCAL_MEM_FENCE | CLK_GLOBAL_MEM_FENCE);
+  // Postfetch
+  for(int i = 0; i < m; i++) {
+    int p[3];
+    int iread = get_local_id(0) + i * get_local_size(0);
+    int iv = iread % _M;
+    int ipg = iread / _M;
+    
+    p[dim1] = ipg % npg[dim1];
+    p[dim2] = (ipg / npg[dim1]);
+
+    // Left point
+    p[dim0] = deg[dim0];
+    int ipgL;
+    xyz_to_ipg(nraf, deg, icL, p, &ipgL);
     int imemL = VARINDEX(param, ie, ipgL, iv);
-    dtwn[imemL] -= flux[iv] * wpgs;
-
+    // wnlocL[iread] = wn[imemL];
+    dtwn[imemL] += dtwnlocL[ipg * m + iv];
+    
+    // Right point
+    p[dim0] = 0;
+    int ipgR;
+    xyz_to_ipg(nraf, deg, icR, p, &ipgR);
     int imemR = VARINDEX(param, ie, ipgR, iv);
-    dtwn[imemR] += flux[iv] * wpgs;
+    // wnlocR[iread] = wn[imemR];
+    dtwn[imemR] += dtwnlocR[ipg * m + iv];
   }
 }
 
