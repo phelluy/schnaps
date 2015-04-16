@@ -256,7 +256,7 @@ void DGFlux(__constant int *param,       // 0: interp param
   int dim1 = (dim0 + 1) % 3;
   int dim2 = (dim1 + 1) % 3;
 
-  // subcell id
+  // Subcell id
   int icL[3], icR[3];
   int icell = get_group_id(0);
 
@@ -281,6 +281,7 @@ void DGFlux(__constant int *param,       // 0: interp param
     p[dim1] = ipg % npg[dim1];
     p[dim2] = (ipg / npg[dim1]);
 
+    // Left point
     p[dim0] = deg[dim0];
     int ipgL;
     xyz_to_ipg(nraf, deg, icL, p, &ipgL);
@@ -288,6 +289,7 @@ void DGFlux(__constant int *param,       // 0: interp param
     // wnlocL[iread] = wn[imemL];
     wnlocL[ipg * m + iv] = wn[imemL];
     
+    // Right point
     p[dim0] = 0;
     int ipgR;
     xyz_to_ipg(nraf, deg, icL, p, &ipgR);
@@ -297,7 +299,7 @@ void DGFlux(__constant int *param,       // 0: interp param
   }
   barrier(CLK_LOCAL_MEM_FENCE | CLK_GLOBAL_MEM_FENCE);
  
-  // Gauss point id where we compute the jacobian
+  // Gauss point id where we compute the Jacobian
   int pL[3], pR[3];
   //ipg_to_xyz(get_local_id(0), p, npg
   {
@@ -310,10 +312,6 @@ void DGFlux(__constant int *param,       // 0: interp param
     pR[dim1] = pL[dim1];
     pR[dim2] = pL[dim2];
   }
-
-  int ipgL, ipgR;
-  xyz_to_ipg(nraf, deg, icL, pL, &ipgL);
-  xyz_to_ipg(nraf, deg, icR, pR, &ipgR);
 
   double hx = 1.0 / (double) nraf[0];
   double hy = 1.0 / (double) nraf[1];
@@ -365,8 +363,13 @@ void DGFlux(__constant int *param,       // 0: interp param
   vnds[1] = codtau[1][dim0] * h1h2;
   vnds[2] = codtau[2][dim0] * h1h2;
 
+  // TODO: wL and wR could be passed without a copy to __private.
   double flux[_M];
-  NUMFLUX(wL, wR, vnds, flux);
+  NUMFLUX(wL, wR, vnds, flux); 
+
+  int ipgL, ipgR;
+  xyz_to_ipg(nraf, deg, icL, pL, &ipgL);
+  xyz_to_ipg(nraf, deg, icR, pR, &ipgR);
 
   double wpgs = wglop(deg[dim1], pL[dim1]) * wglop(deg[dim2], pL[dim2]);
   for(int iv = 0; iv < m; ++iv) {
