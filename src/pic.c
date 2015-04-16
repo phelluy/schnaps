@@ -142,6 +142,60 @@ void CreateParticles(PIC* pic,MacroMesh *m){
 
 }
 
+void AccumulateParticles(PIC* pic,field *f){
+  
+  for(int i=0;i<pic->nbparts;i++) {
+    
+    int ie=pic->old_cell_id[i];
+    
+    if (ie < 0) goto nexti;
+ 
+    int npg=NPG(f->interp_param + 1);
+    double physnode[20][3];
+    for(int inoloc = 0; inoloc < 20; inoloc++) {
+      int ino = f->macromesh.elem2node[20*ie+inoloc];
+      physnode[inoloc][0] = f->macromesh.node[3 * ino + 0];
+      physnode[inoloc][1] = f->macromesh.node[3 * ino + 1];
+      physnode[inoloc][2] = f->macromesh.node[3 * ino + 2];
+    }
+    double dtau[3][3], codtau[3][3];
+    Ref2Phy(physnode, // phys. nodes
+	    pic->xv + 6*i, // xref
+	    NULL, -1, // dpsiref, ifa
+	    NULL, dtau, // xphy, dtau
+	    codtau, NULL, NULL); // codtau, dpsi, vnds
+    double det = dot_product(dtau[0], codtau[0]);
+
+    for(int ib=0;ib < npg;ib++){
+      double wpg;
+      ref_pg_vol(f->interp_param + 1, ib, NULL, &wpg, NULL);
+      wpg *= det;
+      double psi;
+      psi_ref(f->interp_param+1,ib,pic->xv + 6*i,&psi,NULL);
+
+      int iv=6;  // rho index
+      int imem = f->varindex(f->interp_param, ie, ib, iv);
+      f->wn[imem]+= psi/wpg;
+ 
+      iv=4;  // j1 index
+      imem = f->varindex(f->interp_param, ie, ib, iv);
+      f->wn[imem]+= pic->xv[6*i+3]*psi/wpg;
+
+      iv=5;  // j2 index
+      imem = f->varindex(f->interp_param, ie, ib, iv);
+      f->wn[imem]+= pic->xv[6*i+4]*psi/wpg;
+    }
+      
+    
+    
+    
+  nexti:  
+    assert(1==1);
+  }
+  
+}
+
+
 
 void PlotParticles(PIC* pic,MacroMesh *m){
   

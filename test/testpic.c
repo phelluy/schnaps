@@ -92,5 +92,7 @@ int TestPIC(void)
 
   test = test && (final_cell == pic.cell_id[0]);
 
+  AccumulateParticles(&pic,&f);
+
   return test;
 }

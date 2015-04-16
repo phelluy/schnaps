@@ -263,10 +263,12 @@ void ref_pg_vol(int *param, int ipg,
   offset[1] = gauss_lob_offset[deg[1]] + iy;
   offset[2] = gauss_lob_offset[deg[2]] + iz;
 
-  xpg[0] = hx * (ncx + gauss_lob_point[offset[0]]);
-  xpg[1] = hy * (ncy + gauss_lob_point[offset[1]]);
-  xpg[2] = hz * (ncz + gauss_lob_point[offset[2]]);
-
+  if (xpg != NULL){
+    xpg[0] = hx * (ncx + gauss_lob_point[offset[0]]);
+    xpg[1] = hy * (ncy + gauss_lob_point[offset[1]]);
+    xpg[2] = hz * (ncz + gauss_lob_point[offset[2]]);
+  }
+  
   *wpg = hx * hy * hz *
     gauss_lob_weight[offset[0]]*
     gauss_lob_weight[offset[1]]*
@@ -463,9 +465,16 @@ void psi_ref(int *param, int ib, double *xref, double *psi, double *dpsi)
   lagrange_polynomial(&psibz, gauss_lob_point + offset[2],
                       deg[2], ibz, xref[2]/hz-ncbz);
 
-  assert(nraf[0] == 1 && nraf[1] == 1 && nraf[2] == 1);
+  int is[3];
+  for(int ii=0;ii<3;ii++){
+    is[ii]=xref[ii]*nraf[ii];
+    assert(is[ii] < nraf[ii] && is[ii]>= 0);
+  }
+  
+  int is_in_subcell= (ncbx == is[0]) && (ncby == is[1]) && (ncbz == is[2]);
 
-  *psi = psibx * psiby * psibz;
+
+  *psi = psibx * psiby * psibz * is_in_subcell;
 
   if (dpsi != NULL) {
 
@@ -476,9 +485,9 @@ void psi_ref(int *param, int ib, double *xref, double *psi, double *dpsi)
     dlagrange_polynomial(&dpsibz, gauss_lob_point + offset[2],
                          deg[2], ibz, xref[2]);
 
-    dpsi[0] = dpsibx * psiby * psibz;
-    dpsi[1] = psibx * dpsiby * psibz;
-    dpsi[2] = psibx * psiby * dpsibz;
+    dpsi[0] = dpsibx * psiby * psibz * is_in_subcell;
+    dpsi[1] = psibx * dpsiby * psibz * is_in_subcell ;
+    dpsi[2] = psibx * psiby * dpsibz * is_in_subcell;
   }
 };
 
