@@ -268,25 +268,32 @@ void DGFlux(__constant int *param,       // 0: interp param
   icR[dim1] = icL[dim1];
   icR[dim2] = icL[dim2];
 
+  __local double *wnlocL = wnloc;
+  __local double *wnlocR = wnloc + get_local_size(0) * _M;
+
   // Prefetch
   for(int i = 0; i < m; i++) {
-    int pL[3], pR[3];
-    int iread = get_local_id(0) + i * get_local_size(0); 
+    int p[3];
+    int iread = get_local_id(0) + i * get_local_size(0);
     int iv = iread % _M;
-    int ipg = iread / _M;  
-    pL[dim0] = deg[dim0];
-    pL[dim1] = ipg % npg[dim1];
-    pL[dim2] = (ipg / npg[dim1]);
+    int ipg = iread / _M;
+    
+    p[dim1] = ipg % npg[dim1];
+    p[dim2] = (ipg / npg[dim1]);
+
+    p[dim0] = deg[dim0];
     int ipgL;
-    xyz_to_ipg(nraf, deg, icL, pL, &ipgL);    
+    xyz_to_ipg(nraf, deg, icL, p, &ipgL);
     int imemL = VARINDEX(param, ie, ipgL, iv);
-    wnloc[iread] = wn[imemL];
-    pR[dim0] = 0;
-    pR[dim1] = pL[dim1];
-    pR[dim2] = pL[dim2];
+    // wnlocL[iread] = wn[imemL];
+    wnlocL[ipg * m + iv] = wn[imemL];
+    
+    p[dim0] = 0;
     int ipgR;
+    xyz_to_ipg(nraf, deg, icL, p, &ipgR);
     int imemR = VARINDEX(param, ie, ipgR, iv);
-    wnloc[iread + get_local_size(0) * _M] = wn[imemR];
+    // wnlocR[iread] = wn[imemR];
+    wnlocR[ipg * m + iv] = wn[imemL];
   }
   barrier(CLK_LOCAL_MEM_FENCE | CLK_GLOBAL_MEM_FENCE);
  
@@ -343,17 +350,20 @@ void DGFlux(__constant int *param,       // 0: interp param
 
   double wL[_M], wR[_M];
   for(int iv = 0; iv < m; iv++) {
-    int imemL = VARINDEX(param, ie, ipgL, iv);
-    wL[iv] = wn[imemL];
-    int imemR = VARINDEX(param, ie, ipgR, iv);
-    wR[iv] = wn[imemR];
+    /* int imemL = VARINDEX(param, ie, ipgL, iv); */
+    /* wL[iv] = wn[imemL]; */
+    wL[iv] = wnlocL[get_local_id(0) * m + iv];
+
+    /* int imemR = VARINDEX(param, ie, ipgR, iv); */
+    /* wR[iv] = wn[imemR]; */
+    wR[iv] = wnlocR[get_local_id(0) * m + iv];
   }
 
   double vnds[3];
   double h1h2 = 1.0 / nraf[dim1] / nraf[dim2];
-  vnds[0] =  codtau[0][dim0] * h1h2;
-  vnds[1] =  codtau[1][dim0] * h1h2;
-  vnds[2] =  codtau[2][dim0] * h1h2;
+  vnds[0] = codtau[0][dim0] * h1h2;
+  vnds[1] = codtau[1][dim0] * h1h2;
+  vnds[2] = codtau[2][dim0] * h1h2;
 
   double flux[_M];
   NUMFLUX(wL, wR, vnds, flux);
@@ -397,9 +407,7 @@ void DGVolume(__constant int *param,        // interp param
   const int npg[3] = {deg[0] + 1, deg[1] + 1, deg[2] + 1};
   const int nraf[3] = {param[4], param[5], param[6]};
 
-  // cache prefetching
-
-
+  // Prefetch
   int icell = get_group_id(0);
   for(int i=0;i<_M;i++){
     int iread=get_local_id(0) + i * get_local_size(0);
@@ -412,8 +420,6 @@ void DGVolume(__constant int *param,        // interp param
     wnloc[imemloc]=wn[imem];
     dtwnloc[imemloc]=0;
   }
-    
-
   barrier(CLK_LOCAL_MEM_FENCE | CLK_GLOBAL_MEM_FENCE);
 
   // subcell id

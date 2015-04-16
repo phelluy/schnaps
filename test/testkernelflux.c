@@ -31,8 +31,8 @@ int TestKernelFlux()
   f.interp.interp_param[5] = 2; // y direction refinement
   f.interp.interp_param[6] = 1; // z direction refinement
 
-  //ReadMacroMesh(&(f.macromesh),"test/testmacromesh.msh");
-  ReadMacroMesh(&(f.macromesh),"test/testcube.msh");
+  ReadMacroMesh(&(f.macromesh),"test/testmacromesh.msh");
+  //ReadMacroMesh(&(f.macromesh),"test/testcube.msh");
   Detect2DMacroMesh(&(f.macromesh));
   assert(f.macromesh.is2d);
   BuildConnectivity(&(f.macromesh));
@@ -74,7 +74,7 @@ int TestKernelFlux()
 
   clFinish(f.cli.commandqueue);
   for(int ie = 0; ie < f.macromesh.nbelems; ++ie) {
-    printf("\nie: %d\n", ie);
+    // printf("\nie: %d\n", ie);
 
     update_physnode_cl(&f, ie, f.physnode_cl, f.physnode, NULL,
     		       0, NULL, NULL);
