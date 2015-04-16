@@ -244,7 +244,10 @@ void DGFlux(__constant int *param,       // 0: interp param
 	    int dim0,                    // 2: face direction
 	    __constant double *physnode, // 3: macrocell nodes
 	    __global double *wn,         // 4: field values
-	    __global double *dtwn)       // 5: time derivative
+	    __global double *dtwn,       // 5: time derivative
+	    __local double* wnloc,
+	    __local double* dtwnloc
+	    )
 {
   const int m = param[0];
   const int deg[3] = {param[1], param[2], param[3]};
@@ -265,6 +268,28 @@ void DGFlux(__constant int *param,       // 0: interp param
   icR[dim0] = icL[dim0] + 1;
   icR[dim1] = icL[dim1];
   icR[dim2] = icL[dim2];
+
+
+  for(int i = 0; i < m; iv++) {
+    int pL[3], pR[3];
+    int iread= get_local_id(0) + i * get_local_size(0); 
+    int iv = iread % _M;
+    int ipg = iread / _M;  
+    pL[dim0]=deg[dim0];
+    pL[dim1] = ipg % npg[dim1];
+    pL[dim2] = (ipg / npg[dim1]);
+    int ipgL;
+    xyz_to_ipg(nraf, deg, icL, pL, &ipgL);    
+    int imemL = VARINDEX(param, ie, ipgL, iv);
+    wnloc[iread] = wn[imemL];
+    pR[dim0] = 0;
+    pR[dim1] = pL[dim1];
+    pR[dim2] = pL[dim2];
+    int ipgR;
+    int imemR = VARINDEX(param, ie, ipgR, iv);
+    wnloc[iread+get_local_size(0)*_M] = wn[imemR];
+  }
+  
  
   // Gauss point id where we compute the jacobian
   int pL[3], pR[3];
@@ -279,6 +304,10 @@ void DGFlux(__constant int *param,       // 0: interp param
     pR[dim1] = pL[dim1];
     pR[dim2] = pL[dim2];
   }
+
+  int ipgL, ipgR;
+  xyz_to_ipg(nraf, deg, icL, pL, &ipgL);
+  xyz_to_ipg(nraf, deg, icR, pR, &ipgR);
 
   double hx = 1.0 / (double) nraf[0];
   double hy = 1.0 / (double) nraf[1];
@@ -314,9 +343,6 @@ void DGFlux(__constant int *param,       // 0: interp param
   }
 
   double wL[_M], wR[_M];
-  int ipgL, ipgR;
-  xyz_to_ipg(nraf, deg, icL, pL, &ipgL);
-  xyz_to_ipg(nraf, deg, icR, pR, &ipgR);
   for(int iv = 0; iv < m; iv++) {
     int imemL = VARINDEX(param, ie, ipgL, iv);
     wL[iv] = wn[imemL];
