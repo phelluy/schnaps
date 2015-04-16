@@ -270,7 +270,7 @@ void DGFlux(__constant int *param,       // 0: interp param
   icR[dim2] = icL[dim2];
 
 
-  for(int i = 0; i < m; iv++) {
+  for(int i = 0; i < m; i++) {
     int pL[3], pR[3];
     int iread= get_local_id(0) + i * get_local_size(0); 
     int iv = iread % _M;
