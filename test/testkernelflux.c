@@ -24,15 +24,15 @@ int TestKernelFlux()
   f.varindex = GenericVarindex;
 
   f.interp.interp_param[0] = f.model.m;
-  f.interp.interp_param[1] = 1; // x direction degree
-  f.interp.interp_param[2] = 1; // y direction degree
+  f.interp.interp_param[1] = 2; // x direction degree
+  f.interp.interp_param[2] = 2; // y direction degree
   f.interp.interp_param[3] = 0; // z direction degree
-  f.interp.interp_param[4] = 2; // x direction refinement
-  f.interp.interp_param[5] = 1; // y direction refinement
+  f.interp.interp_param[4] = 3; // x direction refinement
+  f.interp.interp_param[5] = 3; // y direction refinement
   f.interp.interp_param[6] = 1; // z direction refinement
 
-  //ReadMacroMesh(&(f.macromesh),"test/testmacromesh.msh");
-  ReadMacroMesh(&(f.macromesh),"test/testcube.msh");
+  ReadMacroMesh(&(f.macromesh),"test/testmacromesh.msh");
+  //ReadMacroMesh(&(f.macromesh),"test/testcube.msh");
   Detect2DMacroMesh(&(f.macromesh));
   assert(f.macromesh.is2d);
   BuildConnectivity(&(f.macromesh));
