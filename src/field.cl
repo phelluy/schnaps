@@ -362,16 +362,36 @@ void DGVolume(__constant int *param,        // interp param
 	      int ie,            // macrocel index
 	      __constant double *physnode,  // macrocell nodes
               __global double *wn,       // field values
-	      __global double *dtwn) // time derivative
+	      __global double *dtwn,
+	      __local double* wnloc,
+	      __local double* dtwnloc
+	      ) // time derivative
 {
   const int m = param[0];
   const int deg[3] = {param[1],param[2], param[3]};
   const int npg[3] = {deg[0] + 1, deg[1] + 1, deg[2] + 1};
   const int nraf[3] = {param[4], param[5], param[6]};
 
+  // cache prefetching
+
+
+  int icell = get_group_id(0);
+  for(int i=0;i<_M;i++){
+    int iread=get_local_id(0) + i * get_local_size(0);
+    int iv = iread % _M;
+    int ipgloc = iread / _M ;
+    int ipg = ipgloc + icell * get_local_size(0);
+    int imem=VARINDEX(param,ie,ipg,iv);
+    int imemloc=iv + ipgloc * _M;
+    wnloc[imemloc]=wn[imem];
+    dtwnloc[imemloc]=0;
+  }
+    
+
+  barrier(CLK_LOCAL_MEM_FENCE);
+
   // subcell id
   int icL[3];
-  int icell = get_group_id(0);
   icL[0] = icell % nraf[0];
   icL[1] = (icell / nraf[0]) % nraf[1];
   icL[2]= icell / nraf[0] / nraf[1];
@@ -422,7 +442,8 @@ void DGVolume(__constant int *param,        // interp param
 
   double wL[_M];
   int ipgL = ipg(npg, p, icell);
-  int imemL0 = VARINDEX(param, ie, ipgL, 0);
+  //int imemL0 = VARINDEX(param, ie, ipgL, 0);
+  int imemL0loc = iv + ipgL * _M;
   for(int iv = 0; iv < m; iv++) {
     // gauss point id in the macrocell
     /* int ipgL = ipg(npg, p, icell); */
@@ -430,7 +451,7 @@ void DGVolume(__constant int *param,        // interp param
     //int imemL= iv + m * ( get_global_id(0) + nnpg * *ie);
     //wL[iv] = wn[imemL];
 
-    wL[iv] = wn[imemL0 + iv];
+    wL[iv] = wnloc[imemL0loc + iv];
   }
 
   double flux[_M];
@@ -458,64 +479,29 @@ void DGVolume(__constant int *param,        // interp param
       NUMFLUX(wL, wL, dphi, flux);
 
       int ipgR = ipg(npg, q, icell);
-      int imemR0 = VARINDEX(param, ie, ipgR, 0);
+      //int imemR0 = VARINDEX(param, ie, ipgR, 0);
+      int imemR0loc = iv + ipgR * _M;
       __global double *dtwn0 = dtwn + imemR0; 
       for(int iv = 0; iv < m; iv++) {
-     	dtwn0[iv] += flux[iv] * wpg;
+     	dtwnloc[imemR0loc+iv] += flux[iv] * wpg;
       }
     }
-
-    // Compute the inter-subcell fluxes if needed
-    /*if(p[dim0] == 0 || p[dim0] == npg[dim0] - 1)*/ /* { */
-    /*   int sgn = (p[dim0] > 0) ? 1 : -1; */
-    /*   int dim1 = (dim0 + 1) % 3; */
-    /*   int dim2 = (dim1 + 1) % 3; */
-
-    /*   // Logical coordinates of the right subcell */
-    /*   int icR[3] = {icL[0], icL[1], icL[2]}; */
-    /*   icR[dim0] += sgn; */
-      
-    /*   // if we are not at the boundary of the macrocell */
-    /*   if(icR[dim0] >= 0 && icR[dim0] < nraf[dim0]) { */
-    /* 	double vnds[3]; */
-    /* 	double h1h2 = 1. / nraf[dim1] / nraf[dim2]; */
-    /* 	vnds[0] = sgn * codtau[0][dim0] * h1h2; */
-    /* 	vnds[1] = sgn * codtau[1][dim0] * h1h2; */
-    /* 	vnds[2] = sgn * codtau[2][dim0] * h1h2; */
-
-    /*     int ncR = icR[0] + nraf[0] * (icR[1] + nraf[1] * icR[2]); */
-    /*     int q[3] = {p[0], p[1], p[2]}; */
-    /*     q[dim0] = (sgn == -1) ? npg[dim0] - 1 : 0; */
-    /* 	int ipgR = ipg(npg, q, ncR); */
-
-    /* 	double wR[_M]; */
-    /* 	int imemR0 = GenericVarindex3d(m, npg, nraf, */
-    /* 				      ie, */
-    /* 				      0, q, icR); */
-    /* 	__global double *wn0 = wn + imemR0; */
-    /*     for(int iv = 0; iv < m; iv++) { */
-    /*       //int imemR = VARINDEX(param, ie, ipgR, iv); */
-    /*       //wR[iv] = wn[imemR0 + iv]; */
-    /*       wR[iv] = wn0[iv]; */
-    /*     } */
-
-    /* 	double wpgs = wglop(deg[dim1], p[dim1]) * wglop(deg[dim2], p[dim2]); */
-    /*     //double flux[_M]; */
-    /*     NUMFLUX(wL, wR, vnds, flux); */
-
-    /* 	int imemL0 = GenericVarindex3d(m, npg, nraf,  */
-    /* 				      ie, */
-    /* 				      0, p, icL); */
-    /* 	__global double *dtwn0 =  dtwn + imemL0; */
-    /*     for(int iv = 0; iv < m; iv++) { */
-    /*       //int ipgL = ipg(npg, p, icell); */
-    /*       //int imemL = VARINDEX(param, ie, ipgL, iv); */
-    /*       dtwn0[iv] -= flux[iv] * wpgs; */
-    /*     } */
-    /*   } */
-    /* } */
-
   } // dim0 loop
+  barrier(CLK_LOCAL_MEM_FENCE);
+
+  for(int i=0;i<_M;i++){
+    int iread=get_local_id(0) + i * get_local_size(0);
+    int iv = iread % _M;
+    int ipgloc = iread / _M ;
+    int ipg = ipgloc + icell * get_local_size(0);
+    int imem=VARINDEX(param,ie,ipg,iv);
+    int imemloc=iv + ipgloc * _M;
+    dtwn[imem]+=dtwnloc[imemloc];
+  }
+
+
+
+
 }
 
 
