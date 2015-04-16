@@ -668,11 +668,11 @@ void dtfield_CL(field *f, cl_mem *wn_cl,
     DGFlux_CL(f, 0, ie, wn_cl, 
 	      1, &(f->clv_physnodeupdate), 
 	      f->clv_flux);
-    //f->flux_time += clv_duration(f->clv_flux[0]);
+    f->flux_time += clv_duration(f->clv_flux[0]);
     for(unsigned int d = 1; d < ndim; ++d) {
       DGFlux_CL(f, d, ie, wn_cl, 
 		1, f->clv_flux + (d - 1) % ndim,  f->clv_flux + d);
-      //f->flux_time += clv_duration(f->clv_flux[d]);
+      f->flux_time += clv_duration(f->clv_flux[d]);
     }
 
     DGVolume_CL(mcelli, f, wn_cl,
@@ -1079,7 +1079,7 @@ void RK2_CL(field *f, double tmax,
 void show_cl_timing(field *f)
 {
   cl_ulong total = f->zbuf_time + f->minter_time + f->vol_time 
-    + f->mass_time + f->rk_time;
+    + f->mass_time + f->rk_time + f->flux_time;
   double N = 1.0 / total;
 
   cl_ulong ns;
@@ -1094,6 +1094,10 @@ void show_cl_timing(field *f)
 
   ns = f->vol_time;
   printf("DGVolume_CL time:             %f%% \t%luns \t%fs\n", 
+	 ns*N, ns, 1e-9 * ns);
+
+  ns = f->flux_time;
+  printf("DGFlux_CL time:               %f%% \t%luns \t%fs\n", 
 	 ns*N, ns, 1e-9 * ns);
 
   ns = f->mass_time;

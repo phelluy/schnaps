@@ -444,7 +444,7 @@ void DGVolume(__constant int *param,        // interp param
   double wL[_M];
   int ipgL = ipg(npg, p, 0);
   //int imemL0 = VARINDEX(param, ie, ipgL, 0);
-  int imemL0loc =  ipgL * _M;
+  int imemL0loc = ipgL * _M;
   for(int iv = 0; iv < m; iv++) {
     // gauss point id in the macrocell
     /* int ipgL = ipg(npg, p, icell); */
