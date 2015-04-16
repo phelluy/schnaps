@@ -383,12 +383,13 @@ void DGVolume(__constant int *param,        // interp param
     int ipg = ipgloc + icell * get_local_size(0);
     int imem=VARINDEX(param,ie,ipg,iv);
     int imemloc=iv + ipgloc * _M;
+    //printf("icell=%d imemloc=%d iv=%d ipg=%d\n",icell,imemloc,iv,ipg);
     wnloc[imemloc]=wn[imem];
     dtwnloc[imemloc]=0;
   }
     
 
-  barrier(CLK_LOCAL_MEM_FENCE);
+  barrier(CLK_LOCAL_MEM_FENCE | CLK_GLOBAL_MEM_FENCE);
 
   // subcell id
   int icL[3];
@@ -441,9 +442,9 @@ void DGVolume(__constant int *param,        // interp param
   }
 
   double wL[_M];
-  int ipgL = ipg(npg, p, icell);
+  int ipgL = ipg(npg, p, 0);
   //int imemL0 = VARINDEX(param, ie, ipgL, 0);
-  int imemL0loc = iv + ipgL * _M;
+  int imemL0loc =  ipgL * _M;
   for(int iv = 0; iv < m; iv++) {
     // gauss point id in the macrocell
     /* int ipgL = ipg(npg, p, icell); */
@@ -478,16 +479,16 @@ void DGVolume(__constant int *param,        // interp param
 
       NUMFLUX(wL, wL, dphi, flux);
 
-      int ipgR = ipg(npg, q, icell);
+      int ipgR = ipg(npg, q, 0);
       //int imemR0 = VARINDEX(param, ie, ipgR, 0);
-      int imemR0loc = iv + ipgR * _M;
-      __global double *dtwn0 = dtwn + imemR0; 
+      int imemR0loc = ipgR * _M;
+      //__global double *dtwn0 = dtwn + imemR0; 
       for(int iv = 0; iv < m; iv++) {
      	dtwnloc[imemR0loc+iv] += flux[iv] * wpg;
       }
     }
   } // dim0 loop
-  barrier(CLK_LOCAL_MEM_FENCE);
+  barrier(CLK_LOCAL_MEM_FENCE | CLK_GLOBAL_MEM_FENCE);
 
   for(int i=0;i<_M;i++){
     int iread=get_local_id(0) + i * get_local_size(0);

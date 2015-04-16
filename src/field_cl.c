@@ -217,7 +217,7 @@ void init_DGMass_CL(field *f)
 }
 
 // Set kernel argument for DGVolume_CL
-void init_DGVolume_CL(field *f, cl_mem *wn_cl)
+void init_DGVolume_CL(field *f, cl_mem *wn_cl, size_t cachesize)
 {
   cl_int status;
   int argnum = 0;
@@ -251,6 +251,20 @@ void init_DGVolume_CL(field *f, cl_mem *wn_cl)
                           argnum++,
                           sizeof(cl_mem),
                           &(f->dtwn_cl));
+  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status >= CL_SUCCESS);
+
+  status = clSetKernelArg(kernel,
+                          argnum++,
+                          sizeof(cl_double) * cachesize,
+                          NULL);
+  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status >= CL_SUCCESS);
+
+  status = clSetKernelArg(kernel,
+                          argnum++,
+                          sizeof(cl_double) * cachesize,
+                          NULL);
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 }
@@ -551,8 +565,12 @@ void DGVolume_CL(void *mc, field *f, cl_mem *wn_cl,
   int *param = f->interp_param;
 
   cl_int status;
-
-  init_DGVolume_CL(f, wn_cl);
+  int m = param[0];
+  size_t groupsize = (param[1] + 1)* (param[2] + 1)*(param[3] + 1);
+  // The total work items number is the number of glops in a subcell
+  // * number of subcells
+  size_t numworkitems = param[4] * param[5] * param[6] * groupsize;
+  init_DGVolume_CL(f, wn_cl, groupsize * m);
     
   const int start = mcell->first;
   const int end = mcell->last_p1;
@@ -569,11 +587,11 @@ void DGVolume_CL(void *mc, field *f, cl_mem *wn_cl,
     assert(status >= CL_SUCCESS);
 
     // The groupsize is the number of glops in a subcell
-    size_t groupsize = (param[1] + 1)* (param[2] + 1)*(param[3] + 1);
-    // The total work items number is the number of glops in a subcell
-    // * number of subcells
-    size_t numworkitems = param[4] * param[5] * param[6] * groupsize;
-    //printf("groupsize=%zd numworkitems=%zd\n", groupsize, numworkitems);
+    /* size_t groupsize = (param[1] + 1)* (param[2] + 1)*(param[3] + 1); */
+    /* // The total work items number is the number of glops in a subcell */
+    /* // * number of subcells */
+    /* size_t numworkitems = param[4] * param[5] * param[6] * groupsize; */
+    /* //printf("groupsize=%zd numworkitems=%zd\n", groupsize, numworkitems); */
     status = clEnqueueNDRangeKernel(f->cli.commandqueue,
 				    kernel,
 				    1,
