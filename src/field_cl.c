@@ -526,7 +526,7 @@ void DGFlux_CL(field *f, int dim0, int ie, cl_mem *wn_cl,
   dim[1] = (dim[0] + 1) % 3;
   dim[2] = (dim[1] + 1) % 3;
 
-  // Number of points on per face
+  // Number of points per face
   int npgf = (deg[dim[1]] + 1) * (deg[dim[2]] + 1);
 
   // Number of faces
@@ -643,7 +643,8 @@ void set_buf_to_zero_cl(cl_mem *buf, int size, field *f,
 				  done);
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
-  f->zbuf_time += clv_duration(f->clv_zbuf);  
+  if(done != NULL)
+    f->zbuf_time += clv_duration(f->clv_zbuf);  
 }
 
 // Apply the Discontinuous Galerkin approximation for computing the

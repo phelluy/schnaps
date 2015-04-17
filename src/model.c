@@ -42,24 +42,20 @@ void TransNumFlux2d(double wL[], double wR[], double* vnorm, double* flux) {
   assert(fabs(vnorm[2]) < 1e-8);
 }
 
-void VecTransNumFlux2d(double wL[], double wR[], double* vnorm, double* flux) {
-  double vn 
-    = transport_v2d[0] * vnorm[0]
-    + transport_v2d[1] * vnorm[1]
-    + transport_v2d[2] * vnorm[2];
-  double vnp = vn > 0 ? vn : 0;
+#pragma start_opencl
+void VecTransNumFlux2d(double *wL, double *wR, double *vnorm, double *flux) 
+{
+  double vn = sqrt(0.5) * vnorm[0] + sqrt(0.5) * vnorm[1];
+  double vnp = vn > 0.0 ? vn : 0.0;
   double vnm = vn - vnp;
   flux[0] = vnp * wL[0] + vnm * wR[0];
   flux[1] = vnp * wL[1] + vnm * wR[1];
-  /* if (fabs(vnorm[2])>1e-6) { */
-  /*   printf("vnds %lf %lf %lf \n", vnorm[0], vnorm[1], vnorm[2]); */
-  /* } */
-  // Verify that 2d computations are actually activated
-  assert(fabs(vnorm[2]) < 1e-8);
 }
+#pragma end_opencl
 
 void TransBoundaryFlux(double x[3], double t, double wL[], double *vnorm,
-		       double *flux) {
+		       double *flux)
+{
   double wR[1];
   TransImposedData(x, t, wR);
   TransNumFlux(wL, wR, vnorm, flux);
@@ -72,13 +68,27 @@ void TransBoundaryFlux2d(double x[3], double t, double wL[], double *vnorm,
   TransNumFlux2d(wL, wR, vnorm, flux);
 }
 
-void VecTransBoundaryFlux2d(double x[3], double t, 
-			    double wL[], double *vnorm,
-			    double* flux) {
+// m = 2 test-case
+#pragma start_opencl
+void VecTransImposedData2d(double *x, double t, double* w) 
+{
+  double vx = sqrt(0.5) * x[0] + sqrt(0.5) * x[1];
+  double xx = vx - t;
+  w[0] = xx * xx;
+  w[1] = 2 * xx * xx;
+}
+#pragma end_opencl
+
+#pragma start_opencl
+void VecTransBoundaryFlux2d(double *x, double t, 
+			    double *wL, double *vnorm,
+			    double *flux) 
+{
   double wR[2];
   VecTransImposedData2d(x, t, wR);
   VecTransNumFlux2d(wL, wR, vnorm, flux);
 }
+#pragma end_opencl
 
 void TransInitData(double x[3], double w[]) {
   double t = 0;
@@ -104,24 +114,11 @@ void TransImposedData(double x[3], double t, double w[]) {
   w[0]=cos(xx);
 }
 
-void TransImposedData2d(double x[3], double t, double w[]) {
-  double vx 
-    = transport_v2d[0] * x[0]
-    + transport_v2d[1] * x[1]
-    + transport_v2d[2] * x[2];
+void TransImposedData2d(double *x, double t, double *w) 
+{
+  double vx  = sqrt(0.5) * x[0] + sqrt(0.5) * x[1];
   double xx = vx - t;
   w[0] = cos(xx);
-}
-
-// m = 2 test-case
-void VecTransImposedData2d(double x[3], double t, double* w) {
-  double vx 
-    = transport_v2d[0] * x[0]
-    + transport_v2d[1] * x[1]
-    + transport_v2d[2] * x[2];
-  double xx = vx - t;
-  w[0] = xx * xx;
-  w[1] = 2 * xx * xx;
 }
 
 void TestTransBoundaryFlux(double x[3], double t, 

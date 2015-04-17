@@ -230,7 +230,6 @@ if(OPENCL_FOUND)
   target_link_libraries(testmanyv ${LIBS})
   add_test(testmanyv testmanyv)
 
-
   add_test(testdtfield_cl testdtfield_cl)
   add_executable(
     testdtfield_cl
@@ -302,5 +301,13 @@ if(OPENCL_FOUND)
     test/testkernelflux.c
     )
   target_link_libraries(testkernelflux ${LIBS})
+
+  add_test(testmeq2_cl testmeq2_cl)
+  add_executable(
+    testmeq2_cl
+    test/test.h
+    test/testmeq2_cl.c
+    )
+  target_link_libraries(testmeq2_cl ${LIBS})
 
 endif(OPENCL_FOUND)

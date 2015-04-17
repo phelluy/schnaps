@@ -23,7 +23,6 @@ int main(int argc, char *argv[]) {
   int nx = 4;
   int ny = 4;
   double tmax = 1e-2;
-  int cemracs = 0;
   bool writemsh = false;
   double vmax = 1.0;
   int mx = 5;
@@ -47,13 +46,10 @@ int main(int argc, char *argv[]) {
 \n\t-h display usage information \n";
 
   for (;;) {
-    int cc = getopt(argc, argv, "c:d:t:C:wD:P:X:Y:x:y:V:g:s:h");
+    int cc = getopt(argc, argv, "c:d:t:wD:P:X:Y:x:y:V:g:s:h");
     if (cc == -1) break;
     switch (cc) {
     case 0:
-      break;
-    case 'C':
-      cemracs = true;
       break;
     case 'c':
       cfl = atof(optarg);
@@ -138,25 +134,11 @@ int main(int argc, char *argv[]) {
   sprintf(buf, " -D vlasov_vmax=%f", f.model.vlasov_vmax);
   strcat(cl_buildoptions, buf);
 
-  if(cemracs > 0) {
-    f.model.BoundaryFlux = cemracs2014_TransBoundaryFlux;
-    if(cemracs == 1) {
-      f.model.InitData = cemracs2014_TransInitData;
-      f.model.ImposedData = cemcracs2014_imposed_data;
-    }
-    if(cemracs == 2) {
-      f.model.InitData = cemracs2014a_TransInitData;
-      f.model.ImposedData = cemcracs2014a_imposed_data;
-    }
-
-    sprintf(buf, " -D BOUNDARYFLUX=%s", "cemracs2014_TransBoundaryFlux");
-    strcat(cl_buildoptions, buf);
-  } else {
-    // FIXME: set boundary flux.
-    f.model.BoundaryFlux = vlaTransBoundaryFlux2d;
-    f.model.InitData = vlaTransInitData2d;
-    f.model.ImposedData = vlaTransImposedData2d;
-  }
+  f.model.BoundaryFlux = cemracs2014_TransBoundaryFlux;
+  f.model.InitData = cemracs2014_TransInitData;
+  f.model.ImposedData = cemcracs2014_imposed_data;
+  sprintf(buf, " -D BOUNDARYFLUX=%s", "cemracs2014_TransBoundaryFlux");
+  strcat(cl_buildoptions, buf);
 
   // Set the global parameters for the Vlasov equation
   f.interp.interp_param[0] = f.model.m; // _M
@@ -189,16 +171,19 @@ int main(int argc, char *argv[]) {
   /* double executiontime; */
   /* struct timespec tstart, tend; */
   if(usegpu) {
+
     printf("Using OpenCL:\n");
     //clock_gettime(CLOCK_MONOTONIC, &tstart);
     RK2_CL(&f, tmax, 0, NULL, NULL);
     //clock_gettime(CLOCK_MONOTONIC, &tend);
 
+    CopyfieldtoCPU(&f);
+
     printf("\nOpenCL Kernel time:\n");
     show_cl_timing(&f);
     printf("\n");
 
-  } else { 
+  } else {
     printf("Using C:\n");
     //clock_gettime(CLOCK_MONOTONIC, &tstart);
     RK2(&f, tmax);
