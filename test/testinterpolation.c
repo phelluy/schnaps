@@ -136,6 +136,8 @@ int TestInterpolation(void){
     }
   }
 
+
+
 #define _MAXDEGTEST 5
 
   // test that ipg_to_xyz and xyz_to_ipg are inverses of each other
@@ -148,12 +150,14 @@ int TestInterpolation(void){
 	for(int r0=0;r0<_DMAX;r0++){
 	  for(int r1=0;r1<_DMAX;r1++){
 	    for(int r2=0;r2<_DMAX;r2++){
-	      int deg[3]={d0,d1,d2};
-	      int raf[3]={r0,r1,r2};
+	      int deg[6]={d0,d1,d2,r0,r1,r2};
+	      int* raf=deg+3;
 	      for (int ipg=0;ipg<NPG(deg);ipg++){
 		int ix[3],ic[3];
 		int ipgcopy=ipg;
+		//printf("avant %d %d %d npg=%d \n",d0,d1,d2,NPG(deg));
 		ipg_to_xyz(raf,deg,ic,ix,&ipgcopy);
+		//printf("apres %d %d %d \n",d0,d1,d2);
 		xyz_to_ipg(raf,deg,ic,ix,&ipgcopy);
 		assert(ipg==ipgcopy);
 	      }
