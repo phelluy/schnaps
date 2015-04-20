@@ -98,7 +98,7 @@ int main(int argc, char *argv[]) {
   //set_vlasov_params(&(f.model));
 
   // Read the gmsh file
-  ReadMacroMesh(&(f.macromesh), "test/testCartesianGrid2d.msh");
+  ReadMacroMesh(&(f.macromesh), "test/testcartesiangrid2d.msh");
   // Try to detect a 2d mesh
   Detect2DMacroMesh(&(f.macromesh));
   assert(f.macromesh.is2d);  
