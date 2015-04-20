@@ -450,8 +450,8 @@ void DGVolume(__constant int *param,       // interp param
     
     wnloc[imemloc] = wn[imem];
     dtwnloc[imemloc] = 0;
-    printf("_M=%d icell=%d imem:%d loc_id=%d iv=%d ipg=%d w2=%f\n",_M,
-	   icell, imem,get_local_id(0) ,iv,ipgloc,wnloc[imemloc]);
+    /* printf("_M=%d icell=%d imem:%d loc_id=%d iv=%d ipg=%d w2=%f\n",_M, */
+    /* 	   icell, imem,get_local_id(0) ,iv,ipgloc,wnloc[imemloc]); */
 
   }
 
@@ -512,7 +512,7 @@ void DGVolume(__constant int *param,       // interp param
   //int imemL0 = VARINDEX(param, ie, ipgL, 0);
   int imemL0loc = ipgL * m;
   __local double *wnloc0 = wnloc + ipgL * m;
-  printf("ipgL * m: %d\n", ipgL * m);
+  //printf("ipgL * m: %d\n", ipgL * m);
   for(int iv = 0; iv < m; iv++) {
     // gauss point id in the macrocell
     /* int ipgL = ipg(npg, p, icell); */
@@ -555,7 +555,7 @@ void DGVolume(__constant int *param,       // interp param
       __local double *dtwnloc0 =  dtwnloc + imemR0loc;
       for(int iv = 0; iv < m; iv++) {
 	// Add to global memory
-	dtwn0[iv] += flux[iv] * wpg;
+	//dtwn0[iv] += flux[iv] * wpg;
 
 	// Add to local memory
 	dtwnloc[iv+ipgR * m] += flux[iv] * wpg;
@@ -573,7 +573,7 @@ void DGVolume(__constant int *param,       // interp param
     int ipg = ipgloc + icell * get_local_size(0);
     int imem = VARINDEX(param, ie, ipg, iv);
     int imemloc=iv + ipgloc * m;
-    //dtwn[imem] += dtwnloc[imemloc];
+    dtwn[imem] += dtwnloc[imemloc];
   }
 }
 
