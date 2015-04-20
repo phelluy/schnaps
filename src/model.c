@@ -75,7 +75,9 @@ void VecTransImposedData2d(double *x, double t, double* w)
   double vx = sqrt(0.5) * x[0] + sqrt(0.5) * x[1];
   double xx = vx - t;
   w[0] = xx * xx;
-  w[1] = 2 * xx * xx;
+  w[1] = xx * xx;
+  /* w[0] = 1000; */
+  /* w[1] = 2000; */
 }
 #pragma end_opencl
 

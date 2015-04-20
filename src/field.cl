@@ -447,12 +447,15 @@ void DGVolume(__constant int *param,       // interp param
     int ipg = ipgloc + icell * get_local_size(0);
     int imem = VARINDEX(param, ie, ipg, iv);
     int imemloc = iv + ipgloc * m;
-    //printf("icell=%d imemloc=%d iv=%d ipg=%d\n",icell,imemloc,iv,ipg);
+    
     wnloc[imemloc] = wn[imem];
     dtwnloc[imemloc] = 0;
+    printf("_M=%d icell=%d imem:%d loc_id=%d iv=%d ipg=%d w2=%f\n",_M,
+	   icell, imem,get_local_id(0) ,iv,ipgloc,wnloc[imemloc]);
+
   }
 
-  barrier(CLK_LOCAL_MEM_FENCE);
+  barrier(CLK_LOCAL_MEM_FENCE | CLK_GLOBAL_MEM_FENCE);
 
   // subcell id
   int icL[3];
@@ -508,7 +511,8 @@ void DGVolume(__constant int *param,       // interp param
   int ipgL = ipg(npg, p, 0);
   //int imemL0 = VARINDEX(param, ie, ipgL, 0);
   int imemL0loc = ipgL * m;
-  __local double *wnloc0 = wnloc + ipgL * m; 
+  __local double *wnloc0 = wnloc + ipgL * m;
+  printf("ipgL * m: %d\n", ipgL * m);
   for(int iv = 0; iv < m; iv++) {
     // gauss point id in the macrocell
     /* int ipgL = ipg(npg, p, icell); */
@@ -516,7 +520,7 @@ void DGVolume(__constant int *param,       // interp param
     /* wL[iv] = wn[imemL]; */
 
     // Copy to register from local memory
-    wL[iv] = wnloc0[iv];
+    wL[iv] = wnloc[iv + ipgL * m ];
   }
 
   double flux[_M];
@@ -551,16 +555,16 @@ void DGVolume(__constant int *param,       // interp param
       __local double *dtwnloc0 =  dtwnloc + imemR0loc;
       for(int iv = 0; iv < m; iv++) {
 	// Add to global memory
-	//dtwn0[iv] += flux[iv] * wpg;
+	dtwn0[iv] += flux[iv] * wpg;
 
 	// Add to local memory
-	dtwnloc0[iv] += flux[iv] * wpg;
+	dtwnloc[iv+ipgR * m] += flux[iv] * wpg;
       }
     }
 
   } // dim0 loop
 
-  barrier(CLK_LOCAL_MEM_FENCE);
+  barrier(CLK_LOCAL_MEM_FENCE | CLK_GLOBAL_MEM_FENCE);
 
   for(int i = 0; i < m; ++i){
     int iread = get_local_id(0) + i * get_local_size(0);
@@ -569,7 +573,7 @@ void DGVolume(__constant int *param,       // interp param
     int ipg = ipgloc + icell * get_local_size(0);
     int imem = VARINDEX(param, ie, ipg, iv);
     int imemloc=iv + ipgloc * m;
-    dtwn[imem] += dtwnloc[imemloc];
+    //dtwn[imem] += dtwnloc[imemloc];
   }
 }
 

@@ -27,11 +27,11 @@ int TestmEq2(void) {
   f.model.cfl = 0.05;  
   f.model.m = 2; 
   f.interp.interp_param[0] = f.model.m;
-  f.interp.interp_param[1] = 2; // x direction degree
-  f.interp.interp_param[2] = 2; // y direction degree
+  f.interp.interp_param[1] = 1; // x direction degree
+  f.interp.interp_param[2] = 1; // y direction degree
   f.interp.interp_param[3] = 0; // z direction degree
-  f.interp.interp_param[4] = 4; // x direction refinement
-  f.interp.interp_param[5] = 4; // y direction refinement
+  f.interp.interp_param[4] = 1; // x direction refinement
+  f.interp.interp_param[5] = 1; // y direction refinement
   f.interp.interp_param[6] = 1; // z direction refinement
 
   f.model.NumFlux = VecTransNumFlux2d;
@@ -41,7 +41,7 @@ int TestmEq2(void) {
   f.varindex = GenericVarindex;
 
   char buf[1000];
-  sprintf(buf, "-D _M=%d", f.model.m);
+  sprintf(buf, "-D _M=%d",f.model.m);
   strcat(cl_buildoptions, buf);
 
   sprintf(buf," -D NUMFLUX=%s", "VecTransNumFlux2d");
@@ -100,6 +100,32 @@ int TestmEq2(void) {
   for(int ie = 0; ie < f.macromesh.nbelems; ++ie) {
     DGVolume((void*) &(f.mcell[ie]), &f, f.wn, f.dtwn);
   }
+
+
+  const int nraf[3] = {f.interp_param[4],
+		       f.interp_param[5],
+		       f.interp_param[6]};
+  const int deg[3] = {f.interp_param[1],
+		      f.interp_param[2],
+		      f.interp_param[3]};
+ 
+  const int npg[3] = {deg[0] + 1,
+		      deg[1] + 1,
+		      deg[2] + 1};
+  
+  for(int ie = 0; ie < f.macromesh.nbelems; ++ie){
+    for(int ic=0;ic<nraf[0]*nraf[1]*nraf[2];++ic){
+      for(int ipg=0;ipg<npg[0]*npg[1]*npg[2];++ipg){
+	printf("ie=%d ic=%d ipg=%d ",ie,ic,ipg);
+	for(int iv=0;iv<2;++iv){
+	  int imem=f.varindex(f.interp_param,ie,ipg+ic*NPG(f.interp_param+1), iv); 
+	  //printf("NPG=%d\n",NPG(f.interp_param+1));
+	  printf("iv=%d \ndtwcl=%f dtwcpu=%f\n\n",iv,dtwn_cl[imem],dtwn[imem]);
+	}
+      }
+    }
+  }
+
 
   err = maxerr(dtwn, dtwn_cl, f.wsize);
   printf("\tmax error: %f\n", err);

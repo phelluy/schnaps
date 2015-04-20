@@ -407,8 +407,7 @@ void BuildKernels(CLInfo *cli, char *strprog, char *buildoptions)
   status = clBuildProgram(cli->program,
 			  0,               // one device
 			  NULL,
-			  NULL, 
-			  //			  buildoptions,//NULL, 
+			  buildoptions,//NULL, 
 			  NULL, NULL);
 
   /* cl_int clBuildProgram(	cl_program program, */
