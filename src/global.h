@@ -82,3 +82,8 @@ char cl_buildoptions[1024];
 #endif //_WITH_OPENCL
 #define __constant
 #endif
+
+//! brief global variable for activating periodic 
+//! computations and defining the length of the 
+//! periodic domain
+//!#define _PERIOD 1

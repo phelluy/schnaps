@@ -409,7 +409,15 @@ void BuildConnectivity(MacroMesh* m)
   /* 	     ie,ifa,m->elem2elem[ifa+6*ie]); */
   /*   } */
   /* } */
-
+  
+#ifdef _PERIOD
+  assert(m->is1d); // TODO : generalize to 2D
+  assert(m->nbelems==1); 
+  // faces 1 and 3 point to the same unique macrocell
+  m->elem2elem[1+6*0]=0;
+  m->elem2elem[3+6*0]=0;
+#endif
+  
   if(m->is2d) suppress_zfaces(m);
 }
 
@@ -584,7 +592,12 @@ void CheckMacroMesh(MacroMesh *m, int *param) {
 		    xpg, dtau,
 		    codtau, NULL, vnds); // codtau,dpsi,vnds
 	  }
-	
+          
+#ifdef _PERIOD
+          assert(m->is1d); // TODO: generalize to 2d
+          if (xpgref_in[0] > _PERIOD) xpgref_in[0] -= _PERIOD;
+          if (xpgref_in[0] < 0) xpgref_in[0] += _PERIOD;
+#endif
 	  // Compute the "slightly inside" position
 	  double xpg_in[3];
 	  { 
@@ -614,7 +627,12 @@ void CheckMacroMesh(MacroMesh *m, int *param) {
 	  Phy2Ref(physnodeR, xpg_in, xref);
 	  
           int ifaR = 0;
-          while (m->elem2elem[6 * ieR + ifaR] != ie) ifaR++;
+          
+#ifdef _PERIOD
+          while (m->elem2elem[6*ieR+ifaR] != ie || ifaR==ifa) ifaR++;
+#else
+          while (m->elem2elem[6*ieR+ifaR] != ie) ifaR++;
+#endif
           assert(ifaR < 6);
 
 	  // Compute the physical coordinates for the point in the
@@ -636,6 +654,13 @@ void CheckMacroMesh(MacroMesh *m, int *param) {
 	  }
 
 	  // Ensure that the normals are opposite
+
+#ifdef _PERIOD
+          assert(fabs(Dist(xpg,xpgR)-_PERIOD)<1e-11);
+#else
+          assert(Dist(xpg,xpgR)<1e-11);
+#endif
+          
 	  assert(fabs(vnds[0] + vndsR[0]) < 1e-11);
 	  assert(fabs(vnds[1] + vndsR[1]) < 1e-11);
 	  assert(fabs(vnds[2] + vndsR[2]) < 1e-11);
