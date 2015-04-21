@@ -836,7 +836,7 @@ void DGMacroCellInterfaceSlow(void *mc, field *f, double *w, double *dtw) {
     // or four faces for 2d computations
     int nbfa = 6;
     if (f->is2d) nbfa = 4;
-     if (f->is1d) nbfa = 2;
+    if (f->is1d) nbfa = 2;
     for(int nifa = 0; nifa < nbfa; nifa++) {
       // get the right elem or the boundary id
       int ifa= f->is1d ?  2*nifa+1 : nifa;
@@ -916,7 +916,7 @@ void DGMacroCellInterfaceSlow(void *mc, field *f, double *w, double *dtw) {
 		  NULL, NULL, NULL); // codtau, dphi, vnds
 
 #ifdef _PERIOD
-	   assert(fabs(Dist(xpg,xpgR)-_PERIOD)<1e-11);
+	  assert(fabs(Dist(xpg,xpgR)-_PERIOD)<1e-11);
 #else
           assert(Dist(xpg,xpgR)<1e-11);
 #endif
@@ -997,17 +997,17 @@ void DGMacroCellInterface(void *mc, field *f, double *w, double *dtw)
       ref_pg_face(iparam + 1, locfaL, ipgfL, xpgref, &wpg, xpgref_in);
 
 #ifdef _PERIOD
-	assert(f->is1d); // TODO: generalize to 2d
-	if (xpgref_in[0] > _PERIOD) {
-	  //printf("à droite ifa= %d x=%f ipgf=%d ieL=%d ieR=%d\n",
-	  //	 ifa,xpgref_in[0],ipgf,ie,ieR);
-	  xpgref_in[0] -= _PERIOD;
-	}
-	else if (xpgref_in[0] < 0) { 
-	  //printf("à gauche ifa= %d  x=%f ieL=%d ieR=%d \n",
-	  //ifa,xpgref_in[0],ie,ieR);
-	  xpgref_in[0] += _PERIOD;
-	}
+      assert(f->is1d); // TODO: generalize to 2d
+      if (xpgref_in[0] > _PERIOD) {
+	//printf("à droite ifa= %d x=%f ipgf=%d ieL=%d ieR=%d\n",
+	//	 ifa,xpgref_in[0],ipgf,ie,ieR);
+	xpgref_in[0] -= _PERIOD;
+      }
+      else if (xpgref_in[0] < 0) { 
+	//printf("à gauche ifa= %d  x=%f ieL=%d ieR=%d \n",
+	//ifa,xpgref_in[0],ie,ieR);
+	xpgref_in[0] += _PERIOD;
+      }
 #endif
 
       // Recover the volume gauss point from the face index
@@ -1051,10 +1051,10 @@ void DGMacroCellInterface(void *mc, field *f, double *w, double *dtw)
 	/* 	  xpgR, NULL, */
 	/* 	  NULL, NULL, NULL); // codtau, dphi, vnds */
 	/*  #ifdef _PERIOD */
-	  /*   assert(fabs(Dist(xpg,xpgR)-_PERIOD)<1e-11); */
-	  /*   #else */
-          /* assert(Dist(xpg,xpgR)<1e-11); */
-	  /* #endif */
+	/*   assert(fabs(Dist(xpg,xpgR)-_PERIOD)<1e-11); */
+	/*   #else */
+	/* assert(Dist(xpg,xpgR)<1e-11); */
+	/* #endif */
 	/* }	 */
 
 	double wR[m];
@@ -1634,26 +1634,26 @@ void RK2(field *f, double tmax)
     if (iter % freq == 0)
       printf("t=%f iter=%d/%d dt=%f\n", f->tnow, iter, f->itermax, f->dt);
 
-     // update before predictor
+    // update before predictor
     f->rk_substep =1;
     if(f->update_before_rk !=NULL){
       f->update_before_rk(f);
-     }  
+    }  
     
     dtfield(f, f->wn, f->dtwn);
     RK_out(wnp1, f->wn, f->dtwn, 0.5 * f->dt, sizew);
 
-      // update after predictor
+    // update after predictor
     if(f->update_after_rk !=NULL){
       f->update_after_rk(f);
-     }
+    }
     
     f->tnow += 0.5 * f->dt;
 
-     f->rk_substep = 2;
+    f->rk_substep = 2;
     if(f->update_before_rk !=NULL){
       f->update_before_rk(f);
-     }  
+    }  
 
     dtfield(f, wnp1, f->dtwn);
     RK_in(f->wn, f->dtwn, f->dt, sizew);
@@ -1661,7 +1661,7 @@ void RK2(field *f, double tmax)
     // update after corrector
     if(f->update_after_rk !=NULL){
       f->update_after_rk(f);
-     }
+    }
 
     f->tnow += 0.5 * f->dt;
     iter++;
