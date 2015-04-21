@@ -9,7 +9,7 @@ double dlag(int deg, int ib, int ipg) {
 
 int ref_ipg(__constant int *param, double *xref);
 
-void Ref2Phy(__constant double* physnode,
+void Ref2Phy(__constant double *physnode,
              double xref[3],
              double dphiref[3],
              int ifa,
@@ -300,7 +300,10 @@ void DGFlux(__constant int *param,       // 0: interp param
     // wnlocR[iread] = wn[imemR];
     wnlocR[ipg * m + iv] = wn[imemR];
   }
-  barrier(CLK_LOCAL_MEM_FENCE | CLK_GLOBAL_MEM_FENCE);
+
+  //barrier(CLK_LOCAL_MEM_FENCE | CLK_GLOBAL_MEM_FENCE);
+  barrier(CLK_LOCAL_MEM_FENCE);
+
  
   // Gauss point id where we compute the Jacobian
   int pL[3], pR[3];
@@ -382,7 +385,8 @@ void DGFlux(__constant int *param,       // 0: interp param
     dtwnR[iv] =  flux[iv] * wpgs;
   }
 
-  barrier(CLK_LOCAL_MEM_FENCE | CLK_GLOBAL_MEM_FENCE);
+  //barrier(CLK_LOCAL_MEM_FENCE | CLK_GLOBAL_MEM_FENCE);
+  barrier(CLK_LOCAL_MEM_FENCE);
 
   // Postfetch
   for(int i = 0; i < m; i++) {
@@ -424,13 +428,13 @@ void set_buffer_to_zero(__global double *w)
 
 // Compute the volume  terms inside  one macrocell
 __kernel
-void DGVolume(__constant int *param,       // interp param
-	      int ie,                      // macrocel index
-	      __constant double *physnode, // macrocell nodes
-              __global double *wn,         // field values
-	      __global double *dtwn,       // time derivative
-	      __local double* wnloc,       // cache for wn
-	      __local double* dtwnloc      // cache for dtwn
+void DGVolume(__constant int *param,       // 0: interp param
+	      int ie,                      // 1: macrocel index
+	      __constant double *physnode, // 2: macrocell nodes
+              __global double *wn,         // 3: field values
+	      __global double *dtwn,       // 4: time derivative
+	      __local double* wnloc,       // 5: cache for wn
+	      __local double* dtwnloc      // 6: cache for dtwn
 	      ) 
 {
   const int m = param[0];
@@ -455,7 +459,8 @@ void DGVolume(__constant int *param,       // interp param
 
   }
 
-  barrier(CLK_LOCAL_MEM_FENCE | CLK_GLOBAL_MEM_FENCE);
+  //barrier(CLK_LOCAL_MEM_FENCE | CLK_GLOBAL_MEM_FENCE);
+  barrier(CLK_LOCAL_MEM_FENCE);
 
   // subcell id
   int icL[3];
@@ -520,7 +525,8 @@ void DGVolume(__constant int *param,       // interp param
     /* wL[iv] = wn[imemL]; */
 
     // Copy to register from local memory
-    wL[iv] = wnloc[iv + ipgL * m ];
+    //wL[iv] = wnloc[ipgL * m + iv];
+    wL[iv] = wnloc0[iv];
   }
 
   double flux[_M];
@@ -558,13 +564,15 @@ void DGVolume(__constant int *param,       // interp param
 	//dtwn0[iv] += flux[iv] * wpg;
 
 	// Add to local memory
-	dtwnloc[iv+ipgR * m] += flux[iv] * wpg;
+	//dtwnloc[ipgR * m + iv] += flux[iv] * wpg;
+	dtwnloc0[iv] += flux[iv] * wpg;
       }
     }
 
   } // dim0 loop
 
-  barrier(CLK_LOCAL_MEM_FENCE | CLK_GLOBAL_MEM_FENCE);
+  //barrier(CLK_LOCAL_MEM_FENCE | CLK_GLOBAL_MEM_FENCE);
+  barrier(CLK_LOCAL_MEM_FENCE);
 
   for(int i = 0; i < m; ++i){
     int iread = get_local_id(0) + i * get_local_size(0);
@@ -572,17 +580,17 @@ void DGVolume(__constant int *param,       // interp param
     int ipgloc = iread / m ;
     int ipg = ipgloc + icell * get_local_size(0);
     int imem = VARINDEX(param, ie, ipg, iv);
-    int imemloc=iv + ipgloc * m;
+    int imemloc = ipgloc * m + iv;
     dtwn[imem] += dtwnloc[imemloc];
   }
 }
 
 // Apply division by the mass matrix on one macrocell
 __kernel
-void DGMass(__constant int *param,       // interp param
-            int ie,                      // macrocel index
-            __constant double *physnode, // macrocell nodes
-            __global double *dtwn)       // time derivative
+void DGMass(__constant int *param,       // 0: interp param
+            int ie,                      // 1: macrocel index
+            __constant double *physnode, // 2: macrocell nodes
+            __global double *dtwn)       // 3: time derivative
 {
   int ipg = get_global_id(0);
   const int m = param[0];
@@ -634,7 +642,7 @@ void DGMass(__constant int *param,       // interp param
     - dtau[2][0] * dtau[0][2] * dtau[1][1];
 
   double overwpgget = 1.0 / (wpg * det);
-  int imem0 = m * (get_global_id(0) + npgie * ie); //VARINDEX
+  int imem0 = m * (get_global_id(0) + npgie * ie);
   __global double *dtwn0 = dtwn + imem0; 
   for(int iv = 0; iv < m; iv++) {
     //int imem = iv + imem0;
@@ -645,16 +653,17 @@ void DGMass(__constant int *param,       // interp param
 // Compute the Discontinuous Galerkin inter-macrocells boundary terms.
 // Second implementation with a loop on the faces.
 __kernel
-void DGMacroCellInterface(__constant int *param,        // interp param
-                          double tnow,  // current time
-                          int ieL, 
-			  int ieR,  // left and right elem ids
-                          int locfaL, 
-			  int locfaR, // current face local indices
-                          __constant double *physnodeL, // left macrocell nodes
-                          __constant double *physnodeR, // right macrocell nodes
-                          __global double *wn,
-                          __global double *dtwn) // time derivative
+void DGMacroCellInterface(__constant int *param,        // 0: interp param
+                          double tnow,                  // 1: current time
+                          int ieL,                      // 2: left macrocell 
+			  int ieR,                      // 3: right macrocell
+                          int locfaL,                   // 4: left face index
+			  int locfaR,                   // 5: right face index
+                          __constant double *physnodeL, // 6: left physnode
+                          __constant double *physnodeR, // 7: right physnode
+                          __global double *wn,          // 8: field 
+                          __global double *dtwn         // 9: time derivative
+			  )
 {
   int ipgfL = get_global_id(0);
 
