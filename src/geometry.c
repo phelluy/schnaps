@@ -65,9 +65,9 @@ void Ref2Phy(double physnode[20][3],
 #include "h20phi.h"  // this file fills the values of phi and gradphi
 
   if (xphy != NULL) {
-    for(int ii = 0; ii < 3; ii++) {
-      xphy[ii]=0;
-      for(int i=0;i<20;i++) {
+    for(int ii = 0; ii < 3; ++ii) {
+      xphy[ii] = 0;
+      for(int i = 0; i < 20; ++i) {
 	xphy[ii] += physnode[i][ii] * gradphi[i][3];
       }
     }
@@ -143,31 +143,35 @@ void Phy2Ref(double physnode[20][3], double xphy[3], double xref[3])
 
   double dtau[3][3], codtau[3][3];
   double dxref[3], dxphy[3];
-  double det;
   int ifa =- 1;
   xref[0] = 0.5;
   xref[1] = 0.5;
   xref[2] = 0.5;
 
+  double *codtau0 = codtau[0];
+  double *codtau1 = codtau[1];
+  double *codtau2 = codtau[2];
+
   for(int iter = 0; iter < ITERNEWTON; ++iter) {
     Ref2Phy(physnode, xref, 0,ifa, dxphy, dtau, codtau, 0,0);
-    dxphy[0] -= (xphy)[0];
-    dxphy[1] -= (xphy)[1];
-    dxphy[2] -= (xphy)[2];
-    det = dot_product(dtau[0], codtau[0]);
-    assert(det > 0);
+    dxphy[0] -= xphy[0];
+    dxphy[1] -= xphy[1];
+    dxphy[2] -= xphy[2];
+    double overdet = 1.0 / dot_product(dtau[0], codtau[0]);
+    //assert(overdet > 0);
 
     for(int ii = 0; ii < 3; ii ++ ) {
       dxref[ii] = 0;
-      for(int jj = 0; jj < 3; jj ++ ) {
-        dxref[ii] += codtau[jj][ii] * dxphy[jj];
-      }
-      xref[ii] -= dxref[ii] / det;
+        dxref[ii] 
+	  += codtau0[ii] * dxphy[0] 
+	  +  codtau1[ii] * dxphy[1] 
+	  +  codtau2[ii] * dxphy[2];
+      xref[ii] -= dxref[ii] * overdet;
     }
   }
 
-  double eps = 1e-2;  // may be to constraining...
-  assert(xref[0] < 1 + eps && xref[0] > -eps);
-  assert(xref[1] < 1 + eps && xref[1] > -eps);
-  assert(xref[2] < 1 + eps && xref[2] > -eps);
+  /* double eps = 1e-2;  // may be to constraining... */
+  /* assert(xref[0] < 1 + eps && xref[0] > -eps); */
+  /* assert(xref[1] < 1 + eps && xref[1] > -eps); */
+  /* assert(xref[2] < 1 + eps && xref[2] > -eps); */
 }

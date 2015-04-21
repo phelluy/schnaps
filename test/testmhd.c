@@ -117,7 +117,7 @@ int main(int argc, char *argv[]) {
   if(usegpu) {
     printf("Using OpenCL:\n");
     //executiontime = seconds();
-    RK2_CL(&f, tmax);
+    RK2(&f, tmax);
     //executiontime = seconds() - executiontime;
   } else { 
     printf("Using C:\n");

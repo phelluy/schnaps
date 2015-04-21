@@ -16,7 +16,7 @@ bool cldevice_exists(cl_platform_id *platform, cl_uint ndevice)
 			  NULL,
 			  &ndevices);
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status == CL_SUCCESS);
+  assert(status >= CL_SUCCESS);
   printf("ndevices:%d\n",ndevices);
   printf("ndevice:%d\n",ndevice);
   if(ndevice < ndevices)
@@ -30,7 +30,7 @@ cl_uint get_nbplatforms()
   cl_uint nbplatforms;
   status = clGetPlatformIDs(0, NULL, &(nbplatforms));
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status == CL_SUCCESS);
+  assert(status >= CL_SUCCESS);
   return nbplatforms;
 }
 
@@ -51,7 +51,7 @@ cl_platform_id get_platform_id(cl_uint nplatform)
   cl_int status;
   status = clGetPlatformIDs(nbplatforms, platforms, NULL);
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status == CL_SUCCESS);
+  assert(status >= CL_SUCCESS);
   
   cl_platform_id the_platform = platforms[nplatform];
 
@@ -70,7 +70,7 @@ cl_uint get_nbdevices(cl_platform_id *platform_id)
 			  NULL,
 			  &nbdevices);
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status == CL_SUCCESS);
+  assert(status >= CL_SUCCESS);
   return nbdevices;
 }
 
@@ -87,7 +87,7 @@ cl_device_id get_device_id(cl_platform_id platform, cl_uint ndevice)
 			  devices,
 			  NULL);
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status == CL_SUCCESS);
+  assert(status >= CL_SUCCESS);
 
   cl_device_id device = devices[ndevice];
 
@@ -105,7 +105,7 @@ void get_cldevice_extensions(cl_device_id device, char * buf, size_t bufsize)
 			   buf,
 			   NULL);
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status == CL_SUCCESS);
+  assert(status >= CL_SUCCESS);
 }
 
 bool cldevice_supports_double(cl_device_id *device)
@@ -159,7 +159,7 @@ void InitCLInfo(CLInfo *cli, int platform_id, int device_id)
   // Store the platform_ids in platforms
   status = clGetPlatformIDs(cli->nbplatforms, platforms, NULL);
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status == CL_SUCCESS);
+  assert(status >= CL_SUCCESS);
   
   printf("\nAvailable OpenCL platforms:\n");
   
@@ -172,7 +172,7 @@ void InitCLInfo(CLInfo *cli, int platform_id, int device_id)
 			       pbuf,
 			       NULL);
     if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
-    assert(status == CL_SUCCESS);
+    assert(status >= CL_SUCCESS);
     printf("\t%s\n", pbuf);
 
     status = clGetPlatformInfo(platforms[i],
@@ -181,7 +181,7 @@ void InitCLInfo(CLInfo *cli, int platform_id, int device_id)
 			       pbuf,
 			       NULL);
     if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
-    assert(status == CL_SUCCESS);
+    assert(status >= CL_SUCCESS);
     printf("\t%s\n",pbuf);
 
     //  opencl version
@@ -191,7 +191,7 @@ void InitCLInfo(CLInfo *cli, int platform_id, int device_id)
 			       cli->platformname,
 			       NULL);
     if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
-    assert(status == CL_SUCCESS);
+    assert(status >= CL_SUCCESS);
     printf("\t%s\n",cli->platformname);
   }
 
@@ -219,7 +219,7 @@ void InitCLInfo(CLInfo *cli, int platform_id, int device_id)
 			  cli->device,
 			  NULL);
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status == CL_SUCCESS);
+  assert(status >= CL_SUCCESS);
 
   // device name
   status = clGetDeviceInfo(cli->device[device_id],
@@ -228,7 +228,7 @@ void InitCLInfo(CLInfo *cli, int platform_id, int device_id)
 			   cli->devicename,
 			   NULL);
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status == CL_SUCCESS);
+  assert(status >= CL_SUCCESS);
   printf("%s\n", cli->devicename);
 
   cl_device_type dtype;
@@ -238,7 +238,7 @@ void InitCLInfo(CLInfo *cli, int platform_id, int device_id)
 			   &dtype, 
 			   NULL);
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status == CL_SUCCESS);
+  assert(status >= CL_SUCCESS);
   printf("\tDevice type: ");
   switch(dtype) {
   case CL_DEVICE_TYPE_CPU:
@@ -264,7 +264,7 @@ void InitCLInfo(CLInfo *cli, int platform_id, int device_id)
 			   &(cli->devicememsize),
 			   NULL);
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status == CL_SUCCESS);
+  assert(status >= CL_SUCCESS);
   printf("\tGlobal memory: %f MB\n",cli->devicememsize/1024./1024.);
 
   status = clGetDeviceInfo(cli->device[device_id],
@@ -273,7 +273,7 @@ void InitCLInfo(CLInfo *cli, int platform_id, int device_id)
 			   &(cli->maxmembuffer),
 			   NULL);
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status == CL_SUCCESS);
+  assert(status >= CL_SUCCESS);
   printf("\tMax buffer size: %f MB\n",cli->maxmembuffer/1024./1024.);
 
   // compute unit size cache
@@ -283,7 +283,7 @@ void InitCLInfo(CLInfo *cli, int platform_id, int device_id)
 			   &(cli->cachesize),
 			   NULL);
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status == CL_SUCCESS);
+  assert(status >= CL_SUCCESS);
   printf("\tCache size: %f KB\n",cli->cachesize/1024.);
 
   // get maxconstmem
@@ -293,8 +293,19 @@ void InitCLInfo(CLInfo *cli, int platform_id, int device_id)
 			   &(cli->maxconstmem),
 			   NULL);
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status == CL_SUCCESS);
+  assert(status >= CL_SUCCESS);
   printf("\tConst mem: %f KB\n",cli->maxconstmem/1024.);
+
+  // get global cache size
+  cl_ulong global_mem_cache_size;
+  status = clGetDeviceInfo(cli->device[device_id],
+			   CL_DEVICE_GLOBAL_MEM_CACHE_SIZE,
+			   sizeof(cl_ulong),
+			   &global_mem_cache_size,
+			   NULL);
+  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status >= CL_SUCCESS);
+  printf("\tGlobal memory cache size: %d bytes\n", (int)global_mem_cache_size);
 
   // get maxconst args
   int maxcstargs;
@@ -304,7 +315,7 @@ void InitCLInfo(CLInfo *cli, int platform_id, int device_id)
 			   &maxcstargs,
 			   NULL);
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status == CL_SUCCESS);
+  assert(status >= CL_SUCCESS);
   printf("\tMax Const args: %d \n",maxcstargs);
 
   // nb of compute units
@@ -314,7 +325,7 @@ void InitCLInfo(CLInfo *cli, int platform_id, int device_id)
 			   (void*)&(cli->nbcomputeunits),
 			   NULL);
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status == CL_SUCCESS);
+  assert(status >= CL_SUCCESS);
   printf("\tNb of compute units: %d\n",cli->nbcomputeunits);
 
   // max workgroup size
@@ -324,7 +335,7 @@ void InitCLInfo(CLInfo *cli, int platform_id, int device_id)
 			   (void*)&(cli->maxworkgroupsize),
 			   NULL);
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status == CL_SUCCESS);
+  assert(status >= CL_SUCCESS);
   printf("\tMax workgroup size: %zu\n",cli->maxworkgroupsize);
 
   // OpenCL extensions
@@ -340,7 +351,7 @@ void InitCLInfo(CLInfo *cli, int platform_id, int device_id)
 				 NULL, // function arguments
 				 &status);
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status == CL_SUCCESS);
+  assert(status >= CL_SUCCESS);
 
 #if 0
   //#ifdef CL_VERSION_2_0
@@ -357,7 +368,7 @@ void InitCLInfo(CLInfo *cli, int platform_id, int device_id)
 					   &status);
 #endif
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status == CL_SUCCESS);
+  assert(status >= CL_SUCCESS);
 
   printf("\tOpenCL Init OK\n\n");
 }
@@ -388,7 +399,7 @@ void BuildKernels(CLInfo *cli, char *strprog, char *buildoptions)
 					   NULL,
 					   &status);
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status == CL_SUCCESS);
+  assert(status >= CL_SUCCESS);
   
   if(!(cli->program)) 
     printf("Failed to create program.\n");
@@ -396,7 +407,8 @@ void BuildKernels(CLInfo *cli, char *strprog, char *buildoptions)
   status = clBuildProgram(cli->program,
 			  0,               // one device
 			  NULL,
-			  buildoptions,//NULL, 
+			  NULL, 
+			  //			  buildoptions,//NULL, 
 			  NULL, NULL);
 
   /* cl_int clBuildProgram(	cl_program program, */
@@ -407,12 +419,14 @@ void BuildKernels(CLInfo *cli, char *strprog, char *buildoptions)
   /* 				void *user_data) */
 
   if(status != CL_SUCCESS) {
-    /* printf("%s\n", strprog); */
+
+    //printf("%s\n", strprog);
     printf("%s\n", clErrorString(status));
-    printf("Compilation output:\n%s\n", 
-	   print_build_debug(&(cli->program), &cli->device[cli->deviceid]));
+    printf("Compilation output:\n%s\n",
+  	   print_build_debug(&(cli->program), &cli->device[cli->deviceid]));
   }
-  assert(status == CL_SUCCESS);
+  assert(status >= CL_SUCCESS);
+
 }
 
 void ReadFile(char filename[], char **s){
@@ -442,4 +456,3 @@ void GetOpenCLCode(void){
   status = system("sh get_opencl_code.sh");
   assert(!status);
 }
-

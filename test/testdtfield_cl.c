@@ -81,11 +81,15 @@ int TestDtfield_CL(void){
 #endif
 
   Initfield(&f);
-
-  dtfield_CL(&f, &(f.wn_cl));
+  
+  cl_event clv_dtfield = clCreateUserEvent(f.cli.context, NULL);
+  
+  dtfield_CL(&f, &(f.wn_cl), 0, NULL, &clv_dtfield);
+  clWaitForEvents(1, &clv_dtfield);
   CopyfieldtoCPU(&f);
 
   // Displayfield(&f);
+  show_cl_timing(&f);
 
   double *saveptr = f.dtwn;
   f.dtwn = calloc(f.wsize, sizeof(double));

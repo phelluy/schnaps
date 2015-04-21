@@ -131,7 +131,8 @@ int TestMacroFace(void){
   clFinish(f.cli.commandqueue);
 
   for(int ifa = 0; ifa < f.macromesh.nbfaces; ifa++)
-    DGMacroCellInterface_CL((void*) (mface + ifa), &f, &(f.wn_cl));
+    DGMacroCellInterface_CL((void*) (mface + ifa), &f, &(f.wn_cl),
+			    0, NULL, NULL);
 
   CopyfieldtoCPU(&f);
   double *fdtwn_opencl = f.dtwn;

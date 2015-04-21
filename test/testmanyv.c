@@ -180,14 +180,17 @@ int main(int argc, char *argv[]) {
   // Prudence...
   CheckMacroMesh(&(f.macromesh), f.interp.interp_param + 1);
 
-
   /* double executiontime; */
   /* struct timespec tstart, tend; */
   if(usegpu) {
     printf("Using OpenCL:\n");
     //clock_gettime(CLOCK_MONOTONIC, &tstart);
-    RK2_CL(&f, tmax);
+    RK2_CL(&f, tmax, 0, NULL, NULL);
     //clock_gettime(CLOCK_MONOTONIC, &tend);
+
+    printf("\nOpenCL Kernel time:\n");
+    show_cl_timing(&f);
+    printf("\n");
 
   } else { 
     printf("Using C:\n");

@@ -68,6 +68,28 @@ int NPG(int param[]);
 //! \param[in] ifa face index
 int NPGF(int param[],int ifa);
 
+//! \brief compute 3d glop and subcell indices from the index
+//! of the glop in the macrocell
+//! \param[in] deg the degrees list (size [3])
+//! \param[in] raf the refinments list (size [3])
+//! \param[in] ipg the glop index in the macrocell
+//! \param[out] ic the 3 subcell indices in x,y,z directions
+//! \param[out] ix the 3 glop indices in the subcell
+#pragma start_opencl
+void ipg_to_xyz(int* raf,int* deg,int* ic,int* ix,int *ipg);
+#pragma end_opencl
+
+//! \brief compute the index of the glop in the macrocell
+//!  from 3d glop and subcell indices
+//! \param[in] deg the degrees list (size [3])
+//! \param[in] raf the refinments list (size [3])
+//! \param[out] ipg the glop index in the macrocell
+//! \param[in] ic the 3 subcell indices in x,y,z directions
+//! \param[in] ix the 3 glop indices in the subcell
+#pragma start_opencl
+void xyz_to_ipg(int* raf,int* deg,int* ic,int* ix,int *ipg);
+#pragma end_opencl
+
 //! \brief return the reference coordinates xpg[3] and weight wpg of the GLOP ipg
 //! \param[in] param interp. params list
 //! \param[in] ipg Gauss point index

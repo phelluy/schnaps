@@ -243,6 +243,14 @@ if(OPENCL_FOUND)
     )
   target_link_libraries(testdtfield_cl ${LIBS})
 
+  add_test(testcache_cl testcache_cl)
+  add_executable(
+    testcache_cl
+    test/test.h
+    test/testcache_cl.c
+    )
+  target_link_libraries(testcache_cl ${LIBS})
+
   add_test(testmacrocellinterface testmacrocellinterface)
   add_executable(
     testmacrocellinterface
@@ -290,6 +298,14 @@ if(OPENCL_FOUND)
     test/testkernelvolume.c
     )
   target_link_libraries(testkernelvolume ${LIBS})
+
+  add_test(testkernelflux testkernelflux)
+  add_executable(
+    testkernelflux
+    test/test.h
+    test/testkernelflux.c
+    )
+  target_link_libraries(testkernelflux ${LIBS})
 
   add_test(testmhd testmhd)
   add_executable(

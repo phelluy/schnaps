@@ -34,6 +34,44 @@ int GenericVarindex(__constant int *param, int elem, int ipg, int iv) {
 }
 #pragma end_opencl
 
+#pragma start_opencl
+int GenericVarindex3d(int m, int *nx, int *nc,
+		      int elem,
+		      int iv, int *ix, int *ic) 
+{
+  // NB: passing nx and nx separately may allow one to deal with faces better.
+  // Also, keeping the values in registers is theoretically faster than
+  // even __local memory.
+
+  // int nx[3] = {param[1] + 1, param[2] + 1, param[3] + 1};
+  // int nc[3] = {param[4], param[5], param[6]};
+
+  // number of glops in subcell
+  int npgc = nx[0] * nx[1] * nx[2]; 
+  // number of glops in macrocell:
+  int npg = nc[0] * nc[1] * nc[2] * npgc; 
+  
+  // index in subcell: 
+  int ipgc = ix[0] + nx[0] * (ix[1] + nx[1] * ix[2]); 
+  // index of subcell in macrocell:
+  int nsubcell = ic[0] + nc[0] * (ic[1] + nc[1] * ic[2]);
+
+  // index of point in macrocell:
+  int ipg = ipgc + npgc * nsubcell; 
+  return iv + m * (ipg + npg * elem);
+}
+
+// Given a the index ipg of a poing in a subcell, determine the three
+// logical coordinates of that point in the subcell.
+/* void ipg_to_xyz(int ipg, int *p, int *npg) */
+/* { */
+/*   p[0] = ipg % npg[0]; */
+/*   p[1] = (ipg / npg[0]) % npg[1]; */
+/*   p[2] = ipg / npg[0] / npg[1]; */
+/* }  */
+
+#pragma end_opencl
+
 double min_grid_spacing(field *f)
 {
   double hmin = FLT_MAX;
@@ -145,7 +183,7 @@ void init_field_cl(field *f)
 			    f->wn,
 			    &status);
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status == CL_SUCCESS);
+  assert(status >= CL_SUCCESS);
 
   f->dtwn_cl = clCreateBuffer(f->cli.context,
 			      CL_MEM_READ_WRITE | CL_MEM_USE_HOST_PTR,
@@ -153,7 +191,7 @@ void init_field_cl(field *f)
 			      f->dtwn,
 			      &status);
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status == CL_SUCCESS);
+  assert(status >= CL_SUCCESS);
 
   f->param_cl = clCreateBuffer(f->cli.context,
 			       CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR,
@@ -161,7 +199,7 @@ void init_field_cl(field *f)
 			       f->interp_param,
 			       &status);
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status == CL_SUCCESS);
+  assert(status >= CL_SUCCESS);
 
   f->physnode = calloc(60, sizeof(cl_double));
 
@@ -171,7 +209,15 @@ void init_field_cl(field *f)
 				  f->physnode,
 				  &status);
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status == CL_SUCCESS);
+  assert(status >= CL_SUCCESS);
+
+  f->physnodeR = calloc(60, sizeof(cl_double));
+
+  f->physnodeR_cl = clCreateBuffer(f->cli.context,
+				   CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR,
+				   sizeof(cl_double) * 60,
+				   f->physnodeR,
+				   &status);
 
   // Program compilation
   char *s;
@@ -189,46 +235,79 @@ void init_field_cl(field *f)
 			     "DGMass",
 			     &status);
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status == CL_SUCCESS);
+  assert(status >= CL_SUCCESS);
+
+  f->dgflux = clCreateKernel(f->cli.program,
+			     "DGFlux",
+			     &status);
+  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status >= CL_SUCCESS);
 
   f->dgvolume = clCreateKernel(f->cli.program,
 			       "DGVolume",
 			       &status);
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status == CL_SUCCESS);
+  assert(status >= CL_SUCCESS);
 
   f->dginterface = clCreateKernel(f->cli.program,
 				  "DGMacroCellInterface",
 				  &status);
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status == CL_SUCCESS);
+  assert(status >= CL_SUCCESS);
 
   f->RK_out_CL = clCreateKernel(f->cli.program,
 				"RK_out_CL",
 				&status);
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status == CL_SUCCESS);
+  assert(status >= CL_SUCCESS);
 
   f->RK4_final_stage = clCreateKernel(f->cli.program,
 				      "RK4_final_stage",
 				      &status);
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status == CL_SUCCESS);
+  assert(status >= CL_SUCCESS);
 
   f->RK_in_CL = clCreateKernel(f->cli.program,
 			       "RK_in_CL",
 			       &status);
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status == CL_SUCCESS);
+  assert(status >= CL_SUCCESS);
 
   f->zero_buf = clCreateKernel(f->cli.program,
 			       "set_buffer_to_zero",
 			       &status);
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status == CL_SUCCESS);
+  assert(status >= CL_SUCCESS);
+
+  // Initialize events. // FIXME: free on exit
+  f->clv_zbuf = clCreateUserEvent(f->cli.context, &status);
+  
+  f->clv_mapdone = clCreateUserEvent(f->cli.context, &status);
+
+  f->clv_physnodeupdate = clCreateUserEvent(f->cli.context, &status);
+
+  f->clv_mci = clCreateUserEvent(f->cli.context, &status);
+  f->clv_interkernel = clCreateUserEvent(f->cli.context, &status);
+  f->clv_interupdate = clCreateUserEvent(f->cli.context, &status);
+  f->clv_interupdateR = clCreateUserEvent(f->cli.context, &status);
+
+  f->clv_mass = clCreateUserEvent(f->cli.context, &status);
+
+  f->clv_flux = calloc(3, sizeof(cl_event));
+  f->clv_flux[0] = clCreateUserEvent(f->cli.context, &status);
+  f->clv_flux[1] = clCreateUserEvent(f->cli.context, &status);
+  f->clv_flux[2] = clCreateUserEvent(f->cli.context, &status);
+
+  f->clv_volume = clCreateUserEvent(f->cli.context, &status);
+
+  // Set timers to zero
+  f->zbuf_time = 0;
+  f->mass_time = 0;
+  f->vol_time = 0;
+  f->minter_time = 0;
+  f->rk_time = 0;
 }
 #endif
-
 
 void Initfield(field *f) {
   //int param[8]={f->model.m,_DEGX,_DEGY,_DEGZ,_RAFX,_RAFY,_RAFZ,0};
@@ -297,7 +376,7 @@ void free_field(field* f)
 
   status = clReleaseMemObject(f->physnode_cl);
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status == CL_SUCCESS);
+  assert(status >= CL_SUCCESS);
 
   free(f->physnode);
 
@@ -305,7 +384,7 @@ void free_field(field* f)
 }
 
 // Display the field on screen
-void Displayfield(field* f) {
+void Displayfield(field *f) {
   printf("Display field...\n");
   for(int ie = 0; ie < f->macromesh.nbelems; ie++) {
     printf("elem %d\n", ie);
@@ -648,7 +727,8 @@ void DGSubCellInterface(void *mc, field *f, double *w, double *dtw)
 	  int offsetL = npg[0] * npg[1] * npg[2] * ncL;
 
 	  // Sweeping subcell faces in the three directions
-	  for(int dim0 = 0; dim0 < 3; dim0++) {
+	  for(int dim0 = 0; dim0 < 3; dim0++) { 
+	    
 	    // Compute the subface flux only if we do not touch the
 	    // subcell boundary along the current direction dim0
 	    if (icL[dim0] != nraf[dim0] - 1) {
