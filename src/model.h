@@ -31,6 +31,13 @@ typedef struct Model {
   void (*BoundaryFlux)(double x[3], double t, double wL[], double vn[3],
 		       double flux[]);
 
+  //! \brief a pointer to the source function
+  //! \param[in] x : space position
+  //! \param[in] t : time
+  //! \param[in] w :  state
+  //! \param[out] source : the source
+  void (*Source)(double x[3],double t,double w[],double source[]);
+
   //! \brief A pointer to the init data function
   // !\param[in] x : space position
   //! \param[out] w : init state at point x

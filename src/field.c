@@ -8,6 +8,8 @@
 #include <math.h>
 #include <float.h>
 #include <string.h>
+#include "quantities_vp.h"
+#include "solverpoisson.h"
 
 #ifdef _WITH_OPENCL 
 #include "clutils.h"
@@ -312,8 +314,9 @@ void init_field_cl(field *f)
 void Initfield(field *f) {
   //int param[8]={f->model.m,_DEGX,_DEGY,_DEGZ,_RAFX,_RAFY,_RAFZ,0};
   f->is2d = false;
+  f->is1d = false;
   
-  f->vmax = 1.0; // FIXME: make this variable
+  f->vmax = 1.0; // FIXME: make this variable ??????
 
   // a copy for avoiding too much "->"
   for(int ip = 0; ip < 8; ip++)
@@ -326,6 +329,18 @@ void Initfield(field *f) {
   assert(f->wn);
   f->dtwn = calloc(nmem, sizeof(double));
   assert(f->dtwn);
+  f->Diagnostics=NULL;
+  f->update_before_rk=NULL;
+  f->update_after_rk=NULL;
+  f->model.Source=NULL;
+
+  f->tnow=0;
+  f->itermax=0;
+  f->iter_time=0;
+  f->tmaximum=0;
+  f->rk_substep=0;
+  f->rk_max=0;
+  f->nb_diags=0;
 
   f->tnow = 0;
 
@@ -821,8 +836,10 @@ void DGMacroCellInterfaceSlow(void *mc, field *f, double *w, double *dtw) {
     // or four faces for 2d computations
     int nbfa = 6;
     if (f->is2d) nbfa = 4;
-    for(int ifa = 0; ifa < nbfa; ifa++) {
+     if (f->is1d) nbfa = 2;
+    for(int nifa = 0; nifa < nbfa; nifa++) {
       // get the right elem or the boundary id
+      int ifa= f->is1d ?  2*nifa+1 : nifa;
       int ieR = f->macromesh.elem2elem[6*ie+ifa];
       double physnodeR[20][3];
       if (ieR >= 0) {
@@ -843,6 +860,20 @@ void DGMacroCellInterfaceSlow(void *mc, field *f, double *w, double *dtw) {
 	// and coordinates of a point slightly inside the
 	// opposite element in xref_in
   	ref_pg_face(iparam + 1, ifa, ipgf, xpgref, &wpg, xpgref_in);
+
+#ifdef _PERIOD
+	assert(f->is1d); // TODO: generalize to 2d
+	if (xpgref_in[0] > _PERIOD) {
+	  //printf("à droite ifa= %d x=%f ipgf=%d ieL=%d ieR=%d\n",
+	  //	 ifa,xpgref_in[0],ipgf,ie,ieR);
+	  xpgref_in[0] -= _PERIOD;
+	}
+	else if (xpgref_in[0] < 0) { 
+	  //printf("à gauche ifa= %d  x=%f ieL=%d ieR=%d \n",
+	  //ifa,xpgref_in[0],ie,ieR);
+	  xpgref_in[0] += _PERIOD;
+	}
+#endif
 
   	// recover the volume gauss point from
   	// the face index
@@ -884,7 +915,12 @@ void DGMacroCellInterfaceSlow(void *mc, field *f, double *w, double *dtw) {
 		  xpgR, NULL,
 		  NULL, NULL, NULL); // codtau, dphi, vnds
 
-	  assert(Dist(xpgR, xpg) < 1e-10);
+#ifdef _PERIOD
+	   assert(fabs(Dist(xpg,xpgR)-_PERIOD)<1e-11);
+#else
+          assert(Dist(xpg,xpgR)<1e-11);
+#endif
+	  
   	  for(int iv = 0; iv < f->model.m; iv++) {
   	    int imem = f->varindex(iparam, ieR, ipgR, iv);
   	    wR[iv] = f->wn[imem];
@@ -960,6 +996,20 @@ void DGMacroCellInterface(void *mc, field *f, double *w, double *dtw)
       // point slightly inside the opposite element in xref_in
       ref_pg_face(iparam + 1, locfaL, ipgfL, xpgref, &wpg, xpgref_in);
 
+#ifdef _PERIOD
+	assert(f->is1d); // TODO: generalize to 2d
+	if (xpgref_in[0] > _PERIOD) {
+	  //printf("à droite ifa= %d x=%f ipgf=%d ieL=%d ieR=%d\n",
+	  //	 ifa,xpgref_in[0],ipgf,ie,ieR);
+	  xpgref_in[0] -= _PERIOD;
+	}
+	else if (xpgref_in[0] < 0) { 
+	  //printf("à gauche ifa= %d  x=%f ieL=%d ieR=%d \n",
+	  //ifa,xpgref_in[0],ie,ieR);
+	  xpgref_in[0] += _PERIOD;
+	}
+#endif
+
       // Recover the volume gauss point from the face index
       int ipgL = iparam[7];
 
@@ -1000,7 +1050,11 @@ void DGMacroCellInterface(void *mc, field *f, double *w, double *dtw)
 	/* 	  NULL, -1, // dphiref, ifa */
 	/* 	  xpgR, NULL, */
 	/* 	  NULL, NULL, NULL); // codtau, dphi, vnds */
-	/*   assert(Dist(xpgR, xpg) < 1e-10); */
+	/*  #ifdef _PERIOD */
+	  /*   assert(fabs(Dist(xpg,xpgR)-_PERIOD)<1e-11); */
+	  /*   #else */
+          /* assert(Dist(xpg,xpgR)<1e-11); */
+	  /* #endif */
 	/* }	 */
 
 	double wR[m];
@@ -1063,19 +1117,34 @@ void DGMass(void *mc, field *f, double *w, double *dtw)
     }
     for(int ipg = 0; ipg < NPG(f->interp_param + 1); ipg++) {
 
-      double dtau[3][3], codtau[3][3], xpgref[3], wpg;
+      double dtau[3][3], codtau[3][3], xpgref[3],xphy[3], wpg;
       ref_pg_vol(f->interp_param + 1, ipg, xpgref, &wpg, NULL);
       Ref2Phy(physnode, // phys. nodes
 	      xpgref, // xref
 	      NULL, -1, // dpsiref, ifa
-	      NULL, dtau, // xphy, dtau
+	      xphy, dtau, // xphy, dtau
 	      codtau, NULL, NULL); // codtau, dpsi, vnds
       double det = dot_product(dtau[0], codtau[0]);
+      // source term
+      double wL[m],source[m];
+      for(int iv = 0; iv < m; iv++){
+	int imem=f->varindex(f->interp_param,ie,ipg,iv);
+	wL[iv]=w[imem];
+      }
+      if (f->model.Source !=0) {
+	f->model.Source(xphy,f->tnow,wL,source);
+      }
+      else {
+	for(int iv = 0; iv < m; iv++){
+	  source[iv] = 0;
+	}
+      }
       for(int iv = 0; iv < f->model.m; iv++) {
 	int imem = f->varindex(f->interp_param, ie, ipg, iv);
 	dtw[imem] /= (wpg * det);
+	dtw[imem] += source[iv];
         //printf("det2=%f wpg=%f imem = %d\n", det, wpg, imem);
-
+	
       }
     }
   }
@@ -1542,6 +1611,7 @@ void RK_in(double *fwnp1, double *fdtwn, const double dt, const int sizew)
 void RK2(field *f, double tmax) 
 {
   f->itermax = tmax / f->dt;
+  int size_diags;
   int freq = (1 >= f->itermax / 10)? 1 : f->itermax / 10;
   int sizew = f->macromesh.nbelems * f->model.m * NPG(f->interp_param + 1);
   int iter = 0;
@@ -1549,20 +1619,53 @@ void RK2(field *f, double tmax)
   double *wnp1 = calloc(f->wsize, sizeof(double));
   assert(wnp1);
 
+  f->rk_max=2;
+  f->tmaximum=tmax;
+  f->itermax=tmax/f->dt;
+  size_diags=f->nb_diags * f->itermax;
+
+  f->iter_time=iter;
+  
+  if(f->nb_diags != 0){
+    f->Diagnostics=malloc(size_diags* sizeof(double));
+  }
+
   while(f->tnow < tmax) {
     if (iter % freq == 0)
       printf("t=%f iter=%d/%d dt=%f\n", f->tnow, iter, f->itermax, f->dt);
 
+     // update before predictor
+    f->rk_substep =1;
+    if(f->update_before_rk !=NULL){
+      f->update_before_rk(f);
+     }  
+    
     dtfield(f, f->wn, f->dtwn);
     RK_out(wnp1, f->wn, f->dtwn, 0.5 * f->dt, sizew);
 
+      // update after predictor
+    if(f->update_after_rk !=NULL){
+      f->update_after_rk(f);
+     }
+    
     f->tnow += 0.5 * f->dt;
+
+     f->rk_substep = 2;
+    if(f->update_before_rk !=NULL){
+      f->update_before_rk(f);
+     }  
 
     dtfield(f, wnp1, f->dtwn);
     RK_in(f->wn, f->dtwn, f->dt, sizew);
 
+    // update after corrector
+    if(f->update_after_rk !=NULL){
+      f->update_after_rk(f);
+     }
+
     f->tnow += 0.5 * f->dt;
     iter++;
+    f->iter_time=iter;
   }
   printf("t=%f iter=%d/%d dt=%f\n", f->tnow, iter, f->itermax, f->dt);
   free(wnp1);

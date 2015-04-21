@@ -66,6 +66,18 @@ list(APPEND
   src/macromesh.c
   src/macromesh.h
   src/h20phi.h
+  src/skyline.h
+  src/solverpoisson.h
+  src/quantities_vp.h
+  src/diagnostics_vp.h
+  src/skyline.c
+  src/solverpoisson.c
+  src/quantities_vp.c
+  src/diagnostics_vp.c
+  src/collision.h
+  src/gyro.h
+  src/collision.c
+  src/gyro.c
   )
 
 if (OPENCL_FOUND)

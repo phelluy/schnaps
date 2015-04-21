@@ -123,6 +123,9 @@ double wglop(int deg,int i) {
   return gauss_lob_weight[gauss_lob_offset[deg] + i];
 }
 
+double glop(int deg,int i){
+  return gauss_lob_point[i+gauss_lob_offset[deg]];
+}
 
 void lagrange_polynomial(double* p, const double* subdiv,
 			 int deg, int ii, double x) {

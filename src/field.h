@@ -40,16 +40,30 @@ typedef struct field {
   int interp_param[8];
   //! Current time
   double tnow;
-  //! CFL parameter min_i (vol_i / surf_i)
+  //! time max
+  double tmaximum;
+//! CFL parameter min_i (vol_i / surf_i)
   double hmin;
   //! Time step
-  //! dt has to be smaller than hmin / vmax
   double dt;
-  
+   //! dt has to be smaller than hmin / vmax
+  int iter_time;
+  //! final time iter
   int itermax;
+  //! nb of diagnostics
+  int nb_diags;
+  //! table for diagnostics
+  double * Diagnostics;
+  //! index of the runge-kutta substep
+  int rk_substep;
+  //! max substep of the rk method
+  int rk_max;
 
   //! Activate or not 2D computations
   bool is2d;
+
+   //! activate or not 1D computations
+  bool is1d;
 
   //! Size of the field buffers
   int wsize;
@@ -59,6 +73,22 @@ typedef struct field {
   double *dtwn;
   //! vmax
   double vmax;
+
+   //! \brief generic update function called 
+  //! \brief called at each runge-kutta sustep
+  //! \param[inout] f a field (to be converted from void*)
+  //! \param[in] elem macro element index
+  //! \param[in] ipg glop index
+  //! \param[in] iv field component index
+  void (*update_before_rk)(void* f);
+
+  //! \brief generic update function called 
+  //! \brief called at each runge-kutta sustep
+  //! \param[inout] f a field (to be converted from void*)
+  //! \param[in] elem macro element index
+  //! \param[in] ipg glop index
+  //! \param[in] iv field component index
+  void (*update_after_rk)(void* f);
 
   //! \brief Memory arrangement of field components
   //! \param[in] param interpolation parameters
