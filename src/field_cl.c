@@ -219,7 +219,7 @@ void init_DGMass_CL(field *f)
 // Set kernel argument for DGVolume_CL
 void init_DGVolume_CL(field *f, cl_mem *wn_cl, size_t cachesize)
 {
-  printf("DGVolume cachesize:%zu\n", cachesize);
+  //printf("DGVolume cachesize:%zu\n", cachesize);
 
   cl_int status;
   int argnum = 0;
@@ -453,7 +453,7 @@ void DGMass_CL(void *mc, field *f,
 void init_DGFlux_CL(field *f, int ie, int dim0, cl_mem *wn_cl, 
 		    size_t cachesize)
 {
-  printf("DGFlux cachesize:%zu\n", cachesize);
+  //printf("DGFlux cachesize:%zu\n", cachesize);
 
   cl_kernel kernel = f->dgflux;
   cl_int status;

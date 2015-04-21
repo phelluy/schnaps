@@ -675,9 +675,8 @@ void DGMacroCellInterface(__constant int *param,        // 0: interp param
   double xpgref[3], xpgref_in[3], wpg;
   // Get the coordinates of the Gauss point and coordinates of a
   // point slightly inside the opposite element in xref_in
-  int ipgL =ref_pg_face(ndeg, nraf, locfaL, ipgfL,
-  	       		 xpgref, &wpg, xpgref_in);
-
+  int ipgL = ref_pg_face(ndeg, nraf, locfaL, ipgfL, xpgref, &wpg, xpgref_in);
+  
   // Normal vector at gauss point ipg
   double vnds[3], xpg[3];
   {
@@ -690,6 +689,7 @@ void DGMacroCellInterface(__constant int *param,        // 0: interp param
   }
 
   double wL[_M];
+  double flux[_M];
   
   if (ieR >= 0) {  // The right element exists
     double xrefL[3];
@@ -718,36 +718,40 @@ void DGMacroCellInterface(__constant int *param,        // 0: interp param
     /* }	 */
 
     double wR[_M];
+
     int imemL0 = VARINDEX(param, ieL, ipgL, 0);
     int imemR0 = VARINDEX(param, ieR, ipgR, 0);
-    for(int iv = 0; iv < m; iv++)
-      wL[iv] = wn[imemL0 + iv];
-    for(int iv = 0; iv < m; iv++)
-      wR[iv] = wn[imemR0 + iv];
-
-    // int_dL F(wL, wR, grad phi_ib)
-    double flux[_M];
-    NUMFLUX(wL, wR, vnds, flux);
-
-    // Add flux to both sides
-    // The basis functions is also the gauss point index
-    for(int iv = 0; iv < m; iv++)
-      dtwn[imemL0 + iv] -= flux[iv] * wpg;
-    for(int iv = 0; iv < m; iv++)
-      dtwn[imemR0 + iv] += flux[iv] * wpg;
-
-  } else { // The point is on the boundary.
-    int imemL0 = VARINDEX(param, ieL, ipgL, 0);
+    __global double *wnL0 = wn + imemL0;
+    __global double *wnR0 = wn + imemR0;
     for(int iv = 0; iv < m; iv++) {
-      wL[iv] = wn[imemL0 + iv];
+      wL[iv] = wnL0[iv];
+      wR[iv] = wnR0[iv];
     }
 
-    double flux[_M];
+    NUMFLUX(wL, wR, vnds, flux);
+
+    __global double *dtwnL0 = dtwn + imemL0;
+    __global double *dtwnR0 = dtwn + imemR0;
+    for(int iv = 0; iv < m; ++iv) {
+      double fluxwpg = flux[iv] * wpg;
+      dtwnL0[iv] -= fluxwpg;
+      dtwnR0[iv] += fluxwpg;
+    }
+
+  } else { // The point is on the boundary.
+
+    int imemL0 = VARINDEX(param, ieL, ipgL, 0);
+    __global double *wn0 = wn + imemL0;
+    for(int iv = 0; iv < m; ++iv) {
+      wL[iv] = wn0[iv];
+    }
+
     BOUNDARYFLUX(xpg, tnow, wL, vnds, flux);
 
     // The basis functions is also the gauss point index
-    for(int iv = 0; iv < m; iv++) {
-      dtwn[imemL0 + iv] -= flux[iv] * wpg;
+    __global double *dtwn0 = dtwn + imemL0; 
+    for(int iv = 0; iv < m; ++iv) {
+      dtwn0[iv] -= flux[iv] * wpg;
     }
   }
 }
