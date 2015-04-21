@@ -71,9 +71,87 @@ cl_ulong clv_duration(cl_event clv)
   return clv_endtime(clv) - clv_startime(clv);
 }
 
+void initDGBoundary_CL(field *f, 
+		       int ieL, int locfaL,
+		       cl_mem physnodeL_cl, 
+		       size_t cachesize)
+{
+
+  cl_int status;
+  cl_kernel kernel = f->dgboundary;
+
+  unsigned int argnum = 0;
+  
+  // __constant int *param,        // 0: interp param
+  status = clSetKernelArg(kernel,
+                          argnum++,
+                          sizeof(cl_mem),
+                          &(f->param_cl));
+  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status >= CL_SUCCESS);
+
+  // double tnow,                  // 1: current time
+  status = clSetKernelArg(kernel,
+			  argnum++,
+			  sizeof(double),
+			  &f->tnow);
+  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status >= CL_SUCCESS);
+
+  // int ieL,                      // 2: left macrocell 
+  status = clSetKernelArg(kernel,
+			  argnum++,
+			  sizeof(int),
+			  &ieL);
+  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status >= CL_SUCCESS);
+
+  // int locfaL,                   // 3: left face index
+  status = clSetKernelArg(kernel,
+			  argnum++,
+			  sizeof(int),
+			  &locfaL);
+  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status >= CL_SUCCESS);
+
+  // __constant double *physnodeL, // 4: left physnode
+  status = clSetKernelArg(kernel,
+                          argnum++,
+                          sizeof(cl_mem),
+                          &physnodeL_cl);
+  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status >= CL_SUCCESS);
+
+  // __global double *wn,          // 5: field 
+  status = clSetKernelArg(kernel,
+                          argnum++,
+                          sizeof(cl_mem),
+                          &f->wn_cl);
+  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status >= CL_SUCCESS);
+
+  // __global double *dtwn,        // 6: time derivative
+  status = clSetKernelArg(kernel,
+                          argnum++,
+                          sizeof(cl_mem),
+                          &f->dtwn_cl);
+  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status >= CL_SUCCESS);
+
+  // __local double *cache         // 7: local mem
+  status = clSetKernelArg(kernel,
+                          argnum++,
+                          sizeof(cl_double) * cachesize,
+                          NULL);
+  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status >= CL_SUCCESS);
+
+}
+
 // Set OpenCL kernel arguments for DGMacroCellInterface
 void initDGMacroCellInterface_CL(field *f, 
-				 cl_mem physnodeL_cl, cl_mem physnodeR_cl)
+				 cl_mem physnodeL_cl, cl_mem physnodeR_cl,
+				 size_t cachesize)
 {
   //printf("initDGMacroCellInterface_CL\n");
 
@@ -129,6 +207,15 @@ void initDGMacroCellInterface_CL(field *f,
                           &(f->dtwn_cl));
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
+
+  // __local double *cache         // 10: local mem
+  status = clSetKernelArg(kernel,
+                          argnum++,
+                          cachesize,
+                          NULL);
+  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status >= CL_SUCCESS);
+
   //printf("... initDGMacroCellInterface_CL done.\n");
 }
 
@@ -345,7 +432,10 @@ void DGMacroCellInterface_CL(void *mf, field *f, cl_mem *wn_cl,
   for(int ifa = start; ifa < end; ++ifa) {
     //printf("ifa: %d\n", ifa);
     
-    initDGMacroCellInterface_CL(f, f->physnode_cl, f->physnodeR_cl);
+    size_t kernel_cachesize = 1;
+
+    initDGMacroCellInterface_CL(f, f->physnode_cl, f->physnodeR_cl, 
+				kernel_cachesize);
     
     int ieL =    f->macromesh.face2elem[4 * ifa];
     int locfaL = f->macromesh.face2elem[4 * ifa + 1];
@@ -369,22 +459,41 @@ void DGMacroCellInterface_CL(void *mf, field *f, cl_mem *wn_cl,
       status = clSetUserEventStatus(f->clv_interupdateR, CL_COMPLETE);
     }
 
-    // Set the remaining loop-dependant kernel arguments
-    loop_initDGMacroCellInterface_CL(f, ieL, ieR, locfaL, locfaR);
-
     size_t numworkitems = NPGF(f->interp_param + 1, locfaL);
-    status = clEnqueueNDRangeKernel(f->cli.commandqueue,
-        			    kernel,
-        			    1, // cl_uint work_dim,
-				    NULL, // const size_t *global_work_offset,
-        			    &numworkitems, // size_t *global_work_size, 
-        			    NULL, // size_t *local_work_size, 
-        			    1,  // cl_uint num_events_in_wait_list, 
-				    &(f->clv_interupdateR), // *event_wait_list,
-				    &(f->clv_interkernel)); // *event
-    if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
-    assert(status >= CL_SUCCESS);
+    if(ieR >= 0) {
+    
+      // Set the remaining loop-dependant kernel arguments
+      loop_initDGMacroCellInterface_CL(f, ieL, ieR, locfaL, locfaR);
+
+      status = clEnqueueNDRangeKernel(f->cli.commandqueue,
+				      kernel,
+				      1, // cl_uint work_dim,
+				      NULL, // global_work_offset,
+				      &numworkitems, // global_work_size, 
+				      NULL, // size_t *local_work_size, 
+				      1,  // nwait, 
+				      &(f->clv_interupdateR), // *wait_list,
+				      &(f->clv_interkernel)); // *event
+      if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
+      assert(status >= CL_SUCCESS);
+    } else {
+      size_t cachesize = 1; // TODO make use of cache
+      initDGBoundary_CL(f, ieL, locfaL, f->physnode_cl, cachesize);
+      status = clEnqueueNDRangeKernel(f->cli.commandqueue,
+				      f->dgboundary,
+				      1, // cl_uint work_dim,
+				      NULL, // global_work_offset,
+				      &numworkitems, // global_work_size, 
+				      NULL, // size_t *local_work_size, 
+				      1,  // nwait, 
+				      &(f->clv_interupdateR), // *wait_list,
+				      &(f->clv_interkernel)); // *event
+      if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
+      assert(status >= CL_SUCCESS);
+    }
     f->minter_time += clv_duration(f->clv_interkernel);
+
+
   }
   
   clWaitForEvents(1, &(f->clv_interkernel));

@@ -92,6 +92,7 @@ typedef struct field {
   cl_kernel dgflux;
   cl_kernel dgvolume;
   cl_kernel dginterface;
+  cl_kernel dgboundary;
   cl_kernel RK_out_CL;
   cl_kernel RK_in_CL;
   cl_kernel RK4_final_stage;

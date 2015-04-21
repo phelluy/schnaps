@@ -143,8 +143,7 @@ int ref_pg_face(int *ndeg, int *nraf0,
 #endif
 
 void NumFlux(double wL[], double wR[], double *vnorm, double *flux) {
-  double s2 = 0.707106781186547524400844362105;
-  double vn = s2 * (vnorm[0] + vnorm[1]);
+  double vn = sqrt(0.5) * (vnorm[0] + vnorm[1]);
 
   double vnp = vn > 0 ? vn : 0;
   double vnm = vn - vnp;
@@ -211,8 +210,7 @@ void BoundaryFlux(double x[3], double t, double wL[], double *vnorm,
                   double *flux) 
 {
   double wR[_M];
-  double s2 = 0.707106781186547524400844362105;
-  double vx = s2 * (x[0] + x[1]);
+  double vx = sqrt(0.5) * (x[0] + x[1]);
   wR[0] = cos(vx - t);
 
   NUMFLUX(wL, wR, vnorm, flux);
@@ -663,9 +661,98 @@ void DGMacroCellInterface(__constant int *param,        // 0: interp param
                           __constant double *physnodeL, // 6: left physnode
                           __constant double *physnodeR, // 7: right physnode
                           __global double *wn,          // 8: field 
-                          __global double *dtwn         // 9: time derivative
+                          __global double *dtwn,        // 9: time derivative
+			  __local double *cache         // 10: local mem
 			  )
 {
+  // TODO: use __local double *cache.
+
+  int ipgfL = get_global_id(0);
+
+  int m = param[0];
+  int ndeg[3] = {param[1], param[2], param[3]};
+  int nraf[3] = {param[4], param[5], param[6]};
+
+  double xpgref[3], xpgref_in[3], wpg;
+  // Get the coordinates of the Gauss point and coordinates of a
+  // point slightly inside the opposite element in xref_in
+  int ipgL = ref_pg_face(ndeg, nraf, locfaL, ipgfL, xpgref, &wpg, xpgref_in);
+  
+  // Normal vector at gauss point ipg
+  double vnds[3], xpg[3];
+  {
+    double dtau[3][3], codtau[3][3];
+    Ref2Phy(physnodeL,
+            xpgref,
+            NULL, locfaL, // dpsiref, ifa
+            xpg, dtau,
+            codtau, NULL, vnds); // codtau, dpsi,vnds
+  }
+
+  double wL[_M];
+  double wR[_M];
+  double flux[_M];
+  
+  double xrefL[3];
+  {
+    double xpg_in[3];
+    Ref2Phy(physnodeL,
+	    xpgref_in,
+	    NULL, -1, // dpsiref, ifa
+	    xpg_in, NULL,
+	    NULL, NULL, NULL); // codtau, dpsi,vnds
+    Phy2Ref(physnodeR, xpg_in, xrefL);
+  }
+
+  int ipgR = ref_ipg(param + 1, xrefL);
+
+  // Test code
+  /* { */
+  /*   double xpgR[3], xrefR[3], wpgR; */
+  /*   ref_pg_vol(param + 1, ipgR, xrefR, &wpgR, NULL); */
+  /*   Ref2Phy(physnodeR, */
+  /* 	  xrefR, */
+  /* 	  NULL, -1, // dphiref, ifa */
+  /* 	  xpgR, NULL,   */
+  /* 	  NULL, NULL, NULL); // codtau, dphi,vnds */
+  /*   assert(Dist(xpgR, xpg) < 1e-10); */
+  /* }	 */
+
+  int imemL0 = VARINDEX(param, ieL, ipgL, 0);
+  int imemR0 = VARINDEX(param, ieR, ipgR, 0);
+  __global double *wnL0 = wn + imemL0;
+  __global double *wnR0 = wn + imemR0;
+  for(int iv = 0; iv < m; iv++) {
+    wL[iv] = wnL0[iv];
+    wR[iv] = wnR0[iv];
+  }
+
+  NUMFLUX(wL, wR, vnds, flux);
+
+  __global double *dtwnL0 = dtwn + imemL0;
+  __global double *dtwnR0 = dtwn + imemR0;
+  for(int iv = 0; iv < m; ++iv) {
+    double fluxwpg = flux[iv] * wpg;
+    dtwnL0[iv] -= fluxwpg;
+    dtwnR0[iv] += fluxwpg;
+  }
+}
+
+// Compute the Discontinuous Galerkin inter-macrocells boundary terms.
+// Second implementation with a loop on the faces.
+__kernel
+void DGBoundary(__constant int *param,        // 0: interp param
+		double tnow,                  // 1: current time
+		int ieL,                      // 2: left macrocell 
+		int locfaL,                   // 3: left face index
+		__constant double *physnodeL, // 4: left physnode
+		__global double *wn,          // 5: field 
+		__global double *dtwn,        // 6: time derivative
+		__local double *cache         // 7: local mem
+		)
+{
+  // TODO: use __local double *cache.
+
   int ipgfL = get_global_id(0);
 
   int m = param[0];
@@ -691,70 +778,21 @@ void DGMacroCellInterface(__constant int *param,        // 0: interp param
   double wL[_M];
   double flux[_M];
   
-  if (ieR >= 0) {  // The right element exists
-    double xrefL[3];
-    {
-      double xpg_in[3];
-      Ref2Phy(physnodeL,
-              xpgref_in,
-              NULL, -1, // dpsiref, ifa
-              xpg_in, NULL,
-              NULL, NULL, NULL); // codtau, dpsi,vnds
-      Phy2Ref(physnodeR, xpg_in, xrefL);
-    }
+  int imemL0 = VARINDEX(param, ieL, ipgL, 0);
+  __global double *wn0 = wn + imemL0;
+  for(int iv = 0; iv < m; ++iv) {
+    wL[iv] = wn0[iv];
+  }
 
-    int ipgR = ref_ipg(param + 1, xrefL);
+  BOUNDARYFLUX(xpg, tnow, wL, vnds, flux);
 
-    // Test code
-    /* { */
-    /*   double xpgR[3], xrefR[3], wpgR; */
-    /*   ref_pg_vol(param + 1, ipgR, xrefR, &wpgR, NULL); */
-    /*   Ref2Phy(physnodeR, */
-    /* 	  xrefR, */
-    /* 	  NULL, -1, // dphiref, ifa */
-    /* 	  xpgR, NULL,   */
-    /* 	  NULL, NULL, NULL); // codtau, dphi,vnds */
-    /*   assert(Dist(xpgR, xpg) < 1e-10); */
-    /* }	 */
-
-    double wR[_M];
-
-    int imemL0 = VARINDEX(param, ieL, ipgL, 0);
-    int imemR0 = VARINDEX(param, ieR, ipgR, 0);
-    __global double *wnL0 = wn + imemL0;
-    __global double *wnR0 = wn + imemR0;
-    for(int iv = 0; iv < m; iv++) {
-      wL[iv] = wnL0[iv];
-      wR[iv] = wnR0[iv];
-    }
-
-    NUMFLUX(wL, wR, vnds, flux);
-
-    __global double *dtwnL0 = dtwn + imemL0;
-    __global double *dtwnR0 = dtwn + imemR0;
-    for(int iv = 0; iv < m; ++iv) {
-      double fluxwpg = flux[iv] * wpg;
-      dtwnL0[iv] -= fluxwpg;
-      dtwnR0[iv] += fluxwpg;
-    }
-
-  } else { // The point is on the boundary.
-
-    int imemL0 = VARINDEX(param, ieL, ipgL, 0);
-    __global double *wn0 = wn + imemL0;
-    for(int iv = 0; iv < m; ++iv) {
-      wL[iv] = wn0[iv];
-    }
-
-    BOUNDARYFLUX(xpg, tnow, wL, vnds, flux);
-
-    // The basis functions is also the gauss point index
-    __global double *dtwn0 = dtwn + imemL0; 
-    for(int iv = 0; iv < m; ++iv) {
-      dtwn0[iv] -= flux[iv] * wpg;
-    }
+  // The basis functions is also the gauss point index
+  __global double *dtwn0 = dtwn + imemL0; 
+  for(int iv = 0; iv < m; ++iv) {
+    dtwn0[iv] -= flux[iv] * wpg;
   }
 }
+
 
 void get_dtau(double x, double y, double z,
 	      __constant double *p, double dtau[][3]) 
