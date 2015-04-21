@@ -108,32 +108,33 @@ int ref_pg_face(int *ndeg, int *nraf0,
 
   // If xpgin exists, compute a point slightly INSIDE the opposite
   // subcell along the face.
-  if(xpgin != NULL) {
-    double small = 1e-3;//0.001
-    double vsmall = 1e-6;//0.000001;
+  // NB: in OpenCL, we _always_ compute xpgin, so the test can be removed.
+  //if(xpgin != NULL) {
+  double small = 1e-3;  //0.001
+  double vsmall = 1e-6; //0.000001;
 
-    xpgin[paxis[0]] = h[0] * (ncx + gauss_lob_point[offset[0]]);
-    xpgin[paxis[1]] = h[1] * (ncy + gauss_lob_point[offset[1]]);
+  xpgin[paxis[0]] = h[0] * (ncx + gauss_lob_point[offset[0]]);
+  xpgin[paxis[1]] = h[1] * (ncy + gauss_lob_point[offset[1]]);
 
-    if(paxis[3] == 0)
-      xpgin[paxis[2]] = -vsmall;
-    if(paxis[3] == 1)
-      xpgin[paxis[2]] = 1 + vsmall;
+  if(paxis[3] == 0)
+    xpgin[paxis[2]] = -vsmall;
+  if(paxis[3] == 1)
+    xpgin[paxis[2]] = 1.0 + vsmall;
 
-    if(ix == 0)
-      xpgin[paxis[0]]
-	= h[0] * (ncx + gauss_lob_point[offset[0]] + small);
-    if(ix == deg[0])
-      xpgin[paxis[0]]
-	= h[0] * (ncx + gauss_lob_point[offset[0]] - small);
+  if(ix == 0)
+    xpgin[paxis[0]]
+      = h[0] * (ncx + gauss_lob_point[offset[0]] + small);
+  if(ix == deg[0])
+    xpgin[paxis[0]]
+      = h[0] * (ncx + gauss_lob_point[offset[0]] - small);
 
-    if(iy == 0)
-      xpgin[paxis[1]]
-	= h[1] * (ncy + gauss_lob_point[offset[1]] + small);
-    if(iy == deg[1])
-      xpgin[paxis[1]]
-	= h[1] * (ncy + gauss_lob_point[offset[1]] - small);
-  }
+  if(iy == 0)
+    xpgin[paxis[1]]
+      = h[1] * (ncy + gauss_lob_point[offset[1]] + small);
+  if(iy == deg[1])
+    xpgin[paxis[1]]
+      = h[1] * (ncy + gauss_lob_point[offset[1]] - small);
+  //}
 
   return ipgv;
 }
