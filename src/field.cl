@@ -433,14 +433,15 @@ void DGVolume(__constant int *param,       // 0: interp param
 	      __constant double *physnode, // 2: macrocell nodes
               __global double *wn,         // 3: field values
 	      __global double *dtwn,       // 4: time derivative
-	      __local double* wnloc,       // 5: cache for wn
-	      __local double* dtwnloc      // 6: cache for dtwn
+	      __local double *wnloc        // 5: cache for wn and dtwn
 	      ) 
 {
   const int m = param[0];
   const int deg[3] = {param[1],param[2], param[3]};
   const int npg[3] = {deg[0] + 1, deg[1] + 1, deg[2] + 1};
   const int nraf[3] = {param[4], param[5], param[6]};
+
+  __local double *dtwnloc = wnloc  + m * npg[0] * npg[1] * npg[2];
 
   // Prefetch
   int icell = get_group_id(0);

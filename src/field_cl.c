@@ -219,6 +219,8 @@ void init_DGMass_CL(field *f)
 // Set kernel argument for DGVolume_CL
 void init_DGVolume_CL(field *f, cl_mem *wn_cl, size_t cachesize)
 {
+  printf("DGVolume cachesize:%zu\n", cachesize);
+
   cl_int status;
   int argnum = 0;
   cl_kernel kernel = f->dgvolume;
@@ -261,12 +263,12 @@ void init_DGVolume_CL(field *f, cl_mem *wn_cl, size_t cachesize)
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 
-  status = clSetKernelArg(kernel,
-                          argnum++,
-                          sizeof(cl_double) * cachesize,
-                          NULL);
-  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status >= CL_SUCCESS);
+  /* status = clSetKernelArg(kernel, */
+  /*                         argnum++, */
+  /*                         sizeof(cl_double) * cachesize, */
+  /*                         NULL); */
+  /* if(status != CL_SUCCESS) printf("%s\n", clErrorString(status)); */
+  /* assert(status >= CL_SUCCESS); */
 }
 
 // Update the cl buffer with physnode data depending in the
@@ -451,6 +453,8 @@ void DGMass_CL(void *mc, field *f,
 void init_DGFlux_CL(field *f, int ie, int dim0, cl_mem *wn_cl, 
 		    size_t cachesize)
 {
+  printf("DGFlux cachesize:%zu\n", cachesize);
+
   cl_kernel kernel = f->dgflux;
   cl_int status;
   int argnum = 0; 
@@ -576,11 +580,11 @@ void DGVolume_CL(void *mc, field *f, cl_mem *wn_cl,
 
   cl_int status;
   int m = param[0];
-  size_t groupsize = (param[1] + 1)* (param[2] + 1)*(param[3] + 1);
+  size_t groupsize = (param[1] + 1) * (param[2] + 1) * (param[3] + 1);
   // The total work items number is the number of glops in a subcell
   // * number of subcells
   size_t numworkitems = param[4] * param[5] * param[6] * groupsize;
-  init_DGVolume_CL(f, wn_cl, groupsize * m);
+  init_DGVolume_CL(f, wn_cl, 2 * groupsize * m);
     
   const int start = mcell->first;
   const int end = mcell->last_p1;

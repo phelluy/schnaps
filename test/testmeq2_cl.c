@@ -41,7 +41,7 @@ int TestmEq2(void) {
   f.varindex = GenericVarindex;
 
   char buf[1000];
-  sprintf(buf, "-D _M=%d",f.model.m);
+  sprintf(buf, "-D _M=%d", f.model.m);
   strcat(cl_buildoptions, buf);
 
   sprintf(buf," -D NUMFLUX=%s", "VecTransNumFlux2d");
