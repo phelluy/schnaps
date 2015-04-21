@@ -476,6 +476,7 @@ void DGMacroCellInterface_CL(void *mf, field *f, cl_mem *wn_cl,
 				      &(f->clv_interkernel)); // *event
       if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
       assert(status >= CL_SUCCESS);
+      f->minter_time += clv_duration(f->clv_interkernel);
     } else {
       size_t cachesize = 1; // TODO make use of cache
       initDGBoundary_CL(f, ieL, locfaL, f->physnode_cl, cachesize);
@@ -490,8 +491,8 @@ void DGMacroCellInterface_CL(void *mf, field *f, cl_mem *wn_cl,
 				      &(f->clv_interkernel)); // *event
       if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
       assert(status >= CL_SUCCESS);
+      f->boundary_time += clv_duration(f->clv_interkernel);
     }
-    f->minter_time += clv_duration(f->clv_interkernel);
 
 
   }
@@ -1202,18 +1203,29 @@ void RK2_CL(field *f, double tmax,
 
 void show_cl_timing(field *f)
 {
-  cl_ulong total = f->zbuf_time + f->minter_time + f->vol_time 
-    + f->mass_time + f->rk_time + f->flux_time;
-  double N = 1.0 / total;
+  cl_ulong total = 0;
+  total += f->zbuf_time;
+  total += f->minter_time;
+  total += f->boundary_time;
+  total += f->vol_time;
+  total += f->mass_time;
+  total += f->rk_time;
+  total += f->flux_time;
+  
+  double N = 100.0 / total;
 
   cl_ulong ns;
 
   ns = f->zbuf_time;
   printf("set_buf_to_zero_cl time:      %f%% \t%luns \t%fs\n", 
-	 ns*N, ns, 1e-9 * ns);
+	 ns * N, ns, 1e-9 * ns);
 
   ns = f->minter_time;
   printf("DGMacroCellInterface_CL time: %f%% \t%luns \t%fs\n", 
+	 ns * N, ns, 1e-9 * ns);
+
+  ns = f->boundary_time;
+  printf("DGBoundary time:              %f%% \t%luns \t%fs\n", 
 	 ns*N, ns, 1e-9 * ns);
 
   ns = f->vol_time;

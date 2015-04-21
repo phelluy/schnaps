@@ -312,6 +312,7 @@ void init_field_cl(field *f)
   f->vol_time = 0;
   f->flux_time = 0;
   f->minter_time = 0;
+  f->boundary_time = 0;
   f->rk_time = 0;
 }
 #endif

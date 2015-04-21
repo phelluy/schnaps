@@ -124,7 +124,13 @@ typedef struct field {
   cl_event clv_interupdateR;
 
   // OpenCL timing
-  cl_ulong zbuf_time, mass_time, vol_time, flux_time, minter_time, rk_time;
+  cl_ulong zbuf_time;
+  cl_ulong mass_time;
+  cl_ulong vol_time;
+  cl_ulong flux_time;
+  cl_ulong minter_time;
+  cl_ulong boundary_time;
+  cl_ulong rk_time;
 #endif
 
 } field;
