@@ -156,6 +156,7 @@ void TestTransImposedData(double x[3], double t, double w[]) {
     + transport_v[2] * x[2];
   double xx = vx - t;
   w[0] = xx * xx;
+  //w[0]=0;
 }
 
 void TestTransImposedData2d(double x[3], double t, double w[]) {

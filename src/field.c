@@ -1104,7 +1104,8 @@ void DGMacroCellInterface(void *mc, field *f, double *w, double *dtw)
 void DGMass(void *mc, field *f, double *w, double *dtw) 
 {
   MacroCell* mcell = (MacroCell*) mc;
-
+  int m=f->model.m;
+  
   // loop on the elements
   for (int ie = mcell->first; ie < mcell->last_p1; ie++) {
     // get the physical nodes of element ie
@@ -1131,19 +1132,21 @@ void DGMass(void *mc, field *f, double *w, double *dtw)
 	int imem=f->varindex(f->interp_param,ie,ipg,iv);
 	wL[iv]=w[imem];
       }
-      if (f->model.Source !=0) {
-	f->model.Source(xphy,f->tnow,wL,source);
+      
+      if (f->model.Source != NULL) {
+      	f->model.Source(xphy,f->tnow,wL,source);
       }
       else {
-	for(int iv = 0; iv < m; iv++){
-	  source[iv] = 0;
-	}
+      	for(int iv = 0; iv < m; iv++){
+      	  source[iv] = 0;
+      	}
       }
+
       for(int iv = 0; iv < f->model.m; iv++) {
 	int imem = f->varindex(f->interp_param, ie, ipg, iv);
 	dtw[imem] /= (wpg * det);
 	dtw[imem] += source[iv];
-        //printf("det2=%f wpg=%f imem = %d\n", det, wpg, imem);
+        printf("det2=%f s=%f ie = %d\n", det, source[0], ie);
 	
       }
     }
@@ -1379,8 +1382,9 @@ void dtfield(field *f, double *w, double *dtw) {
 
   bool facealgo = true;
   if(facealgo)
-    for(int ifa = 0; ifa < f->macromesh.nbfaces; ifa++)
+    for(int ifa = 0; ifa < f->macromesh.nbfaces; ifa++){
       DGMacroCellInterface((void*) (f->mface + ifa), f, w, dtw);
+    }
 
 #ifdef _OPENMP
 #pragma omp parallel for schedule(dynamic, 1)
@@ -1391,6 +1395,8 @@ void dtfield(field *f, double *w, double *dtw) {
     DGSubCellInterface(mcelli, f, w, dtw);
     DGVolume(mcelli, f, w, dtw);
     DGMass(mcelli, f, w, dtw);
+    
+
   }
 #endif
 }
