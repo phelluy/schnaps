@@ -5,19 +5,19 @@
 #include "getopt.h"
 #include <stdlib.h>     /* atoi */
 //#include "model.h"
-#include "../model/MHD/mhdModel.h"
+#include "../model/mhd/mhdmodel.h"
 #include <math.h>
 #include <string.h>
 #include <unistd.h>
 #include <time.h>
 #define _XOPEN_SOURCE 700
 
-double seconds()
-{
-  struct timespec ts;
-  clock_gettime(CLOCK_MONOTONIC, &ts);
-  return (double)ts.tv_sec + 1e-9 * (double)ts.tv_nsec;
-}
+//double seconds()
+//{
+//  struct timespec ts;
+//  clock_gettime(CLOCK_MONOTONIC, &ts);
+//  return (double)ts.tv_sec + 1e-9 * (double)ts.tv_nsec;
+//}
 
 int main(int argc, char *argv[]) {
   double cfl = 0.05;
@@ -90,8 +90,8 @@ int main(int argc, char *argv[]) {
   f.interp.interp_param[1] = 1; // x direction degree
   f.interp.interp_param[2] = 1; // y direction degree
   f.interp.interp_param[3] = 0; // z direction degree
-  f.interp.interp_param[4] = 2; // x direction refinement
-  f.interp.interp_param[5] = 200; // y direction refinement
+  f.interp.interp_param[4] = 1; // x direction refinement
+  f.interp.interp_param[5] = 100; // y direction refinement
   f.interp.interp_param[6] = 1; // z direction refinement
 
 
@@ -116,14 +116,14 @@ int main(int argc, char *argv[]) {
   double executiontime;
   if(usegpu) {
     printf("Using OpenCL:\n");
-    executiontime = seconds();
+    //executiontime = seconds();
     RK2_CL(&f, tmax);
-    executiontime = seconds() - executiontime;
+    //executiontime = seconds() - executiontime;
   } else { 
     printf("Using C:\n");
-    executiontime = seconds();
+    //executiontime = seconds();
     RK2(&f, tmax);
-    executiontime = seconds() - executiontime;
+    //executiontime = seconds() - executiontime;
   }
 
   Plotfield(0,false,&f, "Rho", "dgvisu.msh");

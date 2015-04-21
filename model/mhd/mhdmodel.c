@@ -1,4 +1,4 @@
-#include "mhdModel.h"
+#include "mhdmodel.h"
 #include <math.h>
 #include <stdio.h>
 #include <assert.h>
@@ -540,6 +540,215 @@ void MHDNumFlux_2(double wL[],double wR[],double* vn, double* flux){
 // }}}
 
 
+
+
+
+
+
+void MHDNumFlux1D(double* WL,double* WR,double *vn, double* flux){
+  
+#define Min(a,b) (((a) < (b)) ? (a) : (b))
+#define Max(a,b) (((a) > (b)) ? (a) : (b))
+#define Abs(a) ((a) > (0) ? (a) : (-a))
+
+  double gam = _GAM;
+
+  double piL, piR, piyL, piyR, pizL, pizR;
+  double a, aR, aL, al0, ar0;
+  double cf, cfL, cfR, cL, cR;
+  double Xl, Xr, pxl, pxr;
+  double alpha;
+  double cA, cB, b2;
+  double us, pis, uys, uzs, piys, pizs;
+  double pi, piy, piz;
+  double sigma1, sigma2, sigma3;
+
+  double YL[9];
+  double YR[9];
+  double ymil[9];
+  double ystar[9];
+
+  int i;
+
+  primitives(WL, YL);
+  primitives(WR, YR);
+
+  double b = YL[7]; // En 1D BX est constant dans YL = YR
+
+
+
+// calcul des parametres issus de la relaxation
+  piL = YL[2] + 0.5*Abs(YL[5]*YL[5] + YL[6]*YL[6]) - 0.5*b*b;
+  piyL = -b*YL[5];
+  pizL = -b*YL[6];
+
+  piR = YR[2] + 0.5*Abs(YR[5]*YR[5] + YR[6]*YR[6]) - 0.5*b*b;
+  piyR = -b*YR[5];
+  pizR = -b*YR[6];
+
+
+  for(i=0; i<9; i++){
+     ymil[i] = 0.5*(YL[i]+YR[i]);
+  }
+
+
+  a = sqrt(gam*ymil[2]/ymil[0]);
+  cf = sqrt(\
+            0.5*((b*b + ymil[5]*ymil[5] + ymil[6]*ymil[6])/(ymil[0])+a*a)\
+            + sqrt(\
+                   0.25*(pow((b*b + ymil[5]*ymil[5] + ymil[6]*ymil[6])/(ymil[0])+a*a,2))-(a*a*b*b)/(ymil[0])\
+                  )\
+           );
+
+
+  aL = sqrt(gam*YL[2]/YL[0]);
+  cfL = sqrt(\
+            0.5*((b*b + YL[5]*YL[5] + YL[6]*YL[6])/(YL[0])+aL*aL)\
+            + sqrt(\
+                   0.25*(pow((b*b + YL[5]*YL[5] + YL[6]*YL[6])/(YL[0])+aL*aL,2))-(aL*aL*b*b)/(YL[0])\
+                  )\
+           );
+
+
+  aR = sqrt(gam*YR[2]/YR[0]);
+  cfR = sqrt(\
+            0.5*((b*b + YR[5]*YR[5] + YR[6]*YR[6])/(YR[0])+aR*aR)\
+            + sqrt(\
+                   0.25*(pow((b*b + YR[5]*YR[5] + YR[6]*YR[6])/(YR[0])+aR*aR,2))-(aR*aR*b*b)/(YR[0])\
+                  )\
+           );
+
+
+// calcul des vitesses relaxees a gauche et a droite
+  alpha = (gam-1)/2.;
+
+  Xl = (Max(YL[1]-YR[1], 0.0) + (Max(piR-piL, 0.0))/(YL[0]*cfL+YR[0]*cfR))/cfL;
+  Xr = (Max(YL[1]-YR[1], 0.0) + (Max(piL-piR, 0.0))/(YL[0]*cfL+YR[0]*cfR))/cfR;
+
+  pxl = 1 - Xl/(1+alpha*Xl);
+  pxr = 1 - Xr/(1+alpha*Xr);
+
+  al0 = sqrt(\
+            0.5*((b*b + YL[5]*YL[5] + YL[6]*YL[6])/(YL[0]*pxl)+aL*aL)\
+            + sqrt(\
+                   0.25*(pow((b*b + YL[5]*YL[5] + YL[6]*YL[6])/(YL[0]*pxl)+aL*aL,2))-(aL*aL*b*b)/(YL[0]*pxl)\
+                  )\
+           );
+
+
+  ar0 = sqrt(\
+            0.5*((b*b + YR[5]*YR[5] + YR[6]*YR[6])/(YR[0]*pxr)+aR*aR)\
+            + sqrt(\
+                   0.25*(pow((b*b + YR[5]*YR[5] + YR[6]*YR[6])/(YR[0]*pxr)+aR*aR,2))-(aR*aR*b*b)/(YR[0]*pxr)\
+                  )\
+           );
+
+  cL = al0*YL[0] + alpha*YL[0]*(Max(YL[1]-YR[1],0.0) + (Max(piR-piL,0.0))/(YL[0]*cfL+YR[0]*cfR));
+  cR = ar0*YR[0] + alpha*YR[0]*(Max(YL[1]-YR[1],0.0) + (Max(piL-piR,0.0))/(YL[0]*cfL+YR[0]*cfR));
+
+
+// pour le 3-ondes ondes on prend des vitesses simples
+  cA = cf;
+  cB = cf;
+  b2 = 0.0;
+
+
+// calcul des etats intermediaires
+  us = (cL*YL[1] + cR*YR[1] + piL-piR)/(cL+cR);
+  pis = (cR*piL + cL*piR - cL*cR*(YR[1]-YL[1]))/(cL+cR);
+
+  uys = (cL*YL[3] + cR*YR[3] + piyL-piyR)/(cL+cR);
+  uzs = (cL*YL[4] + cR*YR[4] + pizL-pizR)/(cL+cR);
+
+  piys = (cR*piyL + cL*piyR - cL*cR*(YR[3]-YL[3]))/(cL+cR);
+  pizs = (cR*pizL + cL*pizR - cL*cR*(YR[4]-YL[4]))/(cL+cR);
+
+
+
+// calcul des vitesses caracteristiques
+  sigma1 = YL[1] - cL/YL[0];
+  sigma2 = us;
+  sigma3 = YR[2] + cR/YR[0];
+
+
+// decentrement
+
+  if(sigma1 > 0.0){
+     ystar[0] = YL[0];
+     ystar[1] = YL[1];
+     ystar[2] = YL[2];
+     ystar[3] = YL[3];
+     ystar[4] = YL[4];
+     ystar[5] = YL[5];
+     ystar[6] = YL[6];
+     pi = piL;
+     piy = piyL;
+     piz = pizL;
+  }
+  else
+     if(sigma2 > 0.0){
+        ystar[0] = 1.0/(1.0/YL[0] + (piL-piR+cR*(YR[1]-YL[1]))/(cL*(cL+cR)));
+        ystar[5] = ystar[0]*(YL[5]/YL[0] + b/(cL*cL)*piyL - b/(cL*cL)*piys);
+        ystar[6] = ystar[0]*(YL[6]/YL[0] + b/(cL*cL)*pizL - b/(cL*cL)*pizs);
+        ystar[1] = us;
+        ystar[3] = uys;
+        ystar[4] = uzs;
+        pi = pis;
+        piy = piys;
+        piz = pizs;
+        ystar[2] = ystar[0]*(gam-1)*(YL[2]/((gam-1)*YL[0])\
+                   + ((b*b + YL[5]*YL[5] + YL[6]*YL[6])/(2.0*YL[0]))\
+                   - piL*piL/(2.0*cL*cL) - (piyL*piyL+pizL*pizL)/(2.0*cL*cL)\
+                   - ((b*b+ystar[5]*ystar[5]+ystar[6]*ystar[6])/(2.0*ystar[0]))\
+                   + pis*pis/(2.0*cL*cL) + (piys*piys+pizs*pizs)/(2.0*cL*cL));
+     }
+     else
+        if(sigma3 > 0.0){
+           ystar[0] = 1.0/(1.0/YR[0] + (piR-piL+cL*(YR[1]-YL[1]))/(cR*(cL+cR)));
+           ystar[5] = ystar[0]*(YR[5]/YR[0] + b/(cR*cR)*piyR - b/(cR*cR)*piys);
+           ystar[6] = ystar[0]*(YR[6]/YR[0] + b/(cR*cR)*pizR - b/(cR*cR)*pizs);
+           ystar[1] = us;
+           ystar[3] = uys;
+           ystar[4] = uzs;
+           pi = pis;
+           piy = piys;
+           piz = pizs;
+           ystar[2] = ystar[0]*(gam-1)*(YR[2]/((gam-1)*YR[0])\
+                      + ((b*b + YR[5]*YR[5] + YR[6]*YR[6])/(2.0*YR[0]))\
+                      - piR*piR/(2.0*cR*cR) - (piyR*piyR+pizR*pizR)/(2.0*cR*cR)\
+                      - ((b*b+ystar[5]*ystar[5]+ystar[6]*ystar[6])/(2.0*ystar[0]))\
+                      + pis*pis/(2.0*cR*cR) + (piys*piys+pizs*pizs)/(2.0*cR*cR));
+        }
+        else{
+           ystar[0] = YR[0];
+           ystar[1] = YR[1];
+           ystar[2] = YR[2];
+           ystar[3] = YR[3];
+           ystar[4] = YR[4];
+           ystar[5] = YR[5];
+           ystar[6] = YR[6];
+           pi = piR;
+           piy = piyR;
+           piz = pizR;
+        }
+
+  flux[0] = ystar[0]*ystar[1];
+  flux[1] = ystar[0]*(ystar[1]*ystar[1]) + pi;
+  flux[2] = ystar[1]*(0.5*ystar[0]*(ystar[1]*ystar[1]+ystar[3]*ystar[3]+ystar[4]*ystar[4])\
+                      + ystar[2]/(gam-1) + 0.5*(b*b+ystar[5]*ystar[5]+ystar[6]*ystar[6]) + pi)\
+                      + piy*ystar[3] + piz*ystar[4];
+  flux[3]  = ystar[0]*ystar[1]*ystar[3] + piy;
+  flux[4]  = ystar[0]*ystar[1]*ystar[4] + piz;
+  flux[5]  = ystar[1]*ystar[5] - b*ystar[3];
+  flux[6]  = ystar[1]*ystar[6] - b*ystar[4];
+  flux[7]  = 0;
+  flux[8]  = 0;
+}
+// }}}
+
+
+
+
 // {{{   MHDBoundaryFlux
 #pragma start_opencl
 void MHDBoundaryFlux(double x[3],double t,double wL[],double* vnorm,
@@ -615,6 +824,8 @@ void MHDImposedData(double x[3],double t,double w[]){
 };
 #pragma end_opencl
 // }}}
+
+
 
 // }}}
 

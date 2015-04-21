@@ -38,6 +38,8 @@ void matrix_matrix(double A[9][9],double B[9][9],double C[9][9]);
 void write_matrix(double A[9][9],double *second, double B[9][9+1]);
 void gauss(double A[9][9], double b[9], double *x);
 void MHDNumFlux_2(double wL[],double wR[],double* vn, double* flux);
+
+void MHDNumFlux1D(double wL[],double wR[],double* vn, double* flux);
 #pragma end_opencl
 // }}}
 

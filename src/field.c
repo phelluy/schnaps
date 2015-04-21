@@ -278,6 +278,7 @@ void Initfield(field *f) {
   if(!cldevice_is_acceptable(nplatform_cl, ndevice_cl)) {
     printf("OpenCL device not acceptable; OpenCL initialization disabled.\n");
   } else {
+
     init_field_cl(f);
   }
 #endif // _WITH_OPENCL
@@ -328,6 +329,53 @@ void Displayfield(field* f) {
     }
   }
 };
+
+// Save the results in a text file
+// in order plot it with Gnuplot
+void Gnuplot(field* f,int dir, double fixval, char* filename) {
+
+  FILE * gmshfile;
+  gmshfile = fopen(filename, "w" );
+
+  printf("Save for Gnuplot...\n");
+  for(int ie = 0; ie < f->macromesh.nbelems; ie++) {
+
+    double physnode[20][3];
+    for(int inoloc = 0; inoloc < 20; inoloc++) {
+      int ino = f->macromesh.elem2node[20 * ie + inoloc];
+      physnode[inoloc][0] = f->macromesh.node[3 * ino + 0];
+      physnode[inoloc][1] = f->macromesh.node[3 * ino + 1];
+      physnode[inoloc][2] = f->macromesh.node[3 * ino + 2];
+    }
+
+    for(int ipg = 0; ipg < NPG(f->interp_param + 1); ipg++) {
+
+      double xref[3], xphy[3], wpg;
+      double dtau[3][3];
+      ref_pg_vol(f->interp_param + 1, ipg, xref, &wpg, NULL);
+
+      Ref2Phy(physnode,
+	      xref,
+	      0, -1, // dphiref, ifa
+	      xphy, dtau,
+	      NULL, NULL, NULL); // codtau, dphi, vnds
+
+      if(xphy[dir] > -(fixval + 0.0001) && xphy[dir] < (fixval + 0.00001)){
+
+	fprintf(gmshfile, "%f ",xphy[1-dir]);
+
+	for(int iv = 0; iv < f->model.m; iv++) {
+	  int imem = f->varindex(f->interp_param, ie, ipg, iv);
+	  fprintf(gmshfile, "%f ",f->wn[imem]);
+	}
+	fprintf(gmshfile, "\n");
+
+      }
+    }
+  }
+  fclose(gmshfile);
+};
+
 
 // Save the results in the gmsh format typplot: index of the plotted
 // variable int compare == true -> compare with the exact value.  If

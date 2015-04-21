@@ -68,6 +68,10 @@ list(APPEND
   src/h20phi.h
   )
 
+#files from model/
+file(GLOB_RECURSE model_files model/*.h model/*.c)
+list(APPEND source_files ${model_files})
+
 if (OPENCL_FOUND)
   list(APPEND
     source_files
@@ -287,4 +291,12 @@ if(OPENCL_FOUND)
     )
   target_link_libraries(testkernelvolume ${LIBS})
 
+  add_test(testmhd testmhd)
+  add_executable(
+    testmhd
+    test/test.h
+    test/testmhd.c
+    )
+  target_link_libraries(testmhd ${LIBS})
+  
 endif(OPENCL_FOUND)
