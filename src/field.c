@@ -1052,12 +1052,12 @@ void DGMacroCellInterface(void *mc, field *f, double *w, double *dtw)
   }
 }
 
-
-
 // Apply division by the mass matrix
 void DGMass(void *mc, field *f, double *w, double *dtw) 
 {
-  MacroCell* mcell = (MacroCell*) mc;
+  MacroCell *mcell = (MacroCell*)mc;
+
+  int m = f->model.m;
 
   // loop on the elements
   for (int ie = mcell->first; ie < mcell->last_p1; ie++) {
@@ -1079,9 +1079,11 @@ void DGMass(void *mc, field *f, double *w, double *dtw)
 	      NULL, dtau, // xphy, dtau
 	      codtau, NULL, NULL); // codtau, dpsi, vnds
       double det = dot_product(dtau[0], codtau[0]);
-      for(int iv = 0; iv < f->model.m; iv++) {
+      double overdetwpg = 1.0 / (det * wpg);
+      
+      for(int iv = 0; iv < m; iv++) {
 	int imem = f->varindex(f->interp_param, ie, ipg, iv);
-	dtw[imem] /= (wpg * det);
+	dtw[imem] *= overdetwpg;
         //printf("det2=%f wpg=%f imem = %d\n", det, wpg, imem);
 
       }
