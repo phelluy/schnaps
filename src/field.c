@@ -1091,7 +1091,6 @@ void DGMass(void *mc, field *f, double *w, double *dtw)
   }
 }
 
-
 // Compute the Discontinuous Galerkin volume terms, fast version
 void DGVolume(void *mc, field *f, double *w, double *dtw) 
 {

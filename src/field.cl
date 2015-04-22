@@ -654,16 +654,15 @@ void DGMass(__constant int *param,       // 0: interp param
 // Second implementation with a loop on the faces.
 __kernel
 void DGMacroCellInterface(__constant int *param,        // 0: interp param
-                          double tnow,                  // 1: current time
-                          int ieL,                      // 2: left macrocell 
-			  int ieR,                      // 3: right macrocell
-                          int locfaL,                   // 4: left face index
-			  int locfaR,                   // 5: right face index
-                          __constant double *physnodeL, // 6: left physnode
-                          __constant double *physnodeR, // 7: right physnode
-                          __global double *wn,          // 8: field 
-                          __global double *dtwn,        // 9: time derivative
-			  __local double *cache         // 10: local mem
+                          int ieL,                      // 1: left macrocell 
+			  int ieR,                      // 2: right macrocell
+                          int locfaL,                   // 3: left face index
+			  int locfaR,                   // 4: right face index
+                          __constant double *physnodeL, // 5: left physnode
+                          __constant double *physnodeR, // 6: right physnode
+                          __global double *wn,          // 7: field 
+                          __global double *dtwn,        // 8: time derivative
+			  __local double *cache         // 9: local mem
 			  )
 {
   // TODO: use __local double *cache.

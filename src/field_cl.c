@@ -92,25 +92,25 @@ void initDGBoundary_CL(field *f,
 
   // double tnow,                  // 1: current time
   status = clSetKernelArg(kernel,
-			  argnum++,
-			  sizeof(double),
-			  &f->tnow);
+  			  argnum++,
+  			  sizeof(double),
+  			  &f->tnow);
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 
-  // int ieL,                      // 2: left macrocell 
+  // int ieL,                      // 2: left macrocell
   status = clSetKernelArg(kernel,
-			  argnum++,
-			  sizeof(int),
-			  &ieL);
+  			  argnum++,
+  			  sizeof(int),
+  			  &ieL);
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 
   // int locfaL,                   // 3: left face index
   status = clSetKernelArg(kernel,
-			  argnum++,
-			  sizeof(int),
-			  &locfaL);
+  			  argnum++,
+  			  sizeof(int),
+  			  &locfaL);
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 
@@ -122,7 +122,7 @@ void initDGBoundary_CL(field *f,
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 
-  // __global double *wn,          // 5: field 
+  // __global double *wn,          // 5: field
   status = clSetKernelArg(kernel,
                           argnum++,
                           sizeof(cl_mem),
@@ -145,98 +145,31 @@ void initDGBoundary_CL(field *f,
                           NULL);
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
-
 }
 
-// Set OpenCL kernel arguments for DGMacroCellInterface
-void initDGMacroCellInterface_CL(field *f, 
-				 cl_mem physnodeL_cl, cl_mem physnodeR_cl,
-				 size_t cachesize)
-{
-  //printf("initDGMacroCellInterface_CL\n");
-
-  cl_int status;
-  cl_kernel kernel = f->dginterface;
-
-  // Set kernel arguments
-  unsigned int argnum = 0;
-
-  // associates the param buffer to the 0th kernel argument
-  status = clSetKernelArg(kernel,
-                          argnum++,
-                          sizeof(cl_mem),
-                          &(f->param_cl));
-  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status >= CL_SUCCESS);
-
-  // tnow
-  argnum++;
-
-  // ieL
-  argnum++;
-
-  // ieR
-  argnum++;
-
-  // locfaL
-  argnum++;
-
-  // locfaR
-  argnum++;
-
-  status = clSetKernelArg(kernel,
-                          argnum++,
-                          sizeof(cl_mem),
-                          &physnodeL_cl);
-  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status >= CL_SUCCESS);
-
-  status = clSetKernelArg(kernel,
-                          argnum++,
-                          sizeof(cl_mem),
-                          &physnodeR_cl);
-  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status >= CL_SUCCESS);
-
-  // wn_cl
-  argnum++;
-
-  status = clSetKernelArg(kernel,
-                          argnum++,
-                          sizeof(cl_mem),
-                          &(f->dtwn_cl));
-  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status >= CL_SUCCESS);
-
-  // __local double *cache         // 10: local mem
-  status = clSetKernelArg(kernel,
-                          argnum++,
-                          cachesize,
-                          NULL);
-  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status >= CL_SUCCESS);
-
-  //printf("... initDGMacroCellInterface_CL done.\n");
-}
 
 // Set the loop-dependant kernel arguments for DGMacroCellInterface_CL
-void loop_initDGMacroCellInterface_CL(field *f, 
-				      int ieL, int ieR, int locfaL, int locfaR)
+void initDGMacroCellInterface_CL(field *f, 
+				      int ieL, int ieR, int locfaL, int locfaR,
+				      cl_mem physnodeL_cl, cl_mem physnodeR_cl,
+				      size_t cachesize)
 {
   //printf("loop_initDGMacroCellInterface_CL\n");
   cl_int status;
   cl_kernel kernel = f->dginterface;
 
   // Set kernel arguments
-  unsigned int argnum = 1;
+  unsigned int argnum = 0;
 
+  //__constant int *param,        // 0: interp param
   status = clSetKernelArg(kernel,
-			  argnum++,
-			  sizeof(double),
-			  &(f->tnow));
+			 argnum++,
+                          sizeof(cl_mem),
+                          &(f->param_cl));
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 
+  //int ieL,                      // 1: left macrocell 
   status = clSetKernelArg(kernel,
 			  argnum++,
 			  sizeof(int),
@@ -244,6 +177,7 @@ void loop_initDGMacroCellInterface_CL(field *f,
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 
+  //int ieR,                      // 2: right macrocell
   status = clSetKernelArg(kernel,
 			  argnum++,
 			  sizeof(int),
@@ -251,6 +185,7 @@ void loop_initDGMacroCellInterface_CL(field *f,
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 
+  //int locfaL,                   // 3: left face index
   status = clSetKernelArg(kernel,
 			  argnum++,
 			  sizeof(int),
@@ -258,10 +193,51 @@ void loop_initDGMacroCellInterface_CL(field *f,
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 
+  //int locfaR,                   // 4: right face index
   status = clSetKernelArg(kernel,
 			  argnum++,
 			  sizeof(int),
 			  &locfaR);
+  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status >= CL_SUCCESS);
+
+  //__constant double *physnodeL, // 5: left physnode
+  status = clSetKernelArg(kernel,
+                          argnum++,
+                          sizeof(cl_mem),
+                          &physnodeL_cl);
+  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status >= CL_SUCCESS);
+
+  //__constant double *physnodeR, // 6: right physnode
+  status = clSetKernelArg(kernel,
+                          argnum++,
+                          sizeof(cl_mem),
+                          &physnodeR_cl);
+  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status >= CL_SUCCESS);
+
+  //__global double *wn,          // 7: field 
+  status = clSetKernelArg(kernel,
+                          argnum++,
+                          sizeof(cl_mem),
+                          &f->wn_cl);
+  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status >= CL_SUCCESS);
+
+  //__global double *dtwn,        // 8: time derivative
+  status = clSetKernelArg(kernel,
+                          argnum++,
+                          sizeof(cl_mem),
+                          &(f->dtwn_cl));
+  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status >= CL_SUCCESS);
+
+  //__local double *cache         // 9: local mem
+  status = clSetKernelArg(kernel,
+                          argnum++,
+                          sizeof(cl_double) * cachesize,
+                          NULL);
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 
@@ -298,7 +274,7 @@ void init_DGMass_CL(field *f)
   status = clSetKernelArg(kernel,
                           argnum++,
                           sizeof(cl_mem),
-                          &(f->dtwn_cl));
+                          &f->dtwn_cl);
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 }
@@ -431,12 +407,7 @@ void DGMacroCellInterface_CL(void *mf, field *f, cl_mem *wn_cl,
   int end = mface->last_p1;
   for(int ifa = start; ifa < end; ++ifa) {
     //printf("ifa: %d\n", ifa);
-    
-    size_t kernel_cachesize = 1;
-
-    initDGMacroCellInterface_CL(f, f->physnode_cl, f->physnodeR_cl, 
-				kernel_cachesize);
-    
+        
     int ieL =    f->macromesh.face2elem[4 * ifa];
     int locfaL = f->macromesh.face2elem[4 * ifa + 1];
     int ieR =    f->macromesh.face2elem[4 * ifa + 2];
@@ -463,7 +434,11 @@ void DGMacroCellInterface_CL(void *mf, field *f, cl_mem *wn_cl,
     if(ieR >= 0) {
     
       // Set the remaining loop-dependant kernel arguments
-      loop_initDGMacroCellInterface_CL(f, ieL, ieR, locfaL, locfaR);
+      size_t kernel_cachesize = 1;
+      initDGMacroCellInterface_CL(f, 
+				  ieL, ieR, locfaL, locfaR, 
+				  f->physnode_cl, f->physnodeR_cl, 
+				  kernel_cachesize);
 
       status = clEnqueueNDRangeKernel(f->cli.commandqueue,
 				      kernel,
