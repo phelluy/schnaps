@@ -165,7 +165,6 @@ typedef struct field {
 
 } field;
 
-#pragma start_opencl
 //! \brief memory arrangement of field components.
 //! Generic implementation.
 //! \param[in] param interpolation parameters
@@ -180,10 +179,10 @@ typedef struct field {
 //! \param[in] ipg glop index
 //! \param[in] iv field component index
 //! \returns the memory position in the arrays wn wnp1 or dtwn.
+#pragma start_opencl
 int GenericVarindex(__constant int *param, int elem, int ipg, int iv);
 #pragma end_opencl
 
-#pragma start_opencl
 //! \brief memory arrangement of field components.
 //! with 3D components
 //! \param[in] param interpolation parameters
@@ -199,9 +198,10 @@ int GenericVarindex(__constant int *param, int elem, int ipg, int iv);
 //! \param[in] ic components of the subcell in the macrocell
 //! \param[in] iv component of the conservative variable
 /* //! \returns the memory position in the arrays wn wnp1 or dtwn. */
+#pragma start_opencl
 /* int GenericVarindex3d(int m, */
-/* 		      int nx0, int nx1, int nx2,  */
-/* 		      int nc0, int nc1, int nc2,  */
+/* 		      int nx0, int nx1, int nx2, */
+/* 		      int nc0, int nc1, int nc2, */
 /* 		      int elem, int *ix,int *ic, int iv); */
 #pragma end_opencl
 

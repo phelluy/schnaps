@@ -63,9 +63,13 @@ void TransNumFlux(real wL[], real wR[], real vn[3], real* flux);
 //! \param[in] wL, wR : left and right states
 //! \param[in] vn : normal vector
 //! \param[out] flux : the flux
+#pragma start_opencl
 void TransNumFlux2d(real wL[], real wR[], real vn[3], real* flux);
+#pragma end_opencl
 
+#pragma start_opencl
 void VecTransNumFlux2d(real wL[], real wR[], real vn[3], real* flux);
+#pragma end_opencl
 
 //! \brief The particular boundary flux for the transport model
 //! \param[in] x : space position
@@ -97,7 +101,7 @@ void TransInitData2d(real *x, real *w);
 
 void VecTransInitData2d(real *x, real *w);
 
-void vTransImposedData2d(real *x, real t, real *w);
+//void vTransImposedData2d(real *x, real t, real *w);
 
 //! \brief The particular imposed data for the transport model
 //! \param[in] x, t : space and time position
@@ -109,7 +113,9 @@ void TransImposedData(real* x, real t, real* w);
 //! \param[out] w : imposed state at point x and time t
 void TransImposedData2d(real* x, real t, real* w);
 
+#pragma start_opencl
 void VecTransImposedData2d(real* x, real t, real* w);
+#pragma end_opencl
 
 //! \brief The particular flux for testing the transport model
 //! \param[in] x : space position
@@ -129,8 +135,10 @@ void TestTransBoundaryFlux(real* x, real t, real* wL, real* vn,
 void TestTransBoundaryFlux2d(real* x, real t, real* wL, real* vn,
 			     real* flux);
 
+#pragma start_opencl
 void VecTransBoundaryFlux2d(real* x, real t, real* wL, real* vn,
 			    real* flux);
+#pragma end_opencl
 
 //! \brief The particular init data for the transport model
 //! \param[in] x : space position

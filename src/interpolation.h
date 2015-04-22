@@ -105,7 +105,9 @@ void ref_pg_vol(int* param,int ipg,
 //! \param[in] param interp. params list
 //! \param[in] xref  reference Gauss point coordinates
 //! \return Gauss point index
-int ref_ipg(int* param,real* xref);
+#pragma start_opencl
+int ref_ipg(__constant int* param,real* xref);
+#pragma end_opencl
 
 //! \brief compute the position xpg of glop ipg in the local
 //! numbering on face ifa. If xpgin is not NULL also compute
@@ -157,13 +159,18 @@ real glop(int deg,int i);
 //! \param[in] deg degree
 //! \param[in] i GLOP 1D index
 //! \returns the weight
+#pragma start_opencl
 real wglop(int deg,int i);
+#pragma end_opencl
+
 //! \brief return the 1d derivative of lagrange polynomial ib at glop ipg
 //! \param[in] deg degree
 //! \param[in] ib basis function index
 //! \param[in] ipg index of the Gauss point where the derivative is computed
 //! \returns the value of the derivative
+#pragma start_opencl
 real dlag(int deg,int ib,int ipg);
+#pragma end_opencl
 
 
 //! \brief return the value of a 1D lagrange polynomial
