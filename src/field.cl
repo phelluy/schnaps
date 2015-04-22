@@ -1,6 +1,5 @@
 
-#if 0
-//#define _DOUBLE_PRECISION
+#define _DOUBLE_PRECISION
 #ifdef _DOUBLE_PRECISION
 #define real double
 #else
@@ -212,7 +211,7 @@ void cemracs2014_TransBoundaryFlux(real x[3], real t,
 {
   real wR[_M];
   int m = vlasov_mx * vlasov_my;
-  for(unsigned int i = 0; i < m; ++i)
+  for(int i = 0; i < m; ++i)
     wR[i] = 0;
   vlaTransNumFlux2d(wL, wR, vnorm, flux);
 }
@@ -239,6 +238,8 @@ real wglop(int deg, int i)
 void get_dtau(real x, real y, real z,
 	      __constant real *physnode, real dtau[][3]);
 
+int ipg(const int npg[], const int p[], const int icell);
+
 // Get the logical index of the gaussian point given the coordinate
 // p[] of the point in the subcell and the index of the subcell icell.
 int ipg(const int npg[], const int p[], const int icell) 
@@ -258,10 +259,10 @@ void DGFlux(__constant int *param,       // 0: interp param
 	    __local    real *wnloc     // 6: wn and dtwn in local memory
 	    )
 {
-  const int m = param[0];
-  const int deg[3] = {param[1], param[2], param[3]};
-  const int npg[3] = {deg[0] + 1, deg[1] + 1, deg[2] + 1};
-  const int nraf[3] = {param[4], param[5], param[6]};
+  int m = param[0];
+  int deg[3] = {param[1], param[2], param[3]};
+  int npg[3] = {deg[0] + 1, deg[1] + 1, deg[2] + 1};
+  int nraf[3] = {param[4], param[5], param[6]};
 
   int dim1 = (dim0 + 1) % 3;
   int dim2 = (dim1 + 1) % 3;
@@ -340,10 +341,10 @@ void DGFlux(__constant int *param,       // 0: interp param
   real y = hy * (icL[1] + gauss_lob_point[offset[1]]);
   real z = hz * (icL[2] + gauss_lob_point[offset[2]]);
 
-  real wpg = hx * hy * hz
-    * gauss_lob_weight[offset[0]]
-    * gauss_lob_weight[offset[1]]
-    * gauss_lob_weight[offset[2]];
+  /* real wpg = hx * hy * hz */
+  /*   * gauss_lob_weight[offset[0]] */
+  /*   * gauss_lob_weight[offset[1]] */
+  /*   * gauss_lob_weight[offset[2]]; */
 
   real codtau[3][3];
   {
@@ -445,10 +446,10 @@ void DGVolume(__constant int *param,       // 0: interp param
 	      __local real *wnloc        // 5: cache for wn and dtwn
 	      ) 
 {
-  const int m = param[0];
-  const int deg[3] = {param[1],param[2], param[3]};
-  const int npg[3] = {deg[0] + 1, deg[1] + 1, deg[2] + 1};
-  const int nraf[3] = {param[4], param[5], param[6]};
+  int m = param[0];
+  int deg[3] = {param[1],param[2], param[3]};
+  int npg[3] = {deg[0] + 1, deg[1] + 1, deg[2] + 1};
+  int nraf[3] = {param[4], param[5], param[6]};
 
   __local real *dtwnloc = wnloc  + m * npg[0] * npg[1] * npg[2];
 
@@ -525,7 +526,7 @@ void DGVolume(__constant int *param,       // 0: interp param
   real wL[_M];
   int ipgL = ipg(npg, p, 0);
   //int imemL0 = VARINDEX(param, ie, ipgL, 0);
-  int imemL0loc = ipgL * m;
+  //int imemL0loc = ipgL * m;
   __local real *wnloc0 = wnloc + ipgL * m;
   //printf("ipgL * m: %d\n", ipgL * m);
   for(int iv = 0; iv < m; iv++) {
@@ -564,8 +565,8 @@ void DGVolume(__constant int *param,       // 0: interp param
       NUMFLUX(wL, wL, dphi, flux);
 
       int ipgR = ipg(npg, q, 0);
-      int imemR0 = VARINDEX(param, ie, ipgR, 0);
-      __global real *dtwn0 = dtwn + imemR0; 
+      //int imemR0 = VARINDEX(param, ie, ipgR, 0);
+      //__global real *dtwn0 = dtwn + imemR0; 
 
       int imemR0loc = ipgR * m;
       __local real *dtwnloc0 =  dtwnloc + imemR0loc;
@@ -603,11 +604,11 @@ void DGMass(__constant int *param,       // 0: interp param
             __global real *dtwn)       // 3: time derivative
 {
   int ipg = get_global_id(0);
-  const int m = param[0];
-  const int npg[3] = {param[1] + 1, param[2] + 1, param[3] + 1};
-  const int nraf[3] = {param[4], param[5], param[6]};
+  int m = param[0];
+  int npg[3] = {param[1] + 1, param[2] + 1, param[3] + 1};
+  int nraf[3] = {param[4], param[5], param[6]};
 
-  const int npgie = npg[0] * npg[1] * npg[2] * nraf[0] * nraf[1] * nraf[2];
+  int npgie = npg[0] * npg[1] * npg[2] * nraf[0] * nraf[1] * nraf[2];
 
   //ref_pg_vol(param+1, ipg,xpgref,&wpg,NULL);
   int ix = ipg % npg[0];
@@ -1227,4 +1228,3 @@ void RK4_final_stage(__global real *w,
     a[3] * dtw[i];
 }
 
-#endif

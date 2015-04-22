@@ -92,3 +92,5 @@ char cl_buildoptions[1024];
 #else
 #define real float
 #endif
+
+#define __constant

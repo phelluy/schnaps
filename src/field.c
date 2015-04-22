@@ -221,12 +221,17 @@ void init_field_cl(field *f)
 				   f->physnodeR,
 				   &status);
 
+
   // Program compilation
   char *s;
   GetOpenCLCode();
   ReadFile("schnaps.cl", &s);
 
   printf("\t%s\n", numflux_cl_name);
+  printf("\t%s\n", s);
+
+  //assert(1==2);
+
 
   printf("OpenCL preprocessor options:\n");
   printf("\t%s\n", cl_buildoptions);

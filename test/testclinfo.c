@@ -18,14 +18,15 @@ int TestCLInfo(void) {
   InitCLInfo(&cli, nplatform_cl, ndevice_cl);
   PrintCLInfo(&cli);
 
-  char prog[]="#pragma OPENCL EXTENSION cl_khr_fp64: enable \n"
+  char prog[]=
     "__kernel  \n "
-    "void testadd(__global real* a,__global real* b){ \n"
+    "void testadd(__global float* a,__global float* b){ \n"
     " int i = get_global_id(0); \n"
     "  a[i] += b[i]; \n"
     "}\n";
 
   BuildKernels(&cli, prog, NULL);
+
 
   GetOpenCLCode();
 
