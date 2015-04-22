@@ -70,6 +70,18 @@ list(APPEND
   src/maxwell.c
   src/pic.h
   src/pic.c
+  src/skyline.h
+  src/solverpoisson.h
+  src/quantities_vp.h
+  src/diagnostics_vp.h
+  src/skyline.c
+  src/solverpoisson.c
+  src/quantities_vp.c
+  src/diagnostics_vp.c
+  src/collision.h
+  src/gyro.h
+  src/collision.c
+  src/gyro.c
   )
 
 if (OPENCL_FOUND)
@@ -245,6 +257,41 @@ add_executable(
   )
 target_link_libraries(testpic_accumulate ${LIBS})
 add_test(testpic_accumulate testpic_accumulate)
+add_test(testperiodic testperiodic)
+add_executable(
+  testperiodic
+  test/test.h
+  test/testperiodic.c
+)
+target_link_libraries(testperiodic ${LIBS})
+add_test(testperiodic testperiodic)
+
+add_test(testskyline testskyline)
+add_executable(
+  testskyline
+  test/test.h
+  test/testskyline.c
+  )
+target_link_libraries(testskyline ${LIBS})
+add_test(testskyline testskyline)
+ 
+add_test(testpoisson testpoisson)
+add_executable(
+  testpoisson
+  test/test.h
+  test/testpoisson.c
+)
+target_link_libraries(testpoisson ${LIBS})
+add_test(testpoisson testpoisson)
+
+add_test(test_transportvp test_transportvp)
+add_executable(
+  test_transportvp
+  test/test.h
+  test/test_transportvp.c
+)
+target_link_libraries(test_transportvp ${LIBS})
+add_test(test_transportvp test_transportvp)
 
 ##########  OpenCL unit tests  ##########
 if(OPENCL_FOUND)
@@ -273,6 +320,14 @@ if(OPENCL_FOUND)
     test/testdtfield_cl.c
     )
   target_link_libraries(testdtfield_cl ${LIBS})
+
+  add_test(testcache_cl testcache_cl)
+  add_executable(
+    testcache_cl
+    test/test.h
+    test/testcache_cl.c
+    )
+  target_link_libraries(testcache_cl ${LIBS})
 
   add_test(testmacrocellinterface testmacrocellinterface)
   add_executable(
@@ -321,5 +376,13 @@ if(OPENCL_FOUND)
     test/testkernelvolume.c
     )
   target_link_libraries(testkernelvolume ${LIBS})
+
+  add_test(testkernelflux testkernelflux)
+  add_executable(
+    testkernelflux
+    test/test.h
+    test/testkernelflux.c
+    )
+  target_link_libraries(testkernelflux ${LIBS})
 
 endif(OPENCL_FOUND)

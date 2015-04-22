@@ -36,8 +36,8 @@ int TestfieldRK2(void){
   f.varindex = GenericVarindex;
 
   f.interp.interp_param[0] = f.model.m;
-  f.interp.interp_param[1] = 2; // x direction degree
-  f.interp.interp_param[2] = 2; // y direction degree
+  f.interp.interp_param[1] = 3; // x direction degree
+  f.interp.interp_param[2] = 3; // y direction degree
   f.interp.interp_param[3] = 0; // z direction degree
   f.interp.interp_param[4] = 4; // x direction refinement
   f.interp.interp_param[5] = 4; // y direction refinement
@@ -98,7 +98,8 @@ int TestfieldRK2(void){
   CheckMacroMesh(&(f.macromesh), f.interp.interp_param + 1);
  
   double tmax = 0.1;
-  RK4(&f, tmax);
+  f.vmax=1;
+  RK2(&f, tmax);
  
   Plotfield(0, false, &f, NULL, "dgvisu.msh");
   Plotfield(0, true , &f, "error", "dgerror.msh");

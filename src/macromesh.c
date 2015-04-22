@@ -18,6 +18,7 @@
 void ReadMacroMesh(MacroMesh *m, char *filename)
 {
   m->is2d = false;
+  m->is1d = false;
 
   FILE *f = NULL;
   char *line = NULL;
@@ -250,11 +251,12 @@ void macromesh_bounds(MacroMesh *m, double *bounds)
   double zmax = zmin;
   
   // Loop over all the points in all the subcells of the macrocell
-  const int nbnodes = m->nbnodes;
-  for(int i = 0; i < nbnodes; i++) {
+  const int nbelems = m->nbelems;
+  for(int i = 0; i < m->nbnodes; i++) {
     double x = m->node[3 * i];
     double y = m->node[3 * i + 1];
     double z = m->node[3 * i + 2];
+    printf("xyz %f %f %f \n",x,y,z);
     if(x < xmin) xmin = x;
     if(x > xmax) xmax = x;
     if(y < ymin) ymin = y;
@@ -493,6 +495,15 @@ void BuildConnectivity(MacroMesh* m)
   /* } */
 
   if(m->is2d) suppress_zfaces(m);
+
+#ifdef _PERIOD
+  assert(m->is1d); // TODO : generalize to 2D
+  assert(m->nbelems==1); 
+  // faces 1 and 3 point to the same unique macrocell
+  m->elem2elem[1+6*0]=0;
+  m->elem2elem[3+6*0]=0;
+#endif
+
 }
 
 
@@ -610,7 +621,14 @@ void CheckMacroMesh(MacroMesh *m, int *param) {
         if(m->is2d) { // in 2D do not check upper and lower face
           if(ifa < 4)
             assert(Dist(xpgref, xpgref2) < 1e-11);
-        } else { // in 3D check all faces
+        }
+	else if (m->is1d){
+	  if (ifa==1 || ifa==3) {
+	    assert(Dist(xpgref,xpgref2)<1e-11);
+	  }
+	}
+	// in 3D check all faces
+	else { // in 3D check all faces
 	  if(Dist(xpgref, xpgref2) >= 1e-11) {
 	    printf("ERROR: face and vol indices give different rev points:\n");
 	    printf("ipgv: %d\n", ipgv);
@@ -656,6 +674,12 @@ void CheckMacroMesh(MacroMesh *m, int *param) {
 	    ref_pg_face(param, ifa, ipgf, xpgref, &wpg, xpgref_in);
 	  }
 
+#ifdef _PERIOD
+	  assert(m->is1d); // TODO: generalize to 2d
+	  if (xpgref_in[0] > _PERIOD) xpgref_in[0] -= _PERIOD;
+	  if (xpgref_in[0] < 0) xpgref_in[0] += _PERIOD;
+#endif
+
 	  // Compute the position of the point and the face normal.
 	  double xpg[3], vnds[3];
 	  {
@@ -697,7 +721,11 @@ void CheckMacroMesh(MacroMesh *m, int *param) {
 	  Phy2Ref(physnodeR, xpg_in, xref);
 	  
           int ifaR = 0;
-          while (m->elem2elem[6 * ieR + ifaR] != ie) ifaR++;
+#ifdef _PERIOD
+          while (m->elem2elem[6*ieR+ifaR] != ie || ifaR==ifa) ifaR++;
+#else
+          while (m->elem2elem[6*ieR+ifaR] != ie) ifaR++;
+#endif
           assert(ifaR < 6);
 
 	  // Compute the physical coordinates for the point in the
@@ -727,7 +755,11 @@ void CheckMacroMesh(MacroMesh *m, int *param) {
 	    printf("xpg:%f %f %f\n", xpg[0], xpg[1], xpg[2]);
 	    printf("xpgR:%f %f %f\n", xpgR[0], xpgR[1], xpgR[2]);
 	  }
-	  assert(Dist(xpg, xpgR) < 1e-11);
+#ifdef _PERIOD
+	   assert(fabs(Dist(xpg,xpgR)-_PERIOD)<1e-11);
+#else
+          assert(Dist(xpg,xpgR)<1e-11);
+#endif
         }
       }
     }
@@ -961,3 +993,91 @@ int NearestNode(MacroMesh *m, double *xphy) {
 
   return nearest;
 }
+// Detect if the mesh is 1D
+// and then permut the nodes so that
+// the y,z direction coincides in the reference
+// or physical frame
+void Detect1DMacroMesh(MacroMesh* m){
+
+  m->is1d= true;
+
+  // do not permut the node if the connectivity
+  // is already built
+  if (m->elem2elem != NULL)
+    printf("Cannot permut nodes before building connectivity\n");
+  assert(m->elem2elem == 0);
+
+  for(int ie=0;ie<m->nbelems;ie++){
+    // get the physical nodes of element ie
+    double physnode[20][3];
+    for(int inoloc=0;inoloc<20;inoloc++){
+      int ino=m->elem2node[20*ie+inoloc];
+      physnode[inoloc][0]=m->node[3*ino+0];
+      physnode[inoloc][1]=m->node[3*ino+1];
+      physnode[inoloc][2]=m->node[3*ino+2];
+    }
+
+    // we decide that the mesh is 1D if the 
+    // middles of the elements have a constant y,z 
+    // coordinate equal to 0.5
+    double zmil=0;
+    double ymil=0;
+    for(int inoloc=0;inoloc<20;inoloc++){
+      zmil+=physnode[inoloc][2];
+      ymil+=physnode[inoloc][1];
+    }
+    zmil/=20;
+    ymil/=20;
+    // the mesh is not 1d
+    if (fabs(zmil-0.5)>1e-6 || fabs(ymil-0.5)>1e-6) {
+      m->is1d=false;
+      return;
+    }
+  }
+
+  printf("Detection of a 1D mesh\n");
+
+  printf("Check now hexahedrons orientation\n");
+  for(int ie=0;ie<m->nbelems;ie++){
+    // get the physical nodes of element ie
+    double physnode[20][3];
+    for(int inoloc=0;inoloc<20;inoloc++){
+      int ino=m->elem2node[20*ie+inoloc];
+      physnode[inoloc][0]=m->node[3*ino+0];
+      physnode[inoloc][1]=m->node[3*ino+1];
+      physnode[inoloc][2]=m->node[3*ino+2];
+    }
+
+
+    // face centers coordinates in the ref frame
+    double face_centers[6][3]={
+      {0.5,0.0,0.5},
+      {1.0,0.5,0.5},
+      {0.5,1.0,0.5},
+      {0.0,0.5,0.5},
+      {0.5,0.5,1.0},
+      {0.5,0.5,0.0},
+    };
+
+    // compute the normal to face 1
+    double vnds[3],dtau[3][3],codtau[3][3];
+    Ref2Phy(physnode,
+	    face_centers[1],
+	    NULL,1, // dphiref,ifa
+	    NULL,dtau,
+	    codtau,NULL,vnds); // codtau,dphi,vnds
+
+    double d=sqrt((vnds[0]-1)*(vnds[0]-1)+vnds[1]*vnds[1]+vnds[2]*vnds[2]);
+
+    // if the mesh is not 1D exit
+    assert(d<1e-6);
+
+
+
+  };
+
+}
+
+
+
+

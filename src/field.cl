@@ -1,49 +1,13 @@
-#ifdef cl_khr_fp64
-#pragma OPENCL EXTENSION cl_khr_fp64: enable
-#else 
-#error 
-#endif
-
-//#define _FPREC
-// for single precision computations
-//#define _FPREC f
-
-#define NULL 0
-
-// For each face, give the dimension index i
-__constant int axis_permut[6][4] = {
-  {0, 2, 1, 0},
-  {1, 2, 0, 1},
-  {2, 0, 1, 1},
-  {2, 1, 0, 0},
-  {0, 1, 2, 1},
-  {1, 0, 2, 0}
-};
-
-__constant int h20_refnormal[6][3]={{0,-1,0},
-				    {1,0,0},
-				    {0,1,0},
-				    {-1,0,0},
-				    {0,0,1},
-				    {0,0,-1}};
-
-double dlag(int deg, int ib, int ipg);
-
 // Return the 1d derivative of lagrange polynomial ib at glop ipg
 double dlag(int deg, int ib, int ipg) {
   return gauss_lob_dpsi[gauss_lob_dpsi_offset[deg] + ib * (deg + 1) + ipg];
 }
 
-// Memory location of w : component iv, macrocell elem and gauss point
-// id in the macrocell ipg
-int varindex(__constant int *param, int elem, int ipg, int iv) {
-  int npg
-    = (param[1] + 1) * (param[2] + 1) * (param[3] + 1)
-    * param[4] * param[5] * param[6];
-  return iv + param[0] * (ipg + npg * elem);
-}
+#ifndef VARINDEX
+#define VARINDEX GenericVarindex
+#endif
 
-int ref_ipg(__constant int* param, double* xref);
+int ref_ipg(__constant int *param, double *xref);
 
 void Ref2Phy(__constant double* physnode,
              double xref[3],
@@ -58,20 +22,28 @@ void Ref2Phy(__constant double* physnode,
 void Phy2Ref(__constant double *physnode,
              double xphy[3], double xref[3]);
 
-int ref_pg_face(__constant int* param, int ifa, int ipg,
-                double* xpg, double* wpg, double* xpgin) 
+int ref_pg_face(int *ndeg, int *nraf0,
+		int ifa, int ipg,
+                double *xpg, double *wpg, double *xpgin)
 {
-  //int ipgf=ipg;
+  // For each face, give the dimension index i
+  int axis_permut[6][4] = { {0, 2, 1, 0},
+			    {1, 2, 0, 1},
+			    {2, 0, 1, 1},
+			    {2, 1, 0, 0},
+			    {0, 1, 2, 1},
+			    {1, 0, 2, 0} };
 
+  int paxis[4] = {axis_permut[ifa][0],
+		  axis_permut[ifa][1],
+		  axis_permut[ifa][2],
+		  axis_permut[ifa][3]};
+  
   // approximation degree in each direction
-  int deg[3] = {param[axis_permut[ifa][0]],
-		param[axis_permut[ifa][1]],
-		param[axis_permut[ifa][2]]};
+  int deg[3] = {ndeg[paxis[0]],	ndeg[paxis[1]],	ndeg[paxis[2]]};
 
   // number of subcells in each direction
-  int nraf[3] = {param[3 + axis_permut[ifa][0]],
-		 param[3 + axis_permut[ifa][1]],
-		 param[3 + axis_permut[ifa][2]]};
+  int nraf[3] = {nraf0[paxis[0]], nraf0[paxis[1]], nraf0[paxis[2]]};
 
   // Compute permuted indices
   int ix = ipg % (deg[0] + 1);
@@ -81,7 +53,7 @@ int ref_pg_face(__constant int* param, int ifa, int ipg,
   ipg /= (deg[1] + 1);
 
   // Equals 0 or d depending on the face
-  int iz = axis_permut[ifa][3] * deg[2];
+  int iz = paxis[3] * deg[2];
 
   // Compute permuted indices of the subface
   int ncx = ipg % nraf[0];
@@ -94,28 +66,28 @@ int ref_pg_face(__constant int* param, int ifa, int ipg,
   h[1] = 1.0 / (double) nraf[1];
 
   // Equals 0 or nraf-1 depending on the face
-  int ncz = axis_permut[ifa][3] * (nraf[2] - 1);
+  int ncz = paxis[3] * (nraf[2] - 1);
   h[2] = 1.0 / (double) nraf[2];
 
   // Compute non permuted indices for points and subfaces
   int ipgxyz[3];
-  ipgxyz[axis_permut[ifa][0]] = ix;
-  ipgxyz[axis_permut[ifa][1]] = iy;
-  ipgxyz[axis_permut[ifa][2]] = iz;
+  ipgxyz[paxis[0]] = ix;
+  ipgxyz[paxis[1]] = iy;
+  ipgxyz[paxis[2]] = iz;
 
   int ncpgxyz[3];
-  ncpgxyz[axis_permut[ifa][0]] = ncx;
-  ncpgxyz[axis_permut[ifa][1]] = ncy;
-  ncpgxyz[axis_permut[ifa][2]] = ncz;
+  ncpgxyz[paxis[0]] = ncx;
+  ncpgxyz[paxis[1]] = ncy;
+  ncpgxyz[paxis[2]] = ncz;
 
   // Compute the global index of the Gauss-Lobatto point in the volume
   int ipgv
     = ipgxyz[0]
-    + (param[0] + 1)
-    * (ipgxyz[1] + (param[1] + 1)
-       * (ipgxyz[2] + (param[2] + 1)
-	  * (ncpgxyz[0] + param[3]
-	     * (ncpgxyz[1] + param[4]
+    + (ndeg[0] + 1)
+    * (ipgxyz[1] + (ndeg[1] + 1)
+       * (ipgxyz[2] + (ndeg[2] + 1)
+	  * (ncpgxyz[0] + nraf0[0]
+	     * (ncpgxyz[1] + nraf0[1]
 		* ncpgxyz[2])
 	     )
 	  )
@@ -127,9 +99,9 @@ int ref_pg_face(__constant int* param, int ifa, int ipg,
 		   gauss_lob_offset[deg[1]] + iy};
   //printf("offset=%d\n",offset);
 
-  xpg[axis_permut[ifa][0]] = h[0] * (ncx + gauss_lob_point[offset[0]]);
-  xpg[axis_permut[ifa][1]] = h[1] * (ncy + gauss_lob_point[offset[1]]);
-  xpg[axis_permut[ifa][2]] = axis_permut[ifa][3];
+  xpg[paxis[0]] = h[0] * (ncx + gauss_lob_point[offset[0]]);
+  xpg[paxis[1]] = h[1] * (ncy + gauss_lob_point[offset[1]]);
+  xpg[paxis[2]] = paxis[3];
 
   *wpg = h[0] * h[1] *
     gauss_lob_weight[offset[0]] * gauss_lob_weight[offset[1]];
@@ -140,26 +112,26 @@ int ref_pg_face(__constant int* param, int ifa, int ipg,
     double small = 1e-3;//0.001
     double vsmall = 1e-6;//0.000001;
 
-    xpgin[axis_permut[ifa][0]] = h[0] * (ncx + gauss_lob_point[offset[0]]);
-    xpgin[axis_permut[ifa][1]] = h[1] * (ncy + gauss_lob_point[offset[1]]);
+    xpgin[paxis[0]] = h[0] * (ncx + gauss_lob_point[offset[0]]);
+    xpgin[paxis[1]] = h[1] * (ncy + gauss_lob_point[offset[1]]);
 
-    if(axis_permut[ifa][3] == 0)
-      xpgin[axis_permut[ifa][2]] = -vsmall;
-    if(axis_permut[ifa][3] == 1)
-      xpgin[axis_permut[ifa][2]] = 1 + vsmall;
+    if(paxis[3] == 0)
+      xpgin[paxis[2]] = -vsmall;
+    if(paxis[3] == 1)
+      xpgin[paxis[2]] = 1 + vsmall;
 
     if(ix == 0)
-      xpgin[axis_permut[ifa][0]]
+      xpgin[paxis[0]]
 	= h[0] * (ncx + gauss_lob_point[offset[0]] + small);
     if(ix == deg[0])
-      xpgin[axis_permut[ifa][0]]
+      xpgin[paxis[0]]
 	= h[0] * (ncx + gauss_lob_point[offset[0]] - small);
 
     if(iy == 0)
-      xpgin[axis_permut[ifa][1]]
+      xpgin[paxis[1]]
 	= h[1] * (ncy + gauss_lob_point[offset[1]] + small);
     if(iy == deg[1])
-      xpgin[axis_permut[ifa][1]]
+      xpgin[paxis[1]]
 	= h[1] * (ncy + gauss_lob_point[offset[1]] - small);
   }
 
@@ -255,7 +227,7 @@ double wglop(int deg, int i)
 }
 
 void get_dtau(double x, double y, double z,
-	      __constant double* physnode, double dtau[][3]);
+	      __constant double *physnode, double dtau[][3]);
 
 // Get the logical index of the gaussian point given the coordinate
 // p[] of the point in the subcell and the index of the subcell icell.
@@ -263,6 +235,115 @@ int ipg(const int npg[], const int p[], const int icell)
 {
   return npg[0] * npg[1] * npg[2] * icell
     + p[0] + npg[0] * (p[1] + npg[1] * p[2]);
+}
+
+// Compute the surface terms inside one macrocell
+__kernel
+void DGFlux(__constant int *param,       // 0: interp param
+	    int ie,                      // 1: macrocel index
+	    int dim0,                    // 2: face direction
+	    __constant double *physnode, // 3: macrocell nodes
+	    __global double *wn,         // 4: field values
+	    __global double *dtwn)       // 5: time derivative
+{
+  const int m = param[0];
+  const int deg[3] = {param[1], param[2], param[3]};
+  const int npg[3] = {deg[0] + 1, deg[1] + 1, deg[2] + 1};
+  const int nraf[3] = {param[4], param[5], param[6]};
+
+  int dim1 = (dim0 + 1) % 3;
+  int dim2 = (dim1 + 1) % 3;
+
+  // subcell id
+  int icL[3], icR[3];
+  int icell = get_group_id(0);
+
+  icL[dim0] = icell % (nraf[dim0] - 1);
+  icL[dim1] = (icell / (nraf[dim0]-1)) % nraf[dim1];
+  icL[dim2] = icell / (nraf[dim0]-1) / nraf[dim1];
+
+  icR[dim0] = icL[dim0] + 1;
+  icR[dim1] = icL[dim1];
+  icR[dim2] = icL[dim2];
+ 
+  // Gauss point id where we compute the jacobian
+  int pL[3], pR[3];
+  //ipg_to_xyz(get_local_id(0), p, npg
+  {
+    int ipg = get_local_id(0);
+    pL[dim0] = deg[dim0];
+    pL[dim1] = ipg % npg[dim1];
+    pL[dim2] = (ipg / npg[dim1]);
+
+    pR[dim0] = 0;
+    pR[dim1] = pL[dim1];
+    pR[dim2] = pL[dim2];
+  }
+
+  double hx = 1.0 / (double) nraf[0];
+  double hy = 1.0 / (double) nraf[1];
+  double hz = 1.0 / (double) nraf[2];
+
+  int offset[3] = {gauss_lob_offset[deg[0]] + pL[0],
+  		   gauss_lob_offset[deg[1]] + pL[1],
+  		   gauss_lob_offset[deg[2]] + pL[2]};
+
+  double x = hx * (icL[0] + gauss_lob_point[offset[0]]);
+  double y = hy * (icL[1] + gauss_lob_point[offset[1]]);
+  double z = hz * (icL[2] + gauss_lob_point[offset[2]]);
+
+  double wpg = hx * hy * hz
+    * gauss_lob_weight[offset[0]]
+    * gauss_lob_weight[offset[1]]
+    * gauss_lob_weight[offset[2]];
+
+  double codtau[3][3];
+  {
+    double dtau[3][3];
+    get_dtau(x, y, z, physnode, dtau);
+    
+    codtau[0][0] =  dtau[1][1] * dtau[2][2] - dtau[1][2] * dtau[2][1];
+    codtau[0][1] = -dtau[1][0] * dtau[2][2] + dtau[1][2] * dtau[2][0];
+    codtau[0][2] =  dtau[1][0] * dtau[2][1] - dtau[1][1] * dtau[2][0];
+    codtau[1][0] = -dtau[0][1] * dtau[2][2] + dtau[0][2] * dtau[2][1];
+    codtau[1][1] =  dtau[0][0] * dtau[2][2] - dtau[0][2] * dtau[2][0];
+    codtau[1][2] = -dtau[0][0] * dtau[2][1] + dtau[0][1] * dtau[2][0];
+    codtau[2][0] =  dtau[0][1] * dtau[1][2] - dtau[0][2] * dtau[1][1];
+    codtau[2][1] = -dtau[0][0] * dtau[1][2] + dtau[0][2] * dtau[1][0];
+    codtau[2][2] =  dtau[0][0] * dtau[1][1] - dtau[0][1] * dtau[1][0];
+  }
+
+  double wL[_M], wR[_M];
+  int ipgL, ipgR;
+  xyz_to_ipg(nraf, deg, icL, pL, &ipgL);
+  xyz_to_ipg(nraf, deg, icR, pR, &ipgR);
+  for(int iv = 0; iv < m; iv++) {
+    int imemL = VARINDEX(param, ie, ipgL, iv);
+    wL[iv] = wn[imemL];
+    int imemR = VARINDEX(param, ie, ipgR, iv);
+    wR[iv] = wn[imemR];
+  }
+
+  double vnds[3];
+  double h1h2 = 1.0 / nraf[dim1] / nraf[dim2];
+  vnds[0] =  codtau[0][dim0] * h1h2;
+  vnds[1] =  codtau[1][dim0] * h1h2;
+  vnds[2] =  codtau[2][dim0] * h1h2;
+
+  double flux[_M];
+  NUMFLUX(wL, wR, vnds, flux);
+
+  double wpgs = wglop(deg[dim1], pL[dim1]) * wglop(deg[dim2], pL[dim2]);
+  for(int iv = 0; iv < m; ++iv) {
+    //int ipgL = ipg(npg, p, icell);
+    //int imemL = VARINDEX(param, ie, ipgL, iv);
+
+    int imemL = VARINDEX(param, ie, ipgL, iv);
+    dtwn[imemL] -= flux[iv] * wpgs;
+
+    int imemR = VARINDEX(param, ie, ipgR, iv);
+    dtwn[imemR] += flux[iv] * wpgs;
+  }
 }
 
 __kernel
@@ -275,14 +356,14 @@ void set_buffer_to_zero(__global double *w)
 #define BOUNDARYFLUX BoundaryFlux
 #endif
 
-// Compute the volume and subcell-interface terms on one macrocell
+// Compute the volume  terms inside  one macrocell
 __kernel
-void DGVolume(__constant int* param,        // interp param
+void DGVolume(__constant int *param,        // interp param
 	      int ie,            // macrocel index
-	      __constant double* physnode,  // macrocell nodes
-              __global double* wn,       // field values
-	      __global double* dtwn) // time derivative
-{       
+	      __constant double *physnode,  // macrocell nodes
+              __global double *wn,       // field values
+	      __global double *dtwn) // time derivative
+{
   const int m = param[0];
   const int deg[3] = {param[1],param[2], param[3]};
   const int npg[3] = {deg[0] + 1, deg[1] + 1, deg[2] + 1};
@@ -297,6 +378,7 @@ void DGVolume(__constant int* param,        // interp param
 
   // gauss point id where we compute the jacobian
   int p[3];
+  //ipg_to_xyz(get_local_id(0), p, npg
   {
     int ipg = get_local_id(0);
     p[0] = ipg % npg[0];
@@ -305,9 +387,9 @@ void DGVolume(__constant int* param,        // interp param
   }
 
   // ref coordinates
-  double hx = 1. / (double) nraf[0];
-  double hy = 1. / (double) nraf[1];
-  double hz = 1. / (double) nraf[2];
+  double hx = 1.0 / (double) nraf[0];
+  double hy = 1.0 / (double) nraf[1];
+  double hz = 1.0 / (double) nraf[2];
 
   int offset[3] = {gauss_lob_offset[deg[0]] + p[0],
 		   gauss_lob_offset[deg[1]] + p[1],
@@ -322,100 +404,121 @@ void DGVolume(__constant int* param,        // interp param
     * gauss_lob_weight[offset[1]]
     * gauss_lob_weight[offset[2]];
 
-  double dtau[3][3];
-  get_dtau(x, y, z, physnode, dtau);
-
   double codtau[3][3];
-  codtau[0][0] =  dtau[1][1] * dtau[2][2] - dtau[1][2] * dtau[2][1];
-  codtau[0][1] = -dtau[1][0] * dtau[2][2] + dtau[1][2] * dtau[2][0];
-  codtau[0][2] =  dtau[1][0] * dtau[2][1] - dtau[1][1] * dtau[2][0];
-  codtau[1][0] = -dtau[0][1] * dtau[2][2] + dtau[0][2] * dtau[2][1];
-  codtau[1][1] =  dtau[0][0] * dtau[2][2] - dtau[0][2] * dtau[2][0];
-  codtau[1][2] = -dtau[0][0] * dtau[2][1] + dtau[0][1] * dtau[2][0];
-  codtau[2][0] =  dtau[0][1] * dtau[1][2] - dtau[0][2] * dtau[1][1];
-  codtau[2][1] = -dtau[0][0] * dtau[1][2] + dtau[0][2] * dtau[1][0];
-  codtau[2][2] =  dtau[0][0] * dtau[1][1] - dtau[0][1] * dtau[1][0];
-
-  /* double det=dtau[0][0]*dtau[1][1]*dtau[2][2]-dtau[0][0]*dtau[1][2]*dtau[2][1]-dtau[1][0]*dtau[0][1]*dtau[2][2]+ */
-  /*   dtau[1][0]*dtau[0][2]*dtau[2][1]+dtau[2][0]*dtau[0][1]*dtau[1][2]-dtau[2][0]*dtau[0][2]*dtau[1][1]; */
-
-  double wL[_M];
-  for(int iv = 0; iv < m; iv++) {
-    // gauss point id in the macrocell
-    int ipgL = ipg(npg, p, icell);
-    int imemL = varindex(param, ie, ipgL, iv);
-    //int imemL= iv + m * ( get_global_id(0) + nnpg * *ie);
-    wL[iv] = wn[imemL];
+  {
+    double dtau[3][3];
+    get_dtau(x, y, z, physnode, dtau);
+    
+    codtau[0][0] =  dtau[1][1] * dtau[2][2] - dtau[1][2] * dtau[2][1];
+    codtau[0][1] = -dtau[1][0] * dtau[2][2] + dtau[1][2] * dtau[2][0];
+    codtau[0][2] =  dtau[1][0] * dtau[2][1] - dtau[1][1] * dtau[2][0];
+    codtau[1][0] = -dtau[0][1] * dtau[2][2] + dtau[0][2] * dtau[2][1];
+    codtau[1][1] =  dtau[0][0] * dtau[2][2] - dtau[0][2] * dtau[2][0];
+    codtau[1][2] = -dtau[0][0] * dtau[2][1] + dtau[0][1] * dtau[2][0];
+    codtau[2][0] =  dtau[0][1] * dtau[1][2] - dtau[0][2] * dtau[1][1];
+    codtau[2][1] = -dtau[0][0] * dtau[1][2] + dtau[0][2] * dtau[1][0];
+    codtau[2][2] =  dtau[0][0] * dtau[1][1] - dtau[0][1] * dtau[1][0];
   }
 
+  double wL[_M];
+  int ipgL = ipg(npg, p, icell);
+  int imemL0 = VARINDEX(param, ie, ipgL, 0);
+  for(int iv = 0; iv < m; iv++) {
+    // gauss point id in the macrocell
+    /* int ipgL = ipg(npg, p, icell); */
+    /* int imemL = VARINDEX(param, ie, ipgL, iv); */
+    //int imemL= iv + m * ( get_global_id(0) + nnpg * *ie);
+    //wL[iv] = wn[imemL];
+
+    wL[iv] = wn[imemL0 + iv];
+  }
+
+  double flux[_M];
   for(int dim0 = 0; dim0 < 3; dim0++) {
     int q[3] = {p[0], p[1], p[2]};
 
     // Loop on the "cross" points
     for(int iq = 0; iq < npg[dim0]; iq++) {
       q[dim0] = (p[dim0] + iq) % npg[dim0];
-      double dphiref[3] ={0, 0, 0};
+      double dphiref[3] = {0, 0, 0};
       dphiref[dim0] = dlag(deg[dim0], q[dim0], p[dim0]) * nraf[dim0];
       double dphi[3];
       for(int ii = 0; ii < 3; ii++) {
-	dphi[ii] = 0;
-	for(int jj = 0; jj < 3; jj++) {
-	  dphi[ii] += codtau[ii][jj] * dphiref[jj];
-	}
+	/* dphi[ii] = 0; */
+	/* for(int jj = 0; jj < 3; jj++) { */
+	/*   dphi[ii] += codtau[ii][jj] * dphiref[jj]; */
+	/* } */
+	double *codtauii = codtau[ii];
+	dphi[ii] 
+	  = codtauii[0] * dphiref[0]
+	  + codtauii[1] * dphiref[1]
+	  + codtauii[2] * dphiref[2];
       }
 
-      double flux[_M];
-      NUMFLUX(wL, wL, dphi, flux); // TODO: let schnaps gives fluxnum
+      NUMFLUX(wL, wL, dphi, flux);
 
       int ipgR = ipg(npg, q, icell);
-      for(int iv=0; iv < m; iv++) {
-	int imemR = varindex(param, ie, ipgR, iv); // TODO !
-    	dtwn[imemR] += flux[iv] * wpg;
+      int imemR0 = VARINDEX(param, ie, ipgR, 0);
+      __global double *dtwn0 = dtwn + imemR0; 
+      for(int iv = 0; iv < m; iv++) {
+     	dtwn0[iv] += flux[iv] * wpg;
       }
     }
 
     // Compute the inter-subcell fluxes if needed
-    if(p[dim0] == 0 || p[dim0] == npg[dim0] - 1) {
-      int sgn = (p[dim0] > 0) ? 1 : -1;
-      int dim1 = (dim0 + 1) % 3;
-      int dim2 = (dim1 + 1) % 3;
+    /*if(p[dim0] == 0 || p[dim0] == npg[dim0] - 1)*/ /* { */
+    /*   int sgn = (p[dim0] > 0) ? 1 : -1; */
+    /*   int dim1 = (dim0 + 1) % 3; */
+    /*   int dim2 = (dim1 + 1) % 3; */
 
-      // Logical coordinates of the right subcell
-      int icR[3] = {icL[0], icL[1], icL[2]};
-      icR[dim0] += sgn;
+    /*   // Logical coordinates of the right subcell */
+    /*   int icR[3] = {icL[0], icL[1], icL[2]}; */
+    /*   icR[dim0] += sgn; */
+      
+    /*   // if we are not at the boundary of the macrocell */
+    /*   if(icR[dim0] >= 0 && icR[dim0] < nraf[dim0]) { */
+    /* 	double vnds[3]; */
+    /* 	double h1h2 = 1. / nraf[dim1] / nraf[dim2]; */
+    /* 	vnds[0] = sgn * codtau[0][dim0] * h1h2; */
+    /* 	vnds[1] = sgn * codtau[1][dim0] * h1h2; */
+    /* 	vnds[2] = sgn * codtau[2][dim0] * h1h2; */
 
-      // if we are not at the boundary of the macrocell
-      if(icR[dim0] >= 0 && icR[dim0] < nraf[dim0]) {
-	double vnds[3];
-	double h1h2 = 1. / nraf[dim1] / nraf[dim2];
-	vnds[0] = sgn * codtau[0][dim0] * h1h2;
-	vnds[1] = sgn * codtau[1][dim0] * h1h2;
-	vnds[2] = sgn * codtau[2][dim0] * h1h2;
+    /*     int ncR = icR[0] + nraf[0] * (icR[1] + nraf[1] * icR[2]); */
+    /*     int q[3] = {p[0], p[1], p[2]}; */
+    /*     q[dim0] = (sgn == -1) ? npg[dim0] - 1 : 0; */
+    /* 	int ipgR = ipg(npg, q, ncR); */
 
-        int ncR = icR[0] + nraf[0] * (icR[1] + nraf[1] * icR[2]);
-        int q[3] = {p[0], p[1], p[2]};
-        q[dim0] = (sgn == -1) ? npg[dim0] - 1 : 0;
-	int ipgR = ipg(npg, q, ncR);
+    /* 	double wR[_M]; */
+    /* 	int imemR0 = GenericVarindex3d(m, npg, nraf, */
+    /* 				      ie, */
+    /* 				      0, q, icR); */
+    /* 	__global double *wn0 = wn + imemR0; */
+    /*     for(int iv = 0; iv < m; iv++) { */
+    /*       //int imemR = VARINDEX(param, ie, ipgR, iv); */
+    /*       //wR[iv] = wn[imemR0 + iv]; */
+    /*       wR[iv] = wn0[iv]; */
+    /*     } */
 
-	double wR[_M];
-        for(int iv = 0; iv < m; iv++) {
-          int imemR = varindex(param, ie, ipgR, iv);
-          wR[iv] = wn[imemR];
-        }
+    /* 	double wpgs = wglop(deg[dim1], p[dim1]) * wglop(deg[dim2], p[dim2]); */
+    /*     //double flux[_M]; */
+    /*     NUMFLUX(wL, wR, vnds, flux); */
 
-	double wpgs = wglop(deg[dim1], p[dim1]) * wglop(deg[dim2], p[dim2]);
-        double flux[_M];
-        NUMFLUX(wL, wR, vnds, flux);
-        for(int iv = 0; iv < m; iv++) {
-          int ipgL = ipg(npg, p, icell);
-          int imemL = varindex(param, ie, ipgL, iv);
-          dtwn[imemL] -= flux[iv] * wpgs;
-        }
-      }
-    }
+    /* 	int imemL0 = GenericVarindex3d(m, npg, nraf,  */
+    /* 				      ie, */
+    /* 				      0, p, icL); */
+    /* 	__global double *dtwn0 =  dtwn + imemL0; */
+    /*     for(int iv = 0; iv < m; iv++) { */
+    /*       //int ipgL = ipg(npg, p, icell); */
+    /*       //int imemL = VARINDEX(param, ie, ipgL, iv); */
+    /*       dtwn0[iv] -= flux[iv] * wpgs; */
+    /*     } */
+    /*   } */
+    /* } */
 
   } // dim0 loop
 }
+
+
 
 // Apply division by the mass matrix on one macrocell
 __kernel
@@ -462,32 +565,8 @@ void DGMass(__constant int *param,        // interp param
     * gauss_lob_weight[offset[1]]
     * gauss_lob_weight[offset[2]];
 
-  // end of ref_pg_vol
-  //////////////////////////////////////////////
-
-  //Ref2Phy(physnode, // phys. nodes
-  //        xpgref,  // xref
-  //        NULL,-1, // dpsiref, ifa
-  //        NULL, dtau,  // xphy, dtau
-  //        codtau,NULL,NULL); // codtau, dpsi,vnds
-
   double dtau[3][3];
   get_dtau(x, y, z, physnode, dtau);
-
-  //codtau[0][0] = dtau[1][1] * dtau[2][2] - dtau[1][2] * dtau[2][1];
-  //codtau[0][1] = -dtau[1][0] * dtau[2][2] + dtau[1][2] * dtau[2][0];
-  //codtau[0][2] = dtau[1][0] * dtau[2][1] - dtau[1][1] * dtau[2][0];
-  //codtau[1][0] = -dtau[0][1] * dtau[2][2] + dtau[0][2] * dtau[2][1];
-  //codtau[1][1] = dtau[0][0] * dtau[2][2] - dtau[0][2] * dtau[2][0];
-  //codtau[1][2] = -dtau[0][0] * dtau[2][1] + dtau[0][1] * dtau[2][0];
-  //codtau[2][0] = dtau[0][1] * dtau[1][2] - dtau[0][2] * dtau[1][1];
-  //codtau[2][1] = -dtau[0][0] * dtau[1][2] + dtau[0][2] * dtau[1][0];
-  //codtau[2][2] = dtau[0][0] * dtau[1][1] - dtau[0][1] * dtau[1][0];
-  //double det=dtau[0][0]*codtau[0][0]+dtau[0][1]*codtau[0][1]+
-  // dtau[0][2]*codtau[0][2];
-
-  // end of Ref2Phy
-  //////////////////////////////////////////////////////////
 
   double det
     = dtau[0][0] * dtau[1][1] * dtau[2][2]
@@ -497,15 +576,12 @@ void DGMass(__constant int *param,        // interp param
     + dtau[2][0] * dtau[0][1] * dtau[1][2]
     - dtau[2][0] * dtau[0][2] * dtau[1][1];
 
+  double overwpgget = 1.0 / (wpg * det);
+  int imem0 = m * (get_global_id(0) + npgie * ie); //VARINDEX
+  __global double *dtwn0 = dtwn + imem0; 
   for(int iv = 0; iv < m; iv++) {
-    // varindex
-    int imem = iv + m * (get_global_id(0) + npgie * ie);
-    // end of varindex
-    /////////////////////////////////////
-    //printf("imem=%d dtw=%f\n", imem, dtwn[imem]);
-    //printf("det=%f wpg=%f imem=%d h=%f %f %f\n", det,wpg, imem,hx,hy,hz);
-
-    dtwn[imem] /= (wpg * det);
+    //int imem = iv + imem0;
+    dtwn0[iv] *= overwpgget;
   }
 }
 
@@ -523,13 +599,16 @@ void DGMacroCellInterface(__constant int *param,        // interp param
                           __global double *wn,
                           __global double *dtwn) // time derivative
 {
-  int ipgfL=get_global_id(0);
+  int ipgfL = get_global_id(0);
+
+  int ndeg[3] = {param[1], param[2], param[3]};
+  int nraf[3] = {param[4], param[5], param[6]};
 
   double xpgref[3], xpgref_in[3], wpg;
   // Get the coordinates of the Gauss point and coordinates of a
   // point slightly inside the opposite element in xref_in
-  int ipgL = ref_pg_face(param + 1, locfaL, ipgfL,
-			 xpgref, &wpg, xpgref_in);
+  int ipgL =ref_pg_face(ndeg, nraf, locfaL, ipgfL,
+  	       		 xpgref, &wpg, xpgref_in);
 
   // Normal vector at gauss point ipg
   double vnds[3], xpg[3];
@@ -571,41 +650,36 @@ void DGMacroCellInterface(__constant int *param,        // interp param
     /* }	 */
 
     double wR[_M];
-    for(int iv = 0; iv < _M; iv++) {
-      int imemL = varindex(param, ieL, ipgL, iv);
-      wL[iv] = wn[imemL];
-      int imemR = varindex(param, ieR, ipgR, iv);
-      wR[iv] = wn[imemR];
-    }
+    int imemL0 = VARINDEX(param, ieL, ipgL, 0);
+    int imemR0 = VARINDEX(param, ieR, ipgR, 0);
+    for(int iv = 0; iv < _M; iv++)
+      wL[iv] = wn[imemL0 + iv];
+    for(int iv = 0; iv < _M; iv++)
+      wR[iv] = wn[imemR0 + iv];
 
     // int_dL F(wL, wR, grad phi_ib)
     double flux[_M];
     NUMFLUX(wL, wR, vnds, flux);
 
     // Add flux to both sides
-    for(int iv = 0; iv < _M; iv++) {
-      // The basis functions is also the gauss point index
-      int imemL = varindex(param, ieL, ipgL, iv);
-      int imemR = varindex(param, ieR, ipgR, iv);
-      dtwn[imemL] -= flux[iv] * wpg;
-      dtwn[imemR] += flux[iv] * wpg;
-    }
+    // The basis functions is also the gauss point index
+    for(int iv = 0; iv < _M; iv++)
+      dtwn[imemL0 + iv] -= flux[iv] * wpg;
+    for(int iv = 0; iv < _M; iv++)
+      dtwn[imemR0 + iv] += flux[iv] * wpg;
 
   } else { // The point is on the boundary.
+    int imemL0 = VARINDEX(param, ieL, ipgL, 0);
     for(int iv = 0; iv < _M; iv++) {
-      int imemL = varindex(param, ieL, ipgL, iv);
-      wL[iv] = wn[imemL];
+      wL[iv] = wn[imemL0 + iv];
     }
 
     double flux[_M];
     BOUNDARYFLUX(xpg, tnow, wL, vnds, flux);
 
-    //printf("ipgfL=%d ipgL=%d tnow=%f wL=%f flux=%f\n", ipgfL, ipgL,tnow,wL[0],flux[0]);
-
+    // The basis functions is also the gauss point index
     for(int iv = 0; iv < _M; iv++) {
-      // The basis functions is also the gauss point index
-      int imemL = varindex(param, ieL, ipgL, iv);
-      dtwn[imemL] -= flux[iv] * wpg;
+      dtwn[imemL0 + iv] -= flux[iv] * wpg;
     }
   }
 }
@@ -854,7 +928,7 @@ void Ref2Phy(__constant double* physnode,
     for(int ii = 0; ii < 3; ++ii) {
       xphy[ii] = 0;
       for(int i = 0; i < 20; ++i) {
-	xphy[ii] += physnode[ 3 * i + ii] * gradphi[i][3];
+	xphy[ii] += physnode[3 * i + ii] * gradphi[i][3];
       }
     }
   }
@@ -904,7 +978,15 @@ void Ref2Phy(__constant double* physnode,
     }
   }
 
-  if (vnds !=NULL) {
+  if (vnds != NULL) {
+
+    int h20_refnormal[6][3]={{0,-1,0},
+			     {1,0,0},
+			     {0,1,0},
+			     {-1,0,0},
+			     {0,0,1},
+			     {0,0,-1}};
+
     //assert(codtau != NULL);
     //assert(ifa >=0);
     for(int ii = 0; ii < 3; ii++) {
@@ -926,27 +1008,21 @@ void Phy2Ref(__constant double *physnode, double xphy[3], double xref[3])
   for(int iter = 0; iter < ITERNEWTON; ++iter ) {
     double dtau[3][3], codtau[3][3];
     int ifa =- 1;
-    Ref2Phy(physnode, xref, 0, ifa, dxphy, dtau, codtau, 0,0);
-    dxphy[0] -= (xphy)[0];
-    dxphy[1] -= (xphy)[1];
-    dxphy[2] -= (xphy)[2];
-    double det
-      = dtau[0][0] * codtau[0][0]
-      + dtau[0][1] * codtau[0][1]
-      + dtau[0][2] * codtau[0][2];
-    //assert(det>0);
+    Ref2Phy(physnode, xref, 0, ifa, dxphy, dtau, codtau, 0, 0);
+    dxphy[0] -= xphy[0];
+    dxphy[1] -= xphy[1];
+    dxphy[2] -= xphy[2];
+    double overdet = 1.0 / (  dtau[0][0] * codtau[0][0]
+			    + dtau[0][1] * codtau[0][1]
+			    + dtau[0][2] * codtau[0][2] );
     for(int ii = 0; ii < 3; ++ii) {
-      dxref[ii] = 0;
-      for(int jj = 0; jj < 3; ++jj) {
-        dxref[ii] += codtau[jj][ii] * dxphy[jj];
-      }
-      xref[ii] -= dxref[ii] / det;
+      dxref[ii] 
+	= codtau[0][ii] * dxphy[0] 
+	+ codtau[1][ii] * dxphy[1] 
+	+ codtau[2][ii] * dxphy[2];
+      xref[ii] -= dxref[ii] * overdet;
     }
   }
-  //double eps=1e-2;  // may be to constraining...
-  //assert(xref[0]<1+eps && xref[0]>-eps);
-  //assert(xref[1]<1+eps && xref[1]>-eps);
-  //assert(xref[2]<1+eps && xref[2]>-eps);
 }
 
 // From a reference point find the nearest gauss point

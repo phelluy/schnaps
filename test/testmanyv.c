@@ -29,8 +29,22 @@ int main(int argc, char *argv[]) {
   int my = 5;
   bool usegpu = false;
   double dt = 0.0;
+  char *usage = "./testmanyv \
+\n\t-c <float> set CFL\
+\n\t-d <int> set interpolation degree\
+\n\t-n <int> set number of subcells\
+\n\t-g <1 or 0> GPU(1) instead of CPU(0) \
+\n\t-t <float> set tmax\
+\n\t-w write mesh output \
+\n\t-P <int> set OpenCL platform number \
+\n\t-D <int> set OpenCL device number \
+\n\t-X <int> set number of velocities in x direction \
+\n\t-Y <int> set number of velocities in y direction \
+\n\t-s <float> set dt \
+\n\t-h display usage information \n";
+
   for (;;) {
-    int cc = getopt(argc, argv, "c:d:n:t:C:wD:P:X:Y:V:g:s:");
+    int cc = getopt(argc, argv, "c:d:n:t:C:wD:P:X:Y:V:g:s:h");
     if (cc == -1) break;
     switch (cc) {
     case 0:
@@ -44,11 +58,11 @@ int main(int argc, char *argv[]) {
     case 'd':
       deg = atoi(optarg);
       break;
-    case 'g':
-      usegpu = atoi(optarg);
-      break;
     case 'n':
       nraf = atoi(optarg);
+      break;
+    case 'g':
+      usegpu = atoi(optarg);
       break;
     case 't':
       tmax = atof(optarg);
@@ -74,10 +88,13 @@ int main(int argc, char *argv[]) {
     case 's':
       dt = atof(optarg);
       break;
+    case 'h':
+      printf("Usage:\n%s", usage);
+      exit(0);
+      break;
     default:
       printf("Error: invalid option.\n");
-      printf("Usage:\n");
-      printf("./testmanyv -c <cfl> -d <deg> -n <nraf> -t <tmax> -C\n -P <cl platform number> -D <cl device number> FIXME");
+      printf("Usage:\n%s", usage);
       exit(1);
     }
   }
@@ -157,29 +174,32 @@ int main(int argc, char *argv[]) {
  
   // Prepare the initial fields
   Initfield(&f);
+  f.vmax=f.model.vlasov_vmax;
   if(dt != 0.0)
     f.dt = dt;
 
   // Prudence...
   CheckMacroMesh(&(f.macromesh), f.interp.interp_param + 1);
 
-  /*
-  double executiontime;
-  struct timespec tstart, tend;
+  /* double executiontime; */
+  /* struct timespec tstart, tend; */
   if(usegpu) {
     printf("Using OpenCL:\n");
-    clock_gettime(CLOCK_MONOTONIC, &tstart);
-    RK2_CL(&f, tmax);
-    clock_gettime(CLOCK_MONOTONIC, &tend);
+    //clock_gettime(CLOCK_MONOTONIC, &tstart);
+    RK2_CL(&f, tmax, 0, NULL, NULL);
+    //clock_gettime(CLOCK_MONOTONIC, &tend);
+
+    printf("\nOpenCL Kernel time:\n");
+    show_cl_timing(&f);
+    printf("\n");
 
   } else { 
     printf("Using C:\n");
-    clock_gettime(CLOCK_MONOTONIC, &tstart);
+    //clock_gettime(CLOCK_MONOTONIC, &tstart);
     RK2(&f, tmax);
-    clock_gettime(CLOCK_MONOTONIC, &tend);
+    //clock_gettime(CLOCK_MONOTONIC, &tend);
   }
-  executiontime = seconds(tend, tstart);
-  */
+  /* executiontime = seconds(tend, tstart); */
 
   // Save the results and the error
   if(writemsh) {

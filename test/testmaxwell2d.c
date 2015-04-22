@@ -50,6 +50,7 @@ int TestMaxwell2D(void) {
   //Displayfield(&f);
  
   double tmax = 1.0;
+  f.vmax=1;
   RK2(&f, tmax);
  
   // Save the results and the error

@@ -40,16 +40,30 @@ typedef struct field {
   int interp_param[8];
   //! Current time
   double tnow;
-  //! CFL parameter min_i (vol_i / surf_i)
+  //! time max
+  double tmaximum;
+//! CFL parameter min_i (vol_i / surf_i)
   double hmin;
   //! Time step
-  //! dt has to be smaller than hmin / vmax
   double dt;
-  
+   //! dt has to be smaller than hmin / vmax
+  int iter_time;
+  //! final time iter
   int itermax;
+  //! nb of diagnostics
+  int nb_diags;
+  //! table for diagnostics
+  double * Diagnostics;
+  //! index of the runge-kutta substep
+  int rk_substep;
+  //! max substep of the rk method
+  int rk_max;
 
   //! Activate or not 2D computations
   bool is2d;
+
+   //! activate or not 1D computations
+  bool is1d;
 
   //! Size of the field buffers
   int wsize;
@@ -59,6 +73,22 @@ typedef struct field {
   double *dtwn;
   //! vmax
   double vmax;
+
+   //! \brief generic update function called 
+  //! \brief called at each runge-kutta sustep
+  //! \param[inout] f a field (to be converted from void*)
+  //! \param[in] elem macro element index
+  //! \param[in] ipg glop index
+  //! \param[in] iv field component index
+  void (*update_before_rk)(void* f, double * w);
+
+  //! \brief generic update function called 
+  //! \brief called at each runge-kutta sustep
+  //! \param[inout] f a field (to be converted from void*)
+  //! \param[in] elem macro element index
+  //! \param[in] ipg glop index
+  //! \param[in] iv field component index
+  void (*update_after_rk)(void* f,double * w);
 
   //! \brief Memory arrangement of field components
   //! \param[in] param interpolation parameters
@@ -84,14 +114,46 @@ typedef struct field {
   cl_mem physnode_cl;
   cl_double *physnode;
 
-  //! opencl kernels for mass inversion
+  cl_mem physnodeR_cl;
+  cl_double *physnodeR;
+
+  //! opencl kernels
   cl_kernel dgmass;
+  cl_kernel dgflux;
   cl_kernel dgvolume;
   cl_kernel dginterface;
   cl_kernel RK_out_CL;
   cl_kernel RK_in_CL;
   cl_kernel RK4_final_stage;
   cl_kernel zero_buf;
+
+  // OpenCL events
+
+  // used in update_physnode_cl
+  cl_event clv_mapdone; 
+  
+  // set_buf_to_zero event
+  cl_event clv_zbuf; 
+  
+  cl_event clv_physnodeupdate;
+
+  // Subcell mass events
+  cl_event clv_mass; 
+
+  // Subcell flux events
+  cl_event *clv_flux;
+
+  // Subcell volume events
+  cl_event clv_volume; 
+
+  // Macrocell interface events
+  cl_event clv_mci;
+  cl_event clv_interkernel; 
+  cl_event clv_interupdate;
+  cl_event clv_interupdateR;
+
+  // OpenCL timing
+  cl_ulong zbuf_time, mass_time, vol_time, minter_time, rk_time;
 #endif
 
 } field;
@@ -100,11 +162,40 @@ typedef struct field {
 //! \brief memory arrangement of field components.
 //! Generic implementation.
 //! \param[in] param interpolation parameters
+//! param[0] = M
+//! param[1] = deg x
+//! param[2] = deg y
+//! param[3] = deg z
+//! param[4] = raf x
+//! param[5] = raf y
+//! param[6] = raf z
 //! \param[in] elem macro element index
 //! \param[in] ipg glop index
 //! \param[in] iv field component index
 //! \returns the memory position in the arrays wn wnp1 or dtwn.
-int GenericVarindex(int *param, int elem, int ipg, int iv);
+int GenericVarindex(__constant int *param, int elem, int ipg, int iv);
+#pragma end_opencl
+
+#pragma start_opencl
+//! \brief memory arrangement of field components.
+//! with 3D components
+//! \param[in] param interpolation parameters
+//! param[0] = M
+//! param[1] = deg x
+//! param[2] = deg y
+//! param[3] = deg z
+//! param[4] = raf x
+//! param[5] = raf y
+//! param[6] = raf z
+//! \param[in] elem macro element index
+//! \param[in] ix components of the glop in its subcell
+//! \param[in] ic components of the subcell in the macrocell
+//! \param[in] iv component of the conservative variable
+/* //! \returns the memory position in the arrays wn wnp1 or dtwn. */
+/* int GenericVarindex3d(int m, */
+/* 		      int nx0, int nx1, int nx2,  */
+/* 		      int nc0, int nc1, int nc2,  */
+/* 		      int elem, int *ix,int *ic, int iv); */
 #pragma end_opencl
 
 //! field initialization. Computation of the initial at each glop.
@@ -183,12 +274,16 @@ void RK2(field *f, double tmax);
 //! \param[in] tmax physical duration of the simulation
 void RK4(field *f, double tmax);
 
+#ifdef _WITH_OPENCL
 //! \brief OpenCL version of RK2
 //! time integration by a second order Runge-Kutta algorithm
 //! \param[inout] f a field
 //! \param[in] tmax physical duration of the simulation
-void RK2_CL(field *f, double tmax);
-void RK4_CL(field *f, double tmax);
+void RK2_CL(field *f, double tmax, 
+	    cl_uint nwait, cl_event *wait, cl_event *done);
+void RK4_CL(field *f, double tmax, 
+	    cl_uint nwait, cl_event *wait, cl_event *done);
+#endif
 
 //! \brief save the results in the gmsh format
 //! \param[in] typplot index of the field variable to plot.

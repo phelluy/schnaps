@@ -81,3 +81,5 @@ testmacrocellinterface
 *.log
 *.msh
 testfieldrk2_cl
+
+toto.c

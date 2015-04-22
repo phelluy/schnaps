@@ -8,6 +8,8 @@
 #include <math.h>
 #include <float.h>
 #include <string.h>
+#include "quantities_vp.h"
+#include "solverpoisson.h"
 
 #ifdef _WITH_OPENCL 
 #include "clutils.h"
@@ -27,11 +29,49 @@
 // param[6] = raf z
 
 #pragma start_opencl
-int GenericVarindex(int *param, int elem, int ipg, int iv) {
+int GenericVarindex(__constant int *param, int elem, int ipg, int iv) {
   int npg = (param[1] + 1) * (param[2] + 1) * (param[3] + 1)
     * param[4] * param[5] * param[6];
   return iv + param[0] * (ipg + npg * elem);
 }
+#pragma end_opencl
+
+#pragma start_opencl
+int GenericVarindex3d(int m, int *nx, int *nc,
+		      int elem,
+		      int iv, int *ix, int *ic) 
+{
+  // NB: passing nx and nx separately may allow one to deal with faces better.
+  // Also, keeping the values in registers is theoretically faster than
+  // even __local memory.
+
+  // int nx[3] = {param[1] + 1, param[2] + 1, param[3] + 1};
+  // int nc[3] = {param[4], param[5], param[6]};
+
+  // number of glops in subcell
+  int npgc = nx[0] * nx[1] * nx[2]; 
+  // number of glops in macrocell:
+  int npg = nc[0] * nc[1] * nc[2] * npgc; 
+  
+  // index in subcell: 
+  int ipgc = ix[0] + nx[0] * (ix[1] + nx[1] * ix[2]); 
+  // index of subcell in macrocell:
+  int nsubcell = ic[0] + nc[0] * (ic[1] + nc[1] * ic[2]);
+
+  // index of point in macrocell:
+  int ipg = ipgc + npgc * nsubcell; 
+  return iv + m * (ipg + npg * elem);
+}
+
+// Given a the index ipg of a poing in a subcell, determine the three
+// logical coordinates of that point in the subcell.
+/* void ipg_to_xyz(int ipg, int *p, int *npg) */
+/* { */
+/*   p[0] = ipg % npg[0]; */
+/*   p[1] = (ipg / npg[0]) % npg[1]; */
+/*   p[2] = ipg / npg[0] / npg[1]; */
+/* }  */
+
 #pragma end_opencl
 
 double min_grid_spacing(field *f)
@@ -145,7 +185,7 @@ void init_field_cl(field *f)
 			    f->wn,
 			    &status);
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status == CL_SUCCESS);
+  assert(status >= CL_SUCCESS);
 
   f->dtwn_cl = clCreateBuffer(f->cli.context,
 			      CL_MEM_READ_WRITE | CL_MEM_USE_HOST_PTR,
@@ -153,7 +193,7 @@ void init_field_cl(field *f)
 			      f->dtwn,
 			      &status);
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status == CL_SUCCESS);
+  assert(status >= CL_SUCCESS);
 
   f->param_cl = clCreateBuffer(f->cli.context,
 			       CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR,
@@ -161,7 +201,7 @@ void init_field_cl(field *f)
 			       f->interp_param,
 			       &status);
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status == CL_SUCCESS);
+  assert(status >= CL_SUCCESS);
 
   f->physnode = calloc(60, sizeof(cl_double));
 
@@ -171,7 +211,15 @@ void init_field_cl(field *f)
 				  f->physnode,
 				  &status);
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status == CL_SUCCESS);
+  assert(status >= CL_SUCCESS);
+
+  f->physnodeR = calloc(60, sizeof(cl_double));
+
+  f->physnodeR_cl = clCreateBuffer(f->cli.context,
+				   CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR,
+				   sizeof(cl_double) * 60,
+				   f->physnodeR,
+				   &status);
 
   // Program compilation
   char *s;
@@ -189,52 +237,86 @@ void init_field_cl(field *f)
 			     "DGMass",
 			     &status);
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status == CL_SUCCESS);
+  assert(status >= CL_SUCCESS);
+
+  f->dgflux = clCreateKernel(f->cli.program,
+			     "DGFlux",
+			     &status);
+  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status >= CL_SUCCESS);
 
   f->dgvolume = clCreateKernel(f->cli.program,
 			       "DGVolume",
 			       &status);
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status == CL_SUCCESS);
+  assert(status >= CL_SUCCESS);
 
   f->dginterface = clCreateKernel(f->cli.program,
 				  "DGMacroCellInterface",
 				  &status);
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status == CL_SUCCESS);
+  assert(status >= CL_SUCCESS);
 
   f->RK_out_CL = clCreateKernel(f->cli.program,
 				"RK_out_CL",
 				&status);
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status == CL_SUCCESS);
+  assert(status >= CL_SUCCESS);
 
   f->RK4_final_stage = clCreateKernel(f->cli.program,
 				      "RK4_final_stage",
 				      &status);
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status == CL_SUCCESS);
+  assert(status >= CL_SUCCESS);
 
   f->RK_in_CL = clCreateKernel(f->cli.program,
 			       "RK_in_CL",
 			       &status);
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status == CL_SUCCESS);
+  assert(status >= CL_SUCCESS);
 
   f->zero_buf = clCreateKernel(f->cli.program,
 			       "set_buffer_to_zero",
 			       &status);
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status == CL_SUCCESS);
+  assert(status >= CL_SUCCESS);
+
+  // Initialize events. // FIXME: free on exit
+  f->clv_zbuf = clCreateUserEvent(f->cli.context, &status);
+  
+  f->clv_mapdone = clCreateUserEvent(f->cli.context, &status);
+
+  f->clv_physnodeupdate = clCreateUserEvent(f->cli.context, &status);
+
+  f->clv_mci = clCreateUserEvent(f->cli.context, &status);
+  f->clv_interkernel = clCreateUserEvent(f->cli.context, &status);
+  f->clv_interupdate = clCreateUserEvent(f->cli.context, &status);
+  f->clv_interupdateR = clCreateUserEvent(f->cli.context, &status);
+
+  f->clv_mass = clCreateUserEvent(f->cli.context, &status);
+
+  f->clv_flux = calloc(3, sizeof(cl_event));
+  f->clv_flux[0] = clCreateUserEvent(f->cli.context, &status);
+  f->clv_flux[1] = clCreateUserEvent(f->cli.context, &status);
+  f->clv_flux[2] = clCreateUserEvent(f->cli.context, &status);
+
+  f->clv_volume = clCreateUserEvent(f->cli.context, &status);
+
+  // Set timers to zero
+  f->zbuf_time = 0;
+  f->mass_time = 0;
+  f->vol_time = 0;
+  f->minter_time = 0;
+  f->rk_time = 0;
 }
 #endif
-
 
 void Initfield(field *f) {
   //int param[8]={f->model.m,_DEGX,_DEGY,_DEGZ,_RAFX,_RAFY,_RAFZ,0};
   f->is2d = false;
+  f->is1d = false;
   
-  f->vmax = 1.0; // FIXME: make this variable
+  //f->vmax = 1.0; // FIXME: make this variable ??????
 
   // a copy for avoiding too much "->"
   for(int ip = 0; ip < 8; ip++)
@@ -247,6 +329,18 @@ void Initfield(field *f) {
   assert(f->wn);
   f->dtwn = calloc(nmem, sizeof(double));
   assert(f->dtwn);
+  f->Diagnostics=NULL;
+  f->update_before_rk=NULL;
+  f->update_after_rk=NULL;
+  f->model.Source=NULL;
+
+  f->tnow=0;
+  f->itermax=0;
+  f->iter_time=0;
+  f->tmaximum=0;
+  f->rk_substep=0;
+  f->rk_max=0;
+  f->nb_diags=0;
 
   f->tnow = 0;
 
@@ -255,7 +349,7 @@ void Initfield(field *f) {
   // Compute cfl parameter min_i vol_i/surf_i
   f->hmin = min_grid_spacing(f);
 
-  f->dt = f->model.cfl * f->hmin / f->vmax;
+  f->dt = 0;
 
   printf("hmin=%f\n", f->hmin);
 
@@ -296,7 +390,7 @@ void free_field(field* f)
 
   status = clReleaseMemObject(f->physnode_cl);
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status == CL_SUCCESS);
+  assert(status >= CL_SUCCESS);
 
   free(f->physnode);
 
@@ -304,7 +398,7 @@ void free_field(field* f)
 }
 
 // Display the field on screen
-void Displayfield(field* f) {
+void Displayfield(field *f) {
   printf("Display field...\n");
   for(int ie = 0; ie < f->macromesh.nbelems; ie++) {
     printf("elem %d\n", ie);
@@ -600,7 +694,8 @@ void DGSubCellInterface(void *mc, field *f, double *w, double *dtw)
 	  int offsetL = npg[0] * npg[1] * npg[2] * ncL;
 
 	  // Sweeping subcell faces in the three directions
-	  for(int dim0 = 0; dim0 < 3; dim0++) {
+	  for(int dim0 = 0; dim0 < 3; dim0++) { 
+	    
 	    // Compute the subface flux only if we do not touch the
 	    // subcell boundary along the current direction dim0
 	    if (icL[dim0] != nraf[dim0] - 1) {
@@ -666,8 +761,10 @@ void DGSubCellInterface(void *mc, field *f, double *w, double *dtw)
 		  // normal vector
 		  double wL[m], wR[m], flux[m];
 		  for(int iv = 0; iv < m; iv++) {
-		    int imemL = f->varindex(f->interp_param, ie, ipgL, iv);
+		    // TO DO change the varindex signature
+		    int imemL = f->varindex(f->interp_param, ie, ipgL, iv); 
 		    int imemR = f->varindex(f->interp_param, ie, ipgR, iv);
+		    // end TO DO
 		    wL[iv] = w[imemL];
 		    wR[iv] = w[imemR];
 		  }
@@ -684,8 +781,10 @@ void DGSubCellInterface(void *mc, field *f, double *w, double *dtw)
 
 		  // finally distribute the flux on the two sides
 		  for(int iv = 0; iv < m; iv++) {
+		    // TO DO change the varindex signature
 		    int imemL = f->varindex(f->interp_param, ie, ipgL, iv);
 		    int imemR = f->varindex(f->interp_param, ie, ipgR, iv);
+		    // end TO DO
 		    dtw[imemL] -= flux[iv] * wpg;
 		    dtw[imemR] += flux[iv] * wpg;
 		  }
@@ -737,8 +836,10 @@ void DGMacroCellInterfaceSlow(void *mc, field *f, double *w, double *dtw) {
     // or four faces for 2d computations
     int nbfa = 6;
     if (f->is2d) nbfa = 4;
-    for(int ifa = 0; ifa < nbfa; ifa++) {
+    if (f->is1d) nbfa = 2;
+    for(int nifa = 0; nifa < nbfa; nifa++) {
       // get the right elem or the boundary id
+      int ifa= f->is1d ?  2*nifa+1 : nifa;
       int ieR = f->macromesh.elem2elem[6*ie+ifa];
       double physnodeR[20][3];
       if (ieR >= 0) {
@@ -759,6 +860,20 @@ void DGMacroCellInterfaceSlow(void *mc, field *f, double *w, double *dtw) {
 	// and coordinates of a point slightly inside the
 	// opposite element in xref_in
   	ref_pg_face(iparam + 1, ifa, ipgf, xpgref, &wpg, xpgref_in);
+
+#ifdef _PERIOD
+	assert(f->is1d); // TODO: generalize to 2d
+	if (xpgref_in[0] > _PERIOD) {
+	  //printf("à droite ifa= %d x=%f ipgf=%d ieL=%d ieR=%d\n",
+	  //	 ifa,xpgref_in[0],ipgf,ie,ieR);
+	  xpgref_in[0] -= _PERIOD;
+	}
+	else if (xpgref_in[0] < 0) { 
+	  //printf("à gauche ifa= %d  x=%f ieL=%d ieR=%d \n",
+	  //ifa,xpgref_in[0],ie,ieR);
+	  xpgref_in[0] += _PERIOD;
+	}
+#endif
 
   	// recover the volume gauss point from
   	// the face index
@@ -800,7 +915,12 @@ void DGMacroCellInterfaceSlow(void *mc, field *f, double *w, double *dtw) {
 		  xpgR, NULL,
 		  NULL, NULL, NULL); // codtau, dphi, vnds
 
-	  assert(Dist(xpgR, xpg) < 1e-10);
+#ifdef _PERIOD
+	  assert(fabs(Dist(xpg,xpgR)-_PERIOD)<1e-11);
+#else
+          assert(Dist(xpg,xpgR)<1e-11);
+#endif
+	  
   	  for(int iv = 0; iv < f->model.m; iv++) {
   	    int imem = f->varindex(iparam, ieR, ipgR, iv);
   	    wR[iv] = f->wn[imem];
@@ -876,6 +996,20 @@ void DGMacroCellInterface(void *mc, field *f, double *w, double *dtw)
       // point slightly inside the opposite element in xref_in
       ref_pg_face(iparam + 1, locfaL, ipgfL, xpgref, &wpg, xpgref_in);
 
+#ifdef _PERIOD
+      assert(f->is1d); // TODO: generalize to 2d
+      if (xpgref_in[0] > _PERIOD) {
+	//printf("à droite ifa= %d x=%f ipgf=%d ieL=%d ieR=%d\n",
+	//	 ifa,xpgref_in[0],ipgf,ie,ieR);
+	xpgref_in[0] -= _PERIOD;
+      }
+      else if (xpgref_in[0] < 0) { 
+	//printf("à gauche ifa= %d  x=%f ieL=%d ieR=%d \n",
+	//ifa,xpgref_in[0],ie,ieR);
+	xpgref_in[0] += _PERIOD;
+      }
+#endif
+
       // Recover the volume gauss point from the face index
       int ipgL = iparam[7];
 
@@ -916,7 +1050,11 @@ void DGMacroCellInterface(void *mc, field *f, double *w, double *dtw)
 	/* 	  NULL, -1, // dphiref, ifa */
 	/* 	  xpgR, NULL, */
 	/* 	  NULL, NULL, NULL); // codtau, dphi, vnds */
-	/*   assert(Dist(xpgR, xpg) < 1e-10); */
+	/*  #ifdef _PERIOD */
+	/*   assert(fabs(Dist(xpg,xpgR)-_PERIOD)<1e-11); */
+	/*   #else */
+	/* assert(Dist(xpg,xpgR)<1e-11); */
+	/* #endif */
 	/* }	 */
 
 	double wR[m];
@@ -966,6 +1104,7 @@ void DGMacroCellInterface(void *mc, field *f, double *w, double *dtw)
 void DGMass(void *mc, field *f, double *w, double *dtw) 
 {
   MacroCell* mcell = (MacroCell*) mc;
+  int m=f->model.m;
 
   // loop on the elements
   for (int ie = mcell->first; ie < mcell->last_p1; ie++) {
@@ -979,19 +1118,36 @@ void DGMass(void *mc, field *f, double *w, double *dtw)
     }
     for(int ipg = 0; ipg < NPG(f->interp_param + 1); ipg++) {
 
-      double dtau[3][3], codtau[3][3], xpgref[3], wpg;
+      double dtau[3][3], codtau[3][3], xpgref[3],xphy[3], wpg;
       ref_pg_vol(f->interp_param + 1, ipg, xpgref, &wpg, NULL);
       Ref2Phy(physnode, // phys. nodes
 	      xpgref, // xref
 	      NULL, -1, // dpsiref, ifa
-	      NULL, dtau, // xphy, dtau
+	      xphy, dtau, // xphy, dtau
 	      codtau, NULL, NULL); // codtau, dpsi, vnds
       double det = dot_product(dtau[0], codtau[0]);
+      // source term
+      double wL[m],source[m];
+      for(int iv = 0; iv < m; iv++){
+	int imem=f->varindex(f->interp_param,ie,ipg,iv);
+	wL[iv]=w[imem];
+      }
+      
+      if (f->model.Source != NULL) {
+      	f->model.Source(xphy,f->tnow,wL,source);
+      }
+      else {
+      	for(int iv = 0; iv < m; iv++){
+      	  source[iv] = 0;
+      	}
+      }
+
       for(int iv = 0; iv < f->model.m; iv++) {
 	int imem = f->varindex(f->interp_param, ie, ipg, iv);
 	dtw[imem] /= (wpg * det);
-        //printf("det2=%f wpg=%f imem = %d\n", det, wpg, imem);
-
+	dtw[imem] += source[iv];
+        //printf("det2=%f s=%f ie = %d\n", det, source[0], ie);
+	
       }
     }
   }
@@ -1139,73 +1295,6 @@ void DGVolume(void *mc, field *f, double *w, double *dtw)
   }
 }
 
-// Compute the Discontinuous Galerkin volume terms: slow version
-void DGVolumeSlow(field* f) 
-{
-  // Assembly of the volume terms
-
-  // Loop on the elements
-  for (int ie = 0; ie < f->macromesh.nbelems; ie++) {
-    // get the physical nodes of element ie
-    double physnode[20][3];
-    for(int inoloc = 0; inoloc < 20; inoloc++) {
-      int ino = f->macromesh.elem2node[20 * ie + inoloc];
-      physnode[inoloc][0] = f->macromesh.node[3 * ino + 0];
-      physnode[inoloc][1] = f->macromesh.node[3 * ino + 1];
-      physnode[inoloc][2] = f->macromesh.node[3 * ino + 2];
-    }
-
-    // mass matrix
-    double masspg[NPG(f->interp_param + 1)];
-    // loop on the glops (for numerical integration)
-    for(int ipg = 0; ipg < NPG(f->interp_param + 1); ipg++) {
-      double xpgref[3], wpg;
-      // get the coordinates of the Gauss point
-      ref_pg_vol(f->interp_param + 1, ipg, xpgref, &wpg, NULL);
-
-      // get the value of w at the gauss point
-      double w[f->model.m];
-      for(int iv = 0; iv < f->model.m; iv++) {
-	int imem = f->varindex(f->interp_param, ie, ipg, iv);
-	w[iv] = f->wn[imem];
-      }
-      // loop on the basis functions
-      for(int ib = 0; ib < NPG(f->interp_param + 1); ib++) {
-	// gradient of psi_ib at gauss point ipg
-	double dpsiref[3], dpsi[3];
-	double dtau[3][3], codtau[3][3];//, xpg[3];
-	grad_psi_pg(f->interp_param + 1, ib, ipg, dpsiref);
-	Ref2Phy(physnode, // phys. nodes
-		xpgref, // xref
-		dpsiref, -1, // dpsiref, ifa
-		NULL, dtau, // xphy, dtau
-		codtau, dpsi, NULL); // codtau, dpsi, vnds
-	// remember the diagonal mass term
-	if (ib == ipg) {
-	  double det = dot_product(dtau[0], codtau[0]);
-	  masspg[ipg] = wpg * det;
-	}
-	// int_L F(w, w, grad phi_ib )
-	double flux[f->model.m];
-	f->model.NumFlux(w, w, dpsi, flux);
-
-	for(int iv = 0; iv < f->model.m; iv++) {
-	  int imem = f->varindex(f->interp_param, ie, ib, iv);
-	  f->dtwn[imem] += flux[iv] * wpg;
-	}
-      }
-    }
-
-    for(int ipg = 0; ipg < NPG(f->interp_param + 1); ipg++) {
-      // apply the inverse of the diagonal mass matrix
-      for(int iv = 0; iv < f->model.m; iv++) {
-	int imem = f->varindex(f->interp_param, ie, ipg, iv);
-	f->dtwn[imem] /= masspg[ipg];
-      }
-    }
-
-  }
-}
 
 void dtfield_pthread(field *f) 
 {
@@ -1293,8 +1382,9 @@ void dtfield(field *f, double *w, double *dtw) {
 
   bool facealgo = true;
   if(facealgo)
-    for(int ifa = 0; ifa < f->macromesh.nbfaces; ifa++)
+    for(int ifa = 0; ifa < f->macromesh.nbfaces; ifa++){
       DGMacroCellInterface((void*) (f->mface + ifa), f, w, dtw);
+    }
 
 #ifdef _OPENMP
 #pragma omp parallel for schedule(dynamic, 1)
@@ -1305,6 +1395,8 @@ void dtfield(field *f, double *w, double *dtw) {
     DGSubCellInterface(mcelli, f, w, dtw);
     DGVolume(mcelli, f, w, dtw);
     DGMass(mcelli, f, w, dtw);
+    
+
   }
 #endif
 }
@@ -1524,7 +1616,13 @@ void RK_in(double *fwnp1, double *fdtwn, const double dt, const int sizew)
 // Time integration by a second-order Runge-Kutta algorithm
 void RK2(field *f, double tmax) 
 {
+
+  f->dt = f->model.cfl * f->hmin / f->vmax;
+
+  printf("dt=%f\n",f->dt);
+
   f->itermax = tmax / f->dt;
+  int size_diags;
   int freq = (1 >= f->itermax / 10)? 1 : f->itermax / 10;
   int sizew = f->macromesh.nbelems * f->model.m * NPG(f->interp_param + 1);
   int iter = 0;
@@ -1532,20 +1630,53 @@ void RK2(field *f, double tmax)
   double *wnp1 = calloc(f->wsize, sizeof(double));
   assert(wnp1);
 
+  f->rk_max=2;
+  f->tmaximum=tmax;
+  f->itermax=tmax/f->dt;
+  size_diags=f->nb_diags * f->itermax;
+
+  f->iter_time=iter;
+  
+  if(f->nb_diags != 0){
+    f->Diagnostics=malloc(size_diags* sizeof(double));
+  }
+
   while(f->tnow < tmax) {
     if (iter % freq == 0)
       printf("t=%f iter=%d/%d dt=%f\n", f->tnow, iter, f->itermax, f->dt);
 
+    // update before predictor
+    f->rk_substep =1;
+    if(f->update_before_rk !=NULL){
+      f->update_before_rk(f,f->wn);
+    }  
+    
     dtfield(f, f->wn, f->dtwn);
     RK_out(wnp1, f->wn, f->dtwn, 0.5 * f->dt, sizew);
 
+    // update after predictor
+    if(f->update_after_rk !=NULL){
+      f->update_after_rk(f,wnp1);
+    }
+    
     f->tnow += 0.5 * f->dt;
+
+    f->rk_substep = 2;
+    if(f->update_before_rk !=NULL){
+      f->update_before_rk(f,wnp1);
+    }  
 
     dtfield(f, wnp1, f->dtwn);
     RK_in(f->wn, f->dtwn, f->dt, sizew);
 
+    // update after corrector
+    if(f->update_after_rk !=NULL){
+      f->update_after_rk(f,f->wn);
+    }
+
     f->tnow += 0.5 * f->dt;
     iter++;
+    f->iter_time=iter;
   }
   printf("t=%f iter=%d/%d dt=%f\n", f->tnow, iter, f->itermax, f->dt);
   free(wnp1);
@@ -1572,6 +1703,8 @@ void RK4_final_inplace(double *w, double *l1, double *l2, double *l3,
 // Time integration by a fourth-order Runge-Kutta algorithm
 void RK4(field *f, double tmax) 
 {
+  f->dt = f->model.cfl * f->hmin / f->vmax;
+
   f->itermax = tmax / f->dt;
   int freq = (1 >= f->itermax / 10)? 1 : f->itermax / 10;
   int sizew = f->macromesh.nbelems * f->model.m * NPG(f->interp_param + 1);
@@ -1584,6 +1717,9 @@ void RK4(field *f, double tmax)
   l3 = calloc(sizew, sizeof(double));
 
   while(f->tnow < tmax) {
+    if (iter % freq == 0)
+      printf("t=%f iter=%d/%d dt=%f\n", f->tnow, iter, f->itermax, f->dt);
+
     // l_1 = w_n + 0.5dt * S(w_n, t_0)
     dtfield(f, f->wn, f->dtwn);
     RK_out(l1, f->wn, f->dtwn, 0.5 * f->dt, sizew);

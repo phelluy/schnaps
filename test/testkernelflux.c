@@ -5,7 +5,8 @@
 #include <assert.h>
 #include <math.h>
 
-int TestKernelVolume(void){
+int TestKernelFlux()
+{
   bool test=true;
 
   if(!cldevice_is_acceptable(nplatform_cl, ndevice_cl)) {
@@ -22,13 +23,13 @@ int TestKernelVolume(void){
   f.model.ImposedData = TransImposedData2d;
   f.varindex = GenericVarindex;
 
-  f.interp.interp_param[0] = 1;  // _M
-  f.interp.interp_param[1] = 2;  // x direction degree
-  f.interp.interp_param[2] = 2;  // y direction degree
-  f.interp.interp_param[3] = 0;  // z direction degree
-  f.interp.interp_param[4] = 2;  // x direction refinement
-  f.interp.interp_param[5] = 2;  // y direction refinement
-  f.interp.interp_param[6] = 1;  // z direction refinement
+  f.interp.interp_param[0] = f.model.m;
+  f.interp.interp_param[1] = 2; // x direction degree
+  f.interp.interp_param[2] = 2; // y direction degree
+  f.interp.interp_param[3] = 0; // z direction degree
+  f.interp.interp_param[4] = 2; // x direction refinement
+  f.interp.interp_param[5] = 2; // y direction refinement
+  f.interp.interp_param[6] = 1; // z direction refinement
 
   ReadMacroMesh(&(f.macromesh),"test/testmacromesh.msh");
   //ReadMacroMesh(&(f.macromesh),"test/testcube.msh");
@@ -36,7 +37,7 @@ int TestKernelVolume(void){
   assert(f.macromesh.is2d);
   BuildConnectivity(&(f.macromesh));
 
-  PrintMacroMesh(&(f.macromesh));
+  //PrintMacroMesh(&(f.macromesh));
 
   //AffineMapMacroMesh(&(f.macromesh));
  
@@ -73,16 +74,26 @@ int TestKernelVolume(void){
 
   clFinish(f.cli.commandqueue);
   for(int ie = 0; ie < f.macromesh.nbelems; ++ie) {
+    printf("\nie: %d\n", ie);
+
     update_physnode_cl(&f, ie, f.physnode_cl, f.physnode, NULL,
-		       0, NULL, NULL);
+    		       0, NULL, NULL);
+    clFinish(f.cli.commandqueue);
+    
+    DGFlux_CL(&f, 0, ie, &(f.wn_cl), 0, NULL, NULL);
     clFinish(f.cli.commandqueue);
 
-    DGVolume_CL((void*) &(f.mcell[ie]), &f, &(f.wn_cl), 0, NULL, NULL);
+    DGFlux_CL(&f, 1, ie, &(f.wn_cl), 0, NULL, NULL);
     clFinish(f.cli.commandqueue);
+
+    if(!f.macromesh.is2d) {
+      DGFlux_CL(&f, 2, ie, &(f.wn_cl), 0, NULL, NULL);
+      clFinish(f.cli.commandqueue);
+    }
   }
   CopyfieldtoCPU(&f);
 
-  Displayfield(&f);
+  //Displayfield(&f);
 
   // save the dtwn pointer
   double *dtwn_cl = f.dtwn;
@@ -91,11 +102,11 @@ int TestKernelVolume(void){
   f.dtwn = calloc(f.wsize, sizeof(double));
  
   for(int ie = 0; ie < f.macromesh.nbelems; ++ie) {
-    //DGSubCellInterface((void*) &(f.mcell[ie]), &f, f.wn, f.dtwn);
-    DGVolume((void*) &(f.mcell[ie]), &f, f.wn, f.dtwn);
+    DGSubCellInterface((void*) &(f.mcell[ie]), &f, f.wn, f.dtwn);
+    //DGVolume((void*) &(f.mcell[ie]), &f, f.wn, f.dtwn);
   }
 
-  Displayfield(&f);
+  //Displayfield(&f);
 
   //check that the results are the same
   double maxerr = 0.0;
@@ -115,8 +126,8 @@ int TestKernelVolume(void){
 
 int main(void) {
   // Unit tests
-  int resu = TestKernelVolume();
-  if (resu) printf("Volume Kernel test OK !\n");
-  else printf("Volume Kernel test failed !\n");
+  int resu = TestKernelFlux();
+  if (resu) printf("Flux Kernel test OK !\n");
+  else printf("Flux Kernel test failed !\n");
   return !resu;
 } 
