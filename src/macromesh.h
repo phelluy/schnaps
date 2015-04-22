@@ -22,10 +22,10 @@ typedef struct MacroMesh{
   //! the list for a given node ends with -1's (it explains the +1)
   int* node2elem;
 
-  double *node; //!< nodes coordinates array
+  real *node; //!< nodes coordinates array
   bool is2d; //!< 2d computation detection
 
-  double xmin[3],xmax[3];
+  real xmin[3],xmax[3];
   bool is1d; //!< 1d computation detection
 } MacroMesh;
 
@@ -75,7 +75,7 @@ void BuildConnectivity(MacroMesh *m);
 
 //! \brief affine transformation
 //! \param[inout] x the transformed point
-void AffineMap(double* x);
+void AffineMap(real* x);
 //! \brief simple transformations of the mesh
 //! \param[inout] m the macromesh
 void AffineMapMacroMesh(MacroMesh *m);
@@ -111,20 +111,20 @@ void PrintMacroMesh(MacroMesh *m);
 //! \param[in] xphy a point in physical space
 //! \param[out] xref the corresponding ref coordinates (optional if NULL) 
 //! \returns true or false
-bool IsInElem(MacroMesh *m,int ie, double* xphy, double* xref);
+bool IsInElem(MacroMesh *m,int ie, real* xphy, real* xref);
 
 //! \brief find the nearest node to xphy in the mesh
 //! \param[in] m a macromesh
 //! \param[in] xphy a point in physical space
 //! \returns the index of the nearest node
-int NearestNode(MacroMesh *m,double* xphy);
+int NearestNode(MacroMesh *m,real* xphy);
 
 //! \brief find the cell containing a physical point
 //! \param[in] m a macromesh
 //! \param[in] xphy a point in physical space
 //! \param[out] xref the corresponding ref coordinates (optional if NULL) 
 //! \returns the index of the macrocell containing xphy or -1 if none found
-int NumElemFromPoint(MacroMesh *m,double* xphy, double* xref);
+int NumElemFromPoint(MacroMesh *m,real* xphy, real* xref);
 
 
 #endif

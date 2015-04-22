@@ -43,14 +43,14 @@ int main(void) {
 
   // Apply the DG scheme time integration by RK2 scheme up to final
   // time tmax.
-  double tmax = 1.0;
+  real tmax = 1.0;
   RK2(&f, tmax);
 
   // Save the results and the error
   Plotfield(0, false, &f, NULL, "dgvisu.msh");
   Plotfield(0, true, &f, "Error", "dgerror.msh");
 
-  double dd = L2error(&f);
+  real dd = L2error(&f);
  
   printf("erreur L2=%f\n", dd);
   return 0;

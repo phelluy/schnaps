@@ -12,7 +12,7 @@
 
 
 
-void Computation_charge_density(field *f, double * w){
+void Computation_charge_density(field *f, real * w){
   
   for(int ie=0;ie<f->macromesh.nbelems;ie++){
     for(int ipg=0;ipg<NPG(f->interp_param+1);ipg++){
@@ -22,8 +22,8 @@ void Computation_charge_density(field *f, double * w){
       for(int ielv=0;ielv<_NB_ELEM_V;ielv++){
 	// loop on the local glops
 	for(int iloc=0;iloc<_DEG_V+1;iloc++){
-	  double omega=wglop(_DEG_V,iloc);
-	  double vi=-_VMAX+ielv*_DV+_DV*glop(_DEG_V,iloc);
+	  real omega=wglop(_DEG_V,iloc);
+	  real vi=-_VMAX+ielv*_DV+_DV*glop(_DEG_V,iloc);
 	  int ipgv=iloc+ielv*_DEG_V;
 	  int imem=f->varindex(f->interp_param,ie,ipg,ipgv);
 	  w[imemc]+=omega*_DV*w[imem];
@@ -34,11 +34,11 @@ void Computation_charge_density(field *f, double * w){
   
 }
 
-void Compute_electric_field(field* f, double * w){
+void Compute_electric_field(field* f, real * w){
 
   for (int ie=0;ie<f->macromesh.nbelems;ie++){
     // get the physical nodes of element ie
-    double physnode[20][3];
+    real physnode[20][3];
     for(int inoloc=0;inoloc<20;inoloc++){
       int ino=f->macromesh.elem2node[20*ie+inoloc];
       physnode[inoloc][0]=f->macromesh.node[3*ino+0];
@@ -81,14 +81,14 @@ void Compute_electric_field(field* f, double * w){
 	  int offsetL=npg[0]*npg[1]*npg[2]*ncL;
 
 	  // compute all of the xref for the subcell
-	  double *xref0 = malloc(sc_npg * sizeof(double));
-	  double *xref1 = malloc(sc_npg * sizeof(double));
-	  double *xref2 = malloc(sc_npg * sizeof(double));
+	  real *xref0 = malloc(sc_npg * sizeof(real));
+	  real *xref1 = malloc(sc_npg * sizeof(real));
+	  real *xref2 = malloc(sc_npg * sizeof(real));
 	  int *imems = malloc(m * sc_npg * sizeof(int));
 	  int pos=0;
 	  for(unsigned int p=0; p < sc_npg; ++p) {
-	    double xref[3];
-	    double tomega;
+	    real xref[3];
+	    real tomega;
 	    ref_pg_vol(f->interp_param+1,offsetL+p,xref,&tomega,NULL);
 	    xref0[p] = xref[0];
 	    xref1[p] = xref[1];
@@ -117,27 +117,27 @@ void Compute_electric_field(field* f, double * w){
 		  /*   //wL[iv] = f->wn[imemL]; */
 		  /* } */
 		  //wn[imems[m*(ipgL-offsetL)+_MV+dim0]]=0;
-		  double gradx[3]={0,0,0};
+		  real gradx[3]={0,0,0};
 
 		  int q[3]={p[0],p[1],p[2]};
 		  // loop on the direction dim0 on the "cross"
 		  for(int iq = 0; iq < npg[dim0]; iq++){
 		    q[dim0]=(p[dim0]+iq)%npg[dim0];
 		    int ipgR=offsetL+q[0]+npg[0]*(q[1]+npg[1]*q[2]);
-		    double phiq=w[imems[m*(ipgR-offsetL)+_INDEX_PHI]];
-		    double dphiref[3]={0,0,0};
+		    real phiq=w[imems[m*(ipgR-offsetL)+_INDEX_PHI]];
+		    real dphiref[3]={0,0,0};
 		    // compute grad phi_q at glop p
 		    dphiref[dim0]=dlag(deg[dim0],q[dim0],p[dim0])*nraf[dim0];
 
-		    double xrefL[3]={xref0[ipgL-offsetL],
+		    real xrefL[3]={xref0[ipgL-offsetL],
 		    		     xref1[ipgL-offsetL],
 		    		     xref2[ipgL-offsetL]};
-		    //double wpgL=omega[ipgL-offsetL];
-		    /* double xrefL[3], wpgL; */
+		    //real wpgL=omega[ipgL-offsetL];
+		    /* real xrefL[3], wpgL; */
 		    /* ref_pg_vol(f->interp_param+1,ipgL,xrefL,&wpgL,NULL); */
 
 		    // mapping from the ref glop to the physical glop
-		    double dtau[3][3],codtau[3][3],dphiL[3];
+		    real dtau[3][3],codtau[3][3],dphiL[3];
 		    Ref2Phy(physnode,
 			    xrefL,
 			    dphiref,  // dphiref

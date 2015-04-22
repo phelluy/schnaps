@@ -23,12 +23,12 @@ int TestGeometry(void){
 
   // test the geometric transformation
 
-  double xref[3],v[3];
-  double xref0[3] = {0.1, 0.3, 0.7};
-  double v0[3] = {0.1, 0.3, 0.7};
-  double physnode[20][3];
+  real xref[3],v[3];
+  real xref0[3] = {0.1, 0.3, 0.7};
+  real v0[3] = {0.1, 0.3, 0.7};
+  real physnode[20][3];
 
-  double xphy[3], dtau[3][3];
+  real xphy[3], dtau[3][3];
 
   for(int inoloc = 0; inoloc <20; inoloc++){
     int ino = mc.elem2node[0 * 20 + inoloc];
@@ -49,7 +49,7 @@ int TestGeometry(void){
   v[1] = xref[1]-xref0[1];
   v[2] = xref[2]-xref0[2];
 
-  double d = sqrt(v[0] * v[0] + v[1] * v[1] + v[2] * v[2]);
+  real d = sqrt(v[0] * v[0] + v[1] * v[1] + v[2] * v[2]);
   test = (d < 1e-12);
 
 

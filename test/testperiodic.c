@@ -9,9 +9,9 @@
 #include "solverpoisson.h"
 
 
-void TestPeriodic_ImposedData(double x[3],double t,double w[]);
-void TestPeriodic_InitData(double x[3],double w[]);
-void TestPeriodic_BoundaryFlux(double x[3],double t,double wL[],double* vnorm, double* flux);
+void TestPeriodic_ImposedData(real x[3],real t,real w[]);
+void TestPeriodic_InitData(real x[3],real w[]);
+void TestPeriodic_BoundaryFlux(real x[3],real t,real wL[],real* vnorm, real* flux);
 
 int main(void) {
   
@@ -97,8 +97,8 @@ int TestPeriodic(void) {
   Plotfield(0,(1==0),&f,"sol","dgvisu.msh");
   Plotfield(0,(1==1),&f,"error","dgerror.msh");
 
-  double dd=L2error(&f);
-  double dd_Kinetic=L2_Kinetic_error(&f);
+  real dd=L2error(&f);
+  real dd_Kinetic=L2_Kinetic_error(&f);
   
   printf("erreur kinetic L2=%lf\n",dd_Kinetic);
   printf("erreur L2=%lf\n",dd);
@@ -112,13 +112,13 @@ int TestPeriodic(void) {
 };
 
 
-void TestPeriodic_ImposedData(double x[3],double t,double w[]){
-  double pi=4*atan(1.);
+void TestPeriodic_ImposedData(real x[3],real t,real w[]){
+  real pi=4*atan(1.);
   for(int i=0;i<_INDEX_MAX_KIN+1;i++){
     int j=i%_DEG_V; // local connectivity put in function
     int nel=i/_DEG_V; // element num (TODO : function)
 
-    double vi = (-_VMAX+nel*_DV +
+    real vi = (-_VMAX+nel*_DV +
 		 _DV* glop(_DEG_V,j));
 
     w[i]=cos(2*pi*(x[0]-vi*t));
@@ -134,17 +134,17 @@ void TestPeriodic_ImposedData(double x[3],double t,double w[]){
 
 };
 
-void TestPeriodic_InitData(double x[3],double w[]){
+void TestPeriodic_InitData(real x[3],real w[]){
 
-  double t=0;
+  real t=0;
   TestPeriodic_ImposedData(x,t,w);
 
 };
 
 
-void TestPeriodic_BoundaryFlux(double x[3],double t,double wL[],double* vnorm,
-				       double* flux){
-  double wR[_MV+6];
+void TestPeriodic_BoundaryFlux(real x[3],real t,real wL[],real* vnorm,
+				       real* flux){
+  real wR[_MV+6];
   TestPeriodic_ImposedData(x,t,wR);
   VlasovP_Lagrangian_NumFlux(wL,wR,vnorm,flux);
 };

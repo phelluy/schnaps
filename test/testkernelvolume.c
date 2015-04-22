@@ -52,7 +52,7 @@ int TestKernelVolume(void){
   /*       		    CL_TRUE,  // block until the buffer is available */
   /*       		     CL_MAP_WRITE,  */
   /*       		    0, // offset */
-  /*       		    sizeof(double)*(f.wsize),  // buffersize */
+  /*       		    sizeof(real)*(f.wsize),  // buffersize */
   /*       		    0,NULL,NULL, // events management */
   /*       		    &status); */
   /*   assert(status == CL_SUCCESS); */
@@ -85,10 +85,10 @@ int TestKernelVolume(void){
   Displayfield(&f);
 
   // save the dtwn pointer
-  double *dtwn_cl = f.dtwn;
+  real *dtwn_cl = f.dtwn;
 
   // malloc a new dtwn.
-  f.dtwn = calloc(f.wsize, sizeof(double));
+  f.dtwn = calloc(f.wsize, sizeof(real));
  
   for(int ie = 0; ie < f.macromesh.nbelems; ++ie) {
     //DGSubCellInterface((void*) &(f.mcell[ie]), &f, f.wn, f.dtwn);
@@ -98,7 +98,7 @@ int TestKernelVolume(void){
   Displayfield(&f);
 
   //check that the results are the same
-  double maxerr = 0.0;
+  real maxerr = 0.0;
   printf("\nDifference\tC\t\tOpenCL\n");
   for(int i = 0; i < f.wsize; ++i) {
     printf("%f\t%f\t%f\n", f.dtwn[i] - dtwn_cl[i], f.dtwn[i], dtwn_cl[i]);
@@ -106,7 +106,7 @@ int TestKernelVolume(void){
   }
   printf("max error: %f\n",maxerr);
 
-  double tolerance = 1e-8;
+  real tolerance = 1e-8;
 
   test = (maxerr < tolerance);
 

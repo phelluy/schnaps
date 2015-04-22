@@ -39,7 +39,7 @@ void ReadMacroMesh(MacroMesh *m, char *filename)
   m->nbnodes = atoi(line);
   printf("nbnodes=%d\n", m->nbnodes);
 
-  m->node = malloc(3 * m->nbnodes * sizeof(double));
+  m->node = malloc(3 * m->nbnodes * sizeof(real));
   assert(m->node);
 
   for(int i = 0; i < m->nbnodes; i++) {
@@ -110,15 +110,15 @@ void ReadMacroMesh(MacroMesh *m, char *filename)
   m->elem2elem = NULL;
 }
 
-void AffineMap(double *x)
+void AffineMap(real *x)
 {
-  //double A[3][3]={{1,2,1},{0,-1,4},{7,8,-5}};
-  double A[3][3] = {{0, -1, 0}, {-2, 0, 0}, {0, 0,- 1}};
-  //double A[3][3]={1,0,0,0,2,0,0,0,1};
-  double x0[3] = {0, 0, 1};
-  //double x0[3]={0,0,0};
+  //real A[3][3]={{1,2,1},{0,-1,4},{7,8,-5}};
+  real A[3][3] = {{0, -1, 0}, {-2, 0, 0}, {0, 0,- 1}};
+  //real A[3][3]={1,0,0,0,2,0,0,0,1};
+  real x0[3] = {0, 0, 1};
+  //real x0[3]={0,0,0};
 
-  double newx[3];
+  real newx[3];
 
   for(int i = 0; i < 3; i++)
     newx[i] = x0[i] + dot_product(A[i], x);
@@ -241,21 +241,21 @@ void build_face(MacroMesh *m, Face4Sort *face)
 }
 
 // Find the coordinates of the minimal bounding box for the MacroMesh
-void macromesh_bounds(MacroMesh *m, double *bounds)
+void macromesh_bounds(MacroMesh *m, real *bounds)
 {
-  double xmin = m->node[0];
-  double xmax = xmin;
-  double ymin = m->node[1];
-  double ymax = ymin;
-  double zmin = m->node[2];
-  double zmax = zmin;
+  real xmin = m->node[0];
+  real xmax = xmin;
+  real ymin = m->node[1];
+  real ymax = ymin;
+  real zmin = m->node[2];
+  real zmax = zmin;
   
   // Loop over all the points in all the subcells of the macrocell
   const int nbelems = m->nbelems;
   for(int i = 0; i < m->nbnodes; i++) {
-    double x = m->node[3 * i];
-    double y = m->node[3 * i + 1];
-    double z = m->node[3 * i + 2];
+    real x = m->node[3 * i];
+    real y = m->node[3 * i + 1];
+    real z = m->node[3 * i + 2];
     printf("xyz %f %f %f \n",x,y,z);
     if(x < xmin) xmin = x;
     if(x > xmax) xmax = x;
@@ -471,7 +471,7 @@ void BuildConnectivity(MacroMesh* m)
 {
   printf("Build connectivity...\n");
 
-  double *bounds = malloc(6 * sizeof(double));
+  real *bounds = malloc(6 * sizeof(real));
   macromesh_bounds(m, bounds);
 
   printf("bounds: %f, %f, %f, %f, %f, %f\n",
@@ -534,14 +534,14 @@ int CompareFace4Sort(const void* a,const void* b) {
 
 void CheckMacroMesh(MacroMesh *m, int *param) {
   Geom g;
-  double face_centers[6][3]={ {0.5,0.0,0.5},
+  real face_centers[6][3]={ {0.5,0.0,0.5},
 			      {1.0,0.5,0.5},
 			      {0.5,1.0,0.5},
 			      {0.0,0.5,0.5},
 			      {0.5,0.5,1.0},
 			      {0.5,0.5,0.0} };
 
-  /* double refnormal[6][3]={{0,-1,0},{1,0,0}, */
+  /* real refnormal[6][3]={{0,-1,0},{1,0,0}, */
   /* 			  {0,1,0},{-1,0,0}, */
   /* 			  {0,0,1},{0,0,-1}}; */
 
@@ -557,8 +557,8 @@ void CheckMacroMesh(MacroMesh *m, int *param) {
     // Test that the ref_ipg function is compatible with ref_pg_vol
     //int param[7]={_DEGX,_DEGY,_DEGZ,_RAFX,_RAFY,_RAFZ,0};
     for(int ipg = 0; ipg < NPG(param); ipg++) {
-      double xref1[3], xref_in[3];
-      double wpg;
+      real xref1[3], xref_in[3];
+      real wpg;
       ref_pg_vol(param, ipg, xref1, &wpg, xref_in);
       memcpy(g.xref, xref1, sizeof(g.xref));
 
@@ -582,7 +582,7 @@ void CheckMacroMesh(MacroMesh *m, int *param) {
     g.xref[2] = 0.5;
 
     GeomRef2Phy(&g);
-    double xphym[3];
+    real xphym[3];
     memcpy(xphym, g.xphy, sizeof(xphym));
 
     for(int ifa = 0; ifa < 6; ifa++) {
@@ -593,7 +593,7 @@ void CheckMacroMesh(MacroMesh *m, int *param) {
       // Check volume  orientation
       assert(g.det > 0);
 
-      double vec[3] = {g.xphy[0] - xphym[0],
+      real vec[3] = {g.xphy[0] - xphym[0],
 		       g.xphy[1] - xphym[1],
 		       g.xphy[2] - xphym[2]};
 
@@ -604,17 +604,17 @@ void CheckMacroMesh(MacroMesh *m, int *param) {
       for(int ipgf = 0; ipgf < NPGF(param, ifa); ipgf++) {
 
         // Get the coordinates of the Gauss point
-        double xpgref[3];
+        real xpgref[3];
 	{
-	  double wpg;
+	  real wpg;
 	  ref_pg_face(param, ifa, ipgf, xpgref, &wpg, NULL);
 	}
         
 	// Recover the volume gauss point from the face index
 	int ipgv = param[6];
-	double xpgref2[3];
+	real xpgref2[3];
 	{
-	  double wpg2;
+	  real wpg2;
 	  ref_pg_vol(param, ipgv, xpgref2, &wpg2, NULL);
 	}
 
@@ -649,7 +649,7 @@ void CheckMacroMesh(MacroMesh *m, int *param) {
   for (int ie = 0; ie < m->nbelems; ie++) {
     // int param[8]={1,_DEGX,_DEGY,_DEGZ,_RAFX,_RAFY,_RAFZ,0};
     // Get the geometry for the macro element ie
-    double physnode[20][3];
+    real physnode[20][3];
     for(int inoloc = 0; inoloc < 20; inoloc++) {
       int ino = m->elem2node[20 * ie + inoloc];
       physnode[inoloc][0] = m->node[3 * ino + 0];
@@ -668,9 +668,9 @@ void CheckMacroMesh(MacroMesh *m, int *param) {
 	  // Get the coordinates of the Gauss point from the
 	  // face-local point index and the point slightly inside the
 	  // macrocell.
-	  double xpgref[3], xpgref_in[3];
+	  real xpgref[3], xpgref_in[3];
 	  {
-	    double wpg;
+	    real wpg;
 	    ref_pg_face(param, ifa, ipgf, xpgref, &wpg, xpgref_in);
 	  }
 
@@ -681,10 +681,10 @@ void CheckMacroMesh(MacroMesh *m, int *param) {
 #endif
 
 	  // Compute the position of the point and the face normal.
-	  double xpg[3], vnds[3];
+	  real xpg[3], vnds[3];
 	  {
-	    double dtau[3][3];
-	    double codtau[3][3];
+	    real dtau[3][3];
+	    real codtau[3][3];
 	    Ref2Phy(physnode,
 		    xpgref,
 		    NULL, ifa, // dpsiref,ifa
@@ -693,11 +693,11 @@ void CheckMacroMesh(MacroMesh *m, int *param) {
 	  }
 	
 	  // Compute the "slightly inside" position
-	  double xpg_in[3];
+	  real xpg_in[3];
 	  { 
-	    double vnds[3];
-	    double dtau[3][3];
-	    double codtau[3][3];
+	    real vnds[3];
+	    real dtau[3][3];
+	    real codtau[3][3];
 	    Ref2Phy(physnode,
 		    xpgref_in,
 		    NULL, ifa, // dpsiref,ifa
@@ -708,7 +708,7 @@ void CheckMacroMesh(MacroMesh *m, int *param) {
 	  //     ifa,xpgref_in[0],xpgref_in[1],xpgref_in[2]);
 
 	  // Load the geometry of the right macrocell
-	  double physnodeR[20][3];
+	  real physnodeR[20][3];
 	  for(int inoloc = 0; inoloc < 20; inoloc++) {
 	    int ino = m->elem2node[20 * ieR + inoloc];
 	    physnodeR[inoloc][0] = m->node[3 * ino + 0];
@@ -717,7 +717,7 @@ void CheckMacroMesh(MacroMesh *m, int *param) {
 	  }
 
   	  // Find the corresponding point in the right elem
-  	  double xref[3];
+  	  real xref[3];
 	  Phy2Ref(physnodeR, xpg_in, xref);
 	  
           int ifaR = 0;
@@ -730,15 +730,15 @@ void CheckMacroMesh(MacroMesh *m, int *param) {
 
 	  // Compute the physical coordinates for the point in the
 	  // right macrocell the normal for the relevant face
-	  double xpgR[3], vndsR[3];
+	  real xpgR[3], vndsR[3];
 	  {
-	    double xrefR[3];
+	    real xrefR[3];
 	    {
 	      int ipgR = ref_ipg(param, xref);
-	      double wpgR;
+	      real wpgR;
 	      ref_pg_vol(param, ipgR, xrefR, &wpgR, NULL);
 	    }
-	    double dtauR[3][3], codtauR[3][3];
+	    real dtauR[3][3], codtauR[3][3];
 	    Ref2Phy(physnodeR,
 		    xrefR,
 		    NULL, ifaR, // dphiref, ifa
@@ -779,7 +779,7 @@ void Detect2DMacroMesh(MacroMesh *m)
 
   for(int ie = 0; ie < m->nbelems; ie++) {
     // get the physical nodes of element ie
-    double physnode[20][3];
+    real physnode[20][3];
     for(int inoloc = 0; inoloc < 20; inoloc++) {
       int ino = m->elem2node[20 * ie + inoloc];
       physnode[inoloc][0] = m->node[3 * ino + 0];
@@ -789,7 +789,7 @@ void Detect2DMacroMesh(MacroMesh *m)
 
     // We decide that the mesh is 2D if the middles of the elements
     // have a constant z coordinate equal to 0.5
-    double zmil = 0;
+    real zmil = 0;
     for(int inoloc = 0; inoloc < 20; inoloc++) {
       zmil += physnode[inoloc][2];
     }
@@ -809,7 +809,7 @@ void Detect2DMacroMesh(MacroMesh *m)
   printf("Detection of a 2D mesh\n");
   for(int ie = 0; ie < m->nbelems; ie++) {
     // get the physical nodes of element ie
-    double physnode[20][3];
+    real physnode[20][3];
     for(int inoloc = 0; inoloc < 20; inoloc++) {
       int ino=m->elem2node[20 * ie + inoloc];
       physnode[inoloc][0] = m->node[3 * ino + 0];
@@ -819,7 +819,7 @@ void Detect2DMacroMesh(MacroMesh *m)
     // If the mesh is 2d permut the nodes in order that the z^ and z
     // axis are the same
 
-    double face_centers[6][3] = { {0.5, 0.0, 0.5},
+    real face_centers[6][3] = { {0.5, 0.0, 0.5},
 				  {1.0, 0.5, 0.5},
 				  {0.5, 1.0, 0.5},
 				  {0.0, 0.5, 0.5},
@@ -830,14 +830,14 @@ void Detect2DMacroMesh(MacroMesh *m)
     // are needed to put the cube in a correct position
     for(int irot = 0; irot < 2; irot++) {
       // compute the normal to face 4
-      double vnds[3], dtau[3][3], codtau[3][3];
+      real vnds[3], dtau[3][3], codtau[3][3];
       Ref2Phy(physnode,
 	      face_centers[4],
 	      NULL, 4, // dphiref,ifa
 	      NULL, dtau,
 	      codtau, NULL, vnds); // codtau,dphi,vnds
 
-      double d = norm(vnds);
+      real d = norm(vnds);
       // If the normal is not up or down we have to permut the nodes
       if(fabs(vnds[2] / d) < 0.9) {
 	printf("irot=%d rotating the element %d\n", irot, ie);
@@ -867,9 +867,9 @@ void Detect2DMacroMesh(MacroMesh *m)
 
 };
 
-bool IsInElem(MacroMesh *m,int ie, double* xphy, double* xref0)
+bool IsInElem(MacroMesh *m,int ie, real* xphy, real* xref0)
 {
-    double physnode[20][3];
+    real physnode[20][3];
     for(int inoloc = 0; inoloc < 20; inoloc++) {
       int ino = m->elem2node[20 * ie + inoloc];
       physnode[inoloc][0] = m->node[3 * ino + 0];
@@ -877,7 +877,7 @@ bool IsInElem(MacroMesh *m,int ie, double* xphy, double* xref0)
       physnode[inoloc][2] = m->node[3 * ino + 2];
     }
     
-    double xref[3];
+    real xref[3];
     
     RobustPhy2Ref(physnode,xphy,xref);
     
@@ -895,11 +895,11 @@ bool IsInElem(MacroMesh *m,int ie, double* xphy, double* xref0)
     
 }
 
-int NumElemFromPoint(MacroMesh *m, double *xphy, double *xref0)
+int NumElemFromPoint(MacroMesh *m, real *xphy, real *xref0)
 {
   int num = -1;
   int ino = NearestNode(m, xphy);
-  double xref[3];
+  real xref[3];
 
   // TO DO: remove nodes that do not belong to any element 
   assert(m->node2elem[0 + m->max_node2elem * ino] != -1);
@@ -921,7 +921,7 @@ int NumElemFromPoint(MacroMesh *m, double *xphy, double *xref0)
   return num;
 }
 
-int NearestNode(MacroMesh *m, double *xphy) {
+int NearestNode(MacroMesh *m, real *xphy) {
   int nearest = -1;
 
 #ifdef _WITH_FLANN
@@ -940,22 +940,26 @@ int NearestNode(MacroMesh *m, double *xphy) {
     p = DEFAULT_FLANN_PARAMETERS;
     p.algorithm = FLANN_INDEX_AUTOTUNED;
     p.target_precision = 0.9; /* want 90% target precision */
+#ifdef _DOUBLE_PRECISION
     findex=flann_build_index_double(m->node,
-				    m->nbnodes,
-				    3,
-				    &speedup,
-				    &p);
+#else
+    findex=flann_build_index_float(m->node,
+#endif			
+				  m->nbnodes,
+				  3,
+				  &speedup,
+				  &p);
     is_ready=true;
   }
 
   // number of nearest neighbors to search 
   int nn = 1;
   int result[nn];
-  double dists[nn];
+  real dists[nn];
 
   // compute the nn nearest-neighbors of each point in xphy
   // with index construction
-  // flann_find_nearest_neighbors_double(m->node,     // nodes list
+  // flann_find_nearest_neighbors_real(m->node,     // nodes list
   // 				      m->nbnodes,  // number of nodes
   // 				      3,           // space dim
   // 				      xphy,
@@ -965,7 +969,11 @@ int NearestNode(MacroMesh *m, double *xphy) {
   // 				      nn,
   // 				      &p);         // flan struct
   
+#ifdef _DOUBLE_PRECISION
   flann_find_nearest_neighbors_index_double(findex,// index
+#else
+  flann_find_nearest_neighbors_index_float(findex,// index
+#endif			
 					    xphy, 
 					    1,      // number of points in xphy
 					    result, // nearest points indices
@@ -980,10 +988,10 @@ int NearestNode(MacroMesh *m, double *xphy) {
 #else
 
   // slow version: loops on all the points
-  double d = 1e20;
+  real d = 1e20;
 
   for(int ino = 0; ino < m->nbnodes; ino++){
-    double d2 = Dist(xphy, m->node + 3 * ino);
+    real d2 = Dist(xphy, m->node + 3 * ino);
     if (d2 < d) {
       nearest = ino;
       d = d2;
@@ -1009,7 +1017,7 @@ void Detect1DMacroMesh(MacroMesh* m){
 
   for(int ie=0;ie<m->nbelems;ie++){
     // get the physical nodes of element ie
-    double physnode[20][3];
+    real physnode[20][3];
     for(int inoloc=0;inoloc<20;inoloc++){
       int ino=m->elem2node[20*ie+inoloc];
       physnode[inoloc][0]=m->node[3*ino+0];
@@ -1020,8 +1028,8 @@ void Detect1DMacroMesh(MacroMesh* m){
     // we decide that the mesh is 1D if the 
     // middles of the elements have a constant y,z 
     // coordinate equal to 0.5
-    double zmil=0;
-    double ymil=0;
+    real zmil=0;
+    real ymil=0;
     for(int inoloc=0;inoloc<20;inoloc++){
       zmil+=physnode[inoloc][2];
       ymil+=physnode[inoloc][1];
@@ -1040,7 +1048,7 @@ void Detect1DMacroMesh(MacroMesh* m){
   printf("Check now hexahedrons orientation\n");
   for(int ie=0;ie<m->nbelems;ie++){
     // get the physical nodes of element ie
-    double physnode[20][3];
+    real physnode[20][3];
     for(int inoloc=0;inoloc<20;inoloc++){
       int ino=m->elem2node[20*ie+inoloc];
       physnode[inoloc][0]=m->node[3*ino+0];
@@ -1050,7 +1058,7 @@ void Detect1DMacroMesh(MacroMesh* m){
 
 
     // face centers coordinates in the ref frame
-    double face_centers[6][3]={
+    real face_centers[6][3]={
       {0.5,0.0,0.5},
       {1.0,0.5,0.5},
       {0.5,1.0,0.5},
@@ -1060,14 +1068,14 @@ void Detect1DMacroMesh(MacroMesh* m){
     };
 
     // compute the normal to face 1
-    double vnds[3],dtau[3][3],codtau[3][3];
+    real vnds[3],dtau[3][3],codtau[3][3];
     Ref2Phy(physnode,
 	    face_centers[1],
 	    NULL,1, // dphiref,ifa
 	    NULL,dtau,
 	    codtau,NULL,vnds); // codtau,dphi,vnds
 
-    double d=sqrt((vnds[0]-1)*(vnds[0]-1)+vnds[1]*vnds[1]+vnds[2]*vnds[2]);
+    real d=sqrt((vnds[0]-1)*(vnds[0]-1)+vnds[1]*vnds[1]+vnds[2]*vnds[2]);
 
     // if the mesh is not 1D exit
     assert(d<1e-6);

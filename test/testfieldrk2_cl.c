@@ -87,7 +87,7 @@ int TestfieldRK2_CL(void){
 
   CheckMacroMesh(&(f.macromesh), f.interp.interp_param + 1);
  
-  double tmax = 0.1;
+  real tmax = 0.1;
   f.vmax=1;
   RK2_CL(&f, tmax, 0, NULL, NULL);
   
@@ -96,13 +96,13 @@ int TestfieldRK2_CL(void){
   //Plotfield(0, false, &f, NULL, "dgvisu.msh");
   //Plotfield(0, true , &f, "error", "dgerror.msh");
 
-  double dd = L2error(&f);
+  real dd = L2error(&f);
 
   printf("L2 error: %f\n", dd);
 
   show_cl_timing(&f);
 
-  double tolerance = 0.002;
+  real tolerance = 0.002;
 
   test = dd < tolerance;
   

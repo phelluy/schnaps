@@ -7,9 +7,9 @@
 #include "solverpoisson.h"
 
 
-void TestPoisson_ImposedData(double x[3],double t,double w[]);
-void TestPoisson_InitData(double x[3],double w[]);
-void TestPoisson_BoundaryFlux(double x[3],double t,double wL[],double* vnorm, double* flux);
+void TestPoisson_ImposedData(real x[3],real t,real w[]);
+void TestPoisson_InitData(real x[3],real w[]);
+void TestPoisson_BoundaryFlux(real x[3],real t,real wL[],real* vnorm, real* flux);
 
 int main(void) {
   
@@ -96,7 +96,7 @@ int TestPoisson(void) {
   for(int ie=0;ie<f.macromesh.nbelems;ie++){
     printf("elem %d\n",ie);
     for(int ipg=0;ipg<NPG(f.interp_param+1);ipg++){
-      double xref[3],wpg;
+      real xref[3],wpg;
       ref_pg_vol(f.interp_param+1,ipg,xref,&wpg,NULL);
       printf("Gauss point %d %f %f %f \n",ipg,xref[0],xref[1],xref[2]);
       int imem=f.varindex(f.interp_param,ie,ipg,_MV+1);
@@ -113,7 +113,7 @@ int TestPoisson(void) {
   for(int ie=0;ie<f.macromesh.nbelems;ie++){
     printf("elem %d\n",ie);
     for(int ipg=0;ipg<NPG(f.interp_param+1);ipg++){
-      double xref[3],wpg;
+      real xref[3],wpg;
       ref_pg_vol(f.interp_param+1,ipg,xref,&wpg,NULL);
       printf("Gauss point %d %f %f %f \n",ipg,xref[0],xref[1],xref[2]);
       int imem=f.varindex(f.interp_param,ie,ipg,_MV+1);
@@ -127,13 +127,13 @@ int TestPoisson(void) {
 
 };
 
-void TestPoisson_ImposedData(double x[3],double t,double w[]){
+void TestPoisson_ImposedData(real x[3],real t,real w[]){
 
   for(int i=0;i<_INDEX_MAX_KIN+1;i++){
     int j=i%_DEG_V; // local connectivity put in function
     int nel=i/_DEG_V; // element num (TODO : function)
 
-    double vi = (-_VMAX+nel*_DV +
+    real vi = (-_VMAX+nel*_DV +
 		 _DV* glop(_DEG_V,j));
 
     w[i]=1./_VMAX;
@@ -149,17 +149,17 @@ void TestPoisson_ImposedData(double x[3],double t,double w[]){
 
 };
 
-void TestPoisson_InitData(double x[3],double w[]){
+void TestPoisson_InitData(real x[3],real w[]){
 
-  double t=0;
+  real t=0;
   TestPoisson_ImposedData(x,t,w);
 
 };
 
 
-void TestPoisson_BoundaryFlux(double x[3],double t,double wL[],double* vnorm,
-				       double* flux){
-  double wR[_MV+6];
+void TestPoisson_BoundaryFlux(real x[3],real t,real wL[],real* vnorm,
+				       real* flux){
+  real wR[_MV+6];
   TestPoisson_ImposedData(x,t,wR);
   VlasovP_Lagrangian_NumFlux(wL,wR,vnorm,flux);
 };

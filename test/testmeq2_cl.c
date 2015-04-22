@@ -11,9 +11,9 @@
 #include <time.h>
 #define _XOPEN_SOURCE 700
 
-double maxerr(double *a, double *b, int n) 
+real maxerr(real *a, real *b, int n) 
 {
-  double err = 0.0;
+  real err = 0.0;
   for(int i = 0; i < n; ++i) {
     err = fmax(fabs(a[i] - b[i]), err);
   }
@@ -66,11 +66,11 @@ int TestmEq2(void) {
   
   CheckMacroMesh(&(f.macromesh), f.interp.interp_param + 1);
 
-  double *dtwn_cl = f.dtwn;
-  double *dtwn = calloc(f.wsize, sizeof(double));
+  real *dtwn_cl = f.dtwn;
+  real *dtwn = calloc(f.wsize, sizeof(real));
   
-  double err;
-  double tolerance = 1e-8;
+  real err;
+  real tolerance = 1e-8;
 
   printf("Test volume terms\n");
   
@@ -223,7 +223,7 @@ int TestmEq2(void) {
 
   //Displayfield(&f);
  
-  /* double tmax = 0.1; */
+  /* real tmax = 0.1; */
   /* //RK2_CL(&f, tmax, 0, NULL, NULL); */
   /* CopyfieldtoCPU(&f); */
  
@@ -231,8 +231,8 @@ int TestmEq2(void) {
   /* Plotfield(0, false, &f, NULL, "dgvisu.msh"); */
   /* Plotfield(0, true, &f, "error", "dgerror.msh"); */
 
-  /* double dd = L2error(&f); */
-  /* double tolerance = 1e-4; */
+  /* real dd = L2error(&f); */
+  /* real tolerance = 1e-4; */
   /* test = test && (dd < tolerance); */
   /* printf("L2 error: %f\n", dd); */
 

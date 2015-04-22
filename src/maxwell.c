@@ -7,13 +7,13 @@
 
 
 // Centered flux if eps=0, uncentered flux if eps=1
-void Maxwell2DNumFlux(double wL[], double wR[], double* vnorm, double* flux) {
+void Maxwell2DNumFlux(real wL[], real wR[], real* vnorm, real* flux) {
 
-  double r = sqrt(vnorm[0]*vnorm[0]+vnorm[1]*vnorm[1]);
-  double overr = 1.0 / (r+1e-14);
-  double nx=vnorm[0];
-  double ny=vnorm[1];
-  double eps=1;
+  real r = sqrt(vnorm[0]*vnorm[0]+vnorm[1]*vnorm[1]);
+  real overr = 1.0 / (r+1e-14);
+  real nx=vnorm[0];
+  real ny=vnorm[1];
+  real eps=1;
 
   flux[0] = - ny * (wR[2]+wL[2]) + _KHI * nx * (wR[3]+wL[3])
             - eps * (ny * ny + _KHI * nx * nx) * overr * (wR[0]-wL[0])
@@ -41,15 +41,15 @@ void Maxwell2DNumFlux(double wL[], double wR[], double* vnorm, double* flux) {
 }
 
 
-void Maxwell2DImposedData(double x[3], double t, double w[]) {
+void Maxwell2DImposedData(real x[3], real t, real w[]) {
 
-    double c,u,v,theta,pi;
-    double un=1;
+    real c,u,v,theta,pi;
+    real un=1;
     pi=4*atan(un);
     //pi=_PI;
-    double k=2*pi;
+    real k=2*pi;
     k=0;
-    double r=1;
+    real r=1;
     k=2*pi;
     theta=pi/4;
 
@@ -70,20 +70,20 @@ void Maxwell2DImposedData(double x[3], double t, double w[]) {
 }
 
 
-void Maxwell2DBoundaryFlux(double x[3], double t, double wL[], double *vnorm,
-		       double *flux) {
-  double wR[7];
+void Maxwell2DBoundaryFlux(real x[3], real t, real wL[], real *vnorm,
+		       real *flux) {
+  real wR[7];
   Maxwell2DImposedData(x, t, wR);
   Maxwell2DNumFlux(wL, wR, vnorm, flux);
 }
 
 
-void Maxwell2DInitData(double x[3], double w[]) {
-  double t = 0;
+void Maxwell2DInitData(real x[3], real w[]) {
+  real t = 0;
   Maxwell2DImposedData(x, t, w);
 }
 
-void Maxwell2DSource(double x[3],double t,double w[],double source[]){
+void Maxwell2DSource(real x[3],real t,real w[],real source[]){
 
   source[0]=w[4];
   source[1]=w[5];

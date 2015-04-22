@@ -11,24 +11,24 @@
 #include <time.h>
 #define _XOPEN_SOURCE 700
 
-/* double seconds(struct timespec ta, struct timespec tb) { */
-/*   return (double)(ta.tv_sec - tb.tv_sec)  */
-/*     + 1e-9 * (double)(ta.tv_nsec - tb.tv_nsec); */
+/* real seconds(struct timespec ta, struct timespec tb) { */
+/*   return (real)(ta.tv_sec - tb.tv_sec)  */
+/*     + 1e-9 * (real)(ta.tv_nsec - tb.tv_nsec); */
 /* } */
 
 int main(int argc, char *argv[]) {
   // Unit tests
-  double cfl = 0.5;
+  real cfl = 0.5;
   int deg = 3;
   int nx = 4;
   int ny = 4;
-  double tmax = 1e-2;
+  real tmax = 1e-2;
   bool writemsh = false;
-  double vmax = 1.0;
+  real vmax = 1.0;
   int mx = 5;
   int my = 5;
   bool usegpu = false;
-  double dt = 0.0;
+  real dt = 0.0;
   char *usage = "./testmanyv \
 \n\t-c <float> set CFL\
 \n\t-d <int> set interpolation degree\
@@ -169,7 +169,7 @@ int main(int argc, char *argv[]) {
   // Prudence...
   CheckMacroMesh(&(f.macromesh), f.interp.interp_param + 1);
 
-  /* double executiontime; */
+  /* real executiontime; */
   /* struct timespec tstart, tend; */
   if(usegpu) {
 
@@ -198,8 +198,8 @@ int main(int argc, char *argv[]) {
       for(int iy = 0; iy < f.model.vlasov_my; ++iy) {
 	int mplot = ix * f.model.vlasov_my + iy; 
 
-	double vx = vlasov_vel(ix, f.model.vlasov_mx, f.model.vlasov_vmax);
-	double vy = vlasov_vel(iy, f.model.vlasov_my, f.model.vlasov_vmax);
+	real vx = vlasov_vel(ix, f.model.vlasov_mx, f.model.vlasov_vmax);
+	real vy = vlasov_vel(iy, f.model.vlasov_my, f.model.vlasov_vmax);
 	char fieldname[100];
 	sprintf(fieldname, "output field has v = (%f,%f)", vx, vy);
 	//printf("%s\n", fieldname);
@@ -215,7 +215,7 @@ int main(int argc, char *argv[]) {
 
   printf("tmax: %f, cfl: %f, deg: %d, nrafx: %d, nrafy: %d\n", 
 	 tmax, f.model.cfl, deg, nx, ny);
-  double dd = L2error(&f) / (f.model.vlasov_mx * f.model.vlasov_my);
+  real dd = L2error(&f) / (f.model.vlasov_mx * f.model.vlasov_my);
 
   printf("deltax:\n");
   printf("%f\n", f.hmin);
@@ -239,10 +239,10 @@ int main(int argc, char *argv[]) {
 
   /*
   printf("perRK2time (s):\n");
-  printf("%f\n", executiontime / (double)f.itermax);
+  printf("%f\n", executiontime / (real)f.itermax);
   */
 
-  double tolerance = 1e-2;
+  real tolerance = 1e-2;
   test = test && (dd < tolerance);
 
   if(test) 

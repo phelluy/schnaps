@@ -17,13 +17,13 @@
 //! \param[in] x : point of the mesh
 //! \param[in] t : time
 //! \param[in] t : type of L2norm. if type_norm=0 this is the numerical solution if type_norm=1 this is the error 
-double L2VelError(field * f,double* x,double *w);
+real L2VelError(field * f,real* x,real *w);
 
-double L2_Kinetic_error(field* f);
+real L2_Kinetic_error(field* f);
 
-double local_kinetic_energy(field * f,double* x,double *w);
+real local_kinetic_energy(field * f,real* x,real *w);
 
-void Energies(field* f,double * w,double k_energy, double e_energy, double t_energy);
+void Energies(field* f,real * w,real k_energy, real e_energy, real t_energy);
 
 void Plot_Energies(field* f);
 

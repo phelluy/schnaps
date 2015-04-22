@@ -32,8 +32,8 @@ int TestMacroMesh(void)
 
 
   // test search methods
-  double xphy[3]={1,1.1,0.5};
-  double xref[3];
+  real xphy[3]={1,1.1,0.5};
+  real xref[3];
 
   test= test && IsInElem(&m,0,xphy,xref);
 
@@ -53,7 +53,7 @@ int TestMacroMesh(void)
   printf("xphy=%f %f %f is in elem=%d\n",xphy[0],xphy[1],xphy[2],num);
   test=test && (num == 0);
 
-  double xphy2[3]={1,0,0.33};
+  real xphy2[3]={1,0,0.33};
   num=NumElemFromPoint(&m,xphy2,NULL);
   printf("xphy=%f %f %f is in elem=%d\n",xphy2[0],xphy2[1],xphy2[2],num);
   test=test && (num == 3);

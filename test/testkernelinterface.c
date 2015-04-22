@@ -58,7 +58,7 @@ int TestKernelInterface(void){
 			      CL_TRUE,
 			      CL_MAP_WRITE,
 			      0, // offset
-			      sizeof(double) * (f.wsize),
+			      sizeof(real) * (f.wsize),
 			      0, NULL, NULL, // events management
 			      &status);
   assert(status == CL_SUCCESS);
@@ -86,20 +86,20 @@ int TestKernelInterface(void){
   clFinish(f.cli.commandqueue);
   CopyfieldtoCPU(&f);
   //Displayfield(&f);
-  double *fdtwn_opencl = f.dtwn;
+  real *fdtwn_opencl = f.dtwn;
 
   // OpenMP version
-  f.dtwn = calloc(f.wsize, sizeof(double));
+  f.dtwn = calloc(f.wsize, sizeof(real));
   for(int iw = 0; iw < f.wsize; iw++)
     f.dtwn[iw] = 0;
   for(int ifa = 0; ifa < f.macromesh.nbfaces; ifa++)
     DGMacroCellInterface((void*) (mface + ifa), &f, f.wn, f.dtwn);
   //Displayfield(&f);
-  double *fdtwn_openmp = f.dtwn;
+  real *fdtwn_openmp = f.dtwn;
 
-  double maxerr = 0.0;
+  real maxerr = 0.0;
   for(int i = 0; i < f.wsize; i++) {
-    double error = fabs(fdtwn_openmp[i] - fdtwn_opencl[i]);
+    real error = fabs(fdtwn_openmp[i] - fdtwn_opencl[i]);
     printf("error: %f \t%f \t%f\n", error, fdtwn_openmp[i], fdtwn_opencl[i]);
     maxerr = fmax(error, maxerr);
   }

@@ -1,6 +1,8 @@
 #ifndef _SKYLINE_H
 #define _SKYLINE_H
 
+#include "global.h"
+
 
 
 //! \brief a struct for managing skyline linear system
@@ -13,13 +15,13 @@ typedef struct Skyline{
   int nmem;
 
   //! \brief array for the upper part of  the matrix
-  double* vkgs;
+  real* vkgs;
 
   //! \brief array for the diagonal part of  the matrix (size neq)
-  double* vkgd;
+  real* vkgd;
 
   //! \brief array for the lower part of  the matrix
-  double* vkgi;
+  real* vkgi;
 
   //! \brief profile of the matrix (size neq)
   int* prof;
@@ -64,14 +66,14 @@ void AllocateSkyline(Skyline* sky);
 //! \param[in] i row index
 //! \param[in] j column index
 //! \param[in] val value
-void SetSkyline(Skyline* sky,int i,int j,double val); 
+void SetSkyline(Skyline* sky,int i,int j,real val); 
 
 //! \brief get elem (i,j)
 //! \param[inout] sky the skyline object
 //! \param[in] i row index
 //! \param[in] j column index
 //! \return value at pos (i,j)
-double GetSkyline(Skyline* sky,int i,int j); 
+real GetSkyline(Skyline* sky,int i,int j); 
 
 
 //! \brief display the matrix
@@ -86,7 +88,7 @@ void FactoLU(Skyline* sky);
 //! \param[in] sky the skyline object
 //! \param[in] rhs the right hand side
 //! \param[in] sol the solution
-void SolveSkyline(Skyline* sky,double* rhs,double* sol);
+void SolveSkyline(Skyline* sky,real* rhs,real* sol);
 
 
 

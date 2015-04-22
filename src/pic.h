@@ -12,14 +12,14 @@ typedef struct PIC {
   int nbparts;
 
   //! positions and velocity of particles (size=6*nbparts)
-  double* xv;
+  real* xv;
 
   //! list of cell ids for each particles
   int* cell_id;
   int* old_cell_id;
 
   //! time step
-  double dt; 
+  real dt; 
 
 } PIC;
 
@@ -35,7 +35,7 @@ void InitPIC(PIC* pic,int n);
 //! \param[in] k1 4 van der Corput parameters
 //! \param[in] k2 4 van der Corput parameters
 //! \param[out] v a pseudo-random gaussian vector 
-void BoxMuller3d(double *v,int* k1, int* k2);
+void BoxMuller3d(real *v,int* k1, int* k2);
 
 
 
@@ -60,7 +60,7 @@ void AccumulateParticles(PIC* pic,field *f);
 //! \param[in] n index of the number in the sequence
 //! \param[in] k1 a prime number
 //! \param[in] k2 a prime number k1 > k2 !!
-double corput(int n,int k1,int k2);
+real corput(int n,int k1,int k2);
 
 
 //! brief create a gmsh file for plotting the particles

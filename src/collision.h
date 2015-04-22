@@ -33,7 +33,7 @@
 //! \param[in] wL,wR : left and right states
 //! \param[in] vn : normal vector
 //! \param[out] flux : the flux
-void VlasovP_Lagrangian_NumFlux(double wL[],double wR[],double vn[3],double* flux);
+void VlasovP_Lagrangian_NumFlux(real wL[],real wR[],real vn[3],real* flux);
 
 
 //! \brief compute compute the source term of the collision
@@ -41,7 +41,7 @@ void VlasovP_Lagrangian_NumFlux(double wL[],double wR[],double vn[3],double* flu
 //! \param[in] w the distribution function
 //! \param[in] f the force 
 //! \param[out] source the source
-void VlasovP_Lagrangian_Source(double* x,double t, double* w, double* source);
+void VlasovP_Lagrangian_Source(real* x,real t, real* w, real* source);
 
 
 #endif

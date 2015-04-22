@@ -3,7 +3,7 @@
 #include "quantities_vp.h"
 
 
-void SolvePoisson(field *f,double * w,int type_bc, double bc_l, double bc_r){
+void SolvePoisson(field *f,real * w,int type_bc, real bc_l, real bc_r){
 
   // for the moment, works only for the 1d case
   assert(f->is1d);
@@ -16,8 +16,8 @@ void SolvePoisson(field *f,double * w,int type_bc, double bc_l, double bc_r){
   // = number of nodes in the mesh
   int degx=f->interp.interp_param[1];
   int nelx=f->interp.interp_param[4];
-  double xmin=0;
-  double xmax=1;  // TO DO: compute the maximal x coordinate
+  real xmin=0;
+  real xmax=1;  // TO DO: compute the maximal x coordinate
   int neq=degx*nelx+1;
   
   // number of conservatives variables
@@ -40,18 +40,18 @@ void SolvePoisson(field *f,double * w,int type_bc, double bc_l, double bc_r){
   AllocateSkyline(&sky);
 
   // local matrix (assuming identical finite elements)
-  double aloc[degx+1][degx+1];
+  real aloc[degx+1][degx+1];
   for(int iloc=0;iloc<degx+1;iloc++){
     for(int jloc=0;jloc<degx+1;jloc++){
       aloc[iloc][jloc]=0;
     }
   }
   for(int ipg=0;ipg<degx+1;ipg++){
-    double omega=wglop(degx,ipg);
+    real omega=wglop(degx,ipg);
     for(int iloc=0;iloc<degx+1;iloc++){
       for(int jloc=0;jloc<degx+1;jloc++){
-	double dxi=dlag(degx,iloc,ipg);
-	double dxj=dlag(degx,jloc,ipg);
+	real dxi=dlag(degx,iloc,ipg);
+	real dxj=dlag(degx,jloc,ipg);
 	aloc[iloc][jloc]+=dxi*dxj*omega*nelx;
       }
     }
@@ -63,7 +63,7 @@ void SolvePoisson(field *f,double * w,int type_bc, double bc_l, double bc_r){
       for(int jloc=0;jloc<degx+1;jloc++){
 	int ino=iloc + ie * degx;
 	int jno=jloc + ie * degx;
-	double val = aloc[iloc][jloc];
+	real val = aloc[iloc][jloc];
 	SetSkyline(&sky,ino,jno,val);
       }
     }
@@ -81,17 +81,17 @@ void SolvePoisson(field *f,double * w,int type_bc, double bc_l, double bc_r){
   FactoLU(&sky);
 
     // source assembly 
-  double source[neq];
+  real source[neq];
   for(int i=0;i<neq;i++){
     source[i]=0;
   }
 
   for(int ie=0;ie<nelx;ie++){
     for(int iloc=0;iloc<degx+1;iloc++){
-      double omega=wglop(degx,iloc);
+      real omega=wglop(degx,iloc);
       int ino=iloc + ie * degx;  
       int imem=f->varindex(f->interp_param,0,iloc+ie*(degx+1),_INDEX_RHO);
-      double charge=w[imem];     
+      real charge=w[imem];     
       source[ino]+= charge*omega/nelx;
     }
   }
@@ -102,7 +102,7 @@ void SolvePoisson(field *f,double * w,int type_bc, double bc_l, double bc_r){
     source[neq-1]=1e20*bc_r;
   }
   
-  double sol[neq];
+  real sol[neq];
   SolveSkyline(&sky,source,sol);
 
 

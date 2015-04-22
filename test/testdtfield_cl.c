@@ -91,14 +91,14 @@ int TestDtfield_CL(void){
   // Displayfield(&f);
   show_cl_timing(&f);
 
-  double *saveptr = f.dtwn;
-  f.dtwn = calloc(f.wsize, sizeof(double));
+  real *saveptr = f.dtwn;
+  f.dtwn = calloc(f.wsize, sizeof(real));
 
   dtfield(&f, f.wn, f.dtwn);
  
-  double maxerr = 0;
+  real maxerr = 0;
   for(int i = 0; i < f.wsize; i++) {
-    double error = f.dtwn[i] - saveptr[i];
+    real error = f.dtwn[i] - saveptr[i];
     //printf("error= \t%f\t%f\t%f\n", error, f.dtwn[i], saveptr[i]);
     maxerr = fmax(fabs(error), maxerr);
   }

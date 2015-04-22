@@ -13,7 +13,7 @@ int main(void) {
   return !resu;
 } 
 
-void Maxwell2DConstInitData(double x[3], double w[]) {
+void Maxwell2DConstInitData(real x[3], real w[]) {
   w[0]=0;
   w[1]=0;
   w[2]=1;
@@ -68,7 +68,7 @@ int TestPICAccumulate(void)
   pic.xv[0]=0;
   pic.xv[1]=0;
   pic.xv[2]=0.5;
-  double xref[3];
+  real xref[3];
   pic.cell_id[0]=NumElemFromPoint(&f.macromesh,pic.xv,xref);
   pic.xv[0]=xref[0];  
   pic.xv[1]=xref[1];  

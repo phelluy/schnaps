@@ -20,7 +20,7 @@ int TestCLInfo(void) {
 
   char prog[]="#pragma OPENCL EXTENSION cl_khr_fp64: enable \n"
     "__kernel  \n "
-    "void testadd(__global double* a,__global double* b){ \n"
+    "void testadd(__global real* a,__global real* b){ \n"
     " int i = get_global_id(0); \n"
     "  a[i] += b[i]; \n"
     "}\n";

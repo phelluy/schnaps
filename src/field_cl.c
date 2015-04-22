@@ -20,7 +20,7 @@ void CopyfieldtoCPU(field *f) {
 			      CL_TRUE, // block until the buffer is available
 			      CL_MAP_READ, // we just want to see the results
 			      0, // offset
-			      f->wsize * sizeof(double), // buffersize
+			      f->wsize * sizeof(real), // buffersize
 			      0, NULL, NULL, // events management
 			      &status);
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
@@ -32,7 +32,7 @@ void CopyfieldtoCPU(field *f) {
 			      CL_TRUE, // block until the buffer is available
 			      CL_MAP_READ, // we just want to see the results
 			      0, // offset
-			      f->wsize * sizeof(double), // buffersize
+			      f->wsize * sizeof(real), // buffersize
 			      0, NULL, NULL, // events management
 			      &status);
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
@@ -90,10 +90,10 @@ void initDGBoundary_CL(field *f,
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 
-  // double tnow,                  // 1: current time
+  // real tnow,                  // 1: current time
   status = clSetKernelArg(kernel,
   			  argnum++,
-  			  sizeof(double),
+  			  sizeof(real),
   			  &f->tnow);
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
@@ -114,7 +114,7 @@ void initDGBoundary_CL(field *f,
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 
-  // __constant double *physnodeL, // 4: left physnode
+  // __constant real *physnodeL, // 4: left physnode
   status = clSetKernelArg(kernel,
                           argnum++,
                           sizeof(cl_mem),
@@ -122,7 +122,7 @@ void initDGBoundary_CL(field *f,
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 
-  // __global double *wn,          // 5: field
+  // __global real *wn,          // 5: field
   status = clSetKernelArg(kernel,
                           argnum++,
                           sizeof(cl_mem),
@@ -130,7 +130,7 @@ void initDGBoundary_CL(field *f,
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 
-  // __global double *dtwn,        // 6: time derivative
+  // __global real *dtwn,        // 6: time derivative
   status = clSetKernelArg(kernel,
                           argnum++,
                           sizeof(cl_mem),
@@ -138,10 +138,10 @@ void initDGBoundary_CL(field *f,
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 
-  // __local double *cache         // 7: local mem
+  // __local real *cache         // 7: local mem
   status = clSetKernelArg(kernel,
                           argnum++,
-                          sizeof(cl_double) * cachesize,
+                          sizeof(real) * cachesize,
                           NULL);
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
@@ -201,7 +201,7 @@ void initDGMacroCellInterface_CL(field *f,
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 
-  //__constant double *physnodeL, // 5: left physnode
+  //__constant real *physnodeL, // 5: left physnode
   status = clSetKernelArg(kernel,
                           argnum++,
                           sizeof(cl_mem),
@@ -209,7 +209,7 @@ void initDGMacroCellInterface_CL(field *f,
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 
-  //__constant double *physnodeR, // 6: right physnode
+  //__constant real *physnodeR, // 6: right physnode
   status = clSetKernelArg(kernel,
                           argnum++,
                           sizeof(cl_mem),
@@ -217,7 +217,7 @@ void initDGMacroCellInterface_CL(field *f,
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 
-  //__global double *wn,          // 7: field 
+  //__global real *wn,          // 7: field 
   status = clSetKernelArg(kernel,
                           argnum++,
                           sizeof(cl_mem),
@@ -225,7 +225,7 @@ void initDGMacroCellInterface_CL(field *f,
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 
-  //__global double *dtwn,        // 8: time derivative
+  //__global real *dtwn,        // 8: time derivative
   status = clSetKernelArg(kernel,
                           argnum++,
                           sizeof(cl_mem),
@@ -233,10 +233,10 @@ void initDGMacroCellInterface_CL(field *f,
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 
-  //__local double *cache         // 9: local mem
+  //__local real *cache         // 9: local mem
   status = clSetKernelArg(kernel,
                           argnum++,
-                          sizeof(cl_double) * cachesize,
+                          sizeof(real) * cachesize,
                           NULL);
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
@@ -262,7 +262,7 @@ void init_DGMass_CL(field *f)
   // Set in loop on call.
   argnum++;
       
-  /* __constant double* physnode,  // macrocell nodes */
+  /* __constant real* physnode,  // macrocell nodes */
   status = clSetKernelArg(f->dgmass,           // kernel name
                           argnum++,              // arg num
                           sizeof(cl_mem),
@@ -270,7 +270,7 @@ void init_DGMass_CL(field *f)
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 
-  /* __global double* dtwn // time derivative */
+  /* __global real* dtwn // time derivative */
   status = clSetKernelArg(kernel,
                           argnum++,
                           sizeof(cl_mem),
@@ -321,14 +321,14 @@ void init_DGVolume_CL(field *f, cl_mem *wn_cl, size_t cachesize)
 
   status = clSetKernelArg(kernel,
                           argnum++,
-                          sizeof(cl_double) * cachesize,
+                          sizeof(real) * cachesize,
                           NULL);
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 
   /* status = clSetKernelArg(kernel, */
   /*                         argnum++, */
-  /*                         sizeof(cl_double) * cachesize, */
+  /*                         sizeof(cl_real) * cachesize, */
   /*                         NULL); */
   /* if(status != CL_SUCCESS) printf("%s\n", clErrorString(status)); */
   /* assert(status >= CL_SUCCESS); */
@@ -336,7 +336,7 @@ void init_DGVolume_CL(field *f, cl_mem *wn_cl, size_t cachesize)
 
 // Update the cl buffer with physnode data depending in the
 // macroelement with index ie
-void update_physnode_cl(field *f, int ie, cl_mem physnode_cl, double *physnode,
+void update_physnode_cl(field *f, int ie, cl_mem physnode_cl, real *physnode,
 			cl_ulong *time,
 			cl_uint nwait, cl_event *wait, cl_event *done)
 {
@@ -347,7 +347,7 @@ void update_physnode_cl(field *f, int ie, cl_mem physnode_cl, double *physnode,
 				    CL_TRUE,
 				    CL_MAP_WRITE,
 				    0, // offset
-				    sizeof(cl_double) * 60, // buffersize
+				    sizeof(real) * 60, // buffersize
 				    nwait, 
 				    wait, 
 				    &(f->clv_mapdone),
@@ -362,8 +362,8 @@ void update_physnode_cl(field *f, int ie, cl_mem physnode_cl, double *physnode,
   int ie20 = 20 * ie;
   for(int inoloc = 0; inoloc < 20; ++inoloc) {
     int ino = 3 * f->macromesh.elem2node[ie20 + inoloc];
-    double *iphysnode = physnode + 3 * inoloc;
-    double *nodeino = f->macromesh.node + ino;
+    real *iphysnode = physnode + 3 * inoloc;
+    real *nodeino = f->macromesh.node + ino;
     iphysnode[0] = nodeino[0];
     iphysnode[1] = nodeino[1];
     iphysnode[2] = nodeino[2];
@@ -568,7 +568,7 @@ void init_DGFlux_CL(field *f, int ie, int dim0, cl_mem *wn_cl,
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
     
-  // __constant double *physnode, // macrocell nodes
+  // __constant real *physnode, // macrocell nodes
   status = clSetKernelArg(kernel,
                           argnum++,
                           sizeof(cl_mem),
@@ -576,7 +576,7 @@ void init_DGFlux_CL(field *f, int ie, int dim0, cl_mem *wn_cl,
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 
-  //  __global double *wn, // field values
+  //  __global real *wn, // field values
   status = clSetKernelArg(kernel,
                           argnum++,
                           sizeof(cl_mem),
@@ -584,7 +584,7 @@ void init_DGFlux_CL(field *f, int ie, int dim0, cl_mem *wn_cl,
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 
-  // __global double *dtwn // time derivative
+  // __global real *dtwn // time derivative
   status = clSetKernelArg(kernel,
                           argnum++,
                           sizeof(cl_mem),
@@ -592,10 +592,10 @@ void init_DGFlux_CL(field *f, int ie, int dim0, cl_mem *wn_cl,
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 
-  // __local double* wnloc,       // 6: wn local memory
+  // __local real* wnloc,       // 6: wn local memory
   status = clSetKernelArg(kernel,
                           argnum++,
-                          sizeof(cl_double) * cachesize,
+                          sizeof(real) * cachesize,
                           NULL);
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
@@ -793,13 +793,13 @@ void dtfield_CL(field *f, cl_mem *wn_cl,
 }
 
 // Set kernel arguments for first stage of RK2
-void init_RK2_CL_stage1(field *f, const double dt, cl_mem *wnp1_cl)
+void init_RK2_CL_stage1(field *f, const real dt, cl_mem *wnp1_cl)
 {
   cl_kernel kernel = f->RK_out_CL;
   cl_int status;
   int argnum = 0;
 
-  //__global double *wnp1 // field values
+  //__global real *wnp1 // field values
   status = clSetKernelArg(kernel,
 			  argnum++, 
                           sizeof(cl_mem),
@@ -807,7 +807,7 @@ void init_RK2_CL_stage1(field *f, const double dt, cl_mem *wnp1_cl)
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
   
-  // __global double *wn, 
+  // __global real *wn, 
   status = clSetKernelArg(kernel,
 			  argnum++, 
                           sizeof(cl_mem),
@@ -815,7 +815,7 @@ void init_RK2_CL_stage1(field *f, const double dt, cl_mem *wnp1_cl)
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 
-  //__global double* dtwn // time derivative
+  //__global real* dtwn // time derivative
   status = clSetKernelArg(kernel,
 			  argnum++, 
                           sizeof(cl_mem),
@@ -823,11 +823,11 @@ void init_RK2_CL_stage1(field *f, const double dt, cl_mem *wnp1_cl)
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
   
-  //double dt, // time step for the stage
-  double halfdt = 0.5 * dt;
+  //real dt, // time step for the stage
+  real halfdt = 0.5 * dt;
   status = clSetKernelArg(kernel,
 			  argnum++,
-			  sizeof(double),
+			  sizeof(real),
 			  &halfdt);
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
@@ -854,7 +854,7 @@ void RK2_CL_stage1(field *f, size_t numworkitems,
 }
 
 // Set kernel arguments for second stage of RK2
-void init_RK2_CL_stage2(field *f, const double dt) 
+void init_RK2_CL_stage2(field *f, const real dt) 
 {
   cl_kernel kernel = f->RK_in_CL;
   cl_int status;
@@ -875,7 +875,7 @@ void init_RK2_CL_stage2(field *f, const double dt)
 
   status = clSetKernelArg(kernel,
 			  argnum++,
-			  sizeof(double),
+			  sizeof(real),
 			  &(dt));
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
@@ -900,7 +900,7 @@ void RK2_CL_stage2(field *f, size_t numworkitems,
 
 void RK4_CL_stageA(field *f, 
 		   cl_mem *wnp1, cl_mem *wn, cl_mem *dtw, 
-		   const double dt, const int sizew, size_t numworkitems, 
+		   const real dt, const int sizew, size_t numworkitems, 
 		   cl_uint nwait, cl_event *wait, cl_event *done)
 {
   // l_1 = w_n + 0.5dt * S(w_n, t_0)
@@ -909,7 +909,7 @@ void RK4_CL_stageA(field *f,
   cl_int status;
   int argnum = 0;
 
-  //__global double *wnp1 // field values
+  //__global real *wnp1 // field values
   status = clSetKernelArg(kernel,
 			  argnum++, 
                           sizeof(cl_mem),
@@ -917,7 +917,7 @@ void RK4_CL_stageA(field *f,
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
   
-  // __global double *wn, 
+  // __global real *wn, 
   status = clSetKernelArg(kernel,
 			  argnum++, 
                           sizeof(cl_mem),
@@ -925,7 +925,7 @@ void RK4_CL_stageA(field *f,
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 
-  //__global double *dtwn // time derivative
+  //__global real *dtwn // time derivative
   status = clSetKernelArg(kernel,
 			  argnum++, 
                           sizeof(cl_mem),
@@ -933,10 +933,10 @@ void RK4_CL_stageA(field *f,
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 
-  //double dt,
+  //real dt,
   status = clSetKernelArg(kernel,
 			  argnum++,
-			  sizeof(double),
+			  sizeof(real),
 			  &dt);
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
@@ -959,7 +959,7 @@ void RK4_CL_stageA(field *f,
 
 void RK4_final_inplace_CL(field *f, 
 			  cl_mem *w_cl, cl_mem *l1, cl_mem *l2, cl_mem *l3, 
-			  cl_mem *dtw_cl, const double dt, 
+			  cl_mem *dtw_cl, const real dt, 
 			  const size_t numworkitems, 
 			  cl_uint nwait, cl_event *wait, cl_event *done)
 {
@@ -967,7 +967,7 @@ void RK4_final_inplace_CL(field *f,
   cl_int status;
   int argnum = 0;
 
-  // __global double *w,
+  // __global real *w,
   status = clSetKernelArg(kernel,
 			  argnum++, 
                           sizeof(cl_mem),
@@ -975,7 +975,7 @@ void RK4_final_inplace_CL(field *f,
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 
-  // __global double *l1,
+  // __global real *l1,
   status = clSetKernelArg(kernel,
 			  argnum++, 
                           sizeof(cl_mem),
@@ -983,7 +983,7 @@ void RK4_final_inplace_CL(field *f,
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 
-  // __global double *l2,
+  // __global real *l2,
   status = clSetKernelArg(kernel,
 			  argnum++, 
                           sizeof(cl_mem),
@@ -991,7 +991,7 @@ void RK4_final_inplace_CL(field *f,
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 
-  // __global double *l3,
+  // __global real *l3,
   status = clSetKernelArg(kernel,
 			  argnum++, 
                           sizeof(cl_mem),
@@ -999,7 +999,7 @@ void RK4_final_inplace_CL(field *f,
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 
-  // __global double *dtw, 
+  // __global real *dtw, 
   status = clSetKernelArg(kernel,
 			  argnum++, 
                           sizeof(cl_mem),
@@ -1007,11 +1007,11 @@ void RK4_final_inplace_CL(field *f,
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 
-  // const double dt
-  double halfdt = 0.5 * dt;
+  // const real dt
+  real halfdt = 0.5 * dt;
   status = clSetKernelArg(kernel,
 			  argnum++,
-			  sizeof(double),
+			  sizeof(real),
 			  &dt);
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
@@ -1034,7 +1034,7 @@ void RK4_final_inplace_CL(field *f,
 
 // Time integration by a fourth-order Runge-Kutta algorithm, OpenCL
 // version.
-void RK4_CL(field *f, double tmax, 
+void RK4_CL(field *f, real tmax, 
 	    cl_uint nwait, cl_event *wait, cl_event *done) 
 {
   f->dt = f->model.cfl * f->hmin / f->vmax;
@@ -1048,7 +1048,7 @@ void RK4_CL(field *f, double tmax,
   cl_int status;  
   cl_mem l1 = clCreateBuffer(f->cli.context,
 			     0,
-			     sizeof(double) * f->wsize,
+			     sizeof(real) * f->wsize,
 			     NULL,
 			     &status);
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
@@ -1056,14 +1056,14 @@ void RK4_CL(field *f, double tmax,
 
   cl_mem l2 = clCreateBuffer(f->cli.context,
 			     0,
-			     sizeof(double) * f->wsize,
+			     sizeof(real) * f->wsize,
 			     NULL,
 			     &status);
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
   cl_mem l3 = clCreateBuffer(f->cli.context,
 			     0,
-			     sizeof(double) * f->wsize,
+			     sizeof(real) * f->wsize,
 			     NULL,
 			     &status);
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
@@ -1127,7 +1127,7 @@ void RK4_CL(field *f, double tmax,
 
 // Time integration by a second-order Runge-Kutta algorithm, OpenCL
 // version.
-void RK2_CL(field *f, double tmax,
+void RK2_CL(field *f, real tmax,
 	    cl_uint nwait, cl_event *wait, cl_event *done) 
 {
   f->dt = f->model.cfl * f->hmin / f->vmax;
@@ -1138,7 +1138,7 @@ void RK2_CL(field *f, double tmax,
   cl_int status;
   cl_mem wnp1_cl = clCreateBuffer(f->cli.context,
 				  0, // no flags
-				  sizeof(double) * f->wsize,
+				  sizeof(real) * f->wsize,
 				  NULL, // do not use a host pointer
 				  &status);
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
@@ -1189,7 +1189,7 @@ void show_cl_timing(field *f)
   total += f->rk_time;
   total += f->flux_time;
   
-  double N = 100.0 / total;
+  real N = 100.0 / total;
 
   cl_ulong ns;
 

@@ -9,17 +9,17 @@
 
 
 
-void VlasovP_Lagrangian_NumFlux(double wL[],double wR[],double* vnorm,double* flux){
+void VlasovP_Lagrangian_NumFlux(real wL[],real wR[],real* vnorm,real* flux){
   
   for(int i=0;i<_INDEX_MAX_KIN+1;i++){
     int j=i%_DEG_V; // local connectivity put in function
     int nel=i/_DEG_V; // element num (TODO : function)
 
-    double vn = (-_VMAX+nel*_DV +
+    real vn = (-_VMAX+nel*_DV +
 		 _DV* glop(_DEG_V,j))*vnorm[0];
     
-    double vnp = vn>0 ? vn : 0;
-    double vnm = vn-vnp;
+    real vnp = vn>0 ? vn : 0;
+    real vnm = vn-vnp;
 
     flux[i] = vnp * wL[i] + vnm * wR[i];
   }
@@ -37,11 +37,11 @@ void VlasovP_Lagrangian_NumFlux(double wL[],double wR[],double* vnorm,double* fl
 
 //! \brief compute compute the source term of the collision
 //! model: electric force + true collisions
-void VlasovP_Lagrangian_Source(double* x,double t,double* w, double* source){
+void VlasovP_Lagrangian_Source(real* x,real t,real* w, real* source){
 
-  double E=w[_INDEX_EX]; // electric field
-  double Md[_INDEX_MAX_KIN+1];
-  double db[_INDEX_MAX_KIN+1];
+  real E=w[_INDEX_EX]; // electric field
+  real Md[_INDEX_MAX_KIN+1];
+  real db[_INDEX_MAX_KIN+1];
   for(int iv=0;iv<_INDEX_MAX_KIN+1;iv++){
     Md[iv]=0;
     db[iv]=0;
@@ -60,7 +60,7 @@ void VlasovP_Lagrangian_Source(double* x,double t,double* w, double* source){
   for(int iel=0;iel<_NB_ELEM_V;iel++){
     // loop on the local glops
     for(int kloc=0;kloc<_DEG_V+1;kloc++){
-      double omega=wglop(_DEG_V,kloc);
+      real omega=wglop(_DEG_V,kloc);
       int kpg=kloc+iel*_DEG_V;
       Md[kpg]+=omega*_DV;
       for(int iloc=0;iloc<_DEG_V+1;iloc++){

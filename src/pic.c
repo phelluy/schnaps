@@ -6,7 +6,7 @@
 void InitPIC(PIC* pic,int n){
 
   pic->nbparts=n;
-  pic->xv=malloc(sizeof(double) * 6 * n);
+  pic->xv=malloc(sizeof(real) * 6 * n);
   assert(pic->xv);
   pic->cell_id=malloc(sizeof(int)  * n);
   pic->old_cell_id=malloc(sizeof(int)  * n);
@@ -22,9 +22,9 @@ void FreePIC(PIC* pic){
   if (pic->old_cell_id != NULL) free(pic->old_cell_id);
 }
 
-double corput(int n,int k1,int k2){
-  double corput=0;
-  double s=1;
+real corput(int n,int k1,int k2){
+  real corput=0;
+  real s=1;
   while(n > 0){
     s/=k1;
     corput+=(k2*n%k1)%k1*s;
@@ -33,14 +33,14 @@ double corput(int n,int k1,int k2){
   return corput;
 }
 
-void BoxMuller3d(double *xx,int* k1, int* k2)
+void BoxMuller3d(real *xx,int* k1, int* k2)
 {
-  double x1, x2, rsq;
+  real x1, x2, rsq;
   
   static int iset=0;
   static int n[4]={0,0,0,0};
   static int n2=0;
-  static double gset;
+  static real gset;
   
   if (iset == 0)
     {
@@ -83,10 +83,10 @@ void CreateParticles(PIC* pic,MacroMesh *m){
   int n=0;
   int np=0;
   
-  double vt=1;
+  real vt=1;
 
-  double xp[3];
-  double vp[3];
+  real xp[3];
+  real vp[3];
 
   //srand(time(NULL));
   //int r = rand();
@@ -95,14 +95,14 @@ void CreateParticles(PIC* pic,MacroMesh *m){
   while(np < pic->nbparts){
 
     for(int idim=0;idim<3;idim++){
-      double r=corput(n,k1[idim],k2[idim]);
-      //double r=rand();
+      real r=corput(n,k1[idim],k2[idim]);
+      //real r=rand();
       //r/=RAND_MAX;
       xp[idim]=m->xmin[idim]+r*
 	(m->xmax[idim]-m->xmin[idim]);
     }
 
-    double xref[3];
+    real xref[3];
 
     int num_elem=NumElemFromPoint(m,xp,xref);
     //printf("numelem=%d %f %f %f\n",num_elem,xp[0],xp[1],xp[2]);
@@ -116,7 +116,7 @@ void CreateParticles(PIC* pic,MacroMesh *m){
       pic->xv[np*6+1]=xref[1];
       pic->xv[np*6+2]=xref[2];
 
-      double vp[3]={1,0,0};
+      real vp[3]={1,0,0};
       BoxMuller3d(vp,k1+3,k2+3);
 
 	/*      for(int idim=0;idim<3;idim++){
@@ -151,27 +151,27 @@ void AccumulateParticles(PIC* pic,field *f){
     if (ie < 0) goto nexti;
  
     int npg=NPG(f->interp_param + 1);
-    double physnode[20][3];
+    real physnode[20][3];
     for(int inoloc = 0; inoloc < 20; inoloc++) {
       int ino = f->macromesh.elem2node[20*ie+inoloc];
       physnode[inoloc][0] = f->macromesh.node[3 * ino + 0];
       physnode[inoloc][1] = f->macromesh.node[3 * ino + 1];
       physnode[inoloc][2] = f->macromesh.node[3 * ino + 2];
     }
-    double dtau[3][3], codtau[3][3];
+    real dtau[3][3], codtau[3][3];
     Ref2Phy(physnode, // phys. nodes
 	    pic->xv + 6 * i, // xref
 	    NULL, -1, // dpsiref, ifa
 	    NULL, dtau, // xphy, dtau
 	    codtau, NULL, NULL); // codtau, dpsi, vnds
-    double det = dot_product(dtau[0], codtau[0]);
+    real det = dot_product(dtau[0], codtau[0]);
 
     for(int ib=0;ib < npg;ib++){
-      double wpg;
+      real wpg;
       ref_pg_vol(f->interp_param + 1, ib, NULL, &wpg, NULL);
       printf("det=%f wpg=%f \n", det, wpg);
       wpg *= det;
-      double psi;
+      real psi;
       psi_ref(f->interp_param+1,ib,pic->xv + 6*i,&psi,NULL);
 
       int iv=6;  // rho index
@@ -206,7 +206,7 @@ void PlotParticles(PIC* pic,MacroMesh *m){
   gnufile = fopen("partplot.dat", "w" );
 
   float x,y,z,vx,vy,vz;
-  fprintf(gmshfile, "$MeshFormat\n2.2 0 %d\n", (int) sizeof(double));
+  fprintf(gmshfile, "$MeshFormat\n2.2 0 %d\n", (int) sizeof(real));
   fprintf(gmshfile, "$EndMeshFormat\n$Nodes\n%d\n", pic->nbparts);
   /* fic << "$MeshFormat"<<endl; */
   /* fic << "2 0 8" << endl; */
@@ -222,7 +222,7 @@ void PlotParticles(PIC* pic,MacroMesh *m){
     
     
     // Get the physical nodes of element ie
-    double physnode[20][3];
+    real physnode[20][3];
     for(int inoloc = 0; inoloc < 20; inoloc++) {
       int ino = m->elem2node[20*ie+inoloc];
       physnode[inoloc][0] = m->node[3 * ino + 0];
@@ -230,7 +230,7 @@ void PlotParticles(PIC* pic,MacroMesh *m){
       physnode[inoloc][2] = m->node[3 * ino + 2];
     }
    
-    double xphy[3];
+    real xphy[3];
     Ref2Phy(physnode, // phys. nodes
 	    &(pic->xv[6*i]), // xref
 	    NULL, -1, // dpsiref, ifa
@@ -268,10 +268,10 @@ void PushParticles(field *f,PIC* pic){
     
 
     // jacobian of tau at the particle
-    double physnode[20][3];
+    real physnode[20][3];
     int ie=pic->cell_id[i];
     if (ie >=0) {
-      double w[f->model.m];
+      real w[f->model.m];
       InterpField(f,pic->cell_id[i],&(pic->xv[6*i]),w);
 
       for(int inoloc = 0; inoloc < 20; inoloc++) {
@@ -281,22 +281,22 @@ void PushParticles(field *f,PIC* pic){
 	physnode[inoloc][2] = f->macromesh.node[3 * ino + 2];
       }
 
-      double dtau[3][3],codtau[3][3];
+      real dtau[3][3],codtau[3][3];
       
-      double xphy[3];
+      real xphy[3];
       Ref2Phy(physnode, // phys. nodes
 	      &(pic->xv[6*i]), // xref
 	      NULL, -1, // dpsiref, ifa
 	      xphy, dtau, // xphy, dtau
 	      codtau, NULL, NULL); // codtau, dpsi, vnds
-      double det = dot_product(dtau[0], codtau[0]);
+      real det = dot_product(dtau[0], codtau[0]);
       
       
       //printf("w=%f %f %f %f\n",w[0],w[1],w[2],w[3]);
       
       // 2D motion
       
-      double vref[3];
+      real vref[3];
       pic->xv[6*i+3+0] +=pic->dt * (w[0]+w[2]*pic->xv[6*i+4]);
       pic->xv[6*i+3+1] +=pic->dt * (w[1]-w[2]*pic->xv[6*i+3]);
       pic->xv[6*i+3+2] +=0;

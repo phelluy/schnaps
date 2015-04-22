@@ -17,7 +17,7 @@
 //! \param[in] wL,wR : left and right states
 //! \param[in] vn : normal vector
 //! \param[out] flux : the flux
-void Gyro_Lagrangian_NumFlux(double wL[],double wR[],double vn[3],double* flux);
+void Gyro_Lagrangian_NumFlux(real wL[],real wR[],real vn[3],real* flux);
 
 //! \brief particular boundary flux for the gyro model
 //! \param[in] x : space position
@@ -25,38 +25,38 @@ void Gyro_Lagrangian_NumFlux(double wL[],double wR[],double vn[3],double* flux);
 //! \param[in] wL : left state
 //! \param[in] vn : normal vector
 //! \param[out] flux : the flux
-void Gyro_Lagrangian_BoundaryFlux(double* x,double t,double* wL,double* vn,
-			   double* flux);
+void Gyro_Lagrangian_BoundaryFlux(real* x,real t,real* wL,real* vn,
+			   real* flux);
 
 //! \brief particular init data for the gyro model
 //! \param[in] x : space position
 //! \param[out] w : init state at point x
-void GyroInitData(double* x,double* w);
+void GyroInitData(real* x,real* w);
 
 //! \brief particular imposed data for the  gyro model
 //! \param[in] x : space position
 //! \param[out] w : init state at point x
-void GyroImposedData(double* x,double t,double* w);
+void GyroImposedData(real* x,real t,real* w);
 
 //! \brief particular imposed data for the  gyro model
 //! \param[in] x,t : space and time position
 //! \param[out] w : imposed state at point x and time t
-double Gyro_ImposedKinetic_Data(double* x,double t,double v);
+real Gyro_ImposedKinetic_Data(real* x,real t,real v);
 
 //! \brief compute gyro L2 error in x and v
 //! \param[in] f : a field
-double GyroL2_Kinetic_error(field* f);
+real GyroL2_Kinetic_error(field* f);
 
 //! \brief compute square of velocity L2 error
 //! \param[in] x,t : space and time position
 //! \param[in] w : values of f at glops
-double GyroL2VelError(double* x,double t,double *w);
+real GyroL2VelError(real* x,real t,real *w);
 
 //! \brief compute compute the source term of the gyro
 //! model: electric force + true gyros
 //! \param[in] w : 
 //! \param[in] f : to be removed TODO !!!
 //! \param[out] source : source terms
-void GyroSource(double* force, double* w, double* source);
+void GyroSource(real* force, real* w, real* source);
 
 #endif

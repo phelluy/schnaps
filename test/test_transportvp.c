@@ -9,13 +9,13 @@
 #include "solverpoisson.h"
 
 
-void Test_TransportVP_ImposedData(double x[3],double t,double w[]);
-void Test_TransportVP_InitData(double x[3],double w[]);
-double TransportVP_ImposedKinetic_Data(double x[3],double t,double v);
-void Test_TransportVP_BoundaryFlux(double x[3],double t,double wL[],double* vnorm, double* flux);
+void Test_TransportVP_ImposedData(real x[3],real t,real w[]);
+void Test_TransportVP_InitData(real x[3],real w[]);
+real TransportVP_ImposedKinetic_Data(real x[3],real t,real v);
+void Test_TransportVP_BoundaryFlux(real x[3],real t,real wL[],real* vnorm, real* flux);
 
-void UpdateVlasovPoisson(void* field, double *w);
-void PlotVlasovPoisson(void* vf, double * w);
+void UpdateVlasovPoisson(void* field, real *w);
+void PlotVlasovPoisson(void* vf, real * w);
 
 int main(void) {
   
@@ -96,7 +96,7 @@ int Test_TransportVP(void) {
   Plotfield(iloc+iel*_DEG_V,(1==1),&f,"error","dgerror.msh");
   Plot_Energies(&f);
 
-  double dd_Kinetic=L2_Kinetic_error(&f);
+  real dd_Kinetic=L2_Kinetic_error(&f);
   
   printf("erreur kinetic L2=%lf\n",dd_Kinetic);
   test= test && (dd_Kinetic<1e-2);
@@ -105,13 +105,13 @@ int Test_TransportVP(void) {
 
 };
 
-void Test_TransportVP_ImposedData(double x[3],double t,double w[]){
+void Test_TransportVP_ImposedData(real x[3],real t,real w[]){
 
   for(int i=0;i<_INDEX_MAX_KIN+1;i++){
     int j=i%_DEG_V; // local connectivity put in function
     int nel=i/_DEG_V; // element num (TODO : function)
 
-    double vi = (-_VMAX+nel*_DV +
+    real vi = (-_VMAX+nel*_DV +
 		 _DV* glop(_DEG_V,j));
  
     w[i]=TransportVP_ImposedKinetic_Data(x,t,vi);
@@ -128,33 +128,33 @@ void Test_TransportVP_ImposedData(double x[3],double t,double w[]){
 
 };
 
-void Test_TransportVP_InitData(double x[3],double w[]){
+void Test_TransportVP_InitData(real x[3],real w[]){
 
-  double t=0;
+  real t=0;
   Test_TransportVP_ImposedData(x,t,w);
 
 };
 
-double TransportVP_ImposedKinetic_Data(double x[3],double t,double v){
-  double f;
-  double pi=4*atan(1.);
-  double xnew=0, vnew=0;
+real TransportVP_ImposedKinetic_Data(real x[3],real t,real v){
+  real f;
+  real pi=4*atan(1.);
+  real xnew=0, vnew=0;
  
   f=exp(-(v-t)*(v-t))*exp(-36*((x[0]-v*t+0.5*t*t)-0.5)*((x[0]-v*t+0.5*t*t)-0.5));
   return f;
 };
 
-void Test_TransportVP_BoundaryFlux(double x[3],double t,double wL[],double* vnorm,
-				       double* flux){
-  double wR[_MV+6];
+void Test_TransportVP_BoundaryFlux(real x[3],real t,real wL[],real* vnorm,
+				       real* flux){
+  real wR[_MV+6];
   Test_TransportVP_ImposedData(x,t,wR);
   VlasovP_Lagrangian_NumFlux(wL,wR,vnorm,flux);
 };
 
 
-void UpdateVlasovPoisson(void* vf, double * w){
+void UpdateVlasovPoisson(void* vf, real * w){
   int type_bc;
-  double bc_l, bc_r;
+  real bc_l, bc_r;
   int itermax;
   field* f=vf;
   type_bc=1;
@@ -169,8 +169,8 @@ void UpdateVlasovPoisson(void* vf, double * w){
 }
 
 
-void PlotVlasovPoisson(void* vf, double * w){
-  double k_energy=0,e_energy=0,t_energy=0;
+void PlotVlasovPoisson(void* vf, real * w){
+  real k_energy=0,e_energy=0,t_energy=0;
   
   field* f=vf;
   

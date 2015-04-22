@@ -34,8 +34,8 @@ int TestSkyline(void){
   // _NN is the size of the linear system to be solved
   InitSkyline(&sky,_NN);
 
-  double A[_NN][_NN];
-  double vf[_NN],sol[_NN];
+  real A[_NN][_NN];
+  real vf[_NN],sol[_NN];
 
   A[0][0] = 0.2e1;
   A[0][1] = -0.1e1;
@@ -106,7 +106,7 @@ int TestSkyline(void){
 
 
   // checking
-  double verr=0;
+  real verr=0;
   printf("sol=");
   for(int i=0;i<_NN;i++){
     printf("%f ",sol[i]);

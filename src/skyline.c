@@ -5,9 +5,9 @@
 #include "skyline.h"
 
 
-int sol_(double *vkgs, double *vkgd, double *
-	vkgi, double *vfg, int *kld, double *vu, int neq, 
-	 int ifac, int isol, int nsym, double *
+int sol_(real *vkgs, real *vkgd, real *
+	vkgi, real *vfg, int *kld, real *vu, int neq, 
+	 int ifac, int isol, int nsym, real *
 	 energ, int *ier);
 
 void InitSkyline(Skyline* sky, int n){
@@ -22,7 +22,7 @@ void InitSkyline(Skyline* sky, int n){
 
   sky->vkgs=NULL;
 
-  sky->vkgd=malloc(n*sizeof(double));
+  sky->vkgd=malloc(n*sizeof(real));
   assert(sky->vkgd);
   for(int i=0;i<n;i++) sky->vkgd[i]=0;
 
@@ -57,11 +57,11 @@ void AllocateSkyline(Skyline* sky){
   }
   sky->nmem=sky->kld[sky->neq];
 
-  sky->vkgs=malloc(sky->nmem * sizeof(double));
+  sky->vkgs=malloc(sky->nmem * sizeof(real));
   assert(sky->vkgs);
 
   if (! sky->is_sym){
-    sky->vkgi=malloc(sky->nmem * sizeof(double));
+    sky->vkgi=malloc(sky->nmem * sizeof(real));
     assert(sky->vkgi);
   }
   else{
@@ -79,7 +79,7 @@ void AllocateSkyline(Skyline* sky){
 
 }
 
-void SetSkyline(Skyline* sky,int i,int j,double val){
+void SetSkyline(Skyline* sky,int i,int j,real val){
 
   assert(sky->is_alloc);
 
@@ -102,7 +102,7 @@ void SetSkyline(Skyline* sky,int i,int j,double val){
 
 } 
 
-double GetSkyline(Skyline* sky,int i,int j){
+real GetSkyline(Skyline* sky,int i,int j){
 
   if (sky->is_sym && i>j){
     int temp=i;
@@ -177,9 +177,9 @@ void DisplaySkyline(Skyline* sky){
 
 void FactoLU(Skyline* sky){
 
-  double* vfg=NULL;
-  double* vu=NULL;
-  double energ;
+  real* vfg=NULL;
+  real* vu=NULL;
+  real energ;
   int ier;
   int ifac=1;
   int isol=0;
@@ -195,10 +195,10 @@ void FactoLU(Skyline* sky){
 
 }
 
-void SolveSkyline(Skyline* sky,double* vfg,double* vu){
+void SolveSkyline(Skyline* sky,real* vfg,real* vu){
   assert(sky->is_lu);
 
-  double energ;
+  real energ;
   int ier;
   int ifac=0;
   int isol=1;
@@ -255,14 +255,14 @@ void FreeSkyline(Skyline* sky){
 
 static int c__1 = 1;
 
-/* Subroutine */ int sol_(double *vkgs, double *vkgd, double *
-	vkgi, double *vfg, int *kld, double *vu, int neq, 
-	 int ifac, int isol, int nsym, double *
+/* Subroutine */ int sol_(real *vkgs, real *vkgd, real *
+	vkgi, real *vfg, int *kld, real *vu, int neq, 
+	 int ifac, int isol, int nsym, real *
 	energ, int *ier)
 {
     /* Initialized data */
 
-    static double vzero = 0.;
+    static real vzero = 0.;
 
     /* Format strings */
     static char fmt_8000[] = "(\002 * sol pivot nul equation\002,i5)";
@@ -275,12 +275,12 @@ static int c__1 = 1;
 
     /* Local variables */
     static int i__;
-    static double c1, c2;
+    static real c1, c2;
     static int j1, j2, ic, ij, ik, jbk, jck, jhj, jhk, lhk, jhj1, jhk1, 
 	    lhk1;
-    extern double scal_(double *, double *, int *);
+    extern real scal_(real *, real *, int *);
     static int imin, imax, imin1;
-    static double cdiag;
+    static real cdiag;
 
     /* Fortran I/O blocks */
     //static cilist io___22 = { 0, 0, 0, fmt_8000, 0 };
@@ -291,7 +291,7 @@ static int c__1 = 1;
 
 /*       entrees */
 /*          vkgs,vkgd,vkgi    matrice du systeme : parties superieure, */
-/*                            diagonale, inferieure (double precision) */
+/*                            diagonale, inferieure (real precision) */
 /*          vfg               second membre */
 /*          kld               pointeurs vers les hauts de colonne */
 /*          vu                vecteur solution (qui peut etre vfg) */
@@ -527,15 +527,15 @@ L9999:
 /* ===========================   fin du module sol    ================== */
 } /* sol_ */
 
-double scal_(double *x, double *y, int *n)
+real scal_(real *x, real *y, int *n)
 {
     /* Initialized data */
 
-    static double zero = 0.;
+    static real zero = 0.;
 
     /* System generated locals */
     int i__1;
-    double ret_val;
+    real ret_val;
 
     /* Local variables */
     static int i__;

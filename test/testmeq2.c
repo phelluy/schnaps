@@ -54,7 +54,7 @@ int TestmEq2(void) {
   //dtfield(&f);
   //Displayfield(&f);
  
-  double tmax = 0.1;
+  real tmax = 0.1;
   f.vmax=1;
   RK2(&f, tmax);
  
@@ -62,8 +62,8 @@ int TestmEq2(void) {
   Plotfield(0, false, &f, NULL, "dgvisu.msh");
   Plotfield(0, true, &f, "error", "dgerror.msh");
 
-  double dd = L2error(&f);
-  double tolerance = 1e-4;
+  real dd = L2error(&f);
+  real tolerance = 1e-4;
   test = test && (dd < tolerance);
   printf("L2 error: %f\n", dd);
 

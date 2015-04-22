@@ -49,7 +49,7 @@ int TestMaxwell2D(void) {
   //dtfield(&f);
   //Displayfield(&f);
  
-  double tmax = 1.0;
+  real tmax = 1.0;
   f.vmax=1;
   RK2(&f, tmax);
  
@@ -57,8 +57,8 @@ int TestMaxwell2D(void) {
   Plotfield(0, false, &f, NULL, "dgvisu.msh");
   Plotfield(0, true, &f, "error", "dgerror.msh");
 
-  double dd = L2error(&f);
-  double tolerance = 8e-3;
+  real dd = L2error(&f);
+  real tolerance = 8e-3;
   test = test && (dd < tolerance);
   printf("L2 error: %f\n", dd);
 

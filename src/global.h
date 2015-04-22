@@ -85,3 +85,10 @@ char cl_buildoptions[1024];
 #endif
 
 //#define _PERIOD 1
+
+#define _DOUBLE_PRECISION
+#ifdef _DOUBLE_PRECISION
+#define real double
+#else
+#define real float
+#endif

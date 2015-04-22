@@ -1,5 +1,5 @@
 // Return the 1d derivative of lagrange polynomial ib at glop ipg
-double dlag(int deg, int ib, int ipg) {
+real dlag(int deg, int ib, int ipg) {
   return gauss_lob_dpsi[gauss_lob_dpsi_offset[deg] + ib * (deg + 1) + ipg];
 }
 
@@ -7,24 +7,24 @@ double dlag(int deg, int ib, int ipg) {
 #define VARINDEX GenericVarindex
 #endif
 
-int ref_ipg(__constant int *param, double *xref);
+int ref_ipg(__constant int *param, real *xref);
 
-void Ref2Phy(__constant double *physnode,
-             double xref[3],
-             double dphiref[3],
+void Ref2Phy(__constant real *physnode,
+             real xref[3],
+             real dphiref[3],
              int ifa,
-             double xphy[3],
-             double dtau[3][3],
-             double codtau[3][3],
-             double dphi[3],
-             double vnds[3]);
+             real xphy[3],
+             real dtau[3][3],
+             real codtau[3][3],
+             real dphi[3],
+             real vnds[3]);
 
-void Phy2Ref(__constant double *physnode,
-             double xphy[3], double xref[3]);
+void Phy2Ref(__constant real *physnode,
+             real xphy[3], real xref[3]);
 
 int ref_pg_face(int *ndeg, int *nraf0,
 		int ifa, int ipg,
-                double *xpg, double *wpg, double *xpgin)
+                real *xpg, real *wpg, real *xpgin)
 {
   // For each face, give the dimension index i
   int axis_permut[6][4] = { {0, 2, 1, 0},
@@ -58,16 +58,16 @@ int ref_pg_face(int *ndeg, int *nraf0,
   // Compute permuted indices of the subface
   int ncx = ipg % nraf[0];
 
-  double h[3];
-  h[0] = 1.0 / (double) nraf[0];
+  real h[3];
+  h[0] = 1.0 / (real) nraf[0];
   ipg /= nraf[0];
 
   int ncy = ipg;
-  h[1] = 1.0 / (double) nraf[1];
+  h[1] = 1.0 / (real) nraf[1];
 
   // Equals 0 or nraf-1 depending on the face
   int ncz = paxis[3] * (nraf[2] - 1);
-  h[2] = 1.0 / (double) nraf[2];
+  h[2] = 1.0 / (real) nraf[2];
 
   // Compute non permuted indices for points and subfaces
   int ipgxyz[3];
@@ -110,8 +110,8 @@ int ref_pg_face(int *ndeg, int *nraf0,
   // subcell along the face.
   // NB: in OpenCL, we _always_ compute xpgin, so the test can be removed.
   //if(xpgin != NULL) {
-  double small = 1e-3;  //0.001
-  double vsmall = 1e-6; //0.000001;
+  real small = 1e-3;  //0.001
+  real vsmall = 1e-6; //0.000001;
 
   xpgin[paxis[0]] = h[0] * (ncx + gauss_lob_point[offset[0]]);
   xpgin[paxis[1]] = h[1] * (ncy + gauss_lob_point[offset[1]]);
@@ -143,11 +143,11 @@ int ref_pg_face(int *ndeg, int *nraf0,
 #define NUMFLUX NumFlux
 #endif
 
-void NumFlux(double wL[], double wR[], double *vnorm, double *flux) {
-  double vn = sqrt(0.5) * (vnorm[0] + vnorm[1]);
+void NumFlux(real wL[], real wR[], real *vnorm, real *flux) {
+  real vn = sqrt(0.5) * (vnorm[0] + vnorm[1]);
 
-  double vnp = vn > 0 ? vn : 0;
-  double vnm = vn - vnp;
+  real vnp = vn > 0 ? vn : 0;
+  real vnm = vn - vnp;
 
   flux[0] = vnp * wL[0] + vnm * wR[0];
 };
@@ -165,24 +165,24 @@ void NumFlux(double wL[], double wR[], double *vnorm, double *flux) {
 #endif
 
 // Return the component of the vlasov velocity with index id.
-double vlasov_vel(const int id, const int md)
+real vlasov_vel(const int id, const int md)
 {
   int mid = md / 2;
-  double dv = vlasov_vmax / mid;
+  real dv = vlasov_vmax / mid;
   return (id - mid) * dv;
 }
 
-void vlaTransNumFlux2d(double wL[], double wR[], double *vnorm, double *flux)
+void vlaTransNumFlux2d(real wL[], real wR[], real *vnorm, real *flux)
 {
   for(int ix = 0; ix < vlasov_mx; ++ix) {
-    double vx = vlasov_vel(ix, vlasov_mx);
+    real vx = vlasov_vel(ix, vlasov_mx);
 
     for(int iy = 0; iy < vlasov_my; ++iy) {
-      double vy = vlasov_vel(iy, vlasov_my);
+      real vy = vlasov_vel(iy, vlasov_my);
       
-      double vn = vx * vnorm[0]	+ vy * vnorm[1];
-      double vnp = vn > 0 ? vn : 0;
-      double vnm = vn - vnp;
+      real vn = vx * vnorm[0]	+ vy * vnorm[1];
+      real vnp = vn > 0 ? vn : 0;
+      real vnm = vn - vnp;
       
       // NB: assumes a certain memory distribution for the velocity
       // components at each point.
@@ -196,22 +196,22 @@ void vlaTransNumFlux2d(double wL[], double wR[], double *vnorm, double *flux)
 #define _M 1
 #endif
 
-void cemracs2014_TransBoundaryFlux(double x[3], double t, 
-				   double wL[], double *vnorm,
-				   double *flux)
+void cemracs2014_TransBoundaryFlux(real x[3], real t, 
+				   real wL[], real *vnorm,
+				   real *flux)
 {
-  double wR[_M];
+  real wR[_M];
   int m = vlasov_mx * vlasov_my;
   for(unsigned int i = 0; i < m; ++i)
     wR[i] = 0;
   vlaTransNumFlux2d(wL, wR, vnorm, flux);
 }
 
-void BoundaryFlux(double x[3], double t, double wL[], double *vnorm,
-                  double *flux) 
+void BoundaryFlux(real x[3], real t, real wL[], real *vnorm,
+                  real *flux) 
 {
-  double wR[_M];
-  double vx = sqrt(0.5) * (x[0] + x[1]);
+  real wR[_M];
+  real vx = sqrt(0.5) * (x[0] + x[1]);
   wR[0] = cos(vx - t);
 
   NUMFLUX(wL, wR, vnorm, flux);
@@ -221,13 +221,13 @@ void BoundaryFlux(double x[3], double t, double wL[], double *vnorm,
 //! \param[in] deg degree
 //! \param[in] i glop index
 //! \returns the glop weight
-double wglop(int deg, int i) 
+real wglop(int deg, int i) 
 {
   return gauss_lob_weight[gauss_lob_offset[deg] + i];
 }
 
-void get_dtau(double x, double y, double z,
-	      __constant double *physnode, double dtau[][3]);
+void get_dtau(real x, real y, real z,
+	      __constant real *physnode, real dtau[][3]);
 
 // Get the logical index of the gaussian point given the coordinate
 // p[] of the point in the subcell and the index of the subcell icell.
@@ -242,10 +242,10 @@ __kernel
 void DGFlux(__constant int *param,       // 0: interp param
 	    int ie,                      // 1: macrocel index
 	    int dim0,                    // 2: face direction
-	    __constant double *physnode, // 3: macrocell nodes
-	    __global   double *wn,       // 4: field values
-	    __global   double *dtwn,     // 5: time derivative
-	    __local    double *wnloc     // 6: wn and dtwn in local memory
+	    __constant real *physnode, // 3: macrocell nodes
+	    __global   real *wn,       // 4: field values
+	    __global   real *dtwn,     // 5: time derivative
+	    __local    real *wnloc     // 6: wn and dtwn in local memory
 	    )
 {
   const int m = param[0];
@@ -268,10 +268,10 @@ void DGFlux(__constant int *param,       // 0: interp param
   icR[dim1] = icL[dim1];
   icR[dim2] = icL[dim2];
 
-  __local double *wnlocL = wnloc;
-  __local double *wnlocR = wnloc + get_local_size(0) * m;
-  __local double *dtwnlocL = wnloc + 2 * get_local_size(0) * m;
-  __local double *dtwnlocR = wnloc + 3 * get_local_size(0) * m;
+  __local real *wnlocL = wnloc;
+  __local real *wnlocR = wnloc + get_local_size(0) * m;
+  __local real *dtwnlocL = wnloc + 2 * get_local_size(0) * m;
+  __local real *dtwnlocR = wnloc + 3 * get_local_size(0) * m;
 
   // Prefetch
   for(int i = 0; i < m; i++) {
@@ -318,26 +318,26 @@ void DGFlux(__constant int *param,       // 0: interp param
     pR[dim2] = pL[dim2];
   }
 
-  double hx = 1.0 / (double) nraf[0];
-  double hy = 1.0 / (double) nraf[1];
-  double hz = 1.0 / (double) nraf[2];
+  real hx = 1.0 / (real) nraf[0];
+  real hy = 1.0 / (real) nraf[1];
+  real hz = 1.0 / (real) nraf[2];
 
   int offset[3] = {gauss_lob_offset[deg[0]] + pL[0],
   		   gauss_lob_offset[deg[1]] + pL[1],
   		   gauss_lob_offset[deg[2]] + pL[2]};
 
-  double x = hx * (icL[0] + gauss_lob_point[offset[0]]);
-  double y = hy * (icL[1] + gauss_lob_point[offset[1]]);
-  double z = hz * (icL[2] + gauss_lob_point[offset[2]]);
+  real x = hx * (icL[0] + gauss_lob_point[offset[0]]);
+  real y = hy * (icL[1] + gauss_lob_point[offset[1]]);
+  real z = hz * (icL[2] + gauss_lob_point[offset[2]]);
 
-  double wpg = hx * hy * hz
+  real wpg = hx * hy * hz
     * gauss_lob_weight[offset[0]]
     * gauss_lob_weight[offset[1]]
     * gauss_lob_weight[offset[2]];
 
-  double codtau[3][3];
+  real codtau[3][3];
   {
-    double dtau[3][3];
+    real dtau[3][3];
     get_dtau(x, y, z, physnode, dtau);
     // FIXME: we do not need all of these values
     codtau[0][0] =  dtau[1][1] * dtau[2][2] - dtau[1][2] * dtau[2][1];
@@ -351,8 +351,8 @@ void DGFlux(__constant int *param,       // 0: interp param
     codtau[2][2] =  dtau[0][0] * dtau[1][1] - dtau[0][1] * dtau[1][0];
   }
 
-  double h1h2 = 1.0 / nraf[dim1] / nraf[dim2];
-  double vnds[3];
+  real h1h2 = 1.0 / nraf[dim1] / nraf[dim2];
+  real vnds[3];
   vnds[0] = codtau[0][dim0] * h1h2;
   vnds[1] = codtau[1][dim0] * h1h2;
   vnds[2] = codtau[2][dim0] * h1h2;
@@ -361,9 +361,9 @@ void DGFlux(__constant int *param,       // 0: interp param
   xyz_to_ipg(nraf, deg, icL, pL, &ipgL);
   xyz_to_ipg(nraf, deg, icR, pR, &ipgR);
 
-  double wL[_M], wR[_M]; // TODO: remove?
-  __local double *wnL = wnlocL + get_local_id(0) * m;
-  __local double *wnR = wnlocR + get_local_id(0) * m;
+  real wL[_M], wR[_M]; // TODO: remove?
+  __local real *wnL = wnlocL + get_local_id(0) * m;
+  __local real *wnR = wnlocR + get_local_id(0) * m;
   for(int iv = 0; iv < m; iv++) {
     wL[iv] = wnL[iv];
     wR[iv] = wnR[iv];
@@ -371,13 +371,13 @@ void DGFlux(__constant int *param,       // 0: interp param
 
   // TODO: wL and wR could be passed without a copy to __private.
   // (ie we can just pass *wnL and *wnR).
-  double flux[_M];
+  real flux[_M];
   NUMFLUX(wL, wR, vnds, flux);
 
-  double wpgs = wglop(deg[dim1], pL[dim1]) * wglop(deg[dim2], pL[dim2]);
+  real wpgs = wglop(deg[dim1], pL[dim1]) * wglop(deg[dim2], pL[dim2]);
 
-  __local double *dtwnL = dtwnlocL + get_local_id(0) * m;
-  __local double *dtwnR = dtwnlocR + get_local_id(0) * m;
+  __local real *dtwnL = dtwnlocL + get_local_id(0) * m;
+  __local real *dtwnR = dtwnlocR + get_local_id(0) * m;
   for(int iv = 0; iv < m; ++iv) {
     // write flux to local memory
     dtwnL[iv] = -flux[iv] * wpgs;
@@ -416,7 +416,7 @@ void DGFlux(__constant int *param,       // 0: interp param
 }
 
 __kernel
-void set_buffer_to_zero(__global double *w)
+void set_buffer_to_zero(__global real *w)
 {
   w[get_global_id(0)] = 0.0;
 }
@@ -429,10 +429,10 @@ void set_buffer_to_zero(__global double *w)
 __kernel
 void DGVolume(__constant int *param,       // 0: interp param
 	      int ie,                      // 1: macrocel index
-	      __constant double *physnode, // 2: macrocell nodes
-              __global double *wn,         // 3: field values
-	      __global double *dtwn,       // 4: time derivative
-	      __local double *wnloc        // 5: cache for wn and dtwn
+	      __constant real *physnode, // 2: macrocell nodes
+              __global real *wn,         // 3: field values
+	      __global real *dtwn,       // 4: time derivative
+	      __local real *wnloc        // 5: cache for wn and dtwn
 	      ) 
 {
   const int m = param[0];
@@ -440,7 +440,7 @@ void DGVolume(__constant int *param,       // 0: interp param
   const int npg[3] = {deg[0] + 1, deg[1] + 1, deg[2] + 1};
   const int nraf[3] = {param[4], param[5], param[6]};
 
-  __local double *dtwnloc = wnloc  + m * npg[0] * npg[1] * npg[2];
+  __local real *dtwnloc = wnloc  + m * npg[0] * npg[1] * npg[2];
 
   // Prefetch
   int icell = get_group_id(0);
@@ -479,26 +479,26 @@ void DGVolume(__constant int *param,       // 0: interp param
   }
 
   // ref coordinates
-  double hx = 1.0 / (double) nraf[0];
-  double hy = 1.0 / (double) nraf[1];
-  double hz = 1.0 / (double) nraf[2];
+  real hx = 1.0 / (real) nraf[0];
+  real hy = 1.0 / (real) nraf[1];
+  real hz = 1.0 / (real) nraf[2];
 
   int offset[3] = {gauss_lob_offset[deg[0]] + p[0],
 		   gauss_lob_offset[deg[1]] + p[1],
 		   gauss_lob_offset[deg[2]] + p[2]};
 
-  double x = hx * (icL[0] + gauss_lob_point[offset[0]]);
-  double y = hy * (icL[1] + gauss_lob_point[offset[1]]);
-  double z = hz * (icL[2] + gauss_lob_point[offset[2]]);
+  real x = hx * (icL[0] + gauss_lob_point[offset[0]]);
+  real y = hy * (icL[1] + gauss_lob_point[offset[1]]);
+  real z = hz * (icL[2] + gauss_lob_point[offset[2]]);
 
-  double wpg = hx * hy * hz
+  real wpg = hx * hy * hz
     * gauss_lob_weight[offset[0]]
     * gauss_lob_weight[offset[1]]
     * gauss_lob_weight[offset[2]];
 
-  double codtau[3][3];
+  real codtau[3][3];
   {
-    double dtau[3][3];
+    real dtau[3][3];
     get_dtau(x, y, z, physnode, dtau);
     
     codtau[0][0] =  dtau[1][1] * dtau[2][2] - dtau[1][2] * dtau[2][1];
@@ -512,11 +512,11 @@ void DGVolume(__constant int *param,       // 0: interp param
     codtau[2][2] =  dtau[0][0] * dtau[1][1] - dtau[0][1] * dtau[1][0];
   }
 
-  double wL[_M];
+  real wL[_M];
   int ipgL = ipg(npg, p, 0);
   //int imemL0 = VARINDEX(param, ie, ipgL, 0);
   int imemL0loc = ipgL * m;
-  __local double *wnloc0 = wnloc + ipgL * m;
+  __local real *wnloc0 = wnloc + ipgL * m;
   //printf("ipgL * m: %d\n", ipgL * m);
   for(int iv = 0; iv < m; iv++) {
     // gauss point id in the macrocell
@@ -529,22 +529,22 @@ void DGVolume(__constant int *param,       // 0: interp param
     wL[iv] = wnloc0[iv];
   }
 
-  double flux[_M];
+  real flux[_M];
   for(int dim0 = 0; dim0 < 3; dim0++) {
     int q[3] = {p[0], p[1], p[2]};
 
     // Loop on the "cross" points
     for(int iq = 0; iq < npg[dim0]; iq++) {
       q[dim0] = (p[dim0] + iq) % npg[dim0];
-      double dphiref[3] = {0, 0, 0};
+      real dphiref[3] = {0, 0, 0};
       dphiref[dim0] = dlag(deg[dim0], q[dim0], p[dim0]) * nraf[dim0];
-      double dphi[3];
+      real dphi[3];
       for(int ii = 0; ii < 3; ii++) {
 	/* dphi[ii] = 0; */
 	/* for(int jj = 0; jj < 3; jj++) { */
 	/*   dphi[ii] += codtau[ii][jj] * dphiref[jj]; */
 	/* } */
-	double *codtauii = codtau[ii];
+	real *codtauii = codtau[ii];
 	dphi[ii] 
 	  = codtauii[0] * dphiref[0]
 	  + codtauii[1] * dphiref[1]
@@ -555,10 +555,10 @@ void DGVolume(__constant int *param,       // 0: interp param
 
       int ipgR = ipg(npg, q, 0);
       int imemR0 = VARINDEX(param, ie, ipgR, 0);
-      __global double *dtwn0 = dtwn + imemR0; 
+      __global real *dtwn0 = dtwn + imemR0; 
 
       int imemR0loc = ipgR * m;
-      __local double *dtwnloc0 =  dtwnloc + imemR0loc;
+      __local real *dtwnloc0 =  dtwnloc + imemR0loc;
       for(int iv = 0; iv < m; iv++) {
 	// Add to global memory
 	//dtwn0[iv] += flux[iv] * wpg;
@@ -589,8 +589,8 @@ void DGVolume(__constant int *param,       // 0: interp param
 __kernel
 void DGMass(__constant int *param,       // 0: interp param
             int ie,                      // 1: macrocel index
-            __constant double *physnode, // 2: macrocell nodes
-            __global double *dtwn)       // 3: time derivative
+            __constant real *physnode, // 2: macrocell nodes
+            __global real *dtwn)       // 3: time derivative
 {
   int ipg = get_global_id(0);
   const int m = param[0];
@@ -613,27 +613,27 @@ void DGMass(__constant int *param,       // 0: interp param
   ipg /= nraf[1];
   int ncz = ipg;
 
-  double hx = 1.0 / (double) nraf[0];
-  double hy = 1.0 / (double) nraf[1];
-  double hz = 1.0 / (double) nraf[2];
+  real hx = 1.0 / (real) nraf[0];
+  real hy = 1.0 / (real) nraf[1];
+  real hz = 1.0 / (real) nraf[2];
 
   int offset[3] = {gauss_lob_offset[param[1]] + ix,
 		   gauss_lob_offset[param[2]] + iy,
 		   gauss_lob_offset[param[3]] + iz};
 
-  double x = hx * (ncx + gauss_lob_point[offset[0]]);
-  double y = hy * (ncy + gauss_lob_point[offset[1]]);
-  double z = hz * (ncz + gauss_lob_point[offset[2]]);
+  real x = hx * (ncx + gauss_lob_point[offset[0]]);
+  real y = hy * (ncy + gauss_lob_point[offset[1]]);
+  real z = hz * (ncz + gauss_lob_point[offset[2]]);
 
-  double wpg = hx * hy * hz
+  real wpg = hx * hy * hz
     * gauss_lob_weight[offset[0]]
     * gauss_lob_weight[offset[1]]
     * gauss_lob_weight[offset[2]];
 
-  double dtau[3][3];
+  real dtau[3][3];
   get_dtau(x, y, z, physnode, dtau);
 
-  double det
+  real det
     = dtau[0][0] * dtau[1][1] * dtau[2][2]
     - dtau[0][0] * dtau[1][2] * dtau[2][1]
     - dtau[1][0] * dtau[0][1] * dtau[2][2]
@@ -641,9 +641,9 @@ void DGMass(__constant int *param,       // 0: interp param
     + dtau[2][0] * dtau[0][1] * dtau[1][2]
     - dtau[2][0] * dtau[0][2] * dtau[1][1];
 
-  double overwpgget = 1.0 / (wpg * det);
+  real overwpgget = 1.0 / (wpg * det);
   int imem0 = m * (get_global_id(0) + npgie * ie);
-  __global double *dtwn0 = dtwn + imem0; 
+  __global real *dtwn0 = dtwn + imem0; 
   for(int iv = 0; iv < m; iv++) {
     //int imem = iv + imem0;
     dtwn0[iv] *= overwpgget;
@@ -658,14 +658,14 @@ void DGMacroCellInterface(__constant int *param,        // 0: interp param
 			  int ieR,                      // 2: right macrocell
                           int locfaL,                   // 3: left face index
 			  int locfaR,                   // 4: right face index
-                          __constant double *physnodeL, // 5: left physnode
-                          __constant double *physnodeR, // 6: right physnode
-                          __global double *wn,          // 7: field 
-                          __global double *dtwn,        // 8: time derivative
-			  __local double *cache         // 9: local mem
+                          __constant real *physnodeL, // 5: left physnode
+                          __constant real *physnodeR, // 6: right physnode
+                          __global real *wn,          // 7: field 
+                          __global real *dtwn,        // 8: time derivative
+			  __local real *cache         // 9: local mem
 			  )
 {
-  // TODO: use __local double *cache.
+  // TODO: use __local real *cache.
 
   int ipgfL = get_global_id(0);
 
@@ -673,15 +673,15 @@ void DGMacroCellInterface(__constant int *param,        // 0: interp param
   int ndeg[3] = {param[1], param[2], param[3]};
   int nraf[3] = {param[4], param[5], param[6]};
 
-  double xpgref[3], xpgref_in[3], wpg;
+  real xpgref[3], xpgref_in[3], wpg;
   // Get the coordinates of the Gauss point and coordinates of a
   // point slightly inside the opposite element in xref_in
   int ipgL = ref_pg_face(ndeg, nraf, locfaL, ipgfL, xpgref, &wpg, xpgref_in);
   
   // Normal vector at gauss point ipg
-  double vnds[3], xpg[3];
+  real vnds[3], xpg[3];
   {
-    double dtau[3][3], codtau[3][3];
+    real dtau[3][3], codtau[3][3];
     Ref2Phy(physnodeL,
             xpgref,
             NULL, locfaL, // dpsiref, ifa
@@ -689,13 +689,13 @@ void DGMacroCellInterface(__constant int *param,        // 0: interp param
             codtau, NULL, vnds); // codtau, dpsi,vnds
   }
 
-  double wL[_M];
-  double wR[_M];
-  double flux[_M];
+  real wL[_M];
+  real wR[_M];
+  real flux[_M];
   
-  double xrefL[3];
+  real xrefL[3];
   {
-    double xpg_in[3];
+    real xpg_in[3];
     Ref2Phy(physnodeL,
 	    xpgref_in,
 	    NULL, -1, // dpsiref, ifa
@@ -708,7 +708,7 @@ void DGMacroCellInterface(__constant int *param,        // 0: interp param
 
   // Test code
   /* { */
-  /*   double xpgR[3], xrefR[3], wpgR; */
+  /*   real xpgR[3], xrefR[3], wpgR; */
   /*   ref_pg_vol(param + 1, ipgR, xrefR, &wpgR, NULL); */
   /*   Ref2Phy(physnodeR, */
   /* 	  xrefR, */
@@ -720,8 +720,8 @@ void DGMacroCellInterface(__constant int *param,        // 0: interp param
 
   int imemL0 = VARINDEX(param, ieL, ipgL, 0);
   int imemR0 = VARINDEX(param, ieR, ipgR, 0);
-  __global double *wnL0 = wn + imemL0;
-  __global double *wnR0 = wn + imemR0;
+  __global real *wnL0 = wn + imemL0;
+  __global real *wnR0 = wn + imemR0;
   for(int iv = 0; iv < m; iv++) {
     wL[iv] = wnL0[iv];
     wR[iv] = wnR0[iv];
@@ -729,10 +729,10 @@ void DGMacroCellInterface(__constant int *param,        // 0: interp param
 
   NUMFLUX(wL, wR, vnds, flux);
 
-  __global double *dtwnL0 = dtwn + imemL0;
-  __global double *dtwnR0 = dtwn + imemR0;
+  __global real *dtwnL0 = dtwn + imemL0;
+  __global real *dtwnR0 = dtwn + imemR0;
   for(int iv = 0; iv < m; ++iv) {
-    double fluxwpg = flux[iv] * wpg;
+    real fluxwpg = flux[iv] * wpg;
     dtwnL0[iv] -= fluxwpg;
     dtwnR0[iv] += fluxwpg;
   }
@@ -742,16 +742,16 @@ void DGMacroCellInterface(__constant int *param,        // 0: interp param
 // Second implementation with a loop on the faces.
 __kernel
 void DGBoundary(__constant int *param,        // 0: interp param
-		double tnow,                  // 1: current time
+		real tnow,                  // 1: current time
 		int ieL,                      // 2: left macrocell 
 		int locfaL,                   // 3: left face index
-		__constant double *physnodeL, // 4: left physnode
-		__global double *wn,          // 5: field 
-		__global double *dtwn,        // 6: time derivative
-		__local double *cache         // 7: local mem
+		__constant real *physnodeL, // 4: left physnode
+		__global real *wn,          // 5: field 
+		__global real *dtwn,        // 6: time derivative
+		__local real *cache         // 7: local mem
 		)
 {
-  // TODO: use __local double *cache.
+  // TODO: use __local real *cache.
 
   int ipgfL = get_global_id(0);
 
@@ -759,15 +759,15 @@ void DGBoundary(__constant int *param,        // 0: interp param
   int ndeg[3] = {param[1], param[2], param[3]};
   int nraf[3] = {param[4], param[5], param[6]};
 
-  double xpgref[3], xpgref_in[3], wpg;
+  real xpgref[3], xpgref_in[3], wpg;
   // Get the coordinates of the Gauss point and coordinates of a
   // point slightly inside the opposite element in xref_in
   int ipgL = ref_pg_face(ndeg, nraf, locfaL, ipgfL, xpgref, &wpg, xpgref_in);
   
   // Normal vector at gauss point ipg
-  double vnds[3], xpg[3];
+  real vnds[3], xpg[3];
   {
-    double dtau[3][3], codtau[3][3];
+    real dtau[3][3], codtau[3][3];
     Ref2Phy(physnodeL,
             xpgref,
             NULL, locfaL, // dpsiref, ifa
@@ -775,11 +775,11 @@ void DGBoundary(__constant int *param,        // 0: interp param
             codtau, NULL, vnds); // codtau, dpsi,vnds
   }
 
-  double wL[_M];
-  double flux[_M];
+  real wL[_M];
+  real flux[_M];
   
   int imemL0 = VARINDEX(param, ieL, ipgL, 0);
-  __global double *wn0 = wn + imemL0;
+  __global real *wn0 = wn + imemL0;
   for(int iv = 0; iv < m; ++iv) {
     wL[iv] = wn0[iv];
   }
@@ -787,21 +787,21 @@ void DGBoundary(__constant int *param,        // 0: interp param
   BOUNDARYFLUX(xpg, tnow, wL, vnds, flux);
 
   // The basis functions is also the gauss point index
-  __global double *dtwn0 = dtwn + imemL0; 
+  __global real *dtwn0 = dtwn + imemL0; 
   for(int iv = 0; iv < m; ++iv) {
     dtwn0[iv] -= flux[iv] * wpg;
   }
 }
 
 
-void get_dtau(double x, double y, double z,
-	      __constant double *p, double dtau[][3]) 
+void get_dtau(real x, real y, real z,
+	      __constant real *p, real dtau[][3]) 
 {
   // Gradient of the shape functions and value (4th component) of the
   // shape functions
 
-  /* double gradphi[20][3]; */
-  /* //double x,y,z; */
+  /* real gradphi[20][3]; */
+  /* //real x,y,z; */
   /* // this fills the values of gradphi */
   /* gradphi[0][0] = (-1 + z) * (-1 + y) * (2 * y + 2 * z + 4 * x - 3); */
   /* gradphi[0][1] = (-1 + z) * (-1 + x) * (2 * x + 2 * z - 3 + 4 * y); */
@@ -895,62 +895,62 @@ void get_dtau(double x, double y, double z,
 
 }
 
-void Ref2Phy(__constant double* physnode,
-             double xref[3],
-             double dphiref[3],
+void Ref2Phy(__constant real* physnode,
+             real xref[3],
+             real dphiref[3],
              int ifa,
-             double xphy[3],
-             double dtau[3][3],
-             double codtau[3][3],
-             double dphi[3],
-             double vnds[3]) 
+             real xphy[3],
+             real dtau[3][3],
+             real codtau[3][3],
+             real dphi[3],
+             real vnds[3]) 
 {
   // compute the mapping and its jacobian
-  double x = xref[0];
-  double y = xref[1];
-  double z = xref[2];
+  real x = xref[0];
+  real y = xref[1];
+  real z = xref[2];
 
   // gradient of the shape functions and value (4th component)
   // of the shape functions
-  double gradphi[20][4];
+  real gradphi[20][4];
   {
-    double t1 = -1 + z;
-    double t2 = -1 + y;
-    double t3 = t1 * t2;
-    double t4 = 2 * y;
-    double t5 = 2 * z;
-    double t6 = 4 * x;
-    double t9 = -1 + x;
-    double t10 = t1 * t9;
-    double t11 = 2 * x;
-    double t12 = 4 * y;
-    double t15 = t2 * t9;
-    double t16 = 4 * z;
-    double t24 = x * t1;
-    double t27 = x * t2;
-    double t33 = y * t1;
-    double t38 = x * y;
-    double t48 = y * t9;
-    double t54 = z * t2;
-    double t57 = z * t9;
-    double t67 = x * z;
-    double t75 = y * z;
-    double t94 = t11 - 1;
-    double t98 = 4 * t24 * t9;
-    double t100 = 4 * t27 * t9;
-    double t104 = 4 * t33 * t2;
-    double t105 = t4 - 1;
-    double t111 = 4 * y * t2 * t9;
-    double t114 = z * t1;
-    double t116 = 4 * t114 * t2;
-    double t118 = 4 * t114 * t9;
-    double t119 = t5 - 1;
-    double t128 = 4 * t38 * t2;
-    double t132 = 4 * t67 * t1;
-    double t141 = 4 * t38 * t9;
-    double t145 = 4 * t75 * t1;
-    double t158 = 4 * t67 * t9;
-    double t162 = 4 * t75 * t2;
+    real t1 = -1 + z;
+    real t2 = -1 + y;
+    real t3 = t1 * t2;
+    real t4 = 2 * y;
+    real t5 = 2 * z;
+    real t6 = 4 * x;
+    real t9 = -1 + x;
+    real t10 = t1 * t9;
+    real t11 = 2 * x;
+    real t12 = 4 * y;
+    real t15 = t2 * t9;
+    real t16 = 4 * z;
+    real t24 = x * t1;
+    real t27 = x * t2;
+    real t33 = y * t1;
+    real t38 = x * y;
+    real t48 = y * t9;
+    real t54 = z * t2;
+    real t57 = z * t9;
+    real t67 = x * z;
+    real t75 = y * z;
+    real t94 = t11 - 1;
+    real t98 = 4 * t24 * t9;
+    real t100 = 4 * t27 * t9;
+    real t104 = 4 * t33 * t2;
+    real t105 = t4 - 1;
+    real t111 = 4 * y * t2 * t9;
+    real t114 = z * t1;
+    real t116 = 4 * t114 * t2;
+    real t118 = 4 * t114 * t9;
+    real t119 = t5 - 1;
+    real t128 = 4 * t38 * t2;
+    real t132 = 4 * t67 * t1;
+    real t141 = 4 * t38 * t9;
+    real t145 = 4 * t75 * t1;
+    real t158 = 4 * t67 * t9;
+    real t162 = 4 * t75 * t2;
 
     gradphi[0][0] = t3 * (t4 + t5 - 3 + t6);
     gradphi[0][1] = t10 * (t11 + t5 - 3 + t12);
@@ -1108,21 +1108,21 @@ void Ref2Phy(__constant double* physnode,
   }
 }
 
-void Phy2Ref(__constant double *physnode, double xphy[3], double xref[3]) 
+void Phy2Ref(__constant real *physnode, real xphy[3], real xref[3]) 
 {
 #define ITERNEWTON 10
-  double dxref[3], dxphy[3];
+  real dxref[3], dxphy[3];
   xref[0] = 0.5;
   xref[1] = 0.5;
   xref[2] = 0.5;
   for(int iter = 0; iter < ITERNEWTON; ++iter ) {
-    double dtau[3][3], codtau[3][3];
+    real dtau[3][3], codtau[3][3];
     int ifa =- 1;
     Ref2Phy(physnode, xref, 0, ifa, dxphy, dtau, codtau, 0, 0);
     dxphy[0] -= xphy[0];
     dxphy[1] -= xphy[1];
     dxphy[2] -= xphy[2];
-    double overdet = 1.0 / (  dtau[0][0] * codtau[0][0]
+    real overdet = 1.0 / (  dtau[0][0] * codtau[0][0]
 			    + dtau[0][1] * codtau[0][1]
 			    + dtau[0][2] * codtau[0][2] );
     for(int ii = 0; ii < 3; ++ii) {
@@ -1137,7 +1137,7 @@ void Phy2Ref(__constant double *physnode, double xphy[3], double xref[3])
 
 // From a reference point find the nearest gauss point
 // Warning: works only  degree 1, 2, or 3 (FIXME: why?)
-int ref_ipg(__constant int *param, double *xref) 
+int ref_ipg(__constant int *param, real *xref) 
 {
   // approximation degree in each direction
   int deg[3] = {param[0], param[1], param[2]};
@@ -1145,7 +1145,7 @@ int ref_ipg(__constant int *param, double *xref)
   // number of subcells in each direction
   int nraf[3] = {param[3], param[4], param[5]};
 
-  double hh[3] = {1.0 / nraf[0], 1.0 / nraf[1], 1.0 / nraf[2]};
+  real hh[3] = {1.0 / nraf[0], 1.0 / nraf[1], 1.0 / nraf[2]};
 
   // get the subcell id
   int ncx = floor(xref[0] * nraf[0]);
@@ -1177,10 +1177,10 @@ int ref_ipg(__constant int *param, double *xref)
 
 // Out-of-place RK stage
 __kernel
-void RK_out_CL(__global double *wnp1, 
-	       __global const double *wn, 
-	       __global const double *dtwn, 
-	       const double dt)
+void RK_out_CL(__global real *wnp1, 
+	       __global const real *wn, 
+	       __global const real *dtwn, 
+	       const real dt)
 {
   int ipg = get_global_id(0);
   wnp1[ipg] = wn[ipg] + dt * dtwn[ipg];
@@ -1188,9 +1188,9 @@ void RK_out_CL(__global double *wnp1,
 
 // In-place RK stage
 __kernel
-void RK_in_CL(__global double *wnp1, 
-	      __global double *dtwn, 
-	      const double dt)
+void RK_in_CL(__global real *wnp1, 
+	      __global real *dtwn, 
+	      const real dt)
 {
   int ipg = get_global_id(0);
   wnp1[ipg] += dt * dtwn[ipg];
@@ -1199,15 +1199,15 @@ void RK_in_CL(__global double *wnp1,
 
 // RK4 final stage
 __kernel
-void RK4_final_stage(__global double *w,
-		     __global double *l1,
-		     __global double *l2,
-		     __global double *l3,
-		     __global double *dtw, 
-		     const double dt)
+void RK4_final_stage(__global real *w,
+		     __global real *l1,
+		     __global real *l2,
+		     __global real *l3,
+		     __global real *dtw, 
+		     const real dt)
 {
-  const double b = -1.0 / 3.0;
-  const double a[] = {1.0 / 3.0, 2.0 / 3.0, 1.0 / 3.0, dt / 6.0};
+  const real b = -1.0 / 3.0;
+  const real a[] = {1.0 / 3.0, 2.0 / 3.0, 1.0 / 3.0, dt / 6.0};
   int i = get_global_id(0);
   w[i] = 
     b * w[i] +
