@@ -23,11 +23,11 @@ int TestKernelVolume(void){
   f.varindex = GenericVarindex;
 
   f.interp.interp_param[0] = 1;  // _M
-  f.interp.interp_param[1] = 2;  // x direction degree
-  f.interp.interp_param[2] = 2;  // y direction degree
+  f.interp.interp_param[1] = 1;  // x direction degree
+  f.interp.interp_param[2] = 1;  // y direction degree
   f.interp.interp_param[3] = 0;  // z direction degree
-  f.interp.interp_param[4] = 2;  // x direction refinement
-  f.interp.interp_param[5] = 2;  // y direction refinement
+  f.interp.interp_param[4] = 3;  // x direction refinement
+  f.interp.interp_param[5] = 3;  // y direction refinement
   f.interp.interp_param[6] = 1;  // z direction refinement
 
   ReadMacroMesh(&(f.macromesh),"test/testmacromesh.msh");
@@ -41,7 +41,7 @@ int TestKernelVolume(void){
   //AffineMapMacroMesh(&(f.macromesh));
  
   Initfield(&f);
-  f.is2d=true;
+  f.is2d = true;
 
   /* // set dtwn to 1 for testing */
   
@@ -67,39 +67,44 @@ int TestKernelVolume(void){
   /*       			  f.dtwn, */
   /*   			     0,NULL,NULL); */
 
-
-
   /* assert(status == CL_SUCCESS); */
   /* status=clFinish(f.cli.commandqueue); */
   /* assert(status == CL_SUCCESS); */
 
-  for(int ie=0; ie < f.macromesh.nbelems; ++ie)
-    DGVolume_CL((void*) &(f.mcell[ie]), &f, &(f.wn_cl));
+  clFinish(f.cli.commandqueue);
+  for(int ie = 0; ie < f.macromesh.nbelems; ++ie) {
+    update_physnode_cl(&f, ie, f.physnode_cl, f.physnode, NULL,
+		       0, NULL, NULL);
+    clFinish(f.cli.commandqueue);
 
+    DGVolume_CL((void*) &(f.mcell[ie]), &f, &(f.wn_cl), 0, NULL, NULL);
+    clFinish(f.cli.commandqueue);
+  }
   CopyfieldtoCPU(&f);
 
   Displayfield(&f);
 
   // save the dtwn pointer
-  double *saveptr=f.dtwn;
+  double *dtwn_cl = f.dtwn;
 
   // malloc a new dtwn.
-  f.dtwn=calloc(f.wsize,sizeof(double));
+  f.dtwn = calloc(f.wsize, sizeof(double));
  
-  for(int ie=0; ie < f.macromesh.nbelems; ++ie) {
-    DGSubCellInterface((void*) &(f.mcell[ie]), &f, f.wn, f.dtwn);
+  for(int ie = 0; ie < f.macromesh.nbelems; ++ie) {
+    //DGSubCellInterface((void*) &(f.mcell[ie]), &f, f.wn, f.dtwn);
     DGVolume((void*) &(f.mcell[ie]), &f, f.wn, f.dtwn);
   }
 
   Displayfield(&f);
 
   //check that the results are the same
-  double maxerr=0;
-  for(int i=0;i<f.wsize;i++){
-    printf("error=%f %f %f\n",f.dtwn[i]-saveptr[i],f.dtwn[i],saveptr[i]);
-    maxerr=fmax(fabs(f.dtwn[i]-saveptr[i]),maxerr);
+  double maxerr = 0.0;
+  printf("\nDifference\tC\t\tOpenCL\n");
+  for(int i = 0; i < f.wsize; ++i) {
+    printf("%f\t%f\t%f\n", f.dtwn[i] - dtwn_cl[i], f.dtwn[i], dtwn_cl[i]);
+    maxerr = fmax(fabs(f.dtwn[i] - dtwn_cl[i]), maxerr);
   }
-  printf("max error=%f\n",maxerr);
+  printf("max error: %f\n",maxerr);
 
   double tolerance = 1e-8;
 

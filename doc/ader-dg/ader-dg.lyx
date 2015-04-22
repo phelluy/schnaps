@@ -1,0 +1,464 @@
+#LyX 2.1 created this file. For more info see http://www.lyx.org/
+\lyxformat 474
+\begin_document
+\begin_header
+\textclass article
+\use_default_options true
+\maintain_unincluded_children false
+\language english
+\language_package default
+\inputencoding auto
+\fontencoding global
+\font_roman default
+\font_sans default
+\font_typewriter default
+\font_math auto
+\font_default_family default
+\use_non_tex_fonts false
+\font_sc false
+\font_osf false
+\font_sf_scale 100
+\font_tt_scale 100
+\graphics default
+\default_output_format default
+\output_sync 0
+\bibtex_command default
+\index_command default
+\paperfontsize default
+\use_hyperref false
+\papersize default
+\use_geometry false
+\use_package amsmath 1
+\use_package amssymb 1
+\use_package cancel 1
+\use_package esint 1
+\use_package mathdots 1
+\use_package mathtools 1
+\use_package mhchem 1
+\use_package stackrel 1
+\use_package stmaryrd 1
+\use_package undertilde 1
+\cite_engine basic
+\cite_engine_type default
+\biblio_style plain
+\use_bibtopic false
+\use_indices false
+\paperorientation portrait
+\suppress_date false
+\justification true
+\use_refstyle 1
+\index Index
+\shortcut idx
+\color #008000
+\end_index
+\secnumdepth 3
+\tocdepth 3
+\paragraph_separation indent
+\paragraph_indentation default
+\quotes_language english
+\papercolumns 1
+\papersides 1
+\paperpagestyle default
+\tracking_changes false
+\output_changes false
+\html_math_output 0
+\html_css_as_file 0
+\html_be_strict false
+\end_header
+
+\begin_body
+
+\begin_layout Standard
+We want to solve
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+\partial_{t}w+A\partial_{x}w=0
+\]
+
+\end_inset
+
+where 
+\begin_inset Formula $w=w(x,t)\in\mathbb{R}^{m}$
+\end_inset
+
+, 
+\begin_inset Formula $x\in[a,b]$
+\end_inset
+
+, 
+\begin_inset Formula $t\in[0,T]$
+\end_inset
+
+ and 
+\begin_inset Formula $A$
+\end_inset
+
+ is a 
+\begin_inset Formula $m\times m$
+\end_inset
+
+ matrix.
+ For instance 
+\begin_inset Formula $m=1$
+\end_inset
+
+, 
+\begin_inset Formula $A=u$
+\end_inset
+
+ is a constant velocity and then we solve the transport equation.
+\end_layout
+
+\begin_layout Standard
+For the discretization we consider a 1D mesh
+\begin_inset Formula 
+\[
+a=x_{0}<x_{1}\ldots<x_{n_{e}}=b.
+\]
+
+\end_inset
+
+The elements are defined by
+\begin_inset Formula 
+\[
+E_{i}=]x_{i},x_{i+1}[,\quad i=0\ldots n_{e}-1.
+\]
+
+\end_inset
+
+In each element, we consider a 
+\begin_inset Formula $d^{th}$
+\end_inset
+
+ order approximation of 
+\begin_inset Formula $w$
+\end_inset
+
+.
+ In an element 
+\begin_inset Formula $L$
+\end_inset
+
+ of the mesh, the nodes are
+\begin_inset Formula 
+\[
+X_{j}^{L},\quad j=0\ldots d.
+\]
+
+\end_inset
+
+We construct polynomial basis functions 
+\begin_inset Formula $\psi_{j}^{L}$
+\end_inset
+
+ such that
+\begin_inset Formula 
+\[
+\psi_{j}^{L}(X_{k}^{L})=\delta_{j,k}.
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+We consider a reference element 
+\begin_inset Formula $\hat{L}=]0,1[$
+\end_inset
+
+ and reference nodes 
+\begin_inset Formula $\hat{X}_{j}=j/d$
+\end_inset
+
+, 
+\begin_inset Formula $j=0\ldots d$
+\end_inset
+
+.
+ The Lagrange polynomials are given by
+\begin_inset Formula 
+\[
+I_{j}(\hat{x})=\prod_{k\neq j}\frac{\hat{x}-\hat{X}_{k}}{\hat{X}_{j}-\hat{X}_{k}},
+\]
+
+\end_inset
+
+thus
+\begin_inset Formula 
+\[
+I_{j}(\hat{X}_{i})=\delta_{i,j}.
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+The transformation 
+\begin_inset Formula $\tau^{L}$
+\end_inset
+
+ maps 
+\begin_inset Formula $\hat{L}$
+\end_inset
+
+ on a current element 
+\begin_inset Formula $L=]x_{i},x_{i+1}[$
+\end_inset
+
+
+\begin_inset Formula 
+\[
+\tau^{L}(\hat{x})=(1-\hat{x})x_{i}+\hat{x}x_{i+1}.
+\]
+
+\end_inset
+
+This defines the nodes of the mesh.
+\begin_inset Formula 
+\[
+\tau^{L}(\hat{X}_{j})=X_{j}^{L}.
+\]
+
+\end_inset
+
+The basis functions are then defined by
+\begin_inset Formula 
+\[
+\psi_{j}^{L}(\tau^{L}(\hat{x}))=I_{j}(\hat{x})\Leftrightarrow\psi_{j}^{L}(x)=I_{j}((\tau^{L})^{-1}(x))
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+In each element 
+\begin_inset Formula $L=]x_{k},x_{k+1}[$
+\end_inset
+
+ we approximate 
+\begin_inset Formula $w(x,t)$
+\end_inset
+
+ by
+\begin_inset Formula 
+\[
+w(x,t)=\sum_{j=0}^{d}w_{j}^{k}(t)\psi_{j}^{L}(x)=w_{j}^{k}(t)\psi_{j}^{L}(x),\quad x\in]x_{k},x_{k+1}[.
+\]
+
+\end_inset
+
+The approximate solution is solution of the DG scheme: for all element 
+\begin_inset Formula $L=]x_{k},x_{k+1}[$
+\end_inset
+
+ and all basis function 
+\begin_inset Formula $\psi_{i}^{L}$
+\end_inset
+
+
+\begin_inset Formula 
+\begin{eqnarray*}
+\int_{L}\partial_{t}w\psi_{i}^{L}-\int_{L}Aw\partial_{x}\psi_{i}^{L}+\\
+(A^{+}w(x_{k+1}^{-},t)+A^{-}w(x_{k+1}^{+},t))\psi_{i}^{L}(x_{k+1}^{-})+\\
+(-A^{-}w(x_{k}^{+},t)-A^{+}w(x_{k}^{-},t))\psi_{i}^{L}(x_{k}^{+}) & = & 0.
+\end{eqnarray*}
+
+\end_inset
+
+
+\begin_inset Formula 
+\begin{eqnarray}
+\int_{L}\frac{d}{dt}w_{j}^{k}\psi_{j}^{L}\psi_{i}^{L}-\int_{L}Aw_{j}^{k}\psi_{j}^{L}\partial_{x}\psi_{i}^{L}+\nonumber \\
+(A^{+}w_{d}^{k}+A^{-}w_{0}^{k+1})\delta_{i,d}+\label{eq:eqdif}\\
+(-A^{-}w_{0}^{k}-A^{+}w_{d}^{k-1})\delta_{i,0} & = & 0.\nonumber 
+\end{eqnarray}
+
+\end_inset
+
+In order to remove the coupling between elements 
+\begin_inset Formula $]x_{k-1},x_{k}[$
+\end_inset
+
+, 
+\begin_inset Formula $]x_{k},x_{k+1}[$
+\end_inset
+
+, 
+\begin_inset Formula $]x_{k+1},x_{k+2}[$
+\end_inset
+
+ we consider an approximate differential equation (also called 
+\begin_inset Quotes eld
+\end_inset
+
+predictor
+\begin_inset Quotes erd
+\end_inset
+
+)
+\begin_inset Formula 
+\begin{eqnarray*}
+\int_{L}\frac{d}{dt}v_{j}^{k}\psi_{j}^{L}\psi_{i}^{L}-\int_{L}Av_{j}^{k}\psi_{j}^{L}\partial_{x}\psi_{i}^{L}+\\
+(A^{+}v_{d}^{k}+A^{-}v_{d}^{k})\delta_{i,d}+\\
+(-A^{-}v_{0}^{k}-A^{+}v_{0}^{k})\delta_{i,0} & = & 0.
+\end{eqnarray*}
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Suppose that we know 
+\begin_inset Formula $w_{j}^{k}(t=\alpha)$
+\end_inset
+
+.
+ For evaluating 
+\begin_inset Formula $w_{j}^{k}(t=\beta$
+\end_inset
+
+) we integrate (
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "eq:eqdif"
+
+\end_inset
+
+) from 
+\begin_inset Formula $t=\alpha$
+\end_inset
+
+ to 
+\begin_inset Formula $t=\beta$
+\end_inset
+
+
+\begin_inset Formula 
+\begin{eqnarray}
+\left(\int_{L}\psi_{j}^{L}\psi_{i}^{L}\right)\left(w_{j}^{k}(\beta)-w_{j}^{k}(\alpha)\right)-\int_{t=\alpha}^{\beta}\int_{L}Av_{j}^{k}\psi_{j}^{L}\partial_{x}\psi_{i}^{L}+\nonumber \\
+\int_{t=\alpha}^{\beta}(A^{+}v_{d}^{k}+A^{-}v_{0}^{k+1})\delta_{i,d}+\label{eq:eqdif-1}\\
+\int_{t=\alpha}^{\beta}(-A^{-}v_{0}^{k}-A^{+}v_{d}^{k-1})\delta_{i,0} & = & 0.\nonumber 
+\end{eqnarray}
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+In the end we can consider a general system of ordinary differential equations
+ given by a graph 
+\begin_inset Formula $G=(N,E)$
+\end_inset
+
+ with nodes 
+\begin_inset Formula $N$
+\end_inset
+
+ and oriented edges 
+\begin_inset Formula $E\subset N\times N$
+\end_inset
+
+.
+ At each node 
+\begin_inset Formula $k$
+\end_inset
+
+ we associate a vector 
+\begin_inset Formula $w^{k}(t)$
+\end_inset
+
+solution of a differential equation
+\begin_inset Formula 
+\begin{equation}
+\frac{d}{dt}w^{k}=\sum_{(l,k)\in E}m_{k,l}(w^{k},w^{l}).\label{eq:gen-eqdif}
+\end{equation}
+
+\end_inset
+
+We also have a predictor differential equation 
+\begin_inset Formula $v^{k}\simeq w^{k}$
+\end_inset
+
+
+\begin_inset Formula 
+\[
+\frac{d}{dt}v^{k}=\mu_{k}(v^{k}).
+\]
+
+\end_inset
+
+The predictor differential equation is a crude approximation of (
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "eq:gen-eqdif"
+
+\end_inset
+
+) that ignores the neighbors of 
+\begin_inset Formula $k$
+\end_inset
+
+ .
+ It should not be used for a too long time and must take into account the
+ most recent updates of 
+\begin_inset Formula $w$
+\end_inset
+
+.
+ For computing an approximation of (
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "eq:gen-eqdif"
+
+\end_inset
+
+) between 
+\begin_inset Formula $t=\alpha$
+\end_inset
+
+ and 
+\begin_inset Formula $t=\beta$
+\end_inset
+
+ we use the approximation
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\begin{equation}
+w^{k}(\beta)-w^{k}(\alpha)=\int_{t=\alpha}^{\beta}\sum_{(l,k)\in E}m_{k,l}(v^{k},v^{l}).\label{eq:integ}
+\end{equation}
+
+\end_inset
+
+The integral in (
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "eq:integ"
+
+\end_inset
+
+) can be computed by any quadrature formula.
+ For instance, we can use the midpoint rule
+\begin_inset Formula 
+\begin{equation}
+w^{k}(\beta)-w^{k}(\alpha)\simeq(\beta-\alpha)\sum_{(l,k)\in E}m_{k,l}(v^{k}(\frac{\alpha+\beta}{2}),v^{l}(\frac{\alpha+\beta}{2})).\label{eq:integ-1}
+\end{equation}
+
+\end_inset
+
+
+\end_layout
+
+\end_body
+\end_document

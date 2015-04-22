@@ -13,6 +13,8 @@ int TestModel(void);
 
 int TestField(void);
 
+int TestCache(void);
+
 int TestFieldDG(void);
 
 int TestFieldRK2(void);
@@ -27,11 +29,27 @@ int TestFieldRK2_2D_SubCell(void);
 
 int TestmEq2(void);
 
+int TestMaxwell2D(void);
+
+int TestPIC(void);
+
+int TestPICAccumulate(void);
+
+int TestPeriodic(void);
+
+int TestSkyline(void);
+
+int TestPoisson(void);
+
+int Test_TransportVP(void);
+
 int TestCLInfo(void);
 
 int TestKernel(void);
 
 int TestKernelVolume(void);
+
+int TestKernelFlux(void);
 
 int TestKernelInterface(void);
 

@@ -15,8 +15,18 @@ typedef struct MacroMesh{
   int *elem2node; //!< elems to nodes connectivity (20 nodes/elem)
   int *elem2elem; //!< elems to elems connectivity (along 6 faces)
   int *face2elem; //!< faces to elems connectivity (Left and Right)
+
+  //! max numbers of elems that touch a node +1 
+  int max_node2elem;
+  //! nodes to elems connectivity (size = max_node2elem * nbelems)
+  //! the list for a given node ends with -1's (it explains the +1)
+  int* node2elem;
+
   double *node; //!< nodes coordinates array
   bool is2d; //!< 2d computation detection
+
+  double xmin[3],xmax[3];
+  bool is1d; //!< 1d computation detection
 } MacroMesh;
 
 //! \brief a simple struct for modelling a four
@@ -70,11 +80,18 @@ void AffineMap(double* x);
 //! \param[inout] m the macromesh
 void AffineMapMacroMesh(MacroMesh *m);
 
+//! \brief detects if the mesh is 1D
+//! and then permuts the nodes so that
+//! the y,z directions coincide in the reference
+//! or physical frame.
+//! \param[inout] m a macromesh with m.is1d updated
+void Detect1DMacroMesh(MacroMesh* m);
+
 //! \brief detects if the mesh is 2D
 //! and then permuts the nodes so that
 //! the z direction coincides in the reference
 //! or physical frame.
-//! \param[inout] m a macromesh
+//! \param[inout] m a macromesh with m.is2d updated
 void Detect2DMacroMesh(MacroMesh *m);
 
 //! \brief verify the validity and orientation of the mesh
@@ -87,6 +104,27 @@ void CheckMacroMesh(MacroMesh *m, int param[7]);
 //! \brief list the mesh data
 //! \param[in] m a macromesh
 void PrintMacroMesh(MacroMesh *m);
+
+//! \brief test if a physical point is in a given element
+//! \param[in] m a macromesh
+//! \param[in] ie a macrocell index
+//! \param[in] xphy a point in physical space
+//! \param[out] xref the corresponding ref coordinates (optional if NULL) 
+//! \returns true or false
+bool IsInElem(MacroMesh *m,int ie, double* xphy, double* xref);
+
+//! \brief find the nearest node to xphy in the mesh
+//! \param[in] m a macromesh
+//! \param[in] xphy a point in physical space
+//! \returns the index of the nearest node
+int NearestNode(MacroMesh *m,double* xphy);
+
+//! \brief find the cell containing a physical point
+//! \param[in] m a macromesh
+//! \param[in] xphy a point in physical space
+//! \param[out] xref the corresponding ref coordinates (optional if NULL) 
+//! \returns the index of the macrocell containing xphy or -1 if none found
+int NumElemFromPoint(MacroMesh *m,double* xphy, double* xref);
 
 
 #endif

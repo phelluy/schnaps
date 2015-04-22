@@ -10,6 +10,30 @@ const int h20_refnormal[6][3]={{0,-1,0},
 			       {0,0,1},
 			       {0,0,-1} };
 
+// 20 nodes of the reference element
+const double h20_ref_node[20][3]={
+  0  ,0  ,0  ,
+  1  ,0  ,0  ,
+  1  ,1  ,0  ,
+  0  ,1  ,0  ,
+  0  ,0  ,1  ,
+  1  ,0  ,1  ,
+  1  ,1  ,1  ,
+  0  ,1  ,1  ,
+  0.5,0  ,0  ,
+  0  ,0.5,0  ,
+  0  ,0  ,0.5,
+  1  ,0.5,0  ,
+  1  ,0  ,0.5,
+  0.5,1  ,0  ,
+  1  ,1  ,0.5,
+  0  ,1  ,0.5,
+  0.5,0  ,1  ,
+  0  ,0.5,1  ,
+  1  ,0.5,1  ,
+  0.5,1  ,1
+};
+
 // Return the dot-product of the doubles a[3] and b[3]
 double dot_product(double a[3], double b[3])
 {
@@ -65,9 +89,9 @@ void Ref2Phy(double physnode[20][3],
 #include "h20phi.h"  // this file fills the values of phi and gradphi
 
   if (xphy != NULL) {
-    for(int ii = 0; ii < 3; ii++) {
-      xphy[ii]=0;
-      for(int i=0;i<20;i++) {
+    for(int ii = 0; ii < 3; ++ii) {
+      xphy[ii] = 0;
+      for(int i = 0; i < 20; ++i) {
 	xphy[ii] += physnode[i][ii] * gradphi[i][3];
       }
     }
@@ -143,31 +167,89 @@ void Phy2Ref(double physnode[20][3], double xphy[3], double xref[3])
 
   double dtau[3][3], codtau[3][3];
   double dxref[3], dxphy[3];
-  double det;
   int ifa =- 1;
   xref[0] = 0.5;
   xref[1] = 0.5;
   xref[2] = 0.5;
 
+  double *codtau0 = codtau[0];
+  double *codtau1 = codtau[1];
+  double *codtau2 = codtau[2];
+
   for(int iter = 0; iter < ITERNEWTON; ++iter) {
     Ref2Phy(physnode, xref, 0,ifa, dxphy, dtau, codtau, 0,0);
-    dxphy[0] -= (xphy)[0];
-    dxphy[1] -= (xphy)[1];
-    dxphy[2] -= (xphy)[2];
-    det = dot_product(dtau[0], codtau[0]);
-    assert(det > 0);
+    dxphy[0] -= xphy[0];
+    dxphy[1] -= xphy[1];
+    dxphy[2] -= xphy[2];
+    double overdet = 1.0 / dot_product(dtau[0], codtau[0]);
+    //assert(overdet > 0);
 
     for(int ii = 0; ii < 3; ii ++ ) {
       dxref[ii] = 0;
-      for(int jj = 0; jj < 3; jj ++ ) {
-        dxref[ii] += codtau[jj][ii] * dxphy[jj];
-      }
-      xref[ii] -= dxref[ii] / det;
+        dxref[ii] 
+	  += codtau0[ii] * dxphy[0] 
+	  +  codtau1[ii] * dxphy[1] 
+	  +  codtau2[ii] * dxphy[2];
+      xref[ii] -= dxref[ii] * overdet;
     }
   }
 
-  double eps = 1e-2;  // may be to constraining...
-  assert(xref[0] < 1 + eps && xref[0] > -eps);
-  assert(xref[1] < 1 + eps && xref[1] > -eps);
-  assert(xref[2] < 1 + eps && xref[2] > -eps);
+  /* double eps = 1e-2;  // may be to constraining... */
+  /* assert(xref[0] < 1 + eps && xref[0] > -eps); */
+  /* assert(xref[1] < 1 + eps && xref[1] > -eps); */
+  /* assert(xref[2] < 1 + eps && xref[2] > -eps); */
+}
+
+void RobustPhy2Ref(double physnode[20][3], double xphy[3], double xref[3]) 
+{
+#define _ITERNEWTON 8
+#define _NTHETA 5
+
+  double dtau[3][3], codtau[3][3];
+  double dxref[3], dxphy[3],xphy0[3];
+  int ifa =- 1;
+  
+
+  // construct a point xphy0 for which we know the inverse map
+  xref[0] = 0.5;
+  xref[1] = 0.5;
+  xref[2] = 0.5;
+
+  Ref2Phy(physnode, xref, 0,ifa, xphy0,0,0,0,0);
+
+
+  // homotopy path
+  // theta=0 -> xphy0
+  // theta=1 -> xphy
+  double dtheta=1./_NTHETA;
+
+  for(int itheta=0;itheta<=_NTHETA;itheta++){
+    //printf("itheta=%d\n",itheta);
+    double theta=itheta*dtheta;
+    // intermediate point to find
+    double xphy1[3];
+    for(int ii=0;ii<3;ii++){
+      xphy1[ii]=theta*xphy[ii]+(1-theta)*xphy0[ii];
+    }
+  
+
+    for(int iter = 0; iter < _ITERNEWTON; ++iter) {
+      Ref2Phy(physnode, xref, 0,ifa, dxphy, dtau, codtau, 0,0);
+      dxphy[0] -= xphy1[0];
+      dxphy[1] -= xphy1[1];
+      dxphy[2] -= xphy1[2];
+      double det = dot_product(dtau[0], codtau[0]);
+      //assert(det > 0);
+
+      for(int ii = 0; ii < 3; ii ++ ) {
+	dxref[ii] = 0;
+	for(int jj = 0; jj < 3; jj ++ ) {
+	  dxref[ii] += codtau[jj][ii] * dxphy[jj];
+	}
+	xref[ii] -= dxref[ii] / det;
+      }
+      //printf("iter= %d dxref=%f %f %f xref=%f %f %f\n",iter,dxref[0],dxref[1],dxref[2],xref[0],xref[1],xref[2]);
+    }
+  }
+
 }
