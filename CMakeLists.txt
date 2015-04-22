@@ -237,6 +237,15 @@ add_executable(
 target_link_libraries(testpic ${LIBS})
 add_test(testpic testpic)
 
+#add_test(testpic testpic)
+add_executable(
+  testpic_accumulate
+  test/test.h
+  test/testpic_accumulate.c
+  )
+target_link_libraries(testpic_accumulate ${LIBS})
+add_test(testpic_accumulate testpic_accumulate)
+
 ##########  OpenCL unit tests  ##########
 if(OPENCL_FOUND)
   add_test(testclinfo testclinfo)

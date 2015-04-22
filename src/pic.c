@@ -160,7 +160,7 @@ void AccumulateParticles(PIC* pic,field *f){
     }
     double dtau[3][3], codtau[3][3];
     Ref2Phy(physnode, // phys. nodes
-	    pic->xv + 6*i, // xref
+	    pic->xv + 6 * i, // xref
 	    NULL, -1, // dpsiref, ifa
 	    NULL, dtau, // xphy, dtau
 	    codtau, NULL, NULL); // codtau, dpsi, vnds
@@ -169,6 +169,7 @@ void AccumulateParticles(PIC* pic,field *f){
     for(int ib=0;ib < npg;ib++){
       double wpg;
       ref_pg_vol(f->interp_param + 1, ib, NULL, &wpg, NULL);
+      printf("det=%f wpg=%f \n", det, wpg);
       wpg *= det;
       double psi;
       psi_ref(f->interp_param+1,ib,pic->xv + 6*i,&psi,NULL);

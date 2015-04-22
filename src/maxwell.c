@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <assert.h>
 
+#define _KHI 1
 
 
 // Centered flux if eps=0, uncentered flux if eps=1
@@ -13,7 +14,6 @@ void Maxwell2DNumFlux(double wL[], double wR[], double* vnorm, double* flux) {
   double nx=vnorm[0];
   double ny=vnorm[1];
   double eps=1;
-#define _KHI 1
 
   flux[0] = - ny * (wR[2]+wL[2]) + _KHI * nx * (wR[3]+wL[3])
             - eps * (ny * ny + _KHI * nx * nx) * overr * (wR[0]-wL[0])
@@ -81,6 +81,19 @@ void Maxwell2DBoundaryFlux(double x[3], double t, double wL[], double *vnorm,
 void Maxwell2DInitData(double x[3], double w[]) {
   double t = 0;
   Maxwell2DImposedData(x, t, w);
+}
+
+void Maxwell2DSource(double x[3],double t,double w[],double source[]){
+
+  source[0]=w[4];
+  source[1]=w[5];
+  source[2]=0;
+  source[3]= _KHI * w[6]; 
+  source[4]=0;
+  source[5]=0;
+  source[6]=0;
+
+
 }
 
 

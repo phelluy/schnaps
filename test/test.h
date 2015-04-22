@@ -31,6 +31,8 @@ int TestMaxwell2D(void);
 
 int TestPIC(void);
 
+int TestPICAccumulate(void);
+
 int TestCLInfo(void);
 
 int TestKernel(void);

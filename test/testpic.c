@@ -18,6 +18,9 @@ void Maxwell2DConstInitData(double x[3], double w[]) {
   w[1]=0;
   w[2]=1;
   w[3]=0;
+  w[4]=0;
+  w[5]=0;
+  w[6]=0;
 }
 
 
@@ -43,7 +46,7 @@ int TestPIC(void)
   CreateParticles(&pic,&(f.macromesh));
   PlotParticles(&pic,&(f.macromesh));
 
-  f.model.m = 4; // num of conservative variables
+  f.model.m = 7; // num of conservative variables
 
   /* f.model.NumFlux = Maxwell2DNumFlux; */
   /* f.model.BoundaryFlux = Maxwell2DBoundaryFlux; */
