@@ -40,7 +40,7 @@ int Test_TransportVP(void) {
   
   f.model.m=_MV+6; // num of conservative variables f(vi) for each vi, phi, E, rho, u, p, e (ou T)
   f.model.NumFlux=VlasovP_Lagrangian_NumFlux;
-  f.model.Source = VlasovP_Lagrangian_Source;
+ 
   //f.model.Source = NULL;
  
   f.model.InitData=Test_TransportVP_InitData;
@@ -77,7 +77,7 @@ int Test_TransportVP(void) {
   f.nb_diags=3;
   f.update_before_rk=UpdateVlasovPoisson;
   f.update_after_rk=PlotVlasovPoisson;
-
+  f.model.Source = VlasovP_Lagrangian_Source;
   // prudence...
   CheckMacroMesh(&(f.macromesh),f.interp.interp_param+1);
 
@@ -85,12 +85,12 @@ int Test_TransportVP(void) {
   printf("dt =%f\n",f.dt);
 
 
-  RK2(&f,0.05);
+  RK2(&f,0.03);
   //RK2(&f,0.03,0.05);
 
    // save the results and the error
-  int iel=_NB_ELEM_V/2;
-  int iloc=_DEG_V/2;
+  int iel=2*_NB_ELEM_V/3;
+  int iloc=_DEG_V;
   printf("Trace vi=%f\n",-_VMAX+iel*_DV+_DV*glop(_DEG_V,iloc));
   Plotfield(iloc+iel*_DEG_V,(1==0),&f,"sol","dgvisu.msh");
   Plotfield(iloc+iel*_DEG_V,(1==1),&f,"error","dgerror.msh");
