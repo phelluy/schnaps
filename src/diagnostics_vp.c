@@ -101,7 +101,7 @@ double local_kinetic_energy(field * f,double* x,double *w){
   return l_ke;
 };
 
-void Energies(field* f,double k_energy, double e_energy, double t_energy){
+void Energies(field* f,double * w,double k_energy, double e_energy, double t_energy){
   
   k_energy=0;
   e_energy=0;
@@ -133,14 +133,14 @@ void Energies(field* f,double k_energy, double e_energy, double t_energy){
 	= dtau[0][0] * codtau[0][0]
 	+ dtau[0][1] * codtau[0][1]
 	+ dtau[0][2] * codtau[0][2]; 
-      double w[f->model.m];
+      double wn[f->model.m];
       for(int iv=0;iv<_INDEX_MAX+1;iv++){
 	int imem=f->varindex(f->interp_param,ie,ipg,iv);
-	w[iv]=f->wn[imem];
+	wn[iv]=w[imem];
       }
       // get the exact value
-      k_energy+=local_kinetic_energy(f,xphy,w)*wpg*det;
-      e_energy+=w[_MV+1]*w[_MV+1]*wpg*det;      
+      k_energy+=local_kinetic_energy(f,xphy,wn)*wpg*det;
+      e_energy+=wn[_MV+1]*wn[_MV+1]*wpg*det;      
     }
   }   
   

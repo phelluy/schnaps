@@ -3,7 +3,7 @@
 #include "quantities_vp.h"
 
 
-void SolvePoisson(field *f,int type_bc, double bc_l, double bc_r){
+void SolvePoisson(field *f,double * w,int type_bc, double bc_l, double bc_r){
 
   // for the moment, works only for the 1d case
   assert(f->is1d);
@@ -91,7 +91,7 @@ void SolvePoisson(field *f,int type_bc, double bc_l, double bc_r){
       double omega=wglop(degx,iloc);
       int ino=iloc + ie * degx;  
       int imem=f->varindex(f->interp_param,0,iloc+ie*(degx+1),_INDEX_RHO);
-      double charge=f->wn[imem];     
+      double charge=w[imem];     
       source[ino]+= charge*omega/nelx;
     }
   }
@@ -113,13 +113,13 @@ void SolvePoisson(field *f,int type_bc, double bc_l, double bc_r){
        int ino=ipg + ie * degx;
        // position in the DG vector
        int imem=f->varindex(f->interp_param,0,ipg+ie*(degx+1),_INDEX_PHI);
-       f->wn[imem]=sol[ino];
+       w[imem]=sol[ino];
      }
   }
 	
   FreeSkyline(&sky);
 
 
-  Compute_electric_field(f);
+  Compute_electric_field(f,w);
 
 }

@@ -12,12 +12,12 @@
 
 
 
-void Computation_charge_density(field *f){
+void Computation_charge_density(field *f, double * w){
   
   for(int ie=0;ie<f->macromesh.nbelems;ie++){
     for(int ipg=0;ipg<NPG(f->interp_param+1);ipg++){
       int imemc=f->varindex(f->interp_param,ie,ipg,_MV+2);
-      f->wn[imemc]=0;
+      w[imemc]=0;
   
       for(int ielv=0;ielv<_NB_ELEM_V;ielv++){
 	// loop on the local glops
@@ -26,7 +26,7 @@ void Computation_charge_density(field *f){
 	  double vi=-_VMAX+ielv*_DV+_DV*glop(_DEG_V,iloc);
 	  int ipgv=iloc+ielv*_DEG_V;
 	  int imem=f->varindex(f->interp_param,ie,ipg,ipgv);
-	  f->wn[imemc]+=omega*_DV*f->wn[imem];
+	  w[imemc]+=omega*_DV*w[imem];
 	}
       }
     }
@@ -34,7 +34,7 @@ void Computation_charge_density(field *f){
   
 }
 
-void Compute_electric_field(field* f){
+void Compute_electric_field(field* f, double * w){
 
   for (int ie=0;ie<f->macromesh.nbelems;ie++){
     // get the physical nodes of element ie
@@ -59,8 +59,6 @@ void Compute_electric_field(field* f){
 
     const unsigned int sc_npg=npg[0]*npg[1]*npg[2];
 
-
-    double* wn=f->wn;
 
     int f_interp_param[8]= {f->interp_param[0],
 			    f->interp_param[1],
@@ -126,7 +124,7 @@ void Compute_electric_field(field* f){
 		  for(int iq = 0; iq < npg[dim0]; iq++){
 		    q[dim0]=(p[dim0]+iq)%npg[dim0];
 		    int ipgR=offsetL+q[0]+npg[0]*(q[1]+npg[1]*q[2]);
-		    double phiq=wn[imems[m*(ipgR-offsetL)+_INDEX_PHI]];
+		    double phiq=w[imems[m*(ipgR-offsetL)+_INDEX_PHI]];
 		    double dphiref[3]={0,0,0};
 		    // compute grad phi_q at glop p
 		    dphiref[dim0]=dlag(deg[dim0],q[dim0],p[dim0])*nraf[dim0];
@@ -154,7 +152,7 @@ void Compute_electric_field(field* f){
 
 		    gradx[0]+=phiq*dphiL[0];
 		  } // iq
-		  wn[imems[m*(ipgL-offsetL)+_INDEX_EX+dim0]]=gradx[0];		  
+		  w[imems[m*(ipgL-offsetL)+_INDEX_EX+dim0]]=gradx[0];		  
 		  //printf("grad=%f\n",gradx[0]);
 		} // p2
 	      } // p1

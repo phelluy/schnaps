@@ -1648,7 +1648,7 @@ void RK2(field *f, double tmax)
     // update before predictor
     f->rk_substep =1;
     if(f->update_before_rk !=NULL){
-      f->update_before_rk(f);
+      f->update_before_rk(f,f->wn);
     }  
     
     dtfield(f, f->wn, f->dtwn);
@@ -1656,14 +1656,14 @@ void RK2(field *f, double tmax)
 
     // update after predictor
     if(f->update_after_rk !=NULL){
-      f->update_after_rk(f);
+      f->update_after_rk(f,wnp1);
     }
     
     f->tnow += 0.5 * f->dt;
 
     f->rk_substep = 2;
     if(f->update_before_rk !=NULL){
-      f->update_before_rk(f);
+      f->update_before_rk(f,wnp1);
     }  
 
     dtfield(f, wnp1, f->dtwn);
@@ -1671,7 +1671,7 @@ void RK2(field *f, double tmax)
 
     // update after corrector
     if(f->update_after_rk !=NULL){
-      f->update_after_rk(f);
+      f->update_after_rk(f,f->wn);
     }
 
     f->tnow += 0.5 * f->dt;

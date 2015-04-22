@@ -14,8 +14,8 @@ void Test_TransportVP_InitData(double x[3],double w[]);
 double TransportVP_ImposedKinetic_Data(double x[3],double t,double v);
 void Test_TransportVP_BoundaryFlux(double x[3],double t,double wL[],double* vnorm, double* flux);
 
-void UpdateVlasovPoisson(void* field);
-void PlotVlasovPoisson(void* vf);
+void UpdateVlasovPoisson(void* field, double *w);
+void PlotVlasovPoisson(void* vf, double * w);
 
 int main(void) {
   
@@ -85,7 +85,7 @@ int Test_TransportVP(void) {
   printf("dt =%f\n",f.dt);
 
 
-  RK2(&f,0.03);
+  RK2(&f,0.05);
   //RK2(&f,0.03,0.05);
 
    // save the results and the error
@@ -113,7 +113,7 @@ void Test_TransportVP_ImposedData(double x[3],double t,double w[]){
 
     double vi = (-_VMAX+nel*_DV +
 		 _DV* glop(_DEG_V,j));
-
+ 
     w[i]=TransportVP_ImposedKinetic_Data(x,t,vi);
 
   }
@@ -152,7 +152,7 @@ void Test_TransportVP_BoundaryFlux(double x[3],double t,double wL[],double* vnor
 };
 
 
-void UpdateVlasovPoisson(void* vf){
+void UpdateVlasovPoisson(void* vf, double * w){
   int type_bc;
   double bc_l, bc_r;
   int itermax;
@@ -161,21 +161,21 @@ void UpdateVlasovPoisson(void* vf){
   bc_l=0;
   bc_r=1;
     
-  // Computation_charge_density(f);
+  // Computation_charge_density(f,w);
   
   // Solving poisson
-  SolvePoisson(f,type_bc,bc_l,bc_r);    
+  SolvePoisson(f,w,type_bc,bc_l,bc_r);    
   
 }
 
 
-void PlotVlasovPoisson(void* vf){
+void PlotVlasovPoisson(void* vf, double * w){
   double k_energy=0,e_energy=0,t_energy=0;
   
   field* f=vf;
   
   if(f->rk_substep == f->rk_max){
-    Energies(f,k_energy,e_energy,t_energy);
+    Energies(f,w,k_energy,e_energy,t_energy);
   }
   vf=f;
 }

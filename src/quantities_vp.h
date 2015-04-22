@@ -11,9 +11,9 @@
 #include "skyline.h"
 #include "quantities_vp.h"
 
-void Computation_charge_density(field *f);
+void Computation_charge_density(field *f, double * w);
 
-void Compute_electric_field(field* f);
+void Compute_electric_field(field* f, double * w);
 
 
 #endif

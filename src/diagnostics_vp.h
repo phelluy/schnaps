@@ -23,7 +23,7 @@ double L2_Kinetic_error(field* f);
 
 double local_kinetic_energy(field * f,double* x,double *w);
 
-void Energies(field* f,double k_energy, double e_energy, double t_energy);
+void Energies(field* f,double * w,double k_energy, double e_energy, double t_energy);
 
 void Plot_Energies(field* f);
 
