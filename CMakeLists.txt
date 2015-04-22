@@ -223,6 +223,42 @@ add_executable(
 target_link_libraries(testmeq2 ${LIBS})
 add_test(testmeq2 testmeq2)
 
+add_test(testperiodic testperiodic)
+add_executable(
+  testperiodic
+  test/test.h
+  test/testperiodic.c
+)
+target_link_libraries(testperiodic ${LIBS})
+add_test(testperiodic testperiodic)
+
+add_test(testskyline testskyline)
+add_executable(
+  testskyline
+  test/test.h
+  test/testskyline.c
+  )
+target_link_libraries(testskyline ${LIBS})
+add_test(testskyline testskyline)
+ 
+add_test(testpoisson testpoisson)
+add_executable(
+  testpoisson
+  test/test.h
+  test/testpoisson.c
+)
+target_link_libraries(testpoisson ${LIBS})
+add_test(testpoisson testpoisson)
+
+add_test(test_transportvp test_transportvp)
+add_executable(
+  test_transportvp
+  test/test.h
+  test/test_transportvp.c
+)
+target_link_libraries(test_transportvp ${LIBS})
+add_test(test_transportvp test_transportvp)
+
 ##########  OpenCL unit tests  ##########
 if(OPENCL_FOUND)
   add_test(testclinfo testclinfo)

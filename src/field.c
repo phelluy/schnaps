@@ -316,7 +316,7 @@ void Initfield(field *f) {
   f->is2d = false;
   f->is1d = false;
   
-  f->vmax = 1.0; // FIXME: make this variable ??????
+  //f->vmax = 1.0; // FIXME: make this variable ??????
 
   // a copy for avoiding too much "->"
   for(int ip = 0; ip < 8; ip++)
@@ -349,7 +349,7 @@ void Initfield(field *f) {
   // Compute cfl parameter min_i vol_i/surf_i
   f->hmin = min_grid_spacing(f);
 
-  f->dt = f->model.cfl * f->hmin / f->vmax;
+  f->dt = 0;
 
   printf("hmin=%f\n", f->hmin);
 
@@ -1105,7 +1105,7 @@ void DGMass(void *mc, field *f, double *w, double *dtw)
 {
   MacroCell* mcell = (MacroCell*) mc;
   int m=f->model.m;
-  
+
   // loop on the elements
   for (int ie = mcell->first; ie < mcell->last_p1; ie++) {
     // get the physical nodes of element ie
@@ -1146,7 +1146,7 @@ void DGMass(void *mc, field *f, double *w, double *dtw)
 	int imem = f->varindex(f->interp_param, ie, ipg, iv);
 	dtw[imem] /= (wpg * det);
 	dtw[imem] += source[iv];
-        printf("det2=%f s=%f ie = %d\n", det, source[0], ie);
+        //printf("det2=%f s=%f ie = %d\n", det, source[0], ie);
 	
       }
     }
@@ -1616,6 +1616,11 @@ void RK_in(double *fwnp1, double *fdtwn, const double dt, const int sizew)
 // Time integration by a second-order Runge-Kutta algorithm
 void RK2(field *f, double tmax) 
 {
+
+  f->dt = f->model.cfl * f->hmin / f->vmax;
+
+  printf("dt=%f\n",f->dt);
+
   f->itermax = tmax / f->dt;
   int size_diags;
   int freq = (1 >= f->itermax / 10)? 1 : f->itermax / 10;

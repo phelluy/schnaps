@@ -6,6 +6,7 @@
 #include "global.h"
 #include "geometry.h"
 #include "field.h"
+#include "skyline.h"
 #ifdef _WITH_OPENCL
 #include "field_cl.h"
 #include "clinfo.h"

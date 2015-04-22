@@ -17,6 +17,7 @@ typedef struct MacroMesh{
   int *face2elem; //!< faces to elems connectivity (Left and Right)
   double *node; //!< nodes coordinates array
   bool is2d; //!< 2d computation detection
+  bool is1d; //!< 1d computation detection
 } MacroMesh;
 
 //! \brief a simple struct for modelling a four
@@ -70,11 +71,18 @@ void AffineMap(double* x);
 //! \param[inout] m the macromesh
 void AffineMapMacroMesh(MacroMesh *m);
 
+//! \brief detects if the mesh is 1D
+//! and then permuts the nodes so that
+//! the y,z directions coincide in the reference
+//! or physical frame.
+//! \param[inout] m a macromesh with m.is1d updated
+void Detect1DMacroMesh(MacroMesh* m);
+
 //! \brief detects if the mesh is 2D
 //! and then permuts the nodes so that
 //! the z direction coincides in the reference
 //! or physical frame.
-//! \param[inout] m a macromesh
+//! \param[inout] m a macromesh with m.is2d updated
 void Detect2DMacroMesh(MacroMesh *m);
 
 //! \brief verify the validity and orientation of the mesh
