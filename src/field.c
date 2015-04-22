@@ -1703,6 +1703,8 @@ void RK4_final_inplace(double *w, double *l1, double *l2, double *l3,
 // Time integration by a fourth-order Runge-Kutta algorithm
 void RK4(field *f, double tmax) 
 {
+  f->dt = f->model.cfl * f->hmin / f->vmax;
+
   f->itermax = tmax / f->dt;
   int freq = (1 >= f->itermax / 10)? 1 : f->itermax / 10;
   int sizew = f->macromesh.nbelems * f->model.m * NPG(f->interp_param + 1);

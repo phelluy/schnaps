@@ -85,7 +85,7 @@ int Test_TransportVP(void) {
   printf("dt =%f\n",f.dt);
 
 
-  RK2(&f,0.3);
+  RK2(&f,0.03);
   //RK2(&f,0.03,0.05);
 
    // save the results and the error

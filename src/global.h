@@ -75,4 +75,4 @@ char cl_buildoptions[1024];
 #define __local
 #endif
 
-#define _PERIOD 1
+//#define _PERIOD 1

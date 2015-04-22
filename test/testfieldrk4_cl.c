@@ -89,6 +89,7 @@ int TestfieldRK4_CL(void){
  
   double tmax = 0.1;
   //RK4(&f, tmax);
+  f.vmax=1;
   RK4_CL(&f, tmax, 0, NULL, NULL);
   clFinish(f.cli.commandqueue); 
 

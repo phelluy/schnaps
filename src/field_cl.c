@@ -919,6 +919,7 @@ void RK4_final_inplace_CL(field *f,
 void RK4_CL(field *f, double tmax, 
 	    cl_uint nwait, cl_event *wait, cl_event *done) 
 {
+  f->dt = f->model.cfl * f->hmin / f->vmax;
   clWaitForEvents(nwait, wait);
 
   f->itermax = tmax / f->dt;
@@ -1011,6 +1012,7 @@ void RK4_CL(field *f, double tmax,
 void RK2_CL(field *f, double tmax,
 	    cl_uint nwait, cl_event *wait, cl_event *done) 
 {
+  f->dt = f->model.cfl * f->hmin / f->vmax;
   f->itermax = tmax / f->dt;
   int freq = (1 >= f->itermax / 10)? 1 : f->itermax / 10;
   int iter = 0;

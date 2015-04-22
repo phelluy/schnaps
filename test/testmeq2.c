@@ -55,6 +55,7 @@ int TestmEq2(void) {
   //Displayfield(&f);
  
   double tmax = 0.1;
+  f.vmax=1;
   RK2(&f, tmax);
  
   // Save the results and the error

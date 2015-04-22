@@ -41,6 +41,7 @@ int TestfieldRK2_2D_SubCell(void) {
   assert(f.is2d);
   double tmax = 0.2;
 
+  f.vmax=1;
   RK2(&f, tmax);
  
   Plotfield(0, false, &f, NULL, "dgvisu.msh");
