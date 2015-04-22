@@ -1,3 +1,13 @@
+
+#if 0
+//#define _DOUBLE_PRECISION
+#ifdef _DOUBLE_PRECISION
+#define real double
+#else
+#define real float
+#endif
+
+
 // Return the 1d derivative of lagrange polynomial ib at glop ipg
 real dlag(int deg, int ib, int ipg) {
   return gauss_lob_dpsi[gauss_lob_dpsi_offset[deg] + ib * (deg + 1) + ipg];
@@ -1216,3 +1226,5 @@ void RK4_final_stage(__global real *w,
     a[2] * l3[i] +
     a[3] * dtw[i];
 }
+
+#endif

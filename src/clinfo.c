@@ -137,8 +137,8 @@ bool cldevice_is_acceptable(cl_uint nplatform, cl_uint ndevice)
 
   cl_device_id device = get_device_id(platform, ndevice);
   if(!cldevice_supports_real(&device)) {
-    printf("cldevice does not support real\n");
-    return false;
+    printf("cldevice does not support double\n");
+    //return false;
   }
 
   return true;
