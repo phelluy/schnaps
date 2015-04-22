@@ -1195,31 +1195,31 @@ void show_cl_timing(field *f)
 
   ns = f->zbuf_time;
   printf("set_buf_to_zero_cl time:      %f%% \t%luns \t%fs\n", 
-	 ns * N, ns, 1e-9 * ns);
+	 ns * N, (unsigned long) ns, 1e-9 * ns);
 
   ns = f->minter_time;
   printf("DGMacroCellInterface_CL time: %f%% \t%luns \t%fs\n", 
-	 ns * N, ns, 1e-9 * ns);
+	 ns * N, (unsigned long) ns, 1e-9 * ns);
 
   ns = f->boundary_time;
   printf("DGBoundary time:              %f%% \t%luns \t%fs\n", 
-	 ns*N, ns, 1e-9 * ns);
+	 ns*N, (unsigned long) ns, 1e-9 * ns);
 
   ns = f->vol_time;
   printf("DGVolume_CL time:             %f%% \t%luns \t%fs\n", 
-	 ns*N, ns, 1e-9 * ns);
+	 ns*N, (unsigned long) ns, 1e-9 * ns);
 
   ns = f->flux_time;
   printf("DGFlux_CL time:               %f%% \t%luns \t%fs\n", 
-	 ns*N, ns, 1e-9 * ns);
+	 ns*N, (unsigned long) ns, 1e-9 * ns);
 
   ns = f->mass_time;
   printf("DGMass_CL time:               %f%% \t%luns \t%fs\n", 
-	 ns*N, ns, 1e-9 * ns);
+	 ns*N, (unsigned long) ns, 1e-9 * ns);
 
   ns = f->rk_time;
   printf("rk time:                      %f%% \t%luns \t%fs\n", 
-	 ns*N, ns, 1e-9 * ns);
+	 ns*N, (unsigned long) ns, 1e-9 * ns);
 
 }
 
