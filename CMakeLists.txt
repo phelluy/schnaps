@@ -44,8 +44,6 @@ if(OPENMP_FOUND)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
 endif()
 
-find_package(flann)
-
 include_directories(src)
 
 enable_testing()
@@ -101,14 +99,19 @@ add_library (_schnaps ${source_files})
 set(LIBS "")
 
 if (OPENCL_FOUND)
-list(APPEND LIBS _schnaps pthread ${OPENCL_LIBRARIES} m)
+  list(APPEND LIBS _schnaps pthread ${OPENCL_LIBRARIES} m)
 else()
-list(APPEND LIBS _schnaps pthread m)
+  list(APPEND LIBS _schnaps pthread m)
 endif (OPENCL_FOUND)
 
 # nearest neighbour fast search library
-list(APPEND LIBS flann)
-
+find_package(flann)
+if(FLANN_FOUND)
+  MESSAGE("Delicious!")
+  list(APPEND LIBS flann)
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -D_WITH_FLANN")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}  -D_WITH_FLANN")
+endif()
 
 # main program schnaps
 add_executable(

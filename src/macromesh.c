@@ -9,7 +9,7 @@
 #include <math.h>
 
 // macro for activating flann (fast finding of neighbours)
-#define _WITH_FLANN
+//#define _WITH_FLANN
 
 #ifdef _WITH_FLANN
 #include <flann/flann.h>
