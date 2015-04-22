@@ -122,6 +122,7 @@ typedef struct field {
   cl_kernel dgflux;
   cl_kernel dgvolume;
   cl_kernel dginterface;
+  cl_kernel dgboundary;
   cl_kernel RK_out_CL;
   cl_kernel RK_in_CL;
   cl_kernel RK4_final_stage;
@@ -153,7 +154,13 @@ typedef struct field {
   cl_event clv_interupdateR;
 
   // OpenCL timing
-  cl_ulong zbuf_time, mass_time, vol_time, minter_time, rk_time;
+  cl_ulong zbuf_time;
+  cl_ulong mass_time;
+  cl_ulong vol_time;
+  cl_ulong flux_time;
+  cl_ulong minter_time;
+  cl_ulong boundary_time;
+  cl_ulong rk_time;
 #endif
 
 } field;

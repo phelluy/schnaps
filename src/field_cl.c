@@ -71,19 +71,18 @@ cl_ulong clv_duration(cl_event clv)
   return clv_endtime(clv) - clv_startime(clv);
 }
 
-// Set OpenCL kernel arguments for DGMacroCellInterface
-void initDGMacroCellInterface_CL(field *f, 
-				 cl_mem physnodeL_cl, cl_mem physnodeR_cl)
+void initDGBoundary_CL(field *f, 
+		       int ieL, int locfaL,
+		       cl_mem physnodeL_cl, 
+		       size_t cachesize)
 {
-  //printf("initDGMacroCellInterface_CL\n");
 
   cl_int status;
-  cl_kernel kernel = f->dginterface;
+  cl_kernel kernel = f->dgboundary;
 
-  // Set kernel arguments
   unsigned int argnum = 0;
-
-  // associates the param buffer to the 0th kernel argument
+  
+  // __constant int *param,        // 0: interp param
   status = clSetKernelArg(kernel,
                           argnum++,
                           sizeof(cl_mem),
@@ -91,21 +90,31 @@ void initDGMacroCellInterface_CL(field *f,
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 
-  // tnow
-  argnum++;
+  // double tnow,                  // 1: current time
+  status = clSetKernelArg(kernel,
+  			  argnum++,
+  			  sizeof(double),
+  			  &f->tnow);
+  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status >= CL_SUCCESS);
 
-  // ieL
-  argnum++;
+  // int ieL,                      // 2: left macrocell
+  status = clSetKernelArg(kernel,
+  			  argnum++,
+  			  sizeof(int),
+  			  &ieL);
+  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status >= CL_SUCCESS);
 
-  // ieR
-  argnum++;
+  // int locfaL,                   // 3: left face index
+  status = clSetKernelArg(kernel,
+  			  argnum++,
+  			  sizeof(int),
+  			  &locfaL);
+  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status >= CL_SUCCESS);
 
-  // locfaL
-  argnum++;
-
-  // locfaR
-  argnum++;
-
+  // __constant double *physnodeL, // 4: left physnode
   status = clSetKernelArg(kernel,
                           argnum++,
                           sizeof(cl_mem),
@@ -113,43 +122,54 @@ void initDGMacroCellInterface_CL(field *f,
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 
+  // __global double *wn,          // 5: field
   status = clSetKernelArg(kernel,
                           argnum++,
                           sizeof(cl_mem),
-                          &physnodeR_cl);
+                          &f->wn_cl);
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 
-  // wn_cl
-  argnum++;
-
+  // __global double *dtwn,        // 6: time derivative
   status = clSetKernelArg(kernel,
                           argnum++,
                           sizeof(cl_mem),
-                          &(f->dtwn_cl));
+                          &f->dtwn_cl);
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
-  //printf("... initDGMacroCellInterface_CL done.\n");
+
+  // __local double *cache         // 7: local mem
+  status = clSetKernelArg(kernel,
+                          argnum++,
+                          sizeof(cl_double) * cachesize,
+                          NULL);
+  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status >= CL_SUCCESS);
 }
 
+
 // Set the loop-dependant kernel arguments for DGMacroCellInterface_CL
-void loop_initDGMacroCellInterface_CL(field *f, 
-				      int ieL, int ieR, int locfaL, int locfaR)
+void initDGMacroCellInterface_CL(field *f, 
+				      int ieL, int ieR, int locfaL, int locfaR,
+				      cl_mem physnodeL_cl, cl_mem physnodeR_cl,
+				      size_t cachesize)
 {
   //printf("loop_initDGMacroCellInterface_CL\n");
   cl_int status;
   cl_kernel kernel = f->dginterface;
 
   // Set kernel arguments
-  unsigned int argnum = 1;
+  unsigned int argnum = 0;
 
+  //__constant int *param,        // 0: interp param
   status = clSetKernelArg(kernel,
-			  argnum++,
-			  sizeof(double),
-			  &(f->tnow));
+			 argnum++,
+                          sizeof(cl_mem),
+                          &(f->param_cl));
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 
+  //int ieL,                      // 1: left macrocell 
   status = clSetKernelArg(kernel,
 			  argnum++,
 			  sizeof(int),
@@ -157,6 +177,7 @@ void loop_initDGMacroCellInterface_CL(field *f,
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 
+  //int ieR,                      // 2: right macrocell
   status = clSetKernelArg(kernel,
 			  argnum++,
 			  sizeof(int),
@@ -164,6 +185,7 @@ void loop_initDGMacroCellInterface_CL(field *f,
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 
+  //int locfaL,                   // 3: left face index
   status = clSetKernelArg(kernel,
 			  argnum++,
 			  sizeof(int),
@@ -171,10 +193,51 @@ void loop_initDGMacroCellInterface_CL(field *f,
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 
+  //int locfaR,                   // 4: right face index
   status = clSetKernelArg(kernel,
 			  argnum++,
 			  sizeof(int),
 			  &locfaR);
+  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status >= CL_SUCCESS);
+
+  //__constant double *physnodeL, // 5: left physnode
+  status = clSetKernelArg(kernel,
+                          argnum++,
+                          sizeof(cl_mem),
+                          &physnodeL_cl);
+  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status >= CL_SUCCESS);
+
+  //__constant double *physnodeR, // 6: right physnode
+  status = clSetKernelArg(kernel,
+                          argnum++,
+                          sizeof(cl_mem),
+                          &physnodeR_cl);
+  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status >= CL_SUCCESS);
+
+  //__global double *wn,          // 7: field 
+  status = clSetKernelArg(kernel,
+                          argnum++,
+                          sizeof(cl_mem),
+                          &f->wn_cl);
+  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status >= CL_SUCCESS);
+
+  //__global double *dtwn,        // 8: time derivative
+  status = clSetKernelArg(kernel,
+                          argnum++,
+                          sizeof(cl_mem),
+                          &(f->dtwn_cl));
+  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status >= CL_SUCCESS);
+
+  //__local double *cache         // 9: local mem
+  status = clSetKernelArg(kernel,
+                          argnum++,
+                          sizeof(cl_double) * cachesize,
+                          NULL);
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 
@@ -211,14 +274,16 @@ void init_DGMass_CL(field *f)
   status = clSetKernelArg(kernel,
                           argnum++,
                           sizeof(cl_mem),
-                          &(f->dtwn_cl));
+                          &f->dtwn_cl);
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 }
 
 // Set kernel argument for DGVolume_CL
-void init_DGVolume_CL(field *f, cl_mem *wn_cl)
+void init_DGVolume_CL(field *f, cl_mem *wn_cl, size_t cachesize)
 {
+  //printf("DGVolume cachesize:%zu\n", cachesize);
+
   cl_int status;
   int argnum = 0;
   cl_kernel kernel = f->dgvolume;
@@ -253,6 +318,20 @@ void init_DGVolume_CL(field *f, cl_mem *wn_cl)
                           &(f->dtwn_cl));
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
+
+  status = clSetKernelArg(kernel,
+                          argnum++,
+                          sizeof(cl_double) * cachesize,
+                          NULL);
+  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status >= CL_SUCCESS);
+
+  /* status = clSetKernelArg(kernel, */
+  /*                         argnum++, */
+  /*                         sizeof(cl_double) * cachesize, */
+  /*                         NULL); */
+  /* if(status != CL_SUCCESS) printf("%s\n", clErrorString(status)); */
+  /* assert(status >= CL_SUCCESS); */
 }
 
 // Update the cl buffer with physnode data depending in the
@@ -328,9 +407,7 @@ void DGMacroCellInterface_CL(void *mf, field *f, cl_mem *wn_cl,
   int end = mface->last_p1;
   for(int ifa = start; ifa < end; ++ifa) {
     //printf("ifa: %d\n", ifa);
-    
-    initDGMacroCellInterface_CL(f, f->physnode_cl, f->physnodeR_cl);
-    
+        
     int ieL =    f->macromesh.face2elem[4 * ifa];
     int locfaL = f->macromesh.face2elem[4 * ifa + 1];
     int ieR =    f->macromesh.face2elem[4 * ifa + 2];
@@ -353,22 +430,46 @@ void DGMacroCellInterface_CL(void *mf, field *f, cl_mem *wn_cl,
       status = clSetUserEventStatus(f->clv_interupdateR, CL_COMPLETE);
     }
 
-    // Set the remaining loop-dependant kernel arguments
-    loop_initDGMacroCellInterface_CL(f, ieL, ieR, locfaL, locfaR);
-
     size_t numworkitems = NPGF(f->interp_param + 1, locfaL);
-    status = clEnqueueNDRangeKernel(f->cli.commandqueue,
-        			    kernel,
-        			    1, // cl_uint work_dim,
-				    NULL, // const size_t *global_work_offset,
-        			    &numworkitems, // size_t *global_work_size, 
-        			    NULL, // size_t *local_work_size, 
-        			    1,  // cl_uint num_events_in_wait_list, 
-				    &(f->clv_interupdateR), // *event_wait_list,
-				    &(f->clv_interkernel)); // *event
-    if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
-    assert(status >= CL_SUCCESS);
-    f->minter_time += clv_duration(f->clv_interkernel);
+    if(ieR >= 0) {
+    
+      // Set the remaining loop-dependant kernel arguments
+      size_t kernel_cachesize = 1;
+      initDGMacroCellInterface_CL(f, 
+				  ieL, ieR, locfaL, locfaR, 
+				  f->physnode_cl, f->physnodeR_cl, 
+				  kernel_cachesize);
+
+      status = clEnqueueNDRangeKernel(f->cli.commandqueue,
+				      kernel,
+				      1, // cl_uint work_dim,
+				      NULL, // global_work_offset,
+				      &numworkitems, // global_work_size, 
+				      NULL, // size_t *local_work_size, 
+				      1,  // nwait, 
+				      &(f->clv_interupdateR), // *wait_list,
+				      &(f->clv_interkernel)); // *event
+      if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
+      assert(status >= CL_SUCCESS);
+      f->minter_time += clv_duration(f->clv_interkernel);
+    } else {
+      size_t cachesize = 1; // TODO make use of cache
+      initDGBoundary_CL(f, ieL, locfaL, f->physnode_cl, cachesize);
+      status = clEnqueueNDRangeKernel(f->cli.commandqueue,
+				      f->dgboundary,
+				      1, // cl_uint work_dim,
+				      NULL, // global_work_offset,
+				      &numworkitems, // global_work_size, 
+				      NULL, // size_t *local_work_size, 
+				      1,  // nwait, 
+				      &(f->clv_interupdateR), // *wait_list,
+				      &(f->clv_interkernel)); // *event
+      if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
+      assert(status >= CL_SUCCESS);
+      f->boundary_time += clv_duration(f->clv_interkernel);
+    }
+
+
   }
   
   clWaitForEvents(1, &(f->clv_interkernel));
@@ -434,8 +535,11 @@ void DGMass_CL(void *mc, field *f,
   //printf("... DGMass_CL done.\n");
 }
 
-void init_DGFlux_CL(field *f, int ie, int dim0, cl_mem *wn_cl)
+void init_DGFlux_CL(field *f, int ie, int dim0, cl_mem *wn_cl, 
+		    size_t cachesize)
 {
+  //printf("DGFlux cachesize:%zu\n", cachesize);
+
   cl_kernel kernel = f->dgflux;
   cl_int status;
   int argnum = 0; 
@@ -487,6 +591,14 @@ void init_DGFlux_CL(field *f, int ie, int dim0, cl_mem *wn_cl)
                           &(f->dtwn_cl));
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
+
+  // __local double* wnloc,       // 6: wn local memory
+  status = clSetKernelArg(kernel,
+                          argnum++,
+                          sizeof(cl_double) * cachesize,
+                          NULL);
+  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status >= CL_SUCCESS);
 }
 
 void DGFlux_CL(field *f, int dim0, int ie, cl_mem *wn_cl,
@@ -494,6 +606,7 @@ void DGFlux_CL(field *f, int dim0, int ie, cl_mem *wn_cl,
 {
   // Unpack the parameters
   int *param = f->interp_param;
+  int m = param[0];
   int deg[3] = {param[1], param[2], param[3]};
   int nraf[3] = {param[4], param[5], param[6]};
 
@@ -502,7 +615,7 @@ void DGFlux_CL(field *f, int dim0, int ie, cl_mem *wn_cl,
   dim[1] = (dim[0] + 1) % 3;
   dim[2] = (dim[1] + 1) % 3;
 
-  // Number of points on per face
+  // Number of points per face
   int npgf = (deg[dim[1]] + 1) * (deg[dim[2]] + 1);
 
   // Number of faces
@@ -518,11 +631,11 @@ void DGFlux_CL(field *f, int dim0, int ie, cl_mem *wn_cl,
 
   if(nf > 0) { // If there are faces to work on, launch the kernel
     // Set kernel args
-    init_DGFlux_CL(f, ie, dim0, wn_cl);
-     
-    // Launch the kernel
     size_t numworkitems = nf * npgf;
     size_t groupsize = npgf;
+    init_DGFlux_CL(f, ie, dim0, wn_cl, 4 * m * groupsize);
+     
+    // Launch the kernel
     cl_int status;
     status = clEnqueueNDRangeKernel(f->cli.commandqueue,
 				    f->dgflux,
@@ -551,8 +664,12 @@ void DGVolume_CL(void *mc, field *f, cl_mem *wn_cl,
   int *param = f->interp_param;
 
   cl_int status;
-
-  init_DGVolume_CL(f, wn_cl);
+  int m = param[0];
+  size_t groupsize = (param[1] + 1) * (param[2] + 1) * (param[3] + 1);
+  // The total work items number is the number of glops in a subcell
+  // * number of subcells
+  size_t numworkitems = param[4] * param[5] * param[6] * groupsize;
+  init_DGVolume_CL(f, wn_cl, 2 * groupsize * m);
     
   const int start = mcell->first;
   const int end = mcell->last_p1;
@@ -569,11 +686,11 @@ void DGVolume_CL(void *mc, field *f, cl_mem *wn_cl,
     assert(status >= CL_SUCCESS);
 
     // The groupsize is the number of glops in a subcell
-    size_t groupsize = (param[1] + 1)* (param[2] + 1)*(param[3] + 1);
-    // The total work items number is the number of glops in a subcell
-    // * number of subcells
-    size_t numworkitems = param[4] * param[5] * param[6] * groupsize;
-    //printf("groupsize=%zd numworkitems=%zd\n", groupsize, numworkitems);
+    /* size_t groupsize = (param[1] + 1)* (param[2] + 1)*(param[3] + 1); */
+    /* // The total work items number is the number of glops in a subcell */
+    /* // * number of subcells */
+    /* size_t numworkitems = param[4] * param[5] * param[6] * groupsize; */
+    /* //printf("groupsize=%zd numworkitems=%zd\n", groupsize, numworkitems); */
     status = clEnqueueNDRangeKernel(f->cli.commandqueue,
 				    kernel,
 				    1,
@@ -615,7 +732,8 @@ void set_buf_to_zero_cl(cl_mem *buf, int size, field *f,
 				  done);
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
-  f->zbuf_time += clv_duration(f->clv_zbuf);  
+  if(done != NULL)
+    f->zbuf_time += clv_duration(f->clv_zbuf);  
 }
 
 // Apply the Discontinuous Galerkin approximation for computing the
@@ -650,11 +768,11 @@ void dtfield_CL(field *f, cl_mem *wn_cl,
     DGFlux_CL(f, 0, ie, wn_cl, 
 	      1, &(f->clv_physnodeupdate), 
 	      f->clv_flux);
-    //f->flux_time += clv_duration(f->clv_flux[0]);
+    f->flux_time += clv_duration(f->clv_flux[0]);
     for(unsigned int d = 1; d < ndim; ++d) {
       DGFlux_CL(f, d, ie, wn_cl, 
 		1, f->clv_flux + (d - 1) % ndim,  f->clv_flux + d);
-      //f->flux_time += clv_duration(f->clv_flux[d]);
+      f->flux_time += clv_duration(f->clv_flux[d]);
     }
 
     DGVolume_CL(mcelli, f, wn_cl,
@@ -1062,22 +1180,37 @@ void RK2_CL(field *f, double tmax,
 
 void show_cl_timing(field *f)
 {
-  cl_ulong total = f->zbuf_time + f->minter_time + f->vol_time 
-    + f->mass_time + f->rk_time;
-  double N = 1.0 / total;
+  cl_ulong total = 0;
+  total += f->zbuf_time;
+  total += f->minter_time;
+  total += f->boundary_time;
+  total += f->vol_time;
+  total += f->mass_time;
+  total += f->rk_time;
+  total += f->flux_time;
+  
+  double N = 100.0 / total;
 
   cl_ulong ns;
 
   ns = f->zbuf_time;
   printf("set_buf_to_zero_cl time:      %f%% \t%luns \t%fs\n", 
-	 ns*N, ns, 1e-9 * ns);
+	 ns * N, ns, 1e-9 * ns);
 
   ns = f->minter_time;
   printf("DGMacroCellInterface_CL time: %f%% \t%luns \t%fs\n", 
+	 ns * N, ns, 1e-9 * ns);
+
+  ns = f->boundary_time;
+  printf("DGBoundary time:              %f%% \t%luns \t%fs\n", 
 	 ns*N, ns, 1e-9 * ns);
 
   ns = f->vol_time;
   printf("DGVolume_CL time:             %f%% \t%luns \t%fs\n", 
+	 ns*N, ns, 1e-9 * ns);
+
+  ns = f->flux_time;
+  printf("DGFlux_CL time:               %f%% \t%luns \t%fs\n", 
 	 ns*N, ns, 1e-9 * ns);
 
   ns = f->mass_time;

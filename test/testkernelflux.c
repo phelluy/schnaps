@@ -27,8 +27,8 @@ int TestKernelFlux()
   f.interp.interp_param[1] = 2; // x direction degree
   f.interp.interp_param[2] = 2; // y direction degree
   f.interp.interp_param[3] = 0; // z direction degree
-  f.interp.interp_param[4] = 2; // x direction refinement
-  f.interp.interp_param[5] = 2; // y direction refinement
+  f.interp.interp_param[4] = 3; // x direction refinement
+  f.interp.interp_param[5] = 3; // y direction refinement
   f.interp.interp_param[6] = 1; // z direction refinement
 
   ReadMacroMesh(&(f.macromesh),"test/testmacromesh.msh");
@@ -74,7 +74,7 @@ int TestKernelFlux()
 
   clFinish(f.cli.commandqueue);
   for(int ie = 0; ie < f.macromesh.nbelems; ++ie) {
-    printf("\nie: %d\n", ie);
+    // printf("\nie: %d\n", ie);
 
     update_physnode_cl(&f, ie, f.physnode_cl, f.physnode, NULL,
     		       0, NULL, NULL);

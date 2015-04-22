@@ -257,6 +257,12 @@ void init_field_cl(field *f)
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 
+  f->dgboundary = clCreateKernel(f->cli.program,
+				 "DGBoundary",
+				 &status);
+  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status >= CL_SUCCESS);
+
   f->RK_out_CL = clCreateKernel(f->cli.program,
 				"RK_out_CL",
 				&status);
@@ -306,7 +312,9 @@ void init_field_cl(field *f)
   f->zbuf_time = 0;
   f->mass_time = 0;
   f->vol_time = 0;
+  f->flux_time = 0;
   f->minter_time = 0;
+  f->boundary_time = 0;
   f->rk_time = 0;
 }
 #endif
@@ -1098,13 +1106,12 @@ void DGMacroCellInterface(void *mc, field *f, double *w, double *dtw)
   }
 }
 
-
-
 // Apply division by the mass matrix
 void DGMass(void *mc, field *f, double *w, double *dtw) 
 {
-  MacroCell* mcell = (MacroCell*) mc;
-  int m=f->model.m;
+  MacroCell *mcell = (MacroCell*)mc;
+
+  int m = f->model.m;
 
   // loop on the elements
   for (int ie = mcell->first; ie < mcell->last_p1; ie++) {
@@ -1152,7 +1159,6 @@ void DGMass(void *mc, field *f, double *w, double *dtw)
     }
   }
 }
-
 
 // Compute the Discontinuous Galerkin volume terms, fast version
 void DGVolume(void *mc, field *f, double *w, double *dtw) 

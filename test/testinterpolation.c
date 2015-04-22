@@ -136,7 +136,40 @@ int TestInterpolation(void){
     }
   }
 
+
+
 #define _MAXDEGTEST 5
+
+  // test that ipg_to_xyz and xyz_to_ipg are inverses of each other
+
+#define _DMAX 5
+
+  for(int d0=0;d0<_DMAX;d0++){
+    for(int d1=0;d1<_DMAX;d1++){
+      for(int d2=0;d2<_DMAX;d2++){
+	for(int r0=0;r0<_DMAX;r0++){
+	  for(int r1=0;r1<_DMAX;r1++){
+	    for(int r2=0;r2<_DMAX;r2++){
+	      int deg[6]={d0,d1,d2,r0,r1,r2};
+	      int* raf=deg+3;
+	      for (int ipg=0;ipg<NPG(deg);ipg++){
+		int ix[3],ic[3];
+		int ipgcopy=ipg;
+		//printf("avant %d %d %d npg=%d \n",d0,d1,d2,NPG(deg));
+		ipg_to_xyz(raf,deg,ic,ix,&ipgcopy);
+		//printf("apres %d %d %d \n",d0,d1,d2);
+		xyz_to_ipg(raf,deg,ic,ix,&ipgcopy);
+		assert(ipg==ipgcopy);
+	      }
+	    }
+	  }
+	}
+      }
+    }
+  }
+
+    
+    
 
   // test that the ref_pg_face function
   // is compatible with ref_pg_vol
