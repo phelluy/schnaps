@@ -135,10 +135,12 @@ bool cldevice_is_acceptable(cl_uint nplatform, cl_uint ndevice)
     return false;
   }
 
-  cl_device_id device = get_device_id(platform, ndevice);
-  if(!cldevice_supports_real(&device)) {
-    printf("cldevice does not support double\n");
-    //return false;
+  if(sizeof(real) == sizeof(double)) {
+    cl_device_id device = get_device_id(platform, ndevice);
+    if(!cldevice_supports_real(&device)) {
+      printf("cldevice does not support double\n");
+      return false;
+    }
   }
 
   return true;
@@ -417,15 +419,13 @@ void BuildKernels(CLInfo *cli, char *strprog, char *buildoptions)
   /* 				void(CL_CALLBACK *pfn_notify)(cl_program program, void *user_data), */
   /* 				void *user_data) */
 
-  if(status != CL_SUCCESS) {
-
+  if(status < CL_SUCCESS) {
     //printf("%s\n", strprog);
     printf("%s\n", clErrorString(status));
     printf("Compilation output:\n%s\n",
   	   print_build_debug(&(cli->program), &cli->device[cli->deviceid]));
   }
   assert(status >= CL_SUCCESS);
-
 }
 
 void ReadFile(char filename[], char **s){

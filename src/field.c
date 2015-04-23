@@ -223,12 +223,12 @@ void init_field_cl(field *f)
 
 
   // Program compilation
-  char *s;
+  char *strprog;
   GetOpenCLCode();
-  ReadFile("schnaps.cl", &s);
+  ReadFile("schnaps.cl", &strprog);
 
   printf("\t%s\n", numflux_cl_name);
-  printf("\t%s\n", s);
+  //printf("\t%s\n", strprog);
 
   //assert(1==2);
 
@@ -236,7 +236,7 @@ void init_field_cl(field *f)
   printf("OpenCL preprocessor options:\n");
   printf("\t%s\n", cl_buildoptions);
   
-  BuildKernels(&(f->cli), s, cl_buildoptions);
+  BuildKernels(&(f->cli), strprog, cl_buildoptions);
 
   f->dgmass = clCreateKernel(f->cli.program,
 			     "DGMass",
