@@ -7,11 +7,11 @@
 int TestCache(void){
   int test = true;
 
-  double cfl = 0.5;
+  real cfl = 0.5;
   int degx = 1;
   int nraf = 1;
   int nrafx = 2;
-  double vmax = 1.0;
+  real vmax = 1.0;
   int mx = 2;
   int my = 1;
 

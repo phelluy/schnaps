@@ -27,8 +27,8 @@ int TestKernelFlux()
   f.interp.interp_param[1] = 2; // x direction degree
   f.interp.interp_param[2] = 2; // y direction degree
   f.interp.interp_param[3] = 0; // z direction degree
-  f.interp.interp_param[4] = 2; // x direction refinement
-  f.interp.interp_param[5] = 2; // y direction refinement
+  f.interp.interp_param[4] = 3; // x direction refinement
+  f.interp.interp_param[5] = 3; // y direction refinement
   f.interp.interp_param[6] = 1; // z direction refinement
 
   ReadMacroMesh(&(f.macromesh),"test/testmacromesh.msh");
@@ -53,7 +53,7 @@ int TestKernelFlux()
   /*       		    CL_TRUE,  // block until the buffer is available */
   /*       		     CL_MAP_WRITE,  */
   /*       		    0, // offset */
-  /*       		    sizeof(double)*(f.wsize),  // buffersize */
+  /*       		    sizeof(real)*(f.wsize),  // buffersize */
   /*       		    0,NULL,NULL, // events management */
   /*       		    &status); */
   /*   assert(status == CL_SUCCESS); */
@@ -74,7 +74,7 @@ int TestKernelFlux()
 
   clFinish(f.cli.commandqueue);
   for(int ie = 0; ie < f.macromesh.nbelems; ++ie) {
-    printf("\nie: %d\n", ie);
+    // printf("\nie: %d\n", ie);
 
     update_physnode_cl(&f, ie, f.physnode_cl, f.physnode, NULL,
     		       0, NULL, NULL);
@@ -96,10 +96,10 @@ int TestKernelFlux()
   //Displayfield(&f);
 
   // save the dtwn pointer
-  double *dtwn_cl = f.dtwn;
+  real *dtwn_cl = f.dtwn;
 
   // malloc a new dtwn.
-  f.dtwn = calloc(f.wsize, sizeof(double));
+  f.dtwn = calloc(f.wsize, sizeof(real));
  
   for(int ie = 0; ie < f.macromesh.nbelems; ++ie) {
     DGSubCellInterface((void*) &(f.mcell[ie]), &f, f.wn, f.dtwn);
@@ -109,7 +109,7 @@ int TestKernelFlux()
   //Displayfield(&f);
 
   //check that the results are the same
-  double maxerr = 0.0;
+  real maxerr = 0.0;
   printf("\nDifference\tC\t\tOpenCL\n");
   for(int i = 0; i < f.wsize; ++i) {
     printf("%f\t%f\t%f\n", f.dtwn[i] - dtwn_cl[i], f.dtwn[i], dtwn_cl[i]);
@@ -117,7 +117,7 @@ int TestKernelFlux()
   }
   printf("max error: %f\n",maxerr);
 
-  double tolerance = 1e-8;
+  real tolerance = 1e-8;
 
   test = (maxerr < tolerance);
 

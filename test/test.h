@@ -29,6 +29,22 @@ int TestFieldRK2_2D_SubCell(void);
 
 int TestmEq2(void);
 
+int TestMaxwell2D(void);
+
+int TestMHD(int argc, char *argv[]);
+
+int TestPIC(void);
+
+int TestPICAccumulate(void);
+
+int TestPeriodic(void);
+
+int TestSkyline(void);
+
+int TestPoisson(void);
+
+int Test_TransportVP(void);
+
 int TestCLInfo(void);
 
 int TestKernel(void);

@@ -53,7 +53,7 @@ int TestKernel(void)
 				CL_TRUE,  // block until the buffer is available
 				CL_MAP_WRITE, 
 				0, // offset
-				sizeof(double) * (f.wsize), // buffersize
+				sizeof(real) * (f.wsize), // buffersize
 				0,
 				NULL,
 				NULL, // events management
@@ -92,10 +92,10 @@ int TestKernel(void)
   Displayfield(&f);
 
   // save the dtwn pointer
-  double *saveptr = f.dtwn;
+  real *saveptr = f.dtwn;
 
   // malloc a new dtwn.
-  f.dtwn = calloc(f.wsize,sizeof(double));
+  f.dtwn = calloc(f.wsize,sizeof(real));
   for(int i = 0; i < f.wsize; i++){
     f.dtwn[i] = 1;
   }
@@ -106,7 +106,7 @@ int TestKernel(void)
   Displayfield(&f);
 
   //check that the results are the same
-  double maxerr = 0;
+  real maxerr = 0;
   for(int i = 0; i < f.wsize; i++){
     printf("error=%f %f %f\n", f.dtwn[i]-saveptr[i], f.dtwn[i],saveptr[i]);
     maxerr=fmax(fabs(f.dtwn[i] - saveptr[i]), maxerr);

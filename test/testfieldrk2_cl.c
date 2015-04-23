@@ -77,9 +77,9 @@ int TestfieldRK2_CL(void){
   f.interp.interp_param[1] = 2; // x direction degree
   f.interp.interp_param[2] = 2; // y direction degree
   f.interp.interp_param[3] = 2; // z direction degree
-  f.interp.interp_param[4] = 3; // x direction refinement
-  f.interp.interp_param[5] = 3; // y direction refinement
-  f.interp.interp_param[6] = 3; // z direction refinement
+  f.interp.interp_param[4] = 8; // x direction refinement
+  f.interp.interp_param[5] = 8; // y direction refinement
+  f.interp.interp_param[6] = 8; // z direction refinement
 #endif
 
   //AffineMapMacroMesh(&(f.macromesh));
@@ -87,21 +87,22 @@ int TestfieldRK2_CL(void){
 
   CheckMacroMesh(&(f.macromesh), f.interp.interp_param + 1);
  
-  double tmax = 0.1;
+  real tmax = 0.1;
+  f.vmax=1;
   RK2_CL(&f, tmax, 0, NULL, NULL);
   
   CopyfieldtoCPU(&f);
  
-  Plotfield(0, false, &f, NULL, "dgvisu.msh");
-  Plotfield(0, true , &f, "error", "dgerror.msh");
+  //Plotfield(0, false, &f, NULL, "dgvisu.msh");
+  //Plotfield(0, true , &f, "error", "dgerror.msh");
 
-  double dd = L2error(&f);
+  real dd = L2error(&f);
 
   printf("L2 error: %f\n", dd);
 
   show_cl_timing(&f);
 
-  double tolerance = 0.002;
+  real tolerance = 0.002;
 
   test = dd < tolerance;
   

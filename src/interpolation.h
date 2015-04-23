@@ -34,19 +34,19 @@ typedef struct Interpolation{
   //! \brief basis function index
   int ib;
   //! \brief current volume Gauss weight
-  double wpgv;
+  real wpgv;
   //! \brief  current face Gauss weight
-  double wpgf;
+  real wpgf;
   //! \brief Gauss point ref location
-  double xpgref[3];
+  real xpgref[3];
   //! \brief Gauss point physical location
-  double xpg[3];
+  real xpg[3];
   //! \brief basis function values
-  double phi;
+  real phi;
   //! \brief basis function reference gradient
-  double dphiref[3];
+  real dphiref[3];
   //! \brief basis function physical gradient
-  double dphi[3];
+  real dphi[3];
 
 } Interpolation;
 
@@ -98,14 +98,16 @@ void xyz_to_ipg(int* raf,int* deg,int* ic,int* ix,int *ipg);
 //! \param[in] xpg_in same as xpg but slightly moved such
 //! that the resulting point is in the interior of the ref. element
 void ref_pg_vol(int* param,int ipg,
-		double* xpg,double* wpg,double* xpg_in);
+		real* xpg,real* wpg,real* xpg_in);
 
 //! \brief from a reference point find the nearest
 //! gauss point
 //! \param[in] param interp. params list
 //! \param[in] xref  reference Gauss point coordinates
 //! \return Gauss point index
-int ref_ipg(int* param,double* xref);
+#pragma start_opencl
+int ref_ipg(__constant int* param,real* xref);
+#pragma end_opencl
 
 //! \brief compute the position xpg of glop ipg in the local
 //! numbering on face ifa. If xpgin is not NULL also compute
@@ -117,8 +119,8 @@ int ref_ipg(int* param,double* xref);
 //! \param[out] wpg Gauss point weight.
 //! \param[out] xpgin same as xpg but slightly moved such
 //! that the resulting point is in the interior of the ref. element
-void ref_pg_face(int* param,int ifa,int ipgf,double* xpg,double* wpg,
-		 double* xpgin);
+void ref_pg_face(int* param,int ifa,int ipgf,real* xpg,real* wpg,
+		 real* xpgin);
 //! \brief return the value and the gradient of the basis
 //! functions.
 //! Warning: the value of the gradient is
@@ -129,14 +131,14 @@ void ref_pg_face(int* param,int ifa,int ipgf,double* xpg,double* wpg,
 //! \param[in] xref position of a point in the reference element
 //! \param[out] psi value of the basis function
 //! \param[out] dpsiref gradient of the basis function in the reference element
-void psi_ref(int* param, int ib, double* xref, double* psi, double* dpsiref);
+void psi_ref(int* param, int ib, real* xref, real* psi, real* dpsiref);
 
 //! \brief  gradient of a basis function at a given glop (case of one subcell)
 //! \param[in]  param interpolation parammeters (degrees and refinements)
 //! \param[in] ib basis function index
 //! \param[in] ipg glop index
 //! \param[out] dpsiref gradient of the basis function in the reference element
-void grad_psi_pg(int* param,int ib,int ipg,double* dpsiref);
+void grad_psi_pg(int* param,int ib,int ipg,real* dpsiref);
 
 //! \brief  gradient of a basis function at a given glop in a given subcell
 //! \param[in]  param interpolation parammeters (degrees and refinements)
@@ -145,20 +147,30 @@ void grad_psi_pg(int* param,int ib,int ipg,double* dpsiref);
 //! \param[in] xref position of a point in the reference element
 //! \param[out] psi value of the basis function
 //! \param[out] dpsiref gradient of the basis function in the reference element
-void psi_ref_subcell(int* param, int* is,int ib, double* xref, double* psi, double* dpsiref);
+void psi_ref_subcell(int* param, int* is,int ib, real* xref, real* psi, real* dpsiref);
 
+//! \brief return the 1d ith GLOP position for degree deg
+//! \param[in] deg degree
+//! \param[in] i GLOP 1D index
+//! \returns the position in [0,1]
+real glop(int deg,int i);
 
 //! \brief return the 1d ith GLOP weight for degree deg
 //! \param[in] deg degree
 //! \param[in] i GLOP 1D index
 //! \returns the weight
-double wglop(int deg,int i);
+#pragma start_opencl
+real wglop(int deg,int i);
+#pragma end_opencl
+
 //! \brief return the 1d derivative of lagrange polynomial ib at glop ipg
 //! \param[in] deg degree
 //! \param[in] ib basis function index
 //! \param[in] ipg index of the Gauss point where the derivative is computed
 //! \returns the value of the derivative
-double dlag(int deg,int ib,int ipg);
+#pragma start_opencl
+real dlag(int deg,int ib,int ipg);
+#pragma end_opencl
 
 
 //! \brief return the value of a 1D lagrange polynomial
@@ -167,8 +179,8 @@ double dlag(int deg,int ib,int ipg);
 //! \param[in] deg polynomial degree
 //! \param[in] ii index of the Lagrange polynomial
 //! \param[in] x position where to compute p
-void lagrange_polynomial(double* p,const double* subdiv,
-			 int deg,int ii,double x);
+void lagrange_polynomial(real* p,const real* subdiv,
+			 int deg,int ii,real x);
 
 
 //! \brief return the derivative of a 1D lagrange polynomial
@@ -177,8 +189,8 @@ void lagrange_polynomial(double* p,const double* subdiv,
 //! \param[in] deg polynomial degree
 //! \param[in] ii index of the Lagrange polynomial
 //! \param[in] x position where to compute dp
-void dlagrange_polynomial(double* dp,const double* subdiv,
-			  int deg,int ii,double x);
+void dlagrange_polynomial(real* dp,const real* subdiv,
+			  int deg,int ii,real x);
 
 
 

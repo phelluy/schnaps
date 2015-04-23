@@ -108,7 +108,7 @@ void get_cldevice_extensions(cl_device_id device, char * buf, size_t bufsize)
   assert(status >= CL_SUCCESS);
 }
 
-bool cldevice_supports_double(cl_device_id *device)
+bool cldevice_supports_real(cl_device_id *device)
 {
   char clextensions[1000];
   get_cldevice_extensions(*device, clextensions, sizeof(clextensions));
@@ -136,9 +136,9 @@ bool cldevice_is_acceptable(cl_uint nplatform, cl_uint ndevice)
   }
 
   cl_device_id device = get_device_id(platform, ndevice);
-  if(!cldevice_supports_double(&device)) {
+  if(!cldevice_supports_real(&device)) {
     printf("cldevice does not support double\n");
-    return false;
+    //return false;
   }
 
   return true;
@@ -284,7 +284,7 @@ void InitCLInfo(CLInfo *cli, int platform_id, int device_id)
 			   NULL);
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
-  printf("\tCache size: %f KB\n",cli->cachesize/1024.);
+  printf("\tLocal memory size: %f KB\n",cli->cachesize/1024.);
 
   // get maxconstmem
   status = clGetDeviceInfo(cli->device[device_id],
@@ -383,7 +383,7 @@ void PrintCLInfo(CLInfo *cli){
   // device memory
   printf("\tGlobal memory: %f MB\n", cli->devicememsize/1024./1024.);
   printf("\tMax buffer size: %f MB\n", cli->maxmembuffer/1024./1024.);
-  printf("\tCache size: %f KB\n", cli->cachesize/1024.);
+  printf("\tLocal memory size: %f KB\n", cli->cachesize/1024.);
   printf("\tNb of compute units: %d\n", cli->nbcomputeunits);
   printf("\tMax workgroup size: %zu\n", cli->maxworkgroupsize);
   printf("\tOpenCL extensions:\n%s\n", cli->clextensions);
@@ -407,8 +407,7 @@ void BuildKernels(CLInfo *cli, char *strprog, char *buildoptions)
   status = clBuildProgram(cli->program,
 			  0,               // one device
 			  NULL,
-			  NULL, 
-			  //			  buildoptions,//NULL, 
+			  buildoptions,//NULL, 
 			  NULL, NULL);
 
   /* cl_int clBuildProgram(	cl_program program, */

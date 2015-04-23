@@ -39,26 +39,56 @@ typedef struct field {
   //! A copy of the interpolation parameters
   int interp_param[8];
   //! Current time
-  double tnow;
-  //! CFL parameter min_i (vol_i / surf_i)
-  double hmin;
+  real tnow;
+  //! time max
+  real tmaximum;
+//! CFL parameter min_i (vol_i / surf_i)
+  real hmin;
   //! Time step
-  //! dt has to be smaller than hmin / vmax
-  double dt;
-  
+  real dt;
+   //! dt has to be smaller than hmin / vmax
+  int iter_time;
+  //! final time iter
   int itermax;
+  //! nb of diagnostics
+  int nb_diags;
+  //! table for diagnostics
+  real * Diagnostics;
+  //! index of the runge-kutta substep
+  int rk_substep;
+  //! max substep of the rk method
+  int rk_max;
 
   //! Activate or not 2D computations
   bool is2d;
 
+   //! activate or not 1D computations
+  bool is1d;
+
   //! Size of the field buffers
   int wsize;
   //! fields at time steps n
-  double *wn;
+  real *wn;
   //! Time derivative of the field
-  double *dtwn;
+  real *dtwn;
   //! vmax
-  double vmax;
+  real vmax;
+
+   //! \brief generic update function called 
+  //! \brief called at each runge-kutta sustep
+  //! \param[inout] f a field (to be converted from void*)
+  //! \param[in] elem macro element index
+  //! \param[in] ipg glop index
+  //! \param[in] iv field component index
+  void (*update_before_rk)(void* f, real * w);
+
+  //! \brief generic update function called 
+  //! \brief called at each runge-kutta sustep
+  //! \param[inout] f a field (to be converted from void*)
+  //! \param[in] elem macro element index
+  //! \param[in] ipg glop index
+  //! \param[in] iv field component index
+  void (*update_after_rk)(void* f,real * w);
 
   //! \brief Memory arrangement of field components
   //! \param[in] param interpolation parameters
@@ -82,16 +112,17 @@ typedef struct field {
   cl_mem param_cl;
   //! \brief copy physnode
   cl_mem physnode_cl;
-  cl_double *physnode;
+  real *physnode;
 
   cl_mem physnodeR_cl;
-  cl_double *physnodeR;
+  real *physnodeR;
 
   //! opencl kernels
   cl_kernel dgmass;
   cl_kernel dgflux;
   cl_kernel dgvolume;
   cl_kernel dginterface;
+  cl_kernel dgboundary;
   cl_kernel RK_out_CL;
   cl_kernel RK_in_CL;
   cl_kernel RK4_final_stage;
@@ -123,12 +154,17 @@ typedef struct field {
   cl_event clv_interupdateR;
 
   // OpenCL timing
-  cl_ulong zbuf_time, mass_time, vol_time, minter_time, rk_time;
+  cl_ulong zbuf_time;
+  cl_ulong mass_time;
+  cl_ulong vol_time;
+  cl_ulong flux_time;
+  cl_ulong minter_time;
+  cl_ulong boundary_time;
+  cl_ulong rk_time;
 #endif
 
 } field;
 
-#pragma start_opencl
 //! \brief memory arrangement of field components.
 //! Generic implementation.
 //! \param[in] param interpolation parameters
@@ -143,10 +179,10 @@ typedef struct field {
 //! \param[in] ipg glop index
 //! \param[in] iv field component index
 //! \returns the memory position in the arrays wn wnp1 or dtwn.
+#pragma start_opencl
 int GenericVarindex(__constant int *param, int elem, int ipg, int iv);
 #pragma end_opencl
 
-#pragma start_opencl
 //! \brief memory arrangement of field components.
 //! with 3D components
 //! \param[in] param interpolation parameters
@@ -162,9 +198,10 @@ int GenericVarindex(__constant int *param, int elem, int ipg, int iv);
 //! \param[in] ic components of the subcell in the macrocell
 //! \param[in] iv component of the conservative variable
 /* //! \returns the memory position in the arrays wn wnp1 or dtwn. */
+#pragma start_opencl
 /* int GenericVarindex3d(int m, */
-/* 		      int nx0, int nx1, int nx2,  */
-/* 		      int nc0, int nc1, int nc2,  */
+/* 		      int nx0, int nx1, int nx2, */
+/* 		      int nc0, int nc1, int nc2, */
 /* 		      int elem, int *ix,int *ic, int iv); */
 #pragma end_opencl
 
@@ -190,33 +227,33 @@ void dtfieldSlow(field *f);
 //! the time derivative of the field. Works with several subcells.
 //! Fast version: multithreaded and with tensor products optimizations
 //! \param[inout] f a field
-void dtfield(field *f, double *w, double *dtw);
+void dtfield(field *f, real *w, real *dtw);
 
 //! \brief  compute the Discontinuous Galerkin inter-macrocells boundary terms
 //! The argument has to be void* (for compatibility with pthread)
 //! but it is logically a MacroCell*
 //! \param[inout] mcell a MacroCell
-void DGMacroCellInterfaceSlow(void *mcell, field *f, double *w, double *dtw);
+void DGMacroCellInterfaceSlow(void *mcell, field *f, real *w, real *dtw);
 
 //! \brief  compute the Discontinuous Galerkin inter-macrocells boundary terms second implementation with a loop on the faces
 //! The argument has to be void* (for compatibility with pthread)
 //! but it is logically a MacroCell*
 //! \param[inout] mcell a MacroCell
-void DGMacroCellInterface(void *mface, field *f, double *w, double *dtw);
+void DGMacroCellInterface(void *mface, field *f, real *w, real *dtw);
 
 //! \brief compute the Discontinuous Galerkin volume terms
 //! The argument has to be void* (for compatibility with pthread)
 //! but it is logically a MacroCell*
 //! \param[inout] mcell a MacroCell
-void DGVolume(void *mcell, field *f, double *w, double *dtw);
+void DGVolume(void *mcell, field *f, real *w, real *dtw);
 
 //! \brief compute the Discontinuous Galerkin inter-subcells terms
 //! \param[inout] mcell a MacroCell
-void DGSubCellInterface(void *mcell, field *f, double *w, double *dtw);
+void DGSubCellInterface(void *mcell, field *f, real *w, real *dtw);
 
 //! \brief  apply the DG mass term
 //! \param[inout] mcell a MacroCell
-void DGMass(void *mcell, field *f, double *w, double *dtw);
+void DGMass(void *mcell, field *f, real *w, real *dtw);
 
 //! \brief An out-of-place RK stage
 //! \param[out] fwnp1 field at time n+1
@@ -224,7 +261,7 @@ void DGMass(void *mcell, field *f, double *w, double *dtw);
 //! \param[in] fdtwn time derivative of the field
 //! \param[in] time step
 //! \param[in] size of the field buffer
-void RK_out(double *fwnp1, double *fwn, double *fdtwn, const double dt, 
+void RK_out(real *fwnp1, real *fwn, real *fdtwn, const real dt, 
 	    const int sizew);
 
 //! \brief An in-place RK stage
@@ -232,26 +269,26 @@ void RK_out(double *fwnp1, double *fwn, double *fdtwn, const double dt,
 //! \param[in] fdtwn time derivative of the field
 //! \param[in] time step
 //! \param[in] size of the field buffer
-void RK_in(double *fwnp1, double *fdtwn, const double dt, const int sizew);
+void RK_in(real *fwnp1, real *fdtwn, const real dt, const int sizew);
 
 //! \brief Time integration by a second order Runge-Kutta algorithm
 //! \param[inout] f a field
 //! \param[in] tmax physical duration of the simulation
-void RK2(field *f, double tmax);
+void RK2(field *f, real tmax);
 
 //! \brief Time integration by a second order Runge-Kutta algorithm
 //! \param[inout] f a field
 //! \param[in] tmax physical duration of the simulation
-void RK4(field *f, double tmax);
+void RK4(field *f, real tmax);
 
 #ifdef _WITH_OPENCL
 //! \brief OpenCL version of RK2
 //! time integration by a second order Runge-Kutta algorithm
 //! \param[inout] f a field
 //! \param[in] tmax physical duration of the simulation
-void RK2_CL(field *f, double tmax, 
+void RK2_CL(field *f, real tmax, 
 	    cl_uint nwait, cl_event *wait, cl_event *done);
-void RK4_CL(field *f, double tmax, 
+void RK4_CL(field *f, real tmax, 
 	    cl_uint nwait, cl_event *wait, cl_event *done);
 #endif
 
@@ -263,6 +300,13 @@ void RK4_CL(field *f, double tmax,
 //! \param[in] filename the path to the gmsh visualization file.
 void Plotfield(int typplot, int compare, field *f, char *fieldname, 
 	       char *filename);
+
+//! \brief interpolate field at a reference point a macrocell
+//! \param[in] f a field
+//! \param[in] ie the macrocell index
+//! \param[in] xref reference coordinates
+//! \param[out] w the m field values
+void InterpField(field *f,int ie,real* xref,real* w);
 
 //! \brief  display the field on screen
 //! \param[in] f the field.
@@ -278,6 +322,6 @@ void Gnuplot(field* f,int dir, double fixval,char* filename);
 //! \brief compute the normalized L2 distance with the imposed data
 //! \param[in] f the field.
 //! \returns the error.
-double L2error(field *f);
+real L2error(field *f);
 
 #endif

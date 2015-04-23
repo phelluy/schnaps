@@ -5,27 +5,36 @@
 #include "getopt.h"
 #include <stdlib.h>     /* atoi */
 //#include "model.h"
-#include "../model/mhd/mhdmodel.h"
+#include "mhd.h"
 #include <math.h>
 #include <string.h>
 #include <unistd.h>
 #include <time.h>
 #define _XOPEN_SOURCE 700
 
-//double seconds()
+//real seconds()
 //{
 //  struct timespec ts;
 //  clock_gettime(CLOCK_MONOTONIC, &ts);
-//  return (double)ts.tv_sec + 1e-9 * (double)ts.tv_nsec;
+//  return (real)ts.tv_sec + 1e-9 * (real)ts.tv_nsec;
 //}
 
 int main(int argc, char *argv[]) {
-  double cfl = 0.05;
-  double tmax = 1.0;
+  int resu = TestMHD(argc,argv);
+  if (resu)
+    printf("MHD test OK !\n");
+  else 
+    printf("MHD test failed !\n");
+  return !resu;
+}
+
+int TestMHD(int argc, char *argv[]) {
+  real cfl = 0.05;
+  real tmax = 1.0;
   bool writemsh = false;
-  double vmax = 6.0;
+  real vmax = 6.0;
   bool usegpu = false;
-  double dt = 0.0;
+  real dt = 0.0;
 
   for (;;) {
     int cc = getopt(argc, argv, "c:t:w:D:P:g:s:");
@@ -113,7 +122,7 @@ int main(int argc, char *argv[]) {
 
   Plotfield(0, (1==0), &f, "Rho", "dginit.msh");
 
-  double executiontime;
+  real executiontime;
   if(usegpu) {
     printf("Using OpenCL:\n");
     //executiontime = seconds();
@@ -144,7 +153,7 @@ int main(int argc, char *argv[]) {
   printf("%f\n", executiontime);
 
   printf("time per RK2 (s):\n");
-  printf("%f\n", executiontime / (double)f.itermax);
+  printf("%f\n", executiontime / (real)f.itermax);
 
   return !test;
 }

@@ -84,7 +84,13 @@ char cl_buildoptions[1024];
 #define __local
 #endif
 
-//! brief global variable for activating periodic 
-//! computations and defining the length of the 
-//! periodic domain
 //#define _PERIOD 1
+
+#define _DOUBLE_PRECISION
+#ifdef _DOUBLE_PRECISION
+#define real double
+#else
+#define real float
+#endif
+
+#define __constant

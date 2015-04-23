@@ -12,8 +12,6 @@ SET(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 #set(CMAKE_C_FLAGS "-std=gnu99 -D_REENTRANT -O3 -g")
 set(CMAKE_C_FLAGS "-std=c99 -D_REENTRANT -O3 -g")
 
-#set(OPENCL_FOUND FALSE) # disabled by default for compatibility reasons.
-
 OPTION(USE_OPENCL
   "Compile with the OpenCL library"
   ON)
@@ -66,11 +64,26 @@ list(APPEND
   src/macromesh.c
   src/macromesh.h
   src/h20phi.h
+  src/maxwell.h
+  src/maxwell.c
+  src/mhd.h
+  src/mhd.c
+  src/pic.h
+  src/pic.c
+  src/skyline.h
+  src/solverpoisson.h
+  src/quantities_vp.h
+  src/diagnostics_vp.h
+  src/skyline.c
+  src/solverpoisson.c
+  src/quantities_vp.c
+  src/diagnostics_vp.c
+  src/collision.h
+  src/gyro.h
+  src/collision.c
+  src/gyro.c
   )
 
-#files from model/
-file(GLOB_RECURSE model_files model/*.h model/*.c)
-list(APPEND source_files ${model_files})
 
 if (OPENCL_FOUND)
   list(APPEND
@@ -89,10 +102,19 @@ add_library (_schnaps ${source_files})
 set(LIBS "")
 
 if (OPENCL_FOUND)
-list(APPEND LIBS _schnaps pthread ${OPENCL_LIBRARIES} m)
+  list(APPEND LIBS _schnaps pthread ${OPENCL_LIBRARIES} m)
 else()
-list(APPEND LIBS _schnaps pthread m)
+  list(APPEND LIBS _schnaps pthread m)
 endif (OPENCL_FOUND)
+
+# nearest neighbour fast search library
+find_package(flann)
+if(FLANN_FOUND)
+  MESSAGE("Delicious!")
+  list(APPEND LIBS flann)
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -D_WITH_FLANN")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}  -D_WITH_FLANN")
+endif()
 
 # main program schnaps
 add_executable(
@@ -215,6 +237,68 @@ add_executable(
 target_link_libraries(testmeq2 ${LIBS})
 add_test(testmeq2 testmeq2)
 
+add_test(testmaxwell2d testmaxwell2d)
+add_executable(
+  testmaxwell2d
+  test/test.h
+  test/testmaxwell2d.c
+  )
+target_link_libraries(testmaxwell2d ${LIBS})
+add_test(testmaxwell2d testmaxwell2d)
+
+#add_test(testpic testpic)
+add_executable(
+  testpic
+  test/test.h
+  test/testpic.c
+  )
+target_link_libraries(testpic ${LIBS})
+add_test(testpic testpic)
+
+#add_test(testpic testpic)
+add_executable(
+  testpic_accumulate
+  test/test.h
+  test/testpic_accumulate.c
+  )
+target_link_libraries(testpic_accumulate ${LIBS})
+add_test(testpic_accumulate testpic_accumulate)
+add_test(testperiodic testperiodic)
+add_executable(
+  testperiodic
+  test/test.h
+  test/testperiodic.c
+)
+target_link_libraries(testperiodic ${LIBS})
+add_test(testperiodic testperiodic)
+
+add_test(testskyline testskyline)
+add_executable(
+  testskyline
+  test/test.h
+  test/testskyline.c
+  )
+target_link_libraries(testskyline ${LIBS})
+add_test(testskyline testskyline)
+ 
+add_test(testpoisson testpoisson)
+add_executable(
+  testpoisson
+  test/test.h
+  test/testpoisson.c
+)
+target_link_libraries(testpoisson ${LIBS})
+add_test(testpoisson testpoisson)
+
+add_test(test_transportvp test_transportvp)
+add_executable(
+  test_transportvp
+  test/test.h
+  test/test_transportvp.c
+)
+target_link_libraries(test_transportvp ${LIBS})
+add_test(test_transportvp test_transportvp)
+
 ##########  OpenCL unit tests  ##########
 if(OPENCL_FOUND)
   add_test(testclinfo testclinfo)
@@ -233,7 +317,6 @@ if(OPENCL_FOUND)
     )
   target_link_libraries(testmanyv ${LIBS})
   add_test(testmanyv testmanyv)
-
 
   add_test(testdtfield_cl testdtfield_cl)
   add_executable(
@@ -307,6 +390,15 @@ if(OPENCL_FOUND)
     )
   target_link_libraries(testkernelflux ${LIBS})
 
+  add_test(testmeq2_cl testmeq2_cl)
+  add_executable(
+    testmeq2_cl
+    test/test.h
+    test/testmeq2_cl.c
+    )
+  target_link_libraries(testmeq2_cl ${LIBS})
+
+
   add_test(testmhd testmhd)
   add_executable(
     testmhd
@@ -315,4 +407,5 @@ if(OPENCL_FOUND)
     )
   target_link_libraries(testmhd ${LIBS})
   
+
 endif(OPENCL_FOUND)

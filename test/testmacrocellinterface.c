@@ -111,7 +111,7 @@ int TestMacroFace(void){
   				    CL_TRUE,
   				    CL_MAP_WRITE,
   				    0, // offset
-  				    sizeof(cl_double) * 60,
+  				    sizeof(real) * 60,
   				    0, NULL, NULL,
   				    &status);
   if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
@@ -135,23 +135,23 @@ int TestMacroFace(void){
 			    0, NULL, NULL);
 
   CopyfieldtoCPU(&f);
-  double *fdtwn_opencl = f.dtwn;
+  real *fdtwn_opencl = f.dtwn;
 
   // OpenMP, new method
-  f.dtwn = calloc(f.wsize, sizeof(double));
+  f.dtwn = calloc(f.wsize, sizeof(real));
   for(int iw = 0; iw < f.wsize; iw++)
     f.dtwn[iw] = 0;
   for(int ifa = 0; ifa < f.macromesh.nbfaces; ifa++)
     DGMacroCellInterface((void*) (mface + ifa), &f, f.wn, f.dtwn);
-  double *fdtwn_openmp = f.dtwn;
+  real *fdtwn_openmp = f.dtwn;
 
   // Check that the results are the same
   test = true;
-  double tolerance = 1e-8;
+  real tolerance = 1e-8;
 
-  double maxerr = 0.0;
+  real maxerr = 0.0;
   for(int i = 0; i < f.wsize; i++) {
-    double error = fabs(fdtwn_openmp[i] - fdtwn_opencl[i]);
+    real error = fabs(fdtwn_openmp[i] - fdtwn_opencl[i]);
     //printf("error: %f \t%f \t%f\n", error, fdtwn_openmp[i], fdtwn_opencl[i]);
     maxerr = fmax(error, maxerr);
   }
@@ -165,14 +165,14 @@ int TestMacroFace(void){
   /*   mcell[ie].first = ie; */
   /*   mcell[ie].last_p1 = ie + 1; */
   /* } */
-  /* f.dtwn = calloc(f.wsize, sizeof(double)); */
+  /* f.dtwn = calloc(f.wsize, sizeof(real)); */
   /* for(int iw = 0; iw < f.wsize; iw++) */
   /*   f.dtwn[iw] = 0; */
   /* for(int ie = 0; ie < f.macromesh.nbelems; ++ie) { */
   /*   MacroCell *mcelli = mcell + ie; */
   /*   DGMacroCellInterfaceSlow(mcelli); */
   /* } */
-  /* double *fdtwn_slow = f.dtwn; */
+  /* real *fdtwn_slow = f.dtwn; */
 
   /* maxerr = 0.0; */
   /* for(int i = 0; i < f.wsize; i++) { */

@@ -16,6 +16,7 @@ int TestfieldDG(void){
   f.model.BoundaryFlux = TestTransBoundaryFlux;
   f.model.InitData = TestTransInitData;
   f.model.ImposedData = TestTransImposedData;
+  f.model.Source = NULL;
   f.varindex = GenericVarindex;
 
   f.interp.interp_param[0] = 1; // _M
@@ -49,6 +50,7 @@ int TestfieldDG(void){
       i < f.model.m * f.macromesh.nbelems * NPG(f.interp.interp_param+1); 
       i++){
     test = test && fabs(4 * f.wn[i] - pow(f.dtwn[i], 2)) < 1e-2;
+    printf("i=%d err=%f \n",i,4 * f.wn[i] - pow(f.dtwn[i], 2));
     assert(test);
   }
   

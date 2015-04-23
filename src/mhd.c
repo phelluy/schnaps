@@ -1,4 +1,4 @@
-#include "mhdmodel.h"
+#include "mhd.h"
 #include <math.h>
 #include <stdio.h>
 #include <assert.h>
