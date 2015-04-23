@@ -31,6 +31,8 @@ int TestmEq2(void);
 
 int TestMaxwell2D(void);
 
+int TestGyro(void);
+
 int TestMHD(int argc, char *argv[]);
 
 int TestPIC(void);
@@ -40,6 +42,8 @@ int TestPICAccumulate(void);
 int TestPeriodic(void);
 
 int TestSkyline(void);
+
+int TestLinearSolver(void);
 
 int TestPoisson(void);
 
