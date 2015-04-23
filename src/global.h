@@ -16,6 +16,7 @@ char cl_buildoptions[1024];
 
 #define __constant
 #define __local
+#define __private
 
 //#define _PERIOD 1
 

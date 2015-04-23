@@ -207,7 +207,7 @@ void cemracs2014_TransBoundaryFlux(real x[3], real t,
   vlaTransNumFlux2d(wL, wR, vnorm, flux);
 }
 
-void BoundaryFlux(real x[3], real t, real wL[], real *vnorm,
+void BoundaryFlux(real x[3], real t, real *wL, real *vnorm,
                   real *flux) 
 {
   real wR[_M];

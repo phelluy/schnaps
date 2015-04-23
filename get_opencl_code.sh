@@ -1,5 +1,5 @@
 #!/bin/sh
-
+#exit
 rm -f schnaps.cl
 touch schnaps.cl
 
