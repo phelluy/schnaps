@@ -38,7 +38,7 @@ int Test_TransportVP(void) {
 
   int vec=1;
   
-  f.model.m=_MV+6; // num of conservative variables f(vi) for each vi, phi, E, rho, u, p, e (ou T)
+  f.model.m=_INDEX_MAX; // num of conservative variables f(vi) for each vi, phi, E, rho, u, p, e (ou T)
   f.model.NumFlux=VlasovP_Lagrangian_NumFlux;
  
   //f.model.Source = NULL;
