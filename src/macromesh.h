@@ -27,6 +27,11 @@ typedef struct MacroMesh{
 
   real xmin[3],xmax[3];
   bool is1d; //!< 1d computation detection
+
+  //! period in each direction
+  //! if negative: non-periodic computation (default)
+  real period[3];
+
 } MacroMesh;
 
 //! \brief a simple struct for modelling a four

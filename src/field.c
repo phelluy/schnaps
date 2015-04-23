@@ -137,6 +137,10 @@ real min_grid_spacing(field *f)
 
 void init_data(field *f)
 {
+
+  real w[f->model.m];
+
+
   for(int ie = 0; ie < f->macromesh.nbelems; ie++) {
     
     real physnode[20][3];
@@ -163,11 +167,12 @@ void init_data(field *f)
 	assert(Dist(xref, xref2) < 1e-8);
       }
 
-      real w[f->model.m];
       f->model.InitData(xpg, w);
       for(int iv = 0; iv < f->model.m; iv++) {
-	int imem = f->varindex(f->interp_param, ie, ipg, iv);
+	int imem;
+	imem = f->varindex(f->interp_param, ie, ipg, iv);
 	f->wn[imem] = w[iv];
+
       }
     }
   }
@@ -228,7 +233,7 @@ void init_field_cl(field *f)
   ReadFile("schnaps.cl", &s);
 
   printf("\t%s\n", numflux_cl_name);
-  printf("\t%s\n", s);
+  //printf("\t%s\n", s);
 
   //assert(1==2);
 
@@ -379,6 +384,7 @@ void Initfield(field *f) {
     f->mcell[ie].first = ie;
     f->mcell[ie].last_p1 = ie + 1;
   }
+
 
 #ifdef _WITH_OPENCL
   // opencl inits
@@ -922,19 +928,20 @@ void DGMacroCellInterfaceSlow(void *mc, field *f, real *w, real *dtw) {
 	// opposite element in xref_in
   	ref_pg_face(iparam + 1, ifa, ipgf, xpgref, &wpg, xpgref_in);
 
-#ifdef _PERIOD
-	assert(f->is1d); // TODO: generalize to 2d
-	if (xpgref_in[0] > _PERIOD) {
-	  //printf("à droite ifa= %d x=%f ipgf=%d ieL=%d ieR=%d\n",
-	  //	 ifa,xpgref_in[0],ipgf,ie,ieR);
-	  xpgref_in[0] -= _PERIOD;
-	}
-	else if (xpgref_in[0] < 0) { 
-	  //printf("à gauche ifa= %d  x=%f ieL=%d ieR=%d \n",
-	  //ifa,xpgref_in[0],ie,ieR);
-	  xpgref_in[0] += _PERIOD;
-	}
-#endif
+/* #ifdef _PERIOD */
+/* 	assert(f->is1d); // TODO: generalize to 2d */
+/* 	if (xpgref_in[0] > _PERIOD) { */
+/* 	  //printf("à droite ifa= %d x=%f ipgf=%d ieL=%d ieR=%d\n", */
+/* 	  //	 ifa,xpgref_in[0],ipgf,ie,ieR); */
+/* 	  xpgref_in[0] -= _PERIOD; */
+/* 	} */
+/* 	else if (xpgref_in[0] < 0) {  */
+/* 	  //printf("à gauche ifa= %d  x=%f ieL=%d ieR=%d \n", */
+/* 	  //ifa,xpgref_in[0],ie,ieR); */
+/* 	  xpgref_in[0] += _PERIOD; */
+/* 	} */
+/* #endif */
+
   	// recover the volume gauss point from
   	// the face index
   	int ipg = iparam[7];
@@ -965,6 +972,7 @@ void DGMacroCellInterfaceSlow(void *mc, field *f, real *w, real *dtw) {
 		  xpg_in, dtau,
 		  codtau, NULL, vnds); // codtau, dpsi, vnds
   	  real xref[3];
+	  PeriodicCorrection(xpg_in,f->macromesh.period);
 	  Phy2Ref(physnodeR, xpg_in, xref);
   	  int ipgR = ref_ipg(iparam + 1, xref);
 	  real xpgR[3], xrefR[3], wpgR;
@@ -975,11 +983,11 @@ void DGMacroCellInterfaceSlow(void *mc, field *f, real *w, real *dtw) {
 		  xpgR, NULL,
 		  NULL, NULL, NULL); // codtau, dphi, vnds
 
-#ifdef _PERIOD
-	  assert(fabs(Dist(xpg,xpgR)-_PERIOD)<1e-11);
-#else
-          assert(Dist(xpg,xpgR)<1e-11);
-#endif
+/* #ifdef _PERIOD */
+/* 	  assert(fabs(Dist(xpg,xpgR)-_PERIOD)<1e-11); */
+/* #else */
+/*           assert(Dist(xpg,xpgR)<1e-11); */
+/* #endif */
 	  
   	  for(int iv = 0; iv < f->model.m; iv++) {
   	    int imem = f->varindex(iparam, ieR, ipgR, iv);
@@ -1056,19 +1064,19 @@ void DGMacroCellInterface(void *mc, field *f, real *w, real *dtw)
       // point slightly inside the opposite element in xref_in
       ref_pg_face(iparam + 1, locfaL, ipgfL, xpgref, &wpg, xpgref_in);
 
-#ifdef _PERIOD
-      assert(f->is1d); // TODO: generalize to 2d
-      if (xpgref_in[0] > _PERIOD) {
-	//printf("à droite ifa= %d x=%f ipgf=%d ieL=%d ieR=%d\n",
-	//	 ifa,xpgref_in[0],ipgf,ie,ieR);
-	xpgref_in[0] -= _PERIOD;
-      }
-      else if (xpgref_in[0] < 0) { 
-	//printf("à gauche ifa= %d  x=%f ieL=%d ieR=%d \n",
-	//ifa,xpgref_in[0],ie,ieR);
-	xpgref_in[0] += _PERIOD;
-      }
-#endif
+/* #ifdef _PERIOD */
+/*       assert(f->is1d); // TODO: generalize to 2d */
+/*       if (xpgref_in[0] > _PERIOD) { */
+/* 	//printf("à droite ifa= %d x=%f ipgf=%d ieL=%d ieR=%d\n", */
+/* 	//	 ifa,xpgref_in[0],ipgf,ie,ieR); */
+/* 	xpgref_in[0] -= _PERIOD; */
+/*       } */
+/*       else if (xpgref_in[0] < 0) {  */
+/* 	//printf("à gauche ifa= %d  x=%f ieL=%d ieR=%d \n", */
+/* 	//ifa,xpgref_in[0],ie,ieR); */
+/* 	xpgref_in[0] += _PERIOD; */
+/*       } */
+/* #endif */
 
       // Recover the volume gauss point from the face index
       int ipgL = iparam[7];
@@ -1096,7 +1104,9 @@ void DGMacroCellInterface(void *mc, field *f, real *w, real *dtw)
 		  NULL, -1, // dpsiref, ifa
 		  xpg_in, NULL,
 		  NULL, NULL, NULL); // codtau, dpsi, vnds
+	  PeriodicCorrection(xpg_in,f->macromesh.period);
 	  Phy2Ref(physnodeR, xpg_in, xrefL);
+
 	}
 
         int ipgR = ref_ipg(iparam + 1, xrefL);

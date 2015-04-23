@@ -46,6 +46,28 @@ real norm(real a[3])
   return sqrt(a[0] * a[0] + a[1] * a[1] + a[2] * a[2]);
 }
 
+// Return the dot-product of the reals a[3] and b[3]
+void Normalize(real a[3])
+{
+  real r=norm(a);
+  a[0] /= r;
+  a[1] /= r;
+  a[2] /= r;
+}
+
+void PeriodicCorrection(real xyz[3],real period[3]){
+  for (int dim=0;dim<3;++dim){
+    if (period[dim] > 0){
+      if (xyz[dim] > period[dim]){
+	xyz[dim] -= period[dim];
+      }
+      else if (xyz[dim] < 0){
+	xyz[dim] += period[dim];
+      }
+    }
+  }
+}
+
 real Dist(real a[3], real b[3]) 
 {
   real d[3] = {a[0] - b[0], a[1] - b[1], a[2] - b[2]};

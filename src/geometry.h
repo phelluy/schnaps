@@ -103,6 +103,17 @@ real dot_product(real a[3], real b[3]);
 //! \return The length of the vector
 real norm(real a[3]);
 
+//! \brief normalize a vector
+//! \param[inout] a: the vector
+void Normalize(real a[3]);
+
+//! \brief periodic correction
+//! \param[inout] xyz: the vector to be put inside the periodic box
+//! \param[in] period:  sizes of the box in each direction
+//! if period[dim]<0 -> non periodic in direction dim
+//! the box is of the form [0,period[0]]x[0,period[1]]x[0,period[2]]
+void PeriodicCorrection(real xyz[3],real period[3]);
+
 //! \brief distance between two points
 //! \param[in] a, b : the two points
 //! \return the distance

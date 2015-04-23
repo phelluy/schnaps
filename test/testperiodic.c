@@ -30,16 +30,12 @@ int TestPeriodic(void) {
 
   bool test=true;
 
- #ifndef _PERIOD
-  printf("peridicity disabled\n");
-  return test;
-#endif
 
   field f;
 
   int vec=1;
   
-  f.model.m=_MV+1; // num of conservative variables
+  f.model.m=_INDEX_MAX; // num of conservative variables
   f.vmax = _VMAX; // maximal wave speed 
   f.model.NumFlux=VlasovP_Lagrangian_NumFlux;
    f.model.Source = NULL;
@@ -51,9 +47,9 @@ int TestPeriodic(void) {
   f.varindex=GenericVarindex;
   f.update_before_rk=NULL;
   f.update_after_rk=NULL; 
+  f.model.cfl=0.05;
     
-    
-  f.interp.interp_param[0]=_MV+1;  // _M
+  f.interp.interp_param[0]=f.model.m;  // _M
   f.interp.interp_param[1]=3;  // x direction degree
   f.interp.interp_param[2]=0;  // y direction degree
   f.interp.interp_param[3]=0;  // z direction degree
@@ -68,8 +64,12 @@ int TestPeriodic(void) {
   assert(is1d);
 
   // mesh preparation
+  f.macromesh.period[0]=1;
+
   BuildConnectivity(&(f.macromesh));
 
+  PrintMacroMesh(&(f.macromesh));
+  //assert(1==2);
   //AffineMapMacroMesh(&(f.macromesh));
  
   // prepare the initial fields
@@ -77,6 +77,8 @@ int TestPeriodic(void) {
   f.macromesh.is1d=true;
   f.is1d=true;
   f.nb_diags=0;
+
+
 
   // prudence...
   CheckMacroMesh(&(f.macromesh),f.interp.interp_param+1);
@@ -91,6 +93,7 @@ int TestPeriodic(void) {
   // time integration by RK2 scheme 
   // up to final time = 1.
   //RK2(&f,0.5,0.1);
+  f.vmax=_VMAX;
   RK2(&f,0.5);
  
   // save the results and the error

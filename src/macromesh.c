@@ -17,8 +17,13 @@
 
 void ReadMacroMesh(MacroMesh *m, char *filename)
 {
+
+  // first set default values
   m->is2d = false;
   m->is1d = false;
+  m->period[0]=-1;
+  m->period[1]=-1;
+  m->period[2]=-1;
 
   FILE *f = NULL;
   char *line = NULL;
@@ -496,14 +501,70 @@ void BuildConnectivity(MacroMesh* m)
     
   if(m->is2d) suppress_zfaces(m);
 
-#ifdef _PERIOD
-  assert(m->is1d); // TODO : generalize to 2D
-  assert(m->nbelems==1); 
-  // faces 1 and 3 point to the same unique macrocell
-  m->elem2elem[1+6*0]=0;
-  m->elem2elem[3+6*0]=0;
-#endif
 
+  // update connectivity if the mesh is periodic
+  // in some directions
+
+  real diag[3][3]={1,0,0,
+			 0,1,0,
+			 0,0,1};
+
+  for (int ie = 0; ie < m->nbelems; ie++) {
+    real physnode[20][3];
+    for(int inoloc = 0; inoloc < 20; inoloc++) {
+      int ino = m->elem2node[20 * ie + inoloc];
+      physnode[inoloc][0] = m->node[3 * ino + 0];
+      physnode[inoloc][1] = m->node[3 * ino + 1];
+      physnode[inoloc][2] = m->node[3 * ino + 2];
+    }
+    for(int ifa = 0; ifa < 6; ifa++) {
+      if (m->elem2elem[6 * ie + ifa] < 0){
+	real xpgref[3],xpgref_in[3];
+	int ipgf=0;
+	int param2[7]={0,0,0,1,1,1,0};
+	ref_pg_face(param2, ifa, ipgf, xpgref, NULL, xpgref_in);
+	real dtau[3][3],xpg_in[3];
+	real codtau[3][3],vnds[3];
+	Ref2Phy(physnode,
+		xpgref_in,
+		NULL, ifa, // dpsiref,ifa
+		xpg_in, dtau,
+		codtau, NULL, vnds); // codtau,dpsi,vnds
+	Normalize(vnds);
+	vnds[0]=fabs(vnds[0]);
+	vnds[1]=fabs(vnds[1]);
+	vnds[2]=fabs(vnds[2]);
+	printf("ie=%d ifa=%d vnds=%f %f %f xpg_in=%f %f %f \n",
+	       ie,ifa,vnds[0],vnds[1],vnds[2],
+	       xpg_in[0],xpg_in[1],xpg_in[2]);
+	int dim=0;
+	while(Dist(vnds,diag[dim]) > 1e-2 && dim<3) dim++;
+	assert(dim < 3);
+	if (m->period[dim] > 0){
+	  if (xpg_in[dim] > m->period[dim]){
+	    xpg_in[dim] -= m->period[dim];
+	  }
+	  else if (xpg_in[dim] < 0){
+	    xpg_in[dim] += m->period[dim];
+	  }
+	  else {
+	    assert(1==2);
+	  }
+	  m->elem2elem[6 * ie + ifa] = NumElemFromPoint(m,xpg_in,NULL);
+	}
+      }
+    }
+  }
+
+
+/* #ifdef _PERIOD */
+/*   assert(m->is1d); // TODO : generalize to 2D */
+/*   assert(m->nbelems==1);  */
+/*   // faces 1 and 3 point to the same unique macrocell */
+/*   m->elem2elem[1+6*0]=0; */
+/*   m->elem2elem[3+6*0]=0; */
+/* #endif */
+  
 }
 
 
@@ -674,11 +735,12 @@ void CheckMacroMesh(MacroMesh *m, int *param) {
 	    ref_pg_face(param, ifa, ipgf, xpgref, &wpg, xpgref_in);
 	  }
 
-#ifdef _PERIOD
-	  assert(m->is1d); // TODO: generalize to 2d
-	  if (xpgref_in[0] > _PERIOD) xpgref_in[0] -= _PERIOD;
-	  if (xpgref_in[0] < 0) xpgref_in[0] += _PERIOD;
-#endif
+/* #ifdef _PERIOD */
+/* 	  assert(m->is1d); // TODO: generalize to 2d */
+/* 	  if (xpgref_in[0] > _PERIOD) xpgref_in[0] -= _PERIOD; */
+/* 	  if (xpgref_in[0] < 0) xpgref_in[0] += _PERIOD; */
+/* #endif */
+
 
 	  // Compute the position of the point and the face normal.
 	  real xpg[3], vnds[3];
@@ -703,6 +765,8 @@ void CheckMacroMesh(MacroMesh *m, int *param) {
 		    NULL, ifa, // dpsiref,ifa
 		    xpg_in, dtau,
 		    codtau, NULL, vnds); // codtau,dpsi,vnds
+	    // periodic correction
+	    PeriodicCorrection(xpg_in,m->period);
 	  }
 	  //printf("ie=%d ifa=%d xrefL=%f %f %f\n",ie,
 	  //     ifa,xpgref_in[0],xpgref_in[1],xpgref_in[2]);
@@ -721,22 +785,24 @@ void CheckMacroMesh(MacroMesh *m, int *param) {
 	  Phy2Ref(physnodeR, xpg_in, xref);
 	  
           int ifaR = 0;
-#ifdef _PERIOD
-          while (m->elem2elem[6*ieR+ifaR] != ie || ifaR==ifa) ifaR++;
-#else
-          while (m->elem2elem[6*ieR+ifaR] != ie) ifaR++;
-#endif
+	  // search the id of the face in the right elem
+	  // special treatment if the mesh is periodic
+	  // and contains only one elem (then ie==ieR)
+          while (m->elem2elem[6*ieR+ifaR] != ie ||
+		 (ie==ieR && ifaR==ifa)) ifaR++;  
           assert(ifaR < 6);
+
+	  //printf("ie=%d ieR=%d ifaR=%d ifa=%d \n",ie,ieR,ifaR,ifa);
 
 	  // Compute the physical coordinates for the point in the
 	  // right macrocell the normal for the relevant face
 	  real xpgR[3], vndsR[3];
 	  {
-	    real xrefR[3];
+	    real xrefR[3],xrefR_in[3];
 	    {
 	      int ipgR = ref_ipg(param, xref);
 	      real wpgR;
-	      ref_pg_vol(param, ipgR, xrefR, &wpgR, NULL);
+	      ref_pg_vol(param, ipgR, xrefR, &wpgR, xrefR_in);
 	    }
 	    real dtauR[3][3], codtauR[3][3];
 	    Ref2Phy(physnodeR,
@@ -753,15 +819,14 @@ void CheckMacroMesh(MacroMesh *m, int *param) {
 	  assert(fabs(vnds[1] + vndsR[1]) < 1e-11);
 	  assert(fabs(vnds[2] + vndsR[2]) < 1e-11);
 	  // Ensure that the points are close
-	  if(Dist(xpg, xpgR) >=  1e-11) {
-	    printf("xpg:%f %f %f\n", xpg[0], xpg[1], xpg[2]);
+	  if(Dist(xpg_in, xpgR) >=  1e-2) {
+	    printf("xpg:%f %f %f\n", xpg_in[0], xpg_in[1], xpg_in[2]);
 	    printf("xpgR:%f %f %f\n", xpgR[0], xpgR[1], xpgR[2]);
 	  }
-#ifdef _PERIOD
-	   assert(fabs(Dist(xpg,xpgR)-_PERIOD)<1e-11);
-#else
-          assert(Dist(xpg,xpgR)<1e-11);
-#endif
+
+	  //PeriodicCorrection(xpgR,m->period);
+
+          assert(Dist(xpg_in,xpgR)<1e-2);
         }
       }
     }

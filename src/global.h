@@ -84,8 +84,6 @@ char cl_buildoptions[1024];
 #define __local
 #endif
 
-//#define _PERIOD 1
-
 #define _DOUBLE_PRECISION
 #ifdef _DOUBLE_PRECISION
 #define real double

@@ -99,8 +99,8 @@ int TestMHD(int argc, char *argv[]) {
   f.interp.interp_param[1] = 1; // x direction degree
   f.interp.interp_param[2] = 1; // y direction degree
   f.interp.interp_param[3] = 0; // z direction degree
-  f.interp.interp_param[4] = 1; // x direction refinement
-  f.interp.interp_param[5] = 100; // y direction refinement
+  f.interp.interp_param[4] = 100; // x direction refinement
+  f.interp.interp_param[5] = 1; // y direction refinement
   f.interp.interp_param[6] = 1; // z direction refinement
 
 
@@ -122,10 +122,13 @@ int TestMHD(int argc, char *argv[]) {
 
   Plotfield(0, (1==0), &f, "Rho", "dginit.msh");
 
+  f.vmax=vmax;
+
   real executiontime;
   if(usegpu) {
     printf("Using OpenCL:\n");
     //executiontime = seconds();
+    assert(1==2);
     RK2(&f, tmax);
     //executiontime = seconds() - executiontime;
   } else { 
@@ -155,5 +158,5 @@ int TestMHD(int argc, char *argv[]) {
   printf("time per RK2 (s):\n");
   printf("%f\n", executiontime / (real)f.itermax);
 
-  return !test;
+  return test;
 }
