@@ -406,21 +406,34 @@ void BuildKernels(CLInfo *cli, char *strprog, char *buildoptions)
   if(!(cli->program)) 
     printf("Failed to create program.\n");
 
+  int deflen = 20;
+  char *buildoptions0 
+    = (buildoptions == NULL) ? 
+    malloc(deflen + 1) :  
+    malloc(deflen + strlen(buildoptions) + 1);
+
+#if real == double
+  sprintf(buildoptions0, "-D real=double ");
+#else
+  sprintf(buildoptions0, "-D real=float ");
+#endif
+  if(buildoptions != NULL)
+    strcat(buildoptions0, buildoptions);
+
+  printf("OpenCL compilation arguments: %s\n", buildoptions0);
   status = clBuildProgram(cli->program,
 			  0,               // one device
 			  NULL,
-			  buildoptions,//NULL, 
+			  buildoptions0,
 			  NULL, NULL);
 
-  /* cl_int clBuildProgram(	cl_program program, */
-  /* 				cl_uint num_devices, */
-  /* 				const cl_device_id *device_list, */
-  /* 				const char *options, */
-  /* 				void(CL_CALLBACK *pfn_notify)(cl_program program, void *user_data), */
-  /* 				void *user_data) */
+  free(buildoptions0);
+
+  printf("Compilation messages:\n%s\n",
+	 print_build_debug(&(cli->program), &cli->device[cli->deviceid]));
 
   if(status < CL_SUCCESS) {
-    //printf("%s\n", strprog);
+    //printf("%s\n", strprog); // Print the OpenCL code
     printf("%s\n", clErrorString(status));
     printf("Compilation output:\n%s\n",
   	   print_build_debug(&(cli->program), &cli->device[cli->deviceid]));

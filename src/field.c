@@ -230,12 +230,6 @@ void init_field_cl(field *f)
   printf("\t%s\n", numflux_cl_name);
   //printf("\t%s\n", strprog);
 
-  //assert(1==2);
-
-
-  printf("OpenCL preprocessor options:\n");
-  printf("\t%s\n", cl_buildoptions);
-  
   BuildKernels(&(f->cli), strprog, cl_buildoptions);
 
   f->dgmass = clCreateKernel(f->cli.program,

@@ -3,9 +3,6 @@
 rm -f schnaps.cl
 touch schnaps.cl
 
-### FIXME: this may defined "real" differently in OpenCL and in C.
-echo "#define real double" >> schnaps.cl
-
 #echo "#ifdef cl_khr_fp64" >> schnaps.cl
 echo "#pragma OPENCL EXTENSION cl_khr_fp64: enable" >> schnaps.cl
 #echo "#else" >> schnaps.cl
