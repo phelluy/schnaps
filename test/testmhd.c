@@ -4,7 +4,6 @@
 #include "test.h"
 #include "getopt.h"
 #include <stdlib.h>     /* atoi */
-//#include "model.h"
 #include "mhd.h"
 #include <math.h>
 #include <string.h>
@@ -72,8 +71,8 @@ int TestMHD(int argc, char *argv[]) {
   field f;
   
   f.varindex = GenericVarindex;
-  f.model.cfl = cfl;
   f.model.m = 9;
+  f.model.cfl = cfl;
 
   strcpy(f.model.name,"MHD");
 
@@ -108,15 +107,20 @@ int TestMHD(int argc, char *argv[]) {
 
   // Read the gmsh file
   ReadMacroMesh(&(f.macromesh), "test/testcartesiangrid2d.msh");
+  //ReadMacroMesh(&(f.macromesh), "test/testcube.msh");
   // Try to detect a 2d mesh
   Detect2DMacroMesh(&(f.macromesh));
   assert(f.macromesh.is2d);  
 
+  //f.macromesh.period[1]=10;
+  
   // Mesh preparation
   BuildConnectivity(&(f.macromesh));
 
   // Prepare the initial fields
   Initfield(&f);
+
+  
   // Prudence...
   CheckMacroMesh(&(f.macromesh), f.interp.interp_param + 1);
 
@@ -139,7 +143,7 @@ int TestMHD(int argc, char *argv[]) {
   }
 
   Plotfield(0,false,&f, "Rho", "dgvisu.msh");
-  Gnuplot(&f,1,0.0,"data1D.dat");
+  Gnuplot(&f,0,0.0,"data1D.dat");
 
   printf("tmax: %f, cfl: %f\n", tmax, f.model.cfl);
 

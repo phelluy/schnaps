@@ -21,7 +21,7 @@
 #endif
 
 // param[0] = M
-// param[1] = deg xx
+// param[1] = deg x
 // param[2] = deg y
 // param[3] = deg z
 // param[4] = raf x
@@ -1684,7 +1684,7 @@ void RK2(field *f, real tmax)
 
   f->dt = f->model.cfl * f->hmin / f->vmax;
 
-  printf("dt=%f\n",f->dt);
+  //printf("dt=%f cfl=%f hmin=%f, vmax=%f\n",f->dt, f->model.cfl, f->hmin, f->vmax);
 
   f->itermax = tmax / f->dt;
   int size_diags;

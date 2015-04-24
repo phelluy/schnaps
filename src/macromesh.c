@@ -548,6 +548,7 @@ void BuildConnectivity(MacroMesh* m)
 	    xpg_in[dim] += m->period[dim];
 	  }
 	  else {
+            //printf("xpg_in=%f\n",xpg_in[dim]);
 	    assert(1==2);
 	  }
 	  m->elem2elem[6 * ie + ifa] = NumElemFromPoint(m,xpg_in,NULL);
