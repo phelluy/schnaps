@@ -137,10 +137,6 @@ real min_grid_spacing(field *f)
 
 void init_data(field *f)
 {
-
-  real w[f->model.m];
-
-
   for(int ie = 0; ie < f->macromesh.nbelems; ie++) {
     
     real physnode[20][3];
@@ -167,6 +163,7 @@ void init_data(field *f)
 	assert(Dist(xref, xref2) < 1e-8);
       }
 
+      real w[f->model.m];
       f->model.InitData(xpg, w);
       for(int iv = 0; iv < f->model.m; iv++) {
 	int imem;
