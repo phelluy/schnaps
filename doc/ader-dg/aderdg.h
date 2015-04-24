@@ -3,8 +3,10 @@
 
 // number of conservative variables
 #define _M 2
+const double velocity[_M]={1,-1};
 // polynomial degree
-#define _D 1
+#define _D 4
+
 
 
 typedef struct ADERDG{
@@ -40,10 +42,16 @@ typedef struct ADERDG{
 
 void InitADERDG(ADERDG* adg,int nbelems,double xmin,double xmax);
 
-void Predictor(ADERDG* adg,int cell_id,double* wcell_init,double t,double* wcell);
+void Predictor(ADERDG* adg,double cell_size,double* wcell_init,double t,double* wcell);
 
 
 void ExactSol(double x,double t,double* w);
+
+
+// plotting in gnuplot
+//plot 'adgplot.dat' using 1:2 w l , 'adgplot.dat' using 1:4  
+//plot 'adgplot.dat' using 1:3 w l , 'adgplot.dat' using 1:5 
+void Plot(ADERDG* adg);
 
 
 
@@ -152,5 +160,13 @@ static const double gauss_lob_dpsi[] = {
 //! data for a given degree in the previous arrays
 static const int gauss_lob_dpsi_offset[] = {0, 1, 5, 14, 30};
 
+
+//return glop weight i
+double wglop(int deg,int i);
+
+// returns glop i
+double glop(int deg,int i);
+// return the 1d derivative of lagrange polynomial ib at glop ipg
+double dlag(int deg,int ib,int ipg);
 
 #endif
