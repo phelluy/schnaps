@@ -429,9 +429,6 @@ void BuildKernels(CLInfo *cli, char *strprog, char *buildoptions)
 
   free(buildoptions0);
 
-  printf("Compilation messages:\n%s\n",
-	 print_build_debug(&(cli->program), &cli->device[cli->deviceid]));
-
   if(status < CL_SUCCESS) {
     //printf("%s\n", strprog); // Print the OpenCL code
     printf("%s\n", clErrorString(status));
