@@ -98,7 +98,7 @@ int TestMHD(int argc, char *argv[]) {
   f.interp.interp_param[1] = 1; // x direction degree
   f.interp.interp_param[2] = 1; // y direction degree
   f.interp.interp_param[3] = 0; // z direction degree
-  f.interp.interp_param[4] = 100; // x direction refinement
+  f.interp.interp_param[4] = 10; // x direction refinement
   f.interp.interp_param[5] = 1; // y direction refinement
   f.interp.interp_param[6] = 1; // z direction refinement
 
@@ -106,13 +106,14 @@ int TestMHD(int argc, char *argv[]) {
   //set_vlasov_params(&(f.model));
 
   // Read the gmsh file
-  ReadMacroMesh(&(f.macromesh), "test/testcartesiangrid2d.msh");
+  ReadMacroMesh(&(f.macromesh), "test/testcartesiangrid2d2.msh");
   //ReadMacroMesh(&(f.macromesh), "test/testcube.msh");
   // Try to detect a 2d mesh
   Detect2DMacroMesh(&(f.macromesh));
-  assert(f.macromesh.is2d);  
+  bool is2d=f.macromesh.is2d; 
+  assert(is2d);  
 
-  //f.macromesh.period[1]=10;
+  //f.macromesh.period[0]=10;
   
   // Mesh preparation
   BuildConnectivity(&(f.macromesh));

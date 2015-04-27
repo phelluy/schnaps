@@ -755,10 +755,10 @@ void MHDBoundaryFlux(double x[3],double t,double wL[],double* vnorm,
 		     double* flux){
   double wR[9];
 
-  if(vnorm[0] > 0.0001 || vnorm[0] < -0.0001){
+  if(vnorm[1] > 0.0001 || vnorm[1] < -0.0001){
     MHDImposedData(x,t,wR);
   }
-  else if(vnorm[1] > 0.0001 || vnorm[1] < -0.0001){
+  else if(vnorm[0] > 0.0001 || vnorm[0] < -0.0001){
     for(int i=0; i<9; i++){
       wR[i] = wL[i];
     }
@@ -797,7 +797,7 @@ void MHDImposedData(double x[3],double t,double w[]){
   yL[2] = 3.;
   yL[5] = 1.;
   yL[7] = 1.;
-  yL[5] = 1.5;
+  yL[7] = 1.5;
   yL[8] = 0.;
 
   yR[0] = 1.;
@@ -805,15 +805,15 @@ void MHDImposedData(double x[3],double t,double w[]){
   yR[3] = 0.;
   yR[4] = 0.;
   yR[2] = 1.;
-  yR[7] = 0.0707372016677029;
+  yR[5] = 0.0707372016677029;
   yR[6] = 0.9974949866040544;
-  yR[5] = 1.5;
+  yR[7] = 1.5;
   yR[8] = 0.;
 
   conservatives(yL, wL);
   conservatives(yR, wR);
 
-  if(x[1] < 0)
+  if(x[0] < 5)
     for(int i=0; i<9; i++){
       w[i] = wL[i];
     }

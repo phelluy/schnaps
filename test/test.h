@@ -33,6 +33,8 @@ int TestMaxwell2D(void);
 
 int TestMHD(int argc, char *argv[]);
 
+int TestMHD1D(int argc, char *argv[]);
+
 int TestPIC(void);
 
 int TestPICAccumulate(void);

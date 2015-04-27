@@ -541,10 +541,12 @@ void BuildConnectivity(MacroMesh* m)
 	while(Dist(vnds,diag[dim]) > 1e-2 && dim<3) dim++;
 	//assert(dim < 3);
 	if (dim < 3 && m->period[dim]  > 0){
-	  if (xpg_in[dim] > m->period[dim]){
+	  //if (xpg_in[dim] > m->period[dim]){
+          if (xpg_in[dim] > bounds[2*dim+1]){
 	    xpg_in[dim] -= m->period[dim];
 	  }
-	  else if (xpg_in[dim] < 0){
+	  //else if (xpg_in[dim] < 0){
+          else if (xpg_in[dim] < bounds[2*dim]){
 	    xpg_in[dim] += m->period[dim];
 	  }
 	  else {
@@ -557,6 +559,7 @@ void BuildConnectivity(MacroMesh* m)
     }
   }
 
+  free(bounds);
 
 /* #ifdef _PERIOD */
 /*   assert(m->is1d); // TODO : generalize to 2D */
@@ -602,6 +605,9 @@ void CheckMacroMesh(MacroMesh *m, int *param) {
 			      {0.0,0.5,0.5},
 			      {0.5,0.5,1.0},
 			      {0.5,0.5,0.0} };
+
+  //real *bounds = malloc(6 * sizeof(real));
+  //macromesh_bounds(m, bounds);
 
   /* real refnormal[6][3]={{0,-1,0},{1,0,0}, */
   /* 			  {0,1,0},{-1,0,0}, */
@@ -768,6 +774,10 @@ void CheckMacroMesh(MacroMesh *m, int *param) {
 		    codtau, NULL, vnds); // codtau,dpsi,vnds
 	    // periodic correction
 	    PeriodicCorrection(xpg_in,m->period);
+            // TODO: we need to compute bounds at the begining. However the
+            // funtion NumElemFromPoint failed with testpic and
+            // testpic_accumulate
+            //PeriodicCorrectionB(xpg_in,m->period,bounds);
 	  }
 	  //printf("ie=%d ifa=%d xrefL=%f %f %f\n",ie,
 	  //     ifa,xpgref_in[0],xpgref_in[1],xpgref_in[2]);
@@ -832,6 +842,8 @@ void CheckMacroMesh(MacroMesh *m, int *param) {
       }
     }
   }
+
+  //free(bounds);
 };
 
 // Detect if the mesh is 2D and then permut the nodes so that the z
@@ -1106,6 +1118,7 @@ void Detect1DMacroMesh(MacroMesh* m){
     ymil/=20;
     // the mesh is not 1d
     if (fabs(zmil-0.5)>1e-6 || fabs(ymil-0.5)>1e-6) {
+      printf("The mesh is not 1D zmil=%f ymil=%f\n",zmil,ymil);
       m->is1d=false;
       return;
     }
