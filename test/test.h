@@ -61,4 +61,6 @@ int TestKernelInterface(void);
 
 int TestFieldRK2_CL(void);
 
+int TestLandau_Damping_1D(void);
+
 #endif
