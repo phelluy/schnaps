@@ -23,6 +23,8 @@ typedef struct ADERDG{
   // Gauss points of each cell -> size = _M * (_D+1) * nbelems
   double* wnow;
   double* wnext;
+  // one array for the current predicted values
+  double* wpred;
 
   // current time evolution on the bigger cells
   double tnow;
@@ -42,7 +44,18 @@ typedef struct ADERDG{
 
 void InitADERDG(ADERDG* adg,int nbelems,double xmin,double xmax);
 
-void Predictor(ADERDG* adg,double cell_size,double* wcell_init,double t,double* wcell);
+void Predictor(ADERDG* adg,int ie,double s);
+
+void VolumeTerms(ADERDG* adg,int ie);
+
+
+// perform a macro time step of the ADER method
+void BigStep(ADERDG* adg);
+
+double stretching(double xh);
+
+
+void NumFlux(double* wL,double* wR,double* flux);
 
 
 void ExactSol(double x,double t,double* w);

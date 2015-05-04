@@ -5,6 +5,9 @@
 #include <string.h>
 #include <stdio.h>
 
+
+#define _MAX(a,b) ( (a) > (b) ? (a) : (b) )
+
 int main(void){
 
   ADERDG adg;
@@ -14,6 +17,15 @@ int main(void){
   Plot(&adg);
 
   return 0;
+
+}
+
+double stretching(double x){
+
+  double alpha=2;
+  double beta=2;
+  return alpha * x + (3 - 2 * alpha - beta) * x * x +
+    (alpha - 2 + beta) *  pow( x,  3.);
 
 }
 
@@ -28,11 +40,19 @@ void InitADERDG(ADERDG* adg,int nbelems,double xmin,double xmax){
   adg->face = malloc(sizeof(double) * adg->nbfaces);
   assert(adg->face);
   
-  adg->dx=(xmax-xmin)/nbelems;
 
   for(int i=0;i<adg->nbfaces;i++){
-    adg->face[i]=xmin+i*adg->dx;
+    double xh=(double)i/nbelems;
+    double x=stretching(xh);
+    adg->face[i]=xmin+x*(xmax-xmin);
   }
+
+
+  adg->dx=0;
+  for(int ie=0;ie<adg->nbelems;ie++){
+    adg->dx=_MAX(adg->dx, adg->face[ie+1]- adg->face[ie]);
+  }
+
 
   adg->dt = adg->dx;  // to do put the velocity
   
@@ -40,15 +60,13 @@ void InitADERDG(ADERDG* adg,int nbelems,double xmin,double xmax){
 
   adg->cell_level = malloc(sizeof(int) * adg->nbelems);
   assert(adg->cell_level);
-  for(int i=0;i<adg->nbelems;i++){
-    adg->cell_level[i]=0;
+  for(int ie=0;ie<adg->nbelems;ie++){
+    adg->cell_level[ie]=(int) (log(adg->dx/(adg->face[ie+1]- adg->face[ie]))/log(2));
+    adg->ncfl = _MAX ( adg->ncfl , adg->cell_level[ie]+1 );
   }
 
-  adg->face_level = malloc(sizeof(int) * adg->nbfaces);
-  assert(adg->face_level);
-  for(int i=0;i<adg->nbfaces;i++){
-    adg->face_level[i]=0;
-  }
+  printf("found %d cfl levels\n",adg->ncfl);
+
 
   adg->wnow = malloc(sizeof(double) * adg->nbelems * _M * (_D+1));
   assert(adg->wnow);
@@ -66,13 +84,74 @@ void InitADERDG(ADERDG* adg,int nbelems,double xmin,double xmax){
   
   memcpy(adg->wnext,adg->wnow,sizeof(double) * adg->nbelems * _M * (_D+1));
     
+  adg->wpred = malloc(sizeof(double) * (adg->nbelems +2) * _M * (_D+1));
+  assert(adg->wpred);
+  adg->wpred +=  _M * (_D+1) ; 
 
 
 
   adg->face_level = malloc(sizeof(int) * adg->nbfaces);
   assert(adg->face_level);
+ 
+  for(int i=1;i<adg->nbfaces-1;i++){
+    adg->face_level[i]=_MAX(adg->cell_level[i],adg->cell_level[i+1]);
+  }
+  adg->face_level[0]=adg->cell_level[0];
+  adg->face_level[adg->nbfaces-1]=adg->cell_level[adg->nbelems-1];
   
+
+}
+
+void NumFlux(double* wL,double* wR,double* flux){
+
+  double vn 
+    = velocity[0];
+  double vnp = vn > 0 ? vn : 0;
+  double vnm = vn - vnp;
+  flux[0] = vnp * wL[0] + vnm * wR[0];
+
+  vn  = velocity[0];
+  vnp = vn > 0 ? vn : 0;
+  vnm = vn - vnp;
+  flux[1] = vnp * wL[1] + vnm * wR[1];
+
   
+
+}
+
+
+void BigStep(ADERDG* adg){
+
+
+  for(int level=adg->ncfl - 1;level >= 0;--level){
+    for(int ifa=0;ifa<adg->nbfaces;ifa++){
+      int flev=adg->face_level[ifa];
+      if (flev >= level){
+	// predict if necessary the values on left and right
+	if (ifa>0){
+	  Predictor(adg,ifa-1,adg->dt/pow(2,flev+1));
+	}
+	else {
+	  ExactSol(adg->xmin,adg->tnow+00,adg->wpred-_M);
+	}
+	if (ifa<adg->nbfaces-1) Predictor(adg,ifa,adg->dt/pow(2,flev+1));
+	// compute the flux * dt/2^level
+	double flux[_M];
+	NumFlux(adg->wpred + ( ifa-1 * (_D+1) + _D) * _M , adg->wpred + ( ifa * (_D+1) + 0) * _M , flux);
+	// send it on the two sides
+      }
+    }
+
+    for(int ie=0;ie<adg->nbelems;ie++){
+      if (adg->cell_level[ie] >= level){
+	// predict the value of w in the cell if necessary
+	// compute the volume terms
+	// update the cell
+      }
+    }
+
+
+  }
 
 }
 
@@ -112,13 +191,15 @@ void ExactSol(double x,double t,double* w){
 }
 
 
-void Predictor(ADERDG* adg,double h,double* wcell_init,
-	       double s,double* wcell)
+void Predictor(ADERDG* adg,int ie,double s)
 {
 
   double w0[_D+1],w[_D+1];
 
-  
+  double* wcell_init = adg->wnow + ie * (_D+1) * _M ;
+  double* wcell = adg->wpred + ie * (_D+1) * _M ;
+
+  double h=adg->face[ie+1]-adg->face[ie];
 
   for(int iv=0; iv < _M; ++iv){
     for(int ipg=0;ipg <_D+1;++ipg){
