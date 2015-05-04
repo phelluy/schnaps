@@ -1,7 +1,7 @@
 Lz = 2; // Cylinder length
-R = 2;  // Cylinder radius
-rafxy = 3; 
-rafz = 5;
+R = 1;  // Cylinder radius
+rafxy = 1; 
+rafz = 2;
 h=0.7*R/2;
 Point(1) = {-h, -h, 0};
 Point(2) = {h, -h, 0};

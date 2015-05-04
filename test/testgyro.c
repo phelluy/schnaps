@@ -44,8 +44,8 @@ int TestGyro(void) {
   f.interp.interp_param[5]=4;  // y direction refinement
   f.interp.interp_param[6]=4;  // z direction refinement
   // read the gmsh file
-  //ReadMacroMesh(&(f.macromesh),"test/testcube.msh");
-  ReadMacroMesh(&(f.macromesh),"geo/cube.msh");
+  //ReadMacroMesh(&(f.macromesh),"geo/cube.msh");
+  ReadMacroMesh(&(f.macromesh),"geo/cylindre.msh");
   // try to detect a 2d mesh
   //bool is1d=Detect1DMacroMesh(&(f.macromesh));
   //assert(is1d);
@@ -81,7 +81,7 @@ int TestGyro(void) {
  
   // save the results and the error
   Plotfield(0,(1==0),&f,"sol","dgvisu.msh");
-  Plotfield(0,(1==1),&f,"error","dgerror.msh");
+  //Plotfield(0,(1==1),&f,"error","dgerror.msh");
 
   double dd=L2error(&f);
   //double dd_l2_vel =GyroL2VelError(&f)
@@ -97,26 +97,3 @@ int TestGyro(void) {
   return test;
 
 };
-
-/* double Velocity_distribution_plot(double* x,double t,double *w){ */
-  
-/*   FILE * ver; */
-/*   ver = fopen( "vel_error.dat", "w" ); */
-
-/*   double wex[_INDEX_MAX]; */
-/*   double err2=0; */
-/*   CollisionImposedData(x, t,wex); */
-/*   // loop on the finite emlements */
-/*   for(int iel=0;iel<_NB_ELEM_V;iel++){ */
-/*     // loop on the local glops */
-/*     for(int iloc=0;iloc<_DEG_V+1;iloc++){ */
-/*       double omega=wglop(_DEG_V,iloc); */
-/*       double vi=-_VMAX+iel*_DV+_DV*glop(_DEG_V,iloc); */
-/*       int ipg=iloc+iel*_DEG_V; */
-/*       err2+=omega*_DV*(w[ipg]-wex[ipg])*(w[ipg]-wex[ipg]); */
-/*       fprintf(ver,"%f %f %f % f\n",vi,w[ipg],wex[ipg],w[ipg]-wex[ipg]); */
-/*     } */
-/*   } */
-/*   fclose(ver); */
-/*   return err2; */
-/* }; */

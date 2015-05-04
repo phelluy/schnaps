@@ -42,7 +42,7 @@ void Gyro_Lagrangian_NumFlux(real wL[],real wR[],real* vnorm,real* flux){
     real flux2 = -E_x*wm;
     real v =-_VMAX+ nel*_DV +
       _DV* glop(_DEG_V,j); // gauss_lob_point[j]
-    real flux3 =0;//v*wm;
+    real flux3 =v*wm;
   
     flux[i] = vnorm[0]*flux1+vnorm[1]*flux2+vnorm[2]*flux3-eps*(wR[i]-wL[i])/2;
   }
@@ -114,18 +114,18 @@ void GyroImposedData(real x[3],real t,real w[]){
     //w[i] = cos(2*pi*yi);//*exp(-1/(1-pow(2*xi-1,2)));
     //w[i] = cos(2*pi*xi)*cos(2*pi*yi);//*exp(-0.5*pow(xi-0.5,2));
         //pour transport 3D
+    //real zi=x[2]-vi*t;
     real zi=x[2]-vi*t;
-    //real zi=x[2]-t;
      //w[i] = exp(-4*pow(zi-0.5,2));//exp(-4*pow(yi-0.5,2))*exp(-4*pow(xi-0.5,2))*exp(-4*pow(zi-0.5,2));
 
-    w[i] = exp(-4*pow(zi-0.5,2))*Gyro_ImposedKinetic_Data(x,t,vi);
+    w[i] = exp(-4*pow(zi-1.,2));// *Gyro_ImposedKinetic_Data(x,t,vi);
   }
   // exact value of the potential
   // and electric field
   w[_INDEX_PHI]=0;
   w[_INDEX_EX]=0;//1;
   w[_INDEX_EY]=0;//1;
-  w[_INDEX_EZ]=1;
+  w[_INDEX_EZ]=0;
 
 };
 
@@ -231,36 +231,10 @@ void GyroSource(real* x, real t, real* w, real* source){
 
 
 
-
-
-
-/* real Velocity_distribution_plot(real* x,real t,real *w){ */
-  
-/*   FILE * ver; */
-/*   ver = fopen( "vel_error.dat", "w" ); */
-
-/*   real wex[_INDEX_MAX]; */
-/*   real err2=0; */
-/*   GyroImposedData(x, t,wex); */
-/*   // loop on the finite emlements */
-/*   for(int iel=0;iel<_NB_ELEM_V;iel++){ */
-/*     // loop on the local glops */
-/*     for(int iloc=0;iloc<_DEG_V+1;iloc++){ */
-/*       real omega=wglop(_DEG_V,iloc); */
-/*       real vi=-_VMAX+iel*_DV+_DV*glop(_DEG_V,iloc); */
-/*       int ipg=iloc+iel*_DEG_V; */
-/*       err2+=omega*_DV*(w[ipg]-wex[ipg])*(w[ipg]-wex[ipg]); */
-/*       fprintf(ver,"%f %f %f % f\n",vi,w[ipg],wex[ipg],w[ipg]-wex[ipg]); */
-/*     } */
-/*   } */
-/*   fclose(ver); */
-/*   return err2; */
-/* }; */
-
 void Velocity_distribution_plot(real *w){
   
   FILE * ver;
-  ver = fopen( "vel_error.dat", "w" );
+  ver = fopen( "fvel.dat", "w" );
 
   // loop on the finite emlements
   for(int iel=0;iel<_NB_ELEM_V;iel++){

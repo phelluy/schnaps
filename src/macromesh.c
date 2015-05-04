@@ -539,7 +539,7 @@ void BuildConnectivity(MacroMesh* m)
 	       xpg_in[0],xpg_in[1],xpg_in[2]);
 	int dim=0;
 	while(Dist(vnds,diag[dim]) > 1e-2 && dim<3) dim++;
-	assert(dim < 3);
+	//assert(dim < 3);
 	if (m->period[dim] > 0){
 	  if (xpg_in[dim] > m->period[dim]){
 	    xpg_in[dim] -= m->period[dim];
