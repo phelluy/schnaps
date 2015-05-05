@@ -1,0 +1,36 @@
+# !sh    
+if [ $# = 0 ]
+then
+echo -e "please give executable name"
+exit 1
+fi
+
+echo -e -n "CC=g++\nOPTIMS=\nLIBS= " > makefile
+
+echo >> makefile
+echo -n "$1: " >> makefile
+for fic in *.cpp
+do
+echo -n "${fic%\.cpp}.o " >> makefile
+done
+
+echo >> makefile
+echo -n -e "\t\$(CC) " >> makefile
+for fic in *.cpp
+do
+echo -n "${fic%\.cpp}.o " >> makefile
+done
+echo -n -e "-o $1 \$(OPTIMS) \$(LIBS)\n" >> makefile
+
+echo >> makefile
+for fic in *.c
+do
+gcc -MM $fic >> makefile
+echo -e "\t\$(CC) -c $fic \$(OPTIMS)\n" >> makefile
+done
+
+echo -n -e ".PHONY clean: ">> makefile
+echo >> makefile
+echo -n -e "\t rm *.o rm $1 ">> makefile
+
+exit 0
