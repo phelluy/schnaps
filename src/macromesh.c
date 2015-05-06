@@ -744,12 +744,9 @@ void CheckMacroMesh(MacroMesh *m, int *param) {
 	  // face-local point index and the point slightly inside the
 	  // macrocell.
 	  real xpgref[3], xpgref_in[3];
-	  int numpg_in_vol;
-	  {
-	    real wpg;
-	    ref_pg_face(param, ifa, ipgf, xpgref, &wpg, xpgref_in);
-	    numpg_in_vol=param[6];
-	  }
+	  ref_pg_face(param, ifa, ipgf, xpgref, NULL, xpgref_in);
+	  //ref_pg_face(param, ifa, ipgf, xpgref, NULL, NULL);
+	  int ipg=param[6];
 
 /* #ifdef _PERIOD */
 /* 	  assert(m->is1d); // TODO: generalize to 2d */
@@ -772,24 +769,12 @@ void CheckMacroMesh(MacroMesh *m, int *param) {
           
 	  // Compute the "slightly inside" position
 	  real xpg_in[3];
-	  { 
-	    real vnds[3];
-	    real dtau[3][3];
-	    real codtau[3][3];
-	    Ref2Phy(physnode,
-		    xpgref_in,
-		    NULL, ifa, // dpsiref,ifa
-		    xpg_in, dtau,
-		    codtau, NULL, vnds); // codtau,dpsi,vnds
-	    // periodic correction
-	    PeriodicCorrection(xpg_in,m->period);
-            // TODO: we need to compute bounds at the begining. However the
-            // funtion NumElemFromPoint failed with testpic and
-            // testpic_accumulate
-            //PeriodicCorrectionB(xpg_in,m->period,bounds);
-	  }
-	  //printf("ie=%d ifa=%d xrefL=%f %f %f\n",ie,
-	  //     ifa,xpgref_in[0],xpgref_in[1],xpgref_in[2]);
+	  Ref2Phy(physnode,
+		  xpgref_in,
+		  NULL, ifa, // dpsiref,ifa
+		  xpg_in, NULL,
+		  NULL, NULL, NULL); // codtau,dpsi,vnds
+	  PeriodicCorrection(xpg_in,m->period);
 
 	  // Load the geometry of the right macrocell
 	  real physnodeR[20][3];
@@ -801,8 +786,10 @@ void CheckMacroMesh(MacroMesh *m, int *param) {
 	  }
 
   	  // Find the corresponding point in the right elem
-  	  real xref[3];
-	  Phy2Ref(physnodeR, xpg_in, xref);
+  	  real xpgrefR_in[3];//,xpgrefR[3];
+	  Phy2Ref(physnodeR, xpg_in, xpgrefR_in);
+	  //Phy2Ref(physnodeR, xpg, xpgrefR);
+	  int ipgR = ref_ipg(param, xpgrefR_in);
 	  
 	  // search the id of the face in the right elem
 	  // special treatment if the mesh is periodic
@@ -813,28 +800,19 @@ void CheckMacroMesh(MacroMesh *m, int *param) {
 	      for(int ipgfR = 0; ipgfR < NPGF(param, ifaR); ipgfR++) {
 		real xpgrefR[3];
 		ref_pg_face(param, ifaR, ipgfR, xpgrefR, NULL, NULL);
-		printf("numpg_in_vol %d  param6 %d\n",numpg_in_vol,param[6]);
-		if (param[6] == numpg_in_vol){
-		  //printf("ie=%d ieR=%d ifaR=%d ifa=%d \n",ie,ieR,ifaR,ifa);
-		  
-		  // Compute the physical coordinates for the point in the
-		  // right macrocell the normal for the relevant face
-		  real xpgR[3], vndsR[3];
+		printf("ipgR %d  param6 %d\n",ipgR,param[6]);
+		if (param[6] == ipgR){
+		  real xpgR[3];
+		  real vndsR[3];
 		  {
-		    real xrefR[3],xrefR_in[3];
-		    {
-		      int ipgR = ref_ipg(param, xref);
-		      real wpgR;
-		      ref_pg_vol(param, numpg_in_vol, xrefR, &wpgR, xrefR_in);
-		    }
+		    ref_pg_vol(param, ipgR, xpgrefR, NULL, NULL);
 		    real dtauR[3][3], codtauR[3][3];
 		    Ref2Phy(physnodeR,
-			    xrefR,
+			    xpgrefR,
 			    NULL, ifaR, // dphiref, ifa
 			    xpgR, dtauR,
 			    codtauR, NULL, vndsR); // codtau, dphi, vnds
 		  }
-		  
 		  // Ensure that the normals are opposite
 		  // if xpg and xpgR are close
 		  printf("xpg:%f %f %f\n", xpg_in[0], xpg_in[1], xpg_in[2]);
