@@ -800,7 +800,6 @@ void CheckMacroMesh(MacroMesh *m, int *param) {
 	      for(int ipgfR = 0; ipgfR < NPGF(param, ifaR); ipgfR++) {
 		real xpgrefR[3];
 		ref_pg_face(param, ifaR, ipgfR, xpgrefR, NULL, NULL);
-		printf("ipgR %d  param6 %d\n",ipgR,param[6]);
 		if (param[6] == ipgR){
 		  real xpgR[3];
 		  real vndsR[3];
@@ -815,11 +814,11 @@ void CheckMacroMesh(MacroMesh *m, int *param) {
 		  }
 		  // Ensure that the normals are opposite
 		  // if xpg and xpgR are close
-		  printf("xpg:%f %f %f\n", xpg_in[0], xpg_in[1], xpg_in[2]);
-		  printf("vnds: %f %f %f vndsR: %f %f %f \n",
-			 vnds[0],vnds[1],vnds[2],
-			 vndsR[0],vndsR[1],vndsR[2]);
-		  printf("xpgR:%f %f %f\n", xpgR[0], xpgR[1], xpgR[2]);
+		  /* printf("xpg:%f %f %f\n", xpg_in[0], xpg_in[1], xpg_in[2]); */
+		  /* printf("vnds: %f %f %f vndsR: %f %f %f \n", */
+		  /* 	 vnds[0],vnds[1],vnds[2], */
+		  /* 	 vndsR[0],vndsR[1],vndsR[2]); */
+		  /* printf("xpgR:%f %f %f\n", xpgR[0], xpgR[1], xpgR[2]); */
 		  assert(fabs(vnds[0] + vndsR[0]) < 1e-8);
 		  assert(fabs(vnds[1] + vndsR[1]) < 1e-8);
 		  assert(fabs(vnds[2] + vndsR[2]) < 1e-8);
@@ -829,8 +828,8 @@ void CheckMacroMesh(MacroMesh *m, int *param) {
 	      }
 	    }
 	  }
-	  printf("neighb=%d\n",neighb_count);
-	  //assert(neighb_count == 1);
+	  //printf("neighb=%d\n",neighb_count);
+	  assert(neighb_count == 1);
 	}
       }
     }
