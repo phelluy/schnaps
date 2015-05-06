@@ -113,7 +113,7 @@ int TestMHD1D(int argc, char *argv[]) {
   bool is1d=f.macromesh.is1d; 
   assert(is1d);  
 
-  //f.macromesh.period[0]=10;
+  f.macromesh.period[0]=10;
   
   // Mesh preparation
   BuildConnectivity(&(f.macromesh));

@@ -68,15 +68,15 @@ void PeriodicCorrection(real xyz[3],real period[3]){
   }
 }
 
-void PeriodicCorrectionB(real xyz[3],real period[3], real bounds[6]){
+void PeriodicCorrectionB(real xyz[3],real period[3], real xmin[3], real xmax[3]){
   for (int dim=0;dim<3;++dim){
     if (period[dim] > 0){
       //if (xyz[dim] > period[dim]){
-      if (xyz[dim] > bounds[2*dim+1]){
+      if (xyz[dim] > xmax[dim]){
 	xyz[dim] -= period[dim];
       }
       //else if (xyz[dim] < 0){
-      else if (xyz[dim] < bounds[2*dim]){
+      else if (xyz[dim] < xmin[dim]){
 	xyz[dim] += period[dim];
       }
     }

@@ -773,11 +773,11 @@ void CheckMacroMesh(MacroMesh *m, int *param) {
 		    xpg_in, dtau,
 		    codtau, NULL, vnds); // codtau,dpsi,vnds
 	    // periodic correction
-	    PeriodicCorrection(xpg_in,m->period);
+	    //PeriodicCorrection(xpg_in,m->period);
             // TODO: we need to compute bounds at the begining. However the
             // funtion NumElemFromPoint failed with testpic and
             // testpic_accumulate
-            //PeriodicCorrectionB(xpg_in,m->period,bounds);
+            PeriodicCorrectionB(xpg_in,m->period,m->xmin,m->xmax);
 	  }
 	  //printf("ie=%d ifa=%d xrefL=%f %f %f\n",ie,
 	  //     ifa,xpgref_in[0],xpgref_in[1],xpgref_in[2]);
