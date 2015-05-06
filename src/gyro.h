@@ -1,7 +1,7 @@
 #ifndef _GYRO_H
 #define _GYRO_H
 
-#define _NB_ELEM_V 10
+#define _NB_ELEM_V 4
 #define _DEG_V 2
 
 #define _MV (_NB_ELEM_V *  _DEG_V + 1)
