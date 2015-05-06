@@ -2,10 +2,16 @@
 #define _GYRO_H
 
 #define _NB_ELEM_V 4
-#define _DEG_V 1
+#define _DEG_V 2
 
 #define _MV (_NB_ELEM_V *  _DEG_V + 1)
-#define _VMAX 6
+#define _INDEX_MAX_KIN (_MV-1)
+#define _INDEX_PHI (_MV)
+#define _INDEX_EX (_MV+1)
+#define _INDEX_EY (_MV+2)
+#define _INDEX_EZ (_MV+3)
+#define _INDEX_MAX (_MV+4)
+#define _VMAX 6.
 #define _DV (2*_VMAX / _NB_ELEM_V)
 
 
@@ -52,11 +58,12 @@ real GyroL2_Kinetic_error(field* f);
 //! \param[in] w : values of f at glops
 real GyroL2VelError(real* x,real t,real *w);
 
-//! \brief compute compute the source term of the gyro
-//! model: electric force + true gyros
-//! \param[in] w : 
-//! \param[in] f : to be removed TODO !!!
-//! \param[out] source : source terms
-void GyroSource(real* force, real* w, real* source);
+//! \brief compute compute the source term of the collision
+//! model: electric force + true collisions
+void GyroSource(real* x,real t, real* w, real* source);
+
+//! \brief gnuplot file for the distribution function
+//! \param[in] w : values of f at glops
+void Velocity_distribution_plot(real *w);
 
 #endif

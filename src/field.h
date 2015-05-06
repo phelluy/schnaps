@@ -317,7 +317,7 @@ void Displayfield(field *f);
 //! \param[in] dir fixed direction to plot
 //! \param[in] fixval fixed value to plot
 //! \param[in] filename the path to the gmsh visualization file.
-void Gnuplot(field* f,int dir, double fixval,char* filename);
+void Gnuplot(field* f,int dir, real fixval,char* filename);
 
 //! \brief compute the normalized L2 distance with the imposed data
 //! \param[in] f the field.

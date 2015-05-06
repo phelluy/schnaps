@@ -32,6 +32,9 @@ typedef struct Skyline{
   //! \brief true if the matrix is symmetric
   bool is_sym;
 
+  //! \brief true if the struct is initialized
+  bool is_init;
+
   //! \brief true if the arrays are allocated
   bool is_alloc;
 

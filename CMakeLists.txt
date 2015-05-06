@@ -10,7 +10,7 @@ SET(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 
 #set(CMAKE_C_FLAGS "-std=c99 -D_REENTRANT -O3 -g -D_POSIX_C_SOURCE=200112L")
 #set(CMAKE_C_FLAGS "-std=gnu99 -D_REENTRANT -O3 -g")
-set(CMAKE_C_FLAGS "-std=c99 -D_REENTRANT -O3 -g")
+set(CMAKE_C_FLAGS " -std=c99 -D_REENTRANT -O3 -g")
 
 OPTION(USE_OPENCL
   "Compile with the OpenCL library"
@@ -68,9 +68,13 @@ list(APPEND
   src/maxwell.c
   src/mhd.h
   src/mhd.c
+  src/gyro.h
+  src/gyro.c
   src/pic.h
   src/pic.c
   src/skyline.h
+  src/linear_solver.h
+  src/linear_solver.c
   src/solverpoisson.h
   src/quantities_vp.h
   src/diagnostics_vp.h
@@ -79,9 +83,7 @@ list(APPEND
   src/quantities_vp.c
   src/diagnostics_vp.c
   src/collision.h
-  src/gyro.h
   src/collision.c
-  src/gyro.c
   )
 
 
@@ -246,6 +248,14 @@ add_executable(
 target_link_libraries(testmaxwell2d ${LIBS})
 add_test(testmaxwell2d testmaxwell2d)
 
+add_executable(
+  testgyro
+  test/test.h
+  test/testgyro.c
+  )
+target_link_libraries(testgyro ${LIBS})
+add_test(testgyro testgyro)
+
 #add_test(testpic testpic)
 add_executable(
   testpic
@@ -281,6 +291,14 @@ add_executable(
 target_link_libraries(testskyline ${LIBS})
 add_test(testskyline testskyline)
  
+add_executable(
+  testlinearsolver
+  test/test.h
+  test/testlinearsolver.c
+  )
+target_link_libraries(testlinearsolver ${LIBS})
+add_test(testlinearsolver testlinearsolver)
+
 add_test(testpoisson testpoisson)
 add_executable(
   testpoisson
@@ -298,6 +316,15 @@ add_executable(
 )
 target_link_libraries(test_transportvp ${LIBS})
 add_test(test_transportvp test_transportvp)
+
+add_test(testlandau_damping_1D testlandau_damping_1D)
+add_executable(
+  testlandau_damping_1D
+  test/test.h
+  test/testlandau_damping_1D.c
+)
+target_link_libraries(testlandau_damping_1D ${LIBS})
+add_test(testlandau_damping_1D testlandau_damping_1D)
 
 ##########  OpenCL unit tests  ##########
 if(OPENCL_FOUND)

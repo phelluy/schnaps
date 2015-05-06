@@ -10,6 +10,7 @@
 
 // macro for activating flann (fast finding of neighbours)
 //#define _WITH_FLANN
+#undef _WITH_FLANN
 
 #ifdef _WITH_FLANN
 #include <flann/flann.h>
@@ -261,7 +262,7 @@ void macromesh_bounds(MacroMesh *m, real *bounds)
     real x = m->node[3 * i];
     real y = m->node[3 * i + 1];
     real z = m->node[3 * i + 2];
-    printf("xyz %f %f %f \n",x,y,z);
+    //printf("xyz %f %f %f \n",x,y,z);
     if(x < xmin) xmin = x;
     if(x > xmax) xmax = x;
     if(y < ymin) ymin = y;
@@ -482,6 +483,11 @@ void BuildConnectivity(MacroMesh* m)
   printf("bounds: %f, %f, %f, %f, %f, %f\n",
 	 bounds[0], bounds[1], bounds[2], bounds[3], bounds[4], bounds[5]);
 
+  printf("bounds: %f, %f, %f, %f, %f, %f\n",
+	 m->xmin[0],m->xmax[0],
+	 m->xmin[1],m->xmax[1],
+	 m->xmin[2],m->xmax[2]
+	 );
   // Build a list of faces each face is made of four corners of the
   // hexaedron mesh
   Face4Sort *face = malloc(6 * sizeof(Face4Sort) * m->nbelems);
@@ -534,19 +540,16 @@ void BuildConnectivity(MacroMesh* m)
 	vnds[0]=fabs(vnds[0]);
 	vnds[1]=fabs(vnds[1]);
 	vnds[2]=fabs(vnds[2]);
-	printf("ie=%d ifa=%d vnds=%f %f %f xpg_in=%f %f %f \n",
-	       ie,ifa,vnds[0],vnds[1],vnds[2],
-	       xpg_in[0],xpg_in[1],xpg_in[2]);
 	int dim=0;
 	while(Dist(vnds,diag[dim]) > 1e-2 && dim<3) dim++;
 	//assert(dim < 3);
 	if (dim < 3 && m->period[dim]  > 0){
 	  //if (xpg_in[dim] > m->period[dim]){
-          if (xpg_in[dim] > bounds[2*dim+1]){
+          if (xpg_in[dim] > m->xmax[dim]){
 	    xpg_in[dim] -= m->period[dim];
 	  }
 	  //else if (xpg_in[dim] < 0){
-          else if (xpg_in[dim] < bounds[2*dim]){
+          else if (xpg_in[dim] < m->xmin[dim]){
 	    xpg_in[dim] += m->period[dim];
 	  }
 	  else {
@@ -554,6 +557,10 @@ void BuildConnectivity(MacroMesh* m)
 	    assert(1==2);
 	  }
 	  m->elem2elem[6 * ie + ifa] = NumElemFromPoint(m,xpg_in,NULL);
+	  /* printf("ie=%d ifa=%d numelem=%d vnds=%f %f %f xpg_in=%f %f %f \n", */
+	  /* 	 ie,ifa,NumElemFromPoint(m,xpg_in,NULL), */
+	  /* 	 vnds[0],vnds[1],vnds[2], */
+	  /* 	 xpg_in[0],xpg_in[1],xpg_in[2]); */
 	}
       }
     }
@@ -737,10 +744,9 @@ void CheckMacroMesh(MacroMesh *m, int *param) {
 	  // face-local point index and the point slightly inside the
 	  // macrocell.
 	  real xpgref[3], xpgref_in[3];
-	  {
-	    real wpg;
-	    ref_pg_face(param, ifa, ipgf, xpgref, &wpg, xpgref_in);
-	  }
+	  ref_pg_face(param, ifa, ipgf, xpgref, NULL, xpgref_in);
+	  //ref_pg_face(param, ifa, ipgf, xpgref, NULL, NULL);
+	  int ipg=param[6];
 
 /* #ifdef _PERIOD */
 /* 	  assert(m->is1d); // TODO: generalize to 2d */
@@ -763,24 +769,12 @@ void CheckMacroMesh(MacroMesh *m, int *param) {
           
 	  // Compute the "slightly inside" position
 	  real xpg_in[3];
-	  { 
-	    real vnds[3];
-	    real dtau[3][3];
-	    real codtau[3][3];
-	    Ref2Phy(physnode,
-		    xpgref_in,
-		    NULL, ifa, // dpsiref,ifa
-		    xpg_in, dtau,
-		    codtau, NULL, vnds); // codtau,dpsi,vnds
-	    // periodic correction
-	    //PeriodicCorrection(xpg_in,m->period);
-            // TODO: we need to compute bounds at the begining. However the
-            // funtion NumElemFromPoint failed with testpic and
-            // testpic_accumulate
-            PeriodicCorrectionB(xpg_in,m->period,m->xmin,m->xmax);
-	  }
-	  //printf("ie=%d ifa=%d xrefL=%f %f %f\n",ie,
-	  //     ifa,xpgref_in[0],xpgref_in[1],xpgref_in[2]);
+	  Ref2Phy(physnode,
+		  xpgref_in,
+		  NULL, ifa, // dpsiref,ifa
+		  xpg_in, NULL,
+		  NULL, NULL, NULL); // codtau,dpsi,vnds
+	  PeriodicCorrection(xpg_in,m->period);
 
 	  // Load the geometry of the right macrocell
 	  real physnodeR[20][3];
@@ -792,59 +786,57 @@ void CheckMacroMesh(MacroMesh *m, int *param) {
 	  }
 
   	  // Find the corresponding point in the right elem
-  	  real xref[3];
-	  Phy2Ref(physnodeR, xpg_in, xref);
+  	  real xpgrefR_in[3];//,xpgrefR[3];
+	  Phy2Ref(physnodeR, xpg_in, xpgrefR_in);
+	  //Phy2Ref(physnodeR, xpg, xpgrefR);
+	  int ipgR = ref_ipg(param, xpgrefR_in);
 	  
-          int ifaR = 0;
 	  // search the id of the face in the right elem
 	  // special treatment if the mesh is periodic
 	  // and contains only one elem (then ie==ieR)
-          while (m->elem2elem[6*ieR+ifaR] != ie ||
-		 (ie==ieR && ifaR==ifa)) ifaR++;  
-          assert(ifaR < 6);
+	  int neighb_count=0;
+	  for(int ifaR=0;ifaR<6;ifaR++){
+	    if (m->elem2elem[6*ieR+ifaR] == ie) {
+	      for(int ipgfR = 0; ipgfR < NPGF(param, ifaR); ipgfR++) {
+		real xpgrefR[3];
+		ref_pg_face(param, ifaR, ipgfR, xpgrefR, NULL, NULL);
+		if (param[6] == ipgR){
+		  real xpgR[3];
+		  real vndsR[3];
+		  {
+		    ref_pg_vol(param, ipgR, xpgrefR, NULL, NULL);
+		    real dtauR[3][3], codtauR[3][3];
+		    Ref2Phy(physnodeR,
+			    xpgrefR,
+			    NULL, ifaR, // dphiref, ifa
+			    xpgR, dtauR,
+			    codtauR, NULL, vndsR); // codtau, dphi, vnds
+		  }
+		  // Ensure that the normals are opposite
+		  // if xpg and xpgR are close
+		  /* printf("xpg:%f %f %f\n", xpg_in[0], xpg_in[1], xpg_in[2]); */
+		  /* printf("vnds: %f %f %f vndsR: %f %f %f \n", */
+		  /* 	 vnds[0],vnds[1],vnds[2], */
+		  /* 	 vndsR[0],vndsR[1],vndsR[2]); */
+		  /* printf("xpgR:%f %f %f\n", xpgR[0], xpgR[1], xpgR[2]); */
+		  assert(fabs(vnds[0] + vndsR[0]) < 1e-8);
+		  assert(fabs(vnds[1] + vndsR[1]) < 1e-8);
+		  assert(fabs(vnds[2] + vndsR[2]) < 1e-8);
+		  neighb_count++;
+		}
 
-	  //printf("ie=%d ieR=%d ifaR=%d ifa=%d \n",ie,ieR,ifaR,ifa);
-
-	  // Compute the physical coordinates for the point in the
-	  // right macrocell the normal for the relevant face
-	  real xpgR[3], vndsR[3];
-	  {
-	    real xrefR[3],xrefR_in[3];
-	    {
-	      int ipgR = ref_ipg(param, xref);
-	      real wpgR;
-	      ref_pg_vol(param, ipgR, xrefR, &wpgR, xrefR_in);
+	      }
 	    }
-	    real dtauR[3][3], codtauR[3][3];
-	    Ref2Phy(physnodeR,
-		    xrefR,
-		    NULL, ifaR, // dphiref, ifa
-		    xpgR, dtauR,
-		    codtauR, NULL, vndsR); // codtau, dphi, vnds
 	  }
-
-	  // Ensure that the normals are opposite
-
-          
-	  assert(fabs(vnds[0] + vndsR[0]) < 1e-11);
-	  assert(fabs(vnds[1] + vndsR[1]) < 1e-11);
-	  assert(fabs(vnds[2] + vndsR[2]) < 1e-11);
-	  // Ensure that the points are close
-	  if(Dist(xpg_in, xpgR) >=  1e-2) {
-	    printf("xpg:%f %f %f\n", xpg_in[0], xpg_in[1], xpg_in[2]);
-	    printf("xpgR:%f %f %f\n", xpgR[0], xpgR[1], xpgR[2]);
-	  }
-
-	  //PeriodicCorrection(xpgR,m->period);
-
-          assert(Dist(xpg_in,xpgR)<1e-2);
-        }
+	  //printf("neighb=%d\n",neighb_count);
+	  assert(neighb_count == 1);
+	}
       }
     }
   }
 
   //free(bounds);
-};
+}
 
 // Detect if the mesh is 2D and then permut the nodes so that the z
 // direction coincides in the reference or physical frame
@@ -1030,6 +1022,7 @@ int NearestNode(MacroMesh *m, real *xphy) {
 				  &speedup,
 				  &p);
     is_ready=true;
+				   
   }
 
   // number of nearest neighbors to search 
