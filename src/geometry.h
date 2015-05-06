@@ -114,6 +114,13 @@ void Normalize(real a[3]);
 //! the box is of the form [0,period[0]]x[0,period[1]]x[0,period[2]]
 void PeriodicCorrection(real xyz[3],real period[3]);
 
+//! \brief periodic correction
+//! \param[inout] xyz: the vector to be put inside the periodic box
+//! \param[in] period:  sizes of the box in each direction
+//! \param[in] bounds:  limits of the box in each direction
+//! if period[dim]<0 -> non periodic in direction dim
+void PeriodicCorrectionB(real xyz[3],real period[3],real bounds[6]);
+
 //! \brief distance between two points
 //! \param[in] a, b : the two points
 //! \return the distance

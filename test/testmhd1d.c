@@ -19,15 +19,15 @@
 //}
 
 int main(int argc, char *argv[]) {
-  int resu = TestMHD(argc,argv);
+  int resu = TestMHD1D(argc,argv);
   if (resu)
-    printf("MHD test OK !\n");
+    printf("MHD 1D test OK !\n");
   else 
-    printf("MHD test failed !\n");
+    printf("MHD 1D test failed !\n");
   return !resu;
 }
 
-int TestMHD(int argc, char *argv[]) {
+int TestMHD1D(int argc, char *argv[]) {
   real cfl = 0.2;
   real tmax = 1.0;
   bool writemsh = false;
@@ -96,7 +96,7 @@ int TestMHD(int argc, char *argv[]) {
   // Set the global parameters for the Vlasov equation
   f.interp.interp_param[0] = f.model.m; // _M
   f.interp.interp_param[1] = 1; // x direction degree
-  f.interp.interp_param[2] = 1; // y direction degree
+  f.interp.interp_param[2] = 0; // y direction degree
   f.interp.interp_param[3] = 0; // z direction degree
   f.interp.interp_param[4] = 10; // x direction refinement
   f.interp.interp_param[5] = 1; // y direction refinement
@@ -106,12 +106,12 @@ int TestMHD(int argc, char *argv[]) {
   //set_vlasov_params(&(f.model));
 
   // Read the gmsh file
-  ReadMacroMesh(&(f.macromesh), "test/testcartesiangrid2d2.msh");
+  ReadMacroMesh(&(f.macromesh), "test/testcartesiangrid1d.msh");
   //ReadMacroMesh(&(f.macromesh), "test/testcube.msh");
   // Try to detect a 2d mesh
-  Detect2DMacroMesh(&(f.macromesh));
-  bool is2d=f.macromesh.is2d; 
-  assert(is2d);  
+  Detect1DMacroMesh(&(f.macromesh));
+  bool is1d=f.macromesh.is1d; 
+  assert(is1d);  
 
   //f.macromesh.period[0]=10;
   

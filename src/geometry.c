@@ -68,6 +68,21 @@ void PeriodicCorrection(real xyz[3],real period[3]){
   }
 }
 
+void PeriodicCorrectionB(real xyz[3],real period[3], real bounds[6]){
+  for (int dim=0;dim<3;++dim){
+    if (period[dim] > 0){
+      //if (xyz[dim] > period[dim]){
+      if (xyz[dim] > bounds[2*dim+1]){
+	xyz[dim] -= period[dim];
+      }
+      //else if (xyz[dim] < 0){
+      else if (xyz[dim] < bounds[2*dim]){
+	xyz[dim] += period[dim];
+      }
+    }
+  }
+}
+
 real Dist(real a[3], real b[3]) 
 {
   real d[3] = {a[0] - b[0], a[1] - b[1], a[2] - b[2]};

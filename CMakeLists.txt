@@ -434,5 +434,12 @@ if(OPENCL_FOUND)
     )
   target_link_libraries(testmhd ${LIBS})
   
+  add_test(testmhd1d testmhd1d)
+  add_executable(
+    testmhd1d
+    test/test.h
+    test/testmhd1d.c
+    )
+  target_link_libraries(testmhd1d ${LIBS})
 
 endif(OPENCL_FOUND)
