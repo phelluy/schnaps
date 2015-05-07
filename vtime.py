@@ -7,6 +7,7 @@ from subprocess import * # for popen, running processes
 import csv
 import getopt
 import sys # to check for file existence, etc.
+import copy
 
 # Create an empty tsv file with comments
 def create_csv(filename, comments):
@@ -63,12 +64,11 @@ def main(argv):
 
     create_csv("time.csv", "#n\ttime(s)\tcommand: "+str(cmd0) +"\n")
 
-
     n = 1
     while n <= nmax:
-        cmd = cmd0
-        cmd.append("-x"+str(n))
-        cmd.append("-y"+str(n))
+        cmd = copy.deepcopy(cmd0)
+        cmd.append("-x" + str(n))
+        cmd.append("-y" + str(n))
 
         ts = time.time()
         p = Popen(cmd, stdout = PIPE, stderr = PIPE)
