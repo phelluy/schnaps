@@ -22,25 +22,30 @@ def append_to_csv(filename, data):
     a.writerows([data])
     fd.close()
 
-
 def main(argv):
     filename = "time.csv"
     gpu = False
     nmax = 64
+    nmin = 1
     nplat = 0
     ndef = 0
+    do_append = False
 
     usage = "./vtime.py" \
+            " -a: append to output instead of overwriting it\n" \
             " -g<0 or 1>: use GPU?\n" \
             " -P<int>: Platform number\n" \
             " -D<int>: Device\n" \
             " -n<int>: max number of subcells in each direction\n" \
+            " -m<int>: min number of subcells in each direction\n" \
             " -f<filename>: output filename\n" 
     try:
-        opts, args = getopt.getopt(argv,"g:f:n:P:D:")
+        opts, args = getopt.getopt(argv,"ag:f:n:m:P:D:")
     except getopt.GetoptError:
         print usage
     for opt, arg in opts:
+        if opt in ("-a"):
+            do_append = True
         if opt in ("-g"):
             gpu = (arg == "True" or arg == "true" or arg == "1")
         if opt in ("-f"):
@@ -51,6 +56,8 @@ def main(argv):
             ndev = int(arg)
         if opt in ("-n"):
             nmax = int(arg)
+        if opt in ("-m"):
+            nmin = int(arg)
 
     cmd0 = []
     cmd0.append("./testmanyv")
@@ -62,9 +69,10 @@ def main(argv):
     else:
         cmd0.append("-g0")
 
-    create_csv("time.csv", "#n\ttime(s)\tcommand: "+str(cmd0) +"\n")
+    if not do_append:
+        create_csv(filename, "#n\ttime(s)\tcommand: "+str(cmd0) +"\n")
 
-    n = 1
+    n = nmin
     while n <= nmax:
         cmd = copy.deepcopy(cmd0)
         cmd.append("-x" + str(n))
