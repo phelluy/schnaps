@@ -22,8 +22,8 @@ int main(void) {
     
   int resu=TestLandau_Damping_1D();
 	 
-  if (resu) printf("poisson test OK !\n");
-  else printf("poisson test failed !\n");
+  if (resu) printf("landau test OK !\n");
+  else printf("landau test failed !\n");
 
   return !resu;
 } 
@@ -36,6 +36,8 @@ int TestLandau_Damping_1D(void) {
   field f;
 
   int vec=1;
+  real k=0.5;
+  real pi=4.0*atan(1.0);
   
   f.model.m=_INDEX_MAX; // num of conservative variables f(vi) for each vi, phi, E, rho, u, p, e (ou T)
   f.model.NumFlux=VlasovP_Lagrangian_NumFlux;
@@ -56,13 +58,19 @@ int TestLandau_Damping_1D(void) {
   f.interp.interp_param[5]=1;  // y direction refinement
   f.interp.interp_param[6]=1;  // z direction refinement
  // read the gmsh file
-  ReadMacroMesh(&(f.macromesh),"geo/cube4Pi3d.msh");
+  ReadMacroMesh(&(f.macromesh),"test/testcube.msh");
+  
+  real A[3][3] = {{2*pi/k, 0, 0}, {0, 1, 0}, {0, 0,1}};
+  real x0[3] = {0, 0, 0};
+  AffineMapMacroMesh(&(f.macromesh),A,x0);
+  
   // try to detect a 2d mesh
   Detect1DMacroMesh(&(f.macromesh));
   bool is1d=f.macromesh.is1d;
   assert(is1d);
 
   // mesh preparation
+  f.macromesh.period[0]=2.0*pi/k;
   BuildConnectivity(&(f.macromesh));
 
   //AffineMapMacroMesh(&(f.macromesh));
@@ -84,12 +92,12 @@ int TestLandau_Damping_1D(void) {
   printf("dt =%f\n",f.dt);
 
 
-  RK2(&f,0.03);
+  RK2(&f,10);
   //RK2(&f,0.03,0.05);
 
    // save the results and the error
-  int iel=2*_NB_ELEM_V/3;
-  int iloc=_DEG_V;
+  int iel=_NB_ELEM_V/2;
+  int iloc=0;//_DEG_V;
   printf("Trace vi=%f\n",-_VMAX+iel*_DV+_DV*glop(_DEG_V,iloc));
   Plotfield(iloc+iel*_DEG_V,(1==0),&f,"sol","dgvisu.msh");
   Plotfield(iloc+iel*_DEG_V,(1==1),&f,"error","dgerror.msh");
@@ -120,9 +128,9 @@ void Test_Landau_Damping_ImposedData(real x[3],real t,real w[]){
   }
   // exact value of the potential
   // and electric field
-  w[_INDEX_PHI]=0;
-  w[_INDEX_EX]=0;
-  w[_INDEX_RHO]=0.; //rho init
+  w[_INDEX_PHI]=-eps*cos(k*x[0]);
+  w[_INDEX_EX]=(eps/k)*sin(k*x[0]);
+  w[_INDEX_RHO]=1.; //rho init
   w[_INDEX_VELOCITY]=0; // u init
   w[_INDEX_PRESSURE]=0; // p init
   w[_INDEX_TEMP]=0; // e ou T init
@@ -157,7 +165,6 @@ void UpdateVlasovPoisson(void* vf, real * w){
     
   Computation_charge_density(f,w);
   
-  // Solving poisson
   SolvePoisson(f,w,type_bc,bc_l,bc_r);    
   
 }

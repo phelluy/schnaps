@@ -116,13 +116,8 @@ void ReadMacroMesh(MacroMesh *m, char *filename)
   m->elem2elem = NULL;
 }
 
-void AffineMap(real *x)
+void AffineMap(real *x, real A[3][3], real x0[3])
 {
-  //real A[3][3]={{1,2,1},{0,-1,4},{7,8,-5}};
-  real A[3][3] = {{0, -1, 0}, {-2, 0, 0}, {0, 0,- 1}};
-  //real A[3][3]={1,0,0,0,2,0,0,0,1};
-  real x0[3] = {0, 0, 1};
-  //real x0[3]={0,0,0};
 
   real newx[3];
 
@@ -133,10 +128,10 @@ void AffineMap(real *x)
   x[2] = newx[2];
 }
 
-void AffineMapMacroMesh(MacroMesh *m)
+void AffineMapMacroMesh(MacroMesh *m, real A[3][3], real x0[3])
 {
   for(int ino = 0; ino < m->nbnodes; ino++) {
-    AffineMap(&(m->node[ino * 3]));
+    AffineMap(&(m->node[ino * 3]),A,x0);
   }
 }
 
