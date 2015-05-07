@@ -26,13 +26,17 @@ def main(argv):
     filename = "time.csv"
     gpu = False
     nmax = 64
-    
+    nplat = 0
+    ndef = 0
+
     usage = "./vtime.py" \
             " -g<0 or 1>: use GPU?\n" \
+            " -P<int>: Platform number\n" \
+            " -D<int>: Device\n" \
             " -n<int>: max number of subcells in each direction\n" \
             " -f<filename>: output filename\n" 
     try:
-        opts, args = getopt.getopt(argv,"g:f:n:")
+        opts, args = getopt.getopt(argv,"g:f:n:P:D:")
     except getopt.GetoptError:
         print usage
     for opt, arg in opts:
@@ -40,6 +44,10 @@ def main(argv):
             gpu = (arg == "True" or arg == "true" or arg == "1")
         if opt in ("-f"):
             filename = arg
+        if opt in ("-P"):
+            nplat = int(arg)
+        if opt in ("-D"):
+            ndev = int(arg)
         if opt in ("-n"):
             nmax = int(arg)
 
@@ -48,6 +56,8 @@ def main(argv):
     cmd0.append("-t 1")
     if(gpu):
         cmd0.append("-g1")
+        cmd0.append("-P" + str(nplat))
+        cmd0.append("-D" + str(ndev))
     else:
         cmd0.append("-g0")
 
