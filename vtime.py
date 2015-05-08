@@ -28,7 +28,7 @@ def main(argv):
     nmax = 64
     nmin = 1
     nplat = 0
-    ndef = 0
+    ndev = 0
     do_append = False
 
     usage = "./vtime.py" \
