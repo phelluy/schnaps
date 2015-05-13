@@ -405,14 +405,13 @@ IF(BUILD_PARALUTION)
 
   INCLUDE(ExternalProject)
   SET(PARALUTION_VERSION 1.0.0 CACHE STRING "Paralution version number")
-  EXTERNALPROJECT_ADD( paralution
+  EXTERNALPROJECT_ADD( paralution-${PARALUTION_VERSION}
      URL  http://www.paralution.com/downloads/paralution-${PARALUTION_VERSION}.tar.gz
      CMAKE_ARGS -DSUPPORT_CUDA=OFF -DBUILD_EXAMPLES=OFF
      INSTALL_COMMAND ""
   )
-  INCLUDE_DIRECTORIES(${CMAKE_BINARY_DIR}/paralution-prefix/src/paralution/src/)
-  FIND_LIBRARY(PARALUTION_LIBRARY paralution ${CMAKE_BINARY_DIR}/paralution-prefix/src/paralution-build/lib/)
-
+  INCLUDE_DIRECTORIES(${CMAKE_BINARY_DIR}/paralution-${PARALUTION_VERSION}-prefix/src/paralution-${PARALUTION_VERSION}/src/)
+  LINK_DIRECTORIES(${CMAKE_BINARY_DIR}/paralution-${PARALUTION_VERSION}-prefix/src/paralution-${PARALUTION_VERSION}-build/lib)
 
   SET(MATRIX_FILE gr_30_30.mtx)
 
@@ -430,7 +429,7 @@ IF(BUILD_PARALUTION)
   ENDIF()
 
   ADD_EXECUTABLE(paralution_cg test/cg.cpp)
-  TARGET_LINK_LIBRARIES(paralution_cg ${PARALUTION_LIBRARY})
+  TARGET_LINK_LIBRARIES(paralution_cg paralution)
 
   ADD_TEST(NAME testparalution COMMAND paralution_cg ${MATRIX_FILE} 4)
 
