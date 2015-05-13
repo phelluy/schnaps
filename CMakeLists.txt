@@ -398,3 +398,19 @@ if(OPENCL_FOUND)
   target_link_libraries(testmeq2_cl ${LIBS})
 
 endif(OPENCL_FOUND)
+
+SET(BUILD_PARALUTION      OFF CACHE BOOL   "Build paralution library")
+
+IF(BUILD_PARALUTION)
+
+  INCLUDE(ExternalProject)
+  SET(PARALUTION_VERSION 1.0.0 CACHE STRING "Paralution version number")
+  EXTERNALPROJECT_ADD( paralution
+     URL  http://www.paralution.com/downloads/paralution-${PARALUTION_VERSION}.tar.gz
+     CMAKE_ARGS -DSUPPORT_CUDA=OFF -DBUILD_EXAMPLES=OFF
+     INSTALL_COMMAND ""
+  )
+  INCLUDE_DIRECTORIES(${CMAKE_BINARY_DIR}/paralution-prefix/src/paralution/src/)
+  LINK_DIRECTORIES(${CMAKE_BINARY_DIR}/paralution-prefix/src/paralution-build/lib/)
+
+ENDIF()

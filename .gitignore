@@ -83,3 +83,6 @@ testmacrocellinterface
 testfieldrk2_cl
 
 toto.c
+#PN
+*.swp
+/build/
