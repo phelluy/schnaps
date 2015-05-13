@@ -110,7 +110,7 @@ endif (OPENCL_FOUND)
 find_package(flann)
 if(FLANN_FOUND)
   MESSAGE("Delicious!")
-  list(APPEND LIBS flann)
+  list(APPEND LIBS ${FLANN_LIBRARY})
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -D_WITH_FLANN")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}  -D_WITH_FLANN")
 endif()
@@ -411,6 +411,28 @@ IF(BUILD_PARALUTION)
      INSTALL_COMMAND ""
   )
   INCLUDE_DIRECTORIES(${CMAKE_BINARY_DIR}/paralution-prefix/src/paralution/src/)
-  LINK_DIRECTORIES(${CMAKE_BINARY_DIR}/paralution-prefix/src/paralution-build/lib/)
+  FIND_LIBRARY(PARALUTION_LIBRARY paralution ${CMAKE_BINARY_DIR}/paralution-prefix/src/paralution-build/lib/)
+
+
+  SET(MATRIX_FILE gr_30_30.mtx)
+
+  IF(EXISTS ${MATRIX_FILE})
+  ELSE()
+    FILE(DOWNLOAD "ftp://math.nist.gov/pub/MatrixMarket2/Harwell-Boeing/laplace/${MATRIX_FILE}.gz" 
+                  ${CMAKE_BINARY_DIR}/${MATRIX_FILE}.gz)
+
+    FIND_PROGRAM(GZIP_TOOL
+               NAMES gzip
+               PATHS /bin /usr/bin /usr/local/bin /opt/local/bin)
+
+    EXECUTE_PROCESS( COMMAND ${GZIP_TOOL} -d ${MATRIX_FILE}.gz
+                     WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
+  ENDIF()
+
+  ADD_EXECUTABLE(paralution_cg test/cg.cpp)
+  TARGET_LINK_LIBRARIES(paralution_cg ${PARALUTION_LIBRARY})
+
+  ADD_TEST(NAME testparalution COMMAND paralution_cg ${MATRIX_FILE} 4)
+
 
 ENDIF()
