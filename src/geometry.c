@@ -78,7 +78,7 @@ void Ref2Phy(real physnode[20][3],
              real dphi[3],
              real vnds[3]) 
 {
-  // compute the mapping and its jacobian
+  // Compute the mapping and its Jacobian
   real x = xref[0];
   real y = xref[1];
   real z = xref[2];

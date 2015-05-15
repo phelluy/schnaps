@@ -253,7 +253,13 @@ void DGSubCellInterface(void *mcell, field *f, real *w, real *dtw);
 
 //! \brief  apply the DG mass term
 //! \param[inout] mcell a MacroCell
-void DGMass(void *mcell, field *f, real *w, real *dtw);
+void DGMass(void *mcell, field *f, real *dtw);
+
+//! \brief Add the source term
+//! \param[inout] mcell a MacroCell
+//! \param[in] w: the field
+//! \param[out] dtw: the derivative
+void DGSource(void *mcell, field *f, real *w, real *dtw);
 
 //! \brief An out-of-place RK stage
 //! \param[out] fwnp1 field at time n+1

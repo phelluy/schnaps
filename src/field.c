@@ -336,10 +336,10 @@ void Initfield(field *f) {
   assert(f->wn);
   f->dtwn = calloc(nmem, sizeof(real));
   assert(f->dtwn);
-  f->Diagnostics=NULL;
-  f->update_before_rk=NULL;
-  f->update_after_rk=NULL;
-  f->model.Source=NULL;
+  f->Diagnostics = NULL;
+  f->update_before_rk = NULL;
+  f->update_after_rk = NULL;
+  f->model.Source = NULL;
 
   f->tnow=0;
   f->itermax=0;
@@ -1106,7 +1106,7 @@ void DGMacroCellInterface(void *mc, field *f, real *w, real *dtw)
 }
 
 // Apply division by the mass matrix
-void DGMass(void *mc, field *f, real *w, real *dtw) 
+void DGMass(void *mc, field *f, real *dtw) 
 {
   MacroCell *mcell = (MacroCell*)mc;
 
@@ -1123,8 +1123,7 @@ void DGMass(void *mc, field *f, real *w, real *dtw)
       physnode[inoloc][2] = f->macromesh.node[3 * ino + 2];
     }
     for(int ipg = 0; ipg < NPG(f->interp_param + 1); ipg++) {
-
-      real dtau[3][3], codtau[3][3], xpgref[3],xphy[3], wpg;
+      real dtau[3][3], codtau[3][3], xpgref[3], xphy[3], wpg;
       ref_pg_vol(f->interp_param + 1, ipg, xpgref, &wpg, NULL);
       Ref2Phy(physnode, // phys. nodes
 	      xpgref, // xref
@@ -1132,28 +1131,53 @@ void DGMass(void *mc, field *f, real *w, real *dtw)
 	      xphy, dtau, // xphy, dtau
 	      codtau, NULL, NULL); // codtau, dpsi, vnds
       real det = dot_product(dtau[0], codtau[0]);
-      // source term
-      real wL[m],source[m];
-      for(int iv = 0; iv < m; iv++){
-	int imem=f->varindex(f->interp_param,ie,ipg,iv);
-	wL[iv]=w[imem];
-      }
-      
-      if (f->model.Source != NULL) {
-      	f->model.Source(xphy,f->tnow,wL,source);
-      }
-      else {
-      	for(int iv = 0; iv < m; iv++){
-      	  source[iv] = 0;
-      	}
-      }
-
       for(int iv = 0; iv < f->model.m; iv++) {
 	int imem = f->varindex(f->interp_param, ie, ipg, iv);
 	dtw[imem] /= (wpg * det);
+      }
+    }
+  }
+}
+
+// Apply the source term
+void DGSource(void *mc, field *f, real *w, real *dtw) 
+{
+  if (f->model.Source == NULL) 
+    return;
+
+  MacroCell *mcell = (MacroCell*)mc;
+
+  const int m = f->model.m;
+
+  // Loop on the elements
+  for (int ie = mcell->first; ie < mcell->last_p1; ie++) {
+    // Get the physical nodes of element ie
+    real physnode[20][3];
+    for(int inoloc = 0; inoloc < 20; inoloc++) {
+      int ino = f->macromesh.elem2node[20 * ie + inoloc];
+      physnode[inoloc][0] = f->macromesh.node[3 * ino + 0];
+      physnode[inoloc][1] = f->macromesh.node[3 * ino + 1];
+      physnode[inoloc][2] = f->macromesh.node[3 * ino + 2];
+    }
+    for(int ipg = 0; ipg < NPG(f->interp_param + 1); ipg++) {
+      real dtau[3][3], codtau[3][3], xpgref[3], xphy[3], wpg;
+      ref_pg_vol(f->interp_param + 1, ipg, xpgref, &wpg, NULL);
+      Ref2Phy(physnode, // phys. nodes
+	      xpgref, // xref
+	      NULL, -1, // dpsiref, ifa
+	      xphy, dtau, // xphy, dtau
+	      codtau, NULL, NULL); // codtau, dpsi, vnds
+      real wL[m], source[m];
+      for(int iv = 0; iv < m; ++iv){
+	int imem = f->varindex(f->interp_param, ie, ipg, iv);
+	wL[iv] = w[imem];
+      }
+      
+      f->model.Source(xphy, f->tnow, wL, source);
+
+      for(int iv = 0; iv < m; ++iv) {
+	int imem = f->varindex(f->interp_param, ie, ipg, iv);
 	dtw[imem] += source[iv];
-        //printf("det2=%f s=%f ie = %d\n", det, source[0], ie);
-	
       }
     }
   }
@@ -1399,9 +1423,8 @@ void dtfield(field *f, real *w, real *dtw) {
     if(!facealgo) DGMacroCellInterfaceSlow(mcelli, f, w, dtw);
     DGSubCellInterface(mcelli, f, w, dtw);
     DGVolume(mcelli, f, w, dtw);
-    DGMass(mcelli, f, w, dtw);
-    
-
+    DGMass(mcelli, f, dtw);
+    DGSource(mcelli, f, w, dtw);
   }
 #endif
 }
