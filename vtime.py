@@ -23,6 +23,8 @@ def append_to_csv(filename, data):
     fd.close()
 
 def main(argv):
+    print "Command-line arguments: " + " ".join(argv)
+    
     filename = "time.csv"
     gpu = False
     nmax = 64
