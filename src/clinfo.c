@@ -98,8 +98,9 @@ cl_device_id get_device_id(cl_platform_id platform, cl_uint ndevice)
   unsigned int nsubdev = 8;
   cl_device_partition_property *partprop =
     malloc(sizeof(cl_device_partition_property) * 3);
-  partprop[0] = CL_DEVICE_PARTITION_EQUALLY; 
-  partprop[1] = nsubdev;
+  partprop[0] = CL_DEVICE_PARTITION_EQUALLY;
+  //partprop[0] = CL_DEVICE_PARTITION_BY_COUNTS;
+  partprop[1] = 1;
   partprop[2] = 0;
   cl_device_id *subdevice =  malloc(sizeof(cl_device_id) * nsubdev);
   status = clCreateSubDevices(device,
@@ -112,7 +113,7 @@ cl_device_id get_device_id(cl_platform_id platform, cl_uint ndevice)
 
   return subdevice[0];
 #else
-    return device;
+  return device;
 #endif
 }
 
@@ -223,28 +224,17 @@ void InitCLInfo(CLInfo *cli, int platform_num, int device_num)
   cl_platform_id platform = get_platform_id(platform_num);
 
   // devices count
-  cli->nbdevices = get_nbdevices(&platform);
-  assert(cli->nbdevices > 0);
+  int ndevices = get_nbdevices(&platform);
+  assert(ndevices > 0);
 
-  // devices array construction
-  cli->device = malloc(sizeof(cl_device_id) * cli->nbdevices);
-  assert(cli->device);
-
-  printf("\nWe choose device %d/%d ", device_num, cli->nbdevices - 1);
-  assert(device_num < cli->nbdevices);
+  printf("\nWe choose device %d/%d ", device_num, ndevices);
+  assert(device_num < ndevices);
   printf("of platform %d/%d\n", platform_num, cli->nbplatforms - 1);
 
-  // Get all of the device_ids and store them in cli->device 
-  status = clGetDeviceIDs(platform,
-			  CL_DEVICE_TYPE_ALL,
-			  cli->nbdevices,
-			  cli->device,
-			  NULL);
-  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status >= CL_SUCCESS);
-
+  cli->device = get_device_id(platform, device_num);
+  
   // device name
-  status = clGetDeviceInfo(cli->device[device_num],
+  status = clGetDeviceInfo(cli->device,
 			   CL_DEVICE_NAME,
 			   sizeof(cli->devicename),
 			   cli->devicename,
@@ -254,7 +244,7 @@ void InitCLInfo(CLInfo *cli, int platform_num, int device_num)
   printf("%s\n", cli->devicename);
 
   cl_device_type dtype;
-  status = clGetDeviceInfo(cli->device[device_num],
+  status = clGetDeviceInfo(cli->device,
 			   CL_DEVICE_TYPE,
 			   sizeof(dtype), 
 			   &dtype, 
@@ -282,7 +272,7 @@ void InitCLInfo(CLInfo *cli, int platform_num, int device_num)
   // OpenCL version
   {
     char buf[128];
-    status = clGetDeviceInfo(cli->device[device_num], CL_DEVICE_VERSION,
+    status = clGetDeviceInfo(cli->device, CL_DEVICE_VERSION,
 			     128, buf, NULL);
     if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
     assert(status >= CL_SUCCESS);
@@ -290,7 +280,7 @@ void InitCLInfo(CLInfo *cli, int platform_num, int device_num)
   }
   
   // device memory
-  status = clGetDeviceInfo(cli->device[device_num],
+  status = clGetDeviceInfo(cli->device,
 			   CL_DEVICE_GLOBAL_MEM_SIZE,
 			   sizeof(cl_ulong),
 			   &(cli->devicememsize),
@@ -299,7 +289,7 @@ void InitCLInfo(CLInfo *cli, int platform_num, int device_num)
   assert(status >= CL_SUCCESS);
   printf("\tGlobal memory: %f MB\n",cli->devicememsize/1024./1024.);
 
-  status = clGetDeviceInfo(cli->device[device_num],
+  status = clGetDeviceInfo(cli->device,
 			   CL_DEVICE_MAX_MEM_ALLOC_SIZE,
 			   sizeof(cl_ulong),
 			   &(cli->maxmembuffer),
@@ -309,7 +299,7 @@ void InitCLInfo(CLInfo *cli, int platform_num, int device_num)
   printf("\tMax buffer size: %f MB\n",cli->maxmembuffer/1024./1024.);
 
   // compute unit size cache
-  status = clGetDeviceInfo(cli->device[device_num],
+  status = clGetDeviceInfo(cli->device,
 			   CL_DEVICE_LOCAL_MEM_SIZE,
 			   sizeof(cl_ulong),
 			   &(cli->cachesize),
@@ -319,7 +309,7 @@ void InitCLInfo(CLInfo *cli, int platform_num, int device_num)
   printf("\tLocal memory size: %f KB\n",cli->cachesize/1024.);
 
   // get maxconstmem
-  status = clGetDeviceInfo(cli->device[device_num],
+  status = clGetDeviceInfo(cli->device,
 			   CL_DEVICE_MAX_CONSTANT_BUFFER_SIZE,
 			   sizeof(cl_ulong),
 			   &(cli->maxconstmem),
@@ -330,7 +320,7 @@ void InitCLInfo(CLInfo *cli, int platform_num, int device_num)
 
   // get global cache size
   cl_ulong global_mem_cache_size;
-  status = clGetDeviceInfo(cli->device[device_num],
+  status = clGetDeviceInfo(cli->device,
 			   CL_DEVICE_GLOBAL_MEM_CACHE_SIZE,
 			   sizeof(cl_ulong),
 			   &global_mem_cache_size,
@@ -341,7 +331,7 @@ void InitCLInfo(CLInfo *cli, int platform_num, int device_num)
 
   // get maxconst args
   int maxcstargs;
-  status = clGetDeviceInfo(cli->device[device_num],
+  status = clGetDeviceInfo(cli->device,
 			   CL_DEVICE_MAX_CONSTANT_ARGS,
 			   sizeof(cl_ulong),
 			   &maxcstargs,
@@ -351,7 +341,7 @@ void InitCLInfo(CLInfo *cli, int platform_num, int device_num)
   printf("\tMax Const args: %d \n",maxcstargs);
 
   // nb of compute units
-  status = clGetDeviceInfo(cli->device[device_num],
+  status = clGetDeviceInfo(cli->device,
 			   CL_DEVICE_MAX_COMPUTE_UNITS,
 			   sizeof(cl_uint),
 			   (void*)&(cli->nbcomputeunits),
@@ -361,7 +351,7 @@ void InitCLInfo(CLInfo *cli, int platform_num, int device_num)
   printf("\tNb of compute units: %d\n",cli->nbcomputeunits);
 
   // max workgroup size
-  status = clGetDeviceInfo(cli->device[device_num],
+  status = clGetDeviceInfo(cli->device,
 			   CL_DEVICE_MAX_WORK_GROUP_SIZE,
 			   sizeof(size_t),
 			   (void*)&(cli->maxworkgroupsize),
@@ -371,14 +361,14 @@ void InitCLInfo(CLInfo *cli, int platform_num, int device_num)
   printf("\tMax workgroup size: %zu\n",cli->maxworkgroupsize);
 
   // OpenCL extensions
-  get_cldevice_extensions(cli->device[device_num], cli->clextensions,
+  get_cldevice_extensions(cli->device, cli->clextensions,
 			  sizeof(cli->clextensions));
   printf("\tOpenCL extensions: %s\n", cli->clextensions);
   
   // First opencl context
   cli->context = clCreateContext(NULL, // no context properties
 				 1,         // only one device in the list
-				 &cli->device[device_num], // device list
+				 &cli->device, // device list
 				 NULL, // callback function
 				 NULL, // function arguments
 				 &status);
@@ -390,12 +380,12 @@ void InitCLInfo(CLInfo *cli, int platform_num, int device_num)
   cl_queue_properties queue_properties = CL_QUEUE_PROFILING_ENABLE;
   cli->commandqueue 
     = clCreateCommandQueueWithProperties(cli->context,
-					 cli->device[device_num],
+					 cli->device,
 					 &queue_properties,
 					 &status);
 #else
   cli->commandqueue = clCreateCommandQueue(cli->context,
-					   cli->device[device_num],
+					   cli->device,
 					   CL_QUEUE_PROFILING_ENABLE,
 					   &status);
 #endif
@@ -463,7 +453,7 @@ void BuildKernels(CLInfo *cli, char *strprog, char *buildoptions)
     //printf("%s\n", strprog); // Print the OpenCL code
     printf("%s\n", clErrorString(status));
     printf("Compilation output:\n%s\n",
-  	   print_build_debug(&(cli->program), &cli->device[cli->devicenum]));
+  	   print_build_debug(&(cli->program), &cli->device));
   }
   assert(status >= CL_SUCCESS);
 }

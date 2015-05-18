@@ -341,6 +341,7 @@ void Initfield(field *f) {
   f->update_after_rk = NULL;
   f->model.Source = NULL;
 
+  // TODO: move this to the integrator code
   f->tnow=0;
   f->itermax=0;
   f->iter_time=0;
