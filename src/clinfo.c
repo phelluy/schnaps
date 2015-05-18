@@ -108,7 +108,7 @@ void get_cldevice_extensions(cl_device_id device, char * buf, size_t bufsize)
   assert(status >= CL_SUCCESS);
 }
 
-bool cldevice_supports_real(cl_device_id *device)
+bool cldevice_supports_double(cl_device_id *device)
 {
   char clextensions[1000];
   get_cldevice_extensions(*device, clextensions, sizeof(clextensions));
@@ -135,13 +135,13 @@ bool cldevice_is_acceptable(cl_uint nplatform, cl_uint ndevice)
     return false;
   }
 
-  if(sizeof(real) == sizeof(double)) {
-    cl_device_id device = get_device_id(platform, ndevice);
-    if(!cldevice_supports_real(&device)) {
-      printf("cldevice does not support double\n");
-      return false;
-    }
+#if real == double
+  cl_device_id device = get_device_id(platform, ndevice);
+  if(!cldevice_supports_double(&device)) {
+    printf("cldevice does not support double\n");
+    return false;
   }
+#endif
 
   return true;
 }
