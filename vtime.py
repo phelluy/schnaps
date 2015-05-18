@@ -33,16 +33,17 @@ def main(argv):
     ndev = 0
     do_append = False
 
-    usage = "./vtime.py" \
-            " -a: append to output instead of overwriting it\n" \
-            " -g<0 or 1>: use GPU?\n" \
-            " -P<int>: Platform number\n" \
-            " -D<int>: Device\n" \
-            " -n<int>: max number of subcells in each direction\n" \
-            " -m<int>: min number of subcells in each direction\n" \
-            " -f<filename>: output filename\n" 
+    usage = "./vtime.py\n" \
+            "\t-a: append to output instead of overwriting it\n" \
+            "\t-g<0 or 1>: use GPU?\n" \
+            "\t-P<int>: Platform number\n" \
+            "\t-D<int>: Device\n" \
+            "\t-n<int>: max number of subcells in each direction\n" \
+            "\t-m<int>: min number of subcells in each direction\n" \
+            "\t-f<filename>: output filename\n" \
+            "\t-h: help\n" 
     try:
-        opts, args = getopt.getopt(argv,"ag:f:n:m:P:D:")
+        opts, args = getopt.getopt(argv,"ag:f:n:m:P:D:h")
     except getopt.GetoptError:
         print usage
     for opt, arg in opts:
@@ -60,6 +61,9 @@ def main(argv):
             nmax = int(arg)
         if opt in ("-m"):
             nmin = int(arg)
+        if opt in ("-h"):
+            print usage
+            sys.exit(0)
 
     cmd0 = []
     cmd0.append("./testmanyv")
