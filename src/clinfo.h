@@ -25,10 +25,10 @@ typedef struct CLInfo{
   char devicename[1000]; //!< accelerator name
   char clextensions[1000]; //!< list of OpenCL extensions
   cl_uint nbplatforms;  //!< number of platforms
-  cl_uint platformid; //!< platform id
+  cl_uint platformnum; //!< platform number
 
   cl_uint nbdevices;   //!< number of available devices
-  cl_uint deviceid;   //!< chosen device ID
+  cl_uint devicenum;   //!< chosen device number
 
   cl_context context;//!< OpenCL context
   cl_command_queue commandqueue;   //!< default command queue
