@@ -91,8 +91,29 @@ cl_device_id get_device_id(cl_platform_id platform, cl_uint ndevice)
 
   cl_device_id device = devices[ndevice];
   free(devices);
-  
-  return device;
+
+#if 0
+  // Split the device into subdevices.
+  // NB: requires OpenCL >= 1.2
+  unsigned int nsubdev = 8;
+  cl_device_partition_property *partprop =
+    malloc(sizeof(cl_device_partition_property) * 3);
+  partprop[0] = CL_DEVICE_PARTITION_EQUALLY; 
+  partprop[1] = nsubdev;
+  partprop[2] = 0;
+  cl_device_id *subdevice =  malloc(sizeof(cl_device_id) * nsubdev);
+  status = clCreateSubDevices(device,
+			      partprop,
+			      nsubdev,
+			      subdevice,
+			      NULL);
+  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status >= CL_SUCCESS);
+
+  return subdevice[0];
+#else
+    return device;
+#endif
 }
 
 void get_cldevice_extensions(cl_device_id device, char * buf, size_t bufsize)
@@ -258,6 +279,16 @@ void InitCLInfo(CLInfo *cli, int platform_num, int device_num)
     printf("ERROR: unknown OpenCL device type %d\n", (int)dtype);
   }
 
+  // OpenCL version
+  {
+    char buf[128];
+    status = clGetDeviceInfo(cli->device[device_num], CL_DEVICE_VERSION,
+			     128, buf, NULL);
+    if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
+    assert(status >= CL_SUCCESS);
+    printf("\tOpenCL version: %s\n", buf);
+  }
+  
   // device memory
   status = clGetDeviceInfo(cli->device[device_num],
 			   CL_DEVICE_GLOBAL_MEM_SIZE,
