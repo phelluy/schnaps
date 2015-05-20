@@ -62,6 +62,7 @@ int GenericVarindex3d(int m, int *nx, int *nc,
   int ipg = ipgc + npgc * nsubcell; 
   return iv + m * (ipg + npg * elem);
 }
+#pragma end_opencl
 
 // Given a the index ipg of a poing in a subcell, determine the three
 // logical coordinates of that point in the subcell.
@@ -71,8 +72,6 @@ int GenericVarindex3d(int m, int *nx, int *nc,
 /*   p[1] = (ipg / npg[0]) % npg[1]; */
 /*   p[2] = ipg / npg[0] / npg[1]; */
 /* }  */
-
-#pragma end_opencl
 
 real min_grid_spacing(field *f)
 {
@@ -380,10 +379,10 @@ void Initfield(field *f) {
 #endif // _WITH_OPENCL
   
   printf("field init done\n");
-};
+}
 
 // This is the destructor for a field
-void free_field(field* f) 
+void free_field(field *f) 
 {
   free(f->mcell);
   free(f->mface);
@@ -394,9 +393,7 @@ void free_field(field* f)
   status = clReleaseMemObject(f->physnode_cl);
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
-
   free(f->physnode);
-
 #endif
 }
 
