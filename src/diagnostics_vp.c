@@ -66,7 +66,7 @@ real L2_Kinetic_error(field* f){
       real w[f->model.m];
       for(int iv = 0;iv < f->model.m; iv++){
 	int imem = f->varindex(f->interp_param, ie, ipg, iv);
-	w[iv]=f->wn[imem];
+	w[iv] = f->wn[imem];
       }
       // get the exact value
       error += L2VelError(f, xphy, w) * wpg * det;
@@ -94,6 +94,9 @@ real local_kinetic_energy(field *f,real *x, real *w) {
   return l_ke;
 }
 
+
+// TODO: do not store all diagnotics for all time, but instead just
+// append to the output file.
 void Energies(field *f, real *w, real k_energy, real e_energy, real t_energy) {
   
   k_energy = 0;
@@ -143,7 +146,7 @@ void Energies(field *f, real *w, real k_energy, real e_energy, real t_energy) {
   f->Diagnostics[f->iter_time + 2 * f->itermax] = t_energy;
 }
 
-void Plot_Energies(field* f) {
+void Plot_Energies(field *f) {
   int nb_diag = 0;
   real e_energy = 0, k_energy = 0, t_energy = 0;
   FILE *Plot;

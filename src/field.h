@@ -40,24 +40,22 @@ typedef struct field {
   int interp_param[8];
   //! Current time
   real tnow;
-  //! time max
-  real tmaximum;
-//! CFL parameter min_i (vol_i / surf_i)
+  //! CFL parameter min_i (vol_i / surf_i)
   real hmin;
+
+
+  // TODO: once the output of the diagnostics is done by appending,
+  // remove dt, ieter_time, itermax, nb_diags, and Diagnostics.
   //! Time step
+  //! dt has to be smaller than hmin / vmax
   real dt;
-   //! dt has to be smaller than hmin / vmax
   int iter_time;
   //! final time iter
   int itermax;
   //! nb of diagnostics
   int nb_diags;
   //! table for diagnostics
-  real * Diagnostics;
-  //! index of the runge-kutta substep
-  int rk_substep;
-  //! max substep of the rk method
-  int rk_max;
+  real *Diagnostics;
 
   //! Size of the field buffers
   int wsize;
@@ -78,7 +76,7 @@ typedef struct field {
   //! \param[in] elem macro element index
   //! \param[in] ipg glop index
   //! \param[in] iv field component index
-  void (*update_after_rk)(void* f,real * w);
+  void (*update_after_rk)(void *f, real *w);
 
   //! \brief Memory arrangement of field components
   //! \param[in] param interpolation parameters

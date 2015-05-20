@@ -104,7 +104,7 @@ int Test_TransportVP(void) {
 
 void Test_TransportVP_ImposedData(real *x, real t, real *w) {
 
-  for(int i = 0; i <_INDEX_MAX_KIN + 1; i++){
+  for(int i = 0; i <_INDEX_MAX_KIN + 1; i++) {
     int j = i % _DEG_V; // local connectivity put in function
     int nel = i / _DEG_V; // element num (TODO : function)
 

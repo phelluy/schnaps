@@ -343,10 +343,7 @@ void Initfield(field *f) {
   f->tnow=0;
   f->itermax=0;
   f->iter_time=0;
-  f->tmaximum=0;
-  f->rk_substep=0;
-  f->rk_max=0;
-  f->nb_diags=0;
+  f->nb_diags = 0;
 
   f->tnow = 0;
 
@@ -1618,7 +1615,7 @@ void dtfieldSlow(field* f)
     }
 
   }
-};
+}
 
 // An out-of-place RK step
 void RK_out(real *dest, real *fwn, real *fdtwn, const real dt, 
@@ -1660,9 +1657,6 @@ void RK2(field *f, real tmax)
   assert(wnp1);
 
   // FIXME: remove
-  f->rk_max = 2;
-  f->tmaximum = tmax;
-  f->itermax = tmax/f->dt;
   size_diags = f->nb_diags * f->itermax;
   f->iter_time = iter;
   
@@ -1815,8 +1809,7 @@ real L2error(field *f) {
 }
 
 
-void InterpField(field* f,int ie,real* xref,real* w){
-
+void InterpField(field *f, int ie, real *xref, real *w){
   const int nraf[3] = {f->interp_param[4],
 		       f->interp_param[5],
 		       f->interp_param[6]};
@@ -1824,30 +1817,25 @@ void InterpField(field* f,int ie,real* xref,real* w){
 		      f->interp_param[2],
 		      f->interp_param[3]};
 
-  for(int iv=0;iv<f->model.m;iv++){
-    w[iv]=0;
-  }
+  for(int iv = 0; iv < f->model.m; iv++)
+    w[iv] = 0;
 
   int is[3];
 
-  for(int ii=0;ii<3;ii++){
-    is[ii]=xref[ii]*nraf[ii];
+  for(int ii = 0; ii < 3; ii++){
+    is[ii] = xref[ii] * nraf[ii];
     assert(is[ii] < nraf[ii] && is[ii]>= 0);
   }
   
-
-  int npgv=NPG(f->interp_param + 1);
-  // TO DO: loop only on non zero basis function
+  int npgv = NPG(f->interp_param + 1);
+  // TODO: loop only on non zero basis function
   for(int ib = 0; ib < npgv; ib++) { 
     real psi;
-    psi_ref_subcell(f->interp_param + 1,is,ib,xref,&psi,NULL);
+    psi_ref_subcell(f->interp_param + 1, is, ib, xref, &psi, NULL);
     
     for(int iv=0;iv<f->model.m;iv++){
       int imem = f->varindex(f->interp_param, ie, ib, iv);
       w[iv] += psi * f->wn[imem];
     }
   }
-
-
 }
-
