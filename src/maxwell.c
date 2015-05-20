@@ -93,7 +93,6 @@ void Maxwell2DSource(real x[3],real t,real w[],real source[]){
   source[5]=0;
   source[6]=0;
 
-
 }
 
 

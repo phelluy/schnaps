@@ -32,7 +32,12 @@ void Maxwell2DBoundaryFlux(real* x, real t, real* wL, real* vn,
 //! \param[out] w : init state at point x
 void Maxwell2DInitData(real* x, real* w);
 
-
+//! \brief source term for the maxwell2d model
+//! \param[in] x : space position
+//! \param[in] t : time
+//! \param[in] w : field values
+//! \param[out] source : source term (charge and current)
+void Maxwell2DSource(real x[3],real t,real w[],real source[]);
 
 
 #endif
