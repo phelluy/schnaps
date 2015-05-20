@@ -49,15 +49,15 @@ typedef struct Geom{
 
 //! \brief mapping tau from the reference point to the physical point.
 //! If an optional variable is not used it HAS to be set to NULL
-//! \param[in] physnode : coordinates of the physical nodes
-//! \param[in] xref : coordinates of the mapped point in the reference frame
-//! \param[in] dphiref : gradient of a function in the reference frame (optional)
-//! \param[in] ifa : face index if computation of the normal vector (optional)
-//! \param[out] xphy : coordinates of the mapped point in the physical frame
-//! \param[out] dphi : gradient of the function in the physical frame (optional)
-//! \param[out] dtau : jacobian of the mapping tau (optional)
-//! \param[out] codtau : comatrix of dtau (optional)
-//! \param[out] vnds : normal vector times the elementary surface ds (optional)
+//! \param[in] physnode: coordinates of the physical nodes
+//! \param[in] xref: coordinates of the mapped point in the reference frame
+//! \param[in] dphiref: gradient of a function in the reference frame (optional)
+//! \param[in] ifa: face index if computation of the normal vector (optional)
+//! \param[out] xphy: coordinates of the mapped point in the physical frame
+//! \param[out] dphi: gradient of the function in the physical frame (optional)
+//! \param[out] dtau: jacobian of the mapping tau (optional)
+//! \param[out] codtau: comatrix of dtau (optional)
+//! \param[out] vnds: normal vector times the elementary surface ds (optional)
 void Ref2Phy(real physnode[20][3],
              real xref[3],
              real dphiref[3],
