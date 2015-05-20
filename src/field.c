@@ -320,8 +320,6 @@ void init_field_cl(field *f)
 
 void Initfield(field *f) {
   //int param[8]={f->model.m,_DEGX,_DEGY,_DEGZ,_RAFX,_RAFY,_RAFZ,0};
-  f->is2d = false;
-  f->is1d = false;
   
   //f->vmax = 1.0; // FIXME: make this variable ??????
 
@@ -337,7 +335,7 @@ void Initfield(field *f) {
   f->dtwn = calloc(nmem, sizeof(real));
   assert(f->dtwn);
   f->Diagnostics = NULL;
-  f->update_before_rk = NULL;
+  f->pre_dtfield = NULL;
   f->update_after_rk = NULL;
   f->model.Source = NULL;
 
@@ -843,11 +841,11 @@ void DGMacroCellInterfaceSlow(void *mc, field *f, real *w, real *dtw) {
     // loop on the 6 faces
     // or four faces for 2d computations
     int nbfa = 6;
-    if (f->is2d) nbfa = 4;
-    if (f->is1d) nbfa = 2;
+    if (f->macromesh.is2d) nbfa = 4;
+    if (f->macromesh.is1d) nbfa = 2;
     for(int nifa = 0; nifa < nbfa; nifa++) {
       // get the right elem or the boundary id
-      int ifa= f->is1d ?  2*nifa+1 : nifa;
+      int ifa= f->macromesh.is1d ?  2 * nifa + 1 : nifa;
       int ieR = f->macromesh.elem2elem[6*ie+ifa];
       real physnodeR[20][3];
       if (ieR >= 0) {
@@ -870,7 +868,7 @@ void DGMacroCellInterfaceSlow(void *mc, field *f, real *w, real *dtw) {
   	ref_pg_face(iparam + 1, ifa, ipgf, xpgref, &wpg, xpgref_in);
 
 #ifdef _PERIOD
-	assert(f->is1d); // TODO: generalize to 2d
+	assert(f->macromesh.is1d); // TODO: generalize to 2d
 	if (xpgref_in[0] > _PERIOD) {
 	  //printf("à droite ifa= %d x=%f ipgf=%d ieL=%d ieR=%d\n",
 	  //	 ifa,xpgref_in[0],ipgf,ie,ieR);
@@ -1005,7 +1003,7 @@ void DGMacroCellInterface(void *mc, field *f, real *w, real *dtw)
       ref_pg_face(iparam + 1, locfaL, ipgfL, xpgref, &wpg, xpgref_in);
 
 #ifdef _PERIOD
-      assert(f->is1d); // TODO: generalize to 2d
+      assert(f->macromesh.is1d); // TODO: generalize to 2d
       if (xpgref_in[0] > _PERIOD) {
 	//printf("à droite ifa= %d x=%f ipgf=%d ieL=%d ieR=%d\n",
 	//	 ifa,xpgref_in[0],ipgf,ie,ieR);
@@ -1400,6 +1398,9 @@ void dtfield_pthread(field *f)
 // Apply the Discontinuous Galerkin approximation for computing the
 // time derivative of the field
 void dtfield(field *f, real *w, real *dtw) {
+  if(f->pre_dtfield != NULL) // FIXME: rename to before dtfield
+      f->pre_dtfield(f, w);
+
 #ifdef _WITH_PTHREAD
   dtfield_pthread(f, w, dtw);
 #else
@@ -1471,7 +1472,7 @@ void dtfieldSlow(field* f)
     // loop on the 6 faces
     // or four faces for 2d computations
     int nbfa = 6;
-    if (f->is2d) nbfa = 4;
+    if (f->macromesh.is2d) nbfa = 4;
     for(int ifa = 0; ifa < nbfa; ifa++) {
       // get the right elem or the boundary id
       int ieR = f->macromesh.elem2elem[6*ie+ifa];
@@ -1645,7 +1646,6 @@ void RK_in(real *fwnp1, real *fdtwn, const real dt, const int sizew)
 // Time integration by a second-order Runge-Kutta algorithm
 void RK2(field *f, real tmax) 
 {
-
   f->dt = f->model.cfl * f->hmin / f->vmax;
 
   printf("dt=%f\n",f->dt);
@@ -1659,41 +1659,25 @@ void RK2(field *f, real tmax)
   real *wnp1 = calloc(f->wsize, sizeof(real));
   assert(wnp1);
 
-  f->rk_max=2;
-  f->tmaximum=tmax;
-  f->itermax=tmax/f->dt;
-  size_diags=f->nb_diags * f->itermax;
+  // FIXME: remove
+  f->rk_max = 2;
+  f->tmaximum = tmax;
+  f->itermax = tmax/f->dt;
+  size_diags = f->nb_diags * f->itermax;
 
   f->iter_time=iter;
   
-  if(f->nb_diags != 0){
-    f->Diagnostics=malloc(size_diags* sizeof(real));
-  }
+  if(f->nb_diags != 0)
+    f->Diagnostics = malloc(size_diags * sizeof(real));
 
   while(f->tnow < tmax) {
     if (iter % freq == 0)
       printf("t=%f iter=%d/%d dt=%f\n", f->tnow, iter, f->itermax, f->dt);
 
-    // update before predictor
-    f->rk_substep =1;
-    if(f->update_before_rk !=NULL){
-      f->update_before_rk(f,f->wn);
-    }  
-    
     dtfield(f, f->wn, f->dtwn);
     RK_out(wnp1, f->wn, f->dtwn, 0.5 * f->dt, sizew);
 
-    // update after predictor
-    if(f->update_after_rk !=NULL){
-      f->update_after_rk(f,wnp1);
-    }
-    
     f->tnow += 0.5 * f->dt;
-
-    f->rk_substep = 2;
-    if(f->update_before_rk !=NULL){
-      f->update_before_rk(f,wnp1);
-    }  
 
     dtfield(f, wnp1, f->dtwn);
     RK_in(f->wn, f->dtwn, f->dt, sizew);

@@ -9,9 +9,10 @@
 #include "solverpoisson.h"
 
 
-void TestPeriodic_ImposedData(real x[3],real t,real w[]);
-void TestPeriodic_InitData(real x[3],real w[]);
-void TestPeriodic_BoundaryFlux(real x[3],real t,real wL[],real* vnorm, real* flux);
+void TestPeriodic_ImposedData(real *x, real t, real *w);
+void TestPeriodic_InitData(real *x, real *w);
+void TestPeriodic_BoundaryFlux(real *x, real t, real *wL, real *vnorm,
+			       real *flux);
 
 int main(void) {
   
@@ -25,47 +26,42 @@ int main(void) {
   return !resu;
 } 
 
-
 int TestPeriodic(void) {
 
   bool test=true;
 
- #ifndef _PERIOD
+#ifndef _PERIOD
   printf("peridicity disabled\n");
   return test;
 #endif
 
   field f;
-
-  int vec=1;
   
-  f.model.m=_MV+1; // num of conservative variables
+  f.model.m = _MV+1; // num of conservative variables
   f.vmax = _VMAX; // maximal wave speed 
   f.model.NumFlux=VlasovP_Lagrangian_NumFlux;
-   f.model.Source = NULL;
+  f.model.Source = NULL;
   
-  f.model.BoundaryFlux=TestPeriodic_BoundaryFlux;
-  f.model.InitData=TestPeriodic_InitData;
-  f.model.ImposedData=TestPeriodic_ImposedData;
+  f.model.BoundaryFlux = TestPeriodic_BoundaryFlux;
+  f.model.InitData = TestPeriodic_InitData;
+  f.model.ImposedData = TestPeriodic_ImposedData;
  
-  f.varindex=GenericVarindex;
-  f.update_before_rk=NULL;
-  f.update_after_rk=NULL; 
-    
-    
-  f.interp.interp_param[0]=_MV+1;  // _M
-  f.interp.interp_param[1]=3;  // x direction degree
-  f.interp.interp_param[2]=0;  // y direction degree
-  f.interp.interp_param[3]=0;  // z direction degree
-  f.interp.interp_param[4]=10;  // x direction refinement
-  f.interp.interp_param[5]=1;  // y direction refinement
-  f.interp.interp_param[6]=1;  // z direction refinement
+  f.varindex = GenericVarindex;
+  f.pre_dtfield = NULL;
+  f.update_after_rk = NULL; 
+  
+  f.interp.interp_param[0] = _MV+1;  // _M
+  f.interp.interp_param[1] = 3;  // x direction degree
+  f.interp.interp_param[2] = 0;  // y direction degree
+  f.interp.interp_param[3] = 0;  // z direction degree
+  f.interp.interp_param[4] = 10;  // x direction refinement
+  f.interp.interp_param[5] = 1;  // y direction refinement
+  f.interp.interp_param[6] = 1;  // z direction refinement
   // read the gmsh file
-  ReadMacroMesh(&(f.macromesh),"test/testcube.msh");
+  ReadMacroMesh(&(f.macromesh), "test/testcube.msh");
   // try to detect a 2d mesh
   Detect1DMacroMesh(&(f.macromesh));
-  bool is1d=f.macromesh.is1d;
-  assert(is1d);
+  assert(f.macromesh.is1d);
 
   // mesh preparation
   BuildConnectivity(&(f.macromesh));
@@ -74,9 +70,7 @@ int TestPeriodic(void) {
  
   // prepare the initial fields
   Initfield(&f);
-  f.macromesh.is1d=true;
-  f.is1d=true;
-  f.nb_diags=0;
+  f.nb_diags = 0;
 
   // prudence...
   CheckMacroMesh(&(f.macromesh),f.interp.interp_param+1);
@@ -119,7 +113,7 @@ void TestPeriodic_ImposedData(real x[3],real t,real w[]){
     int nel=i/_DEG_V; // element num (TODO : function)
 
     real vi = (-_VMAX+nel*_DV +
-		 _DV* glop(_DEG_V,j));
+	       _DV* glop(_DEG_V,j));
 
     w[i]=cos(2*pi*(x[0]-vi*t));
   }
@@ -143,7 +137,7 @@ void TestPeriodic_InitData(real x[3],real w[]){
 
 
 void TestPeriodic_BoundaryFlux(real x[3],real t,real wL[],real* vnorm,
-				       real* flux){
+			       real* flux){
   real wR[_MV+6];
   TestPeriodic_ImposedData(x,t,wR);
   VlasovP_Lagrangian_NumFlux(wL,wR,vnorm,flux);

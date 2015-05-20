@@ -23,10 +23,13 @@ typedef struct MacroMesh{
   int* node2elem;
 
   real *node; //!< nodes coordinates array
-  bool is2d; //!< 2d computation detection
+
+  //! Activate or not 2D computations
+  bool is2d;
+  //! Activate or not 1D computations
+  bool is1d;
 
   real xmin[3],xmax[3];
-  bool is1d; //!< 1d computation detection
 } MacroMesh;
 
 //! \brief a simple struct for modelling a four
@@ -80,18 +83,15 @@ void AffineMap(real* x);
 //! \param[inout] m the macromesh
 void AffineMapMacroMesh(MacroMesh *m);
 
-//! \brief detects if the mesh is 1D
-//! and then permuts the nodes so that
-//! the y,z directions coincide in the reference
-//! or physical frame.
-//! \param[inout] m a macromesh with m.is1d updated
+//! \brief detects if the mesh is 1D and then permuts the nodes so
+//! that the y,z directions coincide in the reference or physical
+//! frame.
+//! \param[inout] m a macromesh with is1d modified.
 void Detect1DMacroMesh(MacroMesh* m);
 
-//! \brief detects if the mesh is 2D
-//! and then permuts the nodes so that
-//! the z direction coincides in the reference
-//! or physical frame.
-//! \param[inout] m a macromesh with m.is2d updated
+//! \brief detects if the mesh is 2D and then permuts the nodes so
+//! that the z direction coincides in the reference or physical frame.
+//! \param[inout] m a macromesh with is2d modified.
 void Detect2DMacroMesh(MacroMesh *m);
 
 //! \brief verify the validity and orientation of the mesh

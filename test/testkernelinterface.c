@@ -43,7 +43,6 @@ int TestKernelInterface(void){
   //AffineMapMacroMesh(&(f.macromesh));
  
   Initfield(&f);
-  f.is2d = true;
 
   MacroFace mface[f.macromesh.nbfaces];
   for(int ifa = 0; ifa < f.macromesh.nbfaces; ++ifa){

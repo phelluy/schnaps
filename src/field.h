@@ -59,12 +59,6 @@ typedef struct field {
   //! max substep of the rk method
   int rk_max;
 
-  //! Activate or not 2D computations
-  bool is2d;
-
-   //! activate or not 1D computations
-  bool is1d;
-
   //! Size of the field buffers
   int wsize;
   //! fields at time steps n
@@ -74,13 +68,9 @@ typedef struct field {
   //! vmax
   real vmax;
 
-   //! \brief generic update function called 
-  //! \brief called at each runge-kutta sustep
+  //! \brief Pointer to a generic function called before computing dtfield. 
   //! \param[inout] f a field (to be converted from void*)
-  //! \param[in] elem macro element index
-  //! \param[in] ipg glop index
-  //! \param[in] iv field component index
-  void (*update_before_rk)(void* f, real * w);
+  void (*pre_dtfield)(void *f, real *w);
 
   //! \brief generic update function called 
   //! \brief called at each runge-kutta sustep
