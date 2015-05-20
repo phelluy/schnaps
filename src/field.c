@@ -1664,8 +1664,7 @@ void RK2(field *f, real tmax)
   f->tmaximum = tmax;
   f->itermax = tmax/f->dt;
   size_diags = f->nb_diags * f->itermax;
-
-  f->iter_time=iter;
+  f->iter_time = iter;
   
   if(f->nb_diags != 0)
     f->Diagnostics = malloc(size_diags * sizeof(real));
@@ -1682,12 +1681,11 @@ void RK2(field *f, real tmax)
     dtfield(f, wnp1, f->dtwn);
     RK_in(f->wn, f->dtwn, f->dt, sizew);
 
-    // update after corrector
-    if(f->update_after_rk !=NULL){
-      f->update_after_rk(f,f->wn);
-    }
-
     f->tnow += 0.5 * f->dt;
+
+    if(f->update_after_rk != NULL)
+      f->update_after_rk(f, f->wn);
+
     iter++;
     f->iter_time=iter;
   }
