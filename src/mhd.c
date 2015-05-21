@@ -4,13 +4,13 @@
 #include <assert.h>
 
 
-// {{{ MHD
 #pragma start_opencl
 #define _CH (5)
 #define _GAM (1.666666666666)
 #pragma end_opencl
 
-
+// FIXME: documentation?
+// FIXME: Do not set variables with #define.
 //#define PADE
 //#define PADE2
 #define P2
@@ -19,14 +19,14 @@
 //#define DIFFP2
 //#define DIFFP6
 
-// {{{   conservative
+
 #pragma start_opencl
 void conservatives(double* y, double* w){
-  double gam = _GAM;
+  double gam = _GAM; // FIXME: this should not be a #define
 
   w[0] = y[0];
   w[1] = y[0]*y[1];
-  w[2] = y[2]/(gam-1) +  y[0]*(y[1]*y[1]+y[3]*y[3]+y[4]*y[4])/2
+  w[2] = y[2]/(gam-1) + y[0]*(y[1]*y[1]+y[3]*y[3]+y[4]*y[4])/2
     + (y[7]*y[7]+y[5]*y[5]+y[6]*y[6])/2;
   w[3] = y[0]*y[3];
   w[4] = y[0]*y[4];
@@ -36,9 +36,7 @@ void conservatives(double* y, double* w){
   w[8] = y[8];        // psi
 }
 #pragma end_opencl
-// }}}
 
-// {{{   primitives
 #pragma start_opencl
 void primitives(double* W, double* Y){
 
@@ -56,9 +54,6 @@ void primitives(double* W, double* Y){
   Y[8] = W[8];        // psi
 }
 #pragma end_opencl
-// }}}
-
-// {{{   jacobmhd
 
 void jacobmhd(double* W,double* vn, double M[9][9]){
 
@@ -157,10 +152,6 @@ void jacobmhd(double* W,double* vn, double M[9][9]){
   }
 }
 
-// }}}
-
-
-// {{{   matmul
 void matrix_vector(double A[9][9], double B[9], double* C){
 
   for(int i=0; i<9; i++){
@@ -189,10 +180,6 @@ void matrix_matrix(double A[9][9],double B[9][9],double C[9][9]){
     }
   }
 }
-// }}}
-
-
-// {{{   gauss
 
 void write_matrix(double A[9][9],double *second, double B[9][9+1]){
   
@@ -233,10 +220,6 @@ void gauss(double A[9][9], double b[9], double *x){
   }
 }
 
-// }}}
-
-
-// {{{   fluxnum
 #pragma start_opencl
 void fluxnum(double* W,double* vn, double* flux){
 
@@ -265,12 +248,9 @@ void fluxnum(double* W,double* vn, double* flux){
   flux[8] = _CH*_CH*bn;
 }
 #pragma end_opencl
-// }}}
 
-
-// {{{   MHDNumFlux
 #pragma start_opencl
-void MHDNumFlux(double wL[],double wR[],double* vnorm,double* flux){
+void MHDNumFlux(double *wL, double *wR,double *vnorm, double *flux) {
   double fluxL[9];
   double fluxR[9];
   fluxnum(wL,vnorm,fluxL);
@@ -279,12 +259,10 @@ void MHDNumFlux(double wL[],double wR[],double* vnorm,double* flux){
   for(int i=0; i<9; i++){
     flux[i] = (fluxL[i]+fluxR[i])/2 - _CH*(wR[i]-wL[i])/2;
   }
-};
+}
 #pragma end_opencl
-// }}}
 
-// {{{   MHDNumFlux_2
-void MHDNumFlux_2(double wL[],double wR[],double* vn, double* flux){
+void MHDNumFlux_2(double *wL, double *wR, double *vn, double *flux) {
 
   double wmil[9];
   double wRmwL[9];
@@ -301,7 +279,6 @@ void MHDNumFlux_2(double wL[],double wR[],double* vn, double* flux){
   jacobmhd(wmil,vn,M);
 
 
-  // {{{ PADE
 #ifdef PADE
   // calcul de la matrice M^2
   matrix_matrix(M,M,M2);
@@ -343,10 +320,7 @@ void MHDNumFlux_2(double wL[],double wR[],double* vn, double* flux){
   double abs[9];
   gauss(M,Z,abs);
 #endif
-  // }}}
 
-
-  // {{{ PADE2
 #ifdef PADE2
   // calcul de la matrice M^2
   matrix_matrix(M,M,M2);
@@ -389,10 +363,7 @@ void MHDNumFlux_2(double wL[],double wR[],double* vn, double* flux){
   double abs[9];
   gauss(M,Z,abs);
 #endif
-  // }}}
 
-
-  // {{{ P2
 #ifdef P2
   double coef[3] = {1./2, 0., 1./2};
 
@@ -415,10 +386,7 @@ void MHDNumFlux_2(double wL[],double wR[],double* vn, double* flux){
     }
   }
 #endif
-  // }}}
 
-
-  // {{{ P6
 #ifdef P6
   double coef[7] = {5./16, 0., 15./16, 0., -5./16, 0., 1./16};
 
@@ -441,10 +409,7 @@ void MHDNumFlux_2(double wL[],double wR[],double* vn, double* flux){
     }
   }
 #endif
-  // }}}
 
-
-  // {{{ DIFFPADE
 #ifdef DIFFPADE
   // calcul de la matrice M^2
   matrix_matrix(M,M,M2);
@@ -485,10 +450,7 @@ void MHDNumFlux_2(double wL[],double wR[],double* vn, double* flux){
   double abs[9];
   gauss(M2,Z,abs);
 #endif
-  // }}}
 
-
-  // {{{ DIFFP2
 #ifdef DIFFP2
   // calcul de (wR-wL)
   for (int i=0; i< 9 ; i++){
@@ -499,10 +461,7 @@ void MHDNumFlux_2(double wL[],double wR[],double* vn, double* flux){
 
   matrix_vector(M,wRmwL,abs);
 #endif
-  // }}}
 
-
-  // {{{ DIFFP6
 #ifdef DIFFP6
   double coef[6] = {0., 15./8, 0., -10./8, 0., 3./8};
 
@@ -525,7 +484,6 @@ void MHDNumFlux_2(double wL[],double wR[],double* vn, double* flux){
     }
   }
 #endif
-  // }}}
 
   double fluxL[9];
   double fluxR[9];
@@ -537,13 +495,6 @@ void MHDNumFlux_2(double wL[],double wR[],double* vn, double* flux){
     flux[i] = (fluxL[i]+fluxR[i])/2 - _CH*abs[i]/2;
   }
 }
-// }}}
-
-
-
-
-
-
 
 void MHDNumFlux1D(double* WL,double* WR,double *vn, double* flux){
   
@@ -744,15 +695,10 @@ void MHDNumFlux1D(double* WL,double* WR,double *vn, double* flux){
   flux[7]  = 0;
   flux[8]  = 0;
 }
-// }}}
 
-
-
-
-// {{{   MHDBoundaryFlux
 #pragma start_opencl
-void MHDBoundaryFlux(double x[3],double t,double wL[],double* vnorm,
-		     double* flux){
+void MHDBoundaryFlux(double *x, double t, double *wL, double *vnorm,
+		     double *flux){
   double wR[9];
 
   if(vnorm[1] > 0.0001 || vnorm[1] < -0.0001){
@@ -769,24 +715,20 @@ void MHDBoundaryFlux(double x[3],double t,double wL[],double* vnorm,
     //assert(1==2);
   }
   MHDNumFlux(wL,wR,vnorm,flux);
-};
+}
 #pragma end_opencl
-// }}}
 
-// {{{   MHDInitData
 #pragma start_opencl
-void MHDInitData(double x[3],double w[]){
+void MHDInitData(double *x, double *w){
 
   double t=0;
   MHDImposedData(x,t,w);
 
-};
+}
 #pragma end_opencl
-// }}}
 
-// {{{   MHDImposedData
 #pragma start_opencl
-void MHDImposedData(double x[3],double t,double w[]){
+void MHDImposedData(double *x, double t, double *w) {
   double yL[9], yR[9];
   double wL[9], wR[9];
 
@@ -821,11 +763,5 @@ void MHDImposedData(double x[3],double t,double w[]){
     for(int i=0; i<9; i++){
       w[i] = wR[i];
     }
-};
+}
 #pragma end_opencl
-// }}}
-
-
-
-// }}}
-
