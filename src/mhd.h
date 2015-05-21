@@ -27,14 +27,15 @@ void MHDBoundaryFlux(double *x, double t, double *wL, double *vn, double *flux);
 //! \brief particular init data for the MHD model
 //! \param[in] x : space position
 //! \param[out] w : init state at point x
-void MHDInitData(double* x,double* w);
+void MHDInitData(double *x,double *w);
 
 //! \brief particular imposed data for the MHD model
 //! \param[in] x,t : space and time position
 //! \param[out] w : imposed state at point x and time t
-void MHDImposedData(double* x,double t,double* w);
+void MHDImposedData(double *x,double t, double *w);
 
-void primitives(double* W, double* Y);
+void primitives(double *W, double *Y);
+#pragma end_opencl
 
 // FIXME: using "real var[]" instead of "real *var" breaks OpenCL on
 // certain platforms.
@@ -46,6 +47,6 @@ void gauss(double A[9][9], double b[9], double *x);
 void MHDNumFlux_2(double wL[],double wR[],double* vn, double* flux);
 
 void MHDNumFlux1D(double wL[],double wR[],double* vn, double* flux);
-#pragma end_opencl
+
 
 

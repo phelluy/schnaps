@@ -3,13 +3,13 @@
 #include <stdio.h>
 #include <assert.h>
 
-
 #pragma start_opencl
+// FIXME: Do not set variables with #define.
 #define _CH (5)
 #define _GAM (1.666666666666)
 #pragma end_opencl
 
-// FIXME: documentation?
+// FIXME: documentation???
 // FIXME: Do not set variables with #define.
 //#define PADE
 //#define PADE2
@@ -38,34 +38,35 @@ void conservatives(double* y, double* w){
 #pragma end_opencl
 
 #pragma start_opencl
-void primitives(double* W, double* Y){
-
+// FIXME: documentation????
+void primitives(double *W, double *Y) {
   double gam = _GAM;
 
   Y[0] = W[0];
   Y[1] = W[1]/W[0];
-  Y[2] = (gam-1)*(W[2] - W[0]*(W[1]/W[0]*W[1]/W[0] + W[3]/W[0]*W[3]/W[0]
-			       + W[4]/W[0]*W[4]/W[0])/2 - (W[7]*W[7]+W[5]*W[5]+W[6]*W[6])/2);
-  Y[3] = W[3]/W[0];
-  Y[4] = W[4]/W[0];
+  Y[2] = (gam - 1) * (W[2] - W[0] * (W[1]/W[0]*W[1]/W[0]
+				     + W[3]/W[0]*W[3]/W[0]
+				     + W[4]/W[0]*W[4]/W[0])/2
+		      - (W[7]*W[7]+W[5]*W[5]+W[6]*W[6])/2);
+  Y[3] = W[3] / W[0];
+  Y[4] = W[4] / W[0];
   Y[5] = W[5];
   Y[6] = W[6];
-  Y[7] = W[7];        // Bx
-  Y[8] = W[8];        // psi
+  Y[7] = W[7]; // Bx
+  Y[8] = W[8]; // psi
 }
 #pragma end_opencl
 
-void jacobmhd(double* W,double* vn, double M[9][9]){
+// FIXME: documentation
+void jacobmhd(double *W, double *vn, double M[9][9]) {
 
   double gam = _GAM;
   double Y[9];
 
   double rho, ux, uy, uz, by, bz, p, bx;
 
-  int i,j;
-
-  for(i=0; i<9; i++){
-    for(j=0; j<9; j++){
+  for(int i = 0; i < 9; i++){
+    for(int j = 0; j < 9; j++){
       M[i][j] = 0;
     }
   }
@@ -81,10 +82,10 @@ void jacobmhd(double* W,double* vn, double M[9][9]){
   bz = Y[6];
   bx = Y[7];
 
-  M[0][0] = ux*vn[0]+uy*vn[1]+uz*vn[2];
-  M[0][1] = rho*vn[0];
-  M[0][3] = rho*vn[1];
-  M[0][4] = rho*vn[2];
+  M[0][0] = ux * vn[0] + uy * vn[1] + uz * vn[2];
+  M[0][1] = rho * vn[0];
+  M[0][3] = rho * vn[1];
+  M[0][4] = rho * vn[2];
 
   M[1][1] = ux*vn[0]+uy*vn[1]+uz*vn[2];
   M[1][2] = 1/rho*vn[0];
@@ -152,28 +153,23 @@ void jacobmhd(double* W,double* vn, double M[9][9]){
   }
 }
 
-void matrix_vector(double A[9][9], double B[9], double* C){
-
+// FIXME: documentation
+// FIXME: [] is not suitable for OpenCL
+void matrix_vector(double A[9][9], double B[9], double *C) {
   for(int i=0; i<9; i++){
     C[i] = 0;
-  }
-
-  for(int i=0; i<9; i++){
     for(int j=0; j<9; j++){
       C[i] += A[i][j]*B[j];
     }
   }
 }
 
-void matrix_matrix(double A[9][9],double B[9][9],double C[9][9]){
+// FIXME: documentation
+// FIXME: [] is not suitable for OpenCL
+void matrix_matrix(double A[9][9], double B[9][9], double C[9][9]){
   for(int i=0; i<9; i++){
     for(int j=0; j<9; j++){
       C[i][j]=0;
-    }
-  }
-
-  for(int i=0; i<9; i++){
-    for(int j=0; j<9; j++){
       for(int k=0; k<9; k++){
 	C[i][j] = C[i][j] + (A[i][k]*B[k][j]);
       }
@@ -181,6 +177,8 @@ void matrix_matrix(double A[9][9],double B[9][9],double C[9][9]){
   }
 }
 
+// FIXME: documentation
+// FIXME: [] is not suitable for OpenCL
 void write_matrix(double A[9][9],double *second, double B[9][9+1]){
   
   for (int i = 0; i < 9; i++){
@@ -194,6 +192,8 @@ void write_matrix(double A[9][9],double *second, double B[9][9+1]){
   }
 }
 
+// FIXME: documentation
+// FIXME: [] is not suitable for OpenCL
 void gauss(double A[9][9], double b[9], double *x){
   double B[9][9+1];
   write_matrix(A,b,B);
@@ -221,7 +221,7 @@ void gauss(double A[9][9], double b[9], double *x){
 }
 
 #pragma start_opencl
-void fluxnum(double* W,double* vn, double* flux){
+void fluxnum(double *W,double *vn, double *flux){
 
   double gam = _GAM;
 
@@ -253,11 +253,11 @@ void fluxnum(double* W,double* vn, double* flux){
 void MHDNumFlux(double *wL, double *wR,double *vnorm, double *flux) {
   double fluxL[9];
   double fluxR[9];
-  fluxnum(wL,vnorm,fluxL);
-  fluxnum(wR,vnorm,fluxR);
+  fluxnum(wL, vnorm, fluxL);
+  fluxnum(wR, vnorm, fluxR);
 
-  for(int i=0; i<9; i++){
-    flux[i] = (fluxL[i]+fluxR[i])/2 - _CH*(wR[i]-wL[i])/2;
+  for(int i=0; i < 9; i++){
+    flux[i] = (fluxL[i] + fluxR[i]) / 2 - _CH * (wR[i] - wL[i]) / 2;
   }
 }
 #pragma end_opencl
@@ -268,20 +268,20 @@ void MHDNumFlux_2(double *wL, double *wR, double *vn, double *flux) {
   double wRmwL[9];
   double Z[9];
 
+  // FIXME: ????
   double M[9][9] = {{0}};
   double M2[9][9] = {{0}};
 
-  for (int i=0; i< 9 ; i++){
+  for (int i = 0; i < 9; i++){
     wmil[i] = (wL[i] + wR[i])/2;
   }
 
   // calcul de la matrice M
-  jacobmhd(wmil,vn,M);
-
+  jacobmhd(wmil, vn, M);
 
 #ifdef PADE
   // calcul de la matrice M^2
-  matrix_matrix(M,M,M2);
+  matrix_matrix(M, M, M2);
 
   // calcul de la matrice (I+3M^2) on la stock dans M
   for (int i = 0; i < 9; i++) {
@@ -295,7 +295,7 @@ void MHDNumFlux_2(double *wL, double *wR, double *vn, double *flux) {
   }
 
   // calcul de (wR-wL)
-  for (int i=0; i< 9 ; i++){
+  for (int i = 0; i < 9 ; i++){
     wRmwL[i] = (wR[i] - wL[i]);
   }
 
@@ -305,7 +305,7 @@ void MHDNumFlux_2(double *wL, double *wR, double *vn, double *flux) {
   // calcul de la matrice (3I+M^2) on le stock encore dans M
   for (int i = 0; i < 9; i++) {
     for (int j = 0; j < 9; j++) {
-      if (i==j) {
+      if (i == j) {
 	M[i][j] = 3 + M2[i][j];
       }
       else {
@@ -317,18 +317,18 @@ void MHDNumFlux_2(double *wL, double *wR, double *vn, double *flux) {
   // resolution du systeme (3I + M^2)x = (I + 3M^2)(wR - wL)
   //                   <=> x = (3I + M^2)^-1(I + 3M^2)(wR - wL)
   //                   <=> x = |M|(wR - wL)
-  double abs[9];
-  gauss(M,Z,abs);
+  double dabs[9];
+  gauss(M, Z, dabs);
 #endif
 
 #ifdef PADE2
   // calcul de la matrice M^2
-  matrix_matrix(M,M,M2);
+  matrix_matrix(M, M, M2);
 
   // calcul de la matrice (I+12M^2) on la stock dans M
   for (int i = 0; i < 9; i++) {
     for (int j = 0; j < 9; j++) {
-      if (i==j) {
+      if (i == j) {
 	M[i][j] = 1 + 12*M2[i][j];
       }
       else {
@@ -349,10 +349,10 @@ void MHDNumFlux_2(double *wL, double *wR, double *vn, double *flux) {
   for (int i = 0; i < 9; i++) {
     for (int j = 0; j < 9; j++) {
       if (i==j) {
-	M[i][j] = 6 + 7*M2[i][j];
+	M[i][j] = 6 + 7 * M2[i][j];
       }
       else {
-	M[i][j] = 7*M2[i][j];
+	M[i][j] = 7 * M2[i][j];
       }
     }
   }
@@ -360,29 +360,29 @@ void MHDNumFlux_2(double *wL, double *wR, double *vn, double *flux) {
   // resolution du systeme (6I + 7M^2)x = (I + 12M^2)(wR - wL)
   //                   <=> x = (6I + 7M^2)^-1(I + 12M^2)(wR - wL)
   //                   <=> x = |M|(wR - wL)
-  double abs[9];
-  gauss(M,Z,abs);
+  double dabs[9];
+  gauss(M, Z, dabs);
 #endif
 
 #ifdef P2
   double coef[3] = {1./2, 0., 1./2};
 
   // calcul de (wR-wL)
-  for (int i=0; i< 9 ; i++){
+  for (int i = 0; i < 9 ; i++){
     wRmwL[i] = (wR[i] - wL[i]);
   }
 
-  double abs[9];
+  double dabs[9];
 
-  for (int i=0; i< 9 ; i++){
-    abs[i] = coef[2]*wRmwL[i];
+  for (int i = 0; i < 9 ; i++){
+    dabs[i] = coef[2] * wRmwL[i];
   }
 
   double Mw[9];
-  for(int i=1; i>=0; i--){
-    matrix_vector(M,abs,Mw);
-    for(int j=0; j<9; j++){
-      abs[j] = coef[i]*wRmwL[j] + Mw[j];
+  for(int i = 1; i >= 0; i--){
+    matrix_vector(M, dabs, Mw);
+    for(int j = 0; j < 9; j++){
+      dabs[j] = coef[i] * wRmwL[j] + Mw[j];
     }
   }
 #endif
@@ -395,44 +395,44 @@ void MHDNumFlux_2(double *wL, double *wR, double *vn, double *flux) {
     wRmwL[i] = (wR[i] - wL[i]);
   }
 
-  double abs[9];
+  double dabs[9];
 
-  for (int i=0; i< 9 ; i++){
-    abs[i] = coef[6]*wRmwL[i];
+  for (int i = 0; i< 9 ; i++){
+    dabs[i] = coef[6] * wRmwL[i];
   }
 
   double Mw[9];
-  for(int i=5; i>=0; i--){
-    matrix_vector(M,abs,Mw);
-    for(int j=0; j<9; j++){
-      abs[j] = coef[i]*wRmwL[j] + Mw[j];
+  for(int i = 5; i >= 0; i--){
+    matrix_vector(M, dabs, Mw);
+    for(int j = 0; j < 9; j++){
+      dabs[j] = coef[i] * wRmwL[j] + Mw[j];
     }
   }
 #endif
 
 #ifdef DIFFPADE
   // calcul de la matrice M^2
-  matrix_matrix(M,M,M2);
+  matrix_matrix(M, M, M2);
 
   // calcul de la matrice (16M) on la stock dans M
   for (int i = 0; i < 9; i++) {
     for (int j = 0; j < 9; j++) {
-      M[i][j] = 16*M[i][j];
+      M[i][j] = 16 * M[i][j];
     }
   }
 
   // calcul de (wR-wL)
-  for (int i=0; i< 9 ; i++){
+  for (int i = 0; i < 9; i++){
     wRmwL[i] = (wR[i] - wL[i]);
   }
 
   // calcul de (16M)*(wRmwL)
-  matrix_vector(M,wRmwL,Z);
+  matrix_vector(M, wRmwL, Z);
 
   // calcul de la matrice (3I+M^2) on le stock encore dans M
   for (int i = 0; i < 9; i++) {
     for (int j = 0; j < 9; j++) {
-      if (i==j) {
+      if(i == j) {
 	M[i][j] = 3 + M2[i][j];
       }
       else {
@@ -442,45 +442,45 @@ void MHDNumFlux_2(double *wL, double *wR, double *vn, double *flux) {
   }
 
   // calcul de la matrice (3I+M^2)^2 on le stock encore dans M2
-  matrix_matrix(M,M,M2);
+  matrix_matrix(M, M, M2);
 
   // resolution du systeme (3I + M^2)^2x = (16M)(wR - wL)
   //                   <=> x = ((3I + M^2)^2)^-1(16M)(wR - wL)
   //                   <=> x = sgn(A)(wR - wL)
-  double abs[9];
-  gauss(M2,Z,abs);
+  double dabs[9];
+  gauss(M2, Z, dabs);
 #endif
 
 #ifdef DIFFP2
   // calcul de (wR-wL)
-  for (int i=0; i< 9 ; i++){
+  for (int i = 0; i< 9; i++){
     wRmwL[i] = (wR[i] - wL[i]);
   }
 
-  double abs[9];
+  double dabs[9];
 
-  matrix_vector(M,wRmwL,abs);
+  matrix_vector(M, wRmwL0, dabs);
 #endif
 
 #ifdef DIFFP6
   double coef[6] = {0., 15./8, 0., -10./8, 0., 3./8};
 
   // calcul de (wR-wL)
-  for (int i=0; i< 9 ; i++){
+  for (int i = 0; i < 9 ; i++){
     wRmwL[i] = (wR[i] - wL[i]);
   }
 
-  double abs[9];
+  double dabs[9];
 
-  for (int i=0; i< 9 ; i++){
-    abs[i] = coef[5]*wRmwL[i];
+  for (int i = 0; i < 9; i++){
+    dabs[i] = coef[5] * wRmwL[i];
   }
 
   double Mw[9];
-  for(int i=4; i>=0; i--){
-    matrix_vector(M,abs,Mw);
-    for(int j=0; j<9; j++){
-      abs[j] = coef[i]*wRmwL[j] + Mw[j];
+  for(int i = 4; i >= 0; i--) {
+    matrix_vector(M, dabs, Mw);
+    for(int j = 0; j < 9; j++){
+      dabs[j] = coef[i] * wRmwL[j] + Mw[j];
     }
   }
 #endif
@@ -488,20 +488,16 @@ void MHDNumFlux_2(double *wL, double *wR, double *vn, double *flux) {
   double fluxL[9];
   double fluxR[9];
 
-  fluxnum(wL,vn,fluxL);
-  fluxnum(wR,vn,fluxR);
+  fluxnum(wL, vn, fluxL);
+  fluxnum(wR, vn, fluxR);
 
-  for(int i=0; i<9; i++){
-    flux[i] = (fluxL[i]+fluxR[i])/2 - _CH*abs[i]/2;
+  for(int i = 0; i < 9; i++){
+    flux[i] = (fluxL[i] + fluxR[i]) / 2 - _CH * dabs[i] / 2;
   }
 }
 
-void MHDNumFlux1D(double* WL,double* WR,double *vn, double* flux){
+void MHDNumFlux1D(double *WL, double *WR, double *vn, double *flux) {
   
-#define Min(a,b) (((a) < (b)) ? (a) : (b))
-#define Max(a,b) (((a) > (b)) ? (a) : (b))
-#define Abs(a) ((a) > (0) ? (a) : (-a))
-
   double gam = _GAM;
 
   double piL, piR, piyL, piyR, pizL, pizR;
@@ -526,85 +522,80 @@ void MHDNumFlux1D(double* WL,double* WR,double *vn, double* flux){
 
   double b = YL[7]; // En 1D BX est constant dans YL = YR
 
-
-
-// calcul des parametres issus de la relaxation
-  piL = YL[2] + 0.5*Abs(YL[5]*YL[5] + YL[6]*YL[6]) - 0.5*b*b;
+  // calcul des parametres issus de la relaxation
+  piL = YL[2] + 0.5 * fabs(YL[5]*YL[5] + YL[6]*YL[6]) - 0.5*b*b;
   piyL = -b*YL[5];
   pizL = -b*YL[6];
 
-  piR = YR[2] + 0.5*Abs(YR[5]*YR[5] + YR[6]*YR[6]) - 0.5*b*b;
+  piR = YR[2] + 0.5 * fabs(YR[5]*YR[5] + YR[6]*YR[6]) - 0.5*b*b;
   piyR = -b*YR[5];
   pizR = -b*YR[6];
 
 
   for(i=0; i<9; i++){
-     ymil[i] = 0.5*(YL[i]+YR[i]);
+    ymil[i] = 0.5*(YL[i]+YR[i]);
   }
-
 
   a = sqrt(gam*ymil[2]/ymil[0]);
   cf = sqrt(\
             0.5*((b*b + ymil[5]*ymil[5] + ymil[6]*ymil[6])/(ymil[0])+a*a)\
             + sqrt(\
                    0.25*(pow((b*b + ymil[5]*ymil[5] + ymil[6]*ymil[6])/(ymil[0])+a*a,2))-(a*a*b*b)/(ymil[0])\
-                  )\
-           );
+		   )\
+	    );
 
 
   aL = sqrt(gam*YL[2]/YL[0]);
   cfL = sqrt(\
-            0.5*((b*b + YL[5]*YL[5] + YL[6]*YL[6])/(YL[0])+aL*aL)\
-            + sqrt(\
-                   0.25*(pow((b*b + YL[5]*YL[5] + YL[6]*YL[6])/(YL[0])+aL*aL,2))-(aL*aL*b*b)/(YL[0])\
-                  )\
-           );
+	     0.5*((b*b + YL[5]*YL[5] + YL[6]*YL[6])/(YL[0])+aL*aL)\
+	     + sqrt(\
+		    0.25*(pow((b*b + YL[5]*YL[5] + YL[6]*YL[6])/(YL[0])+aL*aL,2))-(aL*aL*b*b)/(YL[0])\
+		    )\
+	     );
 
 
   aR = sqrt(gam*YR[2]/YR[0]);
   cfR = sqrt(\
-            0.5*((b*b + YR[5]*YR[5] + YR[6]*YR[6])/(YR[0])+aR*aR)\
-            + sqrt(\
-                   0.25*(pow((b*b + YR[5]*YR[5] + YR[6]*YR[6])/(YR[0])+aR*aR,2))-(aR*aR*b*b)/(YR[0])\
-                  )\
-           );
+	     0.5*((b*b + YR[5]*YR[5] + YR[6]*YR[6])/(YR[0])+aR*aR)\
+	     + sqrt(\
+		    0.25*(pow((b*b + YR[5]*YR[5] + YR[6]*YR[6])/(YR[0])+aR*aR,2))-(aR*aR*b*b)/(YR[0])\
+		    )\
+	     );
 
 
-// calcul des vitesses relaxees a gauche et a droite
+  // calcul des vitesses relaxees a gauche et a droite
   alpha = (gam-1)/2.;
 
-  Xl = (Max(YL[1]-YR[1], 0.0) + (Max(piR-piL, 0.0))/(YL[0]*cfL+YR[0]*cfR))/cfL;
-  Xr = (Max(YL[1]-YR[1], 0.0) + (Max(piL-piR, 0.0))/(YL[0]*cfL+YR[0]*cfR))/cfR;
+  Xl = (fmax(YL[1]-YR[1], 0.0) + (fmax(piR-piL, 0.0))/(YL[0]*cfL+YR[0]*cfR))/cfL;
+  Xr = (fmax(YL[1]-YR[1], 0.0) + (fmax(piL-piR, 0.0))/(YL[0]*cfL+YR[0]*cfR))/cfR;
 
   pxl = 1 - Xl/(1+alpha*Xl);
   pxr = 1 - Xr/(1+alpha*Xr);
 
   al0 = sqrt(\
-            0.5*((b*b + YL[5]*YL[5] + YL[6]*YL[6])/(YL[0]*pxl)+aL*aL)\
-            + sqrt(\
-                   0.25*(pow((b*b + YL[5]*YL[5] + YL[6]*YL[6])/(YL[0]*pxl)+aL*aL,2))-(aL*aL*b*b)/(YL[0]*pxl)\
-                  )\
-           );
+	     0.5*((b*b + YL[5]*YL[5] + YL[6]*YL[6])/(YL[0]*pxl)+aL*aL)\
+	     + sqrt(\
+		    0.25*(pow((b*b + YL[5]*YL[5] + YL[6]*YL[6])/(YL[0]*pxl)+aL*aL,2))-(aL*aL*b*b)/(YL[0]*pxl)\
+		    )\
+	     );
 
 
   ar0 = sqrt(\
-            0.5*((b*b + YR[5]*YR[5] + YR[6]*YR[6])/(YR[0]*pxr)+aR*aR)\
-            + sqrt(\
-                   0.25*(pow((b*b + YR[5]*YR[5] + YR[6]*YR[6])/(YR[0]*pxr)+aR*aR,2))-(aR*aR*b*b)/(YR[0]*pxr)\
-                  )\
-           );
+	     0.5*((b*b + YR[5]*YR[5] + YR[6]*YR[6])/(YR[0]*pxr)+aR*aR)\
+	     + sqrt(\
+		    0.25*(pow((b*b + YR[5]*YR[5] + YR[6]*YR[6])/(YR[0]*pxr)+aR*aR,2))-(aR*aR*b*b)/(YR[0]*pxr)\
+		    )\
+	     );
 
-  cL = al0*YL[0] + alpha*YL[0]*(Max(YL[1]-YR[1],0.0) + (Max(piR-piL,0.0))/(YL[0]*cfL+YR[0]*cfR));
-  cR = ar0*YR[0] + alpha*YR[0]*(Max(YL[1]-YR[1],0.0) + (Max(piL-piR,0.0))/(YL[0]*cfL+YR[0]*cfR));
+  cL = al0*YL[0] + alpha*YL[0]*(fmax(YL[1]-YR[1],0.0) + (fmax(piR-piL,0.0))/(YL[0]*cfL+YR[0]*cfR));
+  cR = ar0*YR[0] + alpha*YR[0]*(fmax(YL[1]-YR[1],0.0) + (fmax(piL-piR,0.0))/(YL[0]*cfL+YR[0]*cfR));
 
-
-// pour le 3-ondes ondes on prend des vitesses simples
+  // pour le 3-ondes ondes on prend des vitesses simples
   cA = cf;
   cB = cf;
   b2 = 0.0;
 
-
-// calcul des etats intermediaires
+  // calcul des etats intermediaires
   us = (cL*YL[1] + cR*YR[1] + piL-piR)/(cL+cR);
   pis = (cR*piL + cL*piR - cL*cR*(YR[1]-YL[1]))/(cL+cR);
 
@@ -614,80 +605,76 @@ void MHDNumFlux1D(double* WL,double* WR,double *vn, double* flux){
   piys = (cR*piyL + cL*piyR - cL*cR*(YR[3]-YL[3]))/(cL+cR);
   pizs = (cR*pizL + cL*pizR - cL*cR*(YR[4]-YL[4]))/(cL+cR);
 
-
-
-// calcul des vitesses caracteristiques
+  // calcul des vitesses caracteristiques
   sigma1 = YL[1] - cL/YL[0];
   sigma2 = us;
   sigma3 = YR[2] + cR/YR[0];
 
-
-// decentrement
-
+  // decentrement
   if(sigma1 > 0.0){
-     ystar[0] = YL[0];
-     ystar[1] = YL[1];
-     ystar[2] = YL[2];
-     ystar[3] = YL[3];
-     ystar[4] = YL[4];
-     ystar[5] = YL[5];
-     ystar[6] = YL[6];
-     pi = piL;
-     piy = piyL;
-     piz = pizL;
+    ystar[0] = YL[0];
+    ystar[1] = YL[1];
+    ystar[2] = YL[2];
+    ystar[3] = YL[3];
+    ystar[4] = YL[4];
+    ystar[5] = YL[5];
+    ystar[6] = YL[6];
+    pi = piL;
+    piy = piyL;
+    piz = pizL;
   }
   else
-     if(sigma2 > 0.0){
-        ystar[0] = 1.0/(1.0/YL[0] + (piL-piR+cR*(YR[1]-YL[1]))/(cL*(cL+cR)));
-        ystar[5] = ystar[0]*(YL[5]/YL[0] + b/(cL*cL)*piyL - b/(cL*cL)*piys);
-        ystar[6] = ystar[0]*(YL[6]/YL[0] + b/(cL*cL)*pizL - b/(cL*cL)*pizs);
-        ystar[1] = us;
-        ystar[3] = uys;
-        ystar[4] = uzs;
-        pi = pis;
-        piy = piys;
-        piz = pizs;
-        ystar[2] = ystar[0]*(gam-1)*(YL[2]/((gam-1)*YL[0])\
-                   + ((b*b + YL[5]*YL[5] + YL[6]*YL[6])/(2.0*YL[0]))\
-                   - piL*piL/(2.0*cL*cL) - (piyL*piyL+pizL*pizL)/(2.0*cL*cL)\
-                   - ((b*b+ystar[5]*ystar[5]+ystar[6]*ystar[6])/(2.0*ystar[0]))\
-                   + pis*pis/(2.0*cL*cL) + (piys*piys+pizs*pizs)/(2.0*cL*cL));
-     }
-     else
-        if(sigma3 > 0.0){
-           ystar[0] = 1.0/(1.0/YR[0] + (piR-piL+cL*(YR[1]-YL[1]))/(cR*(cL+cR)));
-           ystar[5] = ystar[0]*(YR[5]/YR[0] + b/(cR*cR)*piyR - b/(cR*cR)*piys);
-           ystar[6] = ystar[0]*(YR[6]/YR[0] + b/(cR*cR)*pizR - b/(cR*cR)*pizs);
-           ystar[1] = us;
-           ystar[3] = uys;
-           ystar[4] = uzs;
-           pi = pis;
-           piy = piys;
-           piz = pizs;
-           ystar[2] = ystar[0]*(gam-1)*(YR[2]/((gam-1)*YR[0])\
-                      + ((b*b + YR[5]*YR[5] + YR[6]*YR[6])/(2.0*YR[0]))\
-                      - piR*piR/(2.0*cR*cR) - (piyR*piyR+pizR*pizR)/(2.0*cR*cR)\
-                      - ((b*b+ystar[5]*ystar[5]+ystar[6]*ystar[6])/(2.0*ystar[0]))\
-                      + pis*pis/(2.0*cR*cR) + (piys*piys+pizs*pizs)/(2.0*cR*cR));
-        }
-        else{
-           ystar[0] = YR[0];
-           ystar[1] = YR[1];
-           ystar[2] = YR[2];
-           ystar[3] = YR[3];
-           ystar[4] = YR[4];
-           ystar[5] = YR[5];
-           ystar[6] = YR[6];
-           pi = piR;
-           piy = piyR;
-           piz = pizR;
-        }
+    if(sigma2 > 0.0){
+      ystar[0] = 1.0/(1.0/YL[0] + (piL-piR+cR*(YR[1]-YL[1]))/(cL*(cL+cR)));
+      ystar[5] = ystar[0]*(YL[5]/YL[0] + b/(cL*cL)*piyL - b/(cL*cL)*piys);
+      ystar[6] = ystar[0]*(YL[6]/YL[0] + b/(cL*cL)*pizL - b/(cL*cL)*pizs);
+      ystar[1] = us;
+      ystar[3] = uys;
+      ystar[4] = uzs;
+      pi = pis;
+      piy = piys;
+      piz = pizs;
+      ystar[2] = ystar[0]*(gam-1)*(YL[2]/((gam-1)*YL[0])\
+				   + ((b*b + YL[5]*YL[5] + YL[6]*YL[6])/(2.0*YL[0]))\
+				   - piL*piL/(2.0*cL*cL) - (piyL*piyL+pizL*pizL)/(2.0*cL*cL)\
+				   - ((b*b+ystar[5]*ystar[5]+ystar[6]*ystar[6])/(2.0*ystar[0]))\
+				   + pis*pis/(2.0*cL*cL) + (piys*piys+pizs*pizs)/(2.0*cL*cL));
+    }
+    else
+      if(sigma3 > 0.0){
+	ystar[0] = 1.0/(1.0/YR[0] + (piR-piL+cL*(YR[1]-YL[1]))/(cR*(cL+cR)));
+	ystar[5] = ystar[0]*(YR[5]/YR[0] + b/(cR*cR)*piyR - b/(cR*cR)*piys);
+	ystar[6] = ystar[0]*(YR[6]/YR[0] + b/(cR*cR)*pizR - b/(cR*cR)*pizs);
+	ystar[1] = us;
+	ystar[3] = uys;
+	ystar[4] = uzs;
+	pi = pis;
+	piy = piys;
+	piz = pizs;
+	ystar[2] = ystar[0]*(gam-1)*(YR[2]/((gam-1)*YR[0])\
+				     + ((b*b + YR[5]*YR[5] + YR[6]*YR[6])/(2.0*YR[0]))\
+				     - piR*piR/(2.0*cR*cR) - (piyR*piyR+pizR*pizR)/(2.0*cR*cR)\
+				     - ((b*b+ystar[5]*ystar[5]+ystar[6]*ystar[6])/(2.0*ystar[0]))\
+				     + pis*pis/(2.0*cR*cR) + (piys*piys+pizs*pizs)/(2.0*cR*cR));
+      }
+      else{
+	ystar[0] = YR[0];
+	ystar[1] = YR[1];
+	ystar[2] = YR[2];
+	ystar[3] = YR[3];
+	ystar[4] = YR[4];
+	ystar[5] = YR[5];
+	ystar[6] = YR[6];
+	pi = piR;
+	piy = piyR;
+	piz = pizR;
+      }
 
   flux[0] = ystar[0]*ystar[1];
   flux[1] = ystar[0]*(ystar[1]*ystar[1]) + pi;
   flux[2] = ystar[1]*(0.5*ystar[0]*(ystar[1]*ystar[1]+ystar[3]*ystar[3]+ystar[4]*ystar[4])\
                       + ystar[2]/(gam-1) + 0.5*(b*b+ystar[5]*ystar[5]+ystar[6]*ystar[6]) + pi)\
-                      + piy*ystar[3] + piz*ystar[4];
+    + piy*ystar[3] + piz*ystar[4];
   flux[3]  = ystar[0]*ystar[1]*ystar[3] + piy;
   flux[4]  = ystar[0]*ystar[1]*ystar[4] + piz;
   flux[5]  = ystar[1]*ystar[5] - b*ystar[3];
