@@ -40,7 +40,6 @@ int TestKernel(void)
   //AffineMapMacroMesh(&(f.macromesh));
  
   Initfield(&f);
-  f.is2d=true;
 
   printf("&f=%p\n",&f);
 

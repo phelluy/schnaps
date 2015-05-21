@@ -32,13 +32,11 @@ int TestfieldRK2_2D_SubCell(void) {
   //AffineMapMacroMesh(&(f.macromesh));
  
   Initfield(&f);
-  f.is2d = true;
 
   CheckMacroMesh(&(f.macromesh), f.interp.interp_param + 1);
 
   printf("cfl param: %f\n", f.hmin);
 
-  assert(f.is2d);
   real tmax = 0.2;
 
   f.vmax=1;
