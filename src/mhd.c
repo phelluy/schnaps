@@ -179,7 +179,7 @@ void matrix_matrix(double A[9][9], double B[9][9], double C[9][9]){
 
 // FIXME: documentation
 // FIXME: [] is not suitable for OpenCL
-void write_matrix(double A[9][9],double *second, double B[9][9+1]){
+void write_matrix(double A[9][9],double *second, double B[9][9+1]) {
   
   for (int i = 0; i < 9; i++){
     for (int j = 0; j < 9 ; j++){
@@ -194,7 +194,7 @@ void write_matrix(double A[9][9],double *second, double B[9][9+1]){
 
 // FIXME: documentation
 // FIXME: [] is not suitable for OpenCL
-void gauss(double A[9][9], double b[9], double *x){
+void gauss(double A[9][9], double b[9], double *x) {
   double B[9][9+1];
   write_matrix(A,b,B);
   // go down
@@ -268,7 +268,6 @@ void MHDNumFlux_2(double *wL, double *wR, double *vn, double *flux) {
   double wRmwL[9];
   double Z[9];
 
-  // FIXME: ????
   double M[9][9] = {{0}};
   double M2[9][9] = {{0}};
 
