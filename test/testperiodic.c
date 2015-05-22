@@ -150,6 +150,7 @@ void TestPeriodic_BoundaryFlux(real x[3],real t,real wL[],real* vnorm,
   real wR[_MV+6];
   TestPeriodic_ImposedData(x,t,wR);
   VlasovP_Lagrangian_NumFlux(wL,wR,vnorm,flux);
+  assert(1==2);
 };
 
 
