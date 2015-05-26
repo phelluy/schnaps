@@ -301,10 +301,10 @@ void ref_pg_vol(int *param, int ipg,
     xpg[2] = hz * (ic[2] + gauss_lob_point[offset[2]]);
   }
   
-  *wpg = hx * hy * hz *
-    gauss_lob_weight[offset[0]]*
-    gauss_lob_weight[offset[1]]*
-    gauss_lob_weight[offset[2]];
+  if (wpg != NULL) *wpg = hx * hy * hz *
+		     gauss_lob_weight[offset[0]]*
+		     gauss_lob_weight[offset[1]]*
+		     gauss_lob_weight[offset[2]];
 
   if (xpg_in !=0) {
     real small = 1e-3;

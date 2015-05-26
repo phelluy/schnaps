@@ -76,6 +76,8 @@ int TestPeriodic(void) {
   Initfield(&f);
   f.nb_diags = 0;
 
+
+
   // prudence...
   CheckMacroMesh(&(f.macromesh),f.interp.interp_param+1);
 

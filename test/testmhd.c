@@ -113,7 +113,7 @@ int TestMHD(int argc, char *argv[]) {
   bool is2d=f.macromesh.is2d; 
   assert(is2d);  
 
-  //f.macromesh.period[0]=10;
+  f.macromesh.period[1]=10;
   
   // Mesh preparation
   BuildConnectivity(&(f.macromesh));

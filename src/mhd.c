@@ -21,8 +21,8 @@
 
 
 #pragma start_opencl
-void conservatives(double* y, double* w){
-  double gam = _GAM; // FIXME: this should not be a #define
+void conservatives(real* y, real* w){
+  real gam = _GAM;
 
   w[0] = y[0];
   w[1] = y[0]*y[1];
@@ -38,9 +38,9 @@ void conservatives(double* y, double* w){
 #pragma end_opencl
 
 #pragma start_opencl
-// FIXME: documentation????
-void primitives(double *W, double *Y) {
-  double gam = _GAM;
+void primitives(real* W, real* Y){
+
+  real gam = _GAM;
 
   Y[0] = W[0];
   Y[1] = W[1]/W[0];
@@ -57,13 +57,14 @@ void primitives(double *W, double *Y) {
 }
 #pragma end_opencl
 
-// FIXME: documentation
-void jacobmhd(double *W, double *vn, double M[9][9]) {
+// {{{   jacobmhd
 
-  double gam = _GAM;
-  double Y[9];
+void jacobmhd(real* W,real* vn, real M[9][9]){
 
-  double rho, ux, uy, uz, by, bz, p, bx;
+  real gam = _GAM;
+  real Y[9];
+
+  real rho, ux, uy, uz, by, bz, p, bx;
 
   for(int i = 0; i < 9; i++){
     for(int j = 0; j < 9; j++){
@@ -153,9 +154,12 @@ void jacobmhd(double *W, double *vn, double M[9][9]) {
   }
 }
 
-// FIXME: documentation
-// FIXME: [] is not suitable for OpenCL
-void matrix_vector(double A[9][9], double B[9], double *C) {
+// }}}
+
+
+// {{{   matmul
+void matrix_vector(real A[9][9], real B[9], real* C){
+
   for(int i=0; i<9; i++){
     C[i] = 0;
     for(int j=0; j<9; j++){
@@ -164,9 +168,7 @@ void matrix_vector(double A[9][9], double B[9], double *C) {
   }
 }
 
-// FIXME: documentation
-// FIXME: [] is not suitable for OpenCL
-void matrix_matrix(double A[9][9], double B[9][9], double C[9][9]){
+void matrix_matrix(real A[9][9],real B[9][9],real C[9][9]){
   for(int i=0; i<9; i++){
     for(int j=0; j<9; j++){
       C[i][j]=0;
@@ -177,9 +179,10 @@ void matrix_matrix(double A[9][9], double B[9][9], double C[9][9]){
   }
 }
 
-// FIXME: documentation
-// FIXME: [] is not suitable for OpenCL
-void write_matrix(double A[9][9],double *second, double B[9][9+1]) {
+
+// {{{   gauss
+
+void write_matrix(real A[9][9],real *second, real B[9][9+1]){
   
   for (int i = 0; i < 9; i++){
     for (int j = 0; j < 9 ; j++){
@@ -192,10 +195,8 @@ void write_matrix(double A[9][9],double *second, double B[9][9+1]) {
   }
 }
 
-// FIXME: documentation
-// FIXME: [] is not suitable for OpenCL
-void gauss(double A[9][9], double b[9], double *x) {
-  double B[9][9+1];
+void gauss(real A[9][9], real b[9], real *x){
+  real B[9][9+1];
   write_matrix(A,b,B);
   // go down
   for (int i = 0; i < 9; i++){
@@ -221,14 +222,14 @@ void gauss(double A[9][9], double b[9], double *x) {
 }
 
 #pragma start_opencl
-void fluxnum(double *W,double *vn, double *flux){
+void fluxnum(real* W,real* vn, real* flux){
 
-  double gam = _GAM;
+  real gam = _GAM;
 
-  double un = W[1]/W[0]*vn[0]+W[3]/W[0]*vn[1]+W[4]/W[0]*vn[2];
-  double bn = W[7]*vn[0]+W[5]*vn[1]+W[6]*vn[2];
+  real un = W[1]/W[0]*vn[0]+W[3]/W[0]*vn[1]+W[4]/W[0]*vn[2];
+  real bn = W[7]*vn[0]+W[5]*vn[1]+W[6]*vn[2];
 
-  double p = (gam-1)*(W[2] - W[0]*(W[1]/W[0]*W[1]/W[0] + W[3]/W[0]*W[3]/W[0]\
+  real p = (gam-1)*(W[2] - W[0]*(W[1]/W[0]*W[1]/W[0] + W[3]/W[0]*W[3]/W[0]\
 				   + W[4]/W[0]*W[4]/W[0])/2 - (W[7]*W[7]+W[5]*W[5]+W[6]*W[6])/2);
 
   flux[0] = W[0]*un;
@@ -250,11 +251,11 @@ void fluxnum(double *W,double *vn, double *flux){
 #pragma end_opencl
 
 #pragma start_opencl
-void MHDNumFlux(double *wL, double *wR,double *vnorm, double *flux) {
-  double fluxL[9];
-  double fluxR[9];
-  fluxnum(wL, vnorm, fluxL);
-  fluxnum(wR, vnorm, fluxR);
+void MHDNumFlux(real wL[],real wR[],real* vnorm,real* flux){
+  real fluxL[9];
+  real fluxR[9];
+  fluxnum(wL,vnorm,fluxL);
+  fluxnum(wR,vnorm,fluxR);
 
   for(int i=0; i < 9; i++){
     flux[i] = (fluxL[i] + fluxR[i]) / 2 - _CH * (wR[i] - wL[i]) / 2;
@@ -262,14 +263,15 @@ void MHDNumFlux(double *wL, double *wR,double *vnorm, double *flux) {
 }
 #pragma end_opencl
 
-void MHDNumFlux_2(double *wL, double *wR, double *vn, double *flux) {
+// {{{   MHDNumFlux_2
+void MHDNumFlux_2(real wL[],real wR[],real* vn, real* flux){
 
-  double wmil[9];
-  double wRmwL[9];
-  double Z[9];
+  real wmil[9];
+  real wRmwL[9];
+  real Z[9];
 
-  double M[9][9] = {{0}};
-  double M2[9][9] = {{0}};
+  real M[9][9] = {{0}};
+  real M2[9][9] = {{0}};
 
   for (int i = 0; i < 9; i++){
     wmil[i] = (wL[i] + wR[i])/2;
@@ -316,8 +318,8 @@ void MHDNumFlux_2(double *wL, double *wR, double *vn, double *flux) {
   // resolution du systeme (3I + M^2)x = (I + 3M^2)(wR - wL)
   //                   <=> x = (3I + M^2)^-1(I + 3M^2)(wR - wL)
   //                   <=> x = |M|(wR - wL)
-  double dabs[9];
-  gauss(M, Z, dabs);
+  real abs[9];
+  gauss(M,Z,abs);
 #endif
 
 #ifdef PADE2
@@ -359,52 +361,52 @@ void MHDNumFlux_2(double *wL, double *wR, double *vn, double *flux) {
   // resolution du systeme (6I + 7M^2)x = (I + 12M^2)(wR - wL)
   //                   <=> x = (6I + 7M^2)^-1(I + 12M^2)(wR - wL)
   //                   <=> x = |M|(wR - wL)
-  double dabs[9];
-  gauss(M, Z, dabs);
+  real abs[9];
+  gauss(M,Z,abs);
 #endif
 
 #ifdef P2
-  double coef[3] = {1./2, 0., 1./2};
+  real coef[3] = {1./2, 0., 1./2};
 
   // calcul de (wR-wL)
   for (int i = 0; i < 9 ; i++){
     wRmwL[i] = (wR[i] - wL[i]);
   }
 
-  double dabs[9];
+  real abs[9];
 
   for (int i = 0; i < 9 ; i++){
-    dabs[i] = coef[2] * wRmwL[i];
+    abs[i] = coef[2] * wRmwL[i];
   }
 
-  double Mw[9];
-  for(int i = 1; i >= 0; i--){
-    matrix_vector(M, dabs, Mw);
-    for(int j = 0; j < 9; j++){
-      dabs[j] = coef[i] * wRmwL[j] + Mw[j];
+  real Mw[9];
+  for(int i=1; i>=0; i--){
+    matrix_vector(M,abs,Mw);
+    for(int j=0; j<9; j++){
+      abs[j] = coef[i]*wRmwL[j] + Mw[j];
     }
   }
 #endif
 
 #ifdef P6
-  double coef[7] = {5./16, 0., 15./16, 0., -5./16, 0., 1./16};
+  real coef[7] = {5./16, 0., 15./16, 0., -5./16, 0., 1./16};
 
   // calcul de (wR-wL)
   for (int i=0; i< 9 ; i++){
     wRmwL[i] = (wR[i] - wL[i]);
   }
 
-  double dabs[9];
+  real abs[9];
 
   for (int i = 0; i< 9 ; i++){
     dabs[i] = coef[6] * wRmwL[i];
   }
 
-  double Mw[9];
-  for(int i = 5; i >= 0; i--){
-    matrix_vector(M, dabs, Mw);
-    for(int j = 0; j < 9; j++){
-      dabs[j] = coef[i] * wRmwL[j] + Mw[j];
+  real Mw[9];
+  for(int i=5; i>=0; i--){
+    matrix_vector(M,abs,Mw);
+    for(int j=0; j<9; j++){
+      abs[j] = coef[i]*wRmwL[j] + Mw[j];
     }
   }
 #endif
@@ -446,8 +448,8 @@ void MHDNumFlux_2(double *wL, double *wR, double *vn, double *flux) {
   // resolution du systeme (3I + M^2)^2x = (16M)(wR - wL)
   //                   <=> x = ((3I + M^2)^2)^-1(16M)(wR - wL)
   //                   <=> x = sgn(A)(wR - wL)
-  double dabs[9];
-  gauss(M2, Z, dabs);
+  real abs[9];
+  gauss(M2,Z,abs);
 #endif
 
 #ifdef DIFFP2
@@ -456,70 +458,79 @@ void MHDNumFlux_2(double *wL, double *wR, double *vn, double *flux) {
     wRmwL[i] = (wR[i] - wL[i]);
   }
 
-  double dabs[9];
+  real abs[9];
 
   matrix_vector(M, wRmwL0, dabs);
 #endif
 
 #ifdef DIFFP6
-  double coef[6] = {0., 15./8, 0., -10./8, 0., 3./8};
+  real coef[6] = {0., 15./8, 0., -10./8, 0., 3./8};
 
   // calcul de (wR-wL)
   for (int i = 0; i < 9 ; i++){
     wRmwL[i] = (wR[i] - wL[i]);
   }
 
-  double dabs[9];
+  real abs[9];
 
   for (int i = 0; i < 9; i++){
     dabs[i] = coef[5] * wRmwL[i];
   }
 
-  double Mw[9];
-  for(int i = 4; i >= 0; i--) {
-    matrix_vector(M, dabs, Mw);
-    for(int j = 0; j < 9; j++){
-      dabs[j] = coef[i] * wRmwL[j] + Mw[j];
+  real Mw[9];
+  for(int i=4; i>=0; i--){
+    matrix_vector(M,abs,Mw);
+    for(int j=0; j<9; j++){
+      abs[j] = coef[i]*wRmwL[j] + Mw[j];
     }
   }
 #endif
 
-  double fluxL[9];
-  double fluxR[9];
+  real fluxL[9];
+  real fluxR[9];
 
   fluxnum(wL, vn, fluxL);
   fluxnum(wR, vn, fluxR);
 
   for(int i = 0; i < 9; i++){
-    flux[i] = (fluxL[i] + fluxR[i]) / 2 - _CH * dabs[i] / 2;
+    flux[i] = (fluxL[i] + fluxR[i]) / 2 - _CH * abs[i] / 2;
   }
 }
 
-void MHDNumFlux1D(double *WL, double *WR, double *vn, double *flux) {
+
+
+
+
+
+void MHDNumFlux1D(real* WL,real* WR,real *vn, real* flux){
   
-  double gam = _GAM;
+#define Min(a,b) (((a) < (b)) ? (a) : (b))
+#define Max(a,b) (((a) > (b)) ? (a) : (b))
+#define Abs(a) ((a) > (0) ? (a) : (-a))
 
-  double piL, piR, piyL, piyR, pizL, pizR;
-  double a, aR, aL, al0, ar0;
-  double cf, cfL, cfR, cL, cR;
-  double Xl, Xr, pxl, pxr;
-  double alpha;
-  double cA, cB, b2;
-  double us, pis, uys, uzs, piys, pizs;
-  double pi, piy, piz;
-  double sigma1, sigma2, sigma3;
+  real gam = _GAM;
 
-  double YL[9];
-  double YR[9];
-  double ymil[9];
-  double ystar[9];
+  real piL, piR, piyL, piyR, pizL, pizR;
+  real a, aR, aL, al0, ar0;
+  real cf, cfL, cfR, cL, cR;
+  real Xl, Xr, pxl, pxr;
+  real alpha;
+  real cA, cB, b2;
+  real us, pis, uys, uzs, piys, pizs;
+  real pi, piy, piz;
+  real sigma1, sigma2, sigma3;
+
+  real YL[9];
+  real YR[9];
+  real ymil[9];
+  real ystar[9];
 
   int i;
 
   primitives(WL, YL);
   primitives(WR, YR);
 
-  double b = YL[7]; // En 1D BX est constant dans YL = YR
+  real b = YL[7]; // En 1D BX est constant dans YL = YR
 
   // calcul des parametres issus de la relaxation
   piL = YL[2] + 0.5 * fabs(YL[5]*YL[5] + YL[6]*YL[6]) - 0.5*b*b;
@@ -683,14 +694,14 @@ void MHDNumFlux1D(double *WL, double *WR, double *vn, double *flux) {
 }
 
 #pragma start_opencl
-void MHDBoundaryFlux(double *x, double t, double *wL, double *vnorm,
-		     double *flux){
-  double wR[9];
+void MHDBoundaryFlux(real x[3],real t,real wL[],real* vnorm,
+		     real* flux){
+  real wR[9];
 
-  if(vnorm[1] > 0.0001 || vnorm[1] < -0.0001){
+  if(vnorm[0] > 0.0001 || vnorm[0] < -0.0001){
     MHDImposedData(x,t,wR);
   }
-  else if(vnorm[0] > 0.0001 || vnorm[0] < -0.0001){
+  else if(vnorm[1] > 0.0001 || vnorm[1] < -0.0001){
     for(int i=0; i<9; i++){
       wR[i] = wL[i];
     }
@@ -705,18 +716,18 @@ void MHDBoundaryFlux(double *x, double t, double *wL, double *vnorm,
 #pragma end_opencl
 
 #pragma start_opencl
-void MHDInitData(double *x, double *w){
+void MHDInitData(real x[3],real w[]){
 
-  double t=0;
+  real t=0;
   MHDImposedData(x,t,w);
 
 }
 #pragma end_opencl
 
 #pragma start_opencl
-void MHDImposedData(double *x, double t, double *w) {
-  double yL[9], yR[9];
-  double wL[9], wR[9];
+void MHDImposedData(real x[3],real t,real w[]){
+  real yL[9], yR[9];
+  real wL[9], wR[9];
 
   yL[0] = 3.;
   yL[1] = 1.3;
@@ -724,7 +735,7 @@ void MHDImposedData(double *x, double t, double *w) {
   yL[4] = 0.;
   yL[2] = 3.;
   yL[5] = 1.;
-  yL[7] = 1.;
+  yL[6] = 1.;
   yL[7] = 1.5;
   yL[8] = 0.;
 

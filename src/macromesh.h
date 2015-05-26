@@ -83,10 +83,14 @@ void BuildConnectivity(MacroMesh *m);
 
 //! \brief affine transformation
 //! \param[inout] x the transformed point
-void AffineMap(real* x);
+//! \param[in] x0 the initial point
+//! \param[in] A the transformation 
+void AffineMap(real* x,real A[3][3], real x0[3]);
 //! \brief simple transformations of the mesh
 //! \param[inout] m the macromesh
-void AffineMapMacroMesh(MacroMesh *m);
+//! \param[in] x0 the initial point
+//! \param[in] A the transformation 
+void AffineMapMacroMesh(MacroMesh *m,real A[3][3], real x0[3]);
 
 //! \brief detects if the mesh is 1D and then permuts the nodes so
 //! that the y,z directions coincide in the reference or physical

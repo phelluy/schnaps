@@ -1,11 +1,7 @@
 #ifndef _COLLISION_H
 #define _COLLISION_H
 
-// FIXME: these need to be able to be set by the command-line
-// arguments if the user wishes.  Using #define is going to cause a
-// lot of problems.  See testmanyv for an example.
-
-#define _NB_ELEM_V 16
+#define _NB_ELEM_V 12
 #define _DEG_V 3
 
 //! \brief number of conservative variables

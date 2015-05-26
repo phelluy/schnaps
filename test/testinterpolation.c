@@ -85,9 +85,12 @@ int TestInterpolation(void){
 
   // transform the ref element with an affine map
   // for more generality
-
+  //real A[3][3]={{1,2,1},{0,-1,4},{7,8,-5}};
+  //real x0[3]={0,0,0};
+  real A[3][3]={{1,0,0},{0,1,0},{0,0,1}};
+  real x0[3]={0,0,0};
   for(int i = 0; i < 20; i++){
-    AffineMap(&(physnode[i][0]));
+    AffineMap(&(physnode[i][0]),A,x0);
   }
 
   // store the interpolation properties

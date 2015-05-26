@@ -119,7 +119,7 @@ void PeriodicCorrection(real xyz[3],real period[3]);
 //! \param[in] period:  sizes of the box in each direction
 //! \param[in] bounds:  limits of the box in each direction
 //! if period[dim]<0 -> non periodic in direction dim
-void PeriodicCorrectionB(real xyz[3],real period[3],real bounds[6]);
+void PeriodicCorrectionB(real xyz[3],real period[3],real xmin[3], real xmax[3]);
 
 //! \brief distance between two points
 //! \param[in] a, b : the two points

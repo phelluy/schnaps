@@ -429,7 +429,7 @@ void Displayfield(field *f) {
 
 // Save the results in a text file
 // in order plot it with Gnuplot
-void Gnuplot(field* f,int dir, double fixval, char* filename) {
+void Gnuplot(field* f,int dir, real fixval, char* filename) {
 
   FILE * gmshfile;
   gmshfile = fopen(filename, "w" );
@@ -437,7 +437,7 @@ void Gnuplot(field* f,int dir, double fixval, char* filename) {
   printf("Save for Gnuplot...\n");
   for(int ie = 0; ie < f->macromesh.nbelems; ie++) {
 
-    double physnode[20][3];
+    real physnode[20][3];
     for(int inoloc = 0; inoloc < 20; inoloc++) {
       int ino = f->macromesh.elem2node[20 * ie + inoloc];
       physnode[inoloc][0] = f->macromesh.node[3 * ino + 0];
@@ -447,8 +447,8 @@ void Gnuplot(field* f,int dir, double fixval, char* filename) {
 
     for(int ipg = 0; ipg < NPG(f->interp_param + 1); ipg++) {
 
-      double xref[3], xphy[3], wpg;
-      double dtau[3][3];
+      real xref[3], xphy[3], wpg;
+      real dtau[3][3];
       ref_pg_vol(f->interp_param + 1, ipg, xref, &wpg, NULL);
 
       Ref2Phy(physnode,
@@ -1095,6 +1095,8 @@ void DGMacroCellInterface(void *mc, field *f, real *w, real *dtw)
 
         int ipgR = ref_ipg(iparam + 1, xrefL);
 
+	//printf("ipgL=%d ipgR=%d\n",ipgL,ipgR);
+
 	// Uncomment to check that the neighbour-finding algorithm worked.
 	/* { */
 	/*   real xpgR[3], xrefR[3], wpgR; */
@@ -1446,7 +1448,7 @@ void dtfield_pthread(field *f)
 // Apply the Discontinuous Galerkin approximation for computing the
 // time derivative of the field
 void dtfield(field *f, real *w, real *dtw) {
-  if(f->pre_dtfield != NULL)
+  if(f->pre_dtfield != NULL) // FIXME: rename to before dtfield
       f->pre_dtfield(f, w);
 
 #ifdef _WITH_PTHREAD

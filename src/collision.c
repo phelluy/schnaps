@@ -46,6 +46,8 @@ void VlasovP_Lagrangian_Source(real* x,real t,real* w, real* source){
     Md[iv]=0;
     db[iv]=0;
   }
+  
+  
   for(int iv=0;iv<_MV+2;iv++){
     source[iv]=0;
   }
@@ -83,7 +85,7 @@ void VlasovP_Lagrangian_Source(real* x,real t,real* w, real* source){
 
   for(int iv=0;iv<_INDEX_MAX_KIN+1;iv++){
     source[iv]/=Md[iv];
-    //printf("%f ",db[iv]);
+    //printf("%f ",source[iv]);
   }
   //printf("\n");
   //assert(1==2);
