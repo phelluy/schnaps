@@ -80,9 +80,10 @@ int TestLandau_Damping_1D(void) {
   Initfield(&f);
   f.vmax = _VMAX; // maximal wave speed
   f.macromesh.is1d=true;
-  f.is1d=true;
+  //f.macromesh.is1d=true;
   f.nb_diags=3;
-  f.update_before_rk=UpdateVlasovPoisson;
+  //f.update_before_rk=UpdateVlasovPoisson;
+  f.pre_dtfield=UpdateVlasovPoisson;
   f.update_after_rk=PlotVlasovPoisson;
   f.model.Source = VlasovP_Lagrangian_Source;
   // prudence...
