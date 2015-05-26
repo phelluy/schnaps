@@ -59,7 +59,7 @@ int TestGyro(void) {
   // prepare the initial fields
   Initfield(&f);
   f.model.Source = GyroSource;
-  f.update_before_rk=NULL;
+  //f.update_before_rk=NULL;
   f.update_after_rk=NULL; 
   f.vmax = _VMAX; // maximal wave speed 
   //f.macromesh.is1d=true;

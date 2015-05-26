@@ -45,7 +45,7 @@ int TestPoisson(void) {
   f.model.ImposedData = TestPoisson_ImposedData;
  
   f.varindex = GenericVarindex;
-  f.update_before_rk = NULL;
+  f.pre_dtfield = NULL;
   f.update_after_rk = NULL; 
     
     
@@ -73,8 +73,6 @@ int TestPoisson(void) {
  
   // prepare the initial fields
   Initfield(&f);
-  f.macromesh.is1d=true;
-  f.is1d=true;
   f.nb_diags=0;
   
   // prudence...

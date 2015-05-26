@@ -17,7 +17,7 @@ void SolvePoisson(field *f,real * w,int type_bc, real bc_l, real bc_r){
   }
   
   // for the moment, works only for the 1d case
-  assert(f->is1d);
+  assert(f->macromesh.is1d);
 
   // assembly of the rigidity matrix
 
@@ -33,17 +33,17 @@ void SolvePoisson(field *f,real * w,int type_bc, real bc_l, real bc_r){
   
   // number of conservatives variables
   // = number of velocity glops + 1 (potential)
-  int m=f->model.m;
+  int m = f->model.m;
 
-  InitSkyline(&sky,neq);
+  InitSkyline(&sky, neq);
 
   // compute the profile of the matrix
-  for(int ie=0;ie<nelx;ie++){
-    for(int iloc=0;iloc<degx+1;iloc++){
-      for(int jloc=0;jloc<degx+1;jloc++){
-	int ino=iloc + ie * degx;
-	int jno=jloc + ie * degx;
-	SwitchOn(&sky,ino,jno);
+  for(int ie = 0; ie < nelx; ie++){
+    for(int iloc = 0; iloc < degx + 1; iloc++){
+      for(int jloc = 0; jloc < degx + 1; jloc++){
+	int ino = iloc + ie * degx;
+	int jno = jloc + ie * degx;
+	SwitchOn(&sky, ino, jno);
       }
     }
   }
