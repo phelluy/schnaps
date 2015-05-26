@@ -104,7 +104,6 @@ void SolvePoisson(field *f,real * w,int type_bc, real bc_l, real bc_r){
       int imem=f->varindex(f->interp_param,0,iloc+ie*(degx+1),_INDEX_RHO);
       real charge=w[imem];          
       source[ino]+= (charge-charge_average)*omega/nelx;
-
     }
   }
 

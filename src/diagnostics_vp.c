@@ -163,7 +163,7 @@ void Plot_Energies(field* f){
     k_energy=f->Diagnostics[i];
     e_energy=f->Diagnostics[i+f->itermax];
     t_energy=f->Diagnostics[i+2*f->itermax];
-    fprintf(Plot, "%lf %lf %lf %lf\n", f->tnow,k_energy,e_energy,t_energy);
+    fprintf(Plot, "%.10e %.10e %.10e %.10e\n", f->tnow,k_energy,e_energy,t_energy);
   }
   fclose(Plot);
 }
