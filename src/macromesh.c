@@ -175,9 +175,9 @@ void PrintMacroMesh(MacroMesh *m) {
       printf("face %d, left: %d loc%d, right: %d loc%d\n",
 	     ifa,
              m->face2elem[4 * ifa + 0] + start,
-             m->face2elem[4 * ifa + 1] + start,
+             m->face2elem[4 * ifa + 1] ,
              m->face2elem[4 * ifa + 2] + start,
-             m->face2elem[4 * ifa + 3] + start
+             m->face2elem[4 * ifa + 3] 
              );
     }
   }
@@ -385,7 +385,7 @@ void build_elem2elem(MacroMesh *m, Face4Sort *face)
   assert(facecount == m->nbfaces);
 }
 
-// Remove the faces in the third z dimension form the list.
+// Remove the faces in the third z dimension from the list.
 void suppress_zfaces(MacroMesh *m)
 {
   printf("Suppress 3d faces...\n");
@@ -402,6 +402,65 @@ void suppress_zfaces(MacroMesh *m)
   newfacecount = 0;
   for(int ifa = 0; ifa < m->nbfaces; ifa++) {
     if(oldf[4 * ifa + 1] < 4) {
+      m->face2elem[4 * newfacecount + 0] = oldf[4 * ifa + 0];
+      m->face2elem[4 * newfacecount + 1] = oldf[4 * ifa + 1];
+      m->face2elem[4 * newfacecount + 2] = oldf[4  *ifa + 2];
+      m->face2elem[4 * newfacecount + 3] = oldf[4  *ifa + 3];
+      newfacecount++;
+    }
+  }
+
+  m->nbfaces=newfacecount;
+  free(oldf);
+}
+
+// Remove the faces in the y direction from the list.
+// must be called after suppressing z faces...
+void suppress_yfaces(MacroMesh *m)
+{
+  printf("Suppress y faces...\n");
+  int newfacecount = 0;
+  for(int ifa = 0; ifa < m->nbfaces; ifa++) {
+    if(m->face2elem[4 * ifa + 1] % 2 != 0) newfacecount++;
+  }
+
+  printf("Old num faces=%d, new num faces=%d\n", m->nbfaces, newfacecount);
+
+  int* oldf = m->face2elem;
+  m->face2elem = malloc(4 * sizeof(int) * newfacecount);
+
+  newfacecount = 0;
+  for(int ifa = 0; ifa < m->nbfaces; ifa++) {
+    if(oldf[4 * ifa + 1] % 2 != 0) {
+      m->face2elem[4 * newfacecount + 0] = oldf[4 * ifa + 0];
+      m->face2elem[4 * newfacecount + 1] = oldf[4 * ifa + 1];
+      m->face2elem[4 * newfacecount + 2] = oldf[4  *ifa + 2];
+      m->face2elem[4 * newfacecount + 3] = oldf[4  *ifa + 3];
+      newfacecount++;
+    }
+  }
+
+  m->nbfaces=newfacecount;
+  free(oldf);
+}
+
+// Remove the doubled faces from the list.
+void suppress_double_faces(MacroMesh *m)
+{
+  printf("Suppress doubled faces...\n");
+  int newfacecount = 0;
+  for(int ifa = 0; ifa < m->nbfaces; ifa++) {
+    if(m->face2elem[4 * ifa + 0]  != -1) newfacecount++;
+  }
+
+  printf("Old num faces=%d, new num faces=%d\n", m->nbfaces, newfacecount);
+
+  int* oldf = m->face2elem;
+  m->face2elem = malloc(4 * sizeof(int) * newfacecount);
+
+  newfacecount = 0;
+  for(int ifa = 0; ifa < m->nbfaces; ifa++) {
+    if(oldf[4 * ifa + 0] != -1) {
       m->face2elem[4 * newfacecount + 0] = oldf[4 * ifa + 0];
       m->face2elem[4 * newfacecount + 1] = oldf[4 * ifa + 1];
       m->face2elem[4 * newfacecount + 2] = oldf[4  *ifa + 2];
@@ -501,14 +560,18 @@ void BuildConnectivity(MacroMesh* m)
   /* } */
     
   if(m->is2d) suppress_zfaces(m);
+  if(m->is1d) {
+    suppress_zfaces(m);
+    suppress_yfaces(m);
+  }
 
 
   // update connectivity if the mesh is periodic
   // in some directions
 
   real diag[3][3]={1,0,0,
-			 0,1,0,
-			 0,0,1};
+		   0,1,0,
+		   0,0,1};
 
   for (int ie = 0; ie < m->nbelems; ie++) {
     real physnode[20][3];
@@ -538,29 +601,59 @@ void BuildConnectivity(MacroMesh* m)
 	int dim=0;
 	while(Dist(vnds,diag[dim]) > 1e-2 && dim<3) dim++;
 	//assert(dim < 3);
+	printf("xpg_in_before=%f\n",xpg_in[dim]);
 	if (dim < 3 && m->period[dim]  > 0){
 	  //if (xpg_in[dim] > m->period[dim]){
           if (xpg_in[dim] > m->xmax[dim]){
 	    xpg_in[dim] -= m->period[dim];
+	    printf("xpg_in_after=%f\n",xpg_in[dim]);
 	  }
 	  //else if (xpg_in[dim] < 0){
           else if (xpg_in[dim] < m->xmin[dim]){
 	    xpg_in[dim] += m->period[dim];
+	    printf("xpg_in_after=%f\n",xpg_in[dim]);
 	  }
 	  else {
             //printf("xpg_in=%f\n",xpg_in[dim]);
 	    assert(1==2);
 	  }
 	  m->elem2elem[6 * ie + ifa] = NumElemFromPoint(m,xpg_in,NULL);
-	  /* printf("ie=%d ifa=%d numelem=%d vnds=%f %f %f xpg_in=%f %f %f \n", */
-	  /* 	 ie,ifa,NumElemFromPoint(m,xpg_in,NULL), */
-	  /* 	 vnds[0],vnds[1],vnds[2], */
-	  /* 	 xpg_in[0],xpg_in[1],xpg_in[2]); */
+	  printf("ie=%d ifa=%d numelem=%d vnds=%f %f %f xpg_in=%f %f %f \n",
+	  	 ie,ifa,NumElemFromPoint(m,xpg_in,NULL),
+	  	 vnds[0],vnds[1],vnds[2],
+	  	 xpg_in[0],xpg_in[1],xpg_in[2]);
 	}
       }
     }
   }
 
+  // now, update the face2elem connectivity (because elem2elem has changed)
+  for(int ifa = 0; ifa < m->nbfaces; ifa++) {
+    int ieL = m->face2elem[4 * ifa + 0];
+    int locfaL = m->face2elem[4 * ifa + 1];
+    int ieR = m->face2elem[4 * ifa + 2];
+    int locfaR = m->face2elem[4 * ifa + 3];
+
+    int ieR2=m->elem2elem[6 * ieL + locfaL];
+
+    if (ieR != ieR2){
+      assert(ieR == -1);
+      int opp[6]={2,3,0,1,5,4};
+      if (locfaL == 0 || locfaL == 1 || locfaL == 4) {
+	m->face2elem[4 * ifa + 2] = ieR2;
+	m->face2elem[4 * ifa + 3] = opp[locfaL];
+      } else {
+	// mark the face for suppression
+	m->face2elem[4 * ifa + 0] = -1;
+      }
+    }
+  }
+
+  suppress_double_faces(m);
+
+  
+
+  //assert(1==5);
   free(bounds);
 
 /* #ifdef _PERIOD */

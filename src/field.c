@@ -1108,6 +1108,8 @@ void DGMacroCellInterface(void *mc, field *f, real *w, real *dtw)
 
         int ipgR = ref_ipg(iparam + 1, xrefL);
 
+	//printf("ipgL=%d ipgR=%d\n",ipgL,ipgR);
+
 	// Uncomment to check that the neighbour-finding algorithm worked.
 	/* { */
 	/*   real xpgR[3], xrefR[3], wpgR; */

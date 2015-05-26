@@ -92,7 +92,7 @@ int TestLandau_Damping_1D(void) {
   printf("dt =%f\n",f.dt);
 
 
-  RK2(&f,10);
+  RK2(&f,0.1);
   //RK2(&f,0.03,0.05);
 
    // save the results and the error
