@@ -70,6 +70,10 @@ typedef struct field {
   //! \param[inout] f a field (to be converted from void*)
   void (*pre_dtfield)(void *f, real *w);
 
+  //! \brief Pointer to a generic function called after computing dtfield. 
+  //! \param[inout] f a field (to be converted from void*)
+  void (*post_dtfield)(void *f, real *w);
+
   //! \brief generic update function called 
   //! \brief called at each runge-kutta sustep
   //! \param[inout] f a field (to be converted from void*)

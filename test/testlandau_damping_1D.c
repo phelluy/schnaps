@@ -177,8 +177,6 @@ void PlotVlasovPoisson(void* vf, real * w){
   
   field* f=vf;
   
-  if(f->rk_substep == f->rk_max){
-    Energies(f,w,k_energy,e_energy,t_energy);
-  }
+  Energies(f,w,k_energy,e_energy,t_energy);
   vf=f;
 }
