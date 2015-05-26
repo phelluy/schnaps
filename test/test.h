@@ -31,6 +31,12 @@ int TestmEq2(void);
 
 int TestMaxwell2D(void);
 
+int TestGyro(void);
+
+int TestMHD(int argc, char *argv[]);
+
+int TestMHD1D(int argc, char *argv[]);
+
 int TestPIC(void);
 
 int TestPICAccumulate(void);
@@ -38,6 +44,8 @@ int TestPICAccumulate(void);
 int TestPeriodic(void);
 
 int TestSkyline(void);
+
+int TestLinearSolver(void);
 
 int TestPoisson(void);
 
@@ -54,5 +62,7 @@ int TestKernelFlux(void);
 int TestKernelInterface(void);
 
 int TestFieldRK2_CL(void);
+
+int TestLandau_Damping_1D(void);
 
 #endif

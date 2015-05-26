@@ -6,6 +6,9 @@
 
 //! \brief a unified framework for all physical models
 typedef struct Model {
+  //! Model name
+  char name[50];
+
   //! Number of conservative variables
   int m;
 

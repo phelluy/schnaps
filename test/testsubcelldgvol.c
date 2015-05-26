@@ -40,7 +40,8 @@ int TestfieldSubCellDGVol(void){
   for(int ie = 0; ie < f.macromesh.nbelems; ie++) {
     DGSubCellInterface((void*) (f.mcell+ie), &f, f.wn, f.dtwn);
     DGVolume((void*) (f.mcell+ie), &f, f.wn, f.dtwn);
-    DGMass((void*) (f.mcell+ie), &f, f.wn, f.dtwn);
+    DGMass((void*) (f.mcell+ie), &f, f.dtwn);
+    DGSource((void*) (f.mcell+ie), &f, f.wn, f.dtwn);
   }
 
   /* DGMacroCellInterfaceSlow(&f); */

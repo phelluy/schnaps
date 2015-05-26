@@ -301,10 +301,10 @@ void ref_pg_vol(int *param, int ipg,
     xpg[2] = hz * (ic[2] + gauss_lob_point[offset[2]]);
   }
   
-  *wpg = hx * hy * hz *
-    gauss_lob_weight[offset[0]]*
-    gauss_lob_weight[offset[1]]*
-    gauss_lob_weight[offset[2]];
+  if (wpg != NULL) *wpg = hx * hy * hz *
+		     gauss_lob_weight[offset[0]]*
+		     gauss_lob_weight[offset[1]]*
+		     gauss_lob_weight[offset[2]];
 
   if (xpg_in !=0) {
     real small = 1e-3;
@@ -401,8 +401,10 @@ void ref_pg_face(int* param, int ifa, int ipg,
   xpg[axis_permut[ifa][1]] = h[1] * (ncy + gauss_lob_point[offset[1]]);
   xpg[axis_permut[ifa][2]] = axis_permut[ifa][3];
 
-  *wpg = h[0] * h[1] *
-    gauss_lob_weight[offset[0]] * gauss_lob_weight[offset[1]];
+
+  if (wpg != NULL) *wpg = h[0] * h[1] *
+		     gauss_lob_weight[offset[0]] * 
+		     gauss_lob_weight[offset[1]];
 
   // If xpgin exists, compute a point slightly INSIDE the opposite
   // subcell along the face.

@@ -1,7 +1,7 @@
 #ifndef _COLLISION_H
 #define _COLLISION_H
 
-#define _NB_ELEM_V 16
+#define _NB_ELEM_V 12
 #define _DEG_V 3
 
 //! \brief number of conservative variables
@@ -23,8 +23,6 @@
 #define _Dirichlet_Poisson_BC (1)
 #define _Periodic_Poisson_BC (2)
 
-
-
 #include "model.h"
 #include "field.h"
 // collision models
@@ -33,15 +31,14 @@
 //! \param[in] wL,wR : left and right states
 //! \param[in] vn : normal vector
 //! \param[out] flux : the flux
-void VlasovP_Lagrangian_NumFlux(real wL[],real wR[],real vn[3],real* flux);
-
+void VlasovP_Lagrangian_NumFlux(real *wL, real *wR, real *vn, real *flux);
 
 //! \brief compute compute the source term of the collision
 //! model: electric force + true collisions
 //! \param[in] w the distribution function
 //! \param[in] f the force 
 //! \param[out] source the source
-void VlasovP_Lagrangian_Source(real* x,real t, real* w, real* source);
+void VlasovP_Lagrangian_Source(real *x, real t, real *w, real *source);
 
 
 #endif

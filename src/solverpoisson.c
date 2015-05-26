@@ -5,8 +5,19 @@
 
 void SolvePoisson(field *f,real * w,int type_bc, real bc_l, real bc_r){
 
+
+  real charge_average;
+  charge_average=0;
+
+  if(type_bc == _Periodic_Poisson_BC){
+    charge_average=Computation_charge_average(f,w);
+  }
+  else {
+    charge_average=0;
+  }
+  
   // for the moment, works only for the 1d case
-  assert(f->is1d);
+  assert(f->macromesh.is1d);
 
   // assembly of the rigidity matrix
 
@@ -22,17 +33,17 @@ void SolvePoisson(field *f,real * w,int type_bc, real bc_l, real bc_r){
   
   // number of conservatives variables
   // = number of velocity glops + 1 (potential)
-  int m=f->model.m;
+  int m = f->model.m;
 
-  InitSkyline(&sky,neq);
+  InitSkyline(&sky, neq);
 
   // compute the profile of the matrix
-  for(int ie=0;ie<nelx;ie++){
-    for(int iloc=0;iloc<degx+1;iloc++){
-      for(int jloc=0;jloc<degx+1;jloc++){
-	int ino=iloc + ie * degx;
-	int jno=jloc + ie * degx;
-	SwitchOn(&sky,ino,jno);
+  for(int ie = 0; ie < nelx; ie++){
+    for(int iloc = 0; iloc < degx + 1; iloc++){
+      for(int jloc = 0; jloc < degx + 1; jloc++){
+	int ino = iloc + ie * degx;
+	int jno = jloc + ie * degx;
+	SwitchOn(&sky, ino, jno);
       }
     }
   }
@@ -91,16 +102,15 @@ void SolvePoisson(field *f,real * w,int type_bc, real bc_l, real bc_r){
       real omega=wglop(degx,iloc);
       int ino=iloc + ie * degx;  
       int imem=f->varindex(f->interp_param,0,iloc+ie*(degx+1),_INDEX_RHO);
-      real charge=w[imem];     
-      source[ino]+= charge*omega/nelx;
+      real charge=w[imem];          
+      source[ino]+= (charge-charge_average)*omega/nelx;
     }
   }
 
   // Apply dirichlet Boundary condition
-  if(type_bc == _Dirichlet_Poisson_BC){
-    source[0]=1e20*bc_l;
-    source[neq-1]=1e20*bc_r;
-  }
+  
+  source[0]=1e20*bc_l;
+  source[neq-1]=1e20*bc_r;
   
   real sol[neq];
   SolveSkyline(&sky,source,sol);

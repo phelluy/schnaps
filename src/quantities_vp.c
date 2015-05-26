@@ -34,6 +34,55 @@ void Computation_charge_density(field *f, real * w){
   
 }
 
+
+real Computation_charge_average(field *f,real * w) {
+  //int param[8] = {f->model.m, _DEGX, _DEGY, _DEGZ, _RAFX, _RAFY, _RAFZ, 0};
+  real average = 0;
+  real rho_imem = 0;
+  real size_domain = 0;
+
+  for (int ie = 0; ie < f->macromesh.nbelems; ie++) {
+    // Get the physical nodes of element ie
+    real physnode[20][3];
+    for(int inoloc = 0; inoloc < 20; inoloc++) {
+      int ino = f->macromesh.elem2node[20*ie+inoloc];
+      physnode[inoloc][0] = f->macromesh.node[3 * ino + 0];
+      physnode[inoloc][1] = f->macromesh.node[3 * ino + 1];
+      physnode[inoloc][2] = f->macromesh.node[3 * ino + 2];
+    }
+
+    // Loop on the glops (for numerical integration)
+    const int npg = NPG(f->interp_param + 1);
+    for(int ipg = 0; ipg < npg; ipg++) {
+	int imem = f->varindex(f->interp_param, ie, ipg, _INDEX_RHO);
+	rho_imem = f->wn[imem];
+      
+      real wpg, det;
+      // Compute wpg, det, and the exact solution
+      { 
+	real xphy[3], xpgref[3];
+	real dtau[3][3], codtau[3][3];
+	// Get the coordinates of the Gauss point
+	ref_pg_vol(f->interp_param + 1, ipg, xpgref, &wpg, NULL);
+	Ref2Phy(physnode, // phys. nodes
+		xpgref, // xref
+		NULL, -1, // dpsiref, ifa
+		xphy, dtau, // xphy, dtau
+		codtau, NULL, NULL); // codtau, dpsi, vnds
+	det = dot_product(dtau[0], codtau[0]);
+      }
+
+
+        average += rho_imem * wpg * det;
+	size_domain +=  wpg * det;
+
+      
+    }
+  }
+  return average/size_domain;
+}
+
+
 void Compute_electric_field(field* f, real * w){
 
   for (int ie=0;ie<f->macromesh.nbelems;ie++){

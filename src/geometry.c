@@ -46,6 +46,43 @@ real norm(real a[3])
   return sqrt(a[0] * a[0] + a[1] * a[1] + a[2] * a[2]);
 }
 
+// Return the dot-product of the reals a[3] and b[3]
+void Normalize(real a[3])
+{
+  real r=norm(a);
+  a[0] /= r;
+  a[1] /= r;
+  a[2] /= r;
+}
+
+void PeriodicCorrection(real xyz[3],real period[3]){
+  for (int dim=0;dim<3;++dim){
+    if (period[dim] > 0){
+      if (xyz[dim] > period[dim]){
+	xyz[dim] -= period[dim];
+      }
+      else if (xyz[dim] < 0){
+	xyz[dim] += period[dim];
+      }
+    }
+  }
+}
+
+void PeriodicCorrectionB(real xyz[3],real period[3], real xmin[3], real xmax[3]){
+  for (int dim=0;dim<3;++dim){
+    if (period[dim] > 0){
+      //if (xyz[dim] > period[dim]){
+      if (xyz[dim] > xmax[dim]){
+	xyz[dim] -= period[dim];
+      }
+      //else if (xyz[dim] < 0){
+      else if (xyz[dim] < xmin[dim]){
+	xyz[dim] += period[dim];
+      }
+    }
+  }
+}
+
 real Dist(real a[3], real b[3]) 
 {
   real d[3] = {a[0] - b[0], a[1] - b[1], a[2] - b[2]};
@@ -78,7 +115,7 @@ void Ref2Phy(real physnode[20][3],
              real dphi[3],
              real vnds[3]) 
 {
-  // compute the mapping and its jacobian
+  // Compute the mapping and its Jacobian
   real x = xref[0];
   real y = xref[1];
   real z = xref[2];
