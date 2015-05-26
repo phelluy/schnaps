@@ -1,12 +1,3 @@
-
-#define _DOUBLE_PRECISION
-#ifdef _DOUBLE_PRECISION
-#define real double
-#else
-#define real float
-#endif
-
-
 // Return the 1d derivative of lagrange polynomial ib at glop ipg
 real dlag(int deg, int ib, int ipg) {
   return gauss_lob_dpsi[gauss_lob_dpsi_offset[deg] + ib * (deg + 1) + ipg];
@@ -31,7 +22,7 @@ void Ref2Phy(__constant real *physnode,
 void Phy2Ref(__constant real *physnode,
              real xphy[3], real xref[3]);
 
-int ref_pg_face(int *ndeg, int *nraf0,
+int ref_pg_face(const int *ndeg, const int *nraf0,
 		int ifa, int ipg,
                 real *xpg, real *wpg, real *xpgin)
 {
@@ -216,7 +207,7 @@ void cemracs2014_TransBoundaryFlux(real x[3], real t,
   vlaTransNumFlux2d(wL, wR, vnorm, flux);
 }
 
-void BoundaryFlux(real x[3], real t, real wL[], real *vnorm,
+void BoundaryFlux(real x[3], real t, real *wL, real *vnorm,
                   real *flux) 
 {
   real wR[_M];
@@ -446,10 +437,10 @@ void DGVolume(__constant int *param,       // 0: interp param
 	      __local real *wnloc        // 5: cache for wn and dtwn
 	      ) 
 {
-  int m = param[0];
-  int deg[3] = {param[1],param[2], param[3]};
-  int npg[3] = {deg[0] + 1, deg[1] + 1, deg[2] + 1};
-  int nraf[3] = {param[4], param[5], param[6]};
+  const int m = param[0];
+  const int deg[3] = {param[1],param[2], param[3]};
+  const int npg[3] = {deg[0] + 1, deg[1] + 1, deg[2] + 1};
+  const int nraf[3] = {param[4], param[5], param[6]};
 
   __local real *dtwnloc = wnloc  + m * npg[0] * npg[1] * npg[2];
 
@@ -680,9 +671,9 @@ void DGMacroCellInterface(__constant int *param,        // 0: interp param
 
   int ipgfL = get_global_id(0);
 
-  int m = param[0];
-  int ndeg[3] = {param[1], param[2], param[3]};
-  int nraf[3] = {param[4], param[5], param[6]};
+  const int m = param[0];
+  const int ndeg[3] = {param[1], param[2], param[3]};
+  const int nraf[3] = {param[4], param[5], param[6]};
 
   real xpgref[3], xpgref_in[3], wpg;
   // Get the coordinates of the Gauss point and coordinates of a
@@ -766,9 +757,9 @@ void DGBoundary(__constant int *param,        // 0: interp param
 
   int ipgfL = get_global_id(0);
 
-  int m = param[0];
-  int ndeg[3] = {param[1], param[2], param[3]};
-  int nraf[3] = {param[4], param[5], param[6]};
+  const int m = param[0];
+  const int ndeg[3] = {param[1], param[2], param[3]};
+  const int nraf[3] = {param[4], param[5], param[6]};
 
   real xpgref[3], xpgref_in[3], wpg;
   // Get the coordinates of the Gauss point and coordinates of a

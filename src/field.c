@@ -186,7 +186,7 @@ void init_field_cl(field *f)
 			    sizeof(real) * f->wsize,
 			    f->wn,
 			    &status);
-  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
+  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 
   f->dtwn_cl = clCreateBuffer(f->cli.context,
@@ -194,7 +194,7 @@ void init_field_cl(field *f)
 			      sizeof(real) * f->wsize,
 			      f->dtwn,
 			      &status);
-  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
+  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 
   f->param_cl = clCreateBuffer(f->cli.context,
@@ -202,7 +202,7 @@ void init_field_cl(field *f)
 			       sizeof(int) * 7,
 			       f->interp_param,
 			       &status);
-  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
+  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 
   f->physnode = calloc(60, sizeof(real));
@@ -212,7 +212,7 @@ void init_field_cl(field *f)
 				  sizeof(real) * 60,
 				  f->physnode,
 				  &status);
-  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
+  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 
   f->physnodeR = calloc(60, sizeof(real));
@@ -225,73 +225,67 @@ void init_field_cl(field *f)
 
 
   // Program compilation
-  char *s;
+  char *strprog;
   GetOpenCLCode();
-  ReadFile("schnaps.cl", &s);
+  ReadFile("schnaps.cl", &strprog);
 
   printf("\t%s\n", numflux_cl_name);
-  //printf("\t%s\n", s);
+  //printf("\t%s\n", strprog);
 
-  //assert(1==2);
-
-
-  printf("OpenCL preprocessor options:\n");
-  printf("\t%s\n", cl_buildoptions);
-  
-  BuildKernels(&(f->cli), s, cl_buildoptions);
+  BuildKernels(&(f->cli), strprog, cl_buildoptions);
 
   f->dgmass = clCreateKernel(f->cli.program,
 			     "DGMass",
 			     &status);
-  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
+  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 
   f->dgflux = clCreateKernel(f->cli.program,
 			     "DGFlux",
 			     &status);
-  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
+  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 
   f->dgvolume = clCreateKernel(f->cli.program,
 			       "DGVolume",
 			       &status);
-  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
+  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 
   f->dginterface = clCreateKernel(f->cli.program,
 				  "DGMacroCellInterface",
 				  &status);
-  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
+  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 
   f->dgboundary = clCreateKernel(f->cli.program,
 				 "DGBoundary",
 				 &status);
-  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
+  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 
   f->RK_out_CL = clCreateKernel(f->cli.program,
 				"RK_out_CL",
 				&status);
-  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
+  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 
   f->RK4_final_stage = clCreateKernel(f->cli.program,
 				      "RK4_final_stage",
 				      &status);
-  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
+  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 
   f->RK_in_CL = clCreateKernel(f->cli.program,
 			       "RK_in_CL",
 			       &status);
-  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
+  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 
   f->zero_buf = clCreateKernel(f->cli.program,
 			       "set_buffer_to_zero",
 			       &status);
-  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
+  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 
   // Initialize events. // FIXME: free on exit
@@ -344,11 +338,12 @@ void Initfield(field *f) {
   assert(f->wn);
   f->dtwn = calloc(nmem, sizeof(real));
   assert(f->dtwn);
-  f->Diagnostics=NULL;
-  f->update_before_rk=NULL;
-  f->update_after_rk=NULL;
-  f->model.Source=NULL;
+  f->Diagnostics = NULL;
+  f->update_before_rk = NULL;
+  f->update_after_rk = NULL;
+  f->model.Source = NULL;
 
+  // TODO: move this to the integrator code
   f->tnow=0;
   f->itermax=0;
   f->iter_time=0;
@@ -406,7 +401,7 @@ void free_field(field* f)
   cl_int status;
 
   status = clReleaseMemObject(f->physnode_cl);
-  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
+  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 
   free(f->physnode);
@@ -1168,7 +1163,7 @@ void DGMacroCellInterface(void *mc, field *f, real *w, real *dtw)
 }
 
 // Apply division by the mass matrix
-void DGMass(void *mc, field *f, real *w, real *dtw) 
+void DGMass(void *mc, field *f, real *dtw) 
 {
   MacroCell *mcell = (MacroCell*)mc;
 
@@ -1185,8 +1180,7 @@ void DGMass(void *mc, field *f, real *w, real *dtw)
       physnode[inoloc][2] = f->macromesh.node[3 * ino + 2];
     }
     for(int ipg = 0; ipg < NPG(f->interp_param + 1); ipg++) {
-
-      real dtau[3][3], codtau[3][3], xpgref[3],xphy[3], wpg;
+      real dtau[3][3], codtau[3][3], xpgref[3], xphy[3], wpg;
       ref_pg_vol(f->interp_param + 1, ipg, xpgref, &wpg, NULL);
       Ref2Phy(physnode, // phys. nodes
 	      xpgref, // xref
@@ -1194,28 +1188,53 @@ void DGMass(void *mc, field *f, real *w, real *dtw)
 	      xphy, dtau, // xphy, dtau
 	      codtau, NULL, NULL); // codtau, dpsi, vnds
       real det = dot_product(dtau[0], codtau[0]);
-      // source term
-      real wL[m],source[m];
-      for(int iv = 0; iv < m; iv++){
-	int imem=f->varindex(f->interp_param,ie,ipg,iv);
-	wL[iv]=w[imem];
-      }
-      
-      if (f->model.Source != NULL) {
-      	f->model.Source(xphy,f->tnow,wL,source);
-      }
-      else {
-      	for(int iv = 0; iv < m; iv++){
-      	  source[iv] = 0;
-      	}
-      }
-
       for(int iv = 0; iv < f->model.m; iv++) {
 	int imem = f->varindex(f->interp_param, ie, ipg, iv);
 	dtw[imem] /= (wpg * det);
+      }
+    }
+  }
+}
+
+// Apply the source term
+void DGSource(void *mc, field *f, real *w, real *dtw) 
+{
+  if (f->model.Source == NULL) 
+    return;
+
+  MacroCell *mcell = (MacroCell*)mc;
+
+  const int m = f->model.m;
+
+  // Loop on the elements
+  for (int ie = mcell->first; ie < mcell->last_p1; ie++) {
+    // Get the physical nodes of element ie
+    real physnode[20][3];
+    for(int inoloc = 0; inoloc < 20; inoloc++) {
+      int ino = f->macromesh.elem2node[20 * ie + inoloc];
+      physnode[inoloc][0] = f->macromesh.node[3 * ino + 0];
+      physnode[inoloc][1] = f->macromesh.node[3 * ino + 1];
+      physnode[inoloc][2] = f->macromesh.node[3 * ino + 2];
+    }
+    for(int ipg = 0; ipg < NPG(f->interp_param + 1); ipg++) {
+      real dtau[3][3], codtau[3][3], xpgref[3], xphy[3], wpg;
+      ref_pg_vol(f->interp_param + 1, ipg, xpgref, &wpg, NULL);
+      Ref2Phy(physnode, // phys. nodes
+	      xpgref, // xref
+	      NULL, -1, // dpsiref, ifa
+	      xphy, dtau, // xphy, dtau
+	      codtau, NULL, NULL); // codtau, dpsi, vnds
+      real wL[m], source[m];
+      for(int iv = 0; iv < m; ++iv){
+	int imem = f->varindex(f->interp_param, ie, ipg, iv);
+	wL[iv] = w[imem];
+      }
+      
+      f->model.Source(xphy, f->tnow, wL, source);
+
+      for(int iv = 0; iv < m; ++iv) {
+	int imem = f->varindex(f->interp_param, ie, ipg, iv);
 	dtw[imem] += source[iv];
-        //printf("det2=%f s=%f ie = %d\n", det, source[0], ie);
-	
       }
     }
   }
@@ -1461,9 +1480,8 @@ void dtfield(field *f, real *w, real *dtw) {
     if(!facealgo) DGMacroCellInterfaceSlow(mcelli, f, w, dtw);
     DGSubCellInterface(mcelli, f, w, dtw);
     DGVolume(mcelli, f, w, dtw);
-    DGMass(mcelli, f, w, dtw);
-    
-
+    DGMass(mcelli, f, dtw);
+    DGSource(mcelli, f, w, dtw);
   }
 #endif
 }

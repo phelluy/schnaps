@@ -700,11 +700,11 @@ int CompareFace4Sort(const void* a,const void* b) {
 void CheckMacroMesh(MacroMesh *m, int *param) {
   Geom g;
   real face_centers[6][3]={ {0.5,0.0,0.5},
-			      {1.0,0.5,0.5},
-			      {0.5,1.0,0.5},
-			      {0.0,0.5,0.5},
-			      {0.5,0.5,1.0},
-			      {0.5,0.5,0.0} };
+			    {1.0,0.5,0.5},
+			    {0.5,1.0,0.5},
+			    {0.0,0.5,0.5},
+			    {0.5,0.5,1.0},
+			    {0.5,0.5,0.0} };
 
   //real *bounds = malloc(6 * sizeof(real));
   //macromesh_bounds(m, bounds);
@@ -762,8 +762,8 @@ void CheckMacroMesh(MacroMesh *m, int *param) {
       assert(g.det > 0);
 
       real vec[3] = {g.xphy[0] - xphym[0],
-		       g.xphy[1] - xphym[1],
-		       g.xphy[2] - xphym[2]};
+		     g.xphy[1] - xphym[1],
+		     g.xphy[2] - xphym[2]};
 
       // Check face orientation
       assert(0 < dot_product(g.vnds, vec));
@@ -985,11 +985,11 @@ void Detect2DMacroMesh(MacroMesh *m)
     // axis are the same
 
     real face_centers[6][3] = { {0.5, 0.0, 0.5},
-				  {1.0, 0.5, 0.5},
-				  {0.5, 1.0, 0.5},
-				  {0.0, 0.5, 0.5},
-				  {0.5, 0.5, 1.0},
-				  {0.5, 0.5, 0.0} };
+				{1.0, 0.5, 0.5},
+				{0.5, 1.0, 0.5},
+				{0.0, 0.5, 0.5},
+				{0.5, 0.5, 1.0},
+				{0.5, 0.5, 0.0} };
 
     // Rotation of the cube around the origin at most two rotations
     // are needed to put the cube in a correct position
@@ -1030,33 +1030,33 @@ void Detect2DMacroMesh(MacroMesh *m)
 
   }
 
-};
+}
 
 bool IsInElem(MacroMesh *m,int ie, real* xphy, real* xref0)
 {
-    real physnode[20][3];
-    for(int inoloc = 0; inoloc < 20; inoloc++) {
-      int ino = m->elem2node[20 * ie + inoloc];
-      physnode[inoloc][0] = m->node[3 * ino + 0];
-      physnode[inoloc][1] = m->node[3 * ino + 1];
-      physnode[inoloc][2] = m->node[3 * ino + 2];
-    }
+  real physnode[20][3];
+  for(int inoloc = 0; inoloc < 20; inoloc++) {
+    int ino = m->elem2node[20 * ie + inoloc];
+    physnode[inoloc][0] = m->node[3 * ino + 0];
+    physnode[inoloc][1] = m->node[3 * ino + 1];
+    physnode[inoloc][2] = m->node[3 * ino + 2];
+  }
     
-    real xref[3];
+  real xref[3];
     
-    RobustPhy2Ref(physnode,xphy,xref);
+  RobustPhy2Ref(physnode,xphy,xref);
     
-    bool is_in_elem = (xref[0] >=0) && (xref[0]<= 1)
-      && (xref[1] >=0) && (xref[1]<= 1)
-      && (xref[2] >=0) && (xref[2]<= 1);  
+  bool is_in_elem = (xref[0] >=0) && (xref[0]<= 1)
+    && (xref[1] >=0) && (xref[1]<= 1)
+    && (xref[2] >=0) && (xref[2]<= 1);  
 
-    if (xref0 != NULL){
-      xref0[0]=xref[0];
-      xref0[1]=xref[1];
-      xref0[2]=xref[2];
-    }
+  if (xref0 != NULL){
+    xref0[0]=xref[0];
+    xref0[1]=xref[1];
+    xref0[2]=xref[2];
+  }
 
-    return is_in_elem;
+  return is_in_elem;
     
 }
 
@@ -1090,8 +1090,7 @@ int NearestNode(MacroMesh *m, real *xphy) {
   int nearest = -1;
 
 #ifdef _WITH_FLANN
-
-  // use of flann library: faster  ???
+  // Use of flann library: faster  ???
   static bool is_ready = false;
   static struct FLANNParameters p;
 
@@ -1100,24 +1099,20 @@ int NearestNode(MacroMesh *m, real *xphy) {
 
   // at first call: construct the index
   // TO DO free the index when finished
-  if (!is_ready){
+  if (!is_ready) {
     printf("Using flann: build search index...\n");
     p = DEFAULT_FLANN_PARAMETERS;
     p.algorithm = FLANN_INDEX_AUTOTUNED;
     p.target_precision = 0.9; /* want 90% target precision */
-#ifdef _DOUBLE_PRECISION
-    findex=flann_build_index_double(m->node,
-#else
-    findex=flann_build_index_float(m->node,
-#endif			
-				  m->nbnodes,
-				  3,
-				  &speedup,
-				  &p);
-    is_ready=true;
-				   
-  }
 
+#if real == double
+      findex = flann_build_index_double(m->node, m->nbnodes, 3, &speedup, &p);
+#else
+      findex = flann_build_index_float(m->node, m->nbnodes, 3, &speedup, &p);
+#endif
+    is_ready = true;
+  }
+  
   // number of nearest neighbors to search 
   int nn = 1;
   int result[nn];
@@ -1135,23 +1130,31 @@ int NearestNode(MacroMesh *m, real *xphy) {
   // 				      nn,
   // 				      &p);         // flan struct
   
-#ifdef _DOUBLE_PRECISION
+
+#if real == double
   flann_find_nearest_neighbors_index_double(findex,// index
-#else
-  flann_find_nearest_neighbors_index_float(findex,// index
-#endif			
-					    xphy, 
+					    xphy,
 					    1,      // number of points in xphy
 					    result, // nearest points indices
 					    dists,  // distances
-					    nn, 
-					    &p);     // flan struct 
+					    nn,
+					    &p);     // flan struct
+#else
+  flann_find_nearest_neighbors_index_float(findex,// index
+					   xphy,
+					   1,      // number of points in xphy
+					   result, // nearest points indices
+					   dists,  // distances
+					   nn,
+					   &p);     // flan struct
+#endif
+
   nearest = result[0];
   // printf("xphy=%f %f %f nearest=%d %f %f %f \n",
   // 	 xphy[0],xphy[1],xphy[2],nearest+1,
   // 	 m->node[0+nearest*3],m->node[1+nearest*3],m->node[2+nearest*3]);
 
-#else
+#else // Do not use FLANN library.
 
   // slow version: loops on all the points
   real d = 1e20;
@@ -1167,13 +1170,11 @@ int NearestNode(MacroMesh *m, real *xphy) {
 
   return nearest;
 }
-// Detect if the mesh is 1D
-// and then permut the nodes so that
-// the y,z direction coincides in the reference
-// or physical frame
-void Detect1DMacroMesh(MacroMesh* m){
 
-  m->is1d= true;
+// Detect if the mesh is 1D and then permut the nodes so that the y,z
+// direction coincides in the reference or physical frame
+void Detect1DMacroMesh(MacroMesh* m){
+  m->is1d = true;
 
   // do not permut the node if the connectivity
   // is already built
@@ -1181,27 +1182,27 @@ void Detect1DMacroMesh(MacroMesh* m){
     printf("Cannot permut nodes before building connectivity\n");
   assert(m->elem2elem == 0);
 
-  for(int ie=0;ie<m->nbelems;ie++){
+  for(int ie = 0; ie < m->nbelems; ie++) {
     // get the physical nodes of element ie
     real physnode[20][3];
-    for(int inoloc=0;inoloc<20;inoloc++){
-      int ino=m->elem2node[20*ie+inoloc];
-      physnode[inoloc][0]=m->node[3*ino+0];
-      physnode[inoloc][1]=m->node[3*ino+1];
-      physnode[inoloc][2]=m->node[3*ino+2];
+    for(int inoloc = 0; inoloc < 20; inoloc++){
+      int ino = m->elem2node[20 * ie + inoloc];
+      physnode[inoloc][0] = m->node[3 * ino + 0];
+      physnode[inoloc][1] = m->node[3 * ino + 1];
+      physnode[inoloc][2] = m->node[3 * ino + 2];
     }
 
     // we decide that the mesh is 1D if the 
     // middles of the elements have a constant y,z 
     // coordinate equal to 0.5
-    real zmil=0;
-    real ymil=0;
-    for(int inoloc=0;inoloc<20;inoloc++){
-      zmil+=physnode[inoloc][2];
-      ymil+=physnode[inoloc][1];
+    real zmil = 0;
+    real ymil = 0;
+    for(int inoloc = 0; inoloc < 20; inoloc++){
+      zmil += physnode[inoloc][2];
+      ymil += physnode[inoloc][1];
     }
-    zmil/=20;
-    ymil/=20;
+    zmil /= 20;
+    ymil /= 20;
     // the mesh is not 1d
     if (fabs(zmil-0.5)>1e-6 || fabs(ymil-0.5)>1e-6) {
       printf("The mesh is not 1D zmil=%f ymil=%f\n",zmil,ymil);
@@ -1213,16 +1214,15 @@ void Detect1DMacroMesh(MacroMesh* m){
   printf("Detection of a 1D mesh\n");
 
   printf("Check now hexahedrons orientation\n");
-  for(int ie=0;ie<m->nbelems;ie++){
+  for(int ie = 0; ie < m->nbelems; ++ie){
     // get the physical nodes of element ie
     real physnode[20][3];
-    for(int inoloc=0;inoloc<20;inoloc++){
-      int ino=m->elem2node[20*ie+inoloc];
-      physnode[inoloc][0]=m->node[3*ino+0];
-      physnode[inoloc][1]=m->node[3*ino+1];
-      physnode[inoloc][2]=m->node[3*ino+2];
+    for(int inoloc = 0; inoloc < 20; inoloc++){
+      int ino = m->elem2node[20 * ie + inoloc];
+      physnode[inoloc][0] = m->node[3 * ino + 0];
+      physnode[inoloc][1] = m->node[3 * ino + 1];
+      physnode[inoloc][2] = m->node[3 * ino + 2];
     }
-
 
     // face centers coordinates in the ref frame
     real face_centers[6][3]={
@@ -1235,22 +1235,20 @@ void Detect1DMacroMesh(MacroMesh* m){
     };
 
     // compute the normal to face 1
-    real vnds[3],dtau[3][3],codtau[3][3];
+    real vnds[3], dtau[3][3], codtau[3][3];
     Ref2Phy(physnode,
 	    face_centers[1],
-	    NULL,1, // dphiref,ifa
-	    NULL,dtau,
-	    codtau,NULL,vnds); // codtau,dphi,vnds
+	    NULL, 1, // dphiref,ifa
+	    NULL, dtau,
+	    codtau, NULL, vnds); // codtau,dphi,vnds
 
-    real d=sqrt((vnds[0]-1)*(vnds[0]-1)+vnds[1]*vnds[1]+vnds[2]*vnds[2]);
+    real d = sqrt((vnds[0] - 1) * (vnds[0] - 1) 
+		+ vnds[1] * vnds[1]
+		+ vnds[2] * vnds[2]);
 
     // if the mesh is not 1D exit
     assert(d<1e-6);
-
-
-
-  };
-
+  }
 }
 
 

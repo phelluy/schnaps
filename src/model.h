@@ -60,18 +60,18 @@ typedef struct Model {
 //! \param[in] wL, wR : left and right states
 //! \param[in] vn : normal vector
 //! \param[out] flux : the flux
-void TransNumFlux(real wL[], real wR[], real vn[3], real* flux);
+void TransNumFlux(real *wL, real *wR, real *vn, real *flux);
 
 //! \brief The particular flux for the 2d transport model
 //! \param[in] wL, wR : left and right states
 //! \param[in] vn : normal vector
 //! \param[out] flux : the flux
 #pragma start_opencl
-void TransNumFlux2d(real wL[], real wR[], real vn[3], real* flux);
+void TransNumFlux2d(real *wL, real *wR, real *vn, real *flux);
 #pragma end_opencl
 
 #pragma start_opencl
-void VecTransNumFlux2d(real wL[], real wR[], real vn[3], real* flux);
+void VecTransNumFlux2d(__private real *wL, real *wR, real *vn, real *flux);
 #pragma end_opencl
 
 //! \brief The particular boundary flux for the transport model
