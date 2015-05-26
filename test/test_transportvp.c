@@ -164,7 +164,7 @@ void UpdateVlasovPoisson(void* vf, real * w){
   // Computation_charge_density(f,w);
   
   // Solving poisson
-  SolvePoisson(f,w,type_bc,bc_l,bc_r);    
+  SolvePoisson1D(f,w,type_bc,bc_l,bc_r);    
   
 }
 

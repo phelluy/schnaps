@@ -107,7 +107,7 @@ int TestPoisson(void) {
 
   //Computation_charge_density(f);
   
-  SolvePoisson(&f,f.wn,1,0.0,0.0);
+  SolvePoisson1D(&f,f.wn,1,0.0,0.0);
 
   // check the gradient given by the poisson solver
   for(int ie=0;ie<f.macromesh.nbelems;ie++){

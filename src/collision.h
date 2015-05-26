@@ -20,8 +20,6 @@
 
 #define _VMAX 6.
 #define _DV (2*_VMAX / _NB_ELEM_V)
-#define _Dirichlet_Poisson_BC (1)
-#define _Periodic_Poisson_BC (2)
 
 
 

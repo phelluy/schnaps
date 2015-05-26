@@ -3,7 +3,7 @@
 #include "quantities_vp.h"
 
 
-void SolvePoisson(field *f,real * w,int type_bc, real bc_l, real bc_r){
+void SolvePoisson1D(field *f,real * w,int type_bc, real bc_l, real bc_r){
 
 
   real charge_average;
@@ -11,6 +11,8 @@ void SolvePoisson(field *f,real * w,int type_bc, real bc_l, real bc_r){
 
   if(type_bc == _Periodic_Poisson_BC){
     charge_average=Computation_charge_average(f,w);
+    bc_l=0;
+    bc_r=0;
   }
   else {
     charge_average=0;
