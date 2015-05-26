@@ -17,7 +17,7 @@ void SolvePoisson(field *f,real * w,int type_bc, real bc_l, real bc_r){
   }
   
   // for the moment, works only for the 1d case
-  assert(f->is1d);
+  assert(f->macromesh.is1d);
 
   // assembly of the rigidity matrix
 
