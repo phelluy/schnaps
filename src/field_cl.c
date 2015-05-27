@@ -514,6 +514,12 @@ void DGMass_CL(void *mc, field *f,
     // subcell) * (number of subcells)
     size_t numworkitems = param[4] * param[5] * param[6] * groupsize;
 
+    unsigned int m = f->interp_param[0];
+    unsigned int nreadsdgmass = m;
+    unsigned int nmultsdgmass = m + 1296;
+    f->nmults += numworkitems * nmultsdgmass;
+    f->nreads += numworkitems * nreadsdgmass;
+    
     status = clEnqueueNDRangeKernel(f->cli.commandqueue,
 				    f->dgmass,
 				    1, // cl_uint work_dim,
@@ -1221,6 +1227,11 @@ void show_cl_timing(field *f)
   printf("rk time:                      %f%% \t%luns \t%fs\n", 
 	 ns*N, (unsigned long) ns, 1e-9 * ns);
 
+  printf("\n");
+  printf("Roofline counts:\n");
+  printf("Number of reads of reals from global memory: %d\n", f->nreads);
+  printf("Number of reads of mults in kernels        : %d\n", f->nmults);
+  
 }
 
 #endif // _WITH_OPENCL

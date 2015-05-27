@@ -316,6 +316,10 @@ void init_field_cl(field *f)
   f->minter_time = 0;
   f->boundary_time = 0;
   f->rk_time = 0;
+
+  // Set roofline counts to zero
+  f->nmults = 0;
+  f->nreads = 0;
 }
 #endif
 
