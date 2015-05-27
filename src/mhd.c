@@ -3,8 +3,6 @@
 #include <stdio.h>
 #include <assert.h>
 
-
-// {{{ MHD
 #pragma start_opencl
 #define _CH (5)
 #define _GAM (1.666666666666)
@@ -19,9 +17,8 @@
 //#define DIFFP2
 //#define DIFFP6
 
-// {{{   conservative
 #pragma start_opencl
-void conservatives(real* y, real* w){
+void conservatives(real *y, real *w) {
   real gam = _GAM;
 
   w[0] = y[0];
@@ -36,11 +33,9 @@ void conservatives(real* y, real* w){
   w[8] = y[8];        // psi
 }
 #pragma end_opencl
-// }}}
 
-// {{{   primitives
 #pragma start_opencl
-void primitives(real* W, real* Y){
+void primitives(real *W, real *Y) {
 
   real gam = _GAM;
 
@@ -56,9 +51,6 @@ void primitives(real* W, real* Y){
   Y[8] = W[8];        // psi
 }
 #pragma end_opencl
-// }}}
-
-// {{{   jacobmhd
 
 void jacobmhd(real* W,real* vn, real M[9][9]){
 
@@ -157,10 +149,6 @@ void jacobmhd(real* W,real* vn, real M[9][9]){
   }
 }
 
-// }}}
-
-
-// {{{   matmul
 void matrix_vector(real A[9][9], real B[9], real* C){
 
   for(int i=0; i<9; i++){
@@ -189,10 +177,6 @@ void matrix_matrix(real A[9][9],real B[9][9],real C[9][9]){
     }
   }
 }
-// }}}
-
-
-// {{{   gauss
 
 void write_matrix(real A[9][9],real *second, real B[9][9+1]){
   
@@ -233,10 +217,6 @@ void gauss(real A[9][9], real b[9], real *x){
   }
 }
 
-// }}}
-
-
-// {{{   fluxnum
 #pragma start_opencl
 void fluxnum(real* W,real* vn, real* flux){
 
@@ -265,12 +245,9 @@ void fluxnum(real* W,real* vn, real* flux){
   flux[8] = _CH*_CH*bn;
 }
 #pragma end_opencl
-// }}}
 
-
-// {{{   MHDNumFlux
 #pragma start_opencl
-void MHDNumFlux(real wL[],real wR[],real* vnorm,real* flux){
+void MHDNumFlux(real *wL, real *wR, real *vnorm, real *flux) {
   real fluxL[9];
   real fluxR[9];
   fluxnum(wL,vnorm,fluxL);
@@ -279,12 +256,10 @@ void MHDNumFlux(real wL[],real wR[],real* vnorm,real* flux){
   for(int i=0; i<9; i++){
     flux[i] = (fluxL[i]+fluxR[i])/2 - _CH*(wR[i]-wL[i])/2;
   }
-};
+}
 #pragma end_opencl
-// }}}
 
-// {{{   MHDNumFlux_2
-void MHDNumFlux_2(real wL[],real wR[],real* vn, real* flux){
+void MHDNumFlux_2(real *wL, real wR, real *vn, real *flux) {
 
   real wmil[9];
   real wRmwL[9];
@@ -300,8 +275,6 @@ void MHDNumFlux_2(real wL[],real wR[],real* vn, real* flux){
   // calcul de la matrice M
   jacobmhd(wmil,vn,M);
 
-
-  // {{{ PADE
 #ifdef PADE
   // calcul de la matrice M^2
   matrix_matrix(M,M,M2);
@@ -343,10 +316,7 @@ void MHDNumFlux_2(real wL[],real wR[],real* vn, real* flux){
   real abs[9];
   gauss(M,Z,abs);
 #endif
-  // }}}
 
-
-  // {{{ PADE2
 #ifdef PADE2
   // calcul de la matrice M^2
   matrix_matrix(M,M,M2);
@@ -389,10 +359,7 @@ void MHDNumFlux_2(real wL[],real wR[],real* vn, real* flux){
   real abs[9];
   gauss(M,Z,abs);
 #endif
-  // }}}
 
-
-  // {{{ P2
 #ifdef P2
   real coef[3] = {1./2, 0., 1./2};
 
@@ -415,10 +382,7 @@ void MHDNumFlux_2(real wL[],real wR[],real* vn, real* flux){
     }
   }
 #endif
-  // }}}
 
-
-  // {{{ P6
 #ifdef P6
   real coef[7] = {5./16, 0., 15./16, 0., -5./16, 0., 1./16};
 
@@ -441,10 +405,7 @@ void MHDNumFlux_2(real wL[],real wR[],real* vn, real* flux){
     }
   }
 #endif
-  // }}}
 
-
-  // {{{ DIFFPADE
 #ifdef DIFFPADE
   // calcul de la matrice M^2
   matrix_matrix(M,M,M2);
@@ -485,10 +446,7 @@ void MHDNumFlux_2(real wL[],real wR[],real* vn, real* flux){
   real abs[9];
   gauss(M2,Z,abs);
 #endif
-  // }}}
 
-
-  // {{{ DIFFP2
 #ifdef DIFFP2
   // calcul de (wR-wL)
   for (int i=0; i< 9 ; i++){
@@ -499,10 +457,7 @@ void MHDNumFlux_2(real wL[],real wR[],real* vn, real* flux){
 
   matrix_vector(M,wRmwL,abs);
 #endif
-  // }}}
 
-
-  // {{{ DIFFP6
 #ifdef DIFFP6
   real coef[6] = {0., 15./8, 0., -10./8, 0., 3./8};
 
@@ -525,7 +480,6 @@ void MHDNumFlux_2(real wL[],real wR[],real* vn, real* flux){
     }
   }
 #endif
-  // }}}
 
   real fluxL[9];
   real fluxR[9];
@@ -537,13 +491,6 @@ void MHDNumFlux_2(real wL[],real wR[],real* vn, real* flux){
     flux[i] = (fluxL[i]+fluxR[i])/2 - _CH*abs[i]/2;
   }
 }
-// }}}
-
-
-
-
-
-
 
 void MHDNumFlux1D(real* WL,real* WR,real *vn, real* flux){
   
@@ -575,9 +522,7 @@ void MHDNumFlux1D(real* WL,real* WR,real *vn, real* flux){
 
   real b = YL[7]; // En 1D BX est constant dans YL = YR
 
-
-
-// calcul des parametres issus de la relaxation
+  // calcul des parametres issus de la relaxation
   piL = YL[2] + 0.5*Abs(YL[5]*YL[5] + YL[6]*YL[6]) - 0.5*b*b;
   piyL = -b*YL[5];
   pizL = -b*YL[6];
@@ -652,7 +597,6 @@ void MHDNumFlux1D(real* WL,real* WR,real *vn, real* flux){
   cB = cf;
   b2 = 0.0;
 
-
 // calcul des etats intermediaires
   us = (cL*YL[1] + cR*YR[1] + piL-piR)/(cL+cR);
   pis = (cR*piL + cL*piR - cL*cR*(YR[1]-YL[1]))/(cL+cR);
@@ -662,8 +606,6 @@ void MHDNumFlux1D(real* WL,real* WR,real *vn, real* flux){
 
   piys = (cR*piyL + cL*piyR - cL*cR*(YR[3]-YL[3]))/(cL+cR);
   pizs = (cR*pizL + cL*pizR - cL*cR*(YR[4]-YL[4]))/(cL+cR);
-
-
 
 // calcul des vitesses caracteristiques
   sigma1 = YL[1] - cL/YL[0];
@@ -744,15 +686,9 @@ void MHDNumFlux1D(real* WL,real* WR,real *vn, real* flux){
   flux[7]  = 0;
   flux[8]  = 0;
 }
-// }}}
 
-
-
-
-// {{{   MHDBoundaryFlux
 #pragma start_opencl
-void MHDBoundaryFlux(real x[3],real t,real wL[],real* vnorm,
-		     real* flux){
+void MHDBoundaryFlux(real *x, real t, real *wL, real *vnorm, real *flux) {
   real wR[9];
 
   if(vnorm[0] > 0.0001 || vnorm[0] < -0.0001){
@@ -771,22 +707,16 @@ void MHDBoundaryFlux(real x[3],real t,real wL[],real* vnorm,
   MHDNumFlux(wL,wR,vnorm,flux);
 };
 #pragma end_opencl
-// }}}
 
-// {{{   MHDInitData
 #pragma start_opencl
-void MHDInitData(real x[3],real w[]){
-
-  real t=0;
-  MHDImposedData(x,t,w);
-
-};
+void MHDInitData(real *x, real *w) {
+  real t = 0;
+  MHDImposedData(x, t, w);
+}
 #pragma end_opencl
-// }}}
 
-// {{{   MHDImposedData
 #pragma start_opencl
-void MHDImposedData(real x[3],real t,real w[]){
+void MHDImposedData(real *x, real t, real *w) {
   real yL[9], yR[9];
   real wL[9], wR[9];
 
@@ -821,11 +751,6 @@ void MHDImposedData(real x[3],real t,real w[]){
     for(int i=0; i<9; i++){
       w[i] = wR[i];
     }
-};
+}
 #pragma end_opencl
-// }}}
-
-
-
-// }}}
 
