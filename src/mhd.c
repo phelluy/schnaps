@@ -259,7 +259,7 @@ void MHDNumFlux(real *wL, real *wR, real *vnorm, real *flux) {
 }
 #pragma end_opencl
 
-void MHDNumFlux_2(real *wL, real wR, real *vn, real *flux) {
+void MHDNumFlux_2(real *wL, real *wR, real *vn, real *flux) {
 
   real wmil[9];
   real wRmwL[9];

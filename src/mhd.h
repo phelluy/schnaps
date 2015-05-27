@@ -46,7 +46,7 @@ void matrix_vector(real A[9][9], real B[9], real* C);
 void matrix_matrix(real A[9][9],real B[9][9],real C[9][9]);
 void write_matrix(real A[9][9],real *second, real B[9][9+1]);
 void gauss(real A[9][9], real b[9], real *x);
-void MHDNumFlux_2(real wL[],real wR[],real* vn, real* flux);
+void MHDNumFlux_2(real *wL, real *wR, real *vn, real *flux);
 
 void MHDNumFlux1D(real wL[],real wR[],real* vn, real* flux);
 #pragma end_opencl
