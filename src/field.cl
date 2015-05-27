@@ -143,6 +143,7 @@ int ref_pg_face(const int *ndeg, const int *nraf0,
 #define NUMFLUX NumFlux
 #endif
 
+// 3m mults
 void NumFlux(real wL[], real wR[], real *vnorm, real *flux) {
   real vn = sqrt(0.5) * (vnorm[0] + vnorm[1]);
 
@@ -275,7 +276,7 @@ void DGFlux(__constant int *param,       // 0: interp param
   __local real *dtwnlocL = wnloc + 2 * get_local_size(0) * m;
   __local real *dtwnlocR = wnloc + 3 * get_local_size(0) * m;
 
-  // Prefetch
+  // Prefetch: 2m reads from global memory.
   for(int i = 0; i < m; i++) {
     int p[3];
     int iread = get_local_id(0) + i * get_local_size(0);
@@ -340,7 +341,7 @@ void DGFlux(__constant int *param,       // 0: interp param
   real codtau[3][3];
   {
     real dtau[3][3];
-    get_dtau(x, y, z, physnode, dtau);
+    get_dtau(x, y, z, physnode, dtau); // 1296 mults
     // FIXME: we do not need all of these values
     codtau[0][0] =  dtau[1][1] * dtau[2][2] - dtau[1][2] * dtau[2][1];
     codtau[0][1] = -dtau[1][0] * dtau[2][2] + dtau[1][2] * dtau[2][0];
@@ -374,13 +375,13 @@ void DGFlux(__constant int *param,       // 0: interp param
   // TODO: wL and wR could be passed without a copy to __private.
   // (ie we can just pass *wnL and *wnR).
   real flux[_M];
-  NUMFLUX(wL, wR, vnds, flux);
+  NUMFLUX(wL, wR, vnds, flux); // 
 
   real wpgs = wglop(deg[dim1], pL[dim1]) * wglop(deg[dim2], pL[dim2]);
 
   __local real *dtwnL = dtwnlocL + get_local_id(0) * m;
   __local real *dtwnR = dtwnlocR + get_local_id(0) * m;
-  for(int iv = 0; iv < m; ++iv) {
+  for(int iv = 0; iv < m; ++iv) { // 2m mults
     // write flux to local memory
     dtwnL[iv] = -flux[iv] * wpgs;
     dtwnR[iv] =  flux[iv] * wpgs;
@@ -389,7 +390,7 @@ void DGFlux(__constant int *param,       // 0: interp param
   //barrier(CLK_LOCAL_MEM_FENCE | CLK_GLOBAL_MEM_FENCE);
   barrier(CLK_LOCAL_MEM_FENCE);
 
-  // Postfetch
+  // Postfetch: 2m writes to global memory
   for(int i = 0; i < m; i++) {
     int p[3];
     int iread = get_local_id(0) + i * get_local_size(0);
@@ -429,13 +430,13 @@ void set_buffer_to_zero(__global real *w)
 
 // Compute the volume  terms inside  one macrocell
 __kernel
-void DGVolume(__constant int *param,       // 0: interp param
-	      int ie,                      // 1: macrocel index
+void DGVolume(__constant int *param,     // 0: interp param
+	      int ie,                    // 1: macrocel index
 	      __constant real *physnode, // 2: macrocell nodes
               __global real *wn,         // 3: field values
 	      __global real *dtwn,       // 4: time derivative
 	      __local real *wnloc        // 5: cache for wn and dtwn
-	      ) 
+	      )
 {
   const int m = param[0];
   const int deg[3] = {param[1],param[2], param[3]};
@@ -444,7 +445,7 @@ void DGVolume(__constant int *param,       // 0: interp param
 
   __local real *dtwnloc = wnloc  + m * npg[0] * npg[1] * npg[2];
 
-  // Prefetch
+  // Prefetch: m reads of wn
   int icell = get_group_id(0);
   for(int i = 0; i < m ; ++i){
     int iread = get_local_id(0) + i * get_local_size(0);
@@ -456,9 +457,9 @@ void DGVolume(__constant int *param,       // 0: interp param
     
     wnloc[imemloc] = wn[imem];
     dtwnloc[imemloc] = 0;
+    
     /* printf("_M=%d icell=%d imem:%d loc_id=%d iv=%d ipg=%d w2=%f\n",_M, */
     /* 	   icell, imem,get_local_id(0) ,iv,ipgloc,wnloc[imemloc]); */
-
   }
 
   //barrier(CLK_LOCAL_MEM_FENCE | CLK_GLOBAL_MEM_FENCE);
@@ -501,7 +502,7 @@ void DGVolume(__constant int *param,       // 0: interp param
   real codtau[3][3];
   {
     real dtau[3][3];
-    get_dtau(x, y, z, physnode, dtau);
+    get_dtau(x, y, z, physnode, dtau); // 1296 mults
     
     codtau[0][0] =  dtau[1][1] * dtau[2][2] - dtau[1][2] * dtau[2][1];
     codtau[0][1] = -dtau[1][0] * dtau[2][2] + dtau[1][2] * dtau[2][0];
@@ -553,7 +554,7 @@ void DGVolume(__constant int *param,       // 0: interp param
 	  + codtauii[2] * dphiref[2];
       }
 
-      NUMFLUX(wL, wL, dphi, flux);
+      NUMFLUX(wL, wL, dphi, flux); // 3m mults when using NumFlux
 
       int ipgR = ipg(npg, q, 0);
       //int imemR0 = VARINDEX(param, ie, ipgR, 0);
@@ -576,6 +577,7 @@ void DGVolume(__constant int *param,       // 0: interp param
   //barrier(CLK_LOCAL_MEM_FENCE | CLK_GLOBAL_MEM_FENCE);
   barrier(CLK_LOCAL_MEM_FENCE);
 
+  // Postfetch: m writes
   for(int i = 0; i < m; ++i){
     int iread = get_local_id(0) + i * get_local_size(0);
     int iv = iread % m;

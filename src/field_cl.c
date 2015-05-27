@@ -640,7 +640,13 @@ void DGFlux_CL(field *f, int dim0, int ie, cl_mem *wn_cl,
     size_t numworkitems = nf * npgf;
     size_t groupsize = npgf;
     init_DGFlux_CL(f, ie, dim0, wn_cl, 4 * m * groupsize);
-     
+
+    unsigned int nreadsdgflux = 4 * m;
+    unsigned int nmultsdgflux = 1296 + 2 * m;
+    nmultsdgflux += 3 * m; // Using NUMFLUX = NumFlux
+    f->nmults += numworkitems * nmultsdgflux;
+    f->nreads += numworkitems * nreadsdgflux;
+    
     // Launch the kernel
     cl_int status;
     status = clEnqueueNDRangeKernel(f->cli.commandqueue,
@@ -675,8 +681,17 @@ void DGVolume_CL(void *mc, field *f, cl_mem *wn_cl,
   // The total work items number is the number of glops in a subcell
   // * number of subcells
   size_t numworkitems = param[4] * param[5] * param[6] * groupsize;
+  
+  unsigned int nreadsdgvol = 2 * m; // read m from wn, write m to dtwn
+  unsigned int nmultsdgvol = 1296 + m;
+  nmultsdgvol += 3 * m; // Using NUMFLUX = NumFlux
+  
+  f->nmults += numworkitems * nmultsdgvol;
+  f->nreads += numworkitems * nreadsdgvol;
+  
+  
   init_DGVolume_CL(f, wn_cl, 2 * groupsize * m);
-    
+  
   const int start = mcell->first;
   const int end = mcell->last_p1;
   
@@ -1228,10 +1243,12 @@ void show_cl_timing(field *f)
 	 ns*N, (unsigned long) ns, 1e-9 * ns);
 
   printf("\n");
+
   printf("Roofline counts:\n");
-  printf("Number of reads of reals from global memory: %d\n", f->nreads);
-  printf("Number of reads of mults in kernels        : %d\n", f->nmults);
-  
+  printf("Number of reads/writes of reals from global memory: %d\n", f->nreads);
+  printf("Number of real multipliess in kernels             : %d\n", f->nmults);
+
+  printf("\n");
 }
 
 #endif // _WITH_OPENCL
