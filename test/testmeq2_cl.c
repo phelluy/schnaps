@@ -62,7 +62,6 @@ int TestmEq2(void) {
   //AffineMapMacroMesh(&(f.macromesh));
  
   Initfield(&f);
-  f.is2d = true;
   
   CheckMacroMesh(&(f.macromesh), f.interp.interp_param + 1);
 

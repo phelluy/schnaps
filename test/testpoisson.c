@@ -9,13 +9,14 @@
 
 void TestPoisson_ImposedData(real x[3],real t,real w[]);
 void TestPoisson_InitData(real x[3],real w[]);
-void TestPoisson_BoundaryFlux(real x[3],real t,real wL[],real* vnorm, real* flux);
+void TestPoisson_BoundaryFlux(real x[3],real t,real wL[],real* vnorm,
+			      real* flux);
 
 int main(void) {
   
   // unit tests
     
-  int resu=TestPoisson();
+  int resu = TestPoisson();
 	 
   if (resu) printf("poisson test OK !\n");
   else printf("poisson test failed !\n");
@@ -23,38 +24,38 @@ int main(void) {
   return !resu;
 } 
 
-
 int TestPoisson(void) {
 
-  bool test=true;
+  bool test = true;
 
   field f;
 
   int vec=1;
-  
-  f.model.m=_MV+6; // num of conservative variables f(vi) for each vi, phi, E, rho, u, p, e (ou T)
+
+  // num of conservative variables f(vi) for each vi, phi, E, rho, u,
+  // p, e (ou T)
+  f.model.m=_MV+6; 
   f.vmax = _VMAX; // maximal wave speed
-  f.model.NumFlux=VlasovP_Lagrangian_NumFlux;
+  f.model.NumFlux = VlasovP_Lagrangian_NumFlux;
   f.model.Source = VlasovP_Lagrangian_Source;
    //f.model.Source = NULL;
   
-  f.model.BoundaryFlux=TestPoisson_BoundaryFlux;
-  f.model.InitData=TestPoisson_InitData;
-  f.model.ImposedData=TestPoisson_ImposedData;
+  f.model.BoundaryFlux = TestPoisson_BoundaryFlux;
+  f.model.InitData = TestPoisson_InitData;
+  f.model.ImposedData = TestPoisson_ImposedData;
  
-  
-  f.varindex=GenericVarindex;
-  f.update_before_rk=NULL;
-  f.update_after_rk=NULL; 
+  f.varindex = GenericVarindex;
+  f.pre_dtfield = NULL;
+  f.update_after_rk = NULL; 
     
     
-  f.interp.interp_param[0]=f.model.m;  // _M
-  f.interp.interp_param[1]=3;  // x direction degree
-  f.interp.interp_param[2]=0;  // y direction degree
-  f.interp.interp_param[3]=0;  // z direction degree
-  f.interp.interp_param[4]=32;  // x direction refinement
-  f.interp.interp_param[5]=1;  // y direction refinement
-  f.interp.interp_param[6]=1;  // z direction refinement
+  f.interp.interp_param[0] = f.model.m;  // _M
+  f.interp.interp_param[1] = 3;  // x direction degree
+  f.interp.interp_param[2] = 0;  // y direction degree
+  f.interp.interp_param[3] = 0;  // z direction degree
+  f.interp.interp_param[4] = 32;  // x direction refinement
+  f.interp.interp_param[5] = 1;  // y direction refinement
+  f.interp.interp_param[6] = 1;  // z direction refinement
   // read the gmsh file
   ReadMacroMesh(&(f.macromesh),"test/testcube.msh");
   // try to detect a 2d mesh
@@ -66,15 +67,12 @@ int TestPoisson(void) {
   // mesh preparation
   BuildConnectivity(&(f.macromesh));
 
-
   PrintMacroMesh(&(f.macromesh));
   //assert(1==2);
   //AffineMapMacroMesh(&(f.macromesh));
  
   // prepare the initial fields
   Initfield(&f);
-  f.macromesh.is1d=true;
-  f.is1d=true;
   f.nb_diags=0;
   
   // prudence...
@@ -107,7 +105,7 @@ int TestPoisson(void) {
 
   //Computation_charge_density(f);
   
-  SolvePoisson(&f,f.wn,1,0.0,0.0);
+  SolvePoisson(&f, f.wn, 1, 0.0, 0.0);
 
   // check the gradient given by the poisson solver
   for(int ie=0;ie<f.macromesh.nbelems;ie++){
@@ -122,30 +120,26 @@ int TestPoisson(void) {
       test=test && (fabs(f.wn[imem]-(1-2*xref[0]))<1e-10);
     }
   }
-
   return test;
-
-};
+}
 
 void TestPoisson_ImposedData(real x[3],real t,real w[]){
+  for(int i = 0; i < _INDEX_MAX_KIN + 1; i++){
+    int j = i%_DEG_V; // local connectivity put in function
+    int nel = i / _DEG_V; // element num (TODO : function)
 
-  for(int i=0;i<_INDEX_MAX_KIN+1;i++){
-    int j=i%_DEG_V; // local connectivity put in function
-    int nel=i/_DEG_V; // element num (TODO : function)
+    real vi = (-_VMAX + nel * _DV + _DV * glop(_DEG_V, j));
 
-    real vi = (-_VMAX+nel*_DV +
-		 _DV* glop(_DEG_V,j));
-
-    w[i]=1./_VMAX;
+    w[i] = 1. / _VMAX;
   }
   // exact value of the potential
   // and electric field
-  w[_INDEX_PHI]=x[0]*(1-x[0]);
-  w[_INDEX_EX]=1.-2.*x[0];
-  w[_INDEX_RHO]=2.; //rho init
-  w[_INDEX_VELOCITY]=0; // u init
-  w[_INDEX_PRESSURE]=0; // p init
-  w[_INDEX_TEMP]=0; // e ou T init
+  w[_INDEX_PHI] = x[0] * (1 - x[0]);
+  w[_INDEX_EX] = 1. - 2. * x[0];
+  w[_INDEX_RHO] = 2.; //rho init
+  w[_INDEX_VELOCITY] = 0; // u init
+  w[_INDEX_PRESSURE] = 0; // p init
+  w[_INDEX_TEMP] = 0; // e ou T init
 
 };
 

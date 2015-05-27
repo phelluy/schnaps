@@ -39,11 +39,11 @@ void TransNumFlux2d(real wL[], real wR[], real* vnorm, real* flux) {
   /* } */
   // verify that 2d computations are actually
   // activated
-  assert(fabs(vnorm[2]) < 1e-8);
+  //assert(fabs(vnorm[2]) < 1e-8);
 }
 
 #pragma start_opencl
-void VecTransNumFlux2d(real *wL, real *wR, real *vnorm, real *flux) 
+void VecTransNumFlux2d(__private real *wL, real *wR, real *vnorm, real *flux) 
 {
   real vn = sqrt(0.5) * vnorm[0] + sqrt(0.5) * vnorm[1];
   real vnp = vn > 0.0 ? vn : 0.0;

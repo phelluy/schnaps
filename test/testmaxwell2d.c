@@ -37,7 +37,6 @@ int TestMaxwell2D(void) {
  
   // Prepare the initial fields
   Initfield(&f);
-  f.is2d = true;
   //f.dt = 1e-3;
   
   // Prudence...

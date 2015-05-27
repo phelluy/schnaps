@@ -9,9 +9,10 @@
 #include "solverpoisson.h"
 
 
-void TestPeriodic_ImposedData(real x[3],real t,real w[]);
-void TestPeriodic_InitData(real x[3],real w[]);
-void TestPeriodic_BoundaryFlux(real x[3],real t,real wL[],real* vnorm, real* flux);
+void TestPeriodic_ImposedData(real *x, real t, real *w);
+void TestPeriodic_InitData(real *x, real *w);
+void TestPeriodic_BoundaryFlux(real *x, real t, real *wL, real *vnorm,
+			       real *flux);
 
 int main(void) {
   
@@ -25,27 +26,25 @@ int main(void) {
   return !resu;
 } 
 
-
 int TestPeriodic(void) {
 
   bool test=true;
 
 
   field f;
-
-  int vec=1;
   
   f.model.m=_INDEX_MAX; // num of conservative variables
   f.vmax = _VMAX; // maximal wave speed 
   f.model.NumFlux=VlasovP_Lagrangian_NumFlux;
-   f.model.Source = NULL;
+  f.model.Source = NULL;
   
-  f.model.BoundaryFlux=TestPeriodic_BoundaryFlux;
-  f.model.InitData=TestPeriodic_InitData;
-  f.model.ImposedData=TestPeriodic_ImposedData;
+  f.model.BoundaryFlux = TestPeriodic_BoundaryFlux;
+  f.model.InitData = TestPeriodic_InitData;
+  f.model.ImposedData = TestPeriodic_ImposedData;
  
   f.varindex=GenericVarindex;
-  f.update_before_rk=NULL;
+  f.pre_dtfield=NULL;
+  f.post_dtfield=NULL;
   f.update_after_rk=NULL; 
   f.model.cfl=0.05;
     
@@ -57,11 +56,10 @@ int TestPeriodic(void) {
   f.interp.interp_param[5]=1;  // y direction refinement
   f.interp.interp_param[6]=1;  // z direction refinement
   // read the gmsh file
-  ReadMacroMesh(&(f.macromesh),"test/testcube.msh");
+  ReadMacroMesh(&(f.macromesh), "test/testcube.msh");
   // try to detect a 2d mesh
   Detect1DMacroMesh(&(f.macromesh));
-  bool is1d=f.macromesh.is1d;
-  assert(is1d);
+  assert(f.macromesh.is1d);
 
   // mesh preparation
   f.macromesh.period[0]=1;
@@ -74,9 +72,7 @@ int TestPeriodic(void) {
  
   // prepare the initial fields
   Initfield(&f);
-  f.macromesh.is1d=true;
-  f.is1d=true;
-  f.nb_diags=0;
+  f.nb_diags = 0;
 
 
 
@@ -122,7 +118,7 @@ void TestPeriodic_ImposedData(real x[3],real t,real w[]){
     int nel=i/_DEG_V; // element num (TODO : function)
 
     real vi = (-_VMAX+nel*_DV +
-		 _DV* glop(_DEG_V,j));
+	       _DV* glop(_DEG_V,j));
 
     w[i]=cos(2*pi*(x[0]-vi*t));
   }
@@ -146,7 +142,7 @@ void TestPeriodic_InitData(real x[3],real w[]){
 
 
 void TestPeriodic_BoundaryFlux(real x[3],real t,real wL[],real* vnorm,
-				       real* flux){
+			       real* flux){
   real wR[_MV+6];
   TestPeriodic_ImposedData(x,t,wR);
   VlasovP_Lagrangian_NumFlux(wL,wR,vnorm,flux);

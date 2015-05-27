@@ -80,7 +80,7 @@ int TestLandau_Damping_1D(void) {
   Initfield(&f);
   f.vmax = _VMAX; // maximal wave speed
   f.macromesh.is1d=true;
-  //f.is1d=true;
+  //f.macromesh.is1d=true;
   f.nb_diags=3;
   f.update_before_rk=UpdateVlasovPoisson;
   f.update_after_rk=PlotVlasovPoisson;
@@ -176,8 +176,6 @@ void PlotVlasovPoisson(void* vf, real * w){
   
   field* f=vf;
   
-  if(f->rk_substep == f->rk_max){
-    Energies(f,w,k_energy,e_energy,t_energy);
-  }
+  Energies(f,w,k_energy,e_energy,t_energy);
   vf=f;
 }
