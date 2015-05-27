@@ -76,7 +76,7 @@ int TestMHD(int argc, char *argv[]) {
 
   strcpy(f.model.name,"MHD");
 
-  f.model.NumFlux=MHDNumFlux;
+  f.model.NumFlux=MHDNumFluxRusanov;
   f.model.BoundaryFlux=MHDBoundaryFlux;
   f.model.InitData=MHDInitData;
   f.model.ImposedData=MHDImposedData;
@@ -85,7 +85,7 @@ int TestMHD(int argc, char *argv[]) {
   sprintf(buf, "-D _M=%d", f.model.m);
   strcat(cl_buildoptions, buf);
 
-  sprintf(numflux_cl_name, "%s", "MHDNumFlux");
+  sprintf(numflux_cl_name, "%s", "MHDNumFluxRusanov");
   sprintf(buf," -D NUMFLUX=");
   strcat(buf, numflux_cl_name);
   strcat(cl_buildoptions, buf);
@@ -113,6 +113,7 @@ int TestMHD(int argc, char *argv[]) {
   bool is2d=f.macromesh.is2d; 
   assert(is2d);  
 
+  //f.macromesh.period[0]=10;
   f.macromesh.period[1]=10;
   
   // Mesh preparation
