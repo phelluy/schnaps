@@ -1246,8 +1246,10 @@ void show_cl_timing(field *f)
 
   printf("Roofline counts:\n");
   printf("Number of reads/writes of reals from global memory: %d\n", f->nreads);
-  printf("Number of real multipliess in kernels             : %d\n", f->nmults);
-
+  printf("Number of real multiplies in kernels:               %d\n", f->nmults);
+  printf("NB: real multiplies assumes the flux involved 3m multiplies.\n");
+  printf("Terms included in roofline: volume, flux, and mass.\n");
+  
   printf("\n");
 }
 
