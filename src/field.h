@@ -155,8 +155,8 @@ typedef struct field {
   cl_ulong rk_time;
 
   // OpenCL roofline measurements
-  unsigned int nmults; // number of real multiplies
-  unsigned int nreads; // number of real reads
+  unsigned long int nmults; // number of real multiplies
+  unsigned long int nreads; // number of real reads
 #endif
 } field;
 
