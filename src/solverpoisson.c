@@ -3,6 +3,88 @@
 #include "quantities_vp.h"
 
 
+
+int CompareFatNode(const void* a,const void* b){
+
+  FatNode* fna = (FatNode*) a;
+  FatNode* fnb = (FatNode*) b;
+
+  int r = fna->x_int[0]-fnb->x_int[0];
+  if (r==0)
+    r = fna->x_int[1]-fnb->x_int[1];
+  if (r==0)
+    r = fna->x_int[2]-fnb->x_int[2];
+  return r;
+
+}
+
+int BuildFatNodeList(field* f,FatNode* fn_list){
+
+  int nb_dg_nodes =  NPG(f->interp_param+1) * f->macromesh.nbelems;
+  
+  fn_list = malloc(nb_dg_nodes * sizeof(FatNode));
+  assert(fn_list);
+
+  int big_int = 1 << 28; // 2**28 = 268 435 456
+
+
+  int ino=0;
+  real* xmin=f->macromesh.xmin;
+  real* xmax=f->macromesh.xmax;
+  for(int ie = 0; ie < f->macromesh.nbelems; ie++) {
+    
+    real physnode[20][3];
+    for(int inoloc = 0; inoloc < 20; inoloc++) {
+      int ino = f->macromesh.elem2node[20 * ie + inoloc];
+      physnode[inoloc][0] = f->macromesh.node[3 * ino + 0];
+      physnode[inoloc][1] = f->macromesh.node[3 * ino + 1];
+      physnode[inoloc][2] = f->macromesh.node[3 * ino + 2];
+    }
+    
+    for(int ipg = 0; ipg < NPG(f->interp_param + 1); ipg++) {
+      real xpg[3];
+      real xref[3];
+      ref_pg_vol(f->interp_param + 1, ipg, xref, NULL, NULL);
+      Ref2Phy(physnode,
+	      xref,
+	      0, -1, // dphiref, ifa
+              xpg, NULL,
+	      NULL, NULL, NULL); // codtau, dphi, vnds
+
+      fn_list[ino].x[0]=xpg[0];
+      fn_list[ino].x[1]=xpg[1];
+      fn_list[ino].x[2]=xpg[2];
+
+      fn_list[ino].x_int[0]=(int) (xpg[0]-xmin[0])/(xmax[0]-xmin[0]) * big_int;
+      fn_list[ino].x_int[1]=(int) (xpg[0]-xmin[1])/(xmax[0]-xmin[1]) * big_int;
+      fn_list[ino].x_int[2]=(int) (xpg[0]-xmin[2])/(xmax[0]-xmin[2]) * big_int;
+      
+      fn_list[ino].dg_index = ino;
+
+      ino++;
+    }
+  }
+
+  assert(ino == nb_dg_nodes);
+  return nb_dg_nodes;
+
+}
+
+void InitPoissonSolver(PoissonSolver* ps, field* fd,int charge_index){
+
+  ps->fd = fd;
+  ps->charge_index = charge_index;
+
+  ps->nb_dg_nodes =  NPG(fd->interp_param+1) * fd->macromesh.nbelems;
+
+  // first step: paste the nodes of the DG mesh
+  BuildFatNodeList(fd,ps->fn_list);
+
+  
+
+
+}
+
 void SolvePoisson(field *f,real * w,int type_bc, real bc_l, real bc_r){
 
 
@@ -23,7 +105,7 @@ void SolvePoisson(field *f,real * w,int type_bc, real bc_l, real bc_r){
 
   Skyline sky;
 
-  // number of equation of the Poisson solver
+  // number of equations of the Poisson solver
   // = number of nodes in the mesh
   int degx=f->interp.interp_param[1];
   int nelx=f->interp.interp_param[4];

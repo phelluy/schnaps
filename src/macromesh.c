@@ -26,6 +26,8 @@ void ReadMacroMesh(MacroMesh *m, char *filename)
   m->period[1]=-1;
   m->period[2]=-1;
 
+  m->connec_ok = false;
+
   FILE *f = NULL;
   char *line = NULL;
   size_t linesize = 0;
@@ -656,6 +658,8 @@ void BuildConnectivity(MacroMesh* m)
   //assert(1==5);
   free(bounds);
 
+  m->connec_ok = true;
+
 /* #ifdef _PERIOD */
 /*   assert(m->is1d); // TODO : generalize to 2D */
 /*   assert(m->nbelems==1);  */
@@ -707,6 +711,8 @@ void CheckMacroMesh(MacroMesh *m, int *param) {
   /* real refnormal[6][3]={{0,-1,0},{1,0,0}, */
   /* 			  {0,1,0},{-1,0,0}, */
   /* 			  {0,0,1},{0,0,-1}}; */
+
+  assert(m->connec_ok);
 
   for(int ie = 0; ie < m->nbelems; ie++) {
     // Load geometry for macro element ie:

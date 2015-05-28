@@ -27,8 +27,15 @@ typedef struct MacroMesh{
   //! Activate or not 2D computations
   bool is2d;
 
+
+  //! a value for checking that connectivity is finished
+  bool connec_ok; 
+
+
+  // mesh boundaries
   real xmin[3],xmax[3];
-  bool is1d; //!< 1d computation detection
+  //! 1d computation detection
+  bool is1d; 
 
   //! period in each direction
   //! if negative: non-periodic computation (default)
