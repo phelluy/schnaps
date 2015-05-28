@@ -603,27 +603,27 @@ void BuildConnectivity(MacroMesh* m)
 	int dim=0;
 	while(Dist(vnds,diag[dim]) > 1e-2 && dim<3) dim++;
 	//assert(dim < 3);
-	printf("xpg_in_before=%f\n",xpg_in[dim]);
+	//printf("xpg_in_before=%f\n",xpg_in[dim]);
 	if (dim < 3 && m->period[dim]  > 0){
 	  //if (xpg_in[dim] > m->period[dim]){
           if (xpg_in[dim] > m->xmax[dim]){
 	    xpg_in[dim] -= m->period[dim];
-	    printf("xpg_in_after=%f\n",xpg_in[dim]);
+	    //printf("xpg_in_after=%f\n",xpg_in[dim]);
 	  }
 	  //else if (xpg_in[dim] < 0){
           else if (xpg_in[dim] < m->xmin[dim]){
 	    xpg_in[dim] += m->period[dim];
-	    printf("xpg_in_after=%f\n",xpg_in[dim]);
+	    //printf("xpg_in_after=%f\n",xpg_in[dim]);
 	  }
 	  else {
             //printf("xpg_in=%f\n",xpg_in[dim]);
 	    assert(1==2);
 	  }
 	  m->elem2elem[6 * ie + ifa] = NumElemFromPoint(m,xpg_in,NULL);
-	  printf("ie=%d ifa=%d numelem=%d vnds=%f %f %f xpg_in=%f %f %f \n",
-	  	 ie,ifa,NumElemFromPoint(m,xpg_in,NULL),
-	  	 vnds[0],vnds[1],vnds[2],
-	  	 xpg_in[0],xpg_in[1],xpg_in[2]);
+	  /* printf("ie=%d ifa=%d numelem=%d vnds=%f %f %f xpg_in=%f %f %f \n", */
+	  /* 	 ie,ifa,NumElemFromPoint(m,xpg_in,NULL), */
+	  /* 	 vnds[0],vnds[1],vnds[2], */
+	  /* 	 xpg_in[0],xpg_in[1],xpg_in[2]); */
 	}
       }
     }

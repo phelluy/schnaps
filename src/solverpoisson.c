@@ -22,13 +22,10 @@ int CompareFatNode(const void* a,const void* b){
 
 int BuildFatNodeList(field* f,FatNode* fn_list){
 
-  int nb_dg_nodes =  NPG(f->interp_param+1) * f->macromesh.nbelems;
-  
-  fn_list = malloc(nb_dg_nodes * sizeof(FatNode));
-  assert(fn_list);
 
   int big_int = 1 << 28; // 2**28 = 268 435 456
 
+  int nb_dg_nodes =  NPG(f->interp_param+1) * f->macromesh.nbelems;
 
   int ino=0;
   real* xmin=f->macromesh.xmin;
@@ -73,16 +70,25 @@ int BuildFatNodeList(field* f,FatNode* fn_list){
 
   qsort(fn_list, nb_dg_nodes, sizeof(FatNode),CompareFatNode);
 
-  for(int ino=0;ino<nb_dg_nodes;ino++){
-    printf("ino=%d xyz= %f %f %f i_xyz=%d %d %d dg_index=%d\n",ino,
-	   fn_list[ino].x[0],fn_list[ino].x[1],fn_list[ino].x[2],
-	   fn_list[ino].x_int[0],fn_list[ino].x_int[1],fn_list[ino].x_int[2],
-	   fn_list[ino].dg_index);
+  fn_list[0].fe_index=0;
+  int fe_index=0;
+  for(int ino=1;ino<nb_dg_nodes;ino++){
+    if (CompareFatNode(fn_list+ino,fn_list+ino-1)!=0) fe_index++;
+    fn_list[ino].fe_index=fe_index;
   }
+  
+
+  /* for(int ino=0;ino<nb_dg_nodes;ino++){ */
+  /*   printf("ino=%d xyz= %f %f %f i_xyz=%d %d %d dg_index=%d fe_index=%d\n",ino, */
+  /* 	   fn_list[ino].x[0],fn_list[ino].x[1],fn_list[ino].x[2], */
+  /* 	   fn_list[ino].x_int[0],fn_list[ino].x_int[1],fn_list[ino].x_int[2], */
+  /* 	   fn_list[ino].dg_index, */
+  /* 	   fn_list[ino].fe_index); */
+  /* } */
 
   
 
-  return nb_dg_nodes;
+  return fe_index+1;
 
 }
 
@@ -93,10 +99,28 @@ void InitPoissonSolver(PoissonSolver* ps, field* fd,int charge_index){
 
   ps->nb_dg_nodes =  NPG(fd->interp_param+1) * fd->macromesh.nbelems;
 
-  // first step: paste the nodes of the DG mesh
-  BuildFatNodeList(fd,ps->fn_list);
-
   
+  ps->fn_list = malloc(ps->nb_dg_nodes * sizeof(FatNode));
+  assert(ps->fn_list);
+  // paste the nodes of the DG mesh
+  ps->nb_fe_nodes=BuildFatNodeList(fd,ps->fn_list);
+
+
+  printf("nb dg nodes=%d ; nb fe nodes=%d\n",ps->nb_dg_nodes,ps->nb_fe_nodes);
+  // build the connectivity array
+
+  ps->dg_to_fe_index = malloc(ps->nb_dg_nodes * sizeof(int));
+  assert(ps->dg_to_fe_index);
+
+  for(int ino=0;ino<ps->nb_dg_nodes;ino++){
+    /* printf("ino=%d idg=%d ife=%d\n",ino,ps->fn_list[ino].dg_index, */
+    /* 	   ps->fn_list[ino].fe_index); */
+    ps->dg_to_fe_index[ps->fn_list[ino].dg_index]=ps->fn_list[ino].fe_index;
+    
+  }
+  /* for(int ino=0;ino<ps->nb_dg_nodes;ino++){ */
+  /*   printf("idg=%d ife=%d\n",ino,ps->dg_to_fe_index[ino]); */
+  /* } */
 
 
 }
