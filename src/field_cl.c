@@ -517,8 +517,8 @@ void DGMass_CL(void *mc, field *f,
     unsigned int m = f->interp_param[0];
     unsigned int nreadsdgmass = m;
     unsigned int nmultsdgmass = 53 + 2 * m + 2601;
-    f->nmults += numworkitems * nmultsdgmass;
-    f->nreads += numworkitems * nreadsdgmass;
+    f->flops_mass += numworkitems * nmultsdgmass;
+    f->reads_mass += numworkitems * nreadsdgmass;
     
     status = clEnqueueNDRangeKernel(f->cli.commandqueue,
 				    f->dgmass,
@@ -644,8 +644,8 @@ void DGFlux_CL(field *f, int dim0, int ie, cl_mem *wn_cl,
     unsigned int nreadsdgflux = 4 * m;
     unsigned int nmultsdgflux = 2601 + 92 + 28 * m;
     nmultsdgflux += 3 * m; // Using NUMFLUX = NumFlux
-    f->nmults += numworkitems * nmultsdgflux;
-    f->nreads += numworkitems * nreadsdgflux;
+    f->flops_flux += numworkitems * nmultsdgflux;
+    f->reads_flux += numworkitems * nreadsdgflux;
     
     // Launch the kernel
     cl_int status;
@@ -700,8 +700,8 @@ void DGVolume_CL(void *mc, field *f, cl_mem *wn_cl,
 
   // Loop on the elements
   for(int ie = start; ie < end; ie++) {
-    f->nmults += numworkitems * nmultsdgvol;
-    f->nreads += numworkitems * nreadsdgvol;
+    f->flops_vol += numworkitems * nmultsdgvol;
+    f->reads_vol += numworkitems * nreadsdgvol;
 
     status = clSetKernelArg(kernel,
 			    1,
@@ -1205,6 +1205,50 @@ void RK2_CL(field *f, real tmax,
 
 void show_cl_timing(field *f)
 {
+  printf("\n");
+  printf("Roofline counts:\n");
+  unsigned long int flops_total = f->flops_vol + f->flops_flux + f->flops_mass;
+  unsigned long int reads_total = f->reads_vol + f->reads_flux + f->reads_mass;
+  printf("Number of real multiplies in kernels:               %lu\n", 
+	 flops_total);
+  printf("Number of reads/writes of reals from global memory: %lu\n", 
+	 reads_total);
+  //printf("NB: real multiplies assumes the flux involved 3m multiplies.\n");
+  printf("Terms included in roofline: volume, flux, and mass.\n");
+
+  cl_ulong roofline_time_ns = f->vol_time + f->flux_time + f->mass_time;
+  double roofline_time_s = 1e-9 * roofline_time_ns;
+  double roofline_flops = flops_total / roofline_time_s;
+  double roofline_bw = sizeof(real) * reads_total / roofline_time_s;
+  
+  // vol terms
+  double vol_time_s = 1e-9 * f->vol_time;
+  double vol_flops = f->flops_vol / vol_time_s;
+  double vol_bw = sizeof(real) * f->reads_vol / vol_time_s;
+  printf("DGVol:  GFLOP/s: %f\tbandwidth (GB/s): %f\n", 
+	 1e-9 * vol_flops, 1e-9 * vol_bw);
+
+  // flux terms
+  double flux_time_s = 1e-9 * f->flux_time;
+  double flux_flops = f->flops_flux / flux_time_s;
+  double flux_bw = sizeof(real) * f->reads_flux / flux_time_s;
+  printf("DGFlux: GFLOP/s: %f\tbandwidth (GB/s): %f\n", 
+	 1e-9 * flux_flops, 1e-9 * flux_bw);
+  
+  // mass terms
+  double mass_time_s = 1e-9 * f->mass_time;
+  double mass_flops = f->flops_mass / mass_time_s;
+  double mass_bw = sizeof(real) * f->reads_mass / mass_time_s;
+  printf("DGMass: GFLOP/s: %f\tbandwidth (GB/s): %f\n", 
+	 1e-9 * mass_flops, 1e-9 * mass_bw);
+
+  printf("Total:  GFLOP/s: %f\tbandwidth (GB/s): %f\n", 
+	 1e-9 * roofline_flops, 1e-9 * roofline_bw);
+
+  printf("\n"); 
+
+
+  printf("Kernel execution times:\n"); 
   cl_ulong total = 0;
   total += f->zbuf_time;
   total += f->minter_time;
@@ -1254,19 +1298,7 @@ void show_cl_timing(field *f)
 
   printf("\n");
 
-  printf("Roofline counts:\n");
-  printf("Number of reads/writes of reals from global memory: %lu\n", f->nreads);
-  printf("Number of real multiplies in kernels:               %lu\n", f->nmults);
-  printf("NB: real multiplies assumes the flux involved 3m multiplies.\n");
-  printf("Terms included in roofline: volume, flux, and mass.\n");
 
-  cl_ulong roofline_time_ns = f->vol_time + f->flux_time + f->mass_time;
-  double roofline_time_s = 1e-9 * roofline_time_ns;
-  double roofline_flops = f->nmults / roofline_time_s;
-  double roofline_bw = sizeof(real) * f->nreads / roofline_time_s;
-  
-  printf("GFLOP/s:          %f\n", 1e-9 * roofline_flops);
-  printf("bandwidth (GB/s): %f\n", 1e-9 * roofline_bw);
   
   printf("\n");
 }
