@@ -97,6 +97,6 @@ void SolvePoisson1D(field *f,real * w,
 //! , returning the potential and the electric field)
 //! \param[in] type_bc the boundary condition type
 //!  (1->dirichlet ; 2-> periodic)
-void SolvePoisson2D(field *f,real * w,int type_bc);
+void SolvePoisson2D(PoissonSolver* ps,real * w,int type_bc);
 
 #endif
