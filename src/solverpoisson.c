@@ -85,7 +85,7 @@ void InitPoissonSolver(PoissonSolver* ps, field* fd,int charge_index){
 
 }
 
-void SolvePoisson(field *f,real * w,int type_bc, real bc_l, real bc_r){
+void SolvePoisson1D(field *f,real * w,int type_bc, real bc_l, real bc_r){
 
 
   real charge_average;
@@ -93,6 +93,8 @@ void SolvePoisson(field *f,real * w,int type_bc, real bc_l, real bc_r){
 
   if(type_bc == _Periodic_Poisson_BC){
     charge_average=Computation_charge_average(f,w);
+    bc_l=0;
+    bc_r=0;
   }
   else {
     charge_average=0;
@@ -105,7 +107,7 @@ void SolvePoisson(field *f,real * w,int type_bc, real bc_l, real bc_r){
 
   Skyline sky;
 
-  // number of equations of the Poisson solver
+  // number of equation of the Poisson solver
   // = number of nodes in the mesh
   int degx=f->interp.interp_param[1];
   int nelx=f->interp.interp_param[4];

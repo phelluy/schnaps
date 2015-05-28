@@ -149,8 +149,10 @@ void UpdateVlasovPoisson(void *vf, real *w) {
   real bc_r = 1;
     
   // Computation_charge_density(f,w);
- 
-  SolvePoisson(f, w, type_bc, bc_l, bc_r);    
+  
+  // Solving poisson
+  SolvePoisson1D(f,w,type_bc,bc_l,bc_r);    
+  
 }
 
 void PlotVlasovPoisson(void *vf, real *w) {
