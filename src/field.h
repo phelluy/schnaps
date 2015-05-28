@@ -40,30 +40,22 @@ typedef struct field {
   int interp_param[8];
   //! Current time
   real tnow;
-  //! time max
-  real tmaximum;
-//! CFL parameter min_i (vol_i / surf_i)
+  //! CFL parameter min_i (vol_i / surf_i)
   real hmin;
+
+
+  // TODO: once the output of the diagnostics is done by appending,
+  // remove dt, ieter_time, itermax, nb_diags, and Diagnostics.
   //! Time step
+  //! dt has to be smaller than hmin / vmax
   real dt;
-   //! dt has to be smaller than hmin / vmax
   int iter_time;
   //! final time iter
   int itermax;
   //! nb of diagnostics
   int nb_diags;
   //! table for diagnostics
-  real * Diagnostics;
-  //! index of the runge-kutta substep
-  int rk_substep;
-  //! max substep of the rk method
-  int rk_max;
-
-  //! Activate or not 2D computations
-  bool is2d;
-
-   //! activate or not 1D computations
-  bool is1d;
+  real *Diagnostics;
 
   //! Size of the field buffers
   int wsize;
@@ -74,13 +66,13 @@ typedef struct field {
   //! vmax
   real vmax;
 
-   //! \brief generic update function called 
-  //! \brief called at each runge-kutta sustep
+  //! \brief Pointer to a generic function called before computing dtfield. 
   //! \param[inout] f a field (to be converted from void*)
-  //! \param[in] elem macro element index
-  //! \param[in] ipg glop index
-  //! \param[in] iv field component index
-  void (*update_before_rk)(void* f, real * w);
+  void (*pre_dtfield)(void *f, real *w);
+
+  //! \brief Pointer to a generic function called after computing dtfield. 
+  //! \param[inout] f a field (to be converted from void*)
+  void (*post_dtfield)(void *f, real *w);
 
   //! \brief generic update function called 
   //! \brief called at each runge-kutta sustep
@@ -88,7 +80,7 @@ typedef struct field {
   //! \param[in] elem macro element index
   //! \param[in] ipg glop index
   //! \param[in] iv field component index
-  void (*update_after_rk)(void* f,real * w);
+  void (*update_after_rk)(void *f, real *w);
 
   //! \brief Memory arrangement of field components
   //! \param[in] param interpolation parameters
@@ -253,7 +245,13 @@ void DGSubCellInterface(void *mcell, field *f, real *w, real *dtw);
 
 //! \brief  apply the DG mass term
 //! \param[inout] mcell a MacroCell
-void DGMass(void *mcell, field *f, real *w, real *dtw);
+void DGMass(void *mcell, field *f, real *dtw);
+
+//! \brief Add the source term
+//! \param[inout] mcell a MacroCell
+//! \param[in] w: the field
+//! \param[out] dtw: the derivative
+void DGSource(void *mcell, field *f, real *w, real *dtw);
 
 //! \brief An out-of-place RK stage
 //! \param[out] fwnp1 field at time n+1

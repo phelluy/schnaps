@@ -40,7 +40,6 @@ int TestKernel(void)
   //AffineMapMacroMesh(&(f.macromesh));
  
   Initfield(&f);
-  f.is2d=true;
 
   printf("&f=%p\n",&f);
 
@@ -101,7 +100,7 @@ int TestKernel(void)
   }
 
   for(int ie = 0; ie < f.macromesh.nbelems; ++ie)
-    DGMass((void*) &(f.mcell[ie]), &f, f.wn, f.dtwn);
+    DGMass((void*) &(f.mcell[ie]), &f, f.dtwn);
 
   Displayfield(&f);
 

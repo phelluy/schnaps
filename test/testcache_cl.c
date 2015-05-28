@@ -45,7 +45,6 @@ int TestCache(void){
   BuildConnectivity(&(f.macromesh));
 
   Initfield(&f);
-  f.is2d = true;
   //CheckMacroMesh(&(f.macromesh), f.interp.interp_param + 1);
 
   int raf[3]={nrafx,nraf,1};
