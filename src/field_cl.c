@@ -677,19 +677,18 @@ void DGVolume_CL(void *mc, field *f, cl_mem *wn_cl,
 
   cl_int status;
   int m = param[0];
-  size_t groupsize = (param[1] + 1) * (param[2] + 1) * (param[3] + 1);
+  const int npgc[3] = {param[1] + 1, param[2] + 1, param[3] + 1};
+  size_t groupsize = npgc[0] * npgc[1] * npgc[2];
   // The total work items number is the number of glops in a subcell
   // * number of subcells
-  size_t numworkitems = param[4] * param[5] * param[6] * groupsize;
+  const int nraf[3] = {param[4], param[5], param[6]};
+  size_t numworkitems = nraf[0] * nraf[1] * nraf[2] * groupsize;
   
   unsigned int nreadsdgvol = 2 * m; // read m from wn, write m to dtwn
   unsigned int nmultsdgvol = 1296 + m;
-  nmultsdgvol += 3 * m; // Using NUMFLUX = NumFlux
-  
-  f->nmults += numworkitems * nmultsdgvol;
-  f->nreads += numworkitems * nreadsdgvol;
-  
-  
+  // Using NUMFLUX = NumFlux (3 * m multiplies):
+  nmultsdgvol += (npgc[0] + npgc[1] + npgc[2]) * 3 * m; 
+      
   init_DGVolume_CL(f, wn_cl, 2 * groupsize * m);
   
   const int start = mcell->first;
@@ -699,6 +698,9 @@ void DGVolume_CL(void *mc, field *f, cl_mem *wn_cl,
 
   // Loop on the elements
   for(int ie = start; ie < end; ie++) {
+    f->nmults += numworkitems * nmultsdgvol;
+    f->nreads += numworkitems * nreadsdgvol;
+
     status = clSetKernelArg(kernel,
 			    1,
 			    sizeof(int),
@@ -1243,12 +1245,26 @@ void show_cl_timing(field *f)
 	 ns*N, (unsigned long) ns, 1e-9 * ns);
 
   printf("\n");
+  
+  ns = total;
+  printf("total time:                   %f%% \t%luns \t%fs\n", 
+	 ns*N, (unsigned long) ns, 1e-9 * ns);
+
+  printf("\n");
 
   printf("Roofline counts:\n");
   printf("Number of reads/writes of reals from global memory: %d\n", f->nreads);
   printf("Number of real multiplies in kernels:               %d\n", f->nmults);
   printf("NB: real multiplies assumes the flux involved 3m multiplies.\n");
   printf("Terms included in roofline: volume, flux, and mass.\n");
+
+  cl_ulong roofline_time_ns = f->vol_time + f->flux_time + f->mass_time;
+  double roofline_time_s = 1e-9 * roofline_time_ns;
+  double roofline_flops = f->nmults / roofline_time_s;
+  double roofline_bw = sizeof(real) * f->nreads / roofline_time_s;
+  
+  printf("GFLOP/s:          %f\n", 1e-9 * roofline_flops);
+  printf("bandwidth (GB/s): %f\n", 1e-9 * roofline_bw);
   
   printf("\n");
 }
