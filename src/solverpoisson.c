@@ -10,10 +10,12 @@ int CompareFatNode(const void* a,const void* b){
   FatNode* fnb = (FatNode*) b;
 
   int r = fna->x_int[0]-fnb->x_int[0];
-  if (r==0)
+  if (r==0 || r==-1 || r==1)
     r = fna->x_int[1]-fnb->x_int[1];
-  if (r==0)
+  if (r==0 || r==-1 || r==1)
     r = fna->x_int[2]-fnb->x_int[2];
+  if (r==0 || r==-1 || r==1)
+    r=0;
   return r;
 
 }
@@ -55,9 +57,11 @@ int BuildFatNodeList(field* f,FatNode* fn_list){
       fn_list[ino].x[1]=xpg[1];
       fn_list[ino].x[2]=xpg[2];
 
-      fn_list[ino].x_int[0]=(int) (xpg[0]-xmin[0])/(xmax[0]-xmin[0]) * big_int;
-      fn_list[ino].x_int[1]=(int) (xpg[0]-xmin[1])/(xmax[0]-xmin[1]) * big_int;
-      fn_list[ino].x_int[2]=(int) (xpg[0]-xmin[2])/(xmax[0]-xmin[2]) * big_int;
+      // convert points to "pixels" and round to nearest integer
+
+      fn_list[ino].x_int[0]=(int) ((xpg[0]-xmin[0])/(xmax[0]-xmin[0]) * big_int)  ;
+      fn_list[ino].x_int[1]=(int) ((xpg[1]-xmin[1])/(xmax[1]-xmin[1]) * big_int)  ;
+      fn_list[ino].x_int[2]=(int) ((xpg[2]-xmin[2])/(xmax[2]-xmin[2]) * big_int)  ;
       
       fn_list[ino].dg_index = ino;
 
@@ -66,6 +70,18 @@ int BuildFatNodeList(field* f,FatNode* fn_list){
   }
 
   assert(ino == nb_dg_nodes);
+
+  qsort(fn_list, nb_dg_nodes, sizeof(FatNode),CompareFatNode);
+
+  for(int ino=0;ino<nb_dg_nodes;ino++){
+    printf("ino=%d xyz= %f %f %f i_xyz=%d %d %d dg_index=%d\n",ino,
+	   fn_list[ino].x[0],fn_list[ino].x[1],fn_list[ino].x[2],
+	   fn_list[ino].x_int[0],fn_list[ino].x_int[1],fn_list[ino].x_int[2],
+	   fn_list[ino].dg_index);
+  }
+
+  
+
   return nb_dg_nodes;
 
 }
