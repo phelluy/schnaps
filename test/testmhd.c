@@ -99,22 +99,23 @@ int TestMHD(int argc, char *argv[]) {
   f.interp.interp_param[2] = 1; // y direction degree
   f.interp.interp_param[3] = 0; // z direction degree
   f.interp.interp_param[4] = 10; // x direction refinement
-  f.interp.interp_param[5] = 1; // y direction refinement
+  f.interp.interp_param[5] = 10; // y direction refinement
   f.interp.interp_param[6] = 1; // z direction refinement
 
 
   //set_vlasov_params(&(f.model));
 
   // Read the gmsh file
-  ReadMacroMesh(&(f.macromesh), "test/testcartesiangrid2d2.msh");
+  //ReadMacroMesh(&(f.macromesh), "test/testcartesiangrid2d2.msh");
+  ReadMacroMesh(&(f.macromesh), "test/testOTgrid.msh");
   //ReadMacroMesh(&(f.macromesh), "test/testcube.msh");
   // Try to detect a 2d mesh
   Detect2DMacroMesh(&(f.macromesh));
   bool is2d=f.macromesh.is2d; 
   assert(is2d);  
 
-  //f.macromesh.period[0]=10;
-  f.macromesh.period[1]=10;
+  f.macromesh.period[0]=6.2831853;
+  f.macromesh.period[1]=6.2831853;
   
   // Mesh preparation
   BuildConnectivity(&(f.macromesh));
@@ -124,7 +125,7 @@ int TestMHD(int argc, char *argv[]) {
 
   
   // Prudence...
-  CheckMacroMesh(&(f.macromesh), f.interp.interp_param + 1);
+  //CheckMacroMesh(&(f.macromesh), f.interp.interp_param + 1);
 
   Plotfield(0, (1==0), &f, "Rho", "dginit.msh");
 

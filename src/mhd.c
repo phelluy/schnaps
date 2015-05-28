@@ -480,39 +480,55 @@ void MHDInitData(double *x, double *w) {
 #pragma start_opencl
 void MHDImposedData(double *x, double t, double *w) {
   int i;
+  double gam = _GAM;
+
   double yL[9], yR[9];
   double wL[9], wR[9];
 
-  yL[0] = 3.;
-  yL[1] = 1.3;
-  yL[3] = 0.;
-  yL[4] = 0.;
-  yL[2] = 3.;
-  yL[5] = 1.;
-  yL[7] = 1.;
-  yL[7] = 1.5;
-  yL[8] = 0.;
+  
+//  yL[0] = 3.;
+//  yL[1] = 1.3;
+//  yL[3] = 0.;
+//  yL[4] = 0.;
+//  yL[2] = 3.;
+//  yL[5] = 1.;
+//  yL[7] = 1.;
+//  yL[7] = 1.5;
+//  yL[8] = 0.;
+//
+//  yR[0] = 1.;
+//  yR[1] = 1.3;
+//  yR[3] = 0.;
+//  yR[4] = 0.;
+//  yR[2] = 1.;
+//  yR[5] = 0.0707372016677029;
+//  yR[6] = 0.9974949866040544;
+//  yR[7] = 1.5;
+//  yR[8] = 0.;
+//
+//  conservatives(yL, wL);
+//  conservatives(yR, wR);
+//
+//  if(x[0] < 5)
+//    for(i=0; i<9; i++){
+//      w[i] = wL[i];
+//    }
+//  else
+//    for(i=0; i<9; i++){
+//      w[i] = wR[i];
+//    }
 
-  yR[0] = 1.;
-  yR[1] = 1.3;
-  yR[3] = 0.;
-  yR[4] = 0.;
-  yR[2] = 1.;
-  yR[5] = 0.0707372016677029;
-  yR[6] = 0.9974949866040544;
-  yR[7] = 1.5;
-  yR[8] = 0.;
+  yL[0] = gam*gam;
+  yL[1] = -sin(x[1]);
+  yL[2] = gam;
+  yL[3] = sin(x[0]);
+  yL[4] = 0.0;
+  yL[5] = sin(2*(x[0]));
+  yL[6] = 0.0;
+  yL[7] = -sin(x[1]);
+  yL[8] = 0.0;
 
-  conservatives(yL, wL);
-  conservatives(yR, wR);
-
-  if(x[0] < 5)
-    for(i=0; i<9; i++){
-      w[i] = wL[i];
-    }
-  else
-    for(i=0; i<9; i++){
-      w[i] = wR[i];
-    }
+  conservatives(yL, w);
+  
 }
 #pragma end_opencl
