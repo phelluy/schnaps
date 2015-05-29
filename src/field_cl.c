@@ -514,6 +514,12 @@ void DGMass_CL(void *mc, field *f,
     // subcell) * (number of subcells)
     size_t numworkitems = param[4] * param[5] * param[6] * groupsize;
 
+    unsigned int m = f->interp_param[0];
+    unsigned int nreadsdgmass = m;
+    unsigned int nmultsdgmass = m + 1296;
+    f->nmults += numworkitems * nmultsdgmass;
+    f->nreads += numworkitems * nreadsdgmass;
+    
     status = clEnqueueNDRangeKernel(f->cli.commandqueue,
 				    f->dgmass,
 				    1, // cl_uint work_dim,
@@ -634,7 +640,13 @@ void DGFlux_CL(field *f, int dim0, int ie, cl_mem *wn_cl,
     size_t numworkitems = nf * npgf;
     size_t groupsize = npgf;
     init_DGFlux_CL(f, ie, dim0, wn_cl, 4 * m * groupsize);
-     
+
+    unsigned int nreadsdgflux = 4 * m;
+    unsigned int nmultsdgflux = 1296 + 2 * m;
+    nmultsdgflux += 3 * m; // Using NUMFLUX = NumFlux
+    f->nmults += numworkitems * nmultsdgflux;
+    f->nreads += numworkitems * nreadsdgflux;
+    
     // Launch the kernel
     cl_int status;
     status = clEnqueueNDRangeKernel(f->cli.commandqueue,
@@ -669,8 +681,17 @@ void DGVolume_CL(void *mc, field *f, cl_mem *wn_cl,
   // The total work items number is the number of glops in a subcell
   // * number of subcells
   size_t numworkitems = param[4] * param[5] * param[6] * groupsize;
+  
+  unsigned int nreadsdgvol = 2 * m; // read m from wn, write m to dtwn
+  unsigned int nmultsdgvol = 1296 + m;
+  nmultsdgvol += 3 * m; // Using NUMFLUX = NumFlux
+  
+  f->nmults += numworkitems * nmultsdgvol;
+  f->nreads += numworkitems * nreadsdgvol;
+  
+  
   init_DGVolume_CL(f, wn_cl, 2 * groupsize * m);
-    
+  
   const int start = mcell->first;
   const int end = mcell->last_p1;
   
@@ -1221,6 +1242,15 @@ void show_cl_timing(field *f)
   printf("rk time:                      %f%% \t%luns \t%fs\n", 
 	 ns*N, (unsigned long) ns, 1e-9 * ns);
 
+  printf("\n");
+
+  printf("Roofline counts:\n");
+  printf("Number of reads/writes of reals from global memory: %d\n", f->nreads);
+  printf("Number of real multiplies in kernels:               %d\n", f->nmults);
+  printf("NB: real multiplies assumes the flux involved 3m multiplies.\n");
+  printf("Terms included in roofline: volume, flux, and mass.\n");
+  
+  printf("\n");
 }
 
 #endif // _WITH_OPENCL

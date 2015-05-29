@@ -1,22 +1,29 @@
+#ifndef _MHD_H
+#define _MHD_H
+#include "model.h"
+
 #pragma start_opencl
 //! \brief computes the conservatives states from the primitives
 //! \param[in] y : primitives states
 //! \param[out] w : conservatives states
-void conservatives(double *y, double *w);
+void conservatives(real *y, real *w);
+void primitives(real *W, real *Y);
+
 
 //! \brief Numerical flux for the MHD model
 //! \param[in] w : states
 //! \param[in] vn : normal vector
 //! \param[out] flux : the flux
-void fluxnum(double *w, double *vn, double *flux);
+void fluxnum(real *w, real *vn, real *flux);
 
 //! \brief particular flux for the MHD model
 //! \param[in] wL,wR : left and right states
 //! \param[in] vn : normal vector
 //! \param[out] flux : the flux
-void MHDNumFluxRusanov(double *wL, double *wR, double *vn, double *flux);
-void MHDNumFluxP2(double wL[],double wR[],double* vn, double* flux);
-void MHDNumFlux1D(double wL[],double wR[],double* vn, double* flux);
+void MHDNumFluxRusanov(real *wL, real *wR, real *vn, real *flux);
+void MHDNumFluxP2(real wL[],real wR[],real* vn, real* flux);
+void MHDNumFlux1D(real wL[],real wR[],real* vn, real* flux);
+
 
 //! \brief particular boundary flux for the MHD model
 //! \param[in] x : space position
@@ -24,22 +31,22 @@ void MHDNumFlux1D(double wL[],double wR[],double* vn, double* flux);
 //! \param[in] wL : left state
 //! \param[in] vn : normal vector
 //! \param[out] flux : the flux
-void MHDBoundaryFlux(double *x, double t, double *wL, double *vn, double *flux);
+void MHDBoundaryFlux(real *x, real t, real *wL, real *vn, real *flux);
 
 //! \brief particular init data for the MHD model
 //! \param[in] x : space position
 //! \param[out] w : init state at point x
-void MHDInitData(double *x,double *w);
+void MHDInitData(real *x, real *w);
 
 //! \brief particular imposed data for the MHD model
 //! \param[in] x,t : space and time position
 //! \param[out] w : imposed state at point x and time t
-void MHDImposedData(double *x,double t, double *w);
-
-void primitives(double *W, double *Y);
+void MHDImposedData(real *x,real t, real *w);
 #pragma end_opencl
 
 // FIXME: using "real var[]" instead of "real *var" breaks OpenCL on
 // certain platforms.
-void jacobmhd(double* W,double* vn, double M[9][9]);
-void matrix_vector(double A[9][9], double B[9], double* C);
+void jacobmhd(real* W,real* vn, real M[9][9]);
+void matrix_vector(real A[9][9], real B[9], real* C);
+
+#endif

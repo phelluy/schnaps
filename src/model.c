@@ -196,6 +196,7 @@ real vlasov_vel(const int id, const int md, real vlasov_vmax)
   return (id - mid) * dv;
 }
 
+// 3m multiplies
 void vlaTransNumFlux2d(real wL[], real wR[], real *vnorm, real *flux) 
 {
   for(int ix = 0; ix < vlasov_mx; ++ix) {

@@ -153,8 +153,11 @@ typedef struct field {
   cl_ulong minter_time;
   cl_ulong boundary_time;
   cl_ulong rk_time;
-#endif
 
+  // OpenCL roofline measurements
+  unsigned int nmults; // number of real multiplies
+  unsigned int nreads; // number of real reads
+#endif
 } field;
 
 //! \brief memory arrangement of field components.
