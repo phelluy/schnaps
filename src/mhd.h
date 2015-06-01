@@ -21,8 +21,8 @@ void fluxnum(real *w, real *vn, real *flux);
 //! \param[in] vn : normal vector
 //! \param[out] flux : the flux
 void MHDNumFluxRusanov(real *wL, real *wR, real *vn, real *flux);
-void MHDNumFluxP2(real wL[],real wR[],real* vn, real* flux);
-void MHDNumFlux1D(real wL[],real wR[],real* vn, real* flux);
+void MHDNumFluxP2(real *wL,real *wR,real *vn, real *flux);
+void MHDNumFlux1D(real *wL,real *wR,real *vn, real *flux);
 
 
 //! \brief particular boundary flux for the MHD model
@@ -42,11 +42,13 @@ void MHDInitData(real *x, real *w);
 //! \param[in] x,t : space and time position
 //! \param[out] w : imposed state at point x and time t
 void MHDImposedData(real *x,real t, real *w);
-#pragma end_opencl
 
 // FIXME: using "real var[]" instead of "real *var" breaks OpenCL on
 // certain platforms.
-void jacobmhd(real* W,real* vn, real M[9][9]);
-void matrix_vector(real A[9][9], real B[9], real* C);
+void jacobmhd(real* W,real* vn, real *M);
+void matrix_vector(real *A, real B[9], real* C);
+
+#pragma end_opencl
+
 
 #endif

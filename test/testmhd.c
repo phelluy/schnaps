@@ -76,7 +76,7 @@ int TestMHD(int argc, char *argv[]) {
 
   strcpy(f.model.name,"MHD");
 
-  f.model.NumFlux=MHDNumFluxRusanov;
+  f.model.NumFlux=MHDNumFluxP2;
   f.model.BoundaryFlux=MHDBoundaryFlux;
   f.model.InitData=MHDInitData;
   f.model.ImposedData=MHDImposedData;
@@ -85,7 +85,7 @@ int TestMHD(int argc, char *argv[]) {
   sprintf(buf, "-D _M=%d", f.model.m);
   strcat(cl_buildoptions, buf);
 
-  sprintf(numflux_cl_name, "%s", "MHDNumFluxRusanov");
+  sprintf(numflux_cl_name, "%s", "MHDNumFluxP2");
   sprintf(buf," -D NUMFLUX=");
   strcat(buf, numflux_cl_name);
   strcat(cl_buildoptions, buf);

@@ -2,6 +2,7 @@
 #include <math.h>
 #include <stdio.h>
 #include <assert.h>
+#include <stdlib.h>
 
 #pragma start_opencl
 // FIXME: Do not set variables with #define.
@@ -47,17 +48,17 @@ void primitives(real *W, real *Y) {
   Y[8] = W[8]; // psi
 }
 #pragma end_opencl
-void jacobmhd(real* W,real* vn, real M[9][9]){
+void jacobmhd(real* W,real* vn, real *M){
 
   int i, j;
   real gam = _GAM;
-  real Y[9];
+  real *Y = malloc(9 * sizeof(real));
 
   real rho, ux, uy, uz, by, bz, p, bx;
 
   for(i = 0; i < 9; i++){
     for(j = 0; j < 9; j++) {
-      M[i][j] = 0;
+      M[i*9+j] = 0;
     }
   }
 
@@ -72,86 +73,88 @@ void jacobmhd(real* W,real* vn, real M[9][9]){
   bz = Y[6];
   bx = Y[7];
 
-  M[0][0] = ux * vn[0] + uy * vn[1] + uz * vn[2];
-  M[0][1] = rho * vn[0];
-  M[0][3] = rho * vn[1];
-  M[0][4] = rho * vn[2];
+  M[0*9+0] = ux * vn[0] + uy * vn[1] + uz * vn[2];
+  M[0*9+1] = rho * vn[0];
+  M[0*9+3] = rho * vn[1];
+  M[0*9+4] = rho * vn[2];
 
-  M[1][1] = ux*vn[0]+uy*vn[1]+uz*vn[2];
-  M[1][2] = 1/rho*vn[0];
-  M[1][5] = -(vn[1]*bx-by*vn[0])/rho;
-  M[1][6] = -(vn[2]*bx-bz*vn[0])/rho;
-  M[1][7] = -(bx*vn[0]+by*vn[1]+bz*vn[2])/rho;
+  M[1*9+1] = ux*vn[0]+uy*vn[1]+uz*vn[2];
+  M[1*9+2] = 1/rho*vn[0];
+  M[1*9+5] = -(vn[1]*bx-by*vn[0])/rho;
+  M[1*9+6] = -(vn[2]*bx-bz*vn[0])/rho;
+  M[1*9+7] = -(bx*vn[0]+by*vn[1]+bz*vn[2])/rho;
 
-  M[2][1] = gam*p*vn[0];
-  M[2][2] = ux*vn[0]+uy*vn[1]+uz*vn[2];
-  M[2][3] = gam*p*vn[1];
-  M[2][4] = gam*p*vn[2];
-  M[2][5] = -ux*vn[1]*bx-uz*bz*vn[1]-uy*by*vn[1]+uy*by*vn[1]*gam+\
+  M[2*9+1] = gam*p*vn[0];
+  M[2*9+2] = ux*vn[0]+uy*vn[1]+uz*vn[2];
+  M[2*9+3] = gam*p*vn[1];
+  M[2*9+4] = gam*p*vn[2];
+  M[2*9+5] = -ux*vn[1]*bx-uz*bz*vn[1]-uy*by*vn[1]+uy*by*vn[1]*gam+\
     ux*gam*vn[1]*bx+uz*gam*bz*vn[1];
-  M[2][6] = -uz*vn[2]*bz+ux*gam*bx*vn[2]+uy*gam*by*vn[2]+uz*bz*vn[2]*gam-\
+  M[2*9+6] = -uz*vn[2]*bz+ux*gam*bx*vn[2]+uy*gam*by*vn[2]+uz*bz*vn[2]*gam-\
     ux*vn[2]*bx-uy*by*vn[2];
-  M[2][7] = -ux*vn[0]*bx-uy*by*vn[0]-uz*bz*vn[0]+ux*bx*vn[0]*gam+\
+  M[2*9+7] = -ux*vn[0]*bx-uy*by*vn[0]-uz*bz*vn[0]+ux*bx*vn[0]*gam+\
     uy*gam*vn[0]*by+uz*gam*bz*vn[0];
-  M[2][8] = -bx*vn[0]*gam+bx*vn[0]-by*vn[1]*gam+by*vn[1]\
+  M[2*9+8] = -bx*vn[0]*gam+bx*vn[0]-by*vn[1]*gam+by*vn[1]\
     -bz*vn[2]*gam+bz*vn[2];
 
-  M[3][2] = 1/rho*vn[1];
-  M[3][3] = ux*vn[0]+uy*vn[1]+uz*vn[2];
-  M[3][5] = -(bx*vn[0]+by*vn[1]+bz*vn[2])/rho;
-  M[3][6] = -(vn[2]*by-bz*vn[1])/rho;
-  M[3][7] = (vn[1]*bx-by*vn[0])/rho;
+  M[3*9+2] = 1/rho*vn[1];
+  M[3*9+3] = ux*vn[0]+uy*vn[1]+uz*vn[2];
+  M[3*9+5] = -(bx*vn[0]+by*vn[1]+bz*vn[2])/rho;
+  M[3*9+6] = -(vn[2]*by-bz*vn[1])/rho;
+  M[3*9+7] = (vn[1]*bx-by*vn[0])/rho;
 
-  M[4][2] = 1/rho*vn[2];
-  M[4][4] = ux*vn[0]+uy*vn[1]+uz*vn[2];
-  M[4][5] = (vn[2]*by-bz*vn[1])/rho;
-  M[4][6] = -(bx*vn[0]+by*vn[1]+bz*vn[2])/rho;
-  M[4][7] = (vn[2]*bx-bz*vn[0])/rho;
+  M[4*9+2] = 1/rho*vn[2];
+  M[4*9+4] = ux*vn[0]+uy*vn[1]+uz*vn[2];
+  M[4*9+5] = (vn[2]*by-bz*vn[1])/rho;
+  M[4*9+6] = -(bx*vn[0]+by*vn[1]+bz*vn[2])/rho;
+  M[4*9+7] = (vn[2]*bx-bz*vn[0])/rho;
 
-  M[5][1] = by*vn[0];
-  M[5][3] = -bx*vn[0]-bz*vn[2];
-  M[5][4] = vn[2]*by;
-  M[5][5] = ux*vn[0]+uz*vn[2];
-  M[5][6] = -vn[2]*uy;
-  M[5][7] = -vn[0]*uy;
-  M[5][8] = vn[1];
+  M[5*9+1] = by*vn[0];
+  M[5*9+3] = -bx*vn[0]-bz*vn[2];
+  M[5*9+4] = vn[2]*by;
+  M[5*9+5] = ux*vn[0]+uz*vn[2];
+  M[5*9+6] = -vn[2]*uy;
+  M[5*9+7] = -vn[0]*uy;
+  M[5*9+8] = vn[1];
 
-  M[6][1] = bz*vn[0];
-  M[6][3] = bz*vn[1];
-  M[6][4] = -vn[0]*bx-by*vn[1];
-  M[6][5] = -vn[1]*uz;
-  M[6][6] = ux*vn[0]+uy*vn[1];
-  M[6][7] = -vn[0]*uz;
-  M[6][8] = vn[2];
+  M[6*9+1] = bz*vn[0];
+  M[6*9+3] = bz*vn[1];
+  M[6*9+4] = -vn[0]*bx-by*vn[1];
+  M[6*9+5] = -vn[1]*uz;
+  M[6*9+6] = ux*vn[0]+uy*vn[1];
+  M[6*9+7] = -vn[0]*uz;
+  M[6*9+8] = vn[2];
 
-  M[7][1] = -vn[1]*by-bz*vn[2];
-  M[7][3] = bx*vn[1];
-  M[7][4] = bx*vn[2];
-  M[7][5] = -vn[1]*ux;
-  M[7][6] = -vn[2]*ux;
-  M[7][7] = uy*vn[1]+uz*vn[2];
-  M[7][8] = vn[0];
+  M[7*9+1] = -vn[1]*by-bz*vn[2];
+  M[7*9+3] = bx*vn[1];
+  M[7*9+4] = bx*vn[2];
+  M[7*9+5] = -vn[1]*ux;
+  M[7*9+6] = -vn[2]*ux;
+  M[7*9+7] = uy*vn[1]+uz*vn[2];
+  M[7*9+8] = vn[0];
 
-  M[8][5] = _CH*_CH*vn[1];
-  M[8][6] = _CH*_CH*vn[2];
-  M[8][7] = _CH*_CH*vn[0];
+  M[8*9+5] = _CH*_CH*vn[1];
+  M[8*9+6] = _CH*_CH*vn[2];
+  M[8*9+7] = _CH*_CH*vn[0];
 
   for(i = 0; i < 9; i++) {
     for(j = 0; j < 9; j++) {
-      M[i][j] /= _CH;
+      M[i*9+j] /= _CH;
     }
   }
+  free(Y);
+  
 }
 
 
 // Matrix-Vector multiplication
 // FIXME: [] is not suitable for OpenCL
-void matrix_vector(real A[9][9], real B[9], real *C) {
+void matrix_vector(real *A, real *B, real *C) {
   int i, j;
   for(i = 0; i < 9; i++) {
     C[i] = 0;
     for(j = 0; j < 9; j++) {
-      C[i] += A[i][j]*B[j];
+      C[i] += A[i*9+j]*B[j];
     }
   }
 }
@@ -190,14 +193,18 @@ void MHDNumFluxRusanov(real *wL, real *wR,real *vnorm, real *flux) {
   int i;
   real fluxL[9];
   real fluxR[9];
+  
   fluxnum(wL, vnorm, fluxL);
   fluxnum(wR, vnorm, fluxR);
 
   for(i = 0; i < 9; i++){
     flux[i] = (fluxL[i] + fluxR[i]) / 2 - _CH * (wR[i] - wL[i]) / 2;
   }
+
 }
 #pragma end_opencl
+
+#pragma start_opencl
 void MHDNumFluxP2(real *wL, real *wR, real *vn, real *flux) {
 
   int i, j;
@@ -205,14 +212,12 @@ void MHDNumFluxP2(real *wL, real *wR, real *vn, real *flux) {
   real wRmwL[9];
   real Z[9];
 
-  real M[9][9];
-  real M2[9][9];
+  real M[81];
 
   // Initialize matrix to 0
   for(i = 0; i < 9 ; i++) {
     for(j = 0; j < 9 ; j++) {
-      M[i][j] = 0;
-      M2[i][j] = 0;
+      M[i*9+j] = 0;
     }
   }
 
@@ -255,8 +260,9 @@ void MHDNumFluxP2(real *wL, real *wR, real *vn, real *flux) {
     flux[i] = (fluxL[i] + fluxR[i]) / 2 - _CH * dabs[i] / 2;
   }
 }
+#pragma end_opencl
 
-
+#pragma start_opencl
 void MHDNumFlux1D(real *WL, real *WR, real *vn, real *flux) {
   
   real gam = _GAM;
@@ -445,6 +451,7 @@ void MHDNumFlux1D(real *WL, real *WR, real *vn, real *flux) {
   flux[7]  = 0;
   flux[8]  = 0;
 }
+#pragma end_opencl
 
 #pragma start_opencl
 void MHDBoundaryFlux(real *x, real t, real *wL, real *vnorm,
