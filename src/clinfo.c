@@ -490,6 +490,8 @@ double cl_dev_gflops(char *platform_name)
 {
   //if(strcmp(platform_name, "Intel(R) Core(TM) i3-4010U CPU @ 1.70GHz") == 0)
   //  return 2;
+  if(strcmp(platform_name, "Tahiti") == 0)
+    return (sizeof(real) == sizeof(float)) ? 3788.8 : 947.2;
   if(strcmp(platform_name, "GeForce GT 540M") == 0)
     return 258.048;
   return 0;
@@ -499,6 +501,8 @@ double cl_dev_bwidth(char *platform_name)
 {
   //if(strcmp(platform_name, "Intel(R) Core(TM) i3-4010U CPU @ 1.70GHz") == 0)
   //  return 2;
+  if(strcmp(platform_name, "Tahiti") == 0)
+    return 264.0;
   if(strcmp(platform_name, "GeForce GT 540M") == 0)
     return 28.8;
   return 0;
