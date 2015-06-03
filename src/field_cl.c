@@ -1206,6 +1206,14 @@ void RK2_CL(field *f, real tmax,
 void show_cl_timing(field *f)
 {
   printf("\n");
+  printf("Device characteristics:\n");
+  printf("\tname:\t%sF\n", f->cli.devicename);
+  double dev_gflops = cl_dev_gflops(f->cli.devicename);
+  double dev_bwidth = cl_dev_bwidth(f->cli.devicename);
+  printf("\tgflops:   \t%f\n", dev_gflops);
+  printf("\tbandwidth:\t%f\n", dev_bwidth);
+
+  printf("\n");
   printf("Roofline counts:\n");
   unsigned long int flops_total = f->flops_vol + f->flops_flux + f->flops_mass;
   unsigned long int reads_total = f->reads_vol + f->reads_flux + f->reads_mass;
@@ -1244,9 +1252,8 @@ void show_cl_timing(field *f)
 
   printf("Total:  GFLOP/s: %f\tbandwidth (GB/s): %f\n", 
 	 1e-9 * roofline_flops, 1e-9 * roofline_bw);
-
-  printf("\n"); 
-
+  
+  printf("\n");
 
   printf("Kernel execution times:\n"); 
   cl_ulong total = 0;
@@ -1293,12 +1300,14 @@ void show_cl_timing(field *f)
   printf("\n");
   
   ns = total;
+  double total_time = 1e-9 * ns;
   printf("total time:                   %f%% \t%luns \t%fs\n", 
-	 ns*N, (unsigned long) ns, 1e-9 * ns);
+	 ns*N, (unsigned long) ns, total_time);
 
   printf("\n");
-
-
+  printf("Total kernel performance:\n");
+  print_kernel_perf(dev_gflops, dev_bwidth,
+		    flops_total, reads_total, total);
   
   printf("\n");
 }
