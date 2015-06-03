@@ -488,17 +488,20 @@ void GetOpenCLCode(void){
 
 double cl_dev_gflops(char *platform_name)
 {
-  // FIXME: the == operator doesn't cut it here.
-  if(platform_name == "Intel(R) Core(TM) i3-4010U CPU @ 1.70GHz")
-    return 1; // FIXME: temp value.
-  return 1; // FIXME: temp!  should be zero as default
+  //if(strcmp(platform_name, "Intel(R) Core(TM) i3-4010U CPU @ 1.70GHz") == 0)
+  //  return 2;
+  if(strcmp(platform_name, "GeForce GT 540M") == 0)
+    return 258.048;
+  return 0;
 }
 
 double cl_dev_bwidth(char *platform_name)
 {
-  if(platform_name == "Intel(R) Core(TM) i3-4010U CPU @ 1.70GHz")
-    return 1;
-  return 1;// FIXME: temp!  should be zero as default
+  //if(strcmp(platform_name, "Intel(R) Core(TM) i3-4010U CPU @ 1.70GHz") == 0)
+  //  return 2;
+  if(strcmp(platform_name, "GeForce GT 540M") == 0)
+    return 28.8;
+  return 0;
 }
 
 // Given the dev_flops (in gflop/s) and the bandwidth (in GB/s), the
