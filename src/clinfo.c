@@ -490,6 +490,9 @@ double cl_dev_gflops(char *platform_name)
 {
   //if(strcmp(platform_name, "Intel(R) Core(TM) i3-4010U CPU @ 1.70GHz") == 0)
   //  return 2;
+  if(strcmp(platform_name, "Intel(R) Many Integrated Core Acceleration Card")
+     == 0)
+    return 1011.0;
   if(strcmp(platform_name, "Tahiti") == 0)
     return (sizeof(real) == sizeof(float)) ? 3788.8 : 947.2;
   if(strcmp(platform_name, "GeForce GT 540M") == 0)
@@ -501,6 +504,9 @@ double cl_dev_bwidth(char *platform_name)
 {
   //if(strcmp(platform_name, "Intel(R) Core(TM) i3-4010U CPU @ 1.70GHz") == 0)
   //  return 2;
+  if(strcmp(platform_name, "Intel(R) Many Integrated Core Acceleration Card")
+     == 0)
+    return 320.0;
   if(strcmp(platform_name, "Tahiti") == 0)
     return 264.0;
   if(strcmp(platform_name, "GeForce GT 540M") == 0)
@@ -514,8 +520,8 @@ double cl_dev_bwidth(char *platform_name)
 double kernel_min_time(double dev_flops, double bandwidth,
 		       unsigned long int flop_count, unsigned long int io_count)
 {
-  return flop_count / (1e9 * dev_flops) 
-    + io_count * sizeof(real)  / (1e9 * bandwidth); 
+  return flop_count / (1e9 * dev_flops); 
+  + io_count * sizeof(real)  / (1e9 * bandwidth); 
 }
 
 void print_kernel_perf(double dev_gflops, double dev_bwidth,
