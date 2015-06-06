@@ -217,8 +217,59 @@ void Ref2Phy(__constant real *physnode,
   }
 }
 
+// Given physnode and xref, compute xphy
+void Ref2Phy_only(__constant real *physnode, const real xref[3], real xphy[3])
+{
+  // compute the mapping and its jacobian
+  real x = xref[0];
+  real y = xref[1];
+  real z = xref[2];
+
+  // gradient of the shape functions and value (4th component)
+  // of the shape functions
+  real gradphi[20][4];
+  compute_gradphi(x, y, z, gradphi);
+
+  for(int ii = 0; ii < 3; ++ii) {
+    xphy[ii] = 0;
+    for(int i = 0; i < 20; ++i) {
+      xphy[ii] += physnode[3 * i + ii] * gradphi[i][3];
+    }
+  }
+}
+
+
 void Phy2Ref(__constant real *physnode,
              real xphy[3], real xref[3]);
+
+// Given parameters deg and nraf and input ipg, compute the reference
+// coordinages (xpg) and the weght of the Gauss piont (wpg).
+void ref_pg_vol(const int *deg, const int *nraf, 
+		const int ipg, real *xpg, real *wpg) {
+  int ix[3], ic[3];
+  ipg_to_xyz(nraf, deg, ic, ix, &ipg);
+
+  real hx = 1 / (real) nraf[0];
+  real hy = 1 / (real) nraf[1];
+  real hz = 1 / (real) nraf[2];
+
+  //printf("h=%f %f %f\n",hx,hy,hz);
+
+  int offset[3];
+  offset[0] = gauss_lob_offset[deg[0]] + ix[0];
+  offset[1] = gauss_lob_offset[deg[1]] + ix[1];
+  offset[2] = gauss_lob_offset[deg[2]] + ix[2];
+
+  xpg[0] = hx * (ic[0] + gauss_lob_point[offset[0]]);
+  xpg[1] = hy * (ic[1] + gauss_lob_point[offset[1]]);
+  xpg[2] = hz * (ic[2] + gauss_lob_point[offset[2]]);
+  
+  *wpg = hx * hy * hz *
+    gauss_lob_weight[offset[0]]*
+    gauss_lob_weight[offset[1]]*
+    gauss_lob_weight[offset[2]];
+}
+
 
 int ref_pg_face(const int *ndeg, const int *nraf0,
 		int ifa, int ipg,
@@ -1166,14 +1217,24 @@ int ref_ipg(__constant int *param, real *xref)
   return ix + (deg[0] + 1) * (iy + (deg[1] + 1) * iz) + offset;
 }
 
+#ifndef _SOURCE_FUNC
+#define _SOURCE_FUNC ZeroSource
+#endif
+
+void ZeroSource(const real *x, real t, real *w, real *source) {
+  for(int i = 0; i < _M; ++i) 
+    source[i] = 0.0;
+}
+
 // Compute the source terms inside  one macrocell
 __kernel
 void DGSource(__constant int *param,     // 0: interp param
 	      int ie,                    // 1: macrocel index
 	      __constant real *physnode, // 2: macrocell nodes
-              __global real *wn,         // 3: field values
-	      __global real *dtwn,       // 4: time derivative
-	      __local real *wnloc        // 5: cache for wn and dtwn
+	      const real tnow,           // 3: the current time
+              __global real *wn,         // 4: field values
+	      __global real *dtwn,       // 5: time derivative
+	      __local real *wnloc        // 6: cache for wn and dtwn
 	      )
 {
   const int m = param[0];
@@ -1183,57 +1244,58 @@ void DGSource(__constant int *param,     // 0: interp param
 
   __local real *dtwnloc = wnloc  + m * npg[0] * npg[1] * npg[2];
 
-  // Prefetch: m reads of wn
+  // Prefetch: m reads of wn, m reads of dtwn
   // TODO: put prefetch in function
   int icell = get_group_id(0);
   for(int i = 0; i < m ; ++i){
     int iread = get_local_id(0) + i * get_local_size(0);
     int iv = iread % m;
     int ipgloc = iread / m;
-    int ipg = ipgloc + icell * get_local_size(0);
-    int imem = VARINDEX(param, ie, ipg, iv);
+    int ipgL = ipgloc + icell * get_local_size(0);
+    int imem = VARINDEX(param, ie, ipgL, iv);
     int imemloc = iv + ipgloc * m;
     
     wnloc[imemloc] = wn[imem];
-    dtwnloc[imemloc] = 0;
+    dtwnloc[imemloc] = dtwn[imem];
   }
 
   barrier(CLK_LOCAL_MEM_FENCE);
 
+  // Compute Gauss point id where we compute the jacobian
+  const int ipgL = get_local_id(0);
+    
   // subcell id
   int icL[3];
   icL[0] = icell % nraf[0];
   icL[1] = (icell / nraf[0]) % nraf[1];
   icL[2]= icell / nraf[0] / nraf[1];
 
-  // Gauss point id where we compute the jacobian
-  int p[3];
-  //ipg_to_xyz(get_local_id(0), p, npg
-  {
-    int ipg = get_local_id(0);
-    p[0] = ipg % npg[0];
-    p[1] = (ipg / npg[0]) % npg[1];
-    p[2] = ipg / npg[0] / npg[1];
-  }
-
+  // Compute xref
+  real xref[3];
+  real wpg;
+  ref_pg_vol(deg, nraf, ipgL, xref, &wpg);
+  
+  // Compute xphy
+  real xphy[3];
+  Ref2Phy_only(physnode, xref, xphy); 
+  
   real w[_M];
   {
-    int ipgL = ipg(npg, p, 0);
     __local real *wnloc0 = wnloc + ipgL * m;
     for(int iv = 0; iv < m; iv++) {
       w[iv] = wnloc0[iv];
     }
   }
 
-  real source[_M];
-  
   // compute source using w and xref, putting the result in source
-  
-  
+  real source[_M];
+  _SOURCE_FUNC(xphy, tnow, w, source);
   
   // Add the source buffer to dtw
-  
-  
+  int imemR0loc = ipgL * m;
+  __local real *dtwnloc0 =  dtwnloc + imemR0loc;
+  for(int iv = 0; iv < m; iv++)
+    dtwnloc0[iv] = source[iv] * wpg;
 
   barrier(CLK_LOCAL_MEM_FENCE);
 
@@ -1242,8 +1304,8 @@ void DGSource(__constant int *param,     // 0: interp param
     int iread = get_local_id(0) + i * get_local_size(0);
     int iv = iread % m;
     int ipgloc = iread / m ;
-    int ipg = ipgloc + icell * get_local_size(0);
-    int imem = VARINDEX(param, ie, ipg, iv);
+    int ipgL = ipgloc + icell * get_local_size(0);
+    int imem = VARINDEX(param, ie, ipgL, iv);
     int imemloc = ipgloc * m + iv;
     dtwn[imem] += dtwnloc[imemloc];
   }

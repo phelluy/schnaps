@@ -189,7 +189,8 @@ void xyz_to_ipg(int* raf, int* deg, int* ic, int* ix, int *ipg) {
 #pragma end_opencl
 
 #pragma start_opencl
-void ipg_to_xyz(int *raf, int *deg, int *ic, int *ix, int *pipg) {
+void ipg_to_xyz(const int *raf, const int *deg, int *ic, int *ix, 
+		const int *pipg) {
   int ipg = *pipg;
 
   ix[0] = ipg % (deg[0] + 1);
@@ -277,7 +278,7 @@ void ref_pg_vol(int *param, int ipg, real *xpg, real *wpg, real *xpg_in) {
   nraf[1] = param[4];
   nraf[2] = param[5];
 
-  int ix[3],ic[3];
+  int ix[3], ic[3];
 
   ipg_to_xyz(nraf,deg,ic,ix,&ipg);
 
@@ -319,7 +320,7 @@ void ref_pg_vol(int *param, int ipg, real *xpg, real *wpg, real *xpg_in) {
     /*  printf("xpg_in %f %f %f %d %d %d\n",xpg_in[0],xpg_in[1],xpg_in[2], */
     /* 	   ix,iy,iz); */
   }
-};
+}
 
 // Return the reference coordinates xpg[3] and weight wpg of the GLOP
 // ipg on the face ifa.

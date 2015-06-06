@@ -251,6 +251,12 @@ void init_field_cl(field *f)
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 
+  f->dgsource = clCreateKernel(f->cli.program,
+			       "DGSource",
+			       &status);
+  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status >= CL_SUCCESS);
+
   f->dginterface = clCreateKernel(f->cli.program,
 				  "DGMacroCellInterface",
 				  &status);
@@ -307,6 +313,7 @@ void init_field_cl(field *f)
   f->clv_flux[2] = clCreateUserEvent(f->cli.context, &status);
 
   f->clv_volume = clCreateUserEvent(f->cli.context, &status);
+  f->clv_source = clCreateUserEvent(f->cli.context, &status);
 
   // Set timers to zero
   f->zbuf_time = 0;
@@ -1355,8 +1362,9 @@ void DGVolume(void *mc, field *f, real *w, real *dtw)
 		    int ipgR = offsetL+q[0]+npg[0]*(q[1]+npg[1]*q[2]);
 		    for(int iv = 0; iv < m; iv++) {
 		      int imemR = f->varindex(f_interp_param, ie, ipgR, iv);
-		      assert(imemR == imems[m * (ipgR - offsetL) + iv]);
-		      dtw[imems[m*(ipgR-offsetL)+iv]]+=flux[iv]*wpgL;
+		      int temp = m * (ipgR - offsetL) + iv;  
+		      assert(imemR == imems[temp]);
+		      dtw[imems[temp]] += flux[iv] * wpgL;
 		    }
 		  } // iq
 		} // p2

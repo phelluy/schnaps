@@ -42,7 +42,7 @@ typedef struct Model {
   //! \param[in] t : time
   //! \param[in] w :  state
   //! \param[out] source : the source
-  void (*Source)(real x[3],real t,real w[],real source[]);
+  void (*Source)(const real *x, const real t, const real *w, real *source);
 
   //! \brief A pointer to the init data function
   // !\param[in] x : space position

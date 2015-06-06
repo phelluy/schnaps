@@ -60,7 +60,7 @@ real GyroL2VelError(real* x,real t,real *w);
 
 //! \brief compute compute the source term of the collision
 //! model: electric force + true collisions
-void GyroSource(real* x,real t, real* w, real* source);
+void GyroSource(const real *x, const real t, const real *w, real *source);
 
 //! \brief gnuplot file for the distribution function
 //! \param[in] w : values of f at glops

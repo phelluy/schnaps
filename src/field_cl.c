@@ -334,6 +334,61 @@ void init_DGVolume_CL(field *f, cl_mem *wn_cl, size_t cachesize)
   /* assert(status >= CL_SUCCESS); */
 }
 
+// Set kernel argument for DGVolume_CL
+void init_DGSource_CL(field *f, cl_mem *wn_cl, size_t cachesize)
+{
+  //printf("DGVolume cachesize:%zu\n", cachesize);
+
+  cl_int status;
+  int argnum = 0;
+  cl_kernel kernel = f->dgsource;
+
+  status = clSetKernelArg(kernel,
+                          argnum++,
+                          sizeof(cl_mem),
+                          &(f->param_cl));
+  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status >= CL_SUCCESS);
+
+  // ie
+  argnum++;
+
+  status = clSetKernelArg(kernel,
+                          argnum++,
+                          sizeof(cl_mem),
+                          &f->physnode_cl);
+  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status >= CL_SUCCESS);
+
+  status = clSetKernelArg(kernel,
+  			  argnum++,
+  			  sizeof(real),
+  			  &f->tnow);
+  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status >= CL_SUCCESS);
+
+  status = clSetKernelArg(kernel,
+                          argnum++,
+                          sizeof(cl_mem),
+                          wn_cl);
+  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status >= CL_SUCCESS);
+
+  status = clSetKernelArg(kernel,
+                          argnum++,
+                          sizeof(cl_mem),
+                          &(f->dtwn_cl));
+  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status >= CL_SUCCESS);
+
+  status = clSetKernelArg(kernel,
+                          argnum++,
+                          sizeof(real) * cachesize,
+                          NULL);
+  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status >= CL_SUCCESS);
+}
+
 // Update the cl buffer with physnode data depending in the
 // macroelement with index ie
 void update_physnode_cl(field *f, int ie, cl_mem physnode_cl, real *physnode,
@@ -727,6 +782,62 @@ void DGVolume_CL(void *mc, field *f, cl_mem *wn_cl,
   }
 }
 
+// Apply division by the mass matrix OpenCL version
+void DGSource_CL(void *mc, field *f, cl_mem *wn_cl,
+		 cl_uint nwait, cl_event *wait, cl_event *done) 
+{
+  MacroCell *mcell = (MacroCell*) mc; // FIXME: just pass ie, it'll be easier.
+  cl_kernel kernel = f->dgsource;
+  int *param = f->interp_param;
+
+  cl_int status;
+  int m = param[0];
+  size_t groupsize = (param[1] + 1) * (param[2] + 1) * (param[3] + 1);
+  // The total work items number is the number of glops in a subcell
+  // times the number of subcells
+  size_t numworkitems = param[4] * param[5] * param[6] * groupsize;
+  
+  /* unsigned int nreadsdgvol = 2 * m; // read m from wn, write m to dtwn */
+  /* unsigned int nmultsdgvol = 1296 + m; */
+  /* nmultsdgvol += 3 * m; // Using NUMFLUX = NumFlux */
+  
+  /* f->nmults += numworkitems * nmultsdgvol; */
+  /* f->nreads += numworkitems * nreadsdgvol; */
+   
+  init_DGSource_CL(f, wn_cl, 2 * groupsize * m);
+  
+  const int start = mcell->first;
+  const int end = mcell->last_p1;
+  
+  // Loop on the elements
+  for(int ie = start; ie < end; ie++) {
+    status = clSetKernelArg(kernel,
+			    1,
+			    sizeof(int),
+			    &ie);
+    if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+    assert(status >= CL_SUCCESS);
+
+    // The groupsize is the number of glops in a subcell
+    /* size_t groupsize = (param[1] + 1)* (param[2] + 1)*(param[3] + 1); */
+    /* // The total work items number is the number of glops in a subcell */
+    /* // * number of subcells */
+    /* size_t numworkitems = param[4] * param[5] * param[6] * groupsize; */
+    /* //printf("groupsize=%zd numworkitems=%zd\n", groupsize, numworkitems); */
+    status = clEnqueueNDRangeKernel(f->cli.commandqueue,
+				    kernel,
+				    1,
+				    NULL,
+				    &numworkitems,
+				    &groupsize,
+				    nwait,
+				    wait,
+				    done);
+    if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+    assert(status >= CL_SUCCESS);
+  }
+}
+
 void set_buf_to_zero_cl(cl_mem *buf, int size, field *f,
 			cl_uint nwait, cl_event *wait,  cl_event *done)
 {
@@ -775,13 +886,13 @@ void dtfield_CL(field *f, cl_mem *wn_cl,
 
   //printf("f->macromesh.nbelems: %d\n", f->macromesh.nbelems);
   
-  clSetUserEventStatus(f->clv_mass, CL_COMPLETE); // start the loop
+  clSetUserEventStatus(f->clv_source, CL_COMPLETE); // start the loop
   for(int ie = 0; ie < f->macromesh.nbelems; ++ie) {
     //printf("ie: %d\n", ie);
     MacroCell *mcelli = f->mcell + ie;
     
     update_physnode_cl(f, ie, f->physnode_cl, f->physnode, &(f->vol_time),
-		       1, &(f->clv_mass),
+		       1, &(f->clv_source),
 		       &(f->clv_physnodeupdate));
     //f->???_time += clv_duration(f->clv_physnodeupdate);
 
@@ -807,6 +918,11 @@ void dtfield_CL(field *f, cl_mem *wn_cl,
   	      &(f->clv_volume),
   	      &(f->clv_mass));
     f->mass_time += clv_duration(f->clv_mass);
+
+    DGSource_CL(mcelli, f, wn_cl, 
+		1,
+		&(f->clv_mass),
+		&(f->clv_source));
   }
   clWaitForEvents(1, &(f->clv_mass));
   if(done != NULL)

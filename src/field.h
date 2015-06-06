@@ -113,6 +113,7 @@ typedef struct field {
   cl_kernel dgmass;
   cl_kernel dgflux;
   cl_kernel dgvolume;
+  cl_kernel dgsource;
   cl_kernel dginterface;
   cl_kernel dgboundary;
   cl_kernel RK_out_CL;
@@ -138,6 +139,9 @@ typedef struct field {
 
   // Subcell volume events
   cl_event clv_volume; 
+
+  // Subcell volume events
+  cl_event clv_source; 
 
   // Macrocell interface events
   cl_event clv_mci;
