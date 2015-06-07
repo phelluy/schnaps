@@ -91,9 +91,7 @@ void GyroInitData(real x[3],real w[]){
 
 }
 
-
-
-void GyroImposedData(real x[3],real t,real w[]){
+void GyroImposedData(const real x[3], const real t,real w[]){
 
   for(int i=0;i<_INDEX_MAX_KIN+1;i++){
     int j=i%_DEG_V; // local connectivity put in function
@@ -130,7 +128,7 @@ void GyroImposedData(real x[3],real t,real w[]){
 }
 
 
-real Gyro_ImposedKinetic_Data(real x[3], real t, real v) {
+real Gyro_ImposedKinetic_Data(const real x[3], const real t, real v) {
   real f;
   f=exp(-pow((v-1.*t),2)/16.); //velocity transport, Ez=1
   //f=exp(-4*pow(xi-0.5,2))*exp(-pow((v-2.*t),2));

@@ -42,12 +42,12 @@ void GyroInitData(real* x,real* w);
 //! \brief particular imposed data for the  gyro model
 //! \param[in] x : space position
 //! \param[out] w : init state at point x
-void GyroImposedData(real* x,real t,real* w);
+void GyroImposedData(const real* x, const real t,real* w);
 
 //! \brief particular imposed data for the  gyro model
 //! \param[in] x,t : space and time position
 //! \param[out] w : imposed state at point x and time t
-real Gyro_ImposedKinetic_Data(real* x,real t,real v);
+real Gyro_ImposedKinetic_Data(const real* x, const real t,real v);
 
 //! \brief compute gyro L2 error in x and v
 //! \param[in] f : a field

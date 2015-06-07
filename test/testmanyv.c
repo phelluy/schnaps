@@ -162,7 +162,7 @@ int main(int argc, char *argv[]) {
  
   // Prepare the initial fields
   Initfield(&f);
-  f.vmax=f.model.vlasov_vmax;
+  f.vmax = f.model.vlasov_vmax;
   if(dt != 0.0)
     f.dt = dt;
 

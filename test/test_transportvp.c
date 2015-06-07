@@ -8,9 +8,9 @@
 #include "diagnostics_vp.h"
 #include "solverpoisson.h"
 
-void Test_TransportVP_ImposedData(real *x, real t, real *w);
+void Test_TransportVP_ImposedData(const real *x, const real t, real *w);
 void Test_TransportVP_InitData(real *x, real *w);
-real TransportVP_ImposedKinetic_Data(real *x, real t, real v);
+real TransportVP_ImposedKinetic_Data(const real *x, const real t, real v);
 void Test_TransportVP_BoundaryFlux(real *x, real t, real *wL, real *vnorm,
 				   real *flux);
 
@@ -101,7 +101,7 @@ int Test_TransportVP(void) {
   return test;
 }
 
-void Test_TransportVP_ImposedData(real *x, real t, real *w) {
+void Test_TransportVP_ImposedData(const real *x, const real t, real *w) {
 
   for(int i = 0; i <_INDEX_MAX_KIN + 1; i++) {
     int j = i % _DEG_V; // local connectivity put in function
@@ -125,7 +125,7 @@ void Test_TransportVP_InitData(real *x, real *w) {
   Test_TransportVP_ImposedData(x, t, w);
 }
 
-real TransportVP_ImposedKinetic_Data(real *x, real t, real v) {
+real TransportVP_ImposedKinetic_Data(const real *x, const real t, real v) {
   real f;
   real pi = 4.0 * atan(1.0);
   real xnew = 0, vnew = 0;

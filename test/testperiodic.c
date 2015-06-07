@@ -9,7 +9,7 @@
 #include "solverpoisson.h"
 
 
-void TestPeriodic_ImposedData(real *x, real t, real *w);
+void TestPeriodic_ImposedData(const real *x, const real t, real *w);
 void TestPeriodic_InitData(real *x, real *w);
 void TestPeriodic_BoundaryFlux(real *x, real t, real *wL, real *vnorm,
 			       real *flux);
@@ -108,10 +108,10 @@ int TestPeriodic(void) {
 
   return test;
 
-};
+}
 
 
-void TestPeriodic_ImposedData(real x[3],real t,real w[]){
+void TestPeriodic_ImposedData(const real x[3], const real t,real w[]){
   real pi=4*atan(1.);
   for(int i=0;i<_INDEX_MAX_KIN+1;i++){
     int j=i%_DEG_V; // local connectivity put in function

@@ -4,7 +4,9 @@
 #include <assert.h>
 
 // Centered flux if eps=0, uncentered flux if eps=1
-void Maxwell2DNumFlux(real *wL, real *wR, real *vnorm, real *flux) 
+#pragma start_opencl
+void Maxwell2DNumFlux(real *wL, real *wR, real *vnorm, 
+			real *flux) 
 {
   real r = sqrt(vnorm[0] *vnorm[0] + vnorm[1] * vnorm[1]);
   real overr = 1.0 / (r + 1e-14);
@@ -40,39 +42,47 @@ void Maxwell2DNumFlux(real *wL, real *wR, real *vnorm, real *flux)
   flux[5] = 0;
   flux[6] = 0;
 }
+#pragma end_opencl
 
-void Maxwell2DImposedData(real *x, real t, real *w) 
+#pragma start_opencl
+void Maxwell2DImposedData(const real *x, const real t, real *w) 
 {
-    real pi = 4 * atan(1.0);
-    real r = 1;
-    real theta = pi / 4;
-    real u = cos(theta);
-    real v = sin(theta); 
-    real k = 2 * pi / v;
-    real c = -cos(k * (u * x[0] + v * x[1] - t));
-    
-    w[0] = -v * c / r;
-    w[1] = u * c / r;
-    w[2] = c / r;
-    w[3] = 0;
-    w[4] = 0;
-    w[5] = 0;
-    w[6] = 0;
+  real pi = 4.0 * atan(1.0);
+  real r = 1.0;
+  real theta = pi / 4.0;
+  real u = cos(theta);
+  real v = sin(theta); 
+  real k = 2.0 * pi / v;
+  real c = -cos(k * (u * x[0] + v * x[1] - t));
+  
+  w[0] = -v * c / r;
+  w[1] = u * c / r;
+  w[2] = c / r;
+  w[3] = 0;
+  w[4] = 0;
+  w[5] = 0;
+  w[6] = 0;
 }
+#pragma end_opencl
 
-void Maxwell2DBoundaryFlux(real *x, real t, real *wL, real *vnorm, real *flux)
+#pragma start_opencl
+void Maxwell2DBoundaryFlux(real *x, real t, 
+			   real *wL, real *vnorm, real *flux)
 {
   real wR[7];
   Maxwell2DImposedData(x, t, wR);
   Maxwell2DNumFlux(wL, wR, vnorm, flux);
 }
+#pragma end_opencl
 
-void Maxwell2DInitData(real x[3], real w[]) {
+void Maxwell2DInitData(real *x, real *w) 
+{
   real t = 0;
   Maxwell2DImposedData(x, t, w);
 }
 
-void Maxwell2DSource(real *x, real t, real *w, real *source)
+#pragma start_opencl
+void Maxwell2DSource(const real *x, const real t, const real *w, real *source)
 {
   real khi = 1.0;
   source[0] = w[4];
@@ -83,5 +93,5 @@ void Maxwell2DSource(real *x, real t, real *w, real *source)
   source[5] = 0;
   source[6] = 0;
 }
-
+#pragma end_opencl
 

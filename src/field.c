@@ -251,6 +251,7 @@ void init_field_cl(field *f)
     strcat(temp, " ");
     BuildKernels(&f->cli, strprog, temp);
   } else {
+    printf("No source term\n");
     BuildKernels(&f->cli, strprog, cl_buildoptions);
   }
 

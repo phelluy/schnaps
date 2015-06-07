@@ -9,7 +9,7 @@
 #include "solverpoisson.h"
 
 
-void Test_Landau_Damping_ImposedData(real x[3],real t,real w[]);
+void Test_Landau_Damping_ImposedData(const real x[3], const real t,real w[]);
 void Test_Landau_Damping_InitData(real x[3],real w[]);
 void Test_Landau_Damping_BoundaryFlux(real x[3],real t,real wL[],real* vnorm, real* flux);
 
@@ -109,9 +109,10 @@ int TestLandau_Damping_1D(void) {
 
   return test;
 
-};
+}
 
-void Test_Landau_Damping_ImposedData(real x[3],real t,real w[]){
+void Test_Landau_Damping_ImposedData(const real x[3], const real t, real w[])
+{
   //parameters of the case
   
   real k=0.5;
