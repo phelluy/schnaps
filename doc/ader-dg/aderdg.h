@@ -7,7 +7,7 @@ const double velocity[_M]={1,-1};
 // polynomial degree
 #define _D 4
 // number of interior elements
-#define _NBELEMS_IN 4
+#define _NBELEMS_IN 1
 
 
 
@@ -26,11 +26,13 @@ typedef struct ADERDG{
 
   double face[_NBFACES];
 
-  // two arrays for maintaining previous and next
+  // three arrays for maintaining previous and next
   // values of the _M conservatives variables at the _D+1
+  // and there derivatives
   // Gauss points of each cell -> size = _M * (_D+1) * nbelems
   double wnow[_NBELEMS][_D+1][_M];
   double wnext[_NBELEMS][_D+1][_M];
+  double dtw[_NBELEMS][_D+1][_M];
   // one array for the current predicted values
   double wpred[_NBELEMS][_D+1][_M];
 
@@ -47,6 +49,9 @@ typedef struct ADERDG{
 
   // number of CFL levels
   int ncfl;
+
+  // current time iteration
+  int iter;
 
   int cell_level[_NBELEMS];  
   int face_level[_NBFACES];  
