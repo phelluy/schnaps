@@ -1207,7 +1207,7 @@ void show_cl_timing(field *f)
 {
   printf("\n");
   printf("Device characteristics:\n");
-  printf("\tname:\t%sF\n", f->cli.devicename);
+  printf("\tname:\t%s\n", f->cli.devicename);
   double dev_gflops = cl_dev_gflops(f->cli.devicename);
   double dev_bwidth = cl_dev_bwidth(f->cli.devicename);
   printf("\tgflops:   \t%f\n", dev_gflops);

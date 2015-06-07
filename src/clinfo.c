@@ -495,6 +495,8 @@ double cl_dev_gflops(char *platform_name)
     return 1011.0;
   if(strcmp(platform_name, "Tahiti") == 0)
     return (sizeof(real) == sizeof(float)) ? 3788.8 : 947.2;
+  if(strcmp(platform_name, "Tesla K80") == 0)
+    return 2910;
   if(strcmp(platform_name, "GeForce GT 540M") == 0)
     return 258.048;
   return 0;
@@ -504,11 +506,14 @@ double cl_dev_bwidth(char *platform_name)
 {
   //if(strcmp(platform_name, "Intel(R) Core(TM) i3-4010U CPU @ 1.70GHz") == 0)
   //  return 2;
+
   if(strcmp(platform_name, "Intel(R) Many Integrated Core Acceleration Card")
      == 0)
     return 320.0;
-  if(strcmp(platform_name, "Tahiti") == 0)
+  if(strcmp(platform_name, "Tesla K80") == 0)
     return 264.0;
+  if(strcmp(platform_name, "Tahiti") == 0)
+    return 480;
   if(strcmp(platform_name, "GeForce GT 540M") == 0)
     return 28.8;
   return 0;
@@ -537,5 +542,5 @@ void print_kernel_perf(double dev_gflops, double dev_bwidth,
 					    flop_count, io_count);
     printf("\tTheoretical kernel time:\t%f s\n", min_time_total);
     printf("\tEfficiency:\t\t\t%f%%\n", 100.0 * min_time_total / total_time);
-  }
+  } 
 }
