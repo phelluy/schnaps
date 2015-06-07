@@ -36,17 +36,20 @@ int TestMaxwell2D(void) {
 
   BuildConnectivity(&(f.macromesh));
 
-  /* char buf[1000]; */
-  /* sprintf(buf, "-D _M=%d", f.model.m); */
-  /* strcat(cl_buildoptions, buf); */
-  /* //set_source_CL(&f, "Maxwell2DSource"); */
+  char buf[1000];
+  sprintf(buf, "-D _M=%d", f.model.m);
+  strcat(cl_buildoptions, buf);
+  //set_source_CL(&f, "Maxwell2DSource");
 
-  /* sprintf(numflux_cl_name, "%s", "Maxwell2DNumFlux"); */
-  /* sprintf(buf," -D NUMFLUX="); */
-  /* strcat(buf, numflux_cl_name); */
+  sprintf(numflux_cl_name, "%s", "Maxwell2DNumFlux");
+  sprintf(buf," -D NUMFLUX=");
+  strcat(buf, numflux_cl_name);
+  strcat(cl_buildoptions, buf);
 
-  /* sprintf(buf, " -D BOUNDARYFLUX=%s", "Maxwell2DBoundaryFlux"); */
-  /* strcat(cl_buildoptions, buf); */
+
+  sprintf(buf, " -D BOUNDARYFLUX=%s", "Maxwell2DBoundaryFlux");
+  strcat(cl_buildoptions, buf);
+
 
   Initfield(&f);
   
@@ -54,9 +57,13 @@ int TestMaxwell2D(void) {
 
   real tmax = 1.0;
   f.vmax = 1;
-  //RK2_CL(&f, tmax, 0, 0, 0);
+  
+#if 1
   RK2(&f, tmax);
-  //CopyfieldtoCPU(&f); 
+#else
+  RK2_CL(&f, tmax, 0, 0, 0);
+  CopyfieldtoCPU(&f); 
+#endif
 
   // Save the results and the error
   Plotfield(0, false, &f, NULL, "dgvisu.msh");
