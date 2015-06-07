@@ -34,6 +34,8 @@ int TestPIC(void)
   int param[]={4, 4, 4, 1, 1, 1, 0};
   
   field f;
+  init_empty_field(&f);
+
   // test gmsh file reading
   ReadMacroMesh(&(f.macromesh), "test/testmacromesh.msh");
   BuildConnectivity(&(f.macromesh));

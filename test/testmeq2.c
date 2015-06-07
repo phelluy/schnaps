@@ -6,6 +6,8 @@
 int TestmEq2(void) {
   bool test = true;
   field f;
+  init_empty_field(&f);
+ 
   int vec = 2;
 
   f.model.cfl = 0.05;  

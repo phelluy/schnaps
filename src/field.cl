@@ -1221,9 +1221,14 @@ int ref_ipg(__constant int *param, real *xref)
 #define _SOURCE_FUNC ZeroSource
 #endif
 
-void ZeroSource(const real *x, real t, real *w, real *source) {
+void ZeroSource(const real *x, const real t, const real *w, real *source) {
   for(int i = 0; i < _M; ++i) 
     source[i] = 0.0;
+}
+
+void OneSource(const real *x, const real t, const real *w, real *source) {
+  for(int i = 0; i < _M; ++i) 
+    source[i] = 1.0;
 }
 
 // Compute the source terms inside  one macrocell
@@ -1272,7 +1277,7 @@ void DGSource(__constant int *param,     // 0: interp param
 
   // Compute xref
   real xref[3];
-  real wpg;
+  real wpg; // FIXME: unused, so remove?
   ref_pg_vol(deg, nraf, ipgL, xref, &wpg);
   
   // Compute xphy
@@ -1295,7 +1300,7 @@ void DGSource(__constant int *param,     // 0: interp param
   int imemR0loc = ipgL * m;
   __local real *dtwnloc0 =  dtwnloc + imemR0loc;
   for(int iv = 0; iv < m; iv++)
-    dtwnloc0[iv] = source[iv] * wpg;
+    dtwnloc0[iv] = source[iv];
 
   barrier(CLK_LOCAL_MEM_FENCE);
 

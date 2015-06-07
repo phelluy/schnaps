@@ -8,6 +8,8 @@ int TestfieldRK2_2D_SubCell(void) {
   bool test = true;
 
   field f;
+  init_empty_field(&f);
+
   f.model.cfl = 0.05;
   f.model.m = 1; // only one conservative variable
   f.model.NumFlux = TransNumFlux2d;

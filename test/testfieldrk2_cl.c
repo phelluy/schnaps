@@ -13,6 +13,7 @@ int TestfieldRK2_CL(void){
   }
 
   field f;
+  init_empty_field(&f);
 
   // 2D meshes:
   // test/disque2d.msh

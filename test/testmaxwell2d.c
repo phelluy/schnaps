@@ -6,6 +6,7 @@
 int TestMaxwell2D(void) {
   bool test = true;
   field f;
+  init_empty_field(&f);
 
   f.model.cfl = 0.05;  
   f.model.m = 7; // num of conservative variables

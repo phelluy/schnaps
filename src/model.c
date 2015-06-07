@@ -167,7 +167,10 @@ void TestTransImposedData2d(real x[3], real t, real w[]) {
   w[0] = xx * xx;
 }
 
-// Vlasov 2D transport equation functions
+void set_global_m(int m0)
+{
+  m = m0;
+}
 
 // Set the parameters for the Vlasov equation that are stored in the
 // global space of model.h
@@ -356,4 +359,11 @@ void cemracs2014_TransBoundaryFlux(real x[3], real t,
   for(unsigned int i = 0; i < m; ++i)
     wR[i] = 0;
   vlaTransNumFlux2d(wL, wR, vnorm, flux);
+}
+
+void OneSource(const real *x, const real t, const real *w, real *source) 
+{
+  for(int i = 0; i < m; ++i) {
+    source[i] = 1.0;
+  }
 }

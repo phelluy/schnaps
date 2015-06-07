@@ -37,8 +37,8 @@ int TestDtfield_CL(void){
   char *mshname =  "test/disque2d.msh";
   
   ReadMacroMesh(&(f.macromesh), mshname);
-  Detect2DMacroMesh(&(f.macromesh));
-  BuildConnectivity(&(f.macromesh));
+  Detect2DMacroMesh(&f.macromesh);
+  BuildConnectivity(&f.macromesh);
 
 #if 1
   // 2D version
@@ -46,6 +46,8 @@ int TestDtfield_CL(void){
 
   f.model.cfl = 0.05;
   f.model.m = 1;
+  m = f.model.m;
+
 
   f.model.NumFlux = TransNumFlux2d;
   f.model.BoundaryFlux = TransBoundaryFlux2d;
@@ -80,11 +82,13 @@ int TestDtfield_CL(void){
   f.interp.interp_param[6] = 3; // z direction refinement
 #endif
 
+  set_global_m(f.model.m);
+  set_source_CL(&f, "OneSource");
   Initfield(&f);
   
   cl_event clv_dtfield = clCreateUserEvent(f.cli.context, NULL);
   
-  dtfield_CL(&f, &(f.wn_cl), 0, NULL, &clv_dtfield);
+  dtfield_CL(&f, &f.wn_cl, 0, NULL, &clv_dtfield);
   clWaitForEvents(1, &clv_dtfield);
   CopyfieldtoCPU(&f);
 
@@ -94,6 +98,7 @@ int TestDtfield_CL(void){
   real *saveptr = f.dtwn;
   f.dtwn = calloc(f.wsize, sizeof(real));
 
+  f.model.Source = OneSource;
   dtfield(&f, f.wn, f.dtwn);
  
   real maxerr = 0;

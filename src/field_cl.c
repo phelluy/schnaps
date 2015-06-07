@@ -3,6 +3,7 @@
 #include "clinfo.h"
 #include "clutils.h"
 #include <assert.h>
+#include <string.h>
 
 #ifdef _WITH_OPENCL
 void CopyfieldtoCPU(field *f) {
@@ -69,6 +70,20 @@ cl_ulong clv_endtime(cl_event clv)
 cl_ulong clv_duration(cl_event clv)
 {
   return clv_endtime(clv) - clv_startime(clv);
+}
+
+void set_source_CL(field *f, char *sourcename_cl) 
+{
+  f->use_source_cl = true;
+  int namelength = strlen(sourcename_cl);
+  if(namelength > 0) {
+    f->sourcename_cl = calloc(sizeof(char), namelength + 1);
+    strcat(f->sourcename_cl, sourcename_cl);
+  } else {
+    printf("The source name %s is empty!\n", sourcename_cl);
+    assert(false);
+  }
+  printf("%s\n", f->sourcename_cl);
 }
 
 void initDGBoundary_CL(field *f, 

@@ -170,6 +170,7 @@ static int vlasov_my;
 static int vlasov_mz;
 static real vlasov_vmax;
 
+void set_global_m(int m0);
 void set_vlasov_params(Model *mod);
 real vlasov_vel(const int id, const int md, real vlasov_vmax);
 void vlaTransInitData2d(real x[3], real w[]);
@@ -188,5 +189,7 @@ void cemracs2014_TransInitData(real x[3], real w[]);
 void cemcracs2014_imposed_data(real x[3], real t, real *w); 
 void cemracs2014a_TransInitData(real x[3], real w[]);
 void cemcracs2014a_imposed_data(real x[3], real t, real *w); 
+
+void OneSource(const real *x, const real t, const real *w, real *source);
 
 #endif

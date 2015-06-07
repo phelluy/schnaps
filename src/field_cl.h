@@ -17,6 +17,7 @@ void CopyfieldtoCPU(field *f);
 void update_physnode_cl(field *f, int ie, cl_mem physnode_cl, real *physnode,
 			cl_ulong *time,
 			cl_uint nwait, cl_event *wait, cl_event *done);
+void set_source_CL(field *f, char *sourcename_cl);
 void set_buf_to_zero_cl(cl_mem *buf, int size, field *f,
 			cl_uint nwait, cl_event *wait,  cl_event *done);
 void dtfield_CL(field *f, cl_mem *dtwn_cl,

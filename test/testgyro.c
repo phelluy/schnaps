@@ -24,6 +24,7 @@ int TestGyro(void) {
   bool test=true;
 
   field f;
+  init_empty_field(&f);
 
   int vec=1;
   

@@ -30,9 +30,9 @@ int TestPeriodic(void) {
 
   bool test=true;
 
-
   field f;
-  
+  init_empty_field(&f);  
+
   f.model.m=_INDEX_MAX; // num of conservative variables
   f.vmax = _VMAX; // maximal wave speed 
   f.model.NumFlux=VlasovP_Lagrangian_NumFlux;

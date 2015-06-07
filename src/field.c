@@ -134,6 +134,11 @@ real min_grid_spacing(field *f)
   return hmin;
 }
 
+void init_empty_field(field *f)
+{
+  f->use_source_cl = false;
+}
+
 void init_data(field *f)
 {
   for(int ie = 0; ie < f->macromesh.nbelems; ie++) {
@@ -177,7 +182,7 @@ void init_data(field *f)
 #ifdef _WITH_OPENCL
 void init_field_cl(field *f)
 {
-  InitCLInfo(&(f->cli), nplatform_cl, ndevice_cl);
+  InitCLInfo(&f->cli, nplatform_cl, ndevice_cl);
   cl_int status;
 
   f->wn_cl = clCreateBuffer(f->cli.context,
@@ -231,7 +236,23 @@ void init_field_cl(field *f)
   printf("\t%s\n", numflux_cl_name);
   //printf("\t%s\n", strprog);
 
-  BuildKernels(&(f->cli), strprog, cl_buildoptions);
+  // If the source term is set (via set_source_CL) then add it to the
+  // buildoptions and compile using the new buildoptions.
+  if(f->use_source_cl) {
+    char *temp;
+    int len0 = strlen(cl_buildoptions);
+    char *D_SOURCE_FUNC = " -D_SOURCE_FUNC=";
+    int len1 = strlen(D_SOURCE_FUNC);
+    int len2 = strlen(f->sourcename_cl);
+    temp = calloc(sizeof(char), len0 + len1 + len2 + 2);
+    strcat(temp, cl_buildoptions);
+    strcat(temp, D_SOURCE_FUNC);
+    strcat(temp, f->sourcename_cl);
+    strcat(temp, " ");
+    BuildKernels(&f->cli, strprog, temp);
+  } else {
+    BuildKernels(&f->cli, strprog, cl_buildoptions);
+  }
 
   f->dgmass = clCreateKernel(f->cli.program,
 			     "DGMass",
@@ -577,11 +598,6 @@ void Plotfield(int typplot, int compare, field* f, char *fieldname,
 	      value[nodecount] -= wex[typplot];
 	    }
 	    nodecount++;
-
-	    // fwrite((char*) &nnoe, sizeof(int), 1, gmshfile);
-	    // fwrite((char*) &(Xplot[0]), sizeof(real), 1, gmshfile);
-	    // fwrite((char*) &(Xplot[1]), sizeof(real), 1, gmshfile);
-	    // fwrite((char*) &(Xplot[2]), sizeof(real), 1, gmshfile);
 	    fprintf(gmshfile, "%d %f %f %f\n", nodecount,
 		    Xplot[0], Xplot[1], Xplot[2]);
 	  }
@@ -1011,7 +1027,7 @@ void DGMacroCellInterfaceSlow(void *mc, field *f, real *w, real *dtw) {
 void DGMacroCellInterface(void *mc, field *f, real *w, real *dtw) 
 {
   MacroFace *mface = (MacroFace*) mc;
-  MacroMesh *msh = &(f->macromesh);
+  MacroMesh *msh = &f->macromesh;
   const unsigned int m = f->model.m;
 
   int iparam[8];
@@ -1202,8 +1218,9 @@ void DGMass(void *mc, field *f, real *dtw)
 // Apply the source term
 void DGSource(void *mc, field *f, real *w, real *dtw) 
 {
-  if (f->model.Source == NULL) 
+  if (f->model.Source == NULL) {
     return;
+  }
 
   MacroCell *mcell = (MacroCell*)mc;
 
@@ -1234,7 +1251,7 @@ void DGSource(void *mc, field *f, real *w, real *dtw)
       }
       
       f->model.Source(xphy, f->tnow, wL, source);
-
+      
       for(int iv = 0; iv < m; ++iv) {
 	int imem = f->varindex(f->interp_param, ie, ipg, iv);
 	dtw[imem] += source[iv];
@@ -1407,7 +1424,7 @@ void dtfield_pthread(field *f)
   // subcell fluxes
   if (!facealgo) {
     for(int ie = 0; ie < f->macromesh.nbelems; ie++) {
-      status = pthread_create (&(tmcell[ie]), // thread
+      status = pthread_create (&tmcell[ie], // thread
 			       NULL,                 // default attributes
 			       DGMacroCellInterfaceSlow,  // called function
 			       (void*) (mcell+ie));  // function params
@@ -1420,7 +1437,7 @@ void dtfield_pthread(field *f)
   }
 
   for(int ie = 0; ie < f->macromesh.nbelems; ie++) {
-    status = pthread_create (&(tmcell[ie]), // thread
+    status = pthread_create (&tmcell[ie], // thread
 			     NULL,                 // default attributes
 			     DGSubCellInterface,  // called function
 			     (void*) (mcell+ie));  // function params
@@ -1432,7 +1449,7 @@ void dtfield_pthread(field *f)
   }
 
   for(int ie = 0; ie < f->macromesh.nbelems; ie++) {
-    status = pthread_create (&(tmcell[ie]), // thread
+    status = pthread_create (&tmcell[ie], // thread
 			     NULL,                 // default attributes
 			     DGVolume,  // called function
 			     (void*) (mcell+ie));  // function params
@@ -1444,7 +1461,7 @@ void dtfield_pthread(field *f)
   }
 
   for(int ie = 0; ie < f->macromesh.nbelems; ie++) {
-    status = pthread_create (&(tmcell[ie]), // thread
+    status = pthread_create (&tmcell[ie], // thread
 			     NULL,                 // default attributes
 			     DGMass,  // called function
 			     (void*) (mcell+ie));  // function params

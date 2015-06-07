@@ -8,7 +8,8 @@ int TestfieldRK2(void){
   int test = true;
 
   field f;
-  
+  init_empty_field(&f);
+
   // 2D meshes:
   // test/disque2d.msh
   // test/testdisque2d.msh

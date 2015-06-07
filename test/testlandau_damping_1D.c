@@ -34,6 +34,7 @@ int TestLandau_Damping_1D(void) {
   bool test=true;
 
   field f;
+  init_empty_field(&f);
 
   int vec=1;
   real k=0.5;

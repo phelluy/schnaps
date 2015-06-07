@@ -69,7 +69,8 @@ int TestMHD1D(int argc, char *argv[]) {
 
   bool test = true;
   field f;
-  
+  init_empty_field(&f);  
+
   f.varindex = GenericVarindex;
   f.model.m = 9;
   f.model.cfl = cfl;

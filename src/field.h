@@ -109,6 +109,9 @@ typedef struct field {
   cl_mem physnodeR_cl;
   real *physnodeR;
 
+  bool use_source_cl;
+  char *sourcename_cl;
+
   //! opencl kernels
   cl_kernel dgmass;
   cl_kernel dgflux;
@@ -207,6 +210,8 @@ int GenericVarindex(__constant int *param, int elem, int ipg, int iv);
 //! field initialization. Computation of the initial at each glop.
 //! \param[inout] f a field
 void Initfield(field *f);
+
+void init_empty_field(field *f);
 
 //! free the buffers created in Initfield.
 //! \param[inout] f a field
