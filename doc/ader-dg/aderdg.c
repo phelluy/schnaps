@@ -23,7 +23,7 @@ int main(void){
 
   /* assert(1==2); */
 
-  ADERSolve(&adg,0.5);
+  ADERSolve(&adg,0.1);
 
   Plot(&adg);
 
@@ -174,32 +174,40 @@ void ADERTimeStep(ADERDG* adg){
 
   // compute the volume terms
   for(int ie = 1; ie<= _NBELEMS_IN; ie++){
+    double h = adg->face[ie] - adg->face[ie-1];
     // loop on the glops i 
     for(int i = 0; i < _NGLOPS; i++){
-      double h = adg->face[ie] - adg->face[ie-1];
-      double x = adg->face[ie] + h * gauss_lob_point[gauss_lob_offset[_D]+i];
+      
       // integration weight
       double omega = wglop(_D, i) * h;
-
+      
+      // flux at glop i
+      double flux[_M];
+      NumFlux(adg->wnow[ie][i], adg->wnow[ie][i], flux);
+      
       // loop on the basis functions j
       for(int j = 0; j < _D+1; j++){
 	// derivative of basis function j at glop i
-	double dd = dlag(_D, j, i);
-	double flux[_M];
-	NumFlux(adg->wnow[ie][j], adg->wnow[ie][j], flux);
+	double dd = dlag(_D, j, i) / h;
 	for (int k = 0; k < _M; k++){
-	  adg->dtw[ie][i][k] += omega * dd * flux[k];
+	  adg->dtw[ie][j][k] += omega * dd * flux[k];
 	}
       }
-
-      // divide by the mass matrix
+    }
+  }    
+   
+  // divide by the mass matrix
+  for(int ie = 1; ie<= _NBELEMS_IN; ie++){
+    double h = adg->face[ie] - adg->face[ie-1];
+    for(int i = 0; i < _NGLOPS; i++){
+      double omega = wglop(_D, i) * h;
       for (int k = 0; k < _M; k++){
 	adg->dtw[ie][i][k] /= omega;
       }
-
     }
+    
   }
-
+  
   // update wnext and 
   // copy wnext into wnow for the next time step
   for(int ie = 1; ie<= _NBELEMS_IN; ie++){
@@ -335,8 +343,7 @@ void Predictor(ADERDG* adg,int ie,double s)
     }
 
     double t=s/h*velocity[iv];
-    assert(t != 0);
-
+ 
     switch(_D) {
 
     case 1 :
