@@ -19,11 +19,13 @@ int main(void){
   /*     Predictor(&adg,ie,.1); */
   /*   } */
 
+  /* adg.tnow=.1; */
+
   /* Plot(&adg); */
 
   /* assert(1==2); */
 
-  ADERSolve(&adg,0.1);
+  ADERSolve(&adg,0.5);
 
   Plot(&adg);
 
@@ -64,7 +66,7 @@ void InitADERDG(ADERDG* adg,double xmin,double xmax){
   }
 
 
-  adg->cfl=0.2;
+  adg->cfl=0.1;
 
   adg->dt = adg->cfl * adg->dx;  // to do put the velocity
   
@@ -320,8 +322,12 @@ void Plot(ADERDG* adg)
 
 void ExactSol(double x,double t,double w[_M]){
 
-  w[0]=cos(2*M_PI*(x-t));
-  w[1]=cos(2*M_PI*(x+t));
+  double pi = 4 * atan(1.);
+
+  //pi=1. / 2;
+
+  w[0] = cos( 2 * pi * (x - t));
+  w[1] = cos( 2 * pi * (x + t));
 
 }
 
@@ -335,14 +341,14 @@ void Predictor(ADERDG* adg,int ie,double s)
   //double* wcell = adg->wpred + ie * (_NGLOPS) * _M ;
 
   assert(ie >= 1  && ie <= _NBELEMS_IN);
-  double h=adg->face[ie]-adg->face[ie-1];
+  double h = adg->face[ie] - adg->face[ie-1];
 
   for(int iv=0; iv < _M; ++iv){
     for(int ipg = 0; ipg < _NGLOPS; ++ipg){
       w0[ipg] = adg->wnow[ie][ipg][iv];//wcell_init[iv+_M*ipg];
     }
 
-    double t=s/h*velocity[iv];
+    double t = s / h * velocity[iv];
  
     switch(_D) {
 
