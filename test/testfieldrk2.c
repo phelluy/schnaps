@@ -98,7 +98,7 @@ int TestfieldRK2(void){
 
   CheckMacroMesh(&(f.macromesh), f.interp.interp_param + 1);
  
-  real tmax = 0.1;
+  real tmax = 0.01;
   f.vmax=1;
   RK2(&f, tmax);
  
