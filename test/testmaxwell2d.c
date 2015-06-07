@@ -16,7 +16,7 @@ int TestMaxwell2D(void) {
   f.model.InitData = Maxwell2DInitData;
   f.model.ImposedData = Maxwell2DImposedData;
   f.varindex = GenericVarindex;
-    
+  
   f.interp.interp_param[0] = f.model.m;
   f.interp.interp_param[1] = 3; // x direction degree
   f.interp.interp_param[2] = 3; // y direction degree
@@ -38,19 +38,11 @@ int TestMaxwell2D(void) {
  
   // Prepare the initial fields
   Initfield(&f);
-  //f.dt = 1e-3;
   
-  // Prudence...
   CheckMacroMesh(&(f.macromesh), f.interp.interp_param + 1);
-
-  printf("cfl param =%f\n", f.hmin);
-
-  // time derivative
-  //dtfield(&f);
-  //Displayfield(&f);
  
   real tmax = 1.0;
-  f.vmax=1;
+  f.vmax = 1;
   RK2(&f, tmax);
  
   // Save the results and the error
@@ -63,7 +55,7 @@ int TestMaxwell2D(void) {
   printf("L2 error: %f\n", dd);
 
   return test;
-};
+}
 
 int main(void) {
   int resu = TestMaxwell2D();
