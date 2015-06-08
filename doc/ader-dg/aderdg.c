@@ -66,7 +66,7 @@ void InitADERDG(ADERDG* adg,double xmin,double xmax){
   }
 
 
-  adg->cfl=0.1;
+  adg->cfl = _CFL;
 
   adg->dt = adg->cfl * adg->dx;  // to do put the velocity
   
@@ -347,6 +347,11 @@ void Predictor(ADERDG* adg,int ie,double s)
     for(int ipg = 0; ipg < _NGLOPS; ++ipg){
       w0[ipg] = adg->wnow[ie][ipg][iv];//wcell_init[iv+_M*ipg];
     }
+
+
+#ifndef _ADER
+    s = 0;
+#endif
 
     double t = s / h * velocity[iv];
  
