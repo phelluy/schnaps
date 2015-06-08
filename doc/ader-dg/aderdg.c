@@ -16,10 +16,10 @@ int main(void){
 
   /* for(int ie = 1; ie <= _NBELEMS_IN; ie++) */
   /*   { */
-  /*     Predictor(&adg,ie,.1); */
+  /*     Predictor(&adg,ie,0.05); */
   /*   } */
 
-  /* adg.tnow=.1; */
+  /* adg.tnow=.05; */
 
   /* Plot(&adg); */
 
@@ -37,7 +37,7 @@ double stretching(double x){
 
   double alpha=2;
   double beta=2;
-  return x;
+  //return x;
   return alpha * x + (3 - 2 * alpha - beta) * x * x +
     (alpha - 2 + beta) *  pow( x,  3.);
 
@@ -70,11 +70,11 @@ void InitADERDG(ADERDG* adg,double xmin,double xmax){
 
   adg->dt = adg->cfl * adg->dx;  // to do put the velocity
   
-  adg->ncfl=1;
+  adg->ncfl=0;
 
   for(int ie = 1; ie <= _NBELEMS_IN; ie++){
-    adg->cell_level[ie]=(int) (log(adg->dx/(adg->face[ie+1]- adg->face[ie]))/log(2));
-    adg->ncfl = _MAX ( adg->ncfl , adg->cell_level[ie]+1 );
+    adg->cell_level[ie]=(int) (log(adg->dx/(adg->face[ie]- adg->face[ie-1]))/log(2));
+    adg->ncfl = _MAX ( adg->ncfl , adg->cell_level[ie] );
   }
   // convention: first and last cell are among the biggest elements
   adg->cell_level[0]=0;
@@ -185,7 +185,7 @@ void ADERTimeStep(ADERDG* adg){
       
       // flux at glop i
       double flux[_M];
-      NumFlux(adg->wnow[ie][i], adg->wnow[ie][i], flux);
+      NumFlux(adg->wpred[ie][i], adg->wpred[ie][i], flux);
       
       // loop on the basis functions j
       for(int j = 0; j < _D+1; j++){
@@ -244,6 +244,9 @@ void NumFlux(double* wL,double* wR,double* flux){
   flux[1] = vnp * wL[1] + vnm * wR[1];
 
   
+  /* flux[0] = vn * (wL[0] + wR[0]) / 2;  */
+  /* flux[1] = vn * (wL[1] + wR[1]) / 2;  */
+
 
 }
 
@@ -328,6 +331,9 @@ void ExactSol(double x,double t,double w[_M]){
 
   w[0] = cos( 2 * pi * (x - t));
   w[1] = cos( 2 * pi * (x + t));
+
+  /* w[0] *= w[0] * w[0]; */
+  /* w[1] *= w[1] * w[1]; */
 
 }
 

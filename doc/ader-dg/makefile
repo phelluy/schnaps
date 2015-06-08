@@ -1,5 +1,5 @@
 CC=gcc
-OPTIMS=
+OPTIMS=-std=c99 -lm  -O
 LIBS= 
 go: aderdg.o 
 	$(CC) aderdg.o -o go $(OPTIMS) $(LIBS)

@@ -5,11 +5,11 @@
 #define _M 2
 const double velocity[_M]={1,-1};
 // polynomial degree
-#define _D 1
+#define _D 2
 // number of interior elements
-#define _NBELEMS_IN 1000
+#define _NBELEMS_IN 20000
 
-#define _CFL 0.4
+#define _CFL 0.15
 
 // activate ader predictor
 #define _ADER
