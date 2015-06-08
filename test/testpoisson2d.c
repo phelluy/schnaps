@@ -126,6 +126,10 @@ int TestPoisson2d(void) {
 
   InitPoissonSolver(&ps,&f,_INDEX_PHI);
 
+  real temp;
+
+  SolvePoisson2D(&ps,&temp,_Dirichlet_Poisson_BC);
+
   Plotfield(_INDEX_PHI, false, &f, NULL, "dgvisu.msh");
 
 

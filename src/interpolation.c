@@ -397,10 +397,11 @@ void ref_pg_face(int* param, int ifa, int ipg,
   offset[0] = gauss_lob_offset[deg[0]] + ix;
   offset[1] = gauss_lob_offset[deg[1]] + iy;
 
-  xpg[axis_permut[ifa][0]] = h[0] * (ncx + gauss_lob_point[offset[0]]);
-  xpg[axis_permut[ifa][1]] = h[1] * (ncy + gauss_lob_point[offset[1]]);
-  xpg[axis_permut[ifa][2]] = axis_permut[ifa][3];
-
+  if (xpg != NULL) {
+    xpg[axis_permut[ifa][0]] = h[0] * (ncx + gauss_lob_point[offset[0]]);
+    xpg[axis_permut[ifa][1]] = h[1] * (ncy + gauss_lob_point[offset[1]]);
+    xpg[axis_permut[ifa][2]] = axis_permut[ifa][3];
+  }
 
   if (wpg != NULL) *wpg = h[0] * h[1] *
 		     gauss_lob_weight[offset[0]] * 

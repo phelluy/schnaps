@@ -54,6 +54,8 @@ typedef struct PoissonSolver{
   //! \brief connectivity DG node -> FE node
   int* dg_to_fe_index;
 
+  //! \brief list that marks boundary nodes
+  int* is_boundary_node;
 
 } PoissonSolver;
 

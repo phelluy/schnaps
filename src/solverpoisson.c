@@ -123,6 +123,41 @@ void InitPoissonSolver(PoissonSolver* ps, field* fd,int charge_index){
   /* } */
 
 
+  // now construct the list of boundary nodes
+  ps->is_boundary_node = calloc(ps->nb_fe_nodes, sizeof(int));
+  assert(ps->is_boundary_node);
+
+  int nraf[3] = {ps->fd->interp_param[4], 
+		 ps->fd->interp_param[5],
+		 ps->fd->interp_param[6]};
+  
+  int npg[3] = {ps->fd->interp_param[1] + 1, 
+		ps->fd->interp_param[2] + 1,
+		ps->fd->interp_param[3] + 1};
+  
+  int nbel = ps->fd->macromesh.nbelems * nraf[0] * nraf[1] * nraf[2];
+
+
+  for (int ie = 0; ie < ps->fd->macromesh.nbelems; ie++) {
+    int nbfa = 6;
+    if (ps->fd->macromesh.is2d) nbfa = 4;
+    for(int ifa = 0; ifa < nbfa; ifa++) {
+      int ieR = ps->fd->macromesh.elem2elem[6*ie+ifa];
+      if (ieR < 0) {
+	for(int ipgf = 0; ipgf < NPGF(ps->fd->interp_param + 1, ifa); ipgf++) {
+	  ref_pg_face(ps->fd->interp_param + 1, ifa, ipgf,
+		      NULL, NULL, NULL);
+	  int ipg = ps->fd->interp_param[7];
+	  int ino_dg = ipg + ie * nbel;
+	  int ino_fe = ps->dg_to_fe_index[ino_dg];
+	  ps->is_boundary_node[ino_fe] = 1;
+	}
+      }
+    }
+  }
+	
+  
+
 }
 
 void SolvePoisson1D(field *f,real * w,int type_bc, real bc_l, real bc_r){
@@ -215,7 +250,7 @@ void SolvePoisson1D(field *f,real * w,int type_bc, real bc_l, real bc_r){
 
   FactoLU(&sky);
 
-    // source assembly 
+  // source assembly 
   real source[neq];
   for(int i=0;i<neq;i++){
     source[i]=0;
@@ -242,13 +277,13 @@ void SolvePoisson1D(field *f,real * w,int type_bc, real bc_l, real bc_r){
 
   // now put the solution at the right place
   for(int ie=0;ie<nelx;ie++){
-     for(int ipg=0;ipg<degx+1;ipg++){
-       // position in the continuous vector
-       int ino=ipg + ie * degx;
-       // position in the DG vector
-       int imem=f->varindex(f->interp_param,0,ipg+ie*(degx+1),_INDEX_PHI);
-       w[imem]=sol[ino];
-     }
+    for(int ipg=0;ipg<degx+1;ipg++){
+      // position in the continuous vector
+      int ino=ipg + ie * degx;
+      // position in the DG vector
+      int imem=f->varindex(f->interp_param,0,ipg+ie*(degx+1),_INDEX_PHI);
+      w[imem]=sol[ino];
+    }
   }
 	
   FreeSkyline(&sky);
@@ -293,99 +328,171 @@ void SolvePoisson2D(PoissonSolver* ps,real * w,int type_bc){
 
   InitSkyline(&sky, neq);
 
+  int nraf[3] = {ps->fd->interp_param[4], 
+		 ps->fd->interp_param[5],
+		 ps->fd->interp_param[6]};
+
+  int npg[3] = {ps->fd->interp_param[1] + 1, 
+		ps->fd->interp_param[2] + 1,
+		ps->fd->interp_param[3] + 1};
+
+  int nbel = ps->fd->macromesh.nbelems * nraf[0] * nraf[1] * nraf[2];
+
+  int nnodes = npg[0] * npg[1] * npg[2] ;
+  
+
   // compute the profile of the matrix
-  for(int ie = 0; ie < nelx; ie++){
-    for(int iloc = 0; iloc < degx + 1; iloc++){
-      for(int jloc = 0; jloc < degx + 1; jloc++){
-	int ino = iloc + ie * degx;
-	int jno = jloc + ie * degx;
-	SwitchOn(&sky, ino, jno);
+  for(int ie = 0; ie < nbel; ie++){
+    for(int iloc = 0; iloc < nnodes; iloc++){
+      for(int jloc = 0; jloc < nnodes; jloc++){
+	int ino_dg = iloc + ie * nnodes;
+	int jno_dg = jloc + ie * nnodes;
+	int ino_fe = ps->dg_to_fe_index[ino_dg];
+	int jno_fe = ps->dg_to_fe_index[jno_dg];
+	SwitchOn(&sky, ino_fe, jno_fe);
       }
     }
   }
 
   AllocateSkyline(&sky);
 
-  // local matrix (assuming identical finite elements)
-  real aloc[degx+1][degx+1];
-  for(int iloc=0;iloc<degx+1;iloc++){
-    for(int jloc=0;jloc<degx+1;jloc++){
-      aloc[iloc][jloc]=0;
+
+  for(int ie = 0; ie < nbel; ie++){  
+    // local matrix 
+    real aloc[nnodes][nnodes];
+    for(int iloc = 0; iloc < nnodes; iloc++){
+      for(int jloc = 0; jloc < nnodes; jloc++){
+	aloc[iloc][jloc] = 0;
+      }
     }
+
+    int iemacro = ie / (nraf[0] * nraf[1] * nraf[2]);
+
+    real physnode[20][3];
+    for(int ino = 0; ino < 20; ino++) {
+      int numnoe = ps->fd->macromesh.elem2node[20 * iemacro + ino];
+      for(int ii = 0; ii < 3; ii++) {
+        physnode[ino][ii] = ps->fd->macromesh.node[3 * numnoe + ii];
+      }
+    }
+    //ref_pg_vol(ps->fd->interp_param+1,int ipg,
+    // real* xpg,real* wpg,real* xpg_in);
+    // grad_psi_pg(ps->fd->interp_param+1,ib,ipg,dphiref)
+    // Ref2Phy(physnode,xref,dphiref,NULL,NULL,dtau,codtau,dphi,NULL);
+
+
+    for(int ipg = 0;ipg < nnodes; ipg++){
+      real wpg;
+      real xref[3];
+      ref_pg_vol(ps->fd->interp_param+1,ipg,xref,&wpg,NULL);
+
+      for(int iloc = 0; iloc < nnodes; iloc++){
+	real dtau[3][3],codtau[3][3];
+	real dphiref_i[3],dphiref_j[3];
+	real dphi_i[3],dphi_j[3];
+	grad_psi_pg(ps->fd->interp_param+1,iloc,ipg,dphiref_i);
+	Ref2Phy(physnode,xref,dphiref_i,0,NULL,
+		dtau,codtau,dphi_i,NULL);
+	real det = dot_product(dtau[0], codtau[0]);
+	for(int jloc = 0; jloc < nnodes; jloc++){
+	  grad_psi_pg(ps->fd->interp_param+1,jloc,ipg,dphiref_j);
+	  Ref2Phy(physnode,xref,dphiref_j,0,NULL,
+		  dtau,codtau,dphi_j,NULL);
+	  aloc[iloc][jloc] += dot_product(dphi_i, dphi_j) * wpg * det;
+	}
+      }
+    }
+
+
+    for(int iloc = 0; iloc < nnodes; iloc++){
+      for(int jloc = 0; jloc < nnodes; jloc++){
+	int ino_dg = iloc + ie * nnodes;
+	int jno_dg = jloc + ie * nnodes;
+	int ino_fe = ps->dg_to_fe_index[ino_dg];
+	int jno_fe = ps->dg_to_fe_index[jno_dg];
+	real val = aloc[iloc][jloc];
+	SetSkyline(&sky,ino_fe,jno_fe,val);
+      }
+    }
+    
+
+ 
   }
-  for(int ipg=0;ipg<degx+1;ipg++){
+
+  /*for(int ipg=0;ipg<degx+1;ipg++){
     real omega=wglop(degx,ipg);
     for(int iloc=0;iloc<degx+1;iloc++){
-      for(int jloc=0;jloc<degx+1;jloc++){
-	real dxi=dlag(degx,iloc,ipg);
-	real dxj=dlag(degx,jloc,ipg);
-	aloc[iloc][jloc]+=dxi*dxj*omega*nelx;
-      }
+    for(int jloc=0;jloc<degx+1;jloc++){
+    real dxi=dlag(degx,iloc,ipg);
+    real dxj=dlag(degx,jloc,ipg);
+    aloc[iloc][jloc] += dxi*dxj*omega*nelx;
     }
-  }
+    }
+    }
 
-  // assembly of the matrix
-  for(int ie=0;ie<nelx;ie++){
+    // assembly of the matrix
+    for(int ie=0;ie<nelx;ie++){
     for(int iloc=0;iloc<degx+1;iloc++){
-      for(int jloc=0;jloc<degx+1;jloc++){
-	int ino=iloc + ie * degx;
-	int jno=jloc + ie * degx;
-	real val = aloc[iloc][jloc];
-	SetSkyline(&sky,ino,jno,val);
-      }
+    for(int jloc=0;jloc<degx+1;jloc++){
+    int ino=iloc + ie * degx;
+    int jno=jloc + ie * degx;
+    real val = aloc[iloc][jloc];
+    SetSkyline(&sky,ino,jno,val);
     }
-  }
+    }
+    }
 
 
-  // dirichlet boundary condition at the first and last location
-  if(type_bc == _Dirichlet_Poisson_BC){
+    // dirichlet boundary condition at the first and last location
+    if(type_bc == _Dirichlet_Poisson_BC){
     SetSkyline(&sky,0,0,1e20);
     SetSkyline(&sky,neq-1,neq-1,1e20);
-  }
+    }
 
-  //DisplaySkyline(&sky);
+    //DisplaySkyline(&sky);
 
-  FactoLU(&sky);
+    FactoLU(&sky);
 
     // source assembly 
-  real source[neq];
-  for(int i=0;i<neq;i++){
+    real source[neq];
+    for(int i=0;i<neq;i++){
     source[i]=0;
-  }
-
-  for(int ie=0;ie<nelx;ie++){
-    for(int iloc=0;iloc<degx+1;iloc++){
-      real omega=wglop(degx,iloc);
-      int ino=iloc + ie * degx;  
-      int imem=f->varindex(f->interp_param,0,iloc+ie*(degx+1),_INDEX_RHO);
-      real charge=w[imem];          
-      source[ino]+= (charge-charge_average)*omega/nelx;
     }
-  }
 
-  // Apply dirichlet Boundary condition
+    for(int ie=0;ie<nelx;ie++){
+    for(int iloc=0;iloc<degx+1;iloc++){
+    real omega=wglop(degx,iloc);
+    int ino=iloc + ie * degx;  
+    int imem=f->varindex(f->interp_param,0,iloc+ie*(degx+1),_INDEX_RHO);
+    real charge=w[imem];          
+    source[ino]+= (charge-charge_average)*omega/nelx;
+    }
+    }
+
+    // Apply dirichlet Boundary condition
   
-  source[0]=1e20*bc;
-  source[neq-1]=1e20*bc;
+    source[0]=1e20*bc;
+    source[neq-1]=1e20*bc;
   
-  real sol[neq];
-  SolveSkyline(&sky,source,sol);
+    real sol[neq];
+    SolveSkyline(&sky,source,sol);
 
 
-  // now put the solution at the right place
-  for(int ie=0;ie<nelx;ie++){
-     for(int ipg=0;ipg<degx+1;ipg++){
-       // position in the continuous vector
-       int ino=ipg + ie * degx;
-       // position in the DG vector
-       int imem=f->varindex(f->interp_param,0,ipg+ie*(degx+1),_INDEX_PHI);
-       w[imem]=sol[ino];
-     }
-  }
+    // now put the solution at the right place
+    for(int ie=0;ie<nelx;ie++){
+    for(int ipg=0;ipg<degx+1;ipg++){
+    // position in the continuous vector
+    int ino=ipg + ie * degx;
+    // position in the DG vector
+    int imem=f->varindex(f->interp_param,0,ipg+ie*(degx+1),_INDEX_PHI);
+    w[imem]=sol[ino];
+    }
+    }
 	
-  FreeSkyline(&sky);
+    FreeSkyline(&sky);
 
 
-  Compute_electric_field(f,w);
+    Compute_electric_field(f,w);
+  */
 
 }
