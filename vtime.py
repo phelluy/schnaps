@@ -33,7 +33,7 @@ def main(argv):
     ndev = 0
     do_append = False
     dt = 0
-    tmax = 0
+    tmax = -1
 
     usage = "./vtime.py\n" \
             "\t-a: append to output instead of overwriting it\n" \
@@ -77,11 +77,13 @@ def main(argv):
 
     cmd0 = []
     cmd0.append("./testmanyv")
-    cmd0.append("-t 1")
+
     if(dt > 0):
         cmd0.append("-s" + str(dt))
-    if(tmax > 0):
+    if(tmax >= 0):
         cmd0.append("-t" + str(tmax))
+    else:
+        cmd0.append("-t1")
     if(gpu):
         cmd0.append("-g1")
         cmd0.append("-P" + str(nplat))
@@ -101,6 +103,7 @@ def main(argv):
         cmd.append("-x" + str(n))
         cmd.append("-y" + str(n))
         print cmd
+        print " ".join(cmd)
 
         ts = time.time()
         p = Popen(cmd, stdout = PIPE, stderr = PIPE)
