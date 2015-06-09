@@ -668,17 +668,18 @@ void grad_psi_pg(int* param,int ib,int ipg,real* dpsi) {
   offset[1] = gauss_lob_dpsi_offset[deg[1]];
   offset[2] = gauss_lob_dpsi_offset[deg[2]];
 
-  // Computation of the value of the interpollation polynomial gradient
+  // Computation of the value of the interpolation polynomial gradient
+  
   real psibx,psiby,psibz,dpsibx,dpsiby,dpsibz;
 
   psibx = (ix[0] == ibx[0]) * (ic[0] == ibc[0]);
-  dpsibx = (ix[0] == ibx[0]) * gauss_lob_dpsi[offset[0]+ibx[0]*(deg[0]+1)+ix[0]] / hx;
+  dpsibx = (ic[0] == ibc[0]) * gauss_lob_dpsi[offset[0]+ibx[0]*(deg[0]+1)+ix[0]] / hx;
 
   psiby = (ix[1] == ibx[1]) * (ic[1] == ibc[1]);
-  dpsiby = (ix[1] == ibx[1]) * gauss_lob_dpsi[offset[1]+ibx[1]*(deg[1]+1)+ix[1]] / hy;
+  dpsiby = (ic[1] == ibc[1]) * gauss_lob_dpsi[offset[1]+ibx[1]*(deg[1]+1)+ix[1]] / hy;
 
   psibz = (ix[2] == ibx[2]) * (ic[2] == ibc[2]);
-  dpsibz = (ix[2] == ibx[2]) * gauss_lob_dpsi[offset[2]+ibx[2]*(deg[2]+1)+ix[2]] / hz;
+  dpsibz = (ic[2] == ibc[2]) * gauss_lob_dpsi[offset[2]+ibx[2]*(deg[2]+1)+ix[2]] / hz;
 
   dpsi[0] = dpsibx*psiby*psibz;
   dpsi[1] = psibx*dpsiby*psibz;

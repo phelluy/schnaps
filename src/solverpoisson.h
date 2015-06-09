@@ -41,6 +41,12 @@ typedef struct PoissonSolver{
   //! \brief charge index in the conservative variables vector
   int charge_index;
 
+  //! \brief vector containing the charge (right hand side)
+  real* rhs;
+
+  //! \brief vector containing the potential (solution)
+  real* sol;
+
   //! \brief number of FE nodes
   int nb_fe_nodes;
 
@@ -99,6 +105,6 @@ void SolvePoisson1D(field *f,real * w,
 //! , returning the potential and the electric field)
 //! \param[in] type_bc the boundary condition type
 //!  (1->dirichlet ; 2-> periodic)
-void SolvePoisson2D(PoissonSolver* ps,real * w,int type_bc);
+void SolvePoisson2D(PoissonSolver* ps,int type_bc);
 
 #endif

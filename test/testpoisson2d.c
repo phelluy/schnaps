@@ -50,14 +50,15 @@ int TestPoisson2d(void) {
    
     
   f.interp.interp_param[0] = f.model.m;  // _M
-  f.interp.interp_param[1] = 1;  // x direction degree
-  f.interp.interp_param[2] = 1;  // y direction degree
+  f.interp.interp_param[1] = 2;  // x direction degree
+  f.interp.interp_param[2] = 2;  // y direction degree
   f.interp.interp_param[3] = 0;  // z direction degree
   f.interp.interp_param[4] = 1;  // x direction refinement
   f.interp.interp_param[5] = 1;  // y direction refinement
   f.interp.interp_param[6] = 1;  // z direction refinement
   // read the gmsh file
   ReadMacroMesh(&(f.macromesh),"test/testdisque2d.msh");
+  //ReadMacroMesh(&(f.macromesh),"test/testcube.msh");
   // try to detect a 2d mesh
   //bool is1d=Detect1DMacroMesh(&(f.macromesh));
   Detect2DMacroMesh(&(f.macromesh));
@@ -126,9 +127,7 @@ int TestPoisson2d(void) {
 
   InitPoissonSolver(&ps,&f,_INDEX_PHI);
 
-  real temp;
-
-  SolvePoisson2D(&ps,&temp,_Dirichlet_Poisson_BC);
+  SolvePoisson2D(&ps,_Dirichlet_Poisson_BC);
 
   Plotfield(_INDEX_PHI, false, &f, NULL, "dgvisu.msh");
 
