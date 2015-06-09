@@ -32,6 +32,8 @@ def main(argv):
     nplat = 0
     ndev = 0
     do_append = False
+    dt = 0
+    tmax = 0
 
     usage = "./vtime.py\n" \
             "\t-a: append to output instead of overwriting it\n" \
@@ -40,10 +42,12 @@ def main(argv):
             "\t-D<int>: Device\n" \
             "\t-n<int>: max number of subcells in each direction\n" \
             "\t-m<int>: min number of subcells in each direction\n" \
+            "\t-s<float>: dt\n" \
+            "\t-t<float>: tmax\n" \
             "\t-f<filename>: output filename\n" \
             "\t-h: help\n" 
     try:
-        opts, args = getopt.getopt(argv,"ag:f:n:m:P:D:h")
+        opts, args = getopt.getopt(argv,"ag:s:t:f:n:m:P:D:h")
     except getopt.GetoptError:
         print usage
     for opt, arg in opts:
@@ -61,13 +65,23 @@ def main(argv):
             nmax = int(arg)
         if opt in ("-m"):
             nmin = int(arg)
+        if opt in ("-s"):
+            dt = float(arg)
+        if opt in ("-t"):
+            tmax = float(arg)
         if opt in ("-h"):
             print usage
             sys.exit(0)
 
+    print "Output in " + filename
+
     cmd0 = []
     cmd0.append("./testmanyv")
     cmd0.append("-t 1")
+    if(dt > 0):
+        cmd0.append("-s" + str(dt))
+    if(tmax > 0):
+        cmd0.append("-t" + str(tmax))
     if(gpu):
         cmd0.append("-g1")
         cmd0.append("-P" + str(nplat))
@@ -77,12 +91,16 @@ def main(argv):
 
     if not do_append:
         create_csv(filename, "#n\ttime(s)\tcommand: "+str(cmd0) +"\n")
-
+    print "nmin ", nmin
+    print "nmax ", nmax
+        
     n = nmin
     while n <= nmax:
+
         cmd = copy.deepcopy(cmd0)
         cmd.append("-x" + str(n))
         cmd.append("-y" + str(n))
+        print cmd
 
         ts = time.time()
         p = Popen(cmd, stdout = PIPE, stderr = PIPE)
