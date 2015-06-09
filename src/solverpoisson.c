@@ -139,6 +139,7 @@ void InitPoissonSolver(PoissonSolver* ps, field* fd,int charge_index){
 		ps->fd->interp_param[3] + 1};
 
   int npgcell = npg[0] * npg[1] * npg[2];
+  int npgmacrocell = npgcell *  nraf[0] * nraf[1] * nraf[2];
 
   
   int nbel = ps->fd->macromesh.nbelems * nraf[0] * nraf[1] * nraf[2];
@@ -154,9 +155,9 @@ void InitPoissonSolver(PoissonSolver* ps, field* fd,int charge_index){
 	  ref_pg_face(ps->fd->interp_param + 1, ifa, ipgf,
 		      NULL, NULL, NULL);
 	  int ipg = ps->fd->interp_param[7];
-	  int ino_dg = ipg + ie * npgcell;
+	  int ino_dg = ipg + ie * npgmacrocell;
 	  int ino_fe = ps->dg_to_fe_index[ino_dg];
-	  //printf("ie=%d ino_dg=%d ino_fe=%d boundary=%d\n",ie,ino_dg,ino_fe,ps->is_boundary_node[ino_fe]);
+	  printf("ie=%d ino_dg=%d ino_fe=%d boundary=%d\n",ie,ino_dg,ino_fe,ps->is_boundary_node[ino_fe]);
 	  ps->is_boundary_node[ino_fe] = 1;
 
 	}
@@ -421,6 +422,7 @@ void SolvePoisson2D(PoissonSolver* ps,int type_bc){
 	  real dphi_i[3],dphi_j[3];
 	  int ilocmacro = iloc + isubcell * nnodes;
 	  grad_psi_pg(ps->fd->interp_param+1,ilocmacro,ipgmacro,dphiref_i);
+
 	  Ref2Phy(physnode,xref,dphiref_i,0,NULL,
 		  dtau,codtau,dphi_i,NULL);
 	  real det = dot_product(dtau[0], codtau[0]);
@@ -498,7 +500,7 @@ void SolvePoisson2D(PoissonSolver* ps,int type_bc){
 	real det = dot_product(dtau[0], codtau[0]);	
 	int ino_dg = iloc + ie * nnodes;
 	int ino_fe = ps->dg_to_fe_index[ino_dg];
-	ps->rhs[ino_fe] += 1 * wpg * det; // TODO: put the actual charge	
+	ps->rhs[ino_fe] += 0 * wpg * det; // TODO: put the actual charge	
       }
     }
   
@@ -506,19 +508,40 @@ void SolvePoisson2D(PoissonSolver* ps,int type_bc){
  
   }
 
+  // apply non homogeneous dirichlet boundary conditions
+  /* for(int ino=0; ino<ps->nb_fe_nodes; ino++){ */
+  /*   real bigval = 1e20; */
+  /*   if (ps->is_boundary_node[ino]) ps->rhs[ino]= 1 * bigval; */
+  /* } */
+
+  for(int ie = 0; ie < ps->fd->macromesh.nbelems; ie++){  
+    for(int ipg = 0;ipg < npgmacrocell; ipg++){
+	int ino_dg = ipg + ie * npgmacrocell;
+	int ino_fe = ps->dg_to_fe_index[ino_dg];
+	int ipot = ps->fd->varindex(ps->fd->interp_param,ie,
+			   ipg,_INDEX_PHI);
+	if (ps->is_boundary_node[ino_fe]){
+	  real bigval = 1e20;
+	  ps->rhs[ino_fe] = ps->fd->wn[ipot] * bigval;
+	  //printf("ino_dg=%d ino_fe=%d ipot=%d\n",ino_dg,ino_fe,ipot);
+	}
+    }
+  }
+
+
+
   // resolution
   SolveSkyline(&sky,ps->rhs,ps->sol);
 
 
-  // copy the potential at the right place xxx
+  // copy the potential at the right place 
   for(int ie = 0; ie < ps->fd->macromesh.nbelems; ie++){  
-    for(int ipg = 0;ipg < NPG(ps->fd->interp_param + 1); ipg++){
+    for(int ipg = 0;ipg < npgmacrocell; ipg++){
 	int ino_dg = ipg + ie * npgmacrocell;
 	int ino_fe = ps->dg_to_fe_index[ino_dg];
 	int ipot = ps->fd->varindex(ps->fd->interp_param,ie,
 			   ipg,_INDEX_PHI);
 	ps->fd->wn[ipot]=ps->sol[ino_fe];
-	printf("ino_dg=%d ino_fe=%d ipot=%d\n",ino_dg,ino_fe,ipot);
     }
   }
 

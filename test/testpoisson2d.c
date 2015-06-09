@@ -50,11 +50,11 @@ int TestPoisson2d(void) {
    
     
   f.interp.interp_param[0] = f.model.m;  // _M
-  f.interp.interp_param[1] = 2;  // x direction degree
-  f.interp.interp_param[2] = 2;  // y direction degree
+  f.interp.interp_param[1] = 1;  // x direction degree
+  f.interp.interp_param[2] = 1;  // y direction degree
   f.interp.interp_param[3] = 0;  // z direction degree
-  f.interp.interp_param[4] = 1;  // x direction refinement
-  f.interp.interp_param[5] = 1;  // y direction refinement
+  f.interp.interp_param[4] = 2;  // x direction refinement
+  f.interp.interp_param[5] = 2;  // y direction refinement
   f.interp.interp_param[6] = 1;  // z direction refinement
   // read the gmsh file
   ReadMacroMesh(&(f.macromesh),"test/testdisque2d.msh");
@@ -146,7 +146,7 @@ void TestPoisson_ImposedData(real x[3],real t,real w[]){
   }
   // exact value of the potential
   // and electric field
-  w[_INDEX_PHI] = x[0] * (1 - x[0]);
+  w[_INDEX_PHI] = x[0] +  x[1] ;// x[0] * x[0] + x[1] * x[1];
   w[_INDEX_EX] = 1. - 2. * x[0];
   w[_INDEX_RHO] = 2.; //rho init
   w[_INDEX_VELOCITY] = 0; // u init
