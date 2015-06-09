@@ -439,7 +439,7 @@ void SolvePoisson2D(PoissonSolver* ps,int type_bc){
 	    grad_psi_pg(ps->fd->interp_param+1,jlocmacro,ipgmacro,dphiref_j);
 	    Ref2Phy(physnode,xref,dphiref_j,0,NULL,
 		    dtau,codtau,dphi_j,NULL);
-	    aloc[iloc][jloc] += dot_product(dphi_i, dphi_j) * wpg * det  ;
+	    aloc[iloc][jloc] += dot_product(dphi_i, dphi_j) * wpg / det  ;
 	  }
 	}
       }
@@ -483,7 +483,7 @@ void SolvePoisson2D(PoissonSolver* ps,int type_bc){
 
     int iemacro = ie / (nraf[0] * nraf[1] * nraf[2]);
     int isubcell = ie % (nraf[0] * nraf[1] * nraf[2]);
-
+    
     real physnode[20][3];
     for(int ino = 0; ino < 20; ino++) {
       int numnoe = ps->fd->macromesh.elem2node[20 * iemacro + ino];
@@ -491,28 +491,23 @@ void SolvePoisson2D(PoissonSolver* ps,int type_bc){
 	physnode[ino][ii] = ps->fd->macromesh.node[3 * numnoe + ii];
       }
     }
-
-    for(int ipg = 0;ipg < nnodes; ipg++){
+    
+ 
+    for(int iloc = 0; iloc < nnodes; iloc++){
       real wpg;
       real xref[3];
-      int ipgmacro = ipg + isubcell * nnodes;
-      ref_pg_vol(ps->fd->interp_param+1,ipgmacro,xref,&wpg,NULL);
-
-      for(int iloc = 0; iloc < nnodes; iloc++){
-	real dtau[3][3],codtau[3][3];
-	real dphiref_i[3],dphiref_j[3];
-	real dphi_i[3],dphi_j[3];
-	int ilocmacro = iloc + isubcell * nnodes;
-	grad_psi_pg(ps->fd->interp_param+1,ilocmacro,ipgmacro,dphiref_i);
-	Ref2Phy(physnode,xref,dphiref_i,0,NULL,
-		dtau,codtau,dphi_i,NULL);
-	real det = dot_product(dtau[0], codtau[0]);	
-	int ino_dg = iloc + ie * nnodes;
-	int ino_fe = ps->dg_to_fe_index[ino_dg];
-	ps->rhs[ino_fe] += -1 * wpg * det  * dv; // TODO: put the actual charge	
-	surf += wpg * det * dv;
-	printf("det=%f surf=%f\n",det,surf);
-      }
+      //int ipgmacro = ipg + isubcell * nnodes;
+      int ilocmacro = iloc + isubcell * nnodes;
+      ref_pg_vol(ps->fd->interp_param+1,ilocmacro,xref,&wpg,NULL);
+      real dtau[3][3],codtau[3][3];
+      Ref2Phy(physnode,xref,NULL,0,NULL,
+	      dtau,codtau,NULL,NULL);
+      real det = dot_product(dtau[0], codtau[0]);	
+      int ino_dg = iloc + ie * nnodes;
+      int ino_fe = ps->dg_to_fe_index[ino_dg];
+      ps->rhs[ino_fe] += -1 * wpg * det ; // TODO: put the actual charge	
+      surf += wpg * det ;
+      printf("ie=%d det=%f surf=%f\n",ie,det,surf);    
     }
   
 
@@ -520,7 +515,7 @@ void SolvePoisson2D(PoissonSolver* ps,int type_bc){
   }
 
   printf("surf=%f\n",surf);
-  assert(1==2);
+  //assert(1==2);
 
   // apply non homogeneous dirichlet boundary conditions
   /* for(int ino=0; ino<ps->nb_fe_nodes; ino++){ */
