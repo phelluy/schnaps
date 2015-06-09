@@ -46,9 +46,6 @@ typedef struct field {
 
   // TODO: once the output of the diagnostics is done by appending,
   // remove dt, ieter_time, itermax, nb_diags, and Diagnostics.
-  //! Time step
-  //! dt has to be smaller than hmin / vmax
-  real dt;
   int iter_time;
   //! final time iter
   int itermax;
@@ -281,24 +278,26 @@ void RK_out(real *fwnp1, real *fwn, real *fdtwn, const real dt,
 //! \param[in] size of the field buffer
 void RK_in(real *fwnp1, real *fdtwn, const real dt, const int sizew);
 
-//! \brief Time integration by a second order Runge-Kutta algorithm
-//! \param[inout] f a field
-//! \param[in] tmax physical duration of the simulation
-void RK2(field *f, real tmax);
+real set_dt(field *f);
 
 //! \brief Time integration by a second order Runge-Kutta algorithm
 //! \param[inout] f a field
 //! \param[in] tmax physical duration of the simulation
-void RK4(field *f, real tmax);
+void RK2(field *f, real tmax, real dt);
+
+//! \brief Time integration by a second order Runge-Kutta algorithm
+//! \param[inout] f a field
+//! \param[in] tmax physical duration of the simulation
+void RK4(field *f, real tmax, real dt);
 
 #ifdef _WITH_OPENCL
 //! \brief OpenCL version of RK2
 //! time integration by a second order Runge-Kutta algorithm
 //! \param[inout] f a field
 //! \param[in] tmax physical duration of the simulation
-void RK2_CL(field *f, real tmax, 
+void RK2_CL(field *f, real tmax, real dt,
 	    cl_uint nwait, cl_event *wait, cl_event *done);
-void RK4_CL(field *f, real tmax, 
+void RK4_CL(field *f, real tmax, real dt,
 	    cl_uint nwait, cl_event *wait, cl_event *done);
 #endif
 

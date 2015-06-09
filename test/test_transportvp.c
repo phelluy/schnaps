@@ -79,10 +79,10 @@ int Test_TransportVP(void) {
   CheckMacroMesh(&(f.macromesh), f.interp.interp_param + 1);
 
   printf("cfl param =%f\n", f.hmin);
-  printf("dt =%f\n", f.dt);
 
   real tmax = 0.03;
-  RK2(&f, tmax);
+  real dt = set_dt(&f);
+  RK2(&f, tmax, dt);
   //RK2(&f,0.03,0.05);
 
    // save the results and the error
@@ -91,7 +91,7 @@ int Test_TransportVP(void) {
   printf("Trace vi=%f\n", -_VMAX + iel * _DV + _DV * glop(_DEG_V, iloc));
   Plotfield(iloc + iel * _DEG_V, false, &f, "sol","dgvisu.msh");
   Plotfield(iloc + iel * _DEG_V, true, &f, "error","dgerror.msh");
-  Plot_Energies(&f);
+  Plot_Energies(&f, dt);
 
   real dd_Kinetic = L2_Kinetic_error(&f);
   

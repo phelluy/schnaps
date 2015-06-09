@@ -57,11 +57,12 @@ int TestMaxwell2D(void) {
 
   real tmax = 1.0;
   f.vmax = 1;
-  
+  real dt = set_dt(&f);
+
 #if 1
-  RK2(&f, tmax);
+  RK2(&f, tmax, dt);
 #else
-  RK2_CL(&f, tmax, 0, 0, 0);
+  RK2_CL(&f, tmax, dt, 0, 0, 0);
   CopyfieldtoCPU(&f); 
 #endif
 

@@ -90,7 +90,8 @@ int TestPeriodic(void) {
   // up to final time = 1.
   //RK2(&f,0.5,0.1);
   f.vmax=_VMAX;
-  RK2(&f,0.5);
+  real dt = set_dt(&f);
+  RK2(&f,0.5, dt);
  
   // save the results and the error
   Plotfield(0,(1==0),&f,"sol","dgvisu.msh");

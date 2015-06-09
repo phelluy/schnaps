@@ -1292,8 +1292,9 @@ void DGSource(__constant int *param,     // 0: interp param
     }
   }
 
-  // compute source using w and xref, putting the result in source
+  // Compute source using w and xref, putting the result in source
   real source[_M];
+
   _SOURCE_FUNC(xphy, tnow, w, source);
   
   // Add the source buffer to dtw

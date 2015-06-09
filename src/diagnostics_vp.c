@@ -146,14 +146,14 @@ void Energies(field *f, real *w, real k_energy, real e_energy, real t_energy) {
   f->Diagnostics[f->iter_time + 2 * f->itermax] = t_energy;
 }
 
-void Plot_Energies(field *f) {
+void Plot_Energies(field *f, real dt) {
   int nb_diag = 0;
   real e_energy = 0, k_energy = 0, t_energy = 0;
   FILE *Plot;
   Plot = fopen("Diagnostics.dat","w");
 
   for(int i = 1; i < f->itermax + 1; i++){
-    f->tnow = i * f->dt; // FIXME: this will break with adaptive time-stepping
+    f->tnow = i * dt; // FIXME: this will break with adaptive time-stepping
     k_energy = f->Diagnostics[i];
     e_energy = f->Diagnostics[i + f->itermax];
     t_energy = f->Diagnostics[i + 2 * f->itermax];

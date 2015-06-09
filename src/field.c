@@ -386,8 +386,6 @@ void Initfield(field *f) {
   // Compute cfl parameter min_i vol_i/surf_i
   f->hmin = min_grid_spacing(f);
 
-  f->dt = 0;
-
   printf("hmin=%f\n", f->hmin);
 
   // Allocate and set MacroFaces
@@ -1723,14 +1721,18 @@ void RK_in(real *fwnp1, real *fdtwn, const real dt, const int sizew)
   }
 }
 
-// Time integration by a second-order Runge-Kutta algorithm
-void RK2(field *f, real tmax) 
+real set_dt(field *f)
 {
-  f->dt = f->model.cfl * f->hmin / f->vmax;
+  return f->model.cfl * f->hmin / f->vmax; 
+}
 
-  //printf("dt=%f cfl=%f hmin=%f, vmax=%f\n",f->dt, f->model.cfl, f->hmin, f->vmax);
+// Time integration by a second-order Runge-Kutta algorithm
+void RK2(field *f, real tmax, real dt) 
+{
+  if(dt <= 0)
+    dt = set_dt(f);
 
-  f->itermax = tmax / f->dt;
+  f->itermax = tmax / dt;
   int size_diags;
   int freq = (1 >= f->itermax / 10)? 1 : f->itermax / 10;
   int sizew = f->macromesh.nbelems * f->model.m * NPG(f->interp_param + 1);
@@ -1748,17 +1750,17 @@ void RK2(field *f, real tmax)
 
   while(f->tnow < tmax) {
     if (iter % freq == 0)
-      printf("t=%f iter=%d/%d dt=%f\n", f->tnow, iter, f->itermax, f->dt);
+      printf("t=%f iter=%d/%d dt=%f\n", f->tnow, iter, f->itermax, dt);
 
     dtfield(f, f->wn, f->dtwn);
-    RK_out(wnp1, f->wn, f->dtwn, 0.5 * f->dt, sizew);
+    RK_out(wnp1, f->wn, f->dtwn, 0.5 * dt, sizew);
 
-    f->tnow += 0.5 * f->dt;
+    f->tnow += 0.5 * dt;
 
     dtfield(f, wnp1, f->dtwn);
-    RK_in(f->wn, f->dtwn, f->dt, sizew);
+    RK_in(f->wn, f->dtwn, dt, sizew);
 
-    f->tnow += 0.5 * f->dt;
+    f->tnow += 0.5 * dt;
 
     if(f->update_after_rk != NULL)
       f->update_after_rk(f, f->wn);
@@ -1766,7 +1768,7 @@ void RK2(field *f, real tmax)
     iter++;
     f->iter_time=iter;
   }
-  printf("t=%f iter=%d/%d dt=%f\n", f->tnow, iter, f->itermax, f->dt);
+  printf("t=%f iter=%d/%d dt=%f\n", f->tnow, iter, f->itermax, dt);
   free(wnp1);
 }
 
@@ -1789,11 +1791,12 @@ void RK4_final_inplace(real *w, real *l1, real *l2, real *l3,
 }
 
 // Time integration by a fourth-order Runge-Kutta algorithm
-void RK4(field *f, real tmax) 
+void RK4(field *f, real tmax, real dt) 
 {
-  f->dt = f->model.cfl * f->hmin / f->vmax;
+  if(dt <= 0)
+    dt = set_dt(f);
 
-  f->itermax = tmax / f->dt;
+  f->itermax = tmax / dt;
   int freq = (1 >= f->itermax / 10)? 1 : f->itermax / 10;
   int sizew = f->macromesh.nbelems * f->model.m * NPG(f->interp_param + 1);
   int iter = 0;
@@ -1806,31 +1809,31 @@ void RK4(field *f, real tmax)
 
   while(f->tnow < tmax) {
     if (iter % freq == 0)
-      printf("t=%f iter=%d/%d dt=%f\n", f->tnow, iter, f->itermax, f->dt);
+      printf("t=%f iter=%d/%d dt=%f\n", f->tnow, iter, f->itermax, dt);
 
     // l_1 = w_n + 0.5dt * S(w_n, t_0)
     dtfield(f, f->wn, f->dtwn);
-    RK_out(l1, f->wn, f->dtwn, 0.5 * f->dt, sizew);
+    RK_out(l1, f->wn, f->dtwn, 0.5 * dt, sizew);
 
-    f->tnow += 0.5 * f->dt;
+    f->tnow += 0.5 * dt;
 
     // l_2 = w_n + 0.5dt * S(l_1, t_0 + 0.5 * dt)
     dtfield(f, l1, f->dtwn);
-    RK_out(l2, f->wn, f->dtwn, 0.5 * f->dt, sizew);
+    RK_out(l2, f->wn, f->dtwn, 0.5 * dt, sizew);
 
     // l_3 = w_n + dt * S(l_2, t_0 + 0.5 * dt)
     dtfield(f, l2, f->dtwn);
-    RK_out(l3, f->wn, f->dtwn, f->dt, sizew);
+    RK_out(l3, f->wn, f->dtwn, dt, sizew);
 
-    f->tnow += 0.5 * f->dt;
+    f->tnow += 0.5 * dt;
 
     // Compute S(l_3, t_0 + dt)
     dtfield(f, l3, f->dtwn);
-    RK4_final_inplace(f->wn, l1, l2, l3, f->dtwn, f->dt, sizew);
+    RK4_final_inplace(f->wn, l1, l2, l3, f->dtwn, dt, sizew);
 
     iter++;
   }
-  printf("t=%f iter=%d/%d dt=%f\n", f->tnow, iter, f->itermax, f->dt);
+  printf("t=%f iter=%d/%d dt=%f\n", f->tnow, iter, f->itermax, dt);
 
   free(l3);
   free(l2);

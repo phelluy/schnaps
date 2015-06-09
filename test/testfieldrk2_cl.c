@@ -90,7 +90,8 @@ int TestfieldRK2_CL(void){
  
   real tmax = 0.1;
   f.vmax=1;
-  RK2_CL(&f, tmax, 0, NULL, NULL);
+  real dt = 0;
+  RK2_CL(&f, tmax, dt,  0, NULL, NULL);
   
   CopyfieldtoCPU(&f);
  

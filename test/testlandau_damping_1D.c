@@ -91,10 +91,9 @@ int TestLandau_Damping_1D(void) {
   CheckMacroMesh(&(f.macromesh),f.interp.interp_param+1);
 
   printf("cfl param =%f\n",f.hmin);
-  printf("dt =%f\n",f.dt);
 
-
-  RK2(&f,0.1);
+  real dt = set_dt(&f);
+  RK2(&f,0.1, dt);
   //RK2(&f,0.03,0.05);
 
    // save the results and the error
@@ -103,7 +102,7 @@ int TestLandau_Damping_1D(void) {
   printf("Trace vi=%f\n",-_VMAX+iel*_DV+_DV*glop(_DEG_V,iloc));
   Plotfield(iloc+iel*_DEG_V,(1==0),&f,"sol","dgvisu.msh");
   Plotfield(iloc+iel*_DEG_V,(1==1),&f,"error","dgerror.msh");
-  Plot_Energies(&f);
+  Plot_Energies(&f, dt);
 
   test= 1;
 

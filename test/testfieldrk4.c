@@ -93,7 +93,8 @@ int TestfieldRK4(void){
  
   real tmax = 0.01;
   f.vmax = 1;
-  RK4(&f, tmax);
+  real dt = 0;
+  RK4(&f, tmax, dt);
  
   Plotfield(0, false, &f, NULL, "dgvisu.msh");
   Plotfield(0, true , &f, "error", "dgerror.msh");
