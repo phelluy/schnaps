@@ -350,7 +350,7 @@ void SolvePoisson2D(PoissonSolver* ps,int type_bc){
 		 ps->fd->interp_param[6]};
 
   real delta_x = 1. / nraf[0];
-  real dv = pow(delta_x,4.);
+  real dv = pow(delta_x,2.);
   assert( nraf[0] == nraf[1]);
   assert( nraf[2] == 1);
   
@@ -471,6 +471,7 @@ void SolvePoisson2D(PoissonSolver* ps,int type_bc){
 
   }
 
+
   // right hand side assembly
   for(int ino = 0; ino < ps->nb_fe_nodes; ino++){
     ps->rhs[ino] = 0;
@@ -510,6 +511,7 @@ void SolvePoisson2D(PoissonSolver* ps,int type_bc){
 	int ino_fe = ps->dg_to_fe_index[ino_dg];
 	ps->rhs[ino_fe] += -1 * wpg * det  * dv; // TODO: put the actual charge	
 	surf += wpg * det * dv;
+	printf("det=%f surf=%f\n",det,surf);
       }
     }
   
@@ -517,8 +519,8 @@ void SolvePoisson2D(PoissonSolver* ps,int type_bc){
  
   }
 
-  /* printf("surf=%f\n",surf); */
-  /* assert(1==2); */
+  printf("surf=%f\n",surf);
+  assert(1==2);
 
   // apply non homogeneous dirichlet boundary conditions
   /* for(int ino=0; ino<ps->nb_fe_nodes; ino++){ */
