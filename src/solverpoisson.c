@@ -157,7 +157,8 @@ void InitPoissonSolver(PoissonSolver* ps, field* fd,int charge_index){
 	  int ipg = ps->fd->interp_param[7];
 	  int ino_dg = ipg + ie * npgmacrocell;
 	  int ino_fe = ps->dg_to_fe_index[ino_dg];
-	  printf("ie=%d ino_dg=%d ino_fe=%d boundary=%d\n",ie,ino_dg,ino_fe,ps->is_boundary_node[ino_fe]);
+	  /* printf("ie=%d ino_dg=%d ino_fe=%d boundary=%d\n", */
+	  /* 	 ie,ino_dg,ino_fe,ps->is_boundary_node[ino_fe]); */
 	  ps->is_boundary_node[ino_fe] = 1;
 
 	}
@@ -347,6 +348,11 @@ void SolvePoisson2D(PoissonSolver* ps,int type_bc){
   int nraf[3] = {ps->fd->interp_param[4], 
 		 ps->fd->interp_param[5],
 		 ps->fd->interp_param[6]};
+
+  real delta_x = 1. / nraf[0];
+  real dv = pow(delta_x,4.);
+  assert( nraf[0] == nraf[1]);
+  assert( nraf[2] == 1);
   
   int npg[3] = {ps->fd->interp_param[1] + 1, 
 		ps->fd->interp_param[2] + 1,
@@ -426,14 +432,14 @@ void SolvePoisson2D(PoissonSolver* ps,int type_bc){
 	  Ref2Phy(physnode,xref,dphiref_i,0,NULL,
 		  dtau,codtau,dphi_i,NULL);
 	  real det = dot_product(dtau[0], codtau[0]);
-	  printf("ipg=%d det=%f xref=%f %f %f dphiref=%f %f %f \n",ipg,det,
-		 xref[0],xref[1],xref[2],dphiref_i[0],dphiref_i[1],dphiref_i[2]);
+	  /* printf("ipg=%d det=%f xref=%f %f %f dphiref=%f %f %f \n",ipg,det, */
+	  /* 	 xref[0],xref[1],xref[2],dphiref_i[0],dphiref_i[1],dphiref_i[2]); */
 	  for(int jloc = 0; jloc < nnodes; jloc++){
 	    int jlocmacro = jloc + isubcell * nnodes;
 	    grad_psi_pg(ps->fd->interp_param+1,jlocmacro,ipgmacro,dphiref_j);
 	    Ref2Phy(physnode,xref,dphiref_j,0,NULL,
 		    dtau,codtau,dphi_j,NULL);
-	    aloc[iloc][jloc] += dot_product(dphi_i, dphi_j) * wpg * det;
+	    aloc[iloc][jloc] += dot_product(dphi_i, dphi_j) * wpg * det  ;
 	  }
 	}
       }
@@ -470,6 +476,8 @@ void SolvePoisson2D(PoissonSolver* ps,int type_bc){
     ps->rhs[ino] = 0;
   }
 
+  real surf = 0;
+
   for(int ie = 0; ie < nbel; ie++){  
 
     int iemacro = ie / (nraf[0] * nraf[1] * nraf[2]);
@@ -486,8 +494,8 @@ void SolvePoisson2D(PoissonSolver* ps,int type_bc){
     for(int ipg = 0;ipg < nnodes; ipg++){
       real wpg;
       real xref[3];
-      int ipgmacro= ipg + isubcell * nnodes;
-     ref_pg_vol(ps->fd->interp_param+1,ipgmacro,xref,&wpg,NULL);
+      int ipgmacro = ipg + isubcell * nnodes;
+      ref_pg_vol(ps->fd->interp_param+1,ipgmacro,xref,&wpg,NULL);
 
       for(int iloc = 0; iloc < nnodes; iloc++){
 	real dtau[3][3],codtau[3][3];
@@ -500,13 +508,17 @@ void SolvePoisson2D(PoissonSolver* ps,int type_bc){
 	real det = dot_product(dtau[0], codtau[0]);	
 	int ino_dg = iloc + ie * nnodes;
 	int ino_fe = ps->dg_to_fe_index[ino_dg];
-	ps->rhs[ino_fe] += 0 * wpg * det; // TODO: put the actual charge	
+	ps->rhs[ino_fe] += -1 * wpg * det  * dv; // TODO: put the actual charge	
+	surf += wpg * det * dv;
       }
     }
   
 
  
   }
+
+  /* printf("surf=%f\n",surf); */
+  /* assert(1==2); */
 
   // apply non homogeneous dirichlet boundary conditions
   /* for(int ino=0; ino<ps->nb_fe_nodes; ino++){ */

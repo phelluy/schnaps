@@ -50,15 +50,15 @@ int TestPoisson2d(void) {
    
     
   f.interp.interp_param[0] = f.model.m;  // _M
-  f.interp.interp_param[1] = 1;  // x direction degree
-  f.interp.interp_param[2] = 1;  // y direction degree
+  f.interp.interp_param[1] = 3;  // x direction degree
+  f.interp.interp_param[2] = 3;  // y direction degree
   f.interp.interp_param[3] = 0;  // z direction degree
   f.interp.interp_param[4] = 2;  // x direction refinement
   f.interp.interp_param[5] = 2;  // y direction refinement
   f.interp.interp_param[6] = 1;  // z direction refinement
   // read the gmsh file
-  ReadMacroMesh(&(f.macromesh),"test/testdisque2d.msh");
-  //ReadMacroMesh(&(f.macromesh),"test/testcube.msh");
+  //ReadMacroMesh(&(f.macromesh),"geo/disque2d.msh");
+  ReadMacroMesh(&(f.macromesh),"geo/square.msh");
   // try to detect a 2d mesh
   //bool is1d=Detect1DMacroMesh(&(f.macromesh));
   Detect2DMacroMesh(&(f.macromesh));
@@ -130,6 +130,7 @@ int TestPoisson2d(void) {
   SolvePoisson2D(&ps,_Dirichlet_Poisson_BC);
 
   Plotfield(_INDEX_PHI, false, &f, NULL, "dgvisu.msh");
+  Plotfield(_INDEX_PHI, true, &f, NULL, "dgerror.msh");
 
 
   return test;
@@ -146,7 +147,7 @@ void TestPoisson_ImposedData(real x[3],real t,real w[]){
   }
   // exact value of the potential
   // and electric field
-  w[_INDEX_PHI] = x[0] +  x[1] ;// x[0] * x[0] + x[1] * x[1];
+  w[_INDEX_PHI] = (x[0] * x[0] + x[1] * x[1])/4;
   w[_INDEX_EX] = 1. - 2. * x[0];
   w[_INDEX_RHO] = 2.; //rho init
   w[_INDEX_VELOCITY] = 0; // u init
