@@ -50,11 +50,11 @@ int TestPoisson2d(void) {
    
     
   f.interp.interp_param[0] = f.model.m;  // _M
-  f.interp.interp_param[1] = 2;  // x direction degree
-  f.interp.interp_param[2] = 2;  // y direction degree
+  f.interp.interp_param[1] = 3;  // x direction degree
+  f.interp.interp_param[2] = 3;  // y direction degree
   f.interp.interp_param[3] = 0;  // z direction degree
-  f.interp.interp_param[4] = 32;  // x direction refinement
-  f.interp.interp_param[5] = 32;  // y direction refinement
+  f.interp.interp_param[4] = 2;  // x direction refinement
+  f.interp.interp_param[5] = 2;  // y direction refinement
   f.interp.interp_param[6] = 1;  // z direction refinement
   // read the gmsh file
   ReadMacroMesh(&(f.macromesh),"test/testdisque2d.msh");
@@ -81,46 +81,6 @@ int TestPoisson2d(void) {
 
   printf("cfl param =%f\n",f.hmin);
 
-  // time derivative
-  //dtField(&f);
-  //DisplayField(&f);
-  //assert(1==2);
-  // apply the DG scheme
-  // time integration by RK2 scheme 
-  // up to final time = 1.
- 
-  /*Compute_electric_field(&f);
-
-  // check the gradient on every glop
-  for(int ie=0;ie<f.macromesh.nbelems;ie++){
-    printf("elem %d\n",ie);
-    for(int ipg=0;ipg<NPG(f.interp_param+1);ipg++){
-      real xref[3],wpg;
-      ref_pg_vol(f.interp_param+1,ipg,xref,&wpg,NULL);
-      printf("Gauss point %d %f %f %f \n",ipg,xref[0],xref[1],xref[2]);
-      int imem=f.varindex(f.interp_param,ie,ipg,_MV+1);
-      printf("gradphi exact=%f gradphinum=%f\n",1-2*xref[0],f.wn[imem]);
-      test=test && (fabs(f.wn[imem]-(1-2*xref[0]))<1e-10);
-    }
-    }*/
-
-  //Computation_charge_density(f);
-  
-  /* SolvePoisson(&f, f.wn, 1, 0.0, 0.0); */
-
-  /* // check the gradient given by the poisson solver */
-  /* for(int ie=0;ie<f.macromesh.nbelems;ie++){ */
-  /*   printf("elem %d\n",ie); */
-  /*   for(int ipg=0;ipg<NPG(f.interp_param+1);ipg++){ */
-  /*     real xref[3],wpg; */
-  /*     ref_pg_vol(f.interp_param+1,ipg,xref,&wpg,NULL); */
-  /*     printf("Gauss point %d %f %f %f \n",ipg,xref[0],xref[1],xref[2]); */
-  /*     int imem=f.varindex(f.interp_param,ie,ipg,_MV+1); */
-  /*     printf("gradphi exact=%f gradphinum=%f rap=%f\n", */
-  /* 	     1-2*xref[0],f.wn[imem],(1-2*xref[0])/f.wn[imem]); */
-  /*     test=test && (fabs(f.wn[imem]-(1-2*xref[0]))<1e-10); */
-  /*   } */
-  /* } */
 
 
   PoissonSolver ps;
@@ -129,34 +89,34 @@ int TestPoisson2d(void) {
 
   SolvePoisson2D(&ps,_Dirichlet_Poisson_BC);
 
-  /* printf("Plot...\n"); */
+  real errl2 = L2error(&f);
+
+  printf("Erreur L2=%f\n",errl2);
+
+  test = test && (errl2 < 1e-4);
+
+  printf("Plot...\n");
 
 
-  /* Plotfield(_INDEX_PHI, false, &f, NULL, "dgvisu.msh"); */
-  /* Plotfield(_INDEX_PHI, true, &f, NULL, "dgerror.msh"); */
+  Plotfield(_INDEX_PHI, false, &f, NULL, "dgvisu.msh");
+  Plotfield(_INDEX_EX, false, &f, NULL, "dgex.msh");
 
 
   return test;
 }
 
 void TestPoisson_ImposedData(real x[3],real t,real w[]){
-  for(int i = 0; i < _INDEX_MAX_KIN + 1; i++){
-    int j = i%_DEG_V; // local connectivity put in function
-    int nel = i / _DEG_V; // element num (TODO : function)
-
-    real vi = (-_VMAX + nel * _DV + _DV * glop(_DEG_V, j));
-
-    w[i] = 1. / _VMAX;
+  for(int i = 0; i < _INDEX_MAX; i++){
+    w[i] = 0;
   }
   // exact value of the potential
   // and electric field
   w[_INDEX_PHI] = (x[0] * x[0] + x[1] * x[1])/4;
-  w[_INDEX_EX] = 1. - 2. * x[0];
-  w[_INDEX_RHO] = 2.; //rho init
-  w[_INDEX_VELOCITY] = 0; // u init
-  w[_INDEX_PRESSURE] = 0; // p init
-  w[_INDEX_TEMP] = 0; // e ou T init
-
+  w[_INDEX_EX] =  -x[0]/2;
+  w[_INDEX_RHO] = -1; //rho init
+  /* w[_INDEX_PHI] = x[0] ; */
+  /* w[_INDEX_EX] =  -1; */
+  /* w[_INDEX_RHO] = 0; //rho init */
 };
 
 void TestPoisson_InitData(real x[3],real w[]){
@@ -169,7 +129,7 @@ void TestPoisson_InitData(real x[3],real w[]){
 
 void TestPoisson_BoundaryFlux(real x[3],real t,real wL[],real* vnorm,
 				       real* flux){
-  real wR[_MV+6];
+  real wR[_INDEX_MAX];
   TestPoisson_ImposedData(x,t,wR);
   VlasovP_Lagrangian_NumFlux(wL,wR,vnorm,flux);
 };

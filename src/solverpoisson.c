@@ -512,7 +512,10 @@ void SolvePoisson2D(PoissonSolver* ps,int type_bc){
       real det = dot_product(dtau[0], codtau[0]);	
       int ino_dg = iloc + ie * nnodes;
       int ino_fe = ps->dg_to_fe_index[ino_dg];
-      ps->rhs[ino_fe] += -1 * wpg * det ; // TODO: put the actual charge	
+      int imem = ps->fd->varindex(ps->fd->interp_param,iemacro,
+				  ilocmacro,_INDEX_RHO);
+      real rho = ps->fd->wn[imem];
+      ps->rhs[ino_fe] += rho  * wpg * det ; // TODO: put the actual charge	
       surf += wpg * det ;
       //printf("ie=%d det=%f surf=%f\n",ie,det,surf);    
     }
@@ -571,83 +574,14 @@ void SolvePoisson2D(PoissonSolver* ps,int type_bc){
   /*   ps->rhs[ino] += 1e20 * ps->is_boundary_node[ino]; */
   /* } */
 
+
+
+
+  printf("Compute electric field...\n");
+
+  
+  ComputeElectricField(ps->fd);
+
   printf("End SolvePoisson2D.\n");
-
-
-  /*for(int ipg=0;ipg<degx+1;ipg++){
-    real omega=wglop(degx,ipg);
-    for(int iloc=0;iloc<degx+1;iloc++){
-    for(int jloc=0;jloc<degx+1;jloc++){
-    real dxi=dlag(degx,iloc,ipg);
-    real dxj=dlag(degx,jloc,ipg);
-    aloc[iloc][jloc] += dxi*dxj*omega*nelx;
-    }
-    }
-    }
-
-    // assembly of the matrix
-    for(int ie=0;ie<nelx;ie++){
-    for(int iloc=0;iloc<degx+1;iloc++){
-    for(int jloc=0;jloc<degx+1;jloc++){
-    int ino=iloc + ie * degx;
-    int jno=jloc + ie * degx;
-    real val = aloc[iloc][jloc];
-    SetSkyline(&sky,ino,jno,val);
-    }
-    }
-    }
-
-
-    // dirichlet boundary condition at the first and last location
-    if(type_bc == _Dirichlet_Poisson_BC){
-    SetSkyline(&sky,0,0,1e20);
-    SetSkyline(&sky,neq-1,neq-1,1e20);
-    }
-
-    //DisplaySkyline(&sky);
-
-    FactoLU(&sky);
-
-    // source assembly 
-    real source[neq];
-    for(int i=0;i<neq;i++){
-    source[i]=0;
-    }
-
-    for(int ie=0;ie<nelx;ie++){
-    for(int iloc=0;iloc<degx+1;iloc++){
-    real omega=wglop(degx,iloc);
-    int ino=iloc + ie * degx;  
-    int imem=f->varindex(f->interp_param,0,iloc+ie*(degx+1),_INDEX_RHO);
-    real charge=w[imem];          
-    source[ino]+= (charge-charge_average)*omega/nelx;
-    }
-    }
-
-    // Apply dirichlet Boundary condition
-  
-    source[0]=1e20*bc;
-    source[neq-1]=1e20*bc;
-  
-    real sol[neq];
-    SolveSkyline(&sky,source,sol);
-
-
-    // now put the solution at the right place
-    for(int ie=0;ie<nelx;ie++){
-    for(int ipg=0;ipg<degx+1;ipg++){
-    // position in the continuous vector
-    int ino=ipg + ie * degx;
-    // position in the DG vector
-    int imem=f->varindex(f->interp_param,0,ipg+ie*(degx+1),_INDEX_PHI);
-    w[imem]=sol[ino];
-    }
-    }
-	
-    FreeSkyline(&sky);
-
-
-    Compute_electric_field(f,w);
-  */
 
 }

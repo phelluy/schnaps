@@ -14,7 +14,7 @@
 void Computation_charge_density(field *f, real * w);
 
 void Compute_electric_field(field* f, real * w);
-
+void ComputeElectricField(field* f);
 real Computation_charge_average(field *f,real * w);
 
 #endif
