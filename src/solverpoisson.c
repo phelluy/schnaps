@@ -331,8 +331,8 @@ void SolvePoisson2D(PoissonSolver* ps,int type_bc){
   }
   
 
-  // for the moment, works only for the 1d case
-  //assert(f->macromesh.is1d);
+
+  printf("Init...\n");
 
   // assembly of the rigidity matrix
 
@@ -387,6 +387,8 @@ void SolvePoisson2D(PoissonSolver* ps,int type_bc){
 
     AllocateSkyline(&sky);
 
+    
+    printf("Assembly...\n");
 
 
     for(int ie = 0; ie < nbel; ie++){  
@@ -466,11 +468,16 @@ void SolvePoisson2D(PoissonSolver* ps,int type_bc){
   }
 
 
+  printf("Factorization...\n");
+
   FactoLU(&sky);
   
 
   }
 
+
+
+  printf("RHS assembly...\n");
 
   // right hand side assembly
   for(int ino = 0; ino < ps->nb_fe_nodes; ino++){
@@ -507,14 +514,14 @@ void SolvePoisson2D(PoissonSolver* ps,int type_bc){
       int ino_fe = ps->dg_to_fe_index[ino_dg];
       ps->rhs[ino_fe] += -1 * wpg * det ; // TODO: put the actual charge	
       surf += wpg * det ;
-      printf("ie=%d det=%f surf=%f\n",ie,det,surf);    
+      //printf("ie=%d det=%f surf=%f\n",ie,det,surf);    
     }
   
 
  
   }
 
-  printf("surf=%f\n",surf);
+  //printf("surf=%f\n",surf);
   //assert(1==2);
 
   // apply non homogeneous dirichlet boundary conditions
@@ -538,10 +545,13 @@ void SolvePoisson2D(PoissonSolver* ps,int type_bc){
   }
 
 
+  printf("Solution...\n");
 
   // resolution
   SolveSkyline(&sky,ps->rhs,ps->sol);
 
+
+  printf("Copy...\n");
 
   // copy the potential at the right place 
   for(int ie = 0; ie < ps->fd->macromesh.nbelems; ie++){  
@@ -561,6 +571,7 @@ void SolvePoisson2D(PoissonSolver* ps,int type_bc){
   /*   ps->rhs[ino] += 1e20 * ps->is_boundary_node[ino]; */
   /* } */
 
+  printf("End SolvePoisson2D.\n");
 
 
   /*for(int ipg=0;ipg<degx+1;ipg++){

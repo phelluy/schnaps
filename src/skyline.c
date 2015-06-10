@@ -343,6 +343,7 @@ static int c__1 = 1;
     jhk = 1;
     i__1 = neq;
     for (ik = 2; ik <= i__1; ++ik) {
+      //printf("factolu %d/%d\n",ik,neq);
 
 /* -------  pointeur du haut de la colonne suivante ik+1 */
 

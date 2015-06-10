@@ -53,8 +53,8 @@ int TestPoisson2d(void) {
   f.interp.interp_param[1] = 2;  // x direction degree
   f.interp.interp_param[2] = 2;  // y direction degree
   f.interp.interp_param[3] = 0;  // z direction degree
-  f.interp.interp_param[4] = 1;  // x direction refinement
-  f.interp.interp_param[5] = 1;  // y direction refinement
+  f.interp.interp_param[4] = 32;  // x direction refinement
+  f.interp.interp_param[5] = 32;  // y direction refinement
   f.interp.interp_param[6] = 1;  // z direction refinement
   // read the gmsh file
   ReadMacroMesh(&(f.macromesh),"test/testdisque2d.msh");
@@ -129,8 +129,11 @@ int TestPoisson2d(void) {
 
   SolvePoisson2D(&ps,_Dirichlet_Poisson_BC);
 
-  Plotfield(_INDEX_PHI, false, &f, NULL, "dgvisu.msh");
-  Plotfield(_INDEX_PHI, true, &f, NULL, "dgerror.msh");
+  /* printf("Plot...\n"); */
+
+
+  /* Plotfield(_INDEX_PHI, false, &f, NULL, "dgvisu.msh"); */
+  /* Plotfield(_INDEX_PHI, true, &f, NULL, "dgerror.msh"); */
 
 
   return test;
