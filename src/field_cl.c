@@ -901,13 +901,18 @@ void dtfield_CL(field *f, cl_mem *wn_cl,
 
   //printf("f->macromesh.nbelems: %d\n", f->macromesh.nbelems);
   
-  clSetUserEventStatus(f->clv_source, CL_COMPLETE); // start the loop
+  // Start the loop
+  if(f->use_source_cl) {
+    clSetUserEventStatus(f->clv_source, CL_COMPLETE); 
+  } else {
+    clSetUserEventStatus(f->clv_mass, CL_COMPLETE);
+  }
   for(int ie = 0; ie < f->macromesh.nbelems; ++ie) {
     //printf("ie: %d\n", ie);
     MacroCell *mcelli = f->mcell + ie;
     
     update_physnode_cl(f, ie, f->physnode_cl, f->physnode, &f->vol_time,
-		       1, &f->clv_source,
+		       1, f->use_source_cl ? &f->clv_source : &f->clv_mass,
 		       &f->clv_physnodeupdate);
     //f->???_time += clv_duration(f->clv_physnodeupdate);
 
@@ -934,10 +939,12 @@ void dtfield_CL(field *f, cl_mem *wn_cl,
   	      &f->clv_mass);
     f->mass_time += clv_duration(f->clv_mass);
 
-    DGSource_CL(mcelli, f, wn_cl, 
-		1,
-		&f->clv_mass,
-		&f->clv_source);
+    if(f->use_source_cl) {
+      DGSource_CL(mcelli, f, wn_cl, 
+		  1,
+		  &f->clv_mass,
+		  &f->clv_source);
+    }
   }
   clWaitForEvents(1, &f->clv_mass);
   if(done != NULL)
