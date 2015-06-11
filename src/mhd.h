@@ -7,6 +7,8 @@
 //! \param[in] y : primitives states
 //! \param[out] w : conservatives states
 void conservatives(real *y, real *w);
+void primitives(real *W, real *Y);
+
 
 //! \brief Numerical flux for the MHD model
 //! \param[in] w : states
@@ -18,7 +20,10 @@ void fluxnum(real *w, real *vn, real *flux);
 //! \param[in] wL,wR : left and right states
 //! \param[in] vn : normal vector
 //! \param[out] flux : the flux
-void MHDNumFlux(real *wL, real *wR, real *vn, real *flux);
+void MHDNumFluxRusanov(real *wL, real *wR, real *vn, real *flux);
+void MHDNumFluxP2(real *wL,real *wR,real *vn, real *flux);
+void MHDNumFlux1D(real *wL,real *wR,real *vn, real *flux);
+
 
 //! \brief particular boundary flux for the MHD model
 //! \param[in] x : space position
@@ -36,19 +41,14 @@ void MHDInitData(real *x, real *w);
 //! \brief particular imposed data for the MHD model
 //! \param[in] x,t : space and time position
 //! \param[out] w : imposed state at point x and time t
-void MHDImposedData(const real *x, const real t, real *w);
+void MHDImposedData(const real *x,const real t, real *w);
 
-void primitives(real *W, real *Y);
+// FIXME: using "real var[]" instead of "real *var" breaks OpenCL on
+// certain platforms.
+void jacobmhd(real* W,real* vn, real *M);
+void matrix_vector(real *A, real B[9], real* C);
 
-// FIXME: [][] breaks OpenCL.  Please use * instead.
-void jacobmhd(real* W,real* vn, real M[9][9]);
-void matrix_vector(real A[9][9], real B[9], real* C);
-void matrix_matrix(real A[9][9],real B[9][9],real C[9][9]);
-void write_matrix(real A[9][9],real *second, real B[9][9+1]);
-void gauss(real A[9][9], real b[9], real *x);
-void MHDNumFlux_2(real *wL, real *wR, real *vn, real *flux);
-
-void MHDNumFlux1D(real wL[],real wR[],real* vn, real* flux);
 #pragma end_opencl
+
 
 #endif

@@ -301,7 +301,6 @@ add_executable(
 target_link_libraries(testlinearsolver ${LIBS})
 add_test(testlinearsolver testlinearsolver)
 
-add_test(testpoisson testpoisson)
 add_executable(
   testpoisson
   test/test.h
@@ -311,13 +310,20 @@ target_link_libraries(testpoisson ${LIBS})
 add_test(testpoisson testpoisson)
 
 add_executable(
+  testpoisson2d
+  test/test.h
+  test/testpoisson2d.c
+)
+target_link_libraries(testpoisson2d ${LIBS})
+add_test(testpoisson2d testpoisson2d)
+
+add_executable(
   test_transportvp
   test/test.h
   test/test_transportvp.c
 )
 target_link_libraries(test_transportvp ${LIBS})
-# This test is too slow.  Please re-enable after decreasing execution time.
-#add_test(test_transportvp test_transportvp)
+add_test(test_transportvp test_transportvp)
 
 add_executable(
   testlandau_damping_1D

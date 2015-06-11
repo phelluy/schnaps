@@ -134,7 +134,7 @@ void ref_pg_face(int* param,int ifa,int ipgf,real* xpg,real* wpg,
 //! \param[out] dpsiref gradient of the basis function in the reference element
 void psi_ref(int* param, int ib, real* xref, real* psi, real* dpsiref);
 
-//! \brief  gradient of a basis function at a given glop (case of one subcell)
+//! \brief  gradient of a basis function at a given glop 
 //! \param[in]  param interpolation parammeters (degrees and refinements)
 //! \param[in] ib basis function index
 //! \param[in] ipg glop index

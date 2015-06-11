@@ -265,7 +265,7 @@ static int c__1 = 1;
     static real vzero = 0.;
 
     /* Format strings */
-    static char fmt_8000[] = "(\002 * sol pivot nul equation\002,i5)";
+    static char fmt_8000[] = "sol pivot nul equation";
 
     /* System generated locals */
     int i__1, i__2, i__3, i__4;
@@ -343,6 +343,7 @@ static int c__1 = 1;
     jhk = 1;
     i__1 = neq;
     for (ik = 2; ik <= i__1; ++ik) {
+      //printf("factolu %d/%d\n",ik,neq);
 
 /* -------  pointeur du haut de la colonne suivante ik+1 */
 
@@ -512,7 +513,7 @@ L150:
 
 L800:
 	/* io___22.ciunit = *mp; */
-      printf("%s\n",fmt_8000);
+    printf("%s %d\n",fmt_8000,ik);
 	/* s_wsfe(&io___22); */
 	/* do_fio(&c__1, (char *)&ik, (ftnlen)sizeof(int)); */
 	/* e_wsfe(); */

@@ -77,7 +77,7 @@ int TestMHD(int argc, char *argv[]) {
 
   strcpy(f.model.name,"MHD");
 
-  f.model.NumFlux=MHDNumFlux;
+  f.model.NumFlux=MHDNumFluxP2;
   f.model.BoundaryFlux=MHDBoundaryFlux;
   f.model.InitData=MHDInitData;
   f.model.ImposedData=MHDImposedData;
@@ -86,7 +86,7 @@ int TestMHD(int argc, char *argv[]) {
   sprintf(buf, "-D _M=%d", f.model.m);
   strcat(cl_buildoptions, buf);
 
-  sprintf(numflux_cl_name, "%s", "MHDNumFlux");
+  sprintf(numflux_cl_name, "%s", "MHDNumFluxP2");
   sprintf(buf," -D NUMFLUX=");
   strcat(buf, numflux_cl_name);
   strcat(cl_buildoptions, buf);
@@ -100,21 +100,23 @@ int TestMHD(int argc, char *argv[]) {
   f.interp.interp_param[2] = 1; // y direction degree
   f.interp.interp_param[3] = 0; // z direction degree
   f.interp.interp_param[4] = 10; // x direction refinement
-  f.interp.interp_param[5] = 1; // y direction refinement
+  f.interp.interp_param[5] = 10; // y direction refinement
   f.interp.interp_param[6] = 1; // z direction refinement
 
 
   //set_vlasov_params(&(f.model));
 
   // Read the gmsh file
-  ReadMacroMesh(&(f.macromesh), "test/testcartesiangrid2d2.msh");
+  //ReadMacroMesh(&(f.macromesh), "test/testcartesiangrid2d2.msh");
+  ReadMacroMesh(&(f.macromesh), "test/testOTgrid.msh");
   //ReadMacroMesh(&(f.macromesh), "test/testcube.msh");
   // Try to detect a 2d mesh
   Detect2DMacroMesh(&(f.macromesh));
   bool is2d=f.macromesh.is2d; 
   assert(is2d);  
 
-  f.macromesh.period[1]=10;
+  f.macromesh.period[0]=6.2831853;
+  f.macromesh.period[1]=6.2831853;
   
   // Mesh preparation
   BuildConnectivity(&(f.macromesh));

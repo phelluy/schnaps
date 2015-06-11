@@ -83,7 +83,6 @@ int TestLandau_Damping_1D(void) {
   f.macromesh.is1d=true;
   //f.macromesh.is1d=true;
   f.nb_diags=3;
-  //f.update_before_rk=UpdateVlasovPoisson;
   f.pre_dtfield=UpdateVlasovPoisson;
   f.update_after_rk=PlotVlasovPoisson;
   f.model.Source = VlasovP_Lagrangian_Source;
@@ -168,7 +167,7 @@ void UpdateVlasovPoisson(void* vf, real * w){
     
   Computation_charge_density(f,w);
   
-  SolvePoisson(f,w,type_bc,bc_l,bc_r);    
+  SolvePoisson1D(f,w,type_bc,bc_l,bc_r);    
   
 }
 

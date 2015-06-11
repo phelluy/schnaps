@@ -26,6 +26,8 @@ void ReadMacroMesh(MacroMesh *m, char *filename)
   m->period[1]=-1;
   m->period[2]=-1;
 
+  m->connec_ok = false;
+
   FILE *f = NULL;
   char *line = NULL;
   size_t linesize = 0;
@@ -588,7 +590,7 @@ void BuildConnectivity(MacroMesh* m)
 	int param2[7]={0,0,0,1,1,1,0};
 	ref_pg_face(param2, ifa, ipgf, xpgref, NULL, xpgref_in);
 	real dtau[3][3],xpg_in[3];
-	real codtau[3][3],vnds[3];
+	real codtau[3][3],vnds[3]={0,0,0};
 	Ref2Phy(physnode,
 		xpgref_in,
 		NULL, ifa, // dpsiref,ifa
@@ -601,27 +603,27 @@ void BuildConnectivity(MacroMesh* m)
 	int dim=0;
 	while(Dist(vnds,diag[dim]) > 1e-2 && dim<3) dim++;
 	//assert(dim < 3);
-	printf("xpg_in_before=%f\n",xpg_in[dim]);
+	//printf("xpg_in_before=%f\n",xpg_in[dim]);
 	if (dim < 3 && m->period[dim]  > 0){
 	  //if (xpg_in[dim] > m->period[dim]){
           if (xpg_in[dim] > m->xmax[dim]){
 	    xpg_in[dim] -= m->period[dim];
-	    printf("xpg_in_after=%f\n",xpg_in[dim]);
+	    //printf("xpg_in_after=%f\n",xpg_in[dim]);
 	  }
 	  //else if (xpg_in[dim] < 0){
           else if (xpg_in[dim] < m->xmin[dim]){
 	    xpg_in[dim] += m->period[dim];
-	    printf("xpg_in_after=%f\n",xpg_in[dim]);
+	    //printf("xpg_in_after=%f\n",xpg_in[dim]);
 	  }
 	  else {
             //printf("xpg_in=%f\n",xpg_in[dim]);
 	    assert(1==2);
 	  }
 	  m->elem2elem[6 * ie + ifa] = NumElemFromPoint(m,xpg_in,NULL);
-	  printf("ie=%d ifa=%d numelem=%d vnds=%f %f %f xpg_in=%f %f %f \n",
-	  	 ie,ifa,NumElemFromPoint(m,xpg_in,NULL),
-	  	 vnds[0],vnds[1],vnds[2],
-	  	 xpg_in[0],xpg_in[1],xpg_in[2]);
+	  /* printf("ie=%d ifa=%d numelem=%d vnds=%f %f %f xpg_in=%f %f %f \n", */
+	  /* 	 ie,ifa,NumElemFromPoint(m,xpg_in,NULL), */
+	  /* 	 vnds[0],vnds[1],vnds[2], */
+	  /* 	 xpg_in[0],xpg_in[1],xpg_in[2]); */
 	}
       }
     }
@@ -655,6 +657,8 @@ void BuildConnectivity(MacroMesh* m)
 
   //assert(1==5);
   free(bounds);
+
+  m->connec_ok = true;
 
 /* #ifdef _PERIOD */
 /*   assert(m->is1d); // TODO : generalize to 2D */
@@ -707,6 +711,8 @@ void CheckMacroMesh(MacroMesh *m, int *param) {
   /* real refnormal[6][3]={{0,-1,0},{1,0,0}, */
   /* 			  {0,1,0},{-1,0,0}, */
   /* 			  {0,0,1},{0,0,-1}}; */
+
+  assert(m->connec_ok);
 
   for(int ie = 0; ie < m->nbelems; ie++) {
     // Load geometry for macro element ie:
@@ -827,7 +833,9 @@ void CheckMacroMesh(MacroMesh *m, int *param) {
 
 	// Get the right elem or the boundary id
 	int ieR = m->elem2elem[6 * ie + ifa];
-  	if(ieR >= 0) {  // The right element exists
+	// If the right element exists and is not
+	// the left element (may arrive in periodic cases)
+  	if(ieR >= 0 && ieR != ie) {
 	  // Get the coordinates of the Gauss point from the
 	  // face-local point index and the point slightly inside the
 	  // macrocell.

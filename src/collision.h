@@ -1,8 +1,8 @@
 #ifndef _COLLISION_H
 #define _COLLISION_H
 
-#define _NB_ELEM_V 12
-#define _DEG_V 3
+#define _NB_ELEM_V 2
+#define _DEG_V 1
 
 //! \brief number of conservative variables
 //! values of  the distribution function at the velocity glops
@@ -20,8 +20,6 @@
 
 #define _VMAX 6.
 #define _DV (2*_VMAX / _NB_ELEM_V)
-#define _Dirichlet_Poisson_BC (1)
-#define _Periodic_Poisson_BC (2)
 
 #include "model.h"
 #include "field.h"
