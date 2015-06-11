@@ -53,7 +53,7 @@ int TestMaxwell2D(void) {
   
   CheckMacroMesh(&(f.macromesh), f.interp.interp_param + 1);
 
-  real tmax = 1.0;
+  real tmax = 0.1;
   f.vmax = 1;
   real dt = set_dt(&f);
 
@@ -73,7 +73,7 @@ int TestMaxwell2D(void) {
   Plotfield(0, true, &f, "error", "dgerror.msh");
 
   real dd = L2error(&f);
-  real tolerance = 8e-3;
+  real tolerance = 9e-3;
   test = test && (dd < tolerance);
   printf("L2 error: %f\n", dd);
 
