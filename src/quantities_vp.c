@@ -116,6 +116,7 @@ void ComputeElectricField(field* f){
       int iex = f->varindex(f->interp_param,ie,
 			    ipg,_INDEX_EX);
       f->wn[iex] = 0;
+      
       for(int ib=0; ib < npgmacrocell; ib++){
 	real dtau[3][3],codtau[3][3];
 	real dphiref[3];
