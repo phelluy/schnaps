@@ -833,7 +833,9 @@ void CheckMacroMesh(MacroMesh *m, int *param) {
 
 	// Get the right elem or the boundary id
 	int ieR = m->elem2elem[6 * ie + ifa];
-  	if(ieR >= 0) {  // The right element exists
+	// If the right element exists and is not
+	// the left element (may arrive in periodic cases)
+  	if(ieR >= 0 && ieR != ie) {
 	  // Get the coordinates of the Gauss point from the
 	  // face-local point index and the point slightly inside the
 	  // macrocell.

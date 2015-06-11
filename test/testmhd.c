@@ -125,7 +125,7 @@ int TestMHD(int argc, char *argv[]) {
 
   
   // Prudence...
-  //CheckMacroMesh(&(f.macromesh), f.interp.interp_param + 1);
+  CheckMacroMesh(&(f.macromesh), f.interp.interp_param + 1);
 
   Plotfield(0, (1==0), &f, "Rho", "dginit.msh");
 
