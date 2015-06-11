@@ -586,9 +586,9 @@ void DGMass_CL(void *mc, field *f,
 
     unsigned int m = f->interp_param[0];
     unsigned int nreadsdgmass = m;
-    unsigned int nmultsdgmass = m + 1296;
-    f->nmults += numworkitems * nmultsdgmass;
-    f->nreads += numworkitems * nreadsdgmass;
+    unsigned int nmultsdgmass = 53 + 2 * m + 2601;
+    f->flops_mass += numworkitems * nmultsdgmass;
+    f->reads_mass += numworkitems * nreadsdgmass;
     
     status = clEnqueueNDRangeKernel(f->cli.commandqueue,
 				    f->dgmass,
@@ -712,10 +712,10 @@ void DGFlux_CL(field *f, int dim0, int ie, cl_mem *wn_cl,
     init_DGFlux_CL(f, ie, dim0, wn_cl, 4 * m * groupsize);
 
     unsigned int nreadsdgflux = 4 * m;
-    unsigned int nmultsdgflux = 1296 + 2 * m;
+    unsigned int nmultsdgflux = 2601 + 92 + 28 * m;
     nmultsdgflux += 3 * m; // Using NUMFLUX = NumFlux
-    f->nmults += numworkitems * nmultsdgflux;
-    f->nreads += numworkitems * nreadsdgflux;
+    f->flops_flux += numworkitems * nmultsdgflux;
+    f->reads_flux += numworkitems * nreadsdgflux;
     
     // Launch the kernel
     cl_int status;
@@ -747,18 +747,19 @@ void DGVolume_CL(void *mc, field *f, cl_mem *wn_cl,
 
   cl_int status;
   int m = param[0];
-  size_t groupsize = (param[1] + 1) * (param[2] + 1) * (param[3] + 1);
+  const int npgc[3] = {param[1] + 1, param[2] + 1, param[3] + 1};
+  const int npg = npgc[0] * npgc[1] * npgc[2];
+  size_t groupsize = npg;
   // The total work items number is the number of glops in a subcell
   // * number of subcells
-  size_t numworkitems = param[4] * param[5] * param[6] * groupsize;
+  const int nraf[3] = {param[4], param[5], param[6]};
+  size_t numworkitems = nraf[0] * nraf[1] * nraf[2] * groupsize;
   
   unsigned int nreadsdgvol = 2 * m; // read m from wn, write m to dtwn
-  unsigned int nmultsdgvol = 1296 + m;
-  nmultsdgvol += 3 * m; // Using NUMFLUX = NumFlux
-  
-  f->nmults += numworkitems * nmultsdgvol;
-  f->nreads += numworkitems * nreadsdgvol;
-  
+  unsigned int nmultsdgvol = 2601 + (npgc[0] + npgc[1] + npgc[2]) * 6 * m;
+  nmultsdgvol += (npgc[0] + npgc[1] + npgc[2]) * 54; 
+  // Using NUMFLUX = NumFlux (3 * m multiplies):
+  nmultsdgvol += (npgc[0] + npgc[1] + npgc[2]) * 6 * m; 
   
   init_DGVolume_CL(f, wn_cl, 2 * groupsize * m);
   
@@ -769,6 +770,9 @@ void DGVolume_CL(void *mc, field *f, cl_mem *wn_cl,
 
   // Loop on the elements
   for(int ie = start; ie < end; ie++) {
+    f->flops_vol += numworkitems * nmultsdgvol;
+    f->reads_vol += numworkitems * nreadsdgvol;
+
     status = clSetKernelArg(kernel,
 			    1,
 			    sizeof(int),
@@ -1344,6 +1348,57 @@ void RK2_CL(field *f, real tmax, real dt,
 
 void show_cl_timing(field *f)
 {
+  printf("\n");
+  printf("Device characteristics:\n");
+  printf("\tname:\t%s\n", f->cli.devicename);
+  double dev_gflops = cl_dev_gflops(f->cli.devicename);
+  double dev_bwidth = cl_dev_bwidth(f->cli.devicename);
+  printf("\tgflops:   \t%f\n", dev_gflops);
+  printf("\tbandwidth:\t%f\n", dev_bwidth);
+
+  printf("\n");
+  printf("Roofline counts:\n");
+  unsigned long int flops_total = f->flops_vol + f->flops_flux + f->flops_mass;
+  unsigned long int reads_total = f->reads_vol + f->reads_flux + f->reads_mass;
+  printf("Number of real multiplies in kernels:               %lu\n", 
+	 flops_total);
+  printf("Number of reads/writes of reals from global memory: %lu\n", 
+	 reads_total);
+  //printf("NB: real multiplies assumes the flux involved 3m multiplies.\n");
+  printf("Terms included in roofline: volume, flux, and mass.\n");
+
+  cl_ulong roofline_time_ns = f->vol_time + f->flux_time + f->mass_time;
+  double roofline_time_s = 1e-9 * roofline_time_ns;
+  double roofline_flops = flops_total / roofline_time_s;
+  double roofline_bw = sizeof(real) * reads_total / roofline_time_s;
+  
+  // vol terms
+  double vol_time_s = 1e-9 * f->vol_time;
+  double vol_flops = f->flops_vol / vol_time_s;
+  double vol_bw = sizeof(real) * f->reads_vol / vol_time_s;
+  printf("DGVol:  GFLOP/s: %f\tbandwidth (GB/s): %f\n", 
+	 1e-9 * vol_flops, 1e-9 * vol_bw);
+
+  // flux terms
+  double flux_time_s = 1e-9 * f->flux_time;
+  double flux_flops = f->flops_flux / flux_time_s;
+  double flux_bw = sizeof(real) * f->reads_flux / flux_time_s;
+  printf("DGFlux: GFLOP/s: %f\tbandwidth (GB/s): %f\n", 
+	 1e-9 * flux_flops, 1e-9 * flux_bw);
+  
+  // mass terms
+  double mass_time_s = 1e-9 * f->mass_time;
+  double mass_flops = f->flops_mass / mass_time_s;
+  double mass_bw = sizeof(real) * f->reads_mass / mass_time_s;
+  printf("DGMass: GFLOP/s: %f\tbandwidth (GB/s): %f\n", 
+	 1e-9 * mass_flops, 1e-9 * mass_bw);
+
+  printf("Total:  GFLOP/s: %f\tbandwidth (GB/s): %f\n", 
+	 1e-9 * roofline_flops, 1e-9 * roofline_bw);
+  
+  printf("\n");
+
+  printf("Kernel execution times:\n"); 
   cl_ulong total = 0;
   total += f->zbuf_time;
   total += f->minter_time;
@@ -1391,12 +1446,16 @@ void show_cl_timing(field *f)
 	 ns*N, (unsigned long) ns, 1e-9 * ns);
 
   printf("\n");
+  
+  ns = total;
+  double total_time = 1e-9 * ns;
+  printf("total time:                   %f%% \t%luns \t%fs\n", 
+	 ns*N, (unsigned long) ns, total_time);
 
-  printf("Roofline counts:\n");
-  printf("Number of reads/writes of reals from global memory: %d\n", f->nreads);
-  printf("Number of real multiplies in kernels:               %d\n", f->nmults);
-  printf("NB: real multiplies assumes the flux involved 3m multiplies.\n");
-  printf("Terms included in roofline: volume, flux, and mass.\n");
+  printf("\n");
+  printf("Total kernel performance:\n");
+  print_kernel_perf(dev_gflops, dev_bwidth,
+		    flops_total, reads_total, total);
   
   printf("\n");
 }
