@@ -8,9 +8,9 @@
 #include "diagnostics_vp.h"
 #include "solverpoisson.h"
 
-void Test_TransportVP_ImposedData(real *x, real t, real *w);
+void Test_TransportVP_ImposedData(const real *x, const real t, real *w);
 void Test_TransportVP_InitData(real *x, real *w);
-real TransportVP_ImposedKinetic_Data(real *x, real t, real v);
+real TransportVP_ImposedKinetic_Data(const real *x, const real t, real v);
 void Test_TransportVP_BoundaryFlux(real *x, real t, real *wL, real *vnorm,
 				   real *flux);
 
@@ -34,6 +34,7 @@ int Test_TransportVP(void) {
   bool test = true;
 
   field f;
+  init_empty_field(&f);
 
   int vec=1;
   f.model.m=_INDEX_MAX; // num of conservative variables f(vi) for each vi, phi, E, rho, u, p, e (ou T)
@@ -78,10 +79,10 @@ int Test_TransportVP(void) {
   CheckMacroMesh(&(f.macromesh), f.interp.interp_param + 1);
 
   printf("cfl param =%f\n", f.hmin);
-  printf("dt =%f\n", f.dt);
 
   real tmax = 0.03;
-  RK2(&f, tmax);
+  real dt = set_dt(&f);
+  RK2(&f, tmax, dt);
   //RK2(&f,0.03,0.05);
 
    // save the results and the error
@@ -90,7 +91,7 @@ int Test_TransportVP(void) {
   printf("Trace vi=%f\n", -_VMAX + iel * _DV + _DV * glop(_DEG_V, iloc));
   Plotfield(iloc + iel * _DEG_V, false, &f, "sol","dgvisu.msh");
   Plotfield(iloc + iel * _DEG_V, true, &f, "error","dgerror.msh");
-  Plot_Energies(&f);
+  Plot_Energies(&f, dt);
 
   real dd_Kinetic = L2_Kinetic_error(&f);
   
@@ -100,7 +101,7 @@ int Test_TransportVP(void) {
   return test;
 }
 
-void Test_TransportVP_ImposedData(real *x, real t, real *w) {
+void Test_TransportVP_ImposedData(const real *x, const real t, real *w) {
 
   for(int i = 0; i <_INDEX_MAX_KIN + 1; i++) {
     int j = i % _DEG_V; // local connectivity put in function
@@ -124,7 +125,7 @@ void Test_TransportVP_InitData(real *x, real *w) {
   Test_TransportVP_ImposedData(x, t, w);
 }
 
-real TransportVP_ImposedKinetic_Data(real *x, real t, real v) {
+real TransportVP_ImposedKinetic_Data(const real *x, const real t, real v) {
   real f;
   real pi = 4.0 * atan(1.0);
   real xnew = 0, vnew = 0;

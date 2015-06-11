@@ -590,7 +590,7 @@ void BuildConnectivity(MacroMesh* m)
 	int param2[7]={0,0,0,1,1,1,0};
 	ref_pg_face(param2, ifa, ipgf, xpgref, NULL, xpgref_in);
 	real dtau[3][3],xpg_in[3];
-	real codtau[3][3],vnds[3];
+	real codtau[3][3],vnds[3]={0,0,0};
 	Ref2Phy(physnode,
 		xpgref_in,
 		NULL, ifa, // dpsiref,ifa

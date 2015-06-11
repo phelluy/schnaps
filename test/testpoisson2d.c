@@ -7,7 +7,7 @@
 #include "solverpoisson.h"
 
 
-void TestPoisson_ImposedData(real x[3],real t,real w[]);
+void TestPoisson_ImposedData(const real x[3],const real t,real w[]);
 void TestPoisson_InitData(real x[3],real w[]);
 void TestPoisson_BoundaryFlux(real x[3],real t,real wL[],real* vnorm,
 			      real* flux);
@@ -29,6 +29,7 @@ int TestPoisson2d(void) {
   bool test = true;
 
   field f;
+  init_empty_field(&f);
 
   int vec=1;
 
@@ -43,6 +44,7 @@ int TestPoisson2d(void) {
   f.model.BoundaryFlux = TestPoisson_BoundaryFlux;
   f.model.InitData = TestPoisson_InitData;
   f.model.ImposedData = TestPoisson_ImposedData;
+  f.model.Source = NULL;
  
   f.varindex = GenericVarindex;
   f.pre_dtfield = NULL;
@@ -53,8 +55,8 @@ int TestPoisson2d(void) {
   f.interp.interp_param[1] = 3;  // x direction degree
   f.interp.interp_param[2] = 3;  // y direction degree
   f.interp.interp_param[3] = 0;  // z direction degree
-  f.interp.interp_param[4] = 4;  // x direction refinement
-  f.interp.interp_param[5] = 4;  // y direction refinement
+  f.interp.interp_param[4] = 2;  // x direction refinement
+  f.interp.interp_param[5] = 2;  // y direction refinement
   f.interp.interp_param[6] = 1;  // z direction refinement
   // read the gmsh file
   ReadMacroMesh(&(f.macromesh),"test/testdisque2d.msh");
@@ -93,7 +95,7 @@ int TestPoisson2d(void) {
 
   printf("Erreur L2=%f\n",errl2);
 
-  test = test && (errl2 < 1e-4);
+  test = test && (errl2 < 4e-4);
 
   printf("Plot...\n");
 
@@ -105,7 +107,7 @@ int TestPoisson2d(void) {
   return test;
 }
 
-void TestPoisson_ImposedData(real x[3],real t,real w[]){
+void TestPoisson_ImposedData(const real x[3],const real t,real w[]){
   for(int i = 0; i < _INDEX_MAX; i++){
     w[i] = 0;
   }

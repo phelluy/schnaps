@@ -22,7 +22,7 @@
 /*     flux[i] = vnp * wL[i] + vnm * wR[i]; */
 /*   } */
   
-/* }; */
+/* } */
 
 //flux num gyro
 void Gyro_Lagrangian_NumFlux(real wL[],real wR[],real* vnorm,real* flux){
@@ -51,7 +51,7 @@ void Gyro_Lagrangian_NumFlux(real wL[],real wR[],real* vnorm,real* flux){
   flux[_INDEX_EY]=0;
   flux[_INDEX_EZ]=0;
   
-};
+}
 
 //! \brief compute square of velocity L2 error
 //! \param[in] w : values of f at glops
@@ -72,7 +72,7 @@ real GyroL2VelError(real* x,real t,real *w){
     }
   }
   return err2;
-};
+}
 
 
 
@@ -81,7 +81,7 @@ void Gyro_Lagrangian_BoundaryFlux(real x[3],real t,real wL[],real* vnorm,
   real wR[_INDEX_MAX];
   GyroImposedData(x,t,wR);
   Gyro_Lagrangian_NumFlux(wL,wR,vnorm,flux);
-};
+}
 
 
 void GyroInitData(real x[3],real w[]){
@@ -89,11 +89,9 @@ void GyroInitData(real x[3],real w[]){
   real t=0;
   GyroImposedData(x,t,w);
 
-};
+}
 
-
-
-void GyroImposedData(real x[3],real t,real w[]){
+void GyroImposedData(const real x[3], const real t,real w[]){
 
   for(int i=0;i<_INDEX_MAX_KIN+1;i++){
     int j=i%_DEG_V; // local connectivity put in function
@@ -127,15 +125,15 @@ void GyroImposedData(real x[3],real t,real w[]){
   w[_INDEX_EY]=0;//1;
   w[_INDEX_EZ]=0;
 
-};
+}
 
 
-real Gyro_ImposedKinetic_Data(real x[3],real t,real v){
+real Gyro_ImposedKinetic_Data(const real x[3], const real t, real v) {
   real f;
   f=exp(-pow((v-1.*t),2)/16.); //velocity transport, Ez=1
   //f=exp(-4*pow(xi-0.5,2))*exp(-pow((v-2.*t),2));
   return f;
-};
+}
 
 real GyroL2_Kinetic_error(field* f){
 
@@ -187,8 +185,7 @@ real GyroL2_Kinetic_error(field* f){
 
 //! \brief compute compute the source term of the collision
 //! model: electric force + true collisions
-void GyroSource(real* x, real t, real* w, real* source){
-
+void GyroSource(const real *x, const real t, const real *w, real *source) {
   real Ez=w[_INDEX_EZ]; // electric field
   real Md[_MV];
   for(int iv=0;iv<_INDEX_MAX_KIN+1;iv++){
@@ -227,7 +224,7 @@ void GyroSource(real* x, real t, real* w, real* source){
   source[_INDEX_EY]=0;
   source[_INDEX_EZ]=0;
 
-};
+}
 
 
 
@@ -251,4 +248,4 @@ void Velocity_distribution_plot(real *w){
     }
   }
   fclose(ver);
-};
+}

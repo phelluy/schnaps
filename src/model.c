@@ -70,7 +70,7 @@ void TransBoundaryFlux2d(real x[3], real t, real wL[], real *vnorm,
 
 // m = 2 test-case
 #pragma start_opencl
-void VecTransImposedData2d(real *x, real t, real* w) 
+void VecTransImposedData2d(const real *x, const real t, real* w) 
 {
   real vx = sqrt(0.5) * x[0] + sqrt(0.5) * x[1];
   real xx = vx - t;
@@ -107,7 +107,7 @@ void VecTransInitData2d(real x[3], real w[]) {
   VecTransImposedData2d(x, t, w);
 }
 
-void TransImposedData(real x[3], real t, real w[]) {
+void TransImposedData(const real x[3], const real t, real w[]) {
   real vx =
     transport_v[0] * x[0] +
     transport_v[1] * x[1] +
@@ -116,7 +116,7 @@ void TransImposedData(real x[3], real t, real w[]) {
   w[0]=cos(xx);
 }
 
-void TransImposedData2d(real *x, real t, real *w) 
+void TransImposedData2d(const real *x, const real t, real *w) 
 {
   real vx  = sqrt(0.5) * x[0] + sqrt(0.5) * x[1];
   real xx = vx - t;
@@ -148,7 +148,7 @@ void TestTransInitData2d(real x[3], real w[]) {
   TestTransImposedData2d(x, t, w);
 }
 
-void TestTransImposedData(real x[3], real t, real w[]) {
+void TestTransImposedData(const real x[3], const real t, real w[]) {
   real vx 
     = transport_v[0] * x[0] 
     + transport_v[1] * x[1] 
@@ -158,7 +158,7 @@ void TestTransImposedData(real x[3], real t, real w[]) {
   //w[0]=0;
 }
 
-void TestTransImposedData2d(real x[3], real t, real w[]) {
+void TestTransImposedData2d(const real x[3], const real t, real w[]) {
   real vx 
     = transport_v2d[0] * x[0] 
     + transport_v2d[1] * x[1] 
@@ -167,7 +167,10 @@ void TestTransImposedData2d(real x[3], real t, real w[]) {
   w[0] = xx * xx;
 }
 
-// Vlasov 2D transport equation functions
+void set_global_m(int m0)
+{
+  m = m0;
+}
 
 // Set the parameters for the Vlasov equation that are stored in the
 // global space of model.h
@@ -252,7 +255,7 @@ real compact_poly6(real r)
   return -35.0 / 16.0 * rrm1 * rrm1 * rrm1 * rrp1 * rrp1 * rrp1;
 }
 
-void vlaTransImposedData2d(real x[3], real t, real *w) 
+void vlaTransImposedData2d(const real x[3], const real t, real *w) 
 {
   real PI = 4.0 * atan(1.0);
   real s2pi = sqrt(2.0 * PI);
@@ -282,7 +285,7 @@ void vlaTransImposedData2d(real x[3], real t, real *w)
   }
 }
 
-void cemcracs2014_imposed_data(real x[3], real t, real *w)
+void cemcracs2014_imposed_data(const real x[3], const real t, real *w)
 {
   real sigma = 1.0;
 
@@ -309,7 +312,7 @@ void cemcracs2014_imposed_data(real x[3], real t, real *w)
   }
 }
 
-void cemcracs2014a_imposed_data(real x[3], real t, real *w)
+void cemcracs2014a_imposed_data(const real x[3], const real t, real *w)
 {
   real sigma = 1.0;
 
@@ -356,4 +359,11 @@ void cemracs2014_TransBoundaryFlux(real x[3], real t,
   for(unsigned int i = 0; i < m; ++i)
     wR[i] = 0;
   vlaTransNumFlux2d(wL, wR, vnorm, flux);
+}
+
+void OneSource(const real *x, const real t, const real *w, real *source) 
+{
+  for(int i = 0; i < m; ++i) {
+    source[i] = 1.0;
+  }
 }

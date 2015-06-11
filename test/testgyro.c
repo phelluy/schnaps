@@ -24,6 +24,7 @@ int TestGyro(void) {
   bool test=true;
 
   field f;
+  init_empty_field(&f);
 
   int vec=1;
   
@@ -78,7 +79,8 @@ int TestGyro(void) {
   // time integration by RK2 scheme 
   // up to final time = 1.
   f.model.cfl=0.2;
-  RK2(&f,0.1);
+  real dt = 0;
+  RK2(&f,0.1, dt);
  
   // save the results and the error
   Plotfield(0,(1==0),&f,"sol","dgvisu.msh");

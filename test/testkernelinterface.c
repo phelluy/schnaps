@@ -14,7 +14,8 @@ int TestKernelInterface(void){
   }
 
   field f;
-
+  init_empty_field(&f);
+  
   // Original:
   f.model.cfl = 0.05;
   f.model.m = 1; // only one conservative variable

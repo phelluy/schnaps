@@ -41,7 +41,7 @@ void MHDInitData(real *x, real *w);
 //! \brief particular imposed data for the MHD model
 //! \param[in] x,t : space and time position
 //! \param[out] w : imposed state at point x and time t
-void MHDImposedData(real *x,real t, real *w);
+void MHDImposedData(const real *x,const real t, real *w);
 
 // FIXME: using "real var[]" instead of "real *var" breaks OpenCL on
 // certain platforms.

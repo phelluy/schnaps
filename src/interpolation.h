@@ -76,7 +76,8 @@ int NPGF(int param[],int ifa);
 //! \param[out] ic the 3 subcell indices in x,y,z directions
 //! \param[out] ix the 3 glop indices in the subcell
 #pragma start_opencl
-void ipg_to_xyz(int* raf,int* deg,int* ic,int* ix,int *ipg);
+void ipg_to_xyz(const int *raf, const int *deg, int *ic, int *ix, const 
+		int *ipg);
 #pragma end_opencl
 
 //! \brief compute the index of the glop in the macrocell

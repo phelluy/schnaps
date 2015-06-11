@@ -9,7 +9,7 @@
 #include "solverpoisson.h"
 
 
-void TestPeriodic_ImposedData(real *x, real t, real *w);
+void TestPeriodic_ImposedData(const real *x, const real t, real *w);
 void TestPeriodic_InitData(real *x, real *w);
 void TestPeriodic_BoundaryFlux(real *x, real t, real *wL, real *vnorm,
 			       real *flux);
@@ -30,9 +30,9 @@ int TestPeriodic(void) {
 
   bool test=true;
 
-
   field f;
-  
+  init_empty_field(&f);  
+
   f.model.m=_INDEX_MAX; // num of conservative variables
   f.vmax = _VMAX; // maximal wave speed 
   f.model.NumFlux=VlasovP_Lagrangian_NumFlux;
@@ -90,7 +90,8 @@ int TestPeriodic(void) {
   // up to final time = 1.
   //RK2(&f,0.5,0.1);
   f.vmax=_VMAX;
-  RK2(&f,0.5);
+  real dt = set_dt(&f);
+  RK2(&f,0.5, dt);
  
   // save the results and the error
   Plotfield(0,(1==0),&f,"sol","dgvisu.msh");
@@ -108,10 +109,10 @@ int TestPeriodic(void) {
 
   return test;
 
-};
+}
 
 
-void TestPeriodic_ImposedData(real x[3],real t,real w[]){
+void TestPeriodic_ImposedData(const real x[3], const real t,real w[]){
   real pi=4*atan(1.);
   for(int i=0;i<_INDEX_MAX_KIN+1;i++){
     int j=i%_DEG_V; // local connectivity put in function

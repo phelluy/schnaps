@@ -7,6 +7,8 @@
 int TestfieldRK2_2D(void) {
   bool test = true;
   field f;
+  init_empty_field(&f);
+
   f.model.cfl = 0.05;
   f.model.m = 1; // only one conservative variable
   f.model.NumFlux = TransNumFlux2d;
@@ -39,7 +41,8 @@ int TestfieldRK2_2D(void) {
 
   real tmax = 0.2;
   f.vmax=1;
-  RK2(&f, tmax);
+  real dt = 0;
+  RK2(&f, tmax, dt);
  
   Plotfield(0, false, &f, NULL, "dgvisu.msh");
   Plotfield(0, true, &f, "error", "dgerror.msh");
