@@ -69,7 +69,8 @@ int TestMHD1D(int argc, char *argv[]) {
 
   bool test = true;
   field f;
-  
+  init_empty_field(&f);  
+
   f.varindex = GenericVarindex;
   f.model.m = 9;
   f.model.cfl = cfl;
@@ -129,17 +130,20 @@ int TestMHD1D(int argc, char *argv[]) {
 
   f.vmax=vmax;
 
+  if(dt <= 0)
+    dt = set_dt(&f);
+
   real executiontime;
   if(usegpu) {
     printf("Using OpenCL:\n");
     //executiontime = seconds();
     assert(1==2);
-    RK2(&f, tmax);
+    RK2(&f, tmax, dt);
     //executiontime = seconds() - executiontime;
   } else { 
     printf("Using C:\n");
     //executiontime = seconds();
-    RK2(&f, tmax);
+    RK2(&f, tmax, dt);
     //executiontime = seconds() - executiontime;
   }
 
@@ -152,7 +156,7 @@ int TestMHD1D(int argc, char *argv[]) {
   printf("%f\n", f.hmin);
 
   printf("deltat:\n");
-  printf("%f\n", f.dt);
+  printf("%f\n", dt);
 
   printf("DOF:\n");
   printf("%d\n", f.wsize);

@@ -716,7 +716,7 @@ void MHDInitData(real *x, real *w) {
 #pragma end_opencl
 
 #pragma start_opencl
-void MHDImposedData(real *x, real t, real *w) {
+void MHDImposedData(const real *x, const real t, real *w) {
   real yL[9], yR[9];
   real wL[9], wR[9];
 

@@ -6,6 +6,8 @@
 int TestmEq2(void) {
   bool test = true;
   field f;
+  init_empty_field(&f);
+ 
   int vec = 2;
 
   f.model.cfl = 0.05;  
@@ -55,7 +57,8 @@ int TestmEq2(void) {
  
   real tmax = 0.1;
   f.vmax=1;
-  RK2(&f, tmax);
+  real dt = set_dt(&f);
+  RK2(&f, tmax, dt);
  
   // Save the results and the error
   Plotfield(0, false, &f, NULL, "dgvisu.msh");

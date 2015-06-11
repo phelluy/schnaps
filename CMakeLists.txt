@@ -258,7 +258,6 @@ add_executable(
 target_link_libraries(testgyro ${LIBS})
 add_test(testgyro testgyro)
 
-#add_test(testpic testpic)
 add_executable(
   testpic
   test/test.h
@@ -267,7 +266,6 @@ add_executable(
 target_link_libraries(testpic ${LIBS})
 add_test(testpic testpic)
 
-#add_test(testpic testpic)
 add_executable(
   testpic_accumulate
   test/test.h
@@ -275,14 +273,16 @@ add_executable(
   )
 target_link_libraries(testpic_accumulate ${LIBS})
 add_test(testpic_accumulate testpic_accumulate)
-add_test(testperiodic testperiodic)
+
 add_executable(
   testperiodic
   test/test.h
   test/testperiodic.c
 )
 target_link_libraries(testperiodic ${LIBS})
-add_test(testperiodic testperiodic)
+# This test is too slow.  Please re-enable after decreasing execution time.
+#add_test(testperiodic testperiodic)
+
 
 add_test(testskyline testskyline)
 add_executable(
@@ -310,23 +310,23 @@ add_executable(
 target_link_libraries(testpoisson ${LIBS})
 add_test(testpoisson testpoisson)
 
-add_test(test_transportvp test_transportvp)
 add_executable(
   test_transportvp
   test/test.h
   test/test_transportvp.c
 )
 target_link_libraries(test_transportvp ${LIBS})
-add_test(test_transportvp test_transportvp)
+# This test is too slow.  Please re-enable after decreasing execution time.
+#add_test(test_transportvp test_transportvp)
 
-add_test(testlandau_damping_1D testlandau_damping_1D)
 add_executable(
   testlandau_damping_1D
   test/test.h
   test/testlandau_damping_1D.c
 )
 target_link_libraries(testlandau_damping_1D ${LIBS})
-add_test(testlandau_damping_1D testlandau_damping_1D)
+# This test is too slow.  Please re-enable after decreasing execution time.
+#add_test(testlandau_damping_1D testlandau_damping_1D)
 
 ##########  OpenCL unit tests  ##########
 if(OPENCL_FOUND)
