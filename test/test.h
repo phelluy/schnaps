@@ -49,6 +49,8 @@ int TestLinearSolver(void);
 
 int TestPoisson(void);
 
+int TestPoisson2d(void);
+
 int Test_TransportVP(void);
 
 int TestCLInfo(void);

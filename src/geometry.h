@@ -54,9 +54,9 @@ typedef struct Geom{
 //! \param[in] dphiref: gradient of a function in the reference frame (optional)
 //! \param[in] ifa: face index if computation of the normal vector (optional)
 //! \param[out] xphy: coordinates of the mapped point in the physical frame
-//! \param[out] dphi: gradient of the function in the physical frame (optional)
 //! \param[out] dtau: jacobian of the mapping tau (optional)
 //! \param[out] codtau: comatrix of dtau (optional)
+//! \param[out] dphi: gradient of the function in the physical frame (optional)
 //! \param[out] vnds: normal vector times the elementary surface ds (optional)
 void Ref2Phy(real physnode[20][3],
              real xref[3],

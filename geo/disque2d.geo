@@ -1,4 +1,4 @@
-rafxy =2;
+rafxy =8;
 rafz =1;
 h=0.7;
 Point(1) = {-h, -h, 0};
