@@ -156,6 +156,7 @@ typedef struct field {
   cl_ulong flux_time;
   cl_ulong minter_time;
   cl_ulong boundary_time;
+  cl_ulong source_time;
   cl_ulong rk_time;
 
   // OpenCL roofline measurements

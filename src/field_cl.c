@@ -944,6 +944,7 @@ void dtfield_CL(field *f, cl_mem *wn_cl,
 		  1,
 		  &f->clv_mass,
 		  &f->clv_source);
+      f->source_time += clv_duration(f->clv_source);
     }
   }
   clWaitForEvents(1, &f->clv_mass);
@@ -1349,6 +1350,7 @@ void show_cl_timing(field *f)
   total += f->boundary_time;
   total += f->vol_time;
   total += f->mass_time;
+  total += f->source_time;
   total += f->rk_time;
   total += f->flux_time;
   
@@ -1366,19 +1368,23 @@ void show_cl_timing(field *f)
 
   ns = f->boundary_time;
   printf("DGBoundary time:              %f%% \t%luns \t%fs\n", 
-	 ns*N, (unsigned long) ns, 1e-9 * ns);
+	 ns * N, (unsigned long) ns, 1e-9 * ns);
 
   ns = f->vol_time;
   printf("DGVolume_CL time:             %f%% \t%luns \t%fs\n", 
-	 ns*N, (unsigned long) ns, 1e-9 * ns);
+	 ns * N, (unsigned long) ns, 1e-9 * ns);
 
   ns = f->flux_time;
   printf("DGFlux_CL time:               %f%% \t%luns \t%fs\n", 
-	 ns*N, (unsigned long) ns, 1e-9 * ns);
+	 ns * N, (unsigned long) ns, 1e-9 * ns);
 
   ns = f->mass_time;
   printf("DGMass_CL time:               %f%% \t%luns \t%fs\n", 
-	 ns*N, (unsigned long) ns, 1e-9 * ns);
+	 ns * N, (unsigned long) ns, 1e-9 * ns);
+
+  ns = f->source_time;
+  printf("DGSource_CL time:             %f%% \t%luns \t%fs\n", 
+	 ns * N, (unsigned long) ns, 1e-9 * ns);
 
   ns = f->rk_time;
   printf("rk time:                      %f%% \t%luns \t%fs\n", 

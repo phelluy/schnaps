@@ -39,17 +39,15 @@ int TestMaxwell2D(void) {
   char buf[1000];
   sprintf(buf, "-D _M=%d", f.model.m);
   strcat(cl_buildoptions, buf);
-  //set_source_CL(&f, "Maxwell2DSource");
+  set_source_CL(&f, "Maxwell2DSource");
 
   sprintf(numflux_cl_name, "%s", "Maxwell2DNumFlux");
   sprintf(buf," -D NUMFLUX=");
   strcat(buf, numflux_cl_name);
   strcat(cl_buildoptions, buf);
 
-
   sprintf(buf, " -D BOUNDARYFLUX=%s", "Maxwell2DBoundaryFlux");
   strcat(cl_buildoptions, buf);
-
 
   Initfield(&f);
   
@@ -64,6 +62,10 @@ int TestMaxwell2D(void) {
 #else
   RK2_CL(&f, tmax, dt, 0, 0, 0);
   CopyfieldtoCPU(&f); 
+  printf("\nOpenCL Kernel time:\n");
+  show_cl_timing(&f);
+  printf("\n");
+
 #endif
 
   // Save the results and the error
