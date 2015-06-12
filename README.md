@@ -30,7 +30,7 @@ Pour lancer schnaps:
 
 générer le maillage:
 
-cd geo ; gmsh disque.geo -3 ; cd ..
+gmsh disque.geo -3
 
 ./schnaps
 
