@@ -7,7 +7,7 @@
 #include "solverpoisson.h"
 
 
-void TestPoisson_ImposedData(real x[3],real t,real w[]);
+void TestPoisson_ImposedData(const real x[3], const real t,real w[]);
 void TestPoisson_InitData(real x[3],real w[]);
 void TestPoisson_BoundaryFlux(real x[3],real t,real wL[],real* vnorm,
 			      real* flux);
@@ -29,7 +29,8 @@ int TestPoisson(void) {
   bool test = true;
 
   field f;
-
+  init_empty_field(&f);
+  
   int vec=1;
 
   // num of conservative variables f(vi) for each vi, phi, E, rho, u,
@@ -105,7 +106,7 @@ int TestPoisson(void) {
 
   //Computation_charge_density(f);
   
-  SolvePoisson(&f, f.wn, 1, 0.0, 0.0);
+  SolvePoisson1D(&f,f.wn,1,0.0,0.0);
 
   // check the gradient given by the poisson solver
   for(int ie=0;ie<f.macromesh.nbelems;ie++){
@@ -123,7 +124,7 @@ int TestPoisson(void) {
   return test;
 }
 
-void TestPoisson_ImposedData(real x[3],real t,real w[]){
+void TestPoisson_ImposedData(const real x[3], const real t,real w[]){
   for(int i = 0; i < _INDEX_MAX_KIN + 1; i++){
     int j = i%_DEG_V; // local connectivity put in function
     int nel = i / _DEG_V; // element num (TODO : function)

@@ -4,6 +4,8 @@
 
 int main(void) {
   field f;
+  init_empty_field(&f);
+
   f.model.cfl = 0.05;
   f.model.m = 1; // only one conservative variable
   f.model.NumFlux = TransNumFlux2d;
@@ -43,8 +45,12 @@ int main(void) {
 
   // Apply the DG scheme time integration by RK2 scheme up to final
   // time tmax.
-  real tmax = 1.0;
-  RK2(&f, tmax);
+  real tmax = 0.1;
+  real dt = 0;
+  f.vmax = 0.1;
+  if(dt <= 0.0)
+    dt = set_dt(&f);
+  RK2(&f, tmax, dt);
 
   // Save the results and the error
   Plotfield(0, false, &f, NULL, "dgvisu.msh");

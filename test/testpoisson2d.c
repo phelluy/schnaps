@@ -7,12 +7,13 @@
 #include "solverpoisson.h"
 
 
-void TestPoisson_ImposedData(real x[3],real t,real w[]);
+void TestPoisson_ImposedData(const real x[3],const real t,real w[]);
 void TestPoisson_InitData(real x[3],real w[]);
 void TestPoisson_BoundaryFlux(real x[3],real t,real wL[],real* vnorm,
 			      real* flux);
 
-int main(void) {
+int main(void) 
+{
   
   // unit tests
     
@@ -22,13 +23,14 @@ int main(void) {
   else printf("2d poisson test failed !\n");
 
   return !resu;
-} 
+}
 
-int TestPoisson2d(void) {
-
+int TestPoisson2d(void) 
+{
   bool test = true;
 
   field f;
+  init_empty_field(&f);
 
   int vec=1;
 
@@ -43,6 +45,7 @@ int TestPoisson2d(void) {
   f.model.BoundaryFlux = TestPoisson_BoundaryFlux;
   f.model.InitData = TestPoisson_InitData;
   f.model.ImposedData = TestPoisson_ImposedData;
+  f.model.Source = NULL;
  
   f.varindex = GenericVarindex;
   f.pre_dtfield = NULL;
@@ -58,6 +61,7 @@ int TestPoisson2d(void) {
   f.interp.interp_param[6] = 1;  // z direction refinement
   // read the gmsh file
   ReadMacroMesh(&(f.macromesh),"test/testdisque2d.msh");
+  //ReadMacroMesh(&(f.macromesh),"geo/square.msh");
   // try to detect a 2d mesh
   //bool is1d=Detect1DMacroMesh(&(f.macromesh));
   Detect2DMacroMesh(&(f.macromesh));
@@ -80,86 +84,56 @@ int TestPoisson2d(void) {
 
   printf("cfl param =%f\n",f.hmin);
 
-  // time derivative
-  //dtField(&f);
-  //DisplayField(&f);
-  //assert(1==2);
-  // apply the DG scheme
-  // time integration by RK2 scheme 
-  // up to final time = 1.
- 
-  /*Compute_electric_field(&f);
 
-  // check the gradient on every glop
-  for(int ie=0;ie<f.macromesh.nbelems;ie++){
-    printf("elem %d\n",ie);
-    for(int ipg=0;ipg<NPG(f.interp_param+1);ipg++){
-      real xref[3],wpg;
-      ref_pg_vol(f.interp_param+1,ipg,xref,&wpg,NULL);
-      printf("Gauss point %d %f %f %f \n",ipg,xref[0],xref[1],xref[2]);
-      int imem=f.varindex(f.interp_param,ie,ipg,_MV+1);
-      printf("gradphi exact=%f gradphinum=%f\n",1-2*xref[0],f.wn[imem]);
-      test=test && (fabs(f.wn[imem]-(1-2*xref[0]))<1e-10);
-    }
-    }*/
+  PoissonSolver ps;
 
-  //Computation_charge_density(f);
-  
-  /* SolvePoisson(&f, f.wn, 1, 0.0, 0.0); */
+  InitPoissonSolver(&ps,&f,_INDEX_PHI);
 
-  /* // check the gradient given by the poisson solver */
-  /* for(int ie=0;ie<f.macromesh.nbelems;ie++){ */
-  /*   printf("elem %d\n",ie); */
-  /*   for(int ipg=0;ipg<NPG(f.interp_param+1);ipg++){ */
-  /*     real xref[3],wpg; */
-  /*     ref_pg_vol(f.interp_param+1,ipg,xref,&wpg,NULL); */
-  /*     printf("Gauss point %d %f %f %f \n",ipg,xref[0],xref[1],xref[2]); */
-  /*     int imem=f.varindex(f.interp_param,ie,ipg,_MV+1); */
-  /*     printf("gradphi exact=%f gradphinum=%f rap=%f\n", */
-  /* 	     1-2*xref[0],f.wn[imem],(1-2*xref[0])/f.wn[imem]); */
-  /*     test=test && (fabs(f.wn[imem]-(1-2*xref[0]))<1e-10); */
-  /*   } */
-  /* } */
+  SolvePoisson2D(&ps,_Dirichlet_Poisson_BC);
+
+  real errl2 = L2error(&f);
+
+  printf("Erreur L2=%f\n",errl2);
+
+  test = test && (errl2 < 4e-4);
+
+  printf("Plot...\n");
+
 
   Plotfield(_INDEX_PHI, false, &f, NULL, "dgvisu.msh");
+  Plotfield(_INDEX_EX, false, &f, NULL, "dgex.msh");
 
 
   return test;
 }
 
-void TestPoisson_ImposedData(real x[3],real t,real w[]){
-  for(int i = 0; i < _INDEX_MAX_KIN + 1; i++){
-    int j = i%_DEG_V; // local connectivity put in function
-    int nel = i / _DEG_V; // element num (TODO : function)
-
-    real vi = (-_VMAX + nel * _DV + _DV * glop(_DEG_V, j));
-
-    w[i] = 1. / _VMAX;
+void TestPoisson_ImposedData(const real x[3], const real t, real w[])
+{
+  for(int i = 0; i < _INDEX_MAX; i++){
+    w[i] = 0;
   }
   // exact value of the potential
   // and electric field
-  w[_INDEX_PHI] = x[0] * (1 - x[0]);
-  w[_INDEX_EX] = 1. - 2. * x[0];
-  w[_INDEX_RHO] = 2.; //rho init
-  w[_INDEX_VELOCITY] = 0; // u init
-  w[_INDEX_PRESSURE] = 0; // p init
-  w[_INDEX_TEMP] = 0; // e ou T init
+  w[_INDEX_PHI] = (x[0] * x[0] + x[1] * x[1])/4;
+  w[_INDEX_EX] =  -x[0]/2;
+  w[_INDEX_RHO] = -1; //rho init
+  /* w[_INDEX_PHI] = x[0] ; */
+  /* w[_INDEX_EX] =  -1; */
+  /* w[_INDEX_RHO] = 0; //rho init */
+}
 
-};
+void TestPoisson_InitData(real x[3], real w[])
+{
+  real t = 0;
+  TestPoisson_ImposedData(x, t, w);
+}
 
-void TestPoisson_InitData(real x[3],real w[]){
-
-  real t=0;
-  TestPoisson_ImposedData(x,t,w);
-
-};
-
-
-void TestPoisson_BoundaryFlux(real x[3],real t,real wL[],real* vnorm,
-				       real* flux){
-  real wR[_MV+6];
-  TestPoisson_ImposedData(x,t,wR);
-  VlasovP_Lagrangian_NumFlux(wL,wR,vnorm,flux);
-};
+void TestPoisson_BoundaryFlux(real x[3], real t, real wL[], real *vnorm, 
+			      real *flux)
+{
+  real wR[_INDEX_MAX];
+  TestPoisson_ImposedData(x, t, wR);
+  VlasovP_Lagrangian_NumFlux(wL, wR, vnorm, flux);
+}
 
 

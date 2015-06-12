@@ -9,7 +9,7 @@
 #include "solverpoisson.h"
 
 
-void Test_Landau_Damping_ImposedData(real x[3],real t,real w[]);
+void Test_Landau_Damping_ImposedData(const real x[3], const real t,real w[]);
 void Test_Landau_Damping_InitData(real x[3],real w[]);
 void Test_Landau_Damping_BoundaryFlux(real x[3],real t,real wL[],real* vnorm, real* flux);
 
@@ -34,6 +34,7 @@ int TestLandau_Damping_1D(void) {
   bool test=true;
 
   field f;
+  init_empty_field(&f);
 
   int vec=1;
   real k=0.5;
@@ -82,7 +83,6 @@ int TestLandau_Damping_1D(void) {
   f.macromesh.is1d=true;
   //f.macromesh.is1d=true;
   f.nb_diags=3;
-  //f.update_before_rk=UpdateVlasovPoisson;
   f.pre_dtfield=UpdateVlasovPoisson;
   f.update_after_rk=PlotVlasovPoisson;
   f.model.Source = VlasovP_Lagrangian_Source;
@@ -90,10 +90,9 @@ int TestLandau_Damping_1D(void) {
   CheckMacroMesh(&(f.macromesh),f.interp.interp_param+1);
 
   printf("cfl param =%f\n",f.hmin);
-  printf("dt =%f\n",f.dt);
 
-
-  RK2(&f,0.1);
+  real dt = set_dt(&f);
+  RK2(&f,0.1, dt);
   //RK2(&f,0.03,0.05);
 
    // save the results and the error
@@ -102,15 +101,16 @@ int TestLandau_Damping_1D(void) {
   printf("Trace vi=%f\n",-_VMAX+iel*_DV+_DV*glop(_DEG_V,iloc));
   Plotfield(iloc+iel*_DEG_V,(1==0),&f,"sol","dgvisu.msh");
   Plotfield(iloc+iel*_DEG_V,(1==1),&f,"error","dgerror.msh");
-  Plot_Energies(&f);
+  Plot_Energies(&f, dt);
 
   test= 1;
 
   return test;
 
-};
+}
 
-void Test_Landau_Damping_ImposedData(real x[3],real t,real w[]){
+void Test_Landau_Damping_ImposedData(const real x[3], const real t, real w[])
+{
   //parameters of the case
   
   real k=0.5;
@@ -167,7 +167,7 @@ void UpdateVlasovPoisson(void* vf, real * w){
     
   Computation_charge_density(f,w);
   
-  SolvePoisson(f,w,type_bc,bc_l,bc_r);    
+  SolvePoisson1D(f,w,type_bc,bc_l,bc_r);    
   
 }
 

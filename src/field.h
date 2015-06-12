@@ -46,9 +46,6 @@ typedef struct field {
 
   // TODO: once the output of the diagnostics is done by appending,
   // remove dt, ieter_time, itermax, nb_diags, and Diagnostics.
-  //! Time step
-  //! dt has to be smaller than hmin / vmax
-  real dt;
   int iter_time;
   //! final time iter
   int itermax;
@@ -109,10 +106,14 @@ typedef struct field {
   cl_mem physnodeR_cl;
   real *physnodeR;
 
+  bool use_source_cl;
+  char *sourcename_cl;
+
   //! opencl kernels
   cl_kernel dgmass;
   cl_kernel dgflux;
   cl_kernel dgvolume;
+  cl_kernel dgsource;
   cl_kernel dginterface;
   cl_kernel dgboundary;
   cl_kernel RK_out_CL;
@@ -139,6 +140,9 @@ typedef struct field {
   // Subcell volume events
   cl_event clv_volume; 
 
+  // Subcell volume events
+  cl_event clv_source; 
+
   // Macrocell interface events
   cl_event clv_mci;
   cl_event clv_interkernel; 
@@ -152,9 +156,13 @@ typedef struct field {
   cl_ulong flux_time;
   cl_ulong minter_time;
   cl_ulong boundary_time;
+  cl_ulong source_time;
   cl_ulong rk_time;
-#endif
 
+  // OpenCL roofline measurements
+  unsigned long int flops_vol, flops_flux, flops_mass; 
+  unsigned long int reads_vol, reads_flux, reads_mass; 
+#endif
 } field;
 
 //! \brief memory arrangement of field components.
@@ -200,6 +208,8 @@ int GenericVarindex(__constant int *param, int elem, int ipg, int iv);
 //! field initialization. Computation of the initial at each glop.
 //! \param[inout] f a field
 void Initfield(field *f);
+
+void init_empty_field(field *f);
 
 //! free the buffers created in Initfield.
 //! \param[inout] f a field
@@ -269,24 +279,26 @@ void RK_out(real *fwnp1, real *fwn, real *fdtwn, const real dt,
 //! \param[in] size of the field buffer
 void RK_in(real *fwnp1, real *fdtwn, const real dt, const int sizew);
 
-//! \brief Time integration by a second order Runge-Kutta algorithm
-//! \param[inout] f a field
-//! \param[in] tmax physical duration of the simulation
-void RK2(field *f, real tmax);
+real set_dt(field *f);
 
 //! \brief Time integration by a second order Runge-Kutta algorithm
 //! \param[inout] f a field
 //! \param[in] tmax physical duration of the simulation
-void RK4(field *f, real tmax);
+void RK2(field *f, real tmax, real dt);
+
+//! \brief Time integration by a second order Runge-Kutta algorithm
+//! \param[inout] f a field
+//! \param[in] tmax physical duration of the simulation
+void RK4(field *f, real tmax, real dt);
 
 #ifdef _WITH_OPENCL
 //! \brief OpenCL version of RK2
 //! time integration by a second order Runge-Kutta algorithm
 //! \param[inout] f a field
 //! \param[in] tmax physical duration of the simulation
-void RK2_CL(field *f, real tmax, 
+void RK2_CL(field *f, real tmax, real dt,
 	    cl_uint nwait, cl_event *wait, cl_event *done);
-void RK4_CL(field *f, real tmax, 
+void RK4_CL(field *f, real tmax, real dt,
 	    cl_uint nwait, cl_event *wait, cl_event *done);
 #endif
 

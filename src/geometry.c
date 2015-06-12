@@ -103,7 +103,7 @@ void GeomRef2Phy(Geom* g)
     = g->codtau[0][0] * g->dtau[0][0] 
     + g->codtau[0][1] * g->dtau[0][1]
     + g->codtau[0][2] * g->dtau[0][2];
-};
+}
 
 void Ref2Phy(real physnode[20][3],
              real xref[3],

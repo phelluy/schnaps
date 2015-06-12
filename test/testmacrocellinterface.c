@@ -15,7 +15,8 @@ int TestMacroFace(void){
   }
 
   field f;
-
+  init_empty_field(&f);
+  
   // 2D meshes:
   // test/disque2d.msh
   // test/testdisque2d.msh

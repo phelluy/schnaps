@@ -25,7 +25,7 @@ real local_kinetic_energy(field * f,real* x,real *w);
 
 void Energies(field* f,real * w,real k_energy, real e_energy, real t_energy);
 
-void Plot_Energies(field* f);
+void Plot_Energies(field* f, real dt);
 
 
 #endif

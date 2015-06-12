@@ -23,6 +23,7 @@ real maxerr(real *a, real *b, int n)
 int TestmEq2(void) {
   bool test = true;
   field f;
+  init_empty_field(&f);
   
   f.model.cfl = 0.05;  
   f.model.m = 2; 

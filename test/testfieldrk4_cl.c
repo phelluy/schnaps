@@ -13,6 +13,7 @@ int TestfieldRK4_CL(void){
   }
 
   field f;
+  init_empty_field(&f);
 
   // 2D meshes:
   // test/disque2d.msh
@@ -87,10 +88,11 @@ int TestfieldRK4_CL(void){
 
   CheckMacroMesh(&(f.macromesh), f.interp.interp_param + 1);
  
-  real tmax = 0.1;
+  real tmax = 0.01;
   //RK4(&f, tmax);
   f.vmax=1;
-  RK4_CL(&f, tmax, 0, NULL, NULL);
+  real dt = set_dt(&f);
+  RK4_CL(&f, tmax, dt, 0, NULL, NULL);
   clFinish(f.cli.commandqueue); 
 
   CopyfieldtoCPU(&f);
