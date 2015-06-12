@@ -365,7 +365,11 @@ void init_field_cl(field *f)
 
   f->clv_physnodeupdate = clCreateUserEvent(f->cli.context, &status);
 
-  f->clv_mci = clCreateUserEvent(f->cli.context, &status);
+  f->clv_mci = calloc(f->macromesh.nbfaces, sizeof(cl_event));
+  for(int ifa = 0; ifa < f->macromesh.nbfaces; ++ifa) {
+    f->clv_mci[ifa] = clCreateUserEvent(f->cli.context, &status);
+  }
+
   f->clv_interkernel = clCreateUserEvent(f->cli.context, &status);
   f->clv_interupdate = clCreateUserEvent(f->cli.context, &status);
   f->clv_interupdateR = clCreateUserEvent(f->cli.context, &status);

@@ -145,7 +145,7 @@ typedef struct field {
   cl_event clv_source; 
 
   // Macrocell interface events
-  cl_event clv_mci;
+  cl_event *clv_mci;
   cl_event clv_interkernel; 
   cl_event clv_interupdate;
   cl_event clv_interupdateR;

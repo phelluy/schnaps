@@ -406,56 +406,56 @@ void init_DGSource_CL(field *f, cl_mem *wn_cl, size_t cachesize)
 
 // Update the cl buffer with physnode data depending in the
 // macroelement with index ie
-void update_physnode_cl(field *f, int ie, cl_mem physnode_cl, real *physnode,
-			cl_ulong *time,
-			cl_uint nwait, cl_event *wait, cl_event *done)
-{
-  cl_int status;
+/* void update_physnode_cl(field *f, int ie, cl_mem physnode_cl, real *physnode, */
+/* 			cl_ulong *time, */
+/* 			cl_uint nwait, cl_event *wait, cl_event *done) */
+/* { */
+/*   cl_int status; */
   
-  void *chkptr = clEnqueueMapBuffer(f->cli.commandqueue,
-				    physnode_cl,
-				    CL_TRUE,
-				    CL_MAP_WRITE,
-				    0, // offset
-				    sizeof(real) * 60, // buffersize
-				    nwait, 
-				    wait, 
-				    &f->clv_mapdone,
-				    &status);
-  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status >= CL_SUCCESS);
-  assert(chkptr == physnode);
+/*   void *chkptr = clEnqueueMapBuffer(f->cli.commandqueue, */
+/* 				    physnode_cl, */
+/* 				    CL_TRUE, */
+/* 				    CL_MAP_WRITE, */
+/* 				    0, // offset */
+/* 				    sizeof(real) * 60, // buffersize */
+/* 				    nwait,  */
+/* 				    wait,  */
+/* 				    &f->clv_mapdone, */
+/* 				    &status); */
+/*   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status)); */
+/*   assert(status >= CL_SUCCESS); */
+/*   assert(chkptr == physnode); */
 
-  if(time != NULL)
-    *time += clv_duration(f->clv_mapdone);
+/*   if(time != NULL) */
+/*     *time += clv_duration(f->clv_mapdone); */
 
-  int ie20 = 20 * ie;
-  for(int inoloc = 0; inoloc < 20; ++inoloc) {
-    int ino = 3 * f->macromesh.elem2node[ie20 + inoloc];
-    real *iphysnode = physnode + 3 * inoloc;
-    real *nodeino = f->macromesh.node + ino;
-    iphysnode[0] = nodeino[0];
-    iphysnode[1] = nodeino[1];
-    iphysnode[2] = nodeino[2];
-  }
+/*   int ie20 = 20 * ie; */
+/*   for(int inoloc = 0; inoloc < 20; ++inoloc) { */
+/*     int ino = 3 * f->macromesh.elem2node[ie20 + inoloc]; */
+/*     real *iphysnode = physnode + 3 * inoloc; */
+/*     real *nodeino = f->macromesh.node + ino; */
+/*     iphysnode[0] = nodeino[0]; */
+/*     iphysnode[1] = nodeino[1]; */
+/*     iphysnode[2] = nodeino[2]; */
+/*   } */
 
-  status = clEnqueueUnmapMemObject(f->cli.commandqueue,
-				   physnode_cl,
-				   physnode,
-				   1, &f->clv_mapdone, done);
-  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status >= CL_SUCCESS);
+/*   status = clEnqueueUnmapMemObject(f->cli.commandqueue, */
+/* 				   physnode_cl, */
+/* 				   physnode, */
+/* 				   1, &f->clv_mapdone, done); */
+/*   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status)); */
+/*   assert(status >= CL_SUCCESS); */
 
-  if(time != NULL)
-    *time += clv_duration(f->clv_mapdone);
-}
+/*   if(time != NULL) */
+/*     *time += clv_duration(f->clv_mapdone); */
+/* } */
 
 void DGMacroCellInterface_CL(void *mf, field *f, cl_mem *wn_cl,
 			     cl_uint nwait, cl_event *wait, cl_event *done) 
 {
   //printf("DGMacroCellInterface_CL\n");
 
-  clWaitForEvents(nwait, wait);
+  //clWaitForEvents(nwait, wait);
 
   /* if(done != NULL) { */
   /*   status = clSetUserEventStatus(*done, CL_); */
@@ -483,21 +483,21 @@ void DGMacroCellInterface_CL(void *mf, field *f, cl_mem *wn_cl,
     int ieR =    f->macromesh.face2elem[4 * ifa + 2];
     int locfaR = f->macromesh.face2elem[4 * ifa + 3];
 
-    update_physnode_cl(f, ieL, f->physnode_cl, f->physnode, &f->minter_time,
-		       0, 
-		       NULL,
-		       &f->clv_interupdate);
+    /* update_physnode_cl(f, ieL, f->physnode_cl, f->physnode, &f->minter_time, */
+    /* 		       0,  */
+    /* 		       NULL, */
+    /* 		       &f->clv_interupdate); */
 
     if(ieR >= 0) {
-      update_physnode_cl(f, ieR, f->physnodeR_cl, f->physnodeR, 
-			 &f->minter_time,
-			 1, 
-			 &f->clv_interupdate,
-			 &f->clv_interupdateR);
-      f->minter_time += clv_duration(f->clv_interupdateR);
+      /* update_physnode_cl(f, ieR, f->physnodeR_cl, f->physnodeR,  */
+      /* 			 &f->minter_time, */
+      /* 			 1,  */
+      /* 			 &f->clv_interupdate, */
+      /* 			 &f->clv_interupdateR); */
+      /* f->minter_time += clv_duration(f->clv_interupdateR); */
     } else {
-      clWaitForEvents(1, &f->clv_interupdate);
-      status = clSetUserEventStatus(f->clv_interupdateR, CL_COMPLETE);
+      /* clWaitForEvents(1, &f->clv_interupdate); */
+      /* status = clSetUserEventStatus(f->clv_interupdateR, CL_COMPLETE); */
     }
 
     size_t numworkitems = NPGF(f->interp_param + 1, locfaL);
@@ -516,12 +516,13 @@ void DGMacroCellInterface_CL(void *mf, field *f, cl_mem *wn_cl,
 				      NULL, // global_work_offset,
 				      &numworkitems, // global_work_size, 
 				      NULL, // size_t *local_work_size, 
-				      1,  // nwait, 
-				      &f->clv_interupdateR, // *wait_list,
+				      nwait,  // nwait, 
+				      wait, // *wait_list,
 				      &f->clv_interkernel); // *event
       if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
       assert(status >= CL_SUCCESS);
       f->minter_time += clv_duration(f->clv_interkernel);
+
     } else {
       size_t cachesize = 1; // TODO make use of cache
       init_DGBoundary_CL(f, ieL, locfaL, f->physnodes_cl, cachesize);
@@ -531,17 +532,17 @@ void DGMacroCellInterface_CL(void *mf, field *f, cl_mem *wn_cl,
 				      NULL, // global_work_offset,
 				      &numworkitems, // global_work_size, 
 				      NULL, // size_t *local_work_size, 
-				      1,  // nwait, 
-				      &f->clv_interupdateR, // *wait_list,
+				      nwait, 
+				      wait, // *wait_list,
 				      &f->clv_interkernel); // *event
       if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
       assert(status >= CL_SUCCESS);
-      f->boundary_time += clv_duration(f->clv_interkernel);
+      clWaitForEvents(1, &f->clv_interkernel);
     }
   }
   
-  clWaitForEvents(1, &f->clv_interkernel);
 
+  clWaitForEvents(1, &f->clv_interkernel);
   if(done != NULL)
     status = clSetUserEventStatus(*done, CL_COMPLETE);
 
@@ -897,9 +898,11 @@ void dtfield_CL(field *f, cl_mem *wn_cl,
     //printf("ifa: %d\n", ifa);
     DGMacroCellInterface_CL((void*) (f->mface + ifa), f, wn_cl,
     			    1,
-    			    &f->clv_zbuf,
-    			    &f->clv_mci);
+    			    ifa == 0 ? &f->clv_zbuf : f->clv_mci + ifa - 1,
+    			    f->clv_mci + ifa);
   }
+  //clWaitForEvents(f->macromesh.nbfaces, f->clv_mci);
+  clWaitForEvents(1, f->clv_mci + f->macromesh.nbfaces - 1);
 
   //printf("f->macromesh.nbelems: %d\n", f->macromesh.nbelems);
   
@@ -910,12 +913,12 @@ void dtfield_CL(field *f, cl_mem *wn_cl,
     clSetUserEventStatus(f->clv_mass, CL_COMPLETE);
   }
   for(int ie = 0; ie < f->macromesh.nbelems; ++ie) {
-    //printf("ie: %d\n", ie);
+    printf("ie: %d\n", ie);
     MacroCell *mcelli = f->mcell + ie;
     
-    update_physnode_cl(f, ie, f->physnode_cl, f->physnode, &f->vol_time,
-    		       1, f->use_source_cl ? &f->clv_source : &f->clv_mass,
-    		       &f->clv_physnodeupdate);
+    /* update_physnode_cl(f, ie, f->physnode_cl, f->physnode, &f->vol_time, */
+    /* 		       1, f->use_source_cl ? &f->clv_source : &f->clv_mass, */
+    /* 		       &f->clv_physnodeupdate); */
     //f->???_time += clv_duration(f->clv_physnodeupdate);
 
     unsigned int ndim = f->macromesh.is2d ? 2 : 3;
