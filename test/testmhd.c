@@ -136,7 +136,7 @@ int TestMHD(int argc, char *argv[]) {
   if(usegpu) {
     printf("Using OpenCL:\n");
     //executiontime = seconds();
-    assert(1==2);
+    //assert(1==2);
     RK2(&f, tmax, dt);
     //executiontime = seconds() - executiontime;
   } else { 
