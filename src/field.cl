@@ -842,9 +842,11 @@ void DGVolume(__constant int *param,     // 0: interp param
 __kernel
 void DGMass(__constant int *param,       // 0: interp param
             int ie,                      // 1: macrocel index
-            __constant real *physnode, // 2: macrocell nodes
+            __constant real *physnodes, // 2: macrocell nodes
             __global real *dtwn)       // 3: time derivative
 {
+  __constant real *physnode = physnodes + 60 * ie;
+  
   int ipg = get_global_id(0);
   int m = param[0];
   int npg[3] = {param[1] + 1, param[2] + 1, param[3] + 1};
@@ -1235,13 +1237,15 @@ void OneSource(const real *x, const real t, const real *w, real *source) {
 __kernel
 void DGSource(__constant int *param,     // 0: interp param
 	      int ie,                    // 1: macrocel index
-	      __constant real *physnode, // 2: macrocell nodes
+	      __constant real *physnodes, // 2: macrocell nodes
 	      const real tnow,           // 3: the current time
               __global real *wn,         // 4: field values
 	      __global real *dtwn,       // 5: time derivative
 	      __local real *wnloc        // 6: cache for wn and dtwn
 	      )
 {
+  __constant real *physnode = physnodes + ie * 60;
+
   const int m = param[0];
   const int deg[3] = {param[1],param[2], param[3]};
   const int npg[3] = {deg[0] + 1, deg[1] + 1, deg[2] + 1};

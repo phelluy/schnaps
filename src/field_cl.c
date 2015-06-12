@@ -91,7 +91,6 @@ void initDGBoundary_CL(field *f,
 		       cl_mem physnodeL_cl, 
 		       size_t cachesize)
 {
-
   cl_int status;
   cl_kernel kernel = f->dgboundary;
 
@@ -281,7 +280,7 @@ void init_DGMass_CL(field *f)
   status = clSetKernelArg(f->dgmass,           // kernel name
                           argnum++,              // arg num
                           sizeof(cl_mem),
-                          &f->physnode_cl);     // opencl buffer
+                          &f->physnodes_cl);     // opencl buffer
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 
@@ -371,7 +370,7 @@ void init_DGSource_CL(field *f, cl_mem *wn_cl, size_t cachesize)
   status = clSetKernelArg(kernel,
                           argnum++,
                           sizeof(cl_mem),
-                          &f->physnode_cl);
+                          &f->physnodes_cl);
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 
