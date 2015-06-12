@@ -86,7 +86,7 @@ void set_source_CL(field *f, char *sourcename_cl)
   printf("%s\n", f->sourcename_cl);
 }
 
-void initDGBoundary_CL(field *f, 
+void init_DGBoundary_CL(field *f, 
 		       int ieL, int locfaL,
 		       cl_mem physnodeL_cl, 
 		       size_t cachesize)
@@ -163,12 +163,13 @@ void initDGBoundary_CL(field *f,
 
 
 // Set the loop-dependant kernel arguments for DGMacroCellInterface_CL
-void initDGMacroCellInterface_CL(field *f, 
-				      int ieL, int ieR, int locfaL, int locfaR,
-				      cl_mem physnodeL_cl, cl_mem physnodeR_cl,
-				      size_t cachesize)
+void init_DGMacroCellInterface_CL(field *f, 
+				  int ieL, int ieR, int locfaL, int locfaR,
+				  cl_mem physnodeL_cl, cl_mem physnodeR_cl,
+				  // FIXME: only pass one physnode_cl 
+				  size_t cachesize)
 {
-  //printf("loop_initDGMacroCellInterface_CL\n");
+  //printf("loop_init_DGMacroCellInterface_CL\n");
   cl_int status;
   cl_kernel kernel = f->dginterface;
 
@@ -255,7 +256,7 @@ void initDGMacroCellInterface_CL(field *f,
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 
-  //printf("... loop_initDGMacroCellInterface_CL done.\n");
+  //printf("... loop_init_DGMacroCellInterface_CL done.\n");
 }
 
 // Set up kernel arguments, etc, for DGMass_CL.
@@ -315,7 +316,7 @@ void init_DGVolume_CL(field *f, cl_mem *wn_cl, size_t cachesize)
   status = clSetKernelArg(kernel,
                           argnum++,
                           sizeof(cl_mem),
-                          &f->physnode_cl);
+                          &f->physnodes_cl);
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 
@@ -504,9 +505,9 @@ void DGMacroCellInterface_CL(void *mf, field *f, cl_mem *wn_cl,
     
       // Set the remaining loop-dependant kernel arguments
       size_t kernel_cachesize = 1;
-      initDGMacroCellInterface_CL(f, 
+      init_DGMacroCellInterface_CL(f, 
 				  ieL, ieR, locfaL, locfaR, 
-				  f->physnode_cl, f->physnodeR_cl, 
+				  f->physnodes_cl, f->physnodes_cl, 
 				  kernel_cachesize);
 
       status = clEnqueueNDRangeKernel(f->cli.commandqueue,
@@ -523,7 +524,7 @@ void DGMacroCellInterface_CL(void *mf, field *f, cl_mem *wn_cl,
       f->minter_time += clv_duration(f->clv_interkernel);
     } else {
       size_t cachesize = 1; // TODO make use of cache
-      initDGBoundary_CL(f, ieL, locfaL, f->physnode_cl, cachesize);
+      init_DGBoundary_CL(f, ieL, locfaL, f->physnodes_cl, cachesize);
       status = clEnqueueNDRangeKernel(f->cli.commandqueue,
 				      f->dgboundary,
 				      1, // cl_uint work_dim,
@@ -537,8 +538,6 @@ void DGMacroCellInterface_CL(void *mf, field *f, cl_mem *wn_cl,
       assert(status >= CL_SUCCESS);
       f->boundary_time += clv_duration(f->clv_interkernel);
     }
-
-
   }
   
   clWaitForEvents(1, &f->clv_interkernel);
@@ -647,7 +646,7 @@ void init_DGFlux_CL(field *f, int ie, int dim0, cl_mem *wn_cl,
   status = clSetKernelArg(kernel,
                           argnum++,
                           sizeof(cl_mem),
-                          &f->physnode_cl);
+                          &f->physnodes_cl);
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 
@@ -915,14 +914,18 @@ void dtfield_CL(field *f, cl_mem *wn_cl,
     MacroCell *mcelli = f->mcell + ie;
     
     update_physnode_cl(f, ie, f->physnode_cl, f->physnode, &f->vol_time,
-		       1, f->use_source_cl ? &f->clv_source : &f->clv_mass,
-		       &f->clv_physnodeupdate);
+    		       1, f->use_source_cl ? &f->clv_source : &f->clv_mass,
+    		       &f->clv_physnodeupdate);
     //f->???_time += clv_duration(f->clv_physnodeupdate);
 
     unsigned int ndim = f->macromesh.is2d ? 2 : 3;
+    /* DGFlux_CL(f, 0, ie, wn_cl,  */
+    /* 	      1, &f->clv_physnodeupdate,  */
+    /* 	      f->clv_flux); */
     DGFlux_CL(f, 0, ie, wn_cl, 
-	      1, &f->clv_physnodeupdate, 
+	      1, f->use_source_cl ? &f->clv_source : &f->clv_mass,
 	      f->clv_flux);
+
     f->flux_time += clv_duration(f->clv_flux[0]);
     for(unsigned int d = 1; d < ndim; ++d) {
       DGFlux_CL(f, d, ie, wn_cl, 
