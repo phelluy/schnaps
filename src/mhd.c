@@ -4,15 +4,15 @@
 #include <assert.h>
 #include <stdlib.h>
 
-#pragma start_opencl
-// FIXME: Do not set variables with #define.
-#define _CH (5)
-#define _GAM (1.666666666666)
-#pragma end_opencl
+//#pragma start_opencl
+//// FIXME: Do not set variables with #define.
+//#define _CH (6)
+//#define _GAM (1.666666666666)
+//#pragma end_opencl
 
 #pragma start_opencl
 void conservatives(real *y, real *w) {
-  real gam = _GAM; // FIXME: this should not be a #define
+  real gam = 1.6666666666; // FIXME: this should not be a #define
 
 
   w[0] = y[0];
@@ -31,7 +31,7 @@ void conservatives(real *y, real *w) {
 #pragma start_opencl
 // FIXME: documentation????
 void primitives(real *W, real *Y) {
-  real gam = _GAM;
+  real gam = 1.6666666666;
 
 
   Y[0] = W[0];
@@ -48,16 +48,17 @@ void primitives(real *W, real *Y) {
   Y[8] = W[8]; // psi
 }
 #pragma end_opencl
+
+#pragma start_opencl
 void jacobmhd(real* W,real* vn, real *M){
 
-  int i, j;
-  real gam = _GAM;
-  real *Y = malloc(9 * sizeof(real));
+  real gam = 1.6666666666;
+  real Y[9];
 
   real rho, ux, uy, uz, by, bz, p, bx;
 
-  for(i = 0; i < 9; i++){
-    for(j = 0; j < 9; j++) {
+  for(int i = 0; i < 9; i++){
+    for(int j = 0; j < 9; j++) {
       M[i*9+j] = 0;
     }
   }
@@ -133,36 +134,36 @@ void jacobmhd(real* W,real* vn, real *M){
   M[7*9+7] = uy*vn[1]+uz*vn[2];
   M[7*9+8] = vn[0];
 
-  M[8*9+5] = _CH*_CH*vn[1];
-  M[8*9+6] = _CH*_CH*vn[2];
-  M[8*9+7] = _CH*_CH*vn[0];
+  M[8*9+5] = 6*6*vn[1];
+  M[8*9+6] = 6*6*vn[2];
+  M[8*9+7] = 6*6*vn[0];
 
-  for(i = 0; i < 9; i++) {
-    for(j = 0; j < 9; j++) {
-      M[i*9+j] /= _CH;
+  for(int i = 0; i < 9; i++) {
+    for(int j = 0; j < 9; j++) {
+      M[i*9+j] /= 6;
     }
   }
-  free(Y);
   
 }
-
+#pragma end_opencl
 
 // Matrix-Vector multiplication
 // FIXME: [] is not suitable for OpenCL
+#pragma start_opencl
 void matrix_vector(real *A, real *B, real *C) {
-  int i, j;
-  for(i = 0; i < 9; i++) {
+  for(int i = 0; i < 9; i++) {
     C[i] = 0;
-    for(j = 0; j < 9; j++) {
+    for(int j = 0; j < 9; j++) {
       C[i] += A[i*9+j]*B[j];
     }
   }
 }
+#pragma end_opencl
 
 #pragma start_opencl
 void fluxnum(real *W,real *vn, real *flux) {
 
-  real gam = _GAM;
+  real gam = 1.6666666666;
 
   real un = W[1]/W[0]*vn[0]+W[3]/W[0]*vn[1]+W[4]/W[0]*vn[2];
   real bn = W[7]*vn[0]+W[5]*vn[1]+W[6]*vn[2];
@@ -184,21 +185,20 @@ void fluxnum(real *W,real *vn, real *flux) {
   flux[6] = -bn*W[4]/W[0] + un*W[6] + W[8]*vn[2];
   flux[7] = -bn*W[1]/W[0] + un*W[7] + W[8]*vn[0];
 
-  flux[8] = _CH*_CH*bn;
+  flux[8] = 6*6*bn;
 }
 #pragma end_opencl
 
 #pragma start_opencl
 void MHDNumFluxRusanov(real *wL, real *wR,real *vnorm, real *flux) {
-  int i;
   real fluxL[9];
   real fluxR[9];
   
   fluxnum(wL, vnorm, fluxL);
   fluxnum(wR, vnorm, fluxR);
 
-  for(i = 0; i < 9; i++){
-    flux[i] = (fluxL[i] + fluxR[i]) / 2 - _CH * (wR[i] - wL[i]) / 2;
+  for(int i = 0; i < 9; i++){
+    flux[i] = (fluxL[i] + fluxR[i]) / 2 - 6 * (wR[i] - wL[i]) / 2;
   }
 
 }
@@ -207,7 +207,6 @@ void MHDNumFluxRusanov(real *wL, real *wR,real *vnorm, real *flux) {
 #pragma start_opencl
 void MHDNumFluxP2(real *wL, real *wR, real *vn, real *flux) {
 
-  int i, j;
   real wmil[9];
   real wRmwL[9];
   real Z[9];
@@ -215,14 +214,14 @@ void MHDNumFluxP2(real *wL, real *wR, real *vn, real *flux) {
   real M[81];
 
   // Initialize matrix to 0
-  for(i = 0; i < 9 ; i++) {
-    for(j = 0; j < 9 ; j++) {
+  for(int i = 0; i < 9 ; i++) {
+    for(int j = 0; j < 9 ; j++) {
       M[i*9+j] = 0;
     }
   }
 
   // Compute the middle state
-  for (i = 0; i < 9; i++) {
+  for (int i = 0; i < 9; i++) {
     wmil[i] = (wL[i] + wR[i])/2;
   }
 
@@ -232,20 +231,20 @@ void MHDNumFluxP2(real *wL, real *wR, real *vn, real *flux) {
   real coef[3] = {1./2, 0., 1./2};
 
   // calcul de (wR-wL)
-  for (i = 0; i < 9 ; i++){
+  for (int i = 0; i < 9 ; i++){
     wRmwL[i] = (wR[i] - wL[i]);
   }
 
   real dabs[9];
 
-  for (i = 0; i < 9 ; i++){
+  for (int i = 0; i < 9 ; i++){
     dabs[i] = coef[2] * wRmwL[i];
   }
 
   real Mw[9];
-  for(i = 1; i >= 0; i--){
+  for(int i = 1; i >= 0; i--){
     matrix_vector(M, dabs, Mw);
-    for(j = 0; j < 9; j++){
+    for(int j = 0; j < 9; j++){
       dabs[j] = coef[i] * wRmwL[j] + Mw[j];
     }
   }
@@ -256,8 +255,8 @@ void MHDNumFluxP2(real *wL, real *wR, real *vn, real *flux) {
   fluxnum(wL, vn, fluxL);
   fluxnum(wR, vn, fluxR);
 
-  for(i = 0; i < 9; i++){
-    flux[i] = (fluxL[i] + fluxR[i]) / 2 - _CH * dabs[i] / 2;
+  for(int i = 0; i < 9; i++){
+    flux[i] = (fluxL[i] + fluxR[i]) / 2 - 6 * dabs[i] / 2;
   }
 }
 #pragma end_opencl
@@ -265,7 +264,7 @@ void MHDNumFluxP2(real *wL, real *wR, real *vn, real *flux) {
 #pragma start_opencl
 void MHDNumFlux1D(real *WL, real *WR, real *vn, real *flux) {
   
-  real gam = _GAM;
+  real gam = 1.6666666666;
 
   real piL, piR, piyL, piyR, pizL, pizR;
   real a, aR, aL, al0, ar0;
@@ -282,8 +281,6 @@ void MHDNumFlux1D(real *WL, real *WR, real *vn, real *flux) {
   real ymil[9];
   real ystar[9];
 
-  int i;
-
   primitives(WL, YL);
   primitives(WR, YR);
 
@@ -299,7 +296,7 @@ void MHDNumFlux1D(real *WL, real *WR, real *vn, real *flux) {
   pizR = -b*YR[6];
 
 
-  for(i=0; i<9; i++){
+  for(int i=0; i<9; i++){
     ymil[i] = 0.5*(YL[i]+YR[i]);
   }
 
@@ -456,14 +453,13 @@ void MHDNumFlux1D(real *WL, real *WR, real *vn, real *flux) {
 #pragma start_opencl
 void MHDBoundaryFlux(real *x, real t, real *wL, real *vnorm,
 		     real *flux) {
-  int i;
   real wR[9];
 
   if(vnorm[1] > 0.0001 || vnorm[1] < -0.0001){
     MHDImposedData(x,t,wR);
   }
   else if(vnorm[0] > 0.0001 || vnorm[0] < -0.0001){
-    for(i=0; i<9; i++){
+    for(int i=0; i<9; i++){
       wR[i] = wL[i];
     }
   }
@@ -485,8 +481,7 @@ void MHDInitData(real *x, real *w) {
 
 #pragma start_opencl
 void MHDImposedData(const real *x,const  real t, real *w) {
-  int i;
-  real gam = _GAM;
+  real gam = 1.6666666666;
 
   real yL[9], yR[9];
   real wL[9], wR[9];
@@ -515,11 +510,11 @@ void MHDImposedData(const real *x,const  real t, real *w) {
 //  conservatives(yR, wR);
 //
 //  if(x[0] < 5)
-//    for(i=0; i<9; i++){
+//    for(int i=0; i<9; i++){
 //      w[i] = wL[i];
 //    }
 //  else
-//    for(i=0; i<9; i++){
+//    for(int i=0; i<9; i++){
 //      w[i] = wR[i];
 //    }
 

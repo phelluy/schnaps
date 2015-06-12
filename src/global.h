@@ -10,7 +10,7 @@
 #ifdef _WITH_OPENCL
 extern int nplatform_cl;
 extern int ndevice_cl;
-char numflux_cl_name[1024];
+char numflux_cl_name[1024]; // FIXME: move to field struct.
 char cl_buildoptions[1024];
 #endif //_WITH_OPENCL
 
@@ -21,4 +21,3 @@ char cl_buildoptions[1024];
 //#define _PERIOD 1
 
 #endif // #ifndef _GLOBAL_H
-

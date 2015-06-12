@@ -74,6 +74,7 @@ cl_ulong clv_duration(cl_event clv)
 
 void set_source_CL(field *f, char *sourcename_cl) 
 {
+#ifdef _WITH_OPENCL
   f->use_source_cl = true;
   int namelength = strlen(sourcename_cl);
   if(namelength > 0) {
@@ -84,6 +85,7 @@ void set_source_CL(field *f, char *sourcename_cl)
     assert(false);
   }
   printf("%s\n", f->sourcename_cl);
+#endif
 }
 
 void init_DGBoundary_CL(field *f, 
