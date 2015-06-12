@@ -39,6 +39,7 @@ int TestMaxwell2D(void) {
   char buf[1000];
   sprintf(buf, "-D _M=%d", f.model.m);
   strcat(cl_buildoptions, buf);
+
   set_source_CL(&f, "Maxwell2DSource");
 
   sprintf(numflux_cl_name, "%s", "Maxwell2DNumFlux");
