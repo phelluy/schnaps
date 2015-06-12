@@ -344,11 +344,16 @@ void init_field_cl(field *f)
   f->flux_time = 0;
   f->minter_time = 0;
   f->boundary_time = 0;
+  f->source_time = 0;
   f->rk_time = 0;
 
   // Set roofline counts to zero
-  f->nmults = 0;
-  f->nreads = 0;
+  f->flops_vol = 0;
+  f->flops_flux = 0;
+  f->flops_mass = 0; 
+  f->reads_vol = 0;
+  f->reads_flux = 0;
+  f->reads_mass = 0; 
 }
 #endif
 

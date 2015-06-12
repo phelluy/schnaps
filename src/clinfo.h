@@ -64,8 +64,15 @@ void GetOpenCLCode(void);
 //! \brief allocates and fills a string with a file content
 void ReadFile(char filename[], char** s);
 
-
 bool cldevice_is_acceptable(cl_uint ndevice, cl_uint nplatform);
 
+double cl_dev_gflops(char *platform_name);
+double cl_dev_bwidth(char *platform_name);
+double kernel_min_time(double dev_flops, double bandwidth,
+		       unsigned long int flop_count, 
+		       unsigned long int io_count);
+void print_kernel_perf(double dev_fflops, double bandwidth,
+		       unsigned long int flop_count, unsigned long int io_count,
+		       cl_ulong kernel_time_ns);
 
 #endif

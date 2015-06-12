@@ -29,7 +29,7 @@ int main(int argc, char *argv[]) {
 
 int TestMHD(int argc, char *argv[]) {
   real cfl = 0.2;
-  real tmax = 1.0;
+  real tmax = 0.1;
   bool writemsh = false;
   real vmax = 6.0;
   bool usegpu = false;
