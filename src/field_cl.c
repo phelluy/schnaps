@@ -915,7 +915,7 @@ void dtfield_CL(field *f, cl_mem *wn_cl,
     clSetUserEventStatus(f->clv_mass, CL_COMPLETE);
   }
   for(int ie = 0; ie < f->macromesh.nbelems; ++ie) {
-    printf("ie: %d\n", ie);
+    //printf("ie: %d\n", ie);
     MacroCell *mcelli = f->mcell + ie;
     
     /* update_physnode_cl(f, ie, f->physnode_cl, f->physnode, &f->vol_time, */
