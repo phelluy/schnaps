@@ -891,12 +891,13 @@ void set_buf_to_zero_cl(cl_mem *buf, int size, field *f,
 // Apply the Discontinuous Galerkin approximation for computing the
 // time derivative of the field. OpenCL version.
 void dtfield_CL(field *f, cl_mem *wn_cl,
-		cl_uint nwait, cl_event *wait, cl_event *done) {
+		cl_uint nwait, cl_event *wait, cl_event *done)
+{
   set_buf_to_zero_cl(&f->dtwn_cl, f->wsize, f,
   		     nwait, wait, &f->clv_zbuf);
-  
-  //printf("f->macromesh.nbfaces: %d\n", f->macromesh.nbfaces);
-  for(int ifa = 0; ifa < f->macromesh.nbfaces; ++ifa) {
+
+  const int nfaces = f->macromesh.nbfaces;
+  for(int ifa = 0; ifa < nfaces; ++ifa) {
     //printf("ifa: %d\n", ifa);
     DGMacroCellInterface_CL((void*) (f->mface + ifa), f, wn_cl,
     			    1,
@@ -914,7 +915,9 @@ void dtfield_CL(field *f, cl_mem *wn_cl,
   } else {
     clSetUserEventStatus(f->clv_mass, CL_COMPLETE);
   }
-  for(int ie = 0; ie < f->macromesh.nbelems; ++ie) {
+  
+  const int nmacro = f->macromesh.nbelems;
+  for(int ie = 0; ie < nmacro; ++ie) {
     //printf("ie: %d\n", ie);
     MacroCell *mcelli = f->mcell + ie;
     
