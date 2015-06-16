@@ -1749,7 +1749,7 @@ void RK2(field *f, real tmax, real dt)
   // FIXME: remove
   size_diags = f->nb_diags * f->itermax;
   f->iter_time = iter;
-  
+
   if(f->nb_diags != 0)
     f->Diagnostics = malloc(size_diags * sizeof(real));
 

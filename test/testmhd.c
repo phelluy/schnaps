@@ -77,7 +77,7 @@ int TestMHD(int argc, char *argv[]) {
 
   strcpy(f.model.name,"MHD");
 
-  f.model.NumFlux=MHDNumFluxP2;
+  f.model.NumFlux=MHDNumFluxRusanov;
   f.model.BoundaryFlux=MHDBoundaryFlux;
   f.model.InitData=MHDInitData;
   f.model.ImposedData=MHDImposedData;
@@ -86,7 +86,7 @@ int TestMHD(int argc, char *argv[]) {
   sprintf(buf, "-D _M=%d", f.model.m);
   strcat(cl_buildoptions, buf);
 
-  sprintf(numflux_cl_name, "%s", "MHDNumFluxP2");
+  sprintf(numflux_cl_name, "%s", "MHDNumFluxRusanov");
   sprintf(buf," -D NUMFLUX=");
   strcat(buf, numflux_cl_name);
   strcat(cl_buildoptions, buf);
@@ -128,7 +128,7 @@ int TestMHD(int argc, char *argv[]) {
   // Prudence...
   CheckMacroMesh(&(f.macromesh), f.interp.interp_param + 1);
 
-  Plotfield(0, (1==0), &f, "Rho", "dginit.msh");
+  //Plotfield(0, (1==0), &f, "Rho", "dginit.msh");
 
   f.vmax=vmax;
 
@@ -137,7 +137,7 @@ int TestMHD(int argc, char *argv[]) {
     printf("Using OpenCL:\n");
     //executiontime = seconds();
     //assert(1==2);
-    RK2(&f, tmax, dt);
+    RK2_CL(&f, tmax, dt, 0, NULL, NULL);
     //executiontime = seconds() - executiontime;
   } else { 
     printf("Using C:\n");
@@ -147,7 +147,9 @@ int TestMHD(int argc, char *argv[]) {
   }
 
   Plotfield(0,false,&f, "Rho", "dgvisu.msh");
-  Gnuplot(&f,0,0.0,"data1D.dat");
+  //Gnuplot(&f,0,0.0,"data1D.dat");
+
+  show_cl_timing(&f);
 
   printf("tmax: %f, cfl: %f\n", tmax, f.model.cfl);
 

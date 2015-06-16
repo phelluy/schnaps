@@ -499,7 +499,6 @@ void DGMacroCellInterface_CL(void *mf, field *f, cl_mem *wn_cl,
       clWaitForEvents(1, &f->clv_interupdate);
       status = clSetUserEventStatus(f->clv_interupdateR, CL_COMPLETE);
     }
-
     size_t numworkitems = NPGF(f->interp_param + 1, locfaL);
     if(ieR >= 0) {
     
@@ -914,12 +913,11 @@ void dtfield_CL(field *f, cl_mem *wn_cl,
   for(int ie = 0; ie < f->macromesh.nbelems; ++ie) {
     //printf("ie: %d\n", ie);
     MacroCell *mcelli = f->mcell + ie;
-    
+
     update_physnode_cl(f, ie, f->physnode_cl, f->physnode, &f->vol_time,
 		       1, f->use_source_cl ? &f->clv_source : &f->clv_mass,
 		       &f->clv_physnodeupdate);
     //f->???_time += clv_duration(f->clv_physnodeupdate);
-
     unsigned int ndim = f->macromesh.is2d ? 2 : 3;
     DGFlux_CL(f, 0, ie, wn_cl, 
 	      1, &f->clv_physnodeupdate, 
@@ -1326,7 +1324,7 @@ void RK2_CL(field *f, real tmax, real dt,
     clWaitForEvents(nwait, wait);
   while(f->tnow < tmax) {
     //printf("iter: %d\n", iter);
-    if (iter % freq == 0)
+    if (iter % 1 == 0)
       printf("t=%f iter=%d/%d dt=%f\n", f->tnow, iter, f->itermax, dt);
 
     dtfield_CL(f, &f->wn_cl, 1, &stage2, &source1);
@@ -1335,10 +1333,12 @@ void RK2_CL(field *f, real tmax, real dt,
     f->tnow += 0.5 * dt;
 
     dtfield_CL(f, &wnp1_cl, 1, &stage1, &source2);
+
     RK2_CL_stage2(f, f->wsize, 1, &source2, &stage2);
 
     f->tnow += 0.5 * dt;
     iter++;
+
   }
   if(done != NULL) 
     status = clSetUserEventStatus(*done, CL_COMPLETE);
