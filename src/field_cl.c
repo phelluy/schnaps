@@ -6,11 +6,11 @@
 #include <string.h>
 
 #ifdef _WITH_OPENCL
-void CopyfieldtoCPU(field *f) {
-
+void CopyfieldtoCPU(field *f)
+{
   cl_int status;
 
-  // ensures that all the buffers are mapped
+  // Ensure that all the buffers are mapped
   status = clFinish(f->cli.commandqueue);
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
@@ -89,9 +89,10 @@ void set_source_CL(field *f, char *sourcename_cl)
 }
 
 void init_DGBoundary_CL(field *f, 
-		       int ieL, int locfaL,
-		       cl_mem physnodeL_cl, 
-		       size_t cachesize)
+			int ieL, int locfaL,
+			cl_mem physnodeL_cl,
+			cl_mem *wn_cl,
+			size_t cachesize)
 {
   cl_int status;
   cl_kernel kernel = f->dgboundary;
@@ -142,7 +143,7 @@ void init_DGBoundary_CL(field *f,
   status = clSetKernelArg(kernel,
                           argnum++,
                           sizeof(cl_mem),
-                          &f->wn_cl);
+                          wn_cl);
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 
@@ -168,6 +169,7 @@ void init_DGBoundary_CL(field *f,
 void init_DGMacroCellInterface_CL(field *f, 
 				  int ieL, int ieR, int locfaL, int locfaR,
 				  cl_mem physnodeL_cl, 
+				  cl_mem *wn_cl,
 				  size_t cachesize)
 {
   //printf("loop_init_DGMacroCellInterface_CL\n");
@@ -237,7 +239,7 @@ void init_DGMacroCellInterface_CL(field *f,
   status = clSetKernelArg(kernel,
                           argnum++,
                           sizeof(cl_mem),
-                          &f->wn_cl);
+                          wn_cl);
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 
@@ -441,9 +443,10 @@ void DGMacroCellInterface_CL(void *mf, field *f, cl_mem *wn_cl,
       // Set the remaining loop-dependant kernel arguments
       size_t kernel_cachesize = 1;
       init_DGMacroCellInterface_CL(f, 
-				  ieL, ieR, locfaL, locfaR, 
-				  f->physnodes_cl,
-				  kernel_cachesize);
+				   ieL, ieR, locfaL, locfaR, 
+				   f->physnodes_cl,
+				   wn_cl, 
+				   kernel_cachesize);
 
       status = clEnqueueNDRangeKernel(f->cli.commandqueue,
 				      kernel,
@@ -459,7 +462,7 @@ void DGMacroCellInterface_CL(void *mf, field *f, cl_mem *wn_cl,
 
     } else {
       size_t cachesize = 1; // TODO make use of cache
-      init_DGBoundary_CL(f, ieL, locfaL, f->physnodes_cl, cachesize);
+      init_DGBoundary_CL(f, ieL, locfaL, f->physnodes_cl, wn_cl, cachesize);
       status = clEnqueueNDRangeKernel(f->cli.commandqueue,
 				      f->dgboundary,
 				      1, // cl_uint work_dim,
