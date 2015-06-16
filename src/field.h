@@ -128,16 +128,16 @@ typedef struct field {
   cl_event clv_zbuf; 
   
   // Subcell mass events
-  cl_event clv_mass; 
+  cl_event *clv_mass; 
 
   // Subcell flux events
-  cl_event clv_flux0, clv_flux1, clv_flux2;
+  cl_event *clv_flux0, *clv_flux1, *clv_flux2;
 
   // Subcell volume events
-  cl_event clv_volume; 
+  cl_event *clv_volume; 
 
   // Subcell volume events
-  cl_event clv_source; 
+  cl_event *clv_source; 
 
   // Macrocell interface events
   cl_event *clv_mci;

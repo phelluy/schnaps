@@ -368,16 +368,31 @@ void init_field_cl(field *f)
   for(int ifa = 0; ifa < nfaces; ++ifa) {
     f->clv_mci[ifa] = clCreateUserEvent(f->cli.context, &status);
   }
+    
+  f->clv_mass = calloc(nmacro, sizeof(cl_event));
+  for(int ie = 0; ie < nmacro; ++ie) {
+    f->clv_mass[ie] = clCreateUserEvent(f->cli.context, &status);
+  }
 
-  f->clv_mass = clCreateUserEvent(f->cli.context, &status);
+  f->clv_flux0 = calloc(nmacro, sizeof(cl_event));
+  f->clv_flux1 = calloc(nmacro, sizeof(cl_event));
+  f->clv_flux2 = calloc(nmacro, sizeof(cl_event));
+  for(int ie = 0; ie < nmacro; ++ie) {
+    f->clv_flux0[ie] = clCreateUserEvent(f->cli.context, &status);
+    f->clv_flux1[ie] = clCreateUserEvent(f->cli.context, &status);
+    f->clv_flux2[ie] = clCreateUserEvent(f->cli.context, &status);
+  }
+  
+  f->clv_volume = calloc(nmacro, sizeof(cl_event));
+  for(int ie = 0; ie < nmacro; ++ie) {
+    f->clv_volume[ie] = clCreateUserEvent(f->cli.context, &status);
+  }
 
-  f->clv_flux0 = clCreateUserEvent(f->cli.context, &status);
-  f->clv_flux1 = clCreateUserEvent(f->cli.context, &status);
-  f->clv_flux2 = clCreateUserEvent(f->cli.context, &status);
-
-  f->clv_volume = clCreateUserEvent(f->cli.context, &status);
-  f->clv_source = clCreateUserEvent(f->cli.context, &status);
-
+  f->clv_source = calloc(nmacro, sizeof(cl_event));
+  for(int ie = 0; ie < nmacro; ++ie) {
+    f->clv_source[ie] = clCreateUserEvent(f->cli.context, &status);
+  }
+    
   // Set timers to zero
   f->zbuf_time = 0;
   f->mass_time = 0;

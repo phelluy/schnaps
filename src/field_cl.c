@@ -493,7 +493,7 @@ void DGMass_CL(void *mc, field *f,
 
   init_DGMass_CL(f);
  
-  clSetUserEventStatus(f->clv_mass, CL_COMPLETE);
+  //clSetUserEventStatus(f->clv_mass, CL_COMPLETE);
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 
@@ -532,7 +532,7 @@ void DGMass_CL(void *mc, field *f,
 				    done); // cl_event *event
     if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
     assert(status >= CL_SUCCESS);
-    f->mass_time += clv_duration(f->clv_mass);
+    //f->mass_time += clv_duration(f->clv_mass);
   }
   
 }
@@ -821,6 +821,7 @@ void dtfield_CL(field *f, cl_mem *wn_cl,
   set_buf_to_zero_cl(&f->dtwn_cl, f->wsize, f,
   		     nwait, wait, &f->clv_zbuf);
 
+  // Macrocell interfaces must be launched serially
   const int nfaces = f->macromesh.nbfaces;
   for(int ifa = 0; ifa < nfaces; ++ifa) {
     //printf("ifa: %d\n", ifa);
@@ -830,26 +831,19 @@ void dtfield_CL(field *f, cl_mem *wn_cl,
     			    f->clv_mci + ifa);
   }
   //clWaitForEvents(f->macromesh.nbfaces, f->clv_mci);
-  clWaitForEvents(1, f->clv_mci + f->macromesh.nbfaces - 1);
+  //clWaitForEvents(1, f->clv_mci + f->macromesh.nbfaces - 1);
 
   //printf("f->macromesh.nbelems: %d\n", f->macromesh.nbelems);
   
-  // Start the loop
-  if(f->use_source_cl) {
-    clSetUserEventStatus(f->clv_source, CL_COMPLETE); 
-  } else {
-    clSetUserEventStatus(f->clv_mass, CL_COMPLETE);
-  }
-
-  cl_event *fluxdone = &f->clv_flux2;
+  cl_event *fluxdone = f->clv_flux2;
   unsigned int ndim = 3;
   if(f->macromesh.is2d) {
     ndim = 2;
-    fluxdone = &f->clv_flux1;
+    fluxdone = f->clv_flux1;
   }
   if(f->macromesh.is1d) {
     ndim = 1;
-    fluxdone = &f->clv_flux0;
+    fluxdone = f->clv_flux0;
   }
   
   const int nmacro = f->macromesh.nbelems;
@@ -858,45 +852,45 @@ void dtfield_CL(field *f, cl_mem *wn_cl,
     MacroCell *mcelli = f->mcell + ie;
     
     DGFlux_CL(f, 0, ie, wn_cl, 
-	      1, f->use_source_cl ? &f->clv_source : &f->clv_mass,
-	      &f->clv_flux0);
-    f->flux_time += clv_duration(f->clv_flux0);
+	      1, f->clv_mci + f->macromesh.nbfaces - 1,
+	      f->clv_flux0 + ie);
+    f->flux_time += clv_duration(f->clv_flux0[ie]);
     
     if(ndim > 1) {
       DGFlux_CL(f, 1, ie, wn_cl, 
-		1, &f->clv_flux0, 
-		&f->clv_flux1);
-      f->flux_time += clv_duration(f->clv_flux1);
+		nfaces, f->clv_mci,
+		f->clv_flux1 + ie);
+      f->flux_time += clv_duration(f->clv_flux1[ie]);
     }
     
     if(ndim > 2) {
       DGFlux_CL(f, 1, ie, wn_cl, 
-		1, &f->clv_flux1, 
-		&f->clv_flux2);
-      f->flux_time += clv_duration(f->clv_flux2);
+		1, f->clv_flux1 + ie, 
+		f->clv_flux2 + ie);
+      f->flux_time += clv_duration(f->clv_flux2[ie]);
     }
         
     DGVolume_CL(mcelli, f, wn_cl,
   		1,
-  		fluxdone,
-  		&f->clv_volume);
-    f->vol_time += clv_duration(f->clv_volume);
+  		fluxdone + ie,
+  		f->clv_volume + ie);
+    f->vol_time += clv_duration(f->clv_volume[ie]);
 
     DGMass_CL(mcelli, f,
   	      1,
-  	      &f->clv_volume,
-  	      &f->clv_mass);
-    f->mass_time += clv_duration(f->clv_mass);
+  	      f->clv_volume + ie,
+  	      f->clv_mass + ie);
+    f->mass_time += clv_duration(f->clv_mass[ie]);
 
     if(f->use_source_cl) {
       DGSource_CL(mcelli, f, wn_cl, 
 		  1,
-		  &f->clv_mass,
-		  &f->clv_source);
-      f->source_time += clv_duration(f->clv_source);
+		  f->clv_mass + ie,
+		  f->clv_source + ie);
+      f->source_time += clv_duration(f->clv_source[ie]);
     }
   }
-  clWaitForEvents(1, &f->clv_mass);
+  clWaitForEvents(nmacro, f->clv_mass);
   if(done != NULL)
     clSetUserEventStatus(*done, CL_COMPLETE);
 }
