@@ -164,6 +164,43 @@ void init_DGBoundary_CL(field *f,
   assert(status >= CL_SUCCESS);
 }
 
+void DGBoundary_CL(void *mf, field *f, cl_mem *wn_cl,
+		   cl_uint nwait, cl_event *wait, cl_event *done) 
+{
+  MacroFace *mface = (MacroFace*) mf;
+  int *param = f->interp_param;
+  cl_int status;
+
+  // Loop on the macro faces
+  int start = mface->first;
+  int end = mface->last_p1;
+  for(int ifa = start; ifa < end; ++ifa) {
+    int ieL =    f->macromesh.face2elem[4 * ifa];
+    int locfaL = f->macromesh.face2elem[4 * ifa + 1];
+    int ieR =    f->macromesh.face2elem[4 * ifa + 2];
+    int locfaR = f->macromesh.face2elem[4 * ifa + 3];
+
+    size_t numworkitems = NPGF(f->interp_param + 1, locfaL);
+    if(ieR == -1) {
+      size_t cachesize = 1; // TODO make use of cache
+      init_DGBoundary_CL(f, ieL, locfaL, f->physnodes_cl, wn_cl, cachesize);
+      status = clEnqueueNDRangeKernel(f->cli.commandqueue,
+				      f->dgboundary,
+				      1, // cl_uint work_dim,
+				      NULL, // global_work_offset,
+				      &numworkitems, // global_work_size, 
+				      NULL, // size_t *local_work_size, 
+				      nwait, 
+				      wait, // *wait_list,
+				      done); // *event
+      if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+      assert(status >= CL_SUCCESS);
+    } else {
+      if(done != NULL)
+	clSetUserEventStatus(*done, CL_COMPLETE);
+    }
+  }
+}
 
 // Set the loop-dependant kernel arguments for DGMacroCellInterface_CL
 void init_DGMacroCellInterface_CL(field *f, 
@@ -263,10 +300,6 @@ void init_DGMacroCellInterface_CL(field *f,
 void DGMacroCellInterface_CL(void *mf, field *f, cl_mem *wn_cl,
 			     cl_uint nwait, cl_event *wait, cl_event *done) 
 {
-  //printf("DGMacroCellInterface_CL\n");
-
-  // TODO: split into macrocell interface and boundary.
-  
   MacroFace *mface = (MacroFace*) mf;
   int *param = f->interp_param;
   cl_int status;
@@ -283,8 +316,6 @@ void DGMacroCellInterface_CL(void *mf, field *f, cl_mem *wn_cl,
   int start = mface->first;
   int end = mface->last_p1;
   for(int ifa = start; ifa < end; ++ifa) {
-    //printf("ifa: %d\n", ifa);
-    
     int ieL =    f->macromesh.face2elem[4 * ifa];
     int locfaL = f->macromesh.face2elem[4 * ifa + 1];
     int ieR =    f->macromesh.face2elem[4 * ifa + 2];
@@ -292,7 +323,6 @@ void DGMacroCellInterface_CL(void *mf, field *f, cl_mem *wn_cl,
 
     size_t numworkitems = NPGF(f->interp_param + 1, locfaL);
     if(ieR >= 0) {
-    
       // Set the remaining loop-dependant kernel arguments
       size_t kernel_cachesize = 1;
       init_DGMacroCellInterface_CL(f, 
@@ -312,29 +342,12 @@ void DGMacroCellInterface_CL(void *mf, field *f, cl_mem *wn_cl,
 				      done); // *event
       if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
       assert(status >= CL_SUCCESS);
-
     } else {
-      size_t cachesize = 1; // TODO make use of cache
-      init_DGBoundary_CL(f, ieL, locfaL, f->physnodes_cl, wn_cl, cachesize);
-      status = clEnqueueNDRangeKernel(f->cli.commandqueue,
-				      f->dgboundary,
-				      1, // cl_uint work_dim,
-				      NULL, // global_work_offset,
-				      &numworkitems, // global_work_size, 
-				      NULL, // size_t *local_work_size, 
-				      nwait, 
-				      wait, // *wait_list,
-				      done); // *event
-      if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
-      assert(status >= CL_SUCCESS);
+      // Set the event to completed status.
+      if(done != NULL)
+	clSetUserEventStatus(*done, CL_COMPLETE);
     }
   }
-
-  if(done != NULL)
-    f->minter_time += clv_duration(*done);
-    
-  
-  //printf("... DGMacroCellInterface_CL done.\n");
 }
 
 // Set up kernel arguments, etc, for DGMass_CL.
@@ -810,7 +823,7 @@ void set_buf_to_zero_cl(cl_mem *buf, int size, field *f,
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
   if(done != NULL)
-    f->zbuf_time += clv_duration(f->clv_zbuf);  
+    f->zbuf_time += clv_duration(f->clv_zbuf);
 }
 
 // Apply the Discontinuous Galerkin approximation for computing the
@@ -820,21 +833,29 @@ void dtfield_CL(field *f, cl_mem *wn_cl,
 {
   set_buf_to_zero_cl(&f->dtwn_cl, f->wsize, f,
   		     nwait, wait, &f->clv_zbuf);
-
+  
   // Macrocell interfaces must be launched serially
+  // FIXME: make a list of macrocell interface faces and loop over them instead.
   const int nfaces = f->macromesh.nbfaces;
   for(int ifa = 0; ifa < nfaces; ++ifa) {
-    //printf("ifa: %d\n", ifa);
     DGMacroCellInterface_CL((void*) (f->mface + ifa), f, wn_cl,
     			    1,
     			    ifa == 0 ? &f->clv_zbuf : f->clv_mci + ifa - 1,
     			    f->clv_mci + ifa);
+    f->minter_time += clv_duration(f->clv_mci[ifa]);
   }
-  //clWaitForEvents(f->macromesh.nbfaces, f->clv_mci);
-  //clWaitForEvents(1, f->clv_mci + f->macromesh.nbfaces - 1);
 
-  //printf("f->macromesh.nbelems: %d\n", f->macromesh.nbelems);
-  
+  // Boundary terms may also need to be launched serially.
+  // FIXME: make a list of boundary faces and loop over them instead.
+  for(int ifa = 0; ifa < nfaces; ++ifa) {
+    DGBoundary_CL((void*) (f->mface + ifa), f, wn_cl,
+		  1,
+		  ifa == 0 ?  f->clv_mci + nfaces - 1
+		  : f->clv_boundary + ifa - 1,
+		  f->clv_boundary + ifa);
+    f->boundary_time += clv_duration(f->clv_boundary[ifa]);
+  }
+
   cl_event *fluxdone = f->clv_flux2;
   unsigned int ndim = 3;
   if(f->macromesh.is2d) {
@@ -856,7 +877,7 @@ void dtfield_CL(field *f, cl_mem *wn_cl,
     MacroCell *mcelli = f->mcell + ie;
     
     DGFlux_CL(f, 0, ie, wn_cl, 
-	      1, f->clv_mci + f->macromesh.nbfaces - 1,
+	      1, f->clv_boundary + nfaces - 1,
 	      f->clv_flux0 + ie);
     f->flux_time += clv_duration(f->clv_flux0[ie]);
     
@@ -1315,21 +1336,21 @@ void show_cl_timing(field *f)
   double roofline_flops = flops_total / roofline_time_s;
   double roofline_bw = sizeof(real) * reads_total / roofline_time_s;
   
-  // vol terms
+  // Volume terms
   double vol_time_s = 1e-9 * f->vol_time;
   double vol_flops = f->flops_vol / vol_time_s;
   double vol_bw = sizeof(real) * f->reads_vol / vol_time_s;
   printf("DGVol:  GFLOP/s: %f\tbandwidth (GB/s): %f\n", 
 	 1e-9 * vol_flops, 1e-9 * vol_bw);
 
-  // flux terms
+  // Flux terms
   double flux_time_s = 1e-9 * f->flux_time;
   double flux_flops = f->flops_flux / flux_time_s;
   double flux_bw = sizeof(real) * f->reads_flux / flux_time_s;
   printf("DGFlux: GFLOP/s: %f\tbandwidth (GB/s): %f\n", 
 	 1e-9 * flux_flops, 1e-9 * flux_bw);
   
-  // mass terms
+  // Mass terms
   double mass_time_s = 1e-9 * f->mass_time;
   double mass_flops = f->flops_mass / mass_time_s;
   double mass_bw = sizeof(real) * f->reads_mass / mass_time_s;

@@ -141,6 +141,8 @@ typedef struct field {
 
   // Macrocell interface events
   cl_event *clv_mci;
+  // Boundary term events
+  cl_event *clv_boundary;
 
   // OpenCL timing
   cl_ulong zbuf_time;

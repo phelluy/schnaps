@@ -368,6 +368,10 @@ void init_field_cl(field *f)
   for(int ifa = 0; ifa < nfaces; ++ifa) {
     f->clv_mci[ifa] = clCreateUserEvent(f->cli.context, &status);
   }
+  f->clv_boundary = calloc(nfaces, sizeof(cl_event));
+  for(int ifa = 0; ifa < nfaces; ++ifa) {
+    f->clv_boundary[ifa] = clCreateUserEvent(f->cli.context, &status);
+  }
     
   f->clv_mass = calloc(nmacro, sizeof(cl_event));
   for(int ie = 0; ie < nmacro; ++ie) {

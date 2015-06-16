@@ -67,11 +67,10 @@ int TestKernelInterface(void){
   for(int i = 0; i < f.wsize; i++)
     f.dtwn[i] = 0.0;
 
-  status=clEnqueueUnmapMemObject(f.cli.commandqueue,
-				 f.dtwn_cl,
-				 f.dtwn,
-				 0, NULL, NULL);
-
+  status = clEnqueueUnmapMemObject(f.cli.commandqueue,
+				   f.dtwn_cl,
+				   f.dtwn,
+				   0, NULL, NULL);
   assert(status == CL_SUCCESS);
   status = clFinish(f.cli.commandqueue);
   assert(status == CL_SUCCESS);
@@ -81,7 +80,10 @@ int TestKernelInterface(void){
     printf("ifa: %d\n", ifa);
     DGMacroCellInterface_CL((void*) (mface + ifa), &f, &(f.wn_cl), 
 			    0, NULL, NULL);
-    //clFinish(f.cli.commandqueue);
+    clFinish(f.cli.commandqueue);
+    DGBoundary_CL((void*) (mface + ifa), &f, &(f.wn_cl),
+			    0, NULL, NULL);
+    clFinish(f.cli.commandqueue);
   }
   clFinish(f.cli.commandqueue);
   CopyfieldtoCPU(&f);
