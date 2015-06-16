@@ -227,12 +227,12 @@ void init_DGMacroCellInterface_CL(field *f,
   assert(status >= CL_SUCCESS);
 
   //__constant real *physnodeR, // 6: right physnode
-  status = clSetKernelArg(kernel,
-                          argnum++,
-                          sizeof(cl_mem),
-                          &physnodeR_cl);
-  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status >= CL_SUCCESS);
+  /* status = clSetKernelArg(kernel, */
+  /*                         argnum++, */
+  /*                         sizeof(cl_mem), */
+  /*                         &physnodeR_cl); */
+  /* if(status < CL_SUCCESS) printf("%s\n", clErrorString(status)); */
+  /* assert(status >= CL_SUCCESS); */
 
   //__global real *wn,          // 7: field 
   status = clSetKernelArg(kernel,
@@ -406,69 +406,18 @@ void init_DGSource_CL(field *f, cl_mem *wn_cl, size_t cachesize)
   assert(status >= CL_SUCCESS);
 }
 
-// Update the cl buffer with physnode data depending in the
-// macroelement with index ie
-/* void update_physnode_cl(field *f, int ie, cl_mem physnode_cl, real *physnode, */
-/* 			cl_ulong *time, */
-/* 			cl_uint nwait, cl_event *wait, cl_event *done) */
-/* { */
-/*   cl_int status; */
-  
-/*   void *chkptr = clEnqueueMapBuffer(f->cli.commandqueue, */
-/* 				    physnode_cl, */
-/* 				    CL_TRUE, */
-/* 				    CL_MAP_WRITE, */
-/* 				    0, // offset */
-/* 				    sizeof(real) * 60, // buffersize */
-/* 				    nwait,  */
-/* 				    wait,  */
-/* 				    &f->clv_mapdone, */
-/* 				    &status); */
-/*   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status)); */
-/*   assert(status >= CL_SUCCESS); */
-/*   assert(chkptr == physnode); */
-
-/*   if(time != NULL) */
-/*     *time += clv_duration(f->clv_mapdone); */
-
-/*   int ie20 = 20 * ie; */
-/*   for(int inoloc = 0; inoloc < 20; ++inoloc) { */
-/*     int ino = 3 * f->macromesh.elem2node[ie20 + inoloc]; */
-/*     real *iphysnode = physnode + 3 * inoloc; */
-/*     real *nodeino = f->macromesh.node + ino; */
-/*     iphysnode[0] = nodeino[0]; */
-/*     iphysnode[1] = nodeino[1]; */
-/*     iphysnode[2] = nodeino[2]; */
-/*   } */
-
-/*   status = clEnqueueUnmapMemObject(f->cli.commandqueue, */
-/* 				   physnode_cl, */
-/* 				   physnode, */
-/* 				   1, &f->clv_mapdone, done); */
-/*   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status)); */
-/*   assert(status >= CL_SUCCESS); */
-
-/*   if(time != NULL) */
-/*     *time += clv_duration(f->clv_mapdone); */
-/* } */
-
 void DGMacroCellInterface_CL(void *mf, field *f, cl_mem *wn_cl,
 			     cl_uint nwait, cl_event *wait, cl_event *done) 
 {
   //printf("DGMacroCellInterface_CL\n");
 
-  //clWaitForEvents(nwait, wait);
-
-  /* if(done != NULL) { */
-  /*   status = clSetUserEventStatus(*done, CL_); */
-  
   MacroFace *mface = (MacroFace*) mf;
   int *param = f->interp_param;
   cl_int status;
   cl_kernel kernel = f->dginterface;
 
   status = clSetKernelArg(kernel,
-                          8,
+                          7,
                           sizeof(cl_mem),
                           wn_cl);
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
@@ -485,24 +434,7 @@ void DGMacroCellInterface_CL(void *mf, field *f, cl_mem *wn_cl,
     int ieR =    f->macromesh.face2elem[4 * ifa + 2];
     int locfaR = f->macromesh.face2elem[4 * ifa + 3];
 
-    /* update_physnode_cl(f, ieL, f->physnode_cl, f->physnode, &f->minter_time, */
-    /* 		       0,  */
-    /* 		       NULL, */
-    /* 		       &f->clv_interupdate); */
-
-    if(ieR >= 0) {
-      /* update_physnode_cl(f, ieR, f->physnodeR_cl, f->physnodeR,  */
-      /* 			 &f->minter_time, */
-      /* 			 1,  */
-      /* 			 &f->clv_interupdate, */
-      /* 			 &f->clv_interupdateR); */
-      /* f->minter_time += clv_duration(f->clv_interupdateR); */
-    } else {
-      /* clWaitForEvents(1, &f->clv_interupdate); */
-      /* status = clSetUserEventStatus(f->clv_interupdateR, CL_COMPLETE); */
-    }
-
-    size_t numworkitems = NPGF(f->interp_param + 1, locfaL);
+     size_t numworkitems = NPGF(f->interp_param + 1, locfaL);
     if(ieR >= 0) {
     
       // Set the remaining loop-dependant kernel arguments

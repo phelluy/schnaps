@@ -918,7 +918,7 @@ void DGMacroCellInterface(__constant int *param,        // 0: interp param
                           int locfaL,                   // 3: left face index
 			  int locfaR,                   // 4: right face index
                           __constant real *physnodes,   // 5: left physnode
-                          __constant real *physnodes0,  // 6: right physnode
+                          //__constant real *physnodes0,  // 6: right physnode
                           __global real *wn,            // 7: field 
                           __global real *dtwn,          // 8: time derivative
 			  __local real *cache           // 9: local mem
