@@ -1324,7 +1324,7 @@ void RK2_CL(field *f, real tmax, real dt,
     clWaitForEvents(nwait, wait);
   while(f->tnow < tmax) {
     //printf("iter: %d\n", iter);
-    if (iter % 1 == 0)
+    if (iter % freq == 0)
       printf("t=%f iter=%d/%d dt=%f\n", f->tnow, iter, f->itermax, dt);
 
     dtfield_CL(f, &f->wn_cl, 1, &stage2, &source1);
