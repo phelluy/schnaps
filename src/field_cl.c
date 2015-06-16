@@ -845,7 +845,11 @@ void dtfield_CL(field *f, cl_mem *wn_cl,
     ndim = 1;
     fluxdone = f->clv_flux0;
   }
+
+  cl_event *dtfielddone = f->use_source_cl ? f->clv_source : f->clv_mass;
   
+  // The kernels for the intra-macrocell computations can be launched
+  // in parallel between macrocells.
   const int nmacro = f->macromesh.nbelems;
   for(int ie = 0; ie < nmacro; ++ie) {
     //printf("ie: %d\n", ie);
@@ -890,7 +894,7 @@ void dtfield_CL(field *f, cl_mem *wn_cl,
       f->source_time += clv_duration(f->clv_source[ie]);
     }
   }
-  clWaitForEvents(nmacro, f->clv_mass);
+  clWaitForEvents(nmacro, dtfielddone);
   if(done != NULL)
     clSetUserEventStatus(*done, CL_COMPLETE);
 }
