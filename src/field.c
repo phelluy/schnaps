@@ -362,10 +362,6 @@ void init_field_cl(field *f)
 
   // Initialize events. // FIXME: free on exit
   f->clv_zbuf = clCreateUserEvent(f->cli.context, &status);
-  
-  f->clv_mapdone = clCreateUserEvent(f->cli.context, &status);
-
-  f->clv_physnodeupdate = clCreateUserEvent(f->cli.context, &status);
 
   const int nfaces = f->macromesh.nbfaces;
   f->clv_mci = calloc(nfaces, sizeof(cl_event));
@@ -373,16 +369,11 @@ void init_field_cl(field *f)
     f->clv_mci[ifa] = clCreateUserEvent(f->cli.context, &status);
   }
 
-  f->clv_interkernel = clCreateUserEvent(f->cli.context, &status);
-  f->clv_interupdate = clCreateUserEvent(f->cli.context, &status);
-  f->clv_interupdateR = clCreateUserEvent(f->cli.context, &status);
-
   f->clv_mass = clCreateUserEvent(f->cli.context, &status);
 
-  f->clv_flux = calloc(3, sizeof(cl_event));
-  f->clv_flux[0] = clCreateUserEvent(f->cli.context, &status);
-  f->clv_flux[1] = clCreateUserEvent(f->cli.context, &status);
-  f->clv_flux[2] = clCreateUserEvent(f->cli.context, &status);
+  f->clv_flux0 = clCreateUserEvent(f->cli.context, &status);
+  f->clv_flux1 = clCreateUserEvent(f->cli.context, &status);
+  f->clv_flux2 = clCreateUserEvent(f->cli.context, &status);
 
   f->clv_volume = clCreateUserEvent(f->cli.context, &status);
   f->clv_source = clCreateUserEvent(f->cli.context, &status);

@@ -410,6 +410,8 @@ void DGMacroCellInterface_CL(void *mf, field *f, cl_mem *wn_cl,
 {
   //printf("DGMacroCellInterface_CL\n");
 
+  // TODO: split into macrocell interface and boundary.
+  
   MacroFace *mface = (MacroFace*) mf;
   int *param = f->interp_param;
   cl_int status;
@@ -427,7 +429,7 @@ void DGMacroCellInterface_CL(void *mf, field *f, cl_mem *wn_cl,
   int end = mface->last_p1;
   for(int ifa = start; ifa < end; ++ifa) {
     //printf("ifa: %d\n", ifa);
-        
+    
     int ieL =    f->macromesh.face2elem[4 * ifa];
     int locfaL = f->macromesh.face2elem[4 * ifa + 1];
     int ieR =    f->macromesh.face2elem[4 * ifa + 2];
@@ -451,10 +453,9 @@ void DGMacroCellInterface_CL(void *mf, field *f, cl_mem *wn_cl,
 				      NULL, // size_t *local_work_size, 
 				      nwait,  // nwait, 
 				      wait, // *wait_list,
-				      &f->clv_interkernel); // *event
+				      done); // *event
       if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
       assert(status >= CL_SUCCESS);
-      f->minter_time += clv_duration(f->clv_interkernel);
 
     } else {
       size_t cachesize = 1; // TODO make use of cache
@@ -467,18 +468,16 @@ void DGMacroCellInterface_CL(void *mf, field *f, cl_mem *wn_cl,
 				      NULL, // size_t *local_work_size, 
 				      nwait, 
 				      wait, // *wait_list,
-				      &f->clv_interkernel); // *event
+				      done); // *event
       if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
       assert(status >= CL_SUCCESS);
-      clWaitForEvents(1, &f->clv_interkernel);
     }
   }
-  
 
-  clWaitForEvents(1, &f->clv_interkernel);
   if(done != NULL)
-    status = clSetUserEventStatus(*done, CL_COMPLETE);
-
+    f->minter_time += clv_duration(*done);
+    
+  
   //printf("... DGMacroCellInterface_CL done.\n");
 }
 
@@ -530,17 +529,12 @@ void DGMass_CL(void *mc, field *f,
 				    &groupsize, // size_t *local_work_size, 
 				    nwait, // cl_uint num_events_in_wait_list, 
 				    wait, //*event_wait_list, 
-				    &f->clv_mass); // cl_event *event
+				    done); // cl_event *event
     if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
     assert(status >= CL_SUCCESS);
     f->mass_time += clv_duration(f->clv_mass);
   }
   
-  clWaitForEvents(1, &f->clv_mass);
-  if(done != NULL) {
-    status = clSetUserEventStatus(*done, CL_COMPLETE);
-  }
-  //printf("... DGMass_CL done.\n");
 }
 
 void init_DGFlux_CL(field *f, int ie, int dim0, cl_mem *wn_cl, 
@@ -846,27 +840,45 @@ void dtfield_CL(field *f, cl_mem *wn_cl,
   } else {
     clSetUserEventStatus(f->clv_mass, CL_COMPLETE);
   }
+
+  cl_event *fluxdone = &f->clv_flux2;
+  unsigned int ndim = 3;
+  if(f->macromesh.is2d) {
+    ndim = 2;
+    fluxdone = &f->clv_flux1;
+  }
+  if(f->macromesh.is1d) {
+    ndim = 1;
+    fluxdone = &f->clv_flux0;
+  }
   
   const int nmacro = f->macromesh.nbelems;
   for(int ie = 0; ie < nmacro; ++ie) {
     //printf("ie: %d\n", ie);
     MacroCell *mcelli = f->mcell + ie;
     
-    unsigned int ndim = f->macromesh.is2d ? 2 : 3;
     DGFlux_CL(f, 0, ie, wn_cl, 
 	      1, f->use_source_cl ? &f->clv_source : &f->clv_mass,
-	      f->clv_flux);
-
-    f->flux_time += clv_duration(f->clv_flux[0]);
-    for(unsigned int d = 1; d < ndim; ++d) {
-      DGFlux_CL(f, d, ie, wn_cl, 
-		1, f->clv_flux + (d - 1) % ndim,  f->clv_flux + d);
-      f->flux_time += clv_duration(f->clv_flux[d]);
+	      &f->clv_flux0);
+    f->flux_time += clv_duration(f->clv_flux0);
+    
+    if(ndim > 1) {
+      DGFlux_CL(f, 1, ie, wn_cl, 
+		1, &f->clv_flux0, 
+		&f->clv_flux1);
+      f->flux_time += clv_duration(f->clv_flux1);
     }
-
+    
+    if(ndim > 2) {
+      DGFlux_CL(f, 1, ie, wn_cl, 
+		1, &f->clv_flux1, 
+		&f->clv_flux2);
+      f->flux_time += clv_duration(f->clv_flux2);
+    }
+        
     DGVolume_CL(mcelli, f, wn_cl,
   		1,
-  		f->clv_flux + ndim - 1,
+  		fluxdone,
   		&f->clv_volume);
     f->vol_time += clv_duration(f->clv_volume);
 

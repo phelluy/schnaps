@@ -124,19 +124,14 @@ typedef struct field {
 
   // OpenCL events
 
-  // used in update_physnode_cl
-  cl_event clv_mapdone; 
-  
   // set_buf_to_zero event
   cl_event clv_zbuf; 
   
-  cl_event clv_physnodeupdate;
-
   // Subcell mass events
   cl_event clv_mass; 
 
   // Subcell flux events
-  cl_event *clv_flux;
+  cl_event clv_flux0, clv_flux1, clv_flux2;
 
   // Subcell volume events
   cl_event clv_volume; 
@@ -146,9 +141,6 @@ typedef struct field {
 
   // Macrocell interface events
   cl_event *clv_mci;
-  cl_event clv_interkernel; 
-  cl_event clv_interupdate;
-  cl_event clv_interupdateR;
 
   // OpenCL timing
   cl_ulong zbuf_time;
