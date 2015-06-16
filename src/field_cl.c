@@ -167,8 +167,7 @@ void init_DGBoundary_CL(field *f,
 // Set the loop-dependant kernel arguments for DGMacroCellInterface_CL
 void init_DGMacroCellInterface_CL(field *f, 
 				  int ieL, int ieR, int locfaL, int locfaR,
-				  cl_mem physnodeL_cl, cl_mem physnodeR_cl,
-				  // FIXME: only pass one physnode_cl 
+				  cl_mem physnodeL_cl, 
 				  size_t cachesize)
 {
   //printf("loop_init_DGMacroCellInterface_CL\n");
@@ -434,14 +433,14 @@ void DGMacroCellInterface_CL(void *mf, field *f, cl_mem *wn_cl,
     int ieR =    f->macromesh.face2elem[4 * ifa + 2];
     int locfaR = f->macromesh.face2elem[4 * ifa + 3];
 
-     size_t numworkitems = NPGF(f->interp_param + 1, locfaL);
+    size_t numworkitems = NPGF(f->interp_param + 1, locfaL);
     if(ieR >= 0) {
     
       // Set the remaining loop-dependant kernel arguments
       size_t kernel_cachesize = 1;
       init_DGMacroCellInterface_CL(f, 
 				  ieL, ieR, locfaL, locfaR, 
-				  f->physnodes_cl, f->physnodes_cl, 
+				  f->physnodes_cl,
 				  kernel_cachesize);
 
       status = clEnqueueNDRangeKernel(f->cli.commandqueue,
@@ -853,15 +852,7 @@ void dtfield_CL(field *f, cl_mem *wn_cl,
     //printf("ie: %d\n", ie);
     MacroCell *mcelli = f->mcell + ie;
     
-    /* update_physnode_cl(f, ie, f->physnode_cl, f->physnode, &f->vol_time, */
-    /* 		       1, f->use_source_cl ? &f->clv_source : &f->clv_mass, */
-    /* 		       &f->clv_physnodeupdate); */
-    //f->???_time += clv_duration(f->clv_physnodeupdate);
-
     unsigned int ndim = f->macromesh.is2d ? 2 : 3;
-    /* DGFlux_CL(f, 0, ie, wn_cl,  */
-    /* 	      1, &f->clv_physnodeupdate,  */
-    /* 	      f->clv_flux); */
     DGFlux_CL(f, 0, ie, wn_cl, 
 	      1, f->use_source_cl ? &f->clv_source : &f->clv_mass,
 	      f->clv_flux);
