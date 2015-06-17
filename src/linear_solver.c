@@ -4,7 +4,6 @@
 #include <assert.h>
 #include "skyline.h"
 
-
 void InitLinearSolver(LinearSolver* lsol,int n,
 		      MatrixStorage* matstor,
 		      Solver* solvtyp){
