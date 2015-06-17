@@ -52,10 +52,10 @@ int TestLandau_Damping_1D(void) {
   f.varindex=GenericVarindex;
     
   f.interp.interp_param[0]=f.model.m;  // _M
-  f.interp.interp_param[1]=3;  // x direction degree
+  f.interp.interp_param[1]=2;  // x direction degree
   f.interp.interp_param[2]=0;  // y direction degree
   f.interp.interp_param[3]=0;  // z direction degree
-  f.interp.interp_param[4]=32;  // x direction refinement
+  f.interp.interp_param[4]=24;  // x direction refinement
   f.interp.interp_param[5]=1;  // y direction refinement
   f.interp.interp_param[6]=1;  // z direction refinement
  // read the gmsh file
@@ -78,11 +78,12 @@ int TestLandau_Damping_1D(void) {
  
   // prepare the initial fields
   f.model.cfl=0.05;
+
   Initfield(&f);
   f.vmax = _VMAX; // maximal wave speed
   f.macromesh.is1d=true;
-  //f.macromesh.is1d=true;
-  f.nb_diags=3;
+    //f.macromesh.is1d=true;
+  f.nb_diags=4;
   f.pre_dtfield=UpdateVlasovPoisson;
   f.update_after_rk=PlotVlasovPoisson;
   f.model.Source = VlasovP_Lagrangian_Source;
@@ -92,8 +93,7 @@ int TestLandau_Damping_1D(void) {
   printf("cfl param =%f\n",f.hmin);
 
   real dt = set_dt(&f);
-  RK2(&f,10, dt);
-  //RK2(&f,0.03,0.05);
+  RK2(&f,4, dt);
 
    // save the results and the error
   int iel=_NB_ELEM_V/2;
@@ -131,7 +131,7 @@ void Test_Landau_Damping_ImposedData(const real x[3], const real t, real w[])
   // and electric field
   w[_INDEX_PHI]=-eps*cos(k*x[0]);
   w[_INDEX_EX]=(eps/k)*sin(k*x[0]);
-  w[_INDEX_RHO]=1.; //rho init
+  w[_INDEX_RHO]=1; //rho init
   w[_INDEX_VELOCITY]=0; // u init
   w[_INDEX_PRESSURE]=0; // p init
   w[_INDEX_TEMP]=0; // e ou T init
@@ -149,7 +149,7 @@ void Test_Landau_Damping_InitData(real x[3],real w[]){
 
 void Test_Landau_Damping_BoundaryFlux(real x[3],real t,real wL[],real* vnorm,
 				       real* flux){
-  real wR[_MV+6];
+  real wR[_INDEX_MAX];
   Test_Landau_Damping_ImposedData(x,t,wR);
   VlasovP_Lagrangian_NumFlux(wL,wR,vnorm,flux);
   assert(1==2);
@@ -173,10 +173,11 @@ void UpdateVlasovPoisson(void* vf, real * w){
 
 
 void PlotVlasovPoisson(void* vf, real * w){
-  real k_energy=0,e_energy=0,t_energy=0;
+  real k_energy=0,e_energy=0,t_energy=0,t_charge=0;
   
   field* f=vf;
   
-  Energies(f,w,k_energy,e_energy,t_energy);
+  Energies(f,w,k_energy,e_energy,t_energy,1);
+  Charge_total(f,w,t_charge,4);
   vf=f;
 }

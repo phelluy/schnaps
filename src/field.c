@@ -1221,7 +1221,6 @@ void DGSource(void *mc, field *f, real *w, real *dtw)
   if (f->model.Source == NULL) {
     return;
   }
-
   MacroCell *mcell = (MacroCell*)mc;
 
   const int m = f->model.m;
@@ -1506,6 +1505,7 @@ void dtfield(field *f, real *w, real *dtw) {
     DGVolume(mcelli, f, w, dtw);
     DGMass(mcelli, f, dtw);
     DGSource(mcelli, f, w, dtw);
+
   }
 #endif
 

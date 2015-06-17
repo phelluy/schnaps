@@ -185,6 +185,7 @@ void SolvePoisson1D(field *f,real * w,int type_bc, real bc_l, real bc_r){
 
   if(type_bc == _Periodic_Poisson_BC){
     charge_average=Computation_charge_average(f,w);
+    //printf(" chare average %e\n",charge_average);
     bc_l=0;
     bc_r=0;
   }
@@ -258,12 +259,12 @@ void SolvePoisson1D(field *f,real * w,int type_bc, real bc_l, real bc_r){
 
 
   // dirichlet boundary condition at the first and last location
-  if(type_bc == _Dirichlet_Poisson_BC){
+  //if(type_bc == _Dirichlet_Poisson_BC){
     SetSkyline(&sky,0,0,1e20);
     SetSkyline(&sky,neq-1,neq-1,1e20);
-  }
+    // }
 
-  //DisplaySkyline(&sky);
+    //DisplaySkyline(&sky);
 
   FactoLU(&sky);
 
@@ -305,7 +306,7 @@ void SolvePoisson1D(field *f,real * w,int type_bc, real bc_l, real bc_r){
 	
   FreeSkyline(&sky);
 
-
+  //ComputeElectricField(f);
   Compute_electric_field(f,w);
 
 }
