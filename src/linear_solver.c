@@ -234,27 +234,27 @@ void SolveLinearSolver(LinearSolver* lsol){
   assert(lsol->rhs);
   assert(lsol->sol);
   
-  switch(lsol->storage_type) {
+  switch(lsol->solver_type) {
     
     Skyline* sky;
     
-  case SKYLINE :
-    sky=(Skyline*)lsol->matrix;
+  case LU :
     
-    switch(lsol->solver_type) {
-    case LU :
+    switch(lsol->storage_type) {
+    case SKYLINE :
+         sky=(Skyline*)lsol->matrix;
       if (!sky->is_lu) FactoLU(sky);
       SolveSkyline(sky,lsol->rhs,lsol->sol);
       break;
-
-    case GMRES :
-      GMRESSolver(lsol);
-      break;  
       
     default : 
       assert(1==2);      
     }
     break;
+
+  case GMRES :
+    GMRESSolver(lsol);
+    break;  
     
     default : 
       assert(1==2);      
