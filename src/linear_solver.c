@@ -228,25 +228,37 @@ void LUDecompLinearSolver(LinearSolver* lsol){
 }
 
 void SolveLinearSolver(LinearSolver* lsol){
-
+  
   assert(lsol->is_init);
   assert(lsol->is_alloc);
   assert(lsol->rhs);
   assert(lsol->sol);
   
   switch(lsol->storage_type) {
-
+    
     Skyline* sky;
-
+    
   case SKYLINE :
     sky=(Skyline*)lsol->matrix;
-    if (!sky->is_lu) FactoLU(sky);
-    SolveSkyline(sky,lsol->rhs,lsol->sol);
-    break;
+    
+    switch(lsol->solver_type) {
+    case LU :
+      if (!sky->is_lu) FactoLU(sky);
+      SolveSkyline(sky,lsol->rhs,lsol->sol);
+      break;
 
-  default : 
-    assert(1==2);
-  }
+    case GMRES :
+      GMRESSolver(lsol);
+      break;  
+      
+    default : 
+      assert(1==2);      
+    }
+    break;
+    
+    default : 
+      assert(1==2);      
+    }
 
 }
 
