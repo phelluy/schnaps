@@ -177,28 +177,21 @@ void DGBoundary_CL(void *mf, field *f, cl_mem *wn_cl,
   for(int ifa = start; ifa < end; ++ifa) {
     int ieL =    f->macromesh.face2elem[4 * ifa];
     int locfaL = f->macromesh.face2elem[4 * ifa + 1];
-    int ieR =    f->macromesh.face2elem[4 * ifa + 2];
-    int locfaR = f->macromesh.face2elem[4 * ifa + 3];
-
+    
     size_t numworkitems = NPGF(f->interp_param + 1, locfaL);
-    if(ieR == -1) {
-      size_t cachesize = 1; // TODO make use of cache
-      init_DGBoundary_CL(f, ieL, locfaL, f->physnodes_cl, wn_cl, cachesize);
-      status = clEnqueueNDRangeKernel(f->cli.commandqueue,
-				      f->dgboundary,
-				      1, // cl_uint work_dim,
-				      NULL, // global_work_offset,
-				      &numworkitems, // global_work_size, 
-				      NULL, // size_t *local_work_size, 
-				      nwait, 
-				      wait, // *wait_list,
-				      done); // *event
-      if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
-      assert(status >= CL_SUCCESS);
-    } else {
-      if(done != NULL)
-	clSetUserEventStatus(*done, CL_COMPLETE);
-    }
+    size_t cachesize = 1; // TODO make use of cache
+    init_DGBoundary_CL(f, ieL, locfaL, f->physnodes_cl, wn_cl, cachesize);
+    status = clEnqueueNDRangeKernel(f->cli.commandqueue,
+				    f->dgboundary,
+				    1, // cl_uint work_dim,
+				    NULL, // global_work_offset,
+				    &numworkitems, // global_work_size, 
+				    NULL, // size_t *local_work_size, 
+				    nwait, 
+				    wait, // *wait_list,
+				    done); // *event
+    if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+    assert(status >= CL_SUCCESS);
   }
 }
 
@@ -847,14 +840,18 @@ void dtfield_CL(field *f, cl_mem *wn_cl,
 
   // Boundary terms may also need to be launched serially.
   // FIXME: make a list of boundary faces and loop over them instead.
-  for(int ifa = 0; ifa < nfaces; ++ifa) {
+  const int nboundaryfaces = f->macromesh.nboundaryfaces;
+  for(int i = 0; i < nboundaryfaces; ++i) {
+    int ifa = f->macromesh.boundaryface[i];
+    
     DGBoundary_CL((void*) (f->mface + ifa), f, wn_cl,
 		  1,
-		  ifa == 0 ?  f->clv_mci + nfaces - 1
-		  : f->clv_boundary + ifa - 1,
-		  f->clv_boundary + ifa);
-    f->boundary_time += clv_duration(f->clv_boundary[ifa]);
+		  i == 0 ?  f->clv_mci + nfaces - 1
+		  : f->clv_boundary + i - 1,
+		  f->clv_boundary + i);
+    f->boundary_time += clv_duration(f->clv_boundary[i]);
   }
+  printf("done boundaries \n");
 
   cl_event *fluxdone = f->clv_flux2;
   unsigned int ndim = 3;
@@ -877,7 +874,7 @@ void dtfield_CL(field *f, cl_mem *wn_cl,
     MacroCell *mcelli = f->mcell + ie;
     
     DGFlux_CL(f, 0, ie, wn_cl, 
-	      1, f->clv_boundary + nfaces - 1,
+	      1, f->clv_boundary + nboundaryfaces - 1,
 	      f->clv_flux0 + ie);
     f->flux_time += clv_duration(f->clv_flux0[ie]);
     
