@@ -363,22 +363,23 @@ void init_field_cl(field *f)
   // Initialize events. // FIXME: free on exit
   f->clv_zbuf = clCreateUserEvent(f->cli.context, &status);
 
-  const int nfaces = f->macromesh.nbfaces;
-  f->clv_mci = calloc(nfaces, sizeof(cl_event));
-  for(int ifa = 0; ifa < nfaces; ++ifa) {
-    f->clv_mci[ifa] = clCreateUserEvent(f->cli.context, &status);
-  }
-  
-  const int nbound = f->macromesh.nboundaryfaces;
-  f->clv_boundary = calloc(nbound, sizeof(cl_event));
-  for(int ifa = 0; ifa < nbound; ++ifa) {
-    f->clv_boundary[ifa] = clCreateUserEvent(f->cli.context, &status);
+  const int ninterfaces = f->macromesh.nmacrointerfaces;
+  if(ninterfaces > 0) {
+    f->clv_mci = calloc(ninterfaces, sizeof(cl_event));
+    for(int ifa = 0; ifa < ninterfaces; ++ifa)
+      f->clv_mci[ifa] = clCreateUserEvent(f->cli.context, &status);
   }
     
-  f->clv_mass = calloc(nmacro, sizeof(cl_event));
-  for(int ie = 0; ie < nmacro; ++ie) {
-    f->clv_mass[ie] = clCreateUserEvent(f->cli.context, &status);
+  const int nbound = f->macromesh.nboundaryfaces;
+  if(nbound > 0) {
+    f->clv_boundary = calloc(nbound, sizeof(cl_event));
+    for(int ifa = 0; ifa < nbound; ++ifa)
+      f->clv_boundary[ifa] = clCreateUserEvent(f->cli.context, &status);
   }
+  
+  f->clv_mass = calloc(nmacro, sizeof(cl_event));
+  for(int ie = 0; ie < nmacro; ++ie)
+    f->clv_mass[ie] = clCreateUserEvent(f->cli.context, &status);
 
   f->clv_flux0 = calloc(nmacro, sizeof(cl_event));
   f->clv_flux1 = calloc(nmacro, sizeof(cl_event));

@@ -311,6 +311,32 @@ int* build_boundarylist(MacroMesh *m)
   }
 }
 
+int* build_interfacelist(MacroMesh *m)
+{
+  int ninter = 0;
+  for(int ifa = 0; ifa < m->nbfaces; ++ifa) {
+    int ieR = m->face2elem[4 * ifa + 2];
+    if(ieR != -1)
+      ninter++;
+  }
+  m->nmacrointerfaces = ninter;
+  
+  printf("m->nmacrointerfaces: %d\n", m->nmacrointerfaces);
+  if(m->nmacrointerfaces > 0) {
+    int *mif = malloc(sizeof(int) * m->nmacrointerfaces);
+
+    int iinter = 0;
+    for(int ifa = 0; ifa < m->nbfaces; ++ifa) {
+      int ieR = m->face2elem[4 * ifa + 2];
+      if(ieR != -1)
+  	mif[iinter++] = ifa;
+    }
+    return mif;
+  } else {
+    return NULL;
+  }
+}
+
 // Allocate and fill the elem2elem array, which provides macrocell
 // interface connectivity.
 void build_elem2elem(MacroMesh *m, Face4Sort *face) 
@@ -411,6 +437,8 @@ void build_elem2elem(MacroMesh *m, Face4Sort *face)
   assert(facecount == m->nbfaces);
 
   m->boundaryface = build_boundarylist(m);
+
+  m->macrointerface = build_interfacelist(m);
 }
 
 // Remove the faces in the third z dimension from the list.
@@ -442,10 +470,13 @@ void suppress_zfaces(MacroMesh *m)
   m->nbfaces = newfacecount;
   free(oldf);
 
-  if(m->nboundaryfaces > 0) {
+  if(m->nboundaryfaces > 0)
     free(m->boundaryface);
-    m->boundaryface = build_boundarylist(m);
-  }
+  m->boundaryface = build_boundarylist(m);
+
+  if(m->nmacrointerfaces > 0)
+    free(m->macrointerface);
+  m->macrointerface = build_interfacelist(m);
 }
 
 // Remove the faces in the y direction from the list.
@@ -477,10 +508,13 @@ void suppress_yfaces(MacroMesh *m)
   m->nbfaces = newfacecount;
   free(oldf);
 
-  if(m->nboundaryfaces > 0) {
+  if(m->nboundaryfaces > 0)
     free(m->boundaryface);
-    m->boundaryface = build_boundarylist(m);
-  }
+  m->boundaryface = build_boundarylist(m);
+  
+  if(m->nmacrointerfaces > 0)
+    free(m->macrointerface);
+  m->macrointerface = build_interfacelist(m);
 }
 
 // Remove the doubled faces from the list.

@@ -131,7 +131,9 @@ int TestMacroFace(void){
 
   clFinish(f.cli.commandqueue);
 
-  for(int ifa = 0; ifa < f.macromesh.nbfaces; ifa++) {
+  const int ninterfaces = f.macromesh.nmacrointerfaces;
+  for(int i = 0; i < ninterfaces; ++i) {
+    int ifa = f.macromesh.macrointerface[i];
     DGMacroCellInterface_CL((void*) (mface + ifa), &f, &(f.wn_cl),
 			    0, NULL, NULL);
     clFinish(f.cli.commandqueue);

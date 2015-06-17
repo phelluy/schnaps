@@ -828,16 +828,19 @@ void dtfield_CL(field *f, cl_mem *wn_cl,
   		     nwait, wait, &f->clv_zbuf);
   
   // Macrocell interfaces must be launched serially
-  // FIXME: make a list of macrocell interface faces and loop over them instead.
-  const int nfaces = f->macromesh.nbfaces;
-  for(int ifa = 0; ifa < nfaces; ++ifa) {
+  const int ninterfaces = f->macromesh.nmacrointerfaces;
+  for(int i = 0; i < ninterfaces; ++i) {
+    int ifa = f->macromesh.macrointerface[i];
     DGMacroCellInterface_CL((void*) (f->mface + ifa), f, wn_cl,
     			    1,
-    			    ifa == 0 ? &f->clv_zbuf : f->clv_mci + ifa - 1,
-    			    f->clv_mci + ifa);
-    f->minter_time += clv_duration(f->clv_mci[ifa]);
+    			    i == 0 ? &f->clv_zbuf : f->clv_mci + i - 1,
+    			    f->clv_mci + i);
+    f->minter_time += clv_duration(f->clv_mci[i]);
   }
 
+  cl_event *startboundary = ninterfaces > 0 ?
+    f->clv_mci + ninterfaces - 1: &f->clv_zbuf;
+  
   // Boundary terms may also need to be launched serially.
   const int nboundaryfaces = f->macromesh.nboundaryfaces;
   for(int i = 0; i < nboundaryfaces; ++i) {
@@ -845,12 +848,24 @@ void dtfield_CL(field *f, cl_mem *wn_cl,
     
     DGBoundary_CL((void*) (f->mface + ifa), f, wn_cl,
 		  1,
-		  i == 0 ?  f->clv_mci + nfaces - 1
-		  : f->clv_boundary + i - 1,
+		  i == 0 ?  startboundary : f->clv_boundary + i - 1,
 		  f->clv_boundary + i);
     f->boundary_time += clv_duration(f->clv_boundary[i]);
   }
-  
+
+
+  // If there are no interfaces and no boundaries, just wait for zerobuf.
+  cl_event *startmacroloop;
+  if(ninterfaces == 0 && nboundaryfaces == 0) {
+    startmacroloop = &f->clv_zbuf;
+  } else {
+    if(nboundaryfaces > 0) {
+      startmacroloop = f->clv_boundary + nboundaryfaces - 1;
+    } else {
+      startmacroloop = f->clv_mci + ninterfaces - 1;
+    }
+  }
+
   cl_event *fluxdone = f->clv_flux2;
   unsigned int ndim = 3;
   if(f->macromesh.is2d) {
@@ -861,7 +876,7 @@ void dtfield_CL(field *f, cl_mem *wn_cl,
     ndim = 1;
     fluxdone = f->clv_flux0;
   }
-
+  
   cl_event *dtfielddone = f->use_source_cl ? f->clv_source : f->clv_mass;
   
   // The kernels for the intra-macrocell computations can be launched
@@ -872,13 +887,13 @@ void dtfield_CL(field *f, cl_mem *wn_cl,
     MacroCell *mcelli = f->mcell + ie;
     
     DGFlux_CL(f, 0, ie, wn_cl, 
-	      1, f->clv_boundary + nboundaryfaces - 1,
+	      1, startmacroloop,
 	      f->clv_flux0 + ie);
     f->flux_time += clv_duration(f->clv_flux0[ie]);
     
     if(ndim > 1) {
       DGFlux_CL(f, 1, ie, wn_cl, 
-		nfaces, f->clv_mci,
+		1, f->clv_flux0 + ie,
 		f->clv_flux1 + ie);
       f->flux_time += clv_duration(f->clv_flux1[ie]);
     }
