@@ -68,6 +68,7 @@ int TestLinearSolver(void){
   vf[3] = 0;
   vf[4] = 0.6e1;
 
+  
 
 
   // first mark the nonzero values in A
@@ -98,6 +99,8 @@ int TestLinearSolver(void){
   DisplayLinearSolver(&sky);
 
 
+  
+  
   // LU decomposition
   LUDecompLinearSolver(&sky);
 

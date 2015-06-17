@@ -47,6 +47,8 @@ int TestSkyline(void);
 
 int TestLinearSolver(void);
 
+int TestGmres(void);
+
 int TestPoisson(void);
 
 int TestPoisson2d(void);

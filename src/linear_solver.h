@@ -89,7 +89,7 @@ void DisplayLinearSolver(LinearSolver* lsol);
 //! \param[in] lsol the LinearSolver object containing matrix A
 //! \param[in] x a vector
 //! \param[out] prod Ax
-void MatVecLinearSolver(LinearSolver* lsol,real* x,real* prod);
+void MatVecLinearSolver(LinearSolver* lsol,real x[],real prod[]);
 
 //! \brief compute the inplace LU decomposition
 //! \param[inout] lsol the LinearSolver object
@@ -101,7 +101,20 @@ void LUDecompLinearSolver(LinearSolver* lsol);
 //! \param[in] sol the solution
 void SolveLinearSolver(LinearSolver* lsol);
 
+//! \brief solve the linear system
+//! \param[in] x vector
+//! \param[in] N size
+//! \param[in] copy x in prod
+void Vector_copy(real x[],real prod[],int N);
 
+  //! \brief solve the linear system
+//! \param[in] x vector
+//! \param[in] y vector
+//! \param[in] N size
+//! \param[in] prod dot product between x and y
+void Vector_prodot(real x[],real y[],real prod[],int N);
+
+void GMRESSolver(LinearSolver* lsol);
 
 
 #endif
