@@ -280,8 +280,7 @@ add_executable(
   test/testperiodic.c
 )
 target_link_libraries(testperiodic ${LIBS})
-# This test is too slow.  Please re-enable after decreasing execution time.
-#add_test(testperiodic testperiodic)
+add_test(testperiodic testperiodic)
 
 
 add_test(testskyline testskyline)

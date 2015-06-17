@@ -370,6 +370,7 @@ void Initfield(field *f) {
   assert(f->dtwn);
   f->Diagnostics = NULL;
   f->pre_dtfield = NULL;
+  f->post_dtfield = NULL;
   f->update_after_rk = NULL;
   f->model.Source = NULL;
 
@@ -1507,6 +1508,9 @@ void dtfield(field *f, real *w, real *dtw) {
     DGSource(mcelli, f, w, dtw);
   }
 #endif
+
+  if(f->post_dtfield != NULL) // FIXME: rename to after dtfield
+      f->post_dtfield(f, w);
 }
 
 // Apply the Discontinuous Galerkin approximation for computing the

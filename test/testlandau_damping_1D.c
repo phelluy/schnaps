@@ -92,7 +92,7 @@ int TestLandau_Damping_1D(void) {
   printf("cfl param =%f\n",f.hmin);
 
   real dt = set_dt(&f);
-  RK2(&f,0.1, dt);
+  RK2(&f,10, dt);
   //RK2(&f,0.03,0.05);
 
    // save the results and the error

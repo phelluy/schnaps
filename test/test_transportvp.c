@@ -49,10 +49,10 @@ int Test_TransportVP(void) {
   f.varindex = GenericVarindex;
     
   f.interp.interp_param[0] = f.model.m;  // _M
-  f.interp.interp_param[1] = 3;  // x direction degree
+  f.interp.interp_param[1] = 2;  // x direction degree
   f.interp.interp_param[2] = 0;  // y direction degree
   f.interp.interp_param[3] = 0;  // z direction degree
-  f.interp.interp_param[4] = 32;  // x direction refinement
+  f.interp.interp_param[4] = 8;  // x direction refinement
   f.interp.interp_param[5] = 1;  // y direction refinement
   f.interp.interp_param[6] = 1;  // z direction refinement
  // read the gmsh file
@@ -73,6 +73,7 @@ int Test_TransportVP(void) {
   f.vmax = _VMAX; // maximal wave speed
   f.nb_diags = 3;
   f.pre_dtfield = UpdateVlasovPoisson;
+  f.post_dtfield=NULL;
   f.update_after_rk = PlotVlasovPoisson;
   f.model.Source = VlasovP_Lagrangian_Source;
   // prudence...
