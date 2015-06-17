@@ -839,7 +839,6 @@ void dtfield_CL(field *f, cl_mem *wn_cl,
   }
 
   // Boundary terms may also need to be launched serially.
-  // FIXME: make a list of boundary faces and loop over them instead.
   const int nboundaryfaces = f->macromesh.nboundaryfaces;
   for(int i = 0; i < nboundaryfaces; ++i) {
     int ifa = f->macromesh.boundaryface[i];
@@ -851,8 +850,7 @@ void dtfield_CL(field *f, cl_mem *wn_cl,
 		  f->clv_boundary + i);
     f->boundary_time += clv_duration(f->clv_boundary[i]);
   }
-  printf("done boundaries \n");
-
+  
   cl_event *fluxdone = f->clv_flux2;
   unsigned int ndim = 3;
   if(f->macromesh.is2d) {

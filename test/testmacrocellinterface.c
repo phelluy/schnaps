@@ -135,6 +135,11 @@ int TestMacroFace(void){
     DGMacroCellInterface_CL((void*) (mface + ifa), &f, &(f.wn_cl),
 			    0, NULL, NULL);
     clFinish(f.cli.commandqueue);
+  }
+  
+  const int nboundaryfaces = f.macromesh.nboundaryfaces;
+  for(int i = 0; i < nboundaryfaces; ++i) {
+    int ifa = f.macromesh.boundaryface[i];
     DGBoundary_CL((void*) (mface + ifa), &f, &(f.wn_cl),
 			    0, NULL, NULL);
     clFinish(f.cli.commandqueue);
