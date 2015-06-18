@@ -179,7 +179,7 @@ void InitPoissonSolver(PoissonSolver* ps, field* fd,int charge_index){
 
 void SolvePoisson1D(field *f,real * w,int type_bc, real bc_l, real bc_r){
 
-
+  real pi=4.0*atan(1.0);
   real charge_average;
   charge_average=0;
 

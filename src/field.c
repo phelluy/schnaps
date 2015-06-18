@@ -1254,6 +1254,7 @@ void DGSource(void *mc, field *f, real *w, real *dtw)
       for(int iv = 0; iv < m; ++iv) {
 	int imem = f->varindex(f->interp_param, ie, ipg, iv);
 	dtw[imem] += source[iv];
+	
       }
     }
   }
