@@ -101,16 +101,16 @@ int TestGmres(void){
     }
   }
  
-
+ 
   // printf for checking...
   DisplayLinearSolver(&sky);
-
   // solve from a decomposed matrix
   // vf: rhs
   // sol: solution
 
   sky.rhs=vf;
   sky.sol=sol;
+
 
   SolveLinearSolver(&sky);
   //GMRESSolver(&sky);

@@ -268,39 +268,50 @@ void SolveLinearSolver(LinearSolver* lsol){
 
 
 void Solver_Paralution(LinearSolver* lsol){
-  int * rows;
-  int * cols;
-  real * coefs;
-  double * mat_coefs;
-  double * RHS;
-  double * Sol;
+  int * rows=NULL;
+  int * cols=NULL;
+  real * coefs=NULL;
+  
+  double * mat_coefs=NULL;
+  double * RHS=NULL;
+  double * Sol=NULL;
+  char * solver;
+  char * pc;
+  char * storage;
+  double residu=0; 
+  int nnz=0,n=0;
+  
+  solver="GMRES";
+  storage="CSR";
+  pc="None";
   
   int basis_size_gmres=30, ILU_p=0,ILU_q=0;
   int iter_final=0,ierr=0,maxit=10000;
   double a_tol=1.e-13,r_tol=1.e-8,div_tol=1.e+2;
-  double residu=0; 
-  int nnz=0,n=0;
+ 
 
   n=lsol->neq;
+  RHS = calloc(n, sizeof(double));
+  Sol = calloc(n, sizeof(double));
 
   for(int i=1;i<n;i++){
     RHS[i] = (double) lsol->rhs[i];
-    Sol[i] = (double) lsol->sol[i];
+    Sol[i] = (double )lsol->sol[i];
   }
 
-  
-  
+   
  switch(lsol->storage_type) {
   case SKYLINE :
     nnz=Matrix_Skyline_to_COO(lsol->matrix,rows,cols,coefs);
 
+    mat_coefs = calloc(n, sizeof(double));
     for(int i=1;i<nnz;i++){
       mat_coefs[i] = (double) coefs[i];
     }
     
-    paralution_fortran_solve_coo(n,n,nnz,lsol->solver_type,CSR,lsol->pc_type,CSR,
-				 rows,cols,mat_coefs,RHS,a_tol,r_tol,div_tol,maxit,
-				 basis_size_gmres,ILU_p,ILU_q,Sol,iter_final,residu,ierr);
+    paralution_fortran_solve_coo(n,n,nnz,solver,storage,pc,storage,
+    				 rows,cols,mat_coefs,RHS,a_tol,r_tol,div_tol,maxit,
+    				 basis_size_gmres,ILU_p,ILU_q,Sol,iter_final,residu,ierr);
     break;
 
   case CSR :
@@ -314,7 +325,7 @@ void Solver_Paralution(LinearSolver* lsol){
   for(int i=1;i<n;i++){
     lsol->sol[i] = (real) Sol[i];
   }
- 
+  
 }
 
 
