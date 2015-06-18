@@ -486,5 +486,9 @@ IF(BUILD_PARALUTION)
 
   ADD_TEST(NAME testparalution COMMAND paralution_cg ${MATRIX_FILE} 4)
 
+  SET(PARALUTION_DIR ${CMAKE_BINARY_DIR}/paralution-${PARALUTION_VERSION}-prefix/src/paralution-${PARALUTION_VERSION}/src/)
+  INCLUDE_DIRECTORIES(${PARALUTON_DIR})
+  ADD_LIBRARY(paralution_fortran   ${PARALUTION_DIR}/plug-ins/paralution_fortran.cpp )
+
 
 ENDIF()
