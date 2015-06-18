@@ -271,10 +271,13 @@ void Solver_Paralution(LinearSolver* lsol){
   int * rows;
   int * cols;
   real * coefs;
+  double * mat_coefs;
   double * RHS;
   double * Sol;
+  
   int basis_size_gmres=30, ILU_p=0,ILU_q=0;
-  int iter_final=0,ierr=0;
+  int iter_final=0,ierr=0,maxit=10000;
+  double a_tol=1.e-13,r_tol=1.e-8,div_tol=1.e+2;
   double residu=0; 
   int nnz=0,n=0;
 
@@ -284,12 +287,19 @@ void Solver_Paralution(LinearSolver* lsol){
     RHS[i] = (double) lsol->rhs[i];
     Sol[i] = (double) lsol->sol[i];
   }
+
+  
   
  switch(lsol->storage_type) {
   case SKYLINE :
     nnz=Matrix_Skyline_to_COO(lsol->matrix,rows,cols,coefs);
+
+    for(int i=1;i<nnz;i++){
+      mat_coefs[i] = (double) coefs[i];
+    }
+    
     paralution_fortran_solve_coo(n,n,nnz,lsol->solver_type,CSR,lsol->pc_type,CSR,
-				 rows,cols,coefs,RHS,1.e-13, 1.e-8,1.e+2,10000,
+				 rows,cols,mat_coefs,RHS,a_tol,r_tol,div_tol,maxit,
 				 basis_size_gmres,ILU_p,ILU_q,Sol,iter_final,residu,ierr);
     break;
 
