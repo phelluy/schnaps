@@ -489,6 +489,9 @@ IF(BUILD_PARALUTION)
   SET(PARALUTION_DIR ${CMAKE_BINARY_DIR}/paralution-${PARALUTION_VERSION}-prefix/src/paralution-${PARALUTION_VERSION}/src/)
   INCLUDE_DIRECTORIES(${PARALUTON_DIR})
   ADD_LIBRARY(paralution_fortran   ${PARALUTION_DIR}/plug-ins/paralution_fortran.cpp )
+  TARGET_LINK_LIBRARIES(paralution_fortran paralution)
 
+  ADD_EXECUTABLE(gmres test/testgmres.c)
+  TARGET_LINK_LIBRARIES(gmres paralution_fortran ${LIBS})
 
 ENDIF()
