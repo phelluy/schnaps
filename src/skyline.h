@@ -93,6 +93,12 @@ void FactoLU(Skyline* sky);
 //! \param[in] sol the solution
 void SolveSkyline(Skyline* sky,real* rhs,real* sol);
 
-
+//! \brief write the skyline matrix of the solver in COO matrix
+//! \param[in] mat he matrix in skyline write
+//! \param[in] rows vector
+//! \param[in] columms vector
+//! \param[in] coef of the matrix
+//! \param[out] return the number of non nuls coef
+int Matrix_Skyline_to_COO(Skyline* mat,int * rows,int * cols, real * coefs);
 
 #endif

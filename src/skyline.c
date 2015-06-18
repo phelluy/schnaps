@@ -75,7 +75,7 @@ void AllocateSkyline(Skyline* sky){
     sky->vkgs[k]=0;
      if (! sky->is_sym) sky->vkgi[k]=0;
   }
-  
+
 
 }
 
@@ -556,3 +556,46 @@ real scal_(real *x, real *y, int *n)
     return ret_val;
 } /* scal_ */
 
+int Matrix_Skyline_to_COO(Skyline* mat,int * rows,int * cols, real * coefs){
+  int c=0;
+  int nnz=0;
+
+  nnz= mat->neq+2*mat->nmem;
+  
+  rows = calloc(nnz, sizeof(real));
+  cols = calloc(nnz, sizeof(int));
+  coefs = calloc(nnz, sizeof(int));
+
+  for (int i=0;i< mat->neq; i++) {
+    for (int j=0;j< mat->neq; j++) {
+      if (j-i <= mat->prof[j] && i-j <= mat->prof[i]){
+	if (i==j){
+	  coefs[c]=mat->vkgd[i];
+	  rows[c]=i;
+	  cols[c]=j;
+	  c++;
+	}
+	else if ( j>i){
+	  int k=mat->kld[j+1]-j+i;
+	  coefs[c]=mat->vkgs[k];
+	  rows[c]=i;
+	  cols[c]=j;
+	  c++; 
+	}
+	else {
+	  int k=mat->kld[i+1]-i+j;
+	  coefs[c]=mat->vkgi[k];
+	  rows[c]=i;
+	  cols[c]=j;
+	  c++; 
+	}
+      }
+    }
+  }
+
+  return nnz;
+  //  for (int pp=0;pp< nnz; pp++) {
+  // printf("i j  aij %d %d %e \n ", rows[pp],cols[pp],coefs[pp]);
+  //}
+   
+} 

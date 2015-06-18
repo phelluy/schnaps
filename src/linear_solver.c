@@ -11,6 +11,7 @@ void InitLinearSolver(LinearSolver* lsol,int n,
   lsol->neq=n;
   lsol->storage_type = SKYLINE;
   lsol->solver_type = LU;
+  lsol->pc_type = None;
   lsol->is_sym = false;
   lsol->is_init = false;
   lsol->is_alloc = false;
@@ -251,15 +252,61 @@ void SolveLinearSolver(LinearSolver* lsol){
     }
     break;
 
-  case GMRES :
+  case GMRES_CERFACS:
     GMRESSolver(lsol);
     break;  
+
+  case GMRES :
+    Solver_Paralution(lsol);
+    break;   
     
-    default : 
-      assert(1==2);      
-    }
+  default : 
+    assert(1==2);      
+  }
 
 }
+
+
+void Solver_Paralution(LinearSolver* lsol){
+  int * rows;
+  int * cols;
+  real * coefs;
+  double * RHS;
+  double * Sol;
+  int basis_size_gmres=30, ILU_p=0,ILU_q=0;
+  int iter_final=0,ierr=0;
+  double residu=0; 
+  int nnz=0,n=0;
+
+  n=lsol->neq;
+
+  for(int i=1;i<n;i++){
+    RHS[i] = (double) lsol->rhs[i];
+    Sol[i] = (double) lsol->sol[i];
+  }
+  
+ switch(lsol->storage_type) {
+  case SKYLINE :
+    nnz=Matrix_Skyline_to_COO(lsol->matrix,rows,cols,coefs);
+    paralution_fortran_solve_coo(n,n,nnz,lsol->solver_type,CSR,lsol->pc_type,CSR,
+				 rows,cols,coefs,RHS,1.e-13, 1.e-8,1.e+2,10000,
+				 basis_size_gmres,ILU_p,ILU_q,Sol,iter_final,residu,ierr);
+    break;
+
+  case CSR :
+    assert(1==2);
+    break;
+
+  default : 
+    assert(1==2);
+  }
+  
+  for(int i=1;i<n;i++){
+    lsol->sol[i] = (real) Sol[i];
+  }
+ 
+}
+
 
 
 void GMRESSolver(LinearSolver* lsol){

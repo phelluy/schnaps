@@ -33,15 +33,15 @@ int TestGmres(void){
   // preliminary work on the skyline struct
   // _NN is the size of the linear system to be solved
   InitLinearSolver(&sky,_NN,NULL,NULL);
-
+  sky.solver_type = GMRES;
   real A[_NN][_NN];
   real vf[_NN],sol[_NN];
 
-  A[0][0] = 0.2e1;
+  A[0][0] = 0.3e1;
   A[0][1] = -0.1e1;
   A[0][2] = 0;
   A[0][3] = 0;
-  A[0][4] = 0;
+  A[0][4] = -0.1e1;
   A[1][0] = -0.1e1;
   A[1][1] = 0.2e1;
   A[1][2] = -0.1e1;
@@ -57,16 +57,19 @@ int TestGmres(void){
   A[3][2] = -0.1e1;
   A[3][3] = 0.2e1;
   A[3][4] = -0.1e1;
-  A[4][0] = 0;
+  A[4][0] = -0.1e1;
   A[4][1] = 0;
   A[4][2] = 0;
   A[4][3] = -0.1e1;
-  A[4][4] = 0.2e1;
-  vf[0] = 0.1e1;
-  vf[1] = 0.2e1;
-  vf[2] = 0.3e1;
-  vf[3] = 0.2e1;
-  vf[4] = 0.1e1;
+  A[4][4] = 0.3e1;
+  vf[0] = -0.4e1;
+  vf[1] = 0;
+  vf[2] = 0;
+  vf[3] = 0;
+  vf[4] = 0.10e2;
+
+  sky.is_sym=false;
+
   sol[0] = 0.0;
   sol[1] = 0.0;
   sol[2] = 0.0;
@@ -84,6 +87,7 @@ int TestGmres(void){
 
   // once the nonzero positions are known allocate memory
   AllocateLinearSolver(&sky);
+
 
   // now set the nonzero terms
   for(int i=0;i<_NN;i++){
@@ -108,7 +112,8 @@ int TestGmres(void){
   sky.rhs=vf;
   sky.sol=sol;
 
-  GMRESSolver(&sky);
+  SolveLinearSolver(&sky);
+  //GMRESSolver(&sky);
 
 
   // checking
