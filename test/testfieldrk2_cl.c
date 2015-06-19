@@ -78,9 +78,9 @@ int TestfieldRK2_CL(void){
   f.interp.interp_param[1] = 2; // x direction degree
   f.interp.interp_param[2] = 2; // y direction degree
   f.interp.interp_param[3] = 2; // z direction degree
-  f.interp.interp_param[4] = 8; // x direction refinement
-  f.interp.interp_param[5] = 8; // y direction refinement
-  f.interp.interp_param[6] = 8; // z direction refinement
+  f.interp.interp_param[4] = 4; // x direction refinement
+  f.interp.interp_param[5] = 4; // y direction refinement
+  f.interp.interp_param[6] = 4; // z direction refinement
 #endif
 
   //AffineMapMacroMesh(&(f.macromesh));
