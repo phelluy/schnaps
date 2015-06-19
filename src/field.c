@@ -1802,6 +1802,7 @@ void RK4(field *f, real tmax, real dt)
     dt = set_dt(f);
 
   f->itermax = tmax / dt;
+  int size_diags;
   int freq = (1 >= f->itermax / 10)? 1 : f->itermax / 10;
   int sizew = f->macromesh.nbelems * f->model.m * NPG(f->interp_param + 1);
   int iter = 0;
@@ -1811,7 +1812,13 @@ void RK4(field *f, real tmax, real dt)
   l1 = calloc(sizew, sizeof(real));
   l2 = calloc(sizew, sizeof(real));
   l3 = calloc(sizew, sizeof(real));
-
+  
+  size_diags = f->nb_diags * f->itermax;
+  f->iter_time = iter;
+  
+    if(f->nb_diags != 0)
+    f->Diagnostics = malloc(size_diags * sizeof(real));
+  
   while(f->tnow < tmax) {
     if (iter % freq == 0)
       printf("t=%f iter=%d/%d dt=%f\n", f->tnow, iter, f->itermax, dt);
@@ -1836,7 +1843,12 @@ void RK4(field *f, real tmax, real dt)
     dtfield(f, l3, f->dtwn);
     RK4_final_inplace(f->wn, l1, l2, l3, f->dtwn, dt, sizew);
 
+    
+    if(f->update_after_rk != NULL)
+      f->update_after_rk(f, f->wn);
+    
     iter++;
+     f->iter_time=iter;
   }
   printf("t=%f iter=%d/%d dt=%f\n", f->tnow, iter, f->itermax, dt);
 

@@ -143,7 +143,7 @@ void Energies(field *f, real *w, real k_energy, real e_energy, real t_energy,int
   t_energy = 0.5 * (e_energy + k_energy);
   
   f->Diagnostics[f->iter_time + (first_diag-1) * f->itermax] = 0.5 * k_energy;
-  f->Diagnostics[f->iter_time + (first_diag) * f->itermax] = e_energy;
+  f->Diagnostics[f->iter_time + (first_diag) * f->itermax] = 0.5 * e_energy;
   f->Diagnostics[f->iter_time + (first_diag+1) * f->itermax] = t_energy;
 }
 

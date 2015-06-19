@@ -55,7 +55,7 @@ int TestLandau_Damping_1D(void) {
   f.interp.interp_param[1]=2;  // x direction degree
   f.interp.interp_param[2]=0;  // y direction degree
   f.interp.interp_param[3]=0;  // z direction degree
-  f.interp.interp_param[4]=30;  // x direction refinement
+  f.interp.interp_param[4]=32;  // x direction refinement
   f.interp.interp_param[5]=1;  // y direction refinement
   f.interp.interp_param[6]=1;  // z direction refinement
  // read the gmsh file
@@ -77,7 +77,7 @@ int TestLandau_Damping_1D(void) {
   //AffineMapMacroMesh(&(f.macromesh));
  
   // prepare the initial fields
-  f.model.cfl=0.005;
+  f.model.cfl=0.5;
 
   Initfield(&f);
   f.vmax = _VMAX; // maximal wave speed
@@ -94,7 +94,7 @@ int TestLandau_Damping_1D(void) {
   printf("cfl param =%f\n",f.hmin);
   
   real dt = set_dt(&f);
-  RK2(&f,25, dt);
+  RK4(&f,20, dt);
 
  
   
@@ -120,7 +120,7 @@ void Test_Landau_Damping_ImposedData(const real x[3], const real t, real w[])
   //parameters of the case
   
   real k=0.5;
-  real eps = 0.005;
+  real eps = 0.05;
   real my_pi= 4.0*atan(1.0);
   
   for(int i=0;i<_INDEX_MAX_KIN+1;i++){
@@ -182,7 +182,6 @@ void PlotVlasovPoisson(void* vf, real * w){
   real k_energy=0,e_energy=0,t_energy=0,t_charge=0;
   
   field* f=vf;
-  
   Energies(f,w,k_energy,e_energy,t_energy,1);
   Charge_total(f,w,t_charge,4);
   vf=f;
