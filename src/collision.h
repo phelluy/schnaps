@@ -1,7 +1,7 @@
 #ifndef _COLLISION_H
 #define _COLLISION_H
 
-#define _NB_ELEM_V 20
+#define _NB_ELEM_V 28
 #define _DEG_V 2
 
 //! \brief number of conservative variables

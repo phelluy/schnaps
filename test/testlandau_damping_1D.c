@@ -55,16 +55,16 @@ int TestLandau_Damping_1D(void) {
   f.interp.interp_param[1]=2;  // x direction degree
   f.interp.interp_param[2]=0;  // y direction degree
   f.interp.interp_param[3]=0;  // z direction degree
-  f.interp.interp_param[4]=24;  // x direction refinement
+  f.interp.interp_param[4]=30;  // x direction refinement
   f.interp.interp_param[5]=1;  // y direction refinement
   f.interp.interp_param[6]=1;  // z direction refinement
  // read the gmsh file
   ReadMacroMesh(&(f.macromesh),"test/testcube.msh");
   
-  real A[3][3] = {{2*pi/k, 0, 0}, {0, 1, 0}, {0, 0,1}};
+  real A[3][3] = {{2.0*pi/k, 0, 0}, {0, 1, 0}, {0, 0,1}};
   real x0[3] = {0, 0, 0};
   AffineMapMacroMesh(&(f.macromesh),A,x0);
-  
+
   // try to detect a 2d mesh
   Detect1DMacroMesh(&(f.macromesh));
   bool is1d=f.macromesh.is1d;
@@ -77,7 +77,7 @@ int TestLandau_Damping_1D(void) {
   //AffineMapMacroMesh(&(f.macromesh));
  
   // prepare the initial fields
-  f.model.cfl=0.05;
+  f.model.cfl=0.005;
 
   Initfield(&f);
   f.vmax = _VMAX; // maximal wave speed
@@ -85,22 +85,28 @@ int TestLandau_Damping_1D(void) {
     //f.macromesh.is1d=true;
   f.nb_diags=4;
   f.pre_dtfield=UpdateVlasovPoisson;
+  f.post_dtfield=NULL;
   f.update_after_rk=PlotVlasovPoisson;
   f.model.Source = VlasovP_Lagrangian_Source;
   // prudence...
   CheckMacroMesh(&(f.macromesh),f.interp.interp_param+1);
 
   printf("cfl param =%f\n",f.hmin);
-
+  
   real dt = set_dt(&f);
-  RK2(&f,4, dt);
+  RK2(&f,25, dt);
 
+ 
+  
    // save the results and the error
   int iel=_NB_ELEM_V/2;
   int iloc=0;//_DEG_V;
   printf("Trace vi=%f\n",-_VMAX+iel*_DV+_DV*glop(_DEG_V,iloc));
-  Plotfield(iloc+iel*_DEG_V,(1==0),&f,"sol","dgvisu.msh");
-  Plotfield(iloc+iel*_DEG_V,(1==1),&f,"error","dgerror.msh");
+  Plotfield(iloc+iel*_DEG_V,(1==0),&f,"sol f ","dgvisu.msh");
+  Plotfield(_INDEX_EX,(1==0),&f,"sol","dgvisuEx.msh");
+  Plotfield(_INDEX_PHI,(1==0),&f,"sol","dgvisuPhi.msh");
+  Plotfield(_INDEX_RHO,(1==0),&f,"sol","dgvisuRho.msh");
+
   Plot_Energies(&f, dt);
 
   test= 1;
@@ -129,7 +135,7 @@ void Test_Landau_Damping_ImposedData(const real x[3], const real t, real w[])
   }
   // exact value of the potential
   // and electric field
-  w[_INDEX_PHI]=-eps*cos(k*x[0]);
+  w[_INDEX_PHI]=-(eps/(k*k))*cos(k*x[0]);
   w[_INDEX_EX]=(eps/k)*sin(k*x[0]);
   w[_INDEX_RHO]=1; //rho init
   w[_INDEX_VELOCITY]=0; // u init

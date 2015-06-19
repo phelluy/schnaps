@@ -179,8 +179,8 @@ void InitPoissonSolver(PoissonSolver* ps, field* fd,int charge_index){
 
 void SolvePoisson1D(field *f,real * w,int type_bc, real bc_l, real bc_r){
 
-  real pi=4.0*atan(1.0);
   real charge_average;
+  real *bounds = malloc(6 * sizeof(real));
   charge_average=0;
 
   if(type_bc == _Periodic_Poisson_BC){
@@ -204,9 +204,10 @@ void SolvePoisson1D(field *f,real * w,int type_bc, real bc_l, real bc_r){
   // = number of nodes in the mesh
   int degx=f->interp.interp_param[1];
   int nelx=f->interp.interp_param[4];
-  real xmin=0;
-  real xmax=1;  // TO DO: compute the maximal x coordinate
   int neq=degx*nelx+1;
+  real xmin=f->macromesh.xmin[0];
+  real xmax=f->macromesh.xmax[0];  //
+  real dx=(xmax-xmin)/nelx;
   
   // number of conservatives variables
   // = number of velocity glops + 1 (potential)
@@ -240,7 +241,7 @@ void SolvePoisson1D(field *f,real * w,int type_bc, real bc_l, real bc_r){
       for(int jloc=0;jloc<degx+1;jloc++){
 	real dxi=dlag(degx,iloc,ipg);
 	real dxj=dlag(degx,jloc,ipg);
-	aloc[iloc][jloc]+=dxi*dxj*omega*nelx;
+	aloc[iloc][jloc]+=dxi*dxj*omega/dx;
       }
     }
   }
@@ -280,7 +281,7 @@ void SolvePoisson1D(field *f,real * w,int type_bc, real bc_l, real bc_r){
       int ino=iloc + ie * degx;  
       int imem=f->varindex(f->interp_param,0,iloc+ie*(degx+1),_INDEX_RHO);
       real charge=w[imem];          
-      source[ino]+= (charge-charge_average)*omega/nelx;
+      source[ino]+= (charge-charge_average)*omega*dx;
     }
   }
 

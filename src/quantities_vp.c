@@ -16,7 +16,7 @@ void Computation_charge_density(field *f, real * w){
   
   for(int ie=0;ie<f->macromesh.nbelems;ie++){
     for(int ipg=0;ipg<NPG(f->interp_param+1);ipg++){
-      int imemc=f->varindex(f->interp_param,ie,ipg,_MV+2);
+      int imemc=f->varindex(f->interp_param,ie,ipg,_INDEX_RHO);
       w[imemc]=0;
   
       for(int ielv=0;ielv<_NB_ELEM_V;ielv++){

@@ -136,6 +136,7 @@ void Energies(field *f, real *w, real k_energy, real e_energy, real t_energy,int
       // get the exact value
       k_energy += local_kinetic_energy(f, xphy, wn) * wpg * det;
       e_energy += wn[_INDEX_EX] * wn[_INDEX_EX] * wpg * det;
+  
     }
   }   
   
@@ -200,7 +201,7 @@ void Plot_Energies(field *f, real dt) {
     e_energy = f->Diagnostics[i + f->itermax];
     t_energy = f->Diagnostics[i + 2 * f->itermax];
     t_charge= f->Diagnostics[i + 3 * f->itermax];
-    fprintf(Plot, "%.11e %.11e %.11e %.11e %.11e\n", f->tnow, k_energy, sqrt(e_energy), t_energy,t_charge);
+    fprintf(Plot, "%.11e %.11e %.11e %.11e %.15e\n", f->tnow, k_energy, e_energy, t_energy,t_charge);
   }
   fclose(Plot);
 }
