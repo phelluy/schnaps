@@ -12,7 +12,7 @@ SET(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 #set(CMAKE_C_FLAGS "-std=gnu99 -D_REENTRANT -O3 -g")
 set(CMAKE_C_FLAGS " -std=c99 -D_REENTRANT -O3 -g")
 
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Dreal=double")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Dreal=double -mmacosx-version-min=10.7")
 
 OPTION(USE_OPENCL
   "Compile with the OpenCL library"
@@ -292,14 +292,7 @@ add_executable(
   )
 target_link_libraries(testskyline ${LIBS})
 add_test(testskyline testskyline)
- 
-add_executable(
-  testlinearsolver
-  test/test.h
-  test/testlinearsolver.c
-  )
-target_link_libraries(testlinearsolver ${LIBS})
-add_test(testlinearsolver testlinearsolver)
+
 
 add_executable(
   testpoisson
@@ -453,6 +446,7 @@ if(OPENCL_FOUND)
 endif(OPENCL_FOUND)
 
 SET(BUILD_PARALUTION      OFF CACHE BOOL   "Build paralution library")
+SET(USE_PARALUTION      OFF CACHE BOOL   "Use paralution library")
 
 IF(BUILD_PARALUTION)
 
@@ -488,10 +482,27 @@ IF(BUILD_PARALUTION)
 
   SET(PARALUTION_DIR ${CMAKE_BINARY_DIR}/paralution-${PARALUTION_VERSION}-prefix/src/paralution-${PARALUTION_VERSION}/src/)
   INCLUDE_DIRECTORIES(${PARALUTON_DIR})
-  ADD_LIBRARY(paralution_fortran   ${PARALUTION_DIR}/plug-ins/paralution_fortran.cpp )
-  TARGET_LINK_LIBRARIES(paralution_fortran paralution)
+  ADD_LIBRARY(paralution_c   src/paralution_c.cpp )
+  TARGET_LINK_LIBRARIES(paralution_c paralution)
 
-  ADD_EXECUTABLE(gmres test/testgmres.c)
-  TARGET_LINK_LIBRARIES(gmres paralution_fortran ${LIBS})
+
+ add_executable(
+  testlinearsolver
+  test/test.h
+  test/testlinearsolver.c
+  )
+target_link_libraries(testlinearsolver paralution_c ${LIBS})
+add_test(testlinearsolver testlinearsolver)
+
+ add_executable(
+  testgmres
+  test/test.h
+  test/testgmres.c
+  )
+target_link_libraries(testgmres paralution_c ${LIBS})
+add_test(testgmres testgmres)
+
+ ## ADD_EXECUTABLE(gmres test/testgmres.c)
+ ## TARGET_LINK_LIBRARIES(gmres paralution_c ${LIBS})
 
 ENDIF()
