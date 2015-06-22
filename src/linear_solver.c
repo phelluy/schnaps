@@ -306,7 +306,9 @@ void Solver_Paralution(LinearSolver* lsol){
  switch(lsol->storage_type) {
   case SKYLINE :
     nnz=Matrix_Skyline_to_COO(lsol->matrix,rows,cols,coefs);
-
+    printf("nnz = %d \n", nnz);
+    printf("coefs size = %lu \n", sizeof(coefs)/sizeof(real));
+    printf("rows size = %lu \n", sizeof(rows));
     mat_coefs = calloc(nnz, sizeof(double));
     for(int i=1;i<nnz;i++){
       mat_coefs[i] = (double) coefs[i];

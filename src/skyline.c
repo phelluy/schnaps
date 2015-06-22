@@ -562,9 +562,9 @@ int Matrix_Skyline_to_COO(Skyline* mat,int * rows,int * cols, real * coefs){
 
   nnz= mat->neq+2*mat->nmem;
   
-  rows = calloc(nnz, sizeof(real));
+  rows = calloc(nnz, sizeof(int));
   cols = calloc(nnz, sizeof(int));
-  coefs = calloc(nnz, sizeof(int));
+  coefs = calloc(nnz, sizeof(real));
 
   for (int i=0;i< mat->neq; i++) {
     for (int j=0;j< mat->neq; j++) {
