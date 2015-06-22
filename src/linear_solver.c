@@ -3,6 +3,8 @@
 #include <stdlib.h>
 #include <assert.h>
 #include "skyline.h"
+#include "paralution_c.h"
+
 
 void InitLinearSolver(LinearSolver* lsol,int n,
 		      MatrixStorage* matstor,
@@ -278,7 +280,7 @@ void Solver_Paralution(LinearSolver* lsol){
   char * solver;
   char * pc;
   char * storage;
-  double residu=0; 
+  double * residu=0; 
   int nnz=0,n=0;
   
   solver="GMRES";
@@ -286,10 +288,11 @@ void Solver_Paralution(LinearSolver* lsol){
   pc="None";
   
   int basis_size_gmres=30, ILU_p=0,ILU_q=0;
-  int iter_final=0,ierr=0,maxit=10000;
+  int* iter_final=0;
+  int* ierr=0;
+  int maxit=10000;
   double a_tol=1.e-13,r_tol=1.e-8,div_tol=1.e+2;
  
-
   n=lsol->neq;
   RHS = calloc(n, sizeof(double));
   Sol = calloc(n, sizeof(double));
@@ -312,7 +315,7 @@ void Solver_Paralution(LinearSolver* lsol){
 #ifdef PARALUTION
     paralution_fortran_solve_coo(n,n,nnz,solver,storage,pc,storage,
     				 rows,cols,mat_coefs,RHS,a_tol,r_tol,div_tol,maxit,
-    				 basis_size_gmres,ILU_p,ILU_q,Sol,iter_final,residu,ierr);
+    				 basis_size_gmres,ILU_p,ILU_q,Sol); //,iter_final,residu,ierr);
 #endif /* PARALUTION */
     break;
 

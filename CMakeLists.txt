@@ -60,6 +60,12 @@ IF(BUILD_PARALUTION)
      INSTALL_COMMAND ""
   )
 
+  INCLUDE_DIRECTORIES(${CMAKE_BINARY_DIR}/paralution-${PARALUTION_VERSION}-prefix/src/paralution-${PARALUTION_VERSION}/src/)
+  LINK_DIRECTORIES(${CMAKE_BINARY_DIR}/paralution-${PARALUTION_VERSION}-prefix/src/paralution-${PARALUTION_VERSION}-build/lib)
+  ADD_LIBRARY(paralution_c   src/paralution_c.cpp )
+  ADD_DEPENDENCIES(paralution_c  paralution-${PARALUTION_VERSION})
+  TARGET_LINK_LIBRARIES(paralution_c paralution)
+
 ENDIF()
 
 
@@ -122,7 +128,7 @@ endif (OPENCL_FOUND)
 add_library (_schnaps ${source_files})
 
 IF(BUILD_PARALUTION)
-  ADD_DEPENDENCIES(_schnaps paralution-${PARALUTION_VERSION})
+  target_link_libraries(_schnaps paralution_c paralution)
 ENDIF(BUILD_PARALUTION)
 
 set(LIBS "")
@@ -470,8 +476,6 @@ endif(OPENCL_FOUND)
 
 IF(BUILD_PARALUTION)
 
-  INCLUDE_DIRECTORIES(${CMAKE_BINARY_DIR}/paralution-${PARALUTION_VERSION}-prefix/src/paralution-${PARALUTION_VERSION}/src/)
-  LINK_DIRECTORIES(${CMAKE_BINARY_DIR}/paralution-${PARALUTION_VERSION}-prefix/src/paralution-${PARALUTION_VERSION}-build/lib)
 
   SET(MATRIX_FILE gr_30_30.mtx)
 
@@ -492,12 +496,6 @@ IF(BUILD_PARALUTION)
   TARGET_LINK_LIBRARIES(paralution_cg paralution)
 
   ADD_TEST(NAME testparalution COMMAND paralution_cg ${MATRIX_FILE} 4)
-
-  SET(PARALUTION_DIR ${CMAKE_BINARY_DIR}/paralution-${PARALUTION_VERSION}-prefix/src/paralution-${PARALUTION_VERSION}/src/)
-  INCLUDE_DIRECTORIES(${PARALUTON_DIR})
-  ADD_LIBRARY(paralution_c   src/paralution_c.cpp )
-  TARGET_LINK_LIBRARIES(paralution_c paralution)
-
 
  add_executable(
   testlinearsolver

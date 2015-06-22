@@ -139,13 +139,7 @@
 
 extern "C" 
 {
-  void paralution_fortran_solve_coo(int, int, int, char*, char*, char*, char*, const int*, const int*,
-                                    const double*, const double*, double, double, double, int, int,
-                                    int, int, double*, int&, double&, int&);
-
-  void paralution_fortran_solve_csr(int, int, int, char*, char*, char*, char*, const int*, const int*,
-                                    const double*, const double*, double, double, double, int, int,
-                                    int, int, double*, int&, double&, int&);
+#include "paralution_c.h"
 }
 
 
@@ -177,7 +171,7 @@ void paralution_fortran_solve(char*, char*, char*, char*, double, double, double
 void paralution_fortran_solve_coo(int n, int m, int nnz, char *solver, char *mformat, char *precond, char *pformat,
                                   const int *fortran_row, const int *fortran_col, const double *fortran_val,
                                   const double *fortran_rhs, double atol, double rtol, double div, int maxiter,
-                                  int basis, int p, int q, double *fortran_x, int &iter, double &resnorm, int &err)
+                                  int basis, int p, int q, double *fortran_x)
 {
 
   
@@ -191,6 +185,9 @@ void paralution_fortran_solve_coo(int n, int m, int nnz, char *solver, char *mfo
   int *row = NULL;
   int *col = NULL;
   double *val = NULL;
+  int iter=0;
+  double resnorm = 0.;
+  int err=0;
 
   paralution::allocate_host(nnz, &row);
   paralution::allocate_host(nnz, &col);
