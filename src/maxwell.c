@@ -4,8 +4,7 @@
 #include <assert.h>
 
 #pragma start_opencl
-void Maxwell2DNumFlux_centered(real *wL, real *wR, real *vnorm, 
-			       real *flux) 
+void Maxwell2DNumFlux_centered(real *wL, real *wR, real *vnorm, real *flux) 
 {
   const real nx = vnorm[0];
   const real ny = vnorm[1];
@@ -27,8 +26,7 @@ void Maxwell2DNumFlux_centered(real *wL, real *wR, real *vnorm,
 #pragma end_opencl
 
 #pragma start_opencl
-void Maxwell2DNumFlux_uncentered(real *wL, real *wR, real *vnorm, 
-			real *flux) 
+void Maxwell2DNumFlux_uncentered(real *wL, real *wR, real *vnorm, real *flux) 
 {
   const real r = sqrt(vnorm[0] * vnorm[0] + vnorm[1] * vnorm[1]);
   const real overr = 1.0 / (r + 1e-16);
@@ -62,6 +60,70 @@ void Maxwell2DNumFlux_uncentered(real *wL, real *wR, real *vnorm,
   flux[6] = 0.0;
 }
 #pragma end_opencl
+
+#pragma start_opencl
+void Maxwell3DNumFlux(real *wL, real *wR, real *vnorm, real *flux) 
+{
+  // The first three components of the flux are
+  // 0.5 * [n x (n x (ER - EL)) / r - n x (HR + HL) ]
+  // and the last three are
+  // 0.5 * [n x (n x (HR - HL)) / r + n x (ER + EL) ] 
+  
+  const real n0 = vnorm[0];
+  const real n1 = vnorm[1];
+  const real n2 = vnorm[2];
+
+  const real overr = 1.0 / (sqrt(n0 * n0 + n1 * n1 + n2 * n2) + 1e-16);
+  const real n01 = overr * n0 * n1;
+  const real n02 = overr * n0 * n2;
+  const real n12 = overr * n1 * n2;
+  const real n00 = overr * n0 * n0;
+  const real n11 = overr * n1 * n1;
+  const real n22 = overr * n2 * n2;
+    
+  const real Es0 = wR[0] + wL[0];
+  const real Es1 = wR[1] + wL[1];
+  const real Es2 = wR[2] + wL[2];
+
+  const real Hs0 = wR[3] + wL[3];
+  const real Hs1 = wR[4] + wL[4];
+  const real Hs2 = wR[5] + wL[5];
+
+  const real Ed0 = wR[0] - wL[0];
+  const real Ed1 = wR[1] - wL[1];
+  const real Ed2 = wR[2] - wL[2];
+
+  const real Hd0 = wR[3] - wL[3];
+  const real Hd1 = wR[4] - wL[4];
+  const real Hd2 = wR[5] - wL[5];
+
+  flux[0] = 0.5 * (
+		   n01 * Ed2 - n22 * Ed0 - n22 * Ed0 + n02 * Ed2
+		   -n1 * Hs2 + n2 * Hs1
+		   );
+  flux[1] = 0.5 * (
+		   n12 * Ed2 - n22 * Ed1 - n11 * Ed2 + n01 * Ed0
+		   -n2 * Hs0 + n0 * Hs2
+		   );
+  flux[2] = 0.5 * (
+		   n02 * Ed0 - n00 * Ed2 - n11 * Ed2 + n12 * Ed1
+		   -n0 * Hs1 + n1 * Hs0
+		   );
+  flux[3] = 0.5 * (
+		   n01 * Hd2 - n22 * Hd0 - n22 * Hd0 + n02 * Hd2
+		   +n1 * Es2 - n2 * Es1
+		   );
+  flux[4] = 0.5 * (
+		   n12 * Hd2 - n22 * Hd1 - n11 * Hd2 + n01 * Hd0
+		   +n2 * Es0 - n0 * Es2
+		   );
+  flux[5] = 0.5 * (
+		   n02 * Hd0 - n00 * Hd2 - n11 * Hd2 + n12 * Hd1
+		   +n0 * Es1 - n1 * Es0
+		   );
+}
+#pragma end_opencl
+
 
 #pragma start_opencl
 void Maxwell2DImposedData(const real *x, const real t, real *w) 

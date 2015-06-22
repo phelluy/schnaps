@@ -7,14 +7,21 @@
 //! \param[in] wL, wR : left and right states
 //! \param[in] vn : normal vector
 //! \param[out] flux : the flux
-void Maxwell2DNumFlux_uncentered(real *wL, real *wR, real *vn, 
-		      real *flux);
+#pragma start_opencl
+void Maxwell2DNumFlux_uncentered(real *wL, real *wR, real *vn, real *flux);
+#pragma end_opencl
+
 //! \brief The particular flux for the maxwell2d model
 //! \param[in] wL, wR : left and right states
 //! \param[in] vn : normal vector
 //! \param[out] flux : the flux
-void Maxwell2DNumFlux_centered(real *wL, real *wR, real *vn, 
-		      real *flux);
+#pragma start_opencl
+void Maxwell2DNumFlux_centered(real *wL, real *wR, real *vn, real *flux);
+#pragma end_opencl
+
+#pragma start_opencl
+void Maxwell3DNumFlux(real *wL, real *wR, real *vnorm, real *flux);
+#pragma end_opencl
 
 //! \brief The particular imposed data for the maxwell2d model
 //! \param[in] x, t : space and time position
