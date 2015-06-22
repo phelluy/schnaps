@@ -12,7 +12,7 @@ SET(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 #set(CMAKE_C_FLAGS "-std=gnu99 -D_REENTRANT -O3 -g")
 set(CMAKE_C_FLAGS " -std=c99 -D_REENTRANT -O3 -g")
 
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Dreal=double -mmacosx-version-min=10.7")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Dreal=double")
 
 OPTION(USE_OPENCL
   "Compile with the OpenCL library"
@@ -287,7 +287,7 @@ target_link_libraries(testgyro ${LIBS})
 add_test(testgyro testgyro)
 
 add_executable(
-  testpic
+  testpic, int&, double&, int&);
   test/test.h
   test/testpic.c
   )
@@ -462,7 +462,7 @@ if(OPENCL_FOUND)
     test/testmhd.c
     )
   target_link_libraries(testmhd ${LIBS})
-  
+  , int&, double&, int&);
   add_test(testmhd1d testmhd1d)
   add_executable(
     testmhd1d
