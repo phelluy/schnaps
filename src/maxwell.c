@@ -5,6 +5,30 @@
 
 // Centered flux if eps=0, uncentered flux if eps=1
 #pragma start_opencl
+void Maxwell2DNumFlux_centered(real *wL, real *wR, real *vnorm, 
+			       real *flux) 
+{
+  const real nx = vnorm[0];
+  const real ny = vnorm[1];
+  const real khi = 1.0;
+
+  const real s0 = wR[0] + wL[0]; 
+  const real s1 = wR[1] + wL[1];
+  const real s2 = wR[2] + wL[2];
+  const real s3 = wR[3] + wL[3];
+
+  flux[0] = 0.5 * (-ny * s2 + khi * nx * s3);
+  flux[1] = 0.5 * ( nx * s2 + khi * ny * s3);
+  flux[2] = 0.5 * (-ny * s0 + nx * s1);
+  flux[3] = 0.5 * khi * (nx * s0 + ny * s1);
+  flux[4] = 0.0;
+  flux[5] = 0.0;
+  flux[6] = 0.0;
+}
+#pragma end_opencl
+
+// Centered flux if eps=0, uncentered flux if eps=1
+#pragma start_opencl
 void Maxwell2DNumFlux(real *wL, real *wR, real *vnorm, 
 			real *flux) 
 {
