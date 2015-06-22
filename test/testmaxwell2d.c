@@ -14,8 +14,8 @@ int TestMaxwell2D(void) {
   f.model.cfl = 0.05;  
   f.model.m = 7; // num of conservative variables
 
-  //f.model.NumFlux = Maxwell2DNumFlux;
-  f.model.NumFlux = Maxwell2DNumFlux_centered;
+  f.model.NumFlux = Maxwell2DNumFlux_uncentered;
+  //f.model.NumFlux = Maxwell2DNumFlux_centered;
   f.model.BoundaryFlux = Maxwell2DBoundaryFlux;
   f.model.InitData = Maxwell2DInitData;
   f.model.ImposedData = Maxwell2DImposedData;
@@ -42,7 +42,7 @@ int TestMaxwell2D(void) {
   strcat(cl_buildoptions, buf);
 
   set_source_CL(&f, "Maxwell2DSource");
-  sprintf(numflux_cl_name, "%s", "Maxwell2DNumFlux");
+  sprintf(numflux_cl_name, "%s", "Maxwell2DNumFlux_uncentered");
   sprintf(buf," -D NUMFLUX=");
   strcat(buf, numflux_cl_name);
   strcat(cl_buildoptions, buf);
@@ -58,7 +58,7 @@ int TestMaxwell2D(void) {
   f.vmax = 1;
   real dt = set_dt(&f);
 
-#if 1
+#if 0
   // C version
   RK2(&f, tmax, dt);
 #else

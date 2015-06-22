@@ -7,7 +7,7 @@
 //! \param[in] wL, wR : left and right states
 //! \param[in] vn : normal vector
 //! \param[out] flux : the flux
-void Maxwell2DNumFlux(real *wL, real *wR, real *vn, 
+void Maxwell2DNumFlux_uncentered(real *wL, real *wR, real *vn, 
 		      real *flux);
 //! \brief The particular flux for the maxwell2d model
 //! \param[in] wL, wR : left and right states
