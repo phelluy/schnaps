@@ -309,9 +309,11 @@ void Solver_Paralution(LinearSolver* lsol){
       mat_coefs[i] = (double) coefs[i];
     }
     
+#ifdef PARALUTION
     paralution_fortran_solve_coo(n,n,nnz,solver,storage,pc,storage,
     				 rows,cols,mat_coefs,RHS,a_tol,r_tol,div_tol,maxit,
     				 basis_size_gmres,ILU_p,ILU_q,Sol,iter_final,residu,ierr);
+#endif /* PARALUTION */
     break;
 
   case CSR :

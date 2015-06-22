@@ -19,12 +19,12 @@ OPTION(USE_OPENCL
   ON)
 
 IF(USE_OPENCL)# set with: cmake . -DUSE_OPENCL:BOOL=ON
-  MESSAGE("Compiling with OpenCL Library")
+  MESSAGE(STATUS "Compiling with OpenCL Library")
   find_package (OpenCL)
   if(OPENCL_FOUND)
-    MESSAGE("OpenCL found")
+    MESSAGE(STATUS "OpenCL found")
   else()
-    MESSAGE("OpenCL not found")
+    MESSAGE(STATUS "OpenCL not found")
   endif(OPENCL_FOUND)
 ENDIF(USE_OPENCL)
 
@@ -45,6 +45,23 @@ if(OPENMP_FOUND)
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
 endif()
+
+SET(BUILD_PARALUTION      OFF CACHE BOOL   "Build paralution library")
+SET(USE_PARALUTION      OFF CACHE BOOL   "Use paralution library")
+
+IF(BUILD_PARALUTION)
+
+  ADD_DEFINITIONS(-DPARALUTION)
+  INCLUDE(ExternalProject)
+  SET(PARALUTION_VERSION 1.0.0 CACHE STRING "Paralution version number")
+  EXTERNALPROJECT_ADD( paralution-${PARALUTION_VERSION}
+     URL  http://www.paralution.com/downloads/paralution-${PARALUTION_VERSION}.tar.gz
+     CMAKE_ARGS -DSUPPORT_CUDA=OFF -DBUILD_EXAMPLES=OFF -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
+     INSTALL_COMMAND ""
+  )
+
+ENDIF()
+
 
 include_directories(src)
 
@@ -103,6 +120,11 @@ endif (OPENCL_FOUND)
 
 #schnaps library
 add_library (_schnaps ${source_files})
+
+IF(BUILD_PARALUTION)
+  ADD_DEPENDENCIES(_schnaps paralution-${PARALUTION_VERSION})
+ENDIF(BUILD_PARALUTION)
+
 set(LIBS "")
 
 if (OPENCL_FOUND)
@@ -114,7 +136,7 @@ endif (OPENCL_FOUND)
 # nearest neighbour fast search library
 find_package(flann)
 if(FLANN_FOUND)
-  MESSAGE("Delicious!")
+  MESSAGE(STATUS "Delicious!")
   list(APPEND LIBS ${FLANN_LIBRARY})
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -D_WITH_FLANN")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}  -D_WITH_FLANN")
@@ -445,18 +467,9 @@ if(OPENCL_FOUND)
 
 endif(OPENCL_FOUND)
 
-SET(BUILD_PARALUTION      OFF CACHE BOOL   "Build paralution library")
-SET(USE_PARALUTION      OFF CACHE BOOL   "Use paralution library")
 
 IF(BUILD_PARALUTION)
 
-  INCLUDE(ExternalProject)
-  SET(PARALUTION_VERSION 1.0.0 CACHE STRING "Paralution version number")
-  EXTERNALPROJECT_ADD( paralution-${PARALUTION_VERSION}
-     URL  http://www.paralution.com/downloads/paralution-${PARALUTION_VERSION}.tar.gz
-     CMAKE_ARGS -DSUPPORT_CUDA=OFF -DBUILD_EXAMPLES=OFF
-     INSTALL_COMMAND ""
-  )
   INCLUDE_DIRECTORIES(${CMAKE_BINARY_DIR}/paralution-${PARALUTION_VERSION}-prefix/src/paralution-${PARALUTION_VERSION}/src/)
   LINK_DIRECTORIES(${CMAKE_BINARY_DIR}/paralution-${PARALUTION_VERSION}-prefix/src/paralution-${PARALUTION_VERSION}-build/lib)
 
