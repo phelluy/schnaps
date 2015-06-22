@@ -33,7 +33,10 @@ int TestGmres(void){
   // preliminary work on the skyline struct
   // _NN is the size of the linear system to be solved
   InitLinearSolver(&sky,_NN,NULL,NULL);
-  sky.solver_type = GMRES;
+  
+  sky.solver_type = PAR_LU;//GMRES;
+  sky.pc_type=NONE;//PAR_JACOBI;
+  
   real A[_NN][_NN];
   real vf[_NN],sol[_NN];
 
@@ -62,6 +65,7 @@ int TestGmres(void){
   A[4][2] = 0;
   A[4][3] = -0.1e1;
   A[4][4] = 0.3e1;
+  
   vf[0] = -0.4e1;
   vf[1] = 0;
   vf[2] = 0;
@@ -113,7 +117,6 @@ int TestGmres(void){
 
 
   SolveLinearSolver(&sky);
-  //GMRESSolver(&sky);
 
 
   // checking

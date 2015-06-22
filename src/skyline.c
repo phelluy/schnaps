@@ -560,13 +560,18 @@ int Matrix_Skyline_to_COO(Skyline* mat,int * rows,int * cols, real * coefs){
   int c=0;
   int nnz=0;
 
+
   nnz= mat->neq+2*mat->nmem;
   
-  rows = calloc(nnz, sizeof(int));
-  cols = calloc(nnz, sizeof(int));
-  coefs = calloc(nnz, sizeof(real));
-
-  for (int i=0;i< mat->neq; i++) {
+  rows = (int*) malloc(nnz*sizeof(int)); 
+  cols = (int*) malloc(nnz*sizeof(int));
+  coefs = (real*) malloc(nnz*sizeof(real));
+  assert(rows);
+  printf("size theoric = %lu %lu \n",nnz*sizeof(int),nnz*sizeof(real));
+  printf("coefs size inside = %lu \n",sizeof(coefs));
+  printf("rows size inside = %lu \n", sizeof(rows));
+  
+   for (int i=0;i< mat->neq; i++) {
     for (int j=0;j< mat->neq; j++) {
       if (j-i <= mat->prof[j] && i-j <= mat->prof[i]){
 	if (i==j){
@@ -592,10 +597,11 @@ int Matrix_Skyline_to_COO(Skyline* mat,int * rows,int * cols, real * coefs){
       }
     }
   }
+  
+
+  for (int pp=0;pp< nnz; pp++) {
+    printf("i j  aij %d %d %e \n ", rows[pp],cols[pp],coefs[pp]);
+  }
 
   return nnz;
-  //  for (int pp=0;pp< nnz; pp++) {
-  // printf("i j  aij %d %d %e \n ", rows[pp],cols[pp],coefs[pp]);
-  //}
-   
 } 

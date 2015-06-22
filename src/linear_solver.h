@@ -6,8 +6,8 @@
 
 
 typedef enum MatrixStorage{SKYLINE,CSR} MatrixStorage;
-typedef enum Solver{LU,GMRES_CERFACS,GMRES,FGMRES,CG,BiCGStab} Solver;
-typedef enum PC{None,Jacobi,ILU,MultiColoredSGS,MultiColoredGS,MultiColoredILU} PC;
+typedef enum Solver{LU,GMRES,PAR_GMRES,PAR_FGMRES,PAR_CG,PAR_BICGSTAB,PAR_AMG,PAR_LU,PAR_QR} Solver;
+typedef enum PC{NONE,PAR_JACOBI,PAR_ILU,PAR_MULTICOLOREDSGS,PAR_MULTICOLOREDGS,PAR_MULTICOLOREDILU,PAR_AMG_PC} PC;
 
 //! class for managing linear solvers
 typedef struct LinearSolver{

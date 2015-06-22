@@ -194,9 +194,6 @@ int TestLinearSolver(void){
   // LU decomposition
   LUDecompLinearSolver(&sky);
 
-  // printf for checking...
-  DisplayLinearSolver(&sky);
-
   // solve from a decomposed matrix
   // vf: rhs
   // sol: solution

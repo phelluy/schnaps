@@ -148,7 +148,10 @@ enum _solver_type{
   CG,
   FixedPoint,
   GMRES,
-  FGMRES
+  FGMRES,
+  LU,
+  QR,
+  AMG
 };
 
 enum _precond_type{
@@ -158,7 +161,8 @@ enum _precond_type{
   MultiColoredSGS,
   ILU,
   MultiColoredILU,
-  FSAI
+  FSAI,
+  AMG_PC
 };
 
 
@@ -209,8 +213,8 @@ void paralution_fortran_solve_coo(int n, int m, int nnz, char *solver, char *mfo
   // Copy matrix so we can convert it to any other format without breaking the fortran code
   for (int i=0; i<nnz; ++i) {
     // Shift row and col index since Fortran arrays start at 1
-    row[i] = fortran_row[i] - 1;
-    col[i] = fortran_col[i] - 1;
+    row[i] = fortran_row[i];
+    col[i] = fortran_col[i];
     val[i] = fortran_val[i];
   }
 
@@ -308,8 +312,11 @@ void paralution_fortran_solve(char *solver, char *mformat, char *precond, char *
 
   // Iterative Linear Solver and Preconditioner
   paralution::IterativeLinearSolver<paralution::LocalMatrix<double>, paralution::LocalVector<double>, double > *ls = NULL;
+  paralution::DirectLinearSolver<paralution::LocalMatrix<double>, paralution::LocalVector<double>, double > *ls_exact = NULL;
   paralution::Preconditioner<paralution::LocalMatrix<double>, paralution::LocalVector<double>, double >        *pr = NULL;
-
+  paralution::AMG<paralution::LocalMatrix<double>, paralution::LocalVector<double>, double >        *pr_mg = NULL;
+  
+  
   _solver_type psolver;
   _precond_type pprecond;
   paralution::_matrix_format matformat;
@@ -321,10 +328,15 @@ void paralution_fortran_solve(char *solver, char *mformat, char *precond, char *
   else if ( std::string(solver) == "FixedPoint" ) psolver = FixedPoint;
   else if ( std::string(solver) == "GMRES" )      psolver = GMRES;
   else if ( std::string(solver) == "FGMRES" )     psolver = FGMRES;
+  else if ( std::string(solver) == "LU" )         psolver = LU;
+  else if ( std::string(solver) == "QR" )         psolver = QR;
+  else if ( std::string(solver) == "AMG" )        psolver = AMG;
   else {
     err = 5;
     return;
   }
+
+  
 
   // Prepare preconditioner type
   if      ( std::string(precond) == "None" ||
@@ -335,6 +347,7 @@ void paralution_fortran_solve(char *solver, char *mformat, char *precond, char *
   else if ( std::string(precond) == "ILU" )             pprecond = ILU;
   else if ( std::string(precond) == "MultiColoredILU" ) pprecond = MultiColoredILU;
   else if ( std::string(precond) == "FSAI" )            pprecond = FSAI;
+  else if ( std::string(precond) == "AMG" )             pprecond = AMG_PC;
   else {
     err = 6;
     return;
@@ -371,7 +384,7 @@ void paralution_fortran_solve(char *solver, char *mformat, char *precond, char *
 
   // Switch for solver selection
   switch( psolver )
-  {
+    {
     case BiCGStab:
       ls = new paralution::BiCGStab<paralution::LocalMatrix<double>, paralution::LocalVector<double>, double >;
       break;
@@ -393,6 +406,20 @@ void paralution_fortran_solve(char *solver, char *mformat, char *precond, char *
       ls_fgmres->SetBasisSize(basis);
       ls = ls_fgmres;
       break;
+    case AMG:
+      paralution::AMG<paralution::LocalMatrix<double>, paralution::LocalVector<double>, double > *ls_amg;
+      ls_amg = new paralution::AMG<paralution::LocalMatrix<double>, paralution::LocalVector<double>, double >;
+      ls_amg->SetCouplingStrength (0.001);
+      ls_amg->SetInterpolation (paralution::SmoothedAggregation);
+      ls = ls_amg;
+      break;
+    case LU:
+      ls_exact = new paralution::LU<paralution::LocalMatrix<double>, paralution::LocalVector<double>, double >;
+      break;
+    case QR:
+      ls_exact = new paralution::QR<paralution::LocalMatrix<double>, paralution::LocalVector<double>, double >;
+      break;
+      
   }
 
   // Switch for preconditioner selection
@@ -446,17 +473,38 @@ void paralution_fortran_solve(char *solver, char *mformat, char *precond, char *
       pr = p_fsai;
       ls->SetPreconditioner(*pr);
       break;
+    case AMG_PC:
+      paralution::AMG<paralution::LocalMatrix<double>, paralution::LocalVector<double>, double > *p_amg;
+      p_amg = new paralution::AMG<paralution::LocalMatrix<double>, paralution::LocalVector<double>, double >;
+      p_amg->InitMaxIter(2);
+      pr_mg = p_amg;
+      ls->SetPreconditioner(*pr_mg);
+      break;  
   }
 
-  ls->SetOperator(*mat);
-  ls->Init(atol, rtol, div, maxiter);
+  
+ 
+  if(psolver !=LU && psolver !=QR ) {
+    ls->SetOperator(*mat);
+    ls->Init(atol, rtol, div, maxiter);
+    
+    ls->MoveToAccelerator();
+    mat->MoveToAccelerator();
+    x->MoveToAccelerator();
+    rhs->MoveToAccelerator();
 
-  ls->MoveToAccelerator();
-  mat->MoveToAccelerator();
-  x->MoveToAccelerator();
-  rhs->MoveToAccelerator();
-
-  ls->Build();
+    ls->Build();
+  }
+  else
+    {
+      ls_exact->SetOperator(*mat);
+      
+      ls_exact->MoveToAccelerator();
+      mat->MoveToAccelerator();
+      x->MoveToAccelerator();
+      rhs->MoveToAccelerator();
+      ls_exact->Build();
+    } 
 
   switch( matformat )
   {
@@ -490,19 +538,29 @@ void paralution_fortran_solve(char *solver, char *mformat, char *precond, char *
   rhs->info();
   mat->info();
 
-  ls->Solve(*rhs, x);
+  if(psolver !=LU && psolver !=QR) {
+    ls->Solve(*rhs, x);
 
-  iter = ls->GetIterationCount();
-  resnorm = ls->GetCurrentResidual();
-  err = ls->GetSolverStatus();
-
-  ls->Clear();
-  delete ls;
-  if ( pr != NULL )
-  {
-    pr->Clear();
-    delete pr;
+    iter = ls->GetIterationCount();
+    resnorm = ls->GetCurrentResidual();
+    err = ls->GetSolverStatus();
+      
+    ls->Clear();
+    delete ls;
+    if ( pr != NULL )
+      {
+	pr->Clear();
+	delete pr;
+	}    
+  
   }
+  else
+    {
+      ls_exact->Solve(*rhs, x);
+
+      ls_exact->Clear();
+      delete ls_exact;
+    } 
 
 }
 
