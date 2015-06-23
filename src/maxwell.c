@@ -8,6 +8,15 @@ void Maxwell2DNumFlux_centered(real *wL, real *wR, real *vnorm, real *flux)
 {
   // FIXME: add documentation
 
+  // FIXME: field layout
+  // w[0] : FIXME
+  // w[1] : FIXME
+  // w[2] : FIXME
+  // w[3] : FIXME
+  // w[4] : FIXME
+  // w[5] : FIXME
+  // w[6] : FIXME
+
   /*
     Let [[E]] = (ER + EL) / 2, [[H]] = (HR + HL) / 2
     the flux is 
@@ -38,6 +47,15 @@ void Maxwell2DNumFlux_centered(real *wL, real *wR, real *vnorm, real *flux)
 void Maxwell2DNumFlux_uncentered(real *wL, real *wR, real *vnorm, real *flux) 
 {
   // FIXME: add documentation
+
+  // FIXME: field layout
+  // w[0] : FIXME
+  // w[1] : FIXME
+  // w[2] : FIXME
+  // w[3] : FIXME
+  // w[4] : FIXME
+  // w[5] : FIXME
+  // w[6] : FIXME
 
   const real nx = vnorm[0];
   const real ny = vnorm[1];
@@ -76,6 +94,15 @@ void Maxwell2DNumFlux_uncentered(real *wL, real *wR, real *vnorm, real *flux)
 void Maxwell2DNumFlux_unoptimised(real *wL, real *wR, real *vnorm, real *flux) 
 {
   // FIXME: add documentation
+
+  // FIXME: field layout
+  // w[0] : FIXME
+  // w[1] : FIXME
+  // w[2] : FIXME
+  // w[3] : FIXME
+  // w[4] : FIXME
+  // w[5] : FIXME
+  // w[6] : FIXME
 
   const real nx = vnorm[0];
   const real ny = vnorm[1];
@@ -118,6 +145,14 @@ void Maxwell2DNumFlux_unoptimised(real *wL, real *wR, real *vnorm, real *flux)
 void Maxwell3DNumFlux(real *wL, real *wR, real *vnorm, real *flux) 
 {
   // FIXME: what is the name of this flux?
+
+  // FIXME: field layout
+  // w[0] : FIXME
+  // w[1] : FIXME
+  // w[2] : FIXME
+  // w[3] : FIXME
+  // w[4] : FIXME
+  // w[5] : FIXME
 
   // The first three components of the flux are
   // Let {{E}} = ( ER + EL ) / 2, [[E]] = ( ER - EL ) / 2 
@@ -172,6 +207,15 @@ void Maxwell3DNumFlux(real *wL, real *wR, real *vnorm, real *flux)
 #pragma start_opencl
 void Maxwell2DImposedData(const real *x, const real t, real *w) 
 {
+  // FIXME: field layout
+  // w[0] : FIXME
+  // w[1] : FIXME
+  // w[2] : FIXME
+  // w[3] : FIXME
+  // w[4] : FIXME
+  // w[5] : FIXME
+  // w[6] : FIXME
+
   const real pi = 4.0 * atan(1.0);
   const real r = 1.0;
   const real theta = pi / 4.0;
