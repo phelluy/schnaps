@@ -31,6 +31,9 @@ typedef struct LinearSolver{
   //! \brief true if the arrays are allocated
   bool is_alloc;
 
+   //! \brief true if the matrix is assembly
+  bool is_assembly;
+
   //! solver type;
   Solver solver_type;
 

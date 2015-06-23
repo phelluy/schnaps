@@ -34,8 +34,8 @@ int TestGmres(void){
   // _NN is the size of the linear system to be solved
   InitLinearSolver(&sky,_NN,NULL,NULL);
   
-  sky.solver_type = PAR_LU;//GMRES;
-  sky.pc_type=NONE;//PAR_JACOBI;
+  sky.solver_type = PAR_GMRES;
+  sky.pc_type=PAR_JACOBI;
   
   real A[_NN][_NN];
   real vf[_NN],sol[_NN];

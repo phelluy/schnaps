@@ -254,7 +254,12 @@ void SolveLinearSolver(LinearSolver* lsol){
     GMRESSolver(lsol);
   }
   else {
+#ifdef PARALUTION
     Solver_Paralution(lsol);
+#else
+    printf("paralution is not build this solver is not accessible.");
+    assert(1==2);
+#endif
   }  
    
 }
@@ -279,11 +284,11 @@ void Solver_Paralution(LinearSolver* lsol){
 
 
 
-  int basis_size_gmres=30, ILU_p=0,ILU_q=0;
+  int basis_size_gmres=30, ILU_p=2,ILU_q=2;
   int* iter_final=0;
   int* ierr=0;
-  int maxit=10000;
-  double a_tol=1.e-13,r_tol=1.e-8,div_tol=1.e+2;
+  int maxit=100000;
+  double a_tol=1.e-13,r_tol=1.e-8,div_tol=1.e+8;
 
   switch(lsol->solver_type){
   case PAR_CG :
@@ -397,15 +402,11 @@ void Solver_Paralution(LinearSolver* lsol){
     for(int i=0;i<nnz;i++){
       mat_coefs[i] = (double) coefs[i];
     }
-
-    for (int pp=0;pp< nnz; pp++) {
-      printf("i j  aij %d %d %e \n ", rows[pp],cols[pp],mat_coefs[pp]);
-    }
     
 #ifdef PARALUTION
     paralution_fortran_solve_coo(n,n,nnz,solver,storage,pc,storage,
     				 rows,cols,mat_coefs,RHS,a_tol,r_tol,div_tol,maxit,
-    				 basis_size_gmres,ILU_p,ILU_q,Sol); //,iter_final,residu,ierr);
+    				 basis_size_gmres,ILU_p,ILU_q,Sol); 
 #endif /* PARALUTION */
     break;
 

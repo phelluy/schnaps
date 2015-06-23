@@ -277,10 +277,10 @@ void paralution_fortran_solve_csr(int n, int m, int nnz, char *solver, char *mfo
   // Copy matrix so we can convert it to any other format without breaking the fortran code
   // Shift since Fortran arrays start at 1
   for (int i=0; i<n+1; ++i)
-    row_offset[i] = fortran_row_offset[i] - 1;
+    row_offset[i] = fortran_row_offset[i];
 
   for (int i=0; i<nnz; ++i) {
-    col[i] = fortran_col[i] - 1;
+    col[i] = fortran_col[i] ;
     val[i] = fortran_val[i];
   }
 
@@ -482,7 +482,6 @@ void paralution_fortran_solve(char *solver, char *mformat, char *precond, char *
       break;  
   }
 
-  
  
   if(psolver !=LU && psolver !=QR ) {
     ls->SetOperator(*mat);
@@ -534,13 +533,14 @@ void paralution_fortran_solve(char *solver, char *mformat, char *precond, char *
       break;
   }
 
+  x->Zeros();
   x->info();
   rhs->info();
   mat->info();
 
   if(psolver !=LU && psolver !=QR) {
     ls->Solve(*rhs, x);
-
+    
     iter = ls->GetIterationCount();
     resnorm = ls->GetCurrentResidual();
     err = ls->GetSolverStatus();
