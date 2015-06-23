@@ -173,9 +173,9 @@ void paralution_fortran_solve(char*, char*, char*, char*, double, double, double
 
 /// Solves a linear system for given COO matrix, rhs, solution vector, solver and preconditioner.
 void paralution_fortran_solve_coo(int n, int m, int nnz, char *solver, char *mformat, char *precond, char *pformat,
-                                  const int *fortran_row, const int *fortran_col, const double *fortran_val,
-                                  const double *fortran_rhs, double atol, double rtol, double div, int maxiter,
-                                  int basis, int p, int q, double *fortran_x)
+                                  int *row, int *col,double * val,
+                                  double *in_rhs, double atol, double rtol, double div, int maxiter,
+                                  int basis, int p, int q, double *in_x)
 {
 
   
@@ -186,37 +186,37 @@ void paralution_fortran_solve_coo(int n, int m, int nnz, char *solver, char *mfo
   paralution::LocalVector<double> paralution_rhs;
   paralution::LocalMatrix<double> paralution_mat;
 
-  int *row = NULL;
-  int *col = NULL;
-  double *val = NULL;
+  //int *row = NULL;
+  //int *col = NULL;
+  //double *val = NULL;
   int iter=0;
   double resnorm = 0.;
   int err=0;
 
-  paralution::allocate_host(nnz, &row);
-  paralution::allocate_host(nnz, &col);
-  paralution::allocate_host(nnz, &val);
+  //paralution::allocate_host(nnz, &row);
+  //paralution::allocate_host(nnz, &col);
+  //paralution::allocate_host(nnz, &val);
 
-  double *in_rhs = NULL;
-  double *in_x = NULL;
-  paralution::allocate_host(m, &in_rhs);
-  paralution::allocate_host(n, &in_x);
+  //double *in_rhs = NULL;
+  //double *in_x = NULL;
+  //paralution::allocate_host(m, &in_rhs);
+  // paralution::allocate_host(n, &in_x);
 
-  for (int i=0; i<m; ++i)
-    in_rhs[i] = fortran_rhs[i];
-  for (int i=0; i<n; ++i)
-    in_x[i] = fortran_x[i];
+  //for (int i=0; i<m; ++i)
+  //  in_rhs[i] = fortran_rhs[i];
+  //for (int i=0; i<n; ++i)
+  // in_x[i] = fortran_x[i];
 
   paralution_rhs.SetDataPtr(&in_rhs, "Imported Fortran rhs", m);
   paralution_x.SetDataPtr(&in_x, "Imported Fortran x", n);
 
   // Copy matrix so we can convert it to any other format without breaking the fortran code
-  for (int i=0; i<nnz; ++i) {
+  // for (int i=0; i<nnz; ++i) {
     // Shift row and col index since Fortran arrays start at 1
-    row[i] = fortran_row[i];
-    col[i] = fortran_col[i];
-    val[i] = fortran_val[i];
-  }
+  // row[i] = fortran_row[i];
+  // col[i] = fortran_col[i];
+  // val[i] = fortran_val[i];
+  //}
 
   // Allocate paralution data structures
   paralution_mat.SetDataPtrCOO(&row, &col, &val, "Imported Fortran COO Matrix", nnz, n, m);
@@ -229,10 +229,10 @@ void paralution_fortran_solve_coo(int n, int m, int nnz, char *solver, char *mfo
   paralution_x.MoveToHost();
   paralution_x.LeaveDataPtr(&in_x);
 
-  for (int i=0; i<n; ++i)
-    fortran_x[i] = in_x[i];
+  //for (int i=0; i<n; ++i)
+  //  fortran_x[i] = in_x[i];
 
-  delete [] in_x;
+  //delete [] in_x;
 
   paralution::stop_paralution();
 
@@ -241,9 +241,9 @@ void paralution_fortran_solve_coo(int n, int m, int nnz, char *solver, char *mfo
 
 /// Solves a linear system for given CSR matrix, rhs, solution vector, solver and preconditioner.
 void paralution_fortran_solve_csr(int n, int m, int nnz, char *solver, char *mformat, char *precond, char *pformat,
-                                  const int *fortran_row_offset, const int *fortran_col, const double *fortran_val,
-                                  const double *fortran_rhs, double atol, double rtol, double div, int maxiter,
-                                  int basis, int p, int q, double *fortran_x, int &iter, double &resnorm, int &err)
+                                  int * row_offset,int * col,double * val,
+                                  double * in_rhs, double atol, double rtol, double div, int maxiter,
+                                  int basis, int p, int q, double *in_x, int &iter, double &resnorm, int &err)
 {
 
   paralution::init_paralution();
@@ -253,36 +253,36 @@ void paralution_fortran_solve_csr(int n, int m, int nnz, char *solver, char *mfo
   paralution::LocalVector<double> paralution_rhs;
   paralution::LocalMatrix<double> paralution_mat;
 
-  int *row_offset = NULL;
-  int *col        = NULL;
-  double *val     = NULL;
+  // int *row_offset = NULL;
+  //int *col        = NULL;
+  //double *val     = NULL;
 
-  paralution::allocate_host(n+1, &row_offset);
-  paralution::allocate_host(nnz, &col);
-  paralution::allocate_host(nnz, &val);
+  //paralution::allocate_host(n+1, &row_offset);
+  //paralution::allocate_host(nnz, &col);
+  //paralution::allocate_host(nnz, &val);
 
-  double *in_rhs = NULL;
-  double *in_x = NULL;
-  paralution::allocate_host(m, &in_rhs);
-  paralution::allocate_host(n, &in_x);
+  //double *in_rhs = NULL;
+  //double *in_x = NULL;
+  //paralution::allocate_host(m, &in_rhs);
+  //paralution::allocate_host(n, &in_x);
 
-  for (int i=0; i<m; ++i)
-    in_rhs[i] = fortran_rhs[i];
-  for (int i=0; i<n; ++i)
-    in_x[i] = fortran_x[i];
+  //for (int i=0; i<m; ++i)
+  //  in_rhs[i] = fortran_rhs[i];
+  //for (int i=0; i<n; ++i)
+    //  in_x[i] = fortran_x[i];
 
   paralution_rhs.SetDataPtr(&in_rhs, "Imported Fortran rhs", m);
   paralution_x.SetDataPtr(&in_x, "Imported Fortran x", n);
 
   // Copy matrix so we can convert it to any other format without breaking the fortran code
   // Shift since Fortran arrays start at 1
-  for (int i=0; i<n+1; ++i)
-    row_offset[i] = fortran_row_offset[i];
+  //for (int i=0; i<n+1; ++i)
+  //  row_offset[i] = fortran_row_offset[i];
 
-  for (int i=0; i<nnz; ++i) {
-    col[i] = fortran_col[i] ;
-    val[i] = fortran_val[i];
-  }
+  // for (int i=0; i<nnz; ++i) {
+  // col[i] = fortran_col[i] ;
+  //  val[i] = fortran_val[i];
+  //}
 
   // Allocate paralution data structures
   paralution_mat.SetDataPtrCSR(&row_offset, &col, &val, "Imported Fortran CSR Matrix", nnz, n, m);
@@ -294,10 +294,10 @@ void paralution_fortran_solve_csr(int n, int m, int nnz, char *solver, char *mfo
   paralution_x.MoveToHost();
   paralution_x.LeaveDataPtr(&in_x);
 
-  for (int i=0; i<n; ++i)
-    fortran_x[i] = in_x[i];
+  //for (int i=0; i<n; ++i)
+  //  fortran_x[i] = in_x[i];
 
-  delete [] in_x;
+  //delete [] in_x;
 
   paralution::stop_paralution();
 
