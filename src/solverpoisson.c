@@ -204,8 +204,9 @@ void SolvePoisson1D(field *f,real * w,int type_bc, real bc_l, real bc_r,Solver s
   // = number of nodes in the mesh
   int degx=f->interp.interp_param[1];
   int nelx=f->interp.interp_param[4];
-  real xmin=0;
-  real xmax=1;  // TO DO: compute the maximal x coordinate
+  real xmin=f->macromesh.xmin[0];
+  real xmax=f->macromesh.xmax[0];  //
+  real dx=(xmax-xmin)/nelx;
   int neq=degx*nelx+1;
   
   // number of conservatives variables
@@ -245,7 +246,7 @@ void SolvePoisson1D(field *f,real * w,int type_bc, real bc_l, real bc_r,Solver s
 	for(int jloc=0;jloc<degx+1;jloc++){
 	  real dxi=dlag(degx,iloc,ipg);
 	  real dxj=dlag(degx,jloc,ipg);
-	  aloc[iloc][jloc]+=dxi*dxj*omega*nelx;
+	  aloc[iloc][jloc]+=dxi*dxj*omega/dx;
 	}
       }
     }
@@ -286,7 +287,7 @@ void SolvePoisson1D(field *f,real * w,int type_bc, real bc_l, real bc_r,Solver s
       int ino=iloc + ie * degx;  
       int imem=f->varindex(f->interp_param,0,iloc+ie*(degx+1),_INDEX_RHO);
       real charge=w[imem];          
-      source[ino]+= (charge-charge_average)*omega/nelx;
+      source[ino]+= (charge-charge_average)*omega*dx;
     }
   }
 

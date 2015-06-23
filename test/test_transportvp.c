@@ -49,10 +49,10 @@ int Test_TransportVP(void) {
   f.varindex = GenericVarindex;
     
   f.interp.interp_param[0] = f.model.m;  // _M
-  f.interp.interp_param[1] = 3;  // x direction degree
+  f.interp.interp_param[1] = 2;  // x direction degree
   f.interp.interp_param[2] = 0;  // y direction degree
   f.interp.interp_param[3] = 0;  // z direction degree
-  f.interp.interp_param[4] = 32;  // x direction refinement
+  f.interp.interp_param[4] = 16;  // x direction refinement
   f.interp.interp_param[5] = 1;  // y direction refinement
   f.interp.interp_param[6] = 1;  // z direction refinement
  // read the gmsh file
@@ -112,7 +112,7 @@ void Test_TransportVP_ImposedData(const real *x, const real t, real *w) {
     w[i] = TransportVP_ImposedKinetic_Data(x, t, vi);
   }
   // exact value of the potential and electric field
-  w[_INDEX_PHI] = x[0];
+  w[_INDEX_PHI] = -x[0];
   w[_INDEX_EX] = 1;
   w[_INDEX_RHO] = 0.; //rho init
   w[_INDEX_VELOCITY] = 0; // u init
