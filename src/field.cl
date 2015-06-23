@@ -1283,10 +1283,10 @@ void DGSource(__constant int *param,     // 0: interp param
   const int ipgL = get_local_id(0);
     
   // subcell id
-  int icL[3];
-  icL[0] = icell % nraf[0];
-  icL[1] = (icell / nraf[0]) % nraf[1];
-  icL[2]= icell / nraf[0] / nraf[1];
+  /* int icL[3]; */
+  /* icL[0] = icell % nraf[0]; */
+  /* icL[1] = (icell / nraf[0]) % nraf[1]; */
+  /* icL[2]= icell / nraf[0] / nraf[1]; */
 
   // Compute xref
   real xref[3];

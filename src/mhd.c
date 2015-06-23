@@ -209,7 +209,6 @@ void MHDNumFluxP2(real *wL, real *wR, real *vn, real *flux) {
 
   real wmil[9];
   real wRmwL[9];
-  real Z[9];
 
   real M[81];
 
@@ -268,10 +267,9 @@ void MHDNumFlux1D(real *WL, real *WR, real *vn, real *flux) {
 
   real piL, piR, piyL, piyR, pizL, pizR;
   real a, aR, aL, al0, ar0;
-  real cf, cfL, cfR, cL, cR;
+  real cfL, cfR, cL, cR;
   real Xl, Xr, pxl, pxr;
   real alpha;
-  real cA, cB, b2;
   real us, pis, uys, uzs, piys, pizs;
   real pi, piy, piz;
   real sigma1, sigma2, sigma3;
@@ -301,7 +299,7 @@ void MHDNumFlux1D(real *WL, real *WR, real *vn, real *flux) {
   }
 
   a = sqrt(gam*ymil[2]/ymil[0]);
-  cf = sqrt(\
+  real cf = sqrt(\
             0.5*((b*b + ymil[5]*ymil[5] + ymil[6]*ymil[6])/(ymil[0])+a*a)\
             + sqrt(\
                    0.25*(pow((b*b + ymil[5]*ymil[5] + ymil[6]*ymil[6])/(ymil[0])+a*a,2))-(a*a*b*b)/(ymil[0])\
@@ -355,9 +353,9 @@ void MHDNumFlux1D(real *WL, real *WR, real *vn, real *flux) {
   cR = ar0*YR[0] + alpha*YR[0]*(fmax(YL[1]-YR[1],0.0) + (fmax(piL-piR,0.0))/(YL[0]*cfL+YR[0]*cfR));
 
   // pour le 3-ondes ondes on prend des vitesses simples
-  cA = cf;
-  cB = cf;
-  b2 = 0.0;
+  //real cA = cf;
+  //real cB = cf;
+  //real b2 = 0.0;
 
 
 // calcul des etats intermediaires
@@ -483,8 +481,10 @@ void MHDInitData(real *x, real *w) {
 void MHDImposedData(const real *x,const  real t, real *w) {
   real gam = 1.6666666666;
 
-  real yL[9], yR[9];
-  real wL[9], wR[9];
+  real yL[9];
+  //real yR[9];
+  //real wL[9];
+  //real wR[9];
   
 //  yL[0] = 3.;
 //  yL[1] = 1.3;

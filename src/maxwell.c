@@ -61,6 +61,46 @@ void Maxwell2DNumFlux_uncentered(real *wL, real *wR, real *vnorm, real *flux)
 }
 #pragma end_opencl
 
+// Centered flux if eps=0, uncentered flux if eps=1
+#pragma start_opencl
+void Maxwell2DNumFlux_unoptimised(real *wL, real *wR, real *vnorm, real *flux) 
+{
+  const real r = sqrt(vnorm[0] * vnorm[0] + vnorm[1] * vnorm[1]);
+  const real overr = 1.0 / (r + 1e-16);
+  const real nx = vnorm[0];
+  const real ny = vnorm[1];
+  const real eps = 1;
+  const real khi = 1.0;
+
+  flux[0] = 
+    - ny * (wR[2] + wL[2]) + khi * nx * (wR[3] + wL[3])
+    - eps * (ny * ny + khi * nx * nx) * overr * (wR[0] - wL[0])
+    - eps * (ny * nx * (khi - 1)) * overr * (wR[1] - wL[1]);
+
+  flux[1] =   
+    nx * (wR[2] + wL[2]) + khi * ny * (wR[3] + wL[3])
+    - eps * (ny * nx * (khi - 1)) * overr * (wR[0] - wL[0])
+    - eps * (nx * nx + khi * ny * ny) * overr  * (wR[1] - wL[1]);
+
+  flux[2] = - ny * (wR[0] + wL[0]) 
+    + nx * (wR[1] + wL[1]) 
+    - eps * r * (wR[2] - wL[2]);
+
+  flux[3] = 
+    khi * nx * (wR[0] + wL[0]) 
+    + khi * ny * (wR[1] + wL[1]) 
+    - eps * khi * r * (wR[3] - wL[3]);
+
+  flux[0] *= 0.5;
+  flux[1] *= 0.5;
+  flux[2] *= 0.5;
+  flux[3] *= 0.5;
+  flux[4] = 0;
+  flux[5] = 0;
+  flux[6] = 0;
+}
+#pragma end_opencl
+
 #pragma start_opencl
 void Maxwell3DNumFlux(real *wL, real *wR, real *vnorm, real *flux) 
 {
@@ -147,8 +187,8 @@ void Maxwell2DImposedData(const real *x, const real t, real *w)
 #pragma end_opencl
 
 #pragma start_opencl
-void Maxwell2DBoundaryFlux(real *x, real t, 
-			   real *wL, real *vnorm, real *flux)
+void Maxwell2DBoundaryFlux_centered(real *x, real t, 
+				    real *wL, real *vnorm, real *flux)
 {
   real wR[7];
   Maxwell2DImposedData(x, t, wR);
