@@ -12,15 +12,15 @@ void Maxwell2DNumFlux_centered(real *wL, real *wR, real *vnorm, real *flux)
   const real ny = vnorm[1];
   const real khi = 1.0;
 
-  const real s0 = wR[0] + wL[0];
-  const real s1 = wR[1] + wL[1];
-  const real s2 = wR[2] + wL[2];
-  const real s3 = wR[3] + wL[3];
+  const real s0 = 0.5 * (wR[0] + wL[0]);
+  const real s1 = 0.5 * (wR[1] + wL[1]);
+  const real s2 = 0.5 * (wR[2] + wL[2]);
+  const real s3 = 0.5 * (wR[3] + wL[3]);
 
-  flux[0] = 0.5 * (-ny * s2 + khi * nx * s3);
-  flux[1] = 0.5 * ( nx * s2 + khi * ny * s3);
-  flux[2] = 0.5 * (-ny * s0 + nx * s1);
-  flux[3] = 0.5 * khi * (nx * s0 + ny * s1);
+  flux[0] = -ny * s2 + khi * nx * s3;
+  flux[1] =  nx * s2 + khi * ny * s3;
+  flux[2] = -ny * s0 + nx * s1;
+  flux[3] = khi * (nx * s0 + ny * s1);
   flux[4] = 0.0;
   flux[5] = 0.0;
   flux[6] = 0.0;
@@ -32,33 +32,32 @@ void Maxwell2DNumFlux_uncentered(real *wL, real *wR, real *vnorm, real *flux)
 {
   // FIXME: add documentation
 
-  const real r = sqrt(vnorm[0] * vnorm[0] + vnorm[1] * vnorm[1]);
-  const real overr = 1.0 / (r + 1e-16);
   const real nx = vnorm[0];
   const real ny = vnorm[1];
+  const real r = sqrt(nx * nx + ny * ny);
+  const real overr = 1.0 / (r + 1e-16);
   const real khi = 1.0;
 
-  const real s0 = wR[0] + wL[0];
-  const real s1 = wR[1] + wL[1];
-  const real s2 = wR[2] + wL[2];
-  const real s3 = wR[3] + wL[3];
+  const real s0 = 0.5 * (wR[0] + wL[0]);
+  const real s1 = 0.5 * (wR[1] + wL[1]);
+  const real s2 = 0.5 * (wR[2] + wL[2]);
+  const real s3 = 0.5 * (wR[3] + wL[3]);
 
-  const real d0 = wR[0] - wL[0];
-  const real d1 = wR[1] - wL[1];
-  const real d2 = wR[2] - wL[2];
-  const real d3 = wR[3] - wL[3];
+  const real d0 = 0.5 * (wR[0] - wL[0]);
+  const real d1 = 0.5 * (wR[1] - wL[1]);
+  const real d2 = 0.5 * (wR[2] - wL[2]);
+  const real d3 = 0.5 * (wR[3] - wL[3]);
 
-  flux[0] = 0.5 * (-ny * s2 + khi * nx * s3
-		   -overr * ( d0 * (ny * ny + khi * nx * nx)
-			      + d1 * nx * ny * (khi - 1)
-			      )
-		   );
-  flux[1] = 0.5 * (nx * s2 + khi * ny * s3
-		   -overr * ((nx * ny * (khi - 1)) * d0
-			     +(nx * nx + khi * ny * ny) * d1)
-		   );
-  flux[2] = 0.5 * (-ny * s0 + nx * s1 - r * d2);
-  flux[3] = 0.5 * khi * (nx * s0 + ny * s1 -r * d3);
+  flux[0] = 
+    -ny * s2 + khi * nx * s3
+    -overr * ( d0 * (ny * ny + khi * nx * nx)
+	       + d1 * nx * ny * (khi - 1) );
+  flux[1] = 
+    nx * s2 + khi * ny * s3
+    -overr * ((nx * ny * (khi - 1)) * d0
+	      +(nx * nx + khi * ny * ny) * d1);
+  flux[2] = -ny * s0 + nx * s1 - r * d2;
+  flux[3] = khi * (nx * s0 + ny * s1 -r * d3);
   flux[4] = 0.0;
   flux[5] = 0.0;
   flux[6] = 0.0;
@@ -71,10 +70,10 @@ void Maxwell2DNumFlux_unoptimised(real *wL, real *wR, real *vnorm, real *flux)
 {
   // FIXME: add documentation
 
-  const real r = sqrt(vnorm[0] * vnorm[0] + vnorm[1] * vnorm[1]);
-  const real overr = 1.0 / (r + 1e-16);
   const real nx = vnorm[0];
   const real ny = vnorm[1];
+  const real r = sqrt(nx * nx + ny * ny);
+  const real overr = 1.0 / (r + 1e-16);
   // Centered flux if eps=0, uncentered flux if eps=1
   const real eps = 1;
   const real khi = 1.0;
@@ -128,34 +127,28 @@ void Maxwell3DNumFlux(real *wL, real *wR, real *vnorm, real *flux)
   const real n11 = overr * n1 * n1;
   const real n22 = overr * n2 * n2;
     
-  const real Es0 = wR[0] + wL[0];
-  const real Es1 = wR[1] + wL[1];
-  const real Es2 = wR[2] + wL[2];
+  const real Es0 = 0.5 * (wR[0] + wL[0]);
+  const real Es1 = 0.5 * (wR[1] + wL[1]);
+  const real Es2 = 0.5 * (wR[2] + wL[2]);
 
-  const real Hs0 = wR[3] + wL[3];
-  const real Hs1 = wR[4] + wL[4];
-  const real Hs2 = wR[5] + wL[5];
+  const real Hs0 = 0.5 * (wR[3] + wL[3]);
+  const real Hs1 = 0.5 * (wR[4] + wL[4]);
+  const real Hs2 = 0.5 * (wR[5] + wL[5]);
 
-  const real Ed0 = wR[0] - wL[0];
-  const real Ed1 = wR[1] - wL[1];
-  const real Ed2 = wR[2] - wL[2];
+  const real Ed0 = 0.5 * (wR[0] - wL[0]);
+  const real Ed1 = 0.5 * (wR[1] - wL[1]);
+  const real Ed2 = 0.5 * (wR[2] - wL[2]);
 
-  const real Hd0 = wR[3] - wL[3];
-  const real Hd1 = wR[4] - wL[4];
-  const real Hd2 = wR[5] - wL[5];
+  const real Hd0 = 0.5 * (wR[3] - wL[3]);
+  const real Hd1 = 0.5 * (wR[4] - wL[4]);
+  const real Hd2 = 0.5 * (wR[5] - wL[5]);
 
-  flux[0] = 0.5 * (n01 * Ed2 - n22 * Ed0 - n22 * Ed0 + n02 * Ed2
-		   -n1 * Hs2 + n2 * Hs1);
-  flux[1] = 0.5 * (n12 * Ed2 - n22 * Ed1 - n11 * Ed2 + n01 * Ed0
-		   -n2 * Hs0 + n0 * Hs2);
-  flux[2] = 0.5 * (n02 * Ed0 - n00 * Ed2 - n11 * Ed2 + n12 * Ed1
-		   -n0 * Hs1 + n1 * Hs0);
-  flux[3] = 0.5 * (n01 * Hd2 - n22 * Hd0 - n22 * Hd0 + n02 * Hd2
-		   +n1 * Es2 - n2 * Es1);
-  flux[4] = 0.5 * (n12 * Hd2 - n22 * Hd1 - n11 * Hd2 + n01 * Hd0
-		   +n2 * Es0 - n0 * Es2);
-  flux[5] = 0.5 * (n02 * Hd0 - n00 * Hd2 - n11 * Hd2 + n12 * Hd1
-		   +n0 * Es1 - n1 * Es0);
+  flux[0] = n01 * Ed2 - n22 * Ed0 - n22 * Ed0 + n02 * Ed2 -n1 * Hs2 + n2 * Hs1;
+  flux[1] = n12 * Ed2 - n22 * Ed1 - n11 * Ed2 + n01 * Ed0 -n2 * Hs0 + n0 * Hs2;
+  flux[2] = n02 * Ed0 - n00 * Ed2 - n11 * Ed2 + n12 * Ed1 -n0 * Hs1 + n1 * Hs0;
+  flux[3] = n01 * Hd2 - n22 * Hd0 - n22 * Hd0 + n02 * Hd2 +n1 * Es2 - n2 * Es1;
+  flux[4] = n12 * Hd2 - n22 * Hd1 - n11 * Hd2 + n01 * Hd0 +n2 * Es0 - n0 * Es2;
+  flux[5] = n02 * Hd0 - n00 * Hd2 - n11 * Hd2 + n12 * Hd1 +n0 * Es1 - n1 * Es0;
 }
 #pragma end_opencl
 
