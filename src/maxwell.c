@@ -6,6 +6,8 @@
 #pragma start_opencl
 void Maxwell2DNumFlux_centered(real *wL, real *wR, real *vnorm, real *flux) 
 {
+  // FIXME: add documentation
+
   const real nx = vnorm[0];
   const real ny = vnorm[1];
   const real khi = 1.0;
@@ -28,6 +30,8 @@ void Maxwell2DNumFlux_centered(real *wL, real *wR, real *vnorm, real *flux)
 #pragma start_opencl
 void Maxwell2DNumFlux_uncentered(real *wL, real *wR, real *vnorm, real *flux) 
 {
+  // FIXME: add documentation
+
   const real r = sqrt(vnorm[0] * vnorm[0] + vnorm[1] * vnorm[1]);
   const real overr = 1.0 / (r + 1e-16);
   const real nx = vnorm[0];
@@ -61,14 +65,17 @@ void Maxwell2DNumFlux_uncentered(real *wL, real *wR, real *vnorm, real *flux)
 }
 #pragma end_opencl
 
-// Centered flux if eps=0, uncentered flux if eps=1
+
 #pragma start_opencl
 void Maxwell2DNumFlux_unoptimised(real *wL, real *wR, real *vnorm, real *flux) 
 {
+  // FIXME: add documentation
+
   const real r = sqrt(vnorm[0] * vnorm[0] + vnorm[1] * vnorm[1]);
   const real overr = 1.0 / (r + 1e-16);
   const real nx = vnorm[0];
   const real ny = vnorm[1];
+  // Centered flux if eps=0, uncentered flux if eps=1
   const real eps = 1;
   const real khi = 1.0;
 
@@ -137,30 +144,18 @@ void Maxwell3DNumFlux(real *wL, real *wR, real *vnorm, real *flux)
   const real Hd1 = wR[4] - wL[4];
   const real Hd2 = wR[5] - wL[5];
 
-  flux[0] = 0.5 * (
-		   n01 * Ed2 - n22 * Ed0 - n22 * Ed0 + n02 * Ed2
-		   -n1 * Hs2 + n2 * Hs1
-		   );
-  flux[1] = 0.5 * (
-		   n12 * Ed2 - n22 * Ed1 - n11 * Ed2 + n01 * Ed0
-		   -n2 * Hs0 + n0 * Hs2
-		   );
-  flux[2] = 0.5 * (
-		   n02 * Ed0 - n00 * Ed2 - n11 * Ed2 + n12 * Ed1
-		   -n0 * Hs1 + n1 * Hs0
-		   );
-  flux[3] = 0.5 * (
-		   n01 * Hd2 - n22 * Hd0 - n22 * Hd0 + n02 * Hd2
-		   +n1 * Es2 - n2 * Es1
-		   );
-  flux[4] = 0.5 * (
-		   n12 * Hd2 - n22 * Hd1 - n11 * Hd2 + n01 * Hd0
-		   +n2 * Es0 - n0 * Es2
-		   );
-  flux[5] = 0.5 * (
-		   n02 * Hd0 - n00 * Hd2 - n11 * Hd2 + n12 * Hd1
-		   +n0 * Es1 - n1 * Es0
-		   );
+  flux[0] = 0.5 * (n01 * Ed2 - n22 * Ed0 - n22 * Ed0 + n02 * Ed2
+		   -n1 * Hs2 + n2 * Hs1);
+  flux[1] = 0.5 * (n12 * Ed2 - n22 * Ed1 - n11 * Ed2 + n01 * Ed0
+		   -n2 * Hs0 + n0 * Hs2);
+  flux[2] = 0.5 * (n02 * Ed0 - n00 * Ed2 - n11 * Ed2 + n12 * Ed1
+		   -n0 * Hs1 + n1 * Hs0);
+  flux[3] = 0.5 * (n01 * Hd2 - n22 * Hd0 - n22 * Hd0 + n02 * Hd2
+		   +n1 * Es2 - n2 * Es1);
+  flux[4] = 0.5 * (n12 * Hd2 - n22 * Hd1 - n11 * Hd2 + n01 * Hd0
+		   +n2 * Es0 - n0 * Es2);
+  flux[5] = 0.5 * (n02 * Hd0 - n00 * Hd2 - n11 * Hd2 + n12 * Hd1
+		   +n0 * Es1 - n1 * Es0);
 }
 #pragma end_opencl
 
