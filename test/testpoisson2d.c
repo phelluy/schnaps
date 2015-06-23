@@ -86,7 +86,7 @@ int TestPoisson2d(void)
   printf("cfl param =%f\n",f.hmin);
 
   PoissonSolver ps;
-  InitPoissonSolver(&ps,&f,_INDEX_PHI,NULL,NULL);
+  InitPoissonSolver(&ps,&f,_INDEX_PHI);
 
 #ifdef PARALUTION
   ps.lsol.solver_type = PAR_GMRES;

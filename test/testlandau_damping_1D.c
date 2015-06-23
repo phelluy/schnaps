@@ -73,8 +73,6 @@ int TestLandau_Damping_1D(void) {
   // mesh preparation
   f.macromesh.period[0]=2.0*pi/k;
   BuildConnectivity(&(f.macromesh));
-
-  //AffineMapMacroMesh(&(f.macromesh));
  
   // prepare the initial fields
   f.model.cfl=0.05;
@@ -92,7 +90,7 @@ int TestLandau_Damping_1D(void) {
   printf("cfl param =%f\n",f.hmin);
 
   real dt = set_dt(&f);
-  RK2(&f,0.1, dt);
+  RK2(&f,25, dt);
   //RK2(&f,0.03,0.05);
 
    // save the results and the error
@@ -167,7 +165,7 @@ void UpdateVlasovPoisson(void* vf, real * w){
     
   Computation_charge_density(f,w);
   
-  SolvePoisson1D(f,w,type_bc,bc_l,bc_r);    
+  SolvePoisson1D(f,w,type_bc,bc_l,bc_r,LU,NONE);    
   
 }
 

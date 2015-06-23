@@ -1,7 +1,7 @@
 #include "solverpoisson.h"
 #include "geometry.h"
 #include "quantities_vp.h"
-
+#include "linear_solver.h"
 
 
 int CompareFatNode(const void* a,const void* b){
@@ -92,7 +92,7 @@ int BuildFatNodeList(field* f,FatNode* fn_list){
 
 }
 
-void InitPoissonSolver(PoissonSolver* ps, field* fd,int charge_index,Solver * solver_sys,PC * precon){
+void InitPoissonSolver(PoissonSolver* ps, field* fd,int charge_index){
 
   ps->fd = fd;
   ps->charge_index = charge_index;
@@ -167,7 +167,7 @@ void InitPoissonSolver(PoissonSolver* ps, field* fd,int charge_index,Solver * so
   }
 
 	
-  InitLinearSolver(&ps->lsol,ps->nb_fe_nodes,solver_sys,precon); //InitSkyline(&sky, neq);
+  InitLinearSolver(&ps->lsol,ps->nb_fe_nodes,NULL,NULL); //InitSkyline(&sky, neq);
 
   ps->lsol.rhs = malloc(ps->nb_fe_nodes * sizeof(real));
   assert(ps->lsol.rhs);
@@ -178,7 +178,7 @@ void InitPoissonSolver(PoissonSolver* ps, field* fd,int charge_index,Solver * so
 
 }
 
-void SolvePoisson1D(field *f,real * w,int type_bc, real bc_l, real bc_r){
+void SolvePoisson1D(field *f,real * w,int type_bc, real bc_l, real bc_r,Solver solver_sys,PC precon){
 
 
   real charge_average;
@@ -214,14 +214,8 @@ void SolvePoisson1D(field *f,real * w,int type_bc, real bc_l, real bc_r){
 
   InitLinearSolver(&sky,neq,NULL,NULL); //InitSkyline(&sky, neq);
   
-#ifdef PARALUTION
-  sky.solver_type = PAR_GMRES;
-  sky.pc_type=PAR_ILU;
-;
-#else
-  sky.solver_type = LU;
-  sky.pc_type=NONE;
-#endif
+  sky.solver_type =LU;// solver_sys;
+  sky.pc_type=NONE ;//precon;
 
   if(!sky.is_alloc){
   // compute the profile of the matrix
@@ -276,6 +270,9 @@ void SolvePoisson1D(field *f,real * w,int type_bc, real bc_l, real bc_r){
 
     sky.is_assembly=true;
   }
+
+  //DisplayLinearSolver(&sky);
+  //sleep(1000);
   
   // source assembly 
   real source[neq];

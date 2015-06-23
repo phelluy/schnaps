@@ -5,7 +5,7 @@
 #include "collision.h"
 #include "quantities_vp.h"
 #include "solverpoisson.h"
-
+#include "linear_solver.h"
 
 void TestPoisson_ImposedData(const real x[3], const real t,real w[]);
 void TestPoisson_InitData(real x[3],real w[]);
@@ -106,7 +106,7 @@ int TestPoisson(void) {
 
   //Computation_charge_density(f);
   
-  SolvePoisson1D(&f,f.wn,1,0.0,0.0);
+  SolvePoisson1D(&f,f.wn,1,0.0,0.0,LU,NONE);
 
   // check the gradient given by the poisson solver
   for(int ie=0;ie<f.macromesh.nbelems;ie++){

@@ -87,7 +87,7 @@ int BuildFatNodeList(field* f,FatNode* fn_list);
 //! \param[inout] ps a PoissonSolver struct
 //! \param[in] fd a Field
 //! \param[in] charge_index charge index in the field variables
-void InitPoissonSolver(PoissonSolver* ps, field* fd,int charge_index,Solver * solver_sys,PC * precon);
+void InitPoissonSolver(PoissonSolver* ps, field* fd,int charge_index);
 
 //! \brief solve a 1D poisson problem
 //! \param[in] f a field (contains the mesh)
@@ -98,7 +98,7 @@ void InitPoissonSolver(PoissonSolver* ps, field* fd,int charge_index,Solver * so
 //! \param[in] bc_l left boundary value (dirichlet case)
 //! \param[in] bc_r right boundary value (dirichlet case)
 void SolvePoisson1D(field *f,real * w,
-		    int type_bc, real bc_l, real bc_r);
+		    int type_bc, real bc_l, real bc_r,Solver solver_sys, PC precon);
 
 
 
