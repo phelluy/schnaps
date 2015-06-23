@@ -7,7 +7,7 @@
 
 typedef enum MatrixStorage{SKYLINE,CSR} MatrixStorage;
 typedef enum Solver{LU,GMRES,PAR_GMRES,PAR_FGMRES,PAR_CG,PAR_BICGSTAB,PAR_AMG,PAR_LU,PAR_QR} Solver;
-typedef enum PC{NONE,PAR_JACOBI,PAR_ILU,PAR_MULTICOLOREDSGS,PAR_MULTICOLOREDGS,PAR_MULTICOLOREDILU,PAR_AMG_PC} PC;
+typedef enum PC{NONE,PAR_JACOBI,PAR_ILU,PAR_MULTICOLOREDSGS,PAR_MULTICOLOREDGS,PAR_MULTICOLOREDILU,PAR_AMG_PC,PAR_ELIMI} PC;
 
 //! class for managing linear solvers
 typedef struct LinearSolver{
@@ -126,7 +126,7 @@ void Vector_prodot(real x[],real y[],real prod[],int N);
 void Solver_Paralution(LinearSolver* lsol);
 
 
-
+real Vector_norm2(real x[],int  N);
 
 void GMRESSolver(LinearSolver* lsol);
 

@@ -161,6 +161,6 @@ void PlotVlasovPoisson(void *vf, real *w) {
   
   field *f = vf;
   
-  Energies(f, w, k_energy, e_energy, t_energy);
+  Energies(f, w, k_energy, e_energy, t_energy,1);
   vf = f;
 }

@@ -89,8 +89,8 @@ int TestPoisson2d(void)
   InitPoissonSolver(&ps,&f,_INDEX_PHI);
 
 #ifdef PARALUTION
-  ps.lsol.solver_type = PAR_GMRES;
-  ps.lsol.pc_type=PAR_ILU;
+  ps.lsol.solver_type = PAR_AMG;
+  ps.lsol.pc_type=NONE;
 #else
   ps.lsol.solver_type = LU;
   ps.lsol.pc_type=NONE;

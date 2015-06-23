@@ -162,7 +162,8 @@ enum _precond_type{
   ILU,
   MultiColoredILU,
   FSAI,
-  AMG_PC
+  AMG_PC,
+  MultiElimination
 };
 
 
@@ -219,12 +220,16 @@ void paralution_fortran_solve_coo(int n, int m, int nnz, char *solver, char *mfo
   //}
 
   // Allocate paralution data structures
-  paralution_mat.SetDataPtrCOO(&row, &col, &val, "Imported Fortran COO Matrix", nnz, n, m);
+  paralution_mat.SetDataPtrCOO(&row, &col, &val, "Imported Fortran COO Matrix", nnz, n, m);  
   paralution_mat.ConvertToCSR();
+
+
   paralution_mat.info();
 
   paralution_fortran_solve(solver, mformat, precond, pformat, atol, rtol, div, maxiter, basis, p, q,
                            &paralution_mat, &paralution_rhs, &paralution_x, iter, resnorm, err);
+
+
 
   paralution_x.MoveToHost();
   paralution_x.LeaveDataPtr(&in_x);
@@ -321,7 +326,7 @@ void paralution_fortran_solve(char *solver, char *mformat, char *precond, char *
   _precond_type pprecond;
   paralution::_matrix_format matformat;
   paralution::_matrix_format preformat;
-
+  
   // Prepare solver type
   if      ( std::string(solver) == "BiCGStab" )   psolver = BiCGStab;
   else if ( std::string(solver) == "CG" )         psolver = CG;
@@ -348,10 +353,12 @@ void paralution_fortran_solve(char *solver, char *mformat, char *precond, char *
   else if ( std::string(precond) == "MultiColoredILU" ) pprecond = MultiColoredILU;
   else if ( std::string(precond) == "FSAI" )            pprecond = FSAI;
   else if ( std::string(precond) == "AMG" )             pprecond = AMG_PC;
+  else if ( std::string(precond) == "ELIMI" )           pprecond = MultiElimination;
   else {
     err = 6;
     return;
   }
+  
 
   // Prepare matrix format for solving
   if      ( std::string(mformat) == "CSR" )   matformat = paralution::CSR;
@@ -382,6 +389,7 @@ void paralution_fortran_solve(char *solver, char *mformat, char *precond, char *
     return;
   }
 
+  
   // Switch for solver selection
   switch( psolver )
     {
@@ -479,33 +487,18 @@ void paralution_fortran_solve(char *solver, char *mformat, char *precond, char *
       p_amg->InitMaxIter(2);
       pr_mg = p_amg;
       ls->SetPreconditioner(*pr_mg);
-      break;  
+      break;
+  case MultiElimination:
+      paralution::MultiElimination<paralution::LocalMatrix<double>, paralution::LocalVector<double>, double > *p_multi;
+      p_multi = new paralution::MultiElimination<paralution::LocalMatrix<double>, paralution::LocalVector<double>, double >;
+      paralution::Jacobi<paralution::LocalMatrix<double>, paralution::LocalVector<double>, double > j_p;
+      p_multi->Set(j_p, 2);
+      pr =p_multi;
+      ls->SetPreconditioner(*pr);
+      break;
   }
 
- 
-  if(psolver !=LU && psolver !=QR ) {
-    ls->SetOperator(*mat);
-    ls->Init(atol, rtol, div, maxiter);
-    
-    ls->MoveToAccelerator();
-    mat->MoveToAccelerator();
-    x->MoveToAccelerator();
-    rhs->MoveToAccelerator();
-
-    ls->Build();
-  }
-  else
-    {
-      ls_exact->SetOperator(*mat);
-      
-      ls_exact->MoveToAccelerator();
-      mat->MoveToAccelerator();
-      x->MoveToAccelerator();
-      rhs->MoveToAccelerator();
-      ls_exact->Build();
-    } 
-
-  switch( matformat )
+   switch( matformat )
   {
     case paralution::CSR:
       mat->ConvertToCSR();
@@ -533,6 +526,42 @@ void paralution_fortran_solve(char *solver, char *mformat, char *precond, char *
       break;
   }
 
+
+ 
+  if(psolver !=LU && psolver !=QR ) {
+    ls->SetOperator(*mat);
+    ls->Init(atol, rtol, div, maxiter);
+
+    ls->MoveToAccelerator();
+    mat->MoveToAccelerator();
+    x->MoveToAccelerator();
+    rhs->MoveToAccelerator();
+    
+     double T1,T2;
+    T1=paralution::paralution_time();
+    ls->Build();
+    T2=paralution::paralution_time();
+    std::cout<<" time "<<(T2-T1)/1000000<<std::endl;
+
+  }
+  else
+    {
+      ls_exact->SetOperator(*mat);
+   
+      ls_exact->MoveToAccelerator();
+      mat->MoveToAccelerator();
+      x->MoveToAccelerator();
+      rhs->MoveToAccelerator();
+      
+      double T1,T2;
+      T1=paralution::paralution_time();
+      ls_exact->Build();
+      T2=paralution::paralution_time();
+      std::cout<<" time "<<(T2-T1)/1000000<<std::endl;
+
+    } 
+
+  //ls->Verbose(2);
   x->Zeros();
   x->info();
   rhs->info();

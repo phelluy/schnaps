@@ -215,8 +215,8 @@ void SolvePoisson1D(field *f,real * w,int type_bc, real bc_l, real bc_r,Solver s
 
   InitLinearSolver(&sky,neq,NULL,NULL); //InitSkyline(&sky, neq);
   
-  sky.solver_type =LU;// solver_sys;
-  sky.pc_type=NONE ;//precon;
+  sky.solver_type = solver_sys;
+  sky.pc_type=precon;
 
   if(!sky.is_alloc){
   // compute the profile of the matrix

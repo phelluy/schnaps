@@ -202,6 +202,20 @@ void Vector_copy(real x[],real prod[],int N){
 }
 
 
+real Vector_norm2(real x[],int  N){
+  int i;
+  real norm_f=0;
+  double norm=0;
+ 
+  for(i=0;i<N;i++)
+    {
+      norm += x[i]*x[i];
+    }
+  norm=sqrt(norm);
+  norm_f = (real) norm;
+  return norm_f;
+}
+
 void Vector_prodot(real x[],real y[],real prod[],int N){
   int i;
  
@@ -281,15 +295,16 @@ void Solver_Paralution(LinearSolver* lsol){
   int nnz=0,n=0,c=0;
   Skyline * mat;
   
-  storage="CSR";
-
-
-
   int basis_size_gmres=30, ILU_p=2,ILU_q=2;
   int* iter_final=0;
   int* ierr=0;
   int maxit=100000;
-  double a_tol=1.e-13,r_tol=1.e-8,div_tol=1.e+8;
+  double norm_rhs=0;
+  double a_tol=0,r_tol=0,div_tol=1.e+8;
+
+  storage="CSR";
+  norm_rhs=Vector_norm2(lsol->rhs,lsol->neq);
+  a_tol=1.e-8*(1.0+1.e-20*norm_rhs);
 
   switch(lsol->solver_type){
   case PAR_CG :
@@ -309,9 +324,11 @@ void Solver_Paralution(LinearSolver* lsol){
      break;
   case PAR_LU :
     solver="LU";
+    storage="DENSE";
      break;
   case PAR_QR :
     solver="QR";
+    storage="DENSE";
      break;
   default : 
     assert(1==2);   
@@ -339,6 +356,9 @@ void Solver_Paralution(LinearSolver* lsol){
      break;
   case PAR_AMG_PC :
     pc="AMG";
+     break;
+  case PAR_ELIMI :
+     pc="ELIMI";
      break;  
   default : 
     assert(1==2);   
