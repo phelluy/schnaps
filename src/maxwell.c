@@ -28,6 +28,7 @@ void Maxwell2DNumFlux_centered(real *wL, real *wR, real *vnorm, real *flux)
   const real ny = vnorm[1];
   const real khi = 1.0;
 
+  // FIXME: improve names for these (refer to E, H, etc).
   const real s0 = 0.5 * (wR[0] + wL[0]);
   const real s1 = 0.5 * (wR[1] + wL[1]);
   const real s2 = 0.5 * (wR[2] + wL[2]);
@@ -63,6 +64,7 @@ void Maxwell2DNumFlux_uncentered(real *wL, real *wR, real *vnorm, real *flux)
   const real overr = 1.0 / (r + 1e-16);
   const real khi = 1.0;
 
+  // FIXME: improve names for these (refer to E, H, etc).
   const real s0 = 0.5 * (wR[0] + wL[0]);
   const real s1 = 0.5 * (wR[1] + wL[1]);
   const real s2 = 0.5 * (wR[2] + wL[2]);
@@ -142,21 +144,15 @@ void Maxwell2DNumFlux_unoptimised(real *wL, real *wR, real *vnorm, real *flux)
 #pragma end_opencl
 
 #pragma start_opencl
-void Maxwell3DNumFlux(real *wL, real *wR, real *vnorm, real *flux) 
+void Maxwell3DNumFlux_uncentered(real *wL, real *wR, real *vnorm, real *flux) 
 {
-  // FIXME: what is the name of this flux?
+  // Uncentered flux (upwind) for Maxwell's equations
 
-  // FIXME: field layout
-  // w[0] : FIXME
-  // w[1] : FIXME
-  // w[2] : FIXME
-  // w[3] : FIXME
-  // w[4] : FIXME
-  // w[5] : FIXME
+  // Data layout: w = {Ex, Ey, Ez, Hx, Hy, Hz}
 
   // The first three components of the flux are
   // Let {{E}} = ( ER + EL ) / 2, [[E]] = ( ER - EL ) / 2 
-  // n x ( n x 0.5 * [[E]] ) / r - n x {{H}}
+  // n x ( n x [[E]] ) / r - n x {{H}}
   // and the last three are
   // n x ( n x [[H]] ) / r + n x {{E}}
   
@@ -235,12 +231,12 @@ void Maxwell2DImposedData(const real *x, const real t, real *w)
 #pragma end_opencl
 
 #pragma start_opencl
-void Maxwell2DBoundaryFlux_centered(real *x, real t, 
-				    real *wL, real *vnorm, real *flux)
+void Maxwell2DBoundaryFlux_uncentered(real *x, real t, 
+				      real *wL, real *vnorm, real *flux)
 {
   real wR[7];
   Maxwell2DImposedData(x, t, wR);
-  Maxwell2DNumFlux_centered(wL, wR, vnorm, flux);
+  Maxwell2DNumFlux_uncentered(wL, wR, vnorm, flux);
 }
 #pragma end_opencl
 
@@ -253,6 +249,8 @@ void Maxwell2DInitData(real *x, real *w)
 #pragma start_opencl
 void Maxwell2DSource(const real *x, const real t, const real *w, real *source)
 {
+  // FIXME: documentation
+
   const real khi = 1.0;
   source[0] = w[4];
   source[1] = w[5];
