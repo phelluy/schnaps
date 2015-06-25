@@ -67,21 +67,30 @@ int TestKernelInterface(void){
   for(int i = 0; i < f.wsize; i++)
     f.dtwn[i] = 0.0;
 
-  status=clEnqueueUnmapMemObject(f.cli.commandqueue,
-				 f.dtwn_cl,
-				 f.dtwn,
-				 0, NULL, NULL);
-
+  status = clEnqueueUnmapMemObject(f.cli.commandqueue,
+				   f.dtwn_cl,
+				   f.dtwn,
+				   0, NULL, NULL);
   assert(status == CL_SUCCESS);
   status = clFinish(f.cli.commandqueue);
   assert(status == CL_SUCCESS);
 
   // OpenCL version
-  for(int ifa = 0; ifa < f.macromesh.nbfaces; ifa++) {
-    printf("ifa: %d\n", ifa);
+  
+  const int ninterfaces = f.macromesh.nmacrointerfaces;
+  for(int i = 0; i < ninterfaces; ++i) {
+    int ifa = f.macromesh.macrointerface[i];
     DGMacroCellInterface_CL((void*) (mface + ifa), &f, &(f.wn_cl), 
 			    0, NULL, NULL);
-    //clFinish(f.cli.commandqueue);
+    clFinish(f.cli.commandqueue);
+  }
+  
+  const int nboundaryfaces = f.macromesh.nboundaryfaces;
+  for(int i = 0; i < nboundaryfaces; ++i) {
+    int ifa = f.macromesh.boundaryface[i];
+    DGBoundary_CL((void*) (mface + ifa), &f, &(f.wn_cl),
+			    0, NULL, NULL);
+    clFinish(f.cli.commandqueue);
   }
   clFinish(f.cli.commandqueue);
   CopyfieldtoCPU(&f);

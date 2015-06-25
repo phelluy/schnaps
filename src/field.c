@@ -182,6 +182,38 @@ void init_data(field *f)
 }
 
 #ifdef _WITH_OPENCL
+void set_physnodes_cl(field *f) 
+{
+  const int nmacro = f->macromesh.nbelems;
+  real buf_size = sizeof(real) * 60 * nmacro;
+  real *physnode = malloc(buf_size);
+  
+  for(int ie = 0; ie < nmacro; ++ie) {
+    int ie20 = 20 * ie;
+    for(int inoloc = 0; inoloc < 20; ++inoloc) {
+      int ino = 3 * f->macromesh.elem2node[ie20 + inoloc];
+      real *iphysnode = physnode + 3 * ie20 + 3 * inoloc;
+      real *nodeino = f->macromesh.node + ino;
+      iphysnode[0] = nodeino[0];
+      iphysnode[1] = nodeino[1];
+      iphysnode[2] = nodeino[2];
+    }
+  }
+  
+  cl_int status;
+  status = clEnqueueWriteBuffer(f->cli.commandqueue,
+  				f->physnodes_cl, // cl_mem buffer,
+  				CL_TRUE,// cl_bool blocking_read,
+  				0, // size_t offset
+  				buf_size, // size_t cb
+  				physnode, //  	void *ptr,
+  				0, 0, 0);
+  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status >= CL_SUCCESS);
+  
+  free(physnode);
+}
+
 void init_field_cl(field *f)
 {
   InitCLInfo(&f->cli, nplatform_cl, ndevice_cl);
@@ -211,8 +243,8 @@ void init_field_cl(field *f)
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 
+  // Allocate one physnode buffer
   f->physnode = calloc(60, sizeof(real));
-
   f->physnode_cl = clCreateBuffer(f->cli.context,
 				  CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR,
 				  sizeof(real) * 60,
@@ -221,14 +253,25 @@ void init_field_cl(field *f)
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 
-  f->physnodeR = calloc(60, sizeof(real));
+  // Allocate and fill buffer for all macrocell geometries.
+  const int nmacro = f->macromesh.nbelems;
+  const size_t buf_size = sizeof(real) * 60 * nmacro;
+  f->physnodes_cl = clCreateBuffer(f->cli.context,
+				   CL_MEM_READ_ONLY,
+				   buf_size,
+				   NULL,
+				   &status);
+  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status >= CL_SUCCESS);
+  set_physnodes_cl(f);
 
+  // Allocate one physnode buffer for R macrocell
+  f->physnodeR = calloc(60, sizeof(real));
   f->physnodeR_cl = clCreateBuffer(f->cli.context,
 				   CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR,
 				   sizeof(real) * 60,
 				   f->physnodeR,
 				   &status);
-
 
   // Program compilation
   char *strprog;
@@ -319,26 +362,44 @@ void init_field_cl(field *f)
 
   // Initialize events. // FIXME: free on exit
   f->clv_zbuf = clCreateUserEvent(f->cli.context, &status);
+
+  const int ninterfaces = f->macromesh.nmacrointerfaces;
+  if(ninterfaces > 0) {
+    f->clv_mci = calloc(ninterfaces, sizeof(cl_event));
+    for(int ifa = 0; ifa < ninterfaces; ++ifa)
+      f->clv_mci[ifa] = clCreateUserEvent(f->cli.context, &status);
+  }
+    
+  const int nbound = f->macromesh.nboundaryfaces;
+  if(nbound > 0) {
+    f->clv_boundary = calloc(nbound, sizeof(cl_event));
+    for(int ifa = 0; ifa < nbound; ++ifa)
+      f->clv_boundary[ifa] = clCreateUserEvent(f->cli.context, &status);
+  }
   
-  f->clv_mapdone = clCreateUserEvent(f->cli.context, &status);
+  f->clv_mass = calloc(nmacro, sizeof(cl_event));
+  for(int ie = 0; ie < nmacro; ++ie)
+    f->clv_mass[ie] = clCreateUserEvent(f->cli.context, &status);
 
-  f->clv_physnodeupdate = clCreateUserEvent(f->cli.context, &status);
+  f->clv_flux0 = calloc(nmacro, sizeof(cl_event));
+  f->clv_flux1 = calloc(nmacro, sizeof(cl_event));
+  f->clv_flux2 = calloc(nmacro, sizeof(cl_event));
+  for(int ie = 0; ie < nmacro; ++ie) {
+    f->clv_flux0[ie] = clCreateUserEvent(f->cli.context, &status);
+    f->clv_flux1[ie] = clCreateUserEvent(f->cli.context, &status);
+    f->clv_flux2[ie] = clCreateUserEvent(f->cli.context, &status);
+  }
+  
+  f->clv_volume = calloc(nmacro, sizeof(cl_event));
+  for(int ie = 0; ie < nmacro; ++ie) {
+    f->clv_volume[ie] = clCreateUserEvent(f->cli.context, &status);
+  }
 
-  f->clv_mci = clCreateUserEvent(f->cli.context, &status);
-  f->clv_interkernel = clCreateUserEvent(f->cli.context, &status);
-  f->clv_interupdate = clCreateUserEvent(f->cli.context, &status);
-  f->clv_interupdateR = clCreateUserEvent(f->cli.context, &status);
-
-  f->clv_mass = clCreateUserEvent(f->cli.context, &status);
-
-  f->clv_flux = calloc(3, sizeof(cl_event));
-  f->clv_flux[0] = clCreateUserEvent(f->cli.context, &status);
-  f->clv_flux[1] = clCreateUserEvent(f->cli.context, &status);
-  f->clv_flux[2] = clCreateUserEvent(f->cli.context, &status);
-
-  f->clv_volume = clCreateUserEvent(f->cli.context, &status);
-  f->clv_source = clCreateUserEvent(f->cli.context, &status);
-
+  f->clv_source = calloc(nmacro, sizeof(cl_event));
+  for(int ie = 0; ie < nmacro; ++ie) {
+    f->clv_source[ie] = clCreateUserEvent(f->cli.context, &status);
+  }
+    
   // Set timers to zero
   f->zbuf_time = 0;
   f->mass_time = 0;

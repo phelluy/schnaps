@@ -478,8 +478,8 @@ void ReadFile(char filename[], char **s){
 
 //! \brief scan all *.h and *.c in order to find the code
 //! to be shared with opencl
-//! such code is enclosed between #pragma start_opencl and 
-//! #pragma end_opencl
+//! such code is enclosed between \#pragma start_opencl and 
+// \#pragma end_opencl
 void GetOpenCLCode(void){
   int status;
   status = system("sh get_opencl_code.sh");

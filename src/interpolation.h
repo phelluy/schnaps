@@ -88,7 +88,8 @@ void ipg_to_xyz(const int *raf, const int *deg, int *ic, int *ix, const
 //! \param[in] ic the 3 subcell indices in x,y,z directions
 //! \param[in] ix the 3 glop indices in the subcell
 #pragma start_opencl
-void xyz_to_ipg(int* raf,int* deg,int* ic,int* ix,int *ipg);
+void xyz_to_ipg(const int *raf, const int *deg, const int *ic, const int *ix,
+		int *ipg);
 #pragma end_opencl
 
 //! \brief return the reference coordinates xpg[3] and weight wpg of the GLOP ipg
