@@ -29,12 +29,13 @@ int main(int argc, char *argv[]) {
 
 int TestMHD(int argc, char *argv[]) {
   real cfl = 0.2;
-  real tmax = 0.1;
+  real tmax = 1;
   bool writemsh = false;
   real vmax = 6.0;
   bool usegpu = false;
   real dt = 0.0;
-
+  real periodsize = 6.2831853;
+  
   for (;;) {
     int cc = getopt(argc, argv, "c:t:w:D:P:g:s:");
     if (cc == -1) break;
@@ -83,7 +84,10 @@ int TestMHD(int argc, char *argv[]) {
   f.model.ImposedData=MHDImposedData;
   
   char buf[1000];
-  sprintf(buf, "-D _M=%d", f.model.m);
+  sprintf(buf, "-D _M=%d -D _PERIODX=%f -D _PERIODY=%f",
+          f.model.m,
+          periodsize,
+          periodsize);
   strcat(cl_buildoptions, buf);
 
   sprintf(numflux_cl_name, "%s", "MHDNumFluxRusanov");
@@ -111,12 +115,12 @@ int TestMHD(int argc, char *argv[]) {
   ReadMacroMesh(&(f.macromesh), "test/testOTgrid.msh");
   //ReadMacroMesh(&(f.macromesh), "test/testcube.msh");
   // Try to detect a 2d mesh
-  Detect2DMacroMesh(&(f.macromesh));
+  Detect2DMacroMesh(&(f.macromesh)); 
   bool is2d=f.macromesh.is2d; 
   assert(is2d);  
 
-  f.macromesh.period[0]=6.2831853;
-  f.macromesh.period[1]=6.2831853;
+  f.macromesh.period[0]=periodsize;
+  f.macromesh.period[1]=periodsize;
   
   // Mesh preparation
   BuildConnectivity(&(f.macromesh));
