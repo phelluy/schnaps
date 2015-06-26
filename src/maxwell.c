@@ -252,12 +252,12 @@ void Maxwell2DSource(const real *x, const real t, const real *w, real *source)
   // FIXME: documentation
 
   const real khi = 1.0;
-  source[0] = w[4];
-  source[1] = w[5];
-  source[2] = 0;
-  source[3] = khi * w[6]; 
-  source[4] = 0;
-  source[5] = 0;
-  source[6] = 0;
+  source[0] = w[4]; // Ex
+  source[1] = w[5]; // Ey
+  source[2] = 0;    // Hz
+  source[3] = khi * w[6]; // div-cleaning variable 
+  source[4] = 0; // rho
+  source[5] = 0; // Jx
+  source[6] = 0; // Jy
 }
 #pragma end_opencl
