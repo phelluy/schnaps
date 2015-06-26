@@ -9,9 +9,9 @@ void Maxwell2DNumFlux_centered(real *wL, real *wR, real *vnorm, real *flux)
   // FIXME: add documentation
 
   // FIXME: field layout
-  // w[0] : FIXME
-  // w[1] : FIXME
-  // w[2] : FIXME
+  // w[0] : FIXME: Ex?
+  // w[1] : FIXME: Ey?
+  // w[2] : FIXME: Hz?
   // w[3] : FIXME
   // w[4] : FIXME
   // w[5] : FIXME
@@ -29,10 +29,10 @@ void Maxwell2DNumFlux_centered(real *wL, real *wR, real *vnorm, real *flux)
   const real khi = 1.0;
 
   // FIXME: improve names for these (refer to E, H, etc).
-  const real s0 = 0.5 * (wR[0] + wL[0]);
-  const real s1 = 0.5 * (wR[1] + wL[1]);
-  const real s2 = 0.5 * (wR[2] + wL[2]);
-  const real s3 = 0.5 * (wR[3] + wL[3]);
+  const real s0 = 0.5 * ( wR[0] + wL[0] );
+  const real s1 = 0.5 * ( wR[1] + wL[1] );
+  const real s2 = 0.5 * ( wR[2] + wL[2] );
+  const real s3 = 0.5 * ( wR[3] + wL[3] );
 
   flux[0] = -ny * s2 + khi * nx * s3;
   flux[1] =  nx * s2 + khi * ny * s3;
@@ -65,15 +65,15 @@ void Maxwell2DNumFlux_uncentered(real *wL, real *wR, real *vnorm, real *flux)
   const real khi = 1.0;
 
   // FIXME: improve names for these (refer to E, H, etc).
-  const real s0 = 0.5 * (wR[0] + wL[0]);
-  const real s1 = 0.5 * (wR[1] + wL[1]);
-  const real s2 = 0.5 * (wR[2] + wL[2]);
-  const real s3 = 0.5 * (wR[3] + wL[3]);
+  const real s0 = 0.5 * ( wR[0] + wL[0] );
+  const real s1 = 0.5 * ( wR[1] + wL[1] );
+  const real s2 = 0.5 * ( wR[2] + wL[2] );
+  const real s3 = 0.5 * ( wR[3] + wL[3] );
 
-  const real d0 = 0.5 * (wR[0] - wL[0]);
-  const real d1 = 0.5 * (wR[1] - wL[1]);
-  const real d2 = 0.5 * (wR[2] - wL[2]);
-  const real d3 = 0.5 * (wR[3] - wL[3]);
+  const real d0 = 0.5 * ( wR[0] - wL[0] );
+  const real d1 = 0.5 * ( wR[1] - wL[1] );
+  const real d2 = 0.5 * ( wR[2] - wL[2] );
+  const real d3 = 0.5 * ( wR[3] - wL[3] );
 
   flux[0] = 
     -ny * s2 + khi * nx * s3
