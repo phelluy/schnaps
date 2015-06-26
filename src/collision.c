@@ -49,7 +49,7 @@ void VlasovP_Lagrangian_Source(const real* x, const real t, const real* w,
   }
   
   
-  for(int iv=0;iv<_MV+2;iv++){
+  for(int iv=0;iv<_INDEX_MAX_KIN+1;iv++){
     source[iv]=0;
   }
   // no source on the potential for the moment

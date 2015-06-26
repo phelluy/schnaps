@@ -297,7 +297,6 @@ void DGMacroCellInterface_CL(void *mf, field *f, cl_mem *wn_cl,
   int *param = f->interp_param;
   cl_int status;
   cl_kernel kernel = f->dginterface;
-
   status = clSetKernelArg(kernel,
                           7,
                           sizeof(cl_mem),
@@ -824,13 +823,16 @@ void set_buf_to_zero_cl(cl_mem *buf, int size, field *f,
 void dtfield_CL(field *f, cl_mem *wn_cl,
 		cl_uint nwait, cl_event *wait, cl_event *done)
 {
+
   set_buf_to_zero_cl(&f->dtwn_cl, f->wsize, f,
   		     nwait, wait, &f->clv_zbuf);
   
   // Macrocell interfaces must be launched serially
   const int ninterfaces = f->macromesh.nmacrointerfaces;
+  
   for(int i = 0; i < ninterfaces; ++i) {
     int ifa = f->macromesh.macrointerface[i];
+
     DGMacroCellInterface_CL((void*) (f->mface + ifa), f, wn_cl,
     			    1,
     			    i == 0 ? &f->clv_zbuf : f->clv_mci + i - 1,

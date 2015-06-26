@@ -29,12 +29,13 @@ int main(int argc, char *argv[]) {
 
 int TestMHD(int argc, char *argv[]) {
   real cfl = 0.2;
-  real tmax = 0.1;
+  real tmax = 1;
   bool writemsh = false;
   real vmax = 6.0;
   bool usegpu = false;
   real dt = 0.0;
-
+  real periodsize = 6.2831853;
+  
   for (;;) {
     int cc = getopt(argc, argv, "c:t:w:D:P:g:s:");
     if (cc == -1) break;
@@ -77,16 +78,19 @@ int TestMHD(int argc, char *argv[]) {
 
   strcpy(f.model.name,"MHD");
 
-  f.model.NumFlux=MHDNumFluxP2;
+  f.model.NumFlux=MHDNumFluxRusanov;
   f.model.BoundaryFlux=MHDBoundaryFlux;
   f.model.InitData=MHDInitData;
   f.model.ImposedData=MHDImposedData;
   
   char buf[1000];
-  sprintf(buf, "-D _M=%d", f.model.m);
+  sprintf(buf, "-D _M=%d -D _PERIODX=%f -D _PERIODY=%f",
+          f.model.m,
+          periodsize,
+          periodsize);
   strcat(cl_buildoptions, buf);
 
-  sprintf(numflux_cl_name, "%s", "MHDNumFluxP2");
+  sprintf(numflux_cl_name, "%s", "MHDNumFluxRusanov");
   sprintf(buf," -D NUMFLUX=");
   strcat(buf, numflux_cl_name);
   strcat(cl_buildoptions, buf);
@@ -111,12 +115,12 @@ int TestMHD(int argc, char *argv[]) {
   ReadMacroMesh(&(f.macromesh), "test/testOTgrid.msh");
   //ReadMacroMesh(&(f.macromesh), "test/testcube.msh");
   // Try to detect a 2d mesh
-  Detect2DMacroMesh(&(f.macromesh));
+  Detect2DMacroMesh(&(f.macromesh)); 
   bool is2d=f.macromesh.is2d; 
   assert(is2d);  
 
-  f.macromesh.period[0]=6.2831853;
-  f.macromesh.period[1]=6.2831853;
+  f.macromesh.period[0]=periodsize;
+  f.macromesh.period[1]=periodsize;
   
   // Mesh preparation
   BuildConnectivity(&(f.macromesh));
@@ -128,7 +132,7 @@ int TestMHD(int argc, char *argv[]) {
   // Prudence...
   CheckMacroMesh(&(f.macromesh), f.interp.interp_param + 1);
 
-  Plotfield(0, (1==0), &f, "Rho", "dginit.msh");
+  //Plotfield(0, (1==0), &f, "Rho", "dginit.msh");
 
   f.vmax=vmax;
 
@@ -137,7 +141,7 @@ int TestMHD(int argc, char *argv[]) {
     printf("Using OpenCL:\n");
     //executiontime = seconds();
     //assert(1==2);
-    RK2(&f, tmax, dt);
+    RK2_CL(&f, tmax, dt, 0, NULL, NULL);
     //executiontime = seconds() - executiontime;
   } else { 
     printf("Using C:\n");
@@ -147,7 +151,9 @@ int TestMHD(int argc, char *argv[]) {
   }
 
   Plotfield(0,false,&f, "Rho", "dgvisu.msh");
-  Gnuplot(&f,0,0.0,"data1D.dat");
+  //Gnuplot(&f,0,0.0,"data1D.dat");
+
+  show_cl_timing(&f);
 
   printf("tmax: %f, cfl: %f\n", tmax, f.model.cfl);
 

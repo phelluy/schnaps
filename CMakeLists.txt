@@ -10,7 +10,7 @@ SET(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 
 #set(CMAKE_C_FLAGS "-std=c99 -D_REENTRANT -O3 -g -D_POSIX_C_SOURCE=200112L")
 #set(CMAKE_C_FLAGS "-std=gnu99 -D_REENTRANT -O3 -g")
-set(CMAKE_C_FLAGS " -std=c99 -D_REENTRANT -O3 -g")
+set(CMAKE_C_FLAGS " -std=c99 -D_REENTRANT -O3")
 
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Dreal=double")
 
@@ -271,8 +271,7 @@ add_executable(
   test/testperiodic.c
 )
 target_link_libraries(testperiodic ${LIBS})
-# This test is too slow.  Please re-enable after decreasing execution time.
-#add_test(testperiodic testperiodic)
+add_test(testperiodic testperiodic)
 
 
 add_test(testskyline testskyline)

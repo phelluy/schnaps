@@ -97,7 +97,7 @@ real local_kinetic_energy(field *f,real *x, real *w) {
 
 // TODO: do not store all diagnotics for all time, but instead just
 // append to the output file.
-void Energies(field *f, real *w, real k_energy, real e_energy, real t_energy) {
+void Energies(field *f, real *w, real k_energy, real e_energy, real t_energy,int first_diag) {
   
   k_energy = 0;
   e_energy = 0;
@@ -135,20 +135,63 @@ void Energies(field *f, real *w, real k_energy, real e_energy, real t_energy) {
       }
       // get the exact value
       k_energy += local_kinetic_energy(f, xphy, wn) * wpg * det;
-      e_energy += wn[_MV+1] * wn[_MV+1] * wpg * det;      
+      e_energy += wn[_INDEX_EX] * wn[_INDEX_EX] * wpg * det;
+  
     }
   }   
   
   t_energy = 0.5 * (e_energy + k_energy);
   
-  f->Diagnostics[f->iter_time] = 0.5 * k_energy;
-  f->Diagnostics[f->iter_time + f->itermax] = 0.5 * e_energy;
-  f->Diagnostics[f->iter_time + 2 * f->itermax] = t_energy;
+  f->Diagnostics[f->iter_time + (first_diag-1) * f->itermax] = 0.5 * k_energy;
+  f->Diagnostics[f->iter_time + (first_diag) * f->itermax] = 0.5 * e_energy;
+  f->Diagnostics[f->iter_time + (first_diag+1) * f->itermax] = t_energy;
 }
+
+void Charge_total(field *f, real *w, real t_charge,int first_diag) {
+  
+  t_charge=0;
+
+  for (int ie = 0; ie < f->macromesh.nbelems; ie++){
+    // get the physical nodes of element ie
+    real physnode[20][3];
+    for(int inoloc = 0; inoloc < 20; inoloc++){
+      int ino = f->macromesh.elem2node[20 * ie + inoloc];
+      physnode[inoloc][0] = f->macromesh.node[3 * ino + 0];
+      physnode[inoloc][1] = f->macromesh.node[3 * ino + 1];
+      physnode[inoloc][2] = f->macromesh.node[3 * ino + 2];
+    }
+
+    // loop on the glops (for numerical integration)
+    for(int ipg = 0; ipg < NPG(f->interp_param + 1); ipg++){
+      real xpgref[3], xphy[3], wpg;
+      real dtau[3][3], codtau[3][3];//,xpg[3];
+      // get the coordinates of the Gauss point
+      ref_pg_vol(f->interp_param + 1, ipg, xpgref, &wpg, NULL);
+      Ref2Phy(physnode, // phys. nodes
+	      xpgref,  // xref
+	      NULL,-1, // dpsiref,ifa
+	      xphy,dtau,  // xphy,dtau
+	      codtau,NULL,NULL); // codtau,dpsi,vnds
+      real det
+	= dtau[0][0] * codtau[0][0]
+	+ dtau[0][1] * codtau[0][1]
+	+ dtau[0][2] * codtau[0][2]; 
+      real wn[f->model.m];
+      for(int iv = 0; iv < _INDEX_MAX + 1; iv++){ 
+	int imem = f->varindex(f->interp_param, ie, ipg, iv);
+	wn[iv] = w[imem];
+      }
+      t_charge += wn[_INDEX_RHO] * wpg * det;
+    }
+  }   
+
+  f->Diagnostics[f->iter_time + (first_diag-1) * f->itermax] = t_charge;
+}
+
 
 void Plot_Energies(field *f, real dt) {
   int nb_diag = 0;
-  real e_energy = 0, k_energy = 0, t_energy = 0;
+  real e_energy = 0, k_energy = 0, t_energy = 0,t_charge=0;
   FILE *Plot;
   Plot = fopen("Diagnostics.dat","w");
 
@@ -157,7 +200,8 @@ void Plot_Energies(field *f, real dt) {
     k_energy = f->Diagnostics[i];
     e_energy = f->Diagnostics[i + f->itermax];
     t_energy = f->Diagnostics[i + 2 * f->itermax];
-    fprintf(Plot, "%lf %lf %lf %lf\n", f->tnow, k_energy, e_energy, t_energy);
+    t_charge= f->Diagnostics[i + 3 * f->itermax];
+    fprintf(Plot, "%.11e %.11e %.11e %.11e %.15e\n", f->tnow, k_energy, e_energy, t_energy,t_charge);
   }
   fclose(Plot);
 }

@@ -49,10 +49,10 @@ int TestPeriodic(void) {
   f.model.cfl=0.05;
     
   f.interp.interp_param[0]=f.model.m;  // _M
-  f.interp.interp_param[1]=3;  // x direction degree
+  f.interp.interp_param[1]=2;  // x direction degree
   f.interp.interp_param[2]=0;  // y direction degree
   f.interp.interp_param[3]=0;  // z direction degree
-  f.interp.interp_param[4]=10;  // x direction refinement
+  f.interp.interp_param[4]=8;  // x direction refinement
   f.interp.interp_param[5]=1;  // y direction refinement
   f.interp.interp_param[6]=1;  // z direction refinement
   // read the gmsh file
@@ -102,7 +102,7 @@ int TestPeriodic(void) {
   
   printf("erreur kinetic L2=%lf\n",dd_Kinetic);
   printf("erreur L2=%lf\n",dd);
-  test= test && (dd<3e-3);
+  test= test && (dd<5e-2);
 
 
   //SolvePoisson(&f);
