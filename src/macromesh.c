@@ -544,6 +544,14 @@ void suppress_double_faces(MacroMesh *m)
 
   m->nbfaces=newfacecount;
   free(oldf);
+
+  if(m->nboundaryfaces > 0)
+    free(m->boundaryface);
+  m->boundaryface = build_boundarylist(m);
+  
+  if(m->nmacrointerfaces > 0)
+    free(m->macrointerface);
+  m->macrointerface = build_interfacelist(m);
 }
 
 // Build the node 2 elems connectivity

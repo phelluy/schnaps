@@ -117,8 +117,8 @@ int TestPoisson(void) {
       printf("Gauss point %d %f %f %f \n",ipg,xref[0],xref[1],xref[2]);
       int imem=f.varindex(f.interp_param,ie,ipg,_MV+1);
       printf("gradphi exact=%f gradphinum=%f rap=%f\n",
-	     1-2*xref[0],f.wn[imem],(1-2*xref[0])/f.wn[imem]);
-      test=test && (fabs(f.wn[imem]-(1-2*xref[0]))<1e-10);
+	     1-2*xref[0],f.wn[imem],(-1+2*xref[0])/f.wn[imem]);
+      test=test && (fabs(f.wn[imem]-(-1+2*xref[0]))<1e-10);
     }
   }
   return test;
@@ -136,7 +136,7 @@ void TestPoisson_ImposedData(const real x[3], const real t,real w[]){
   // exact value of the potential
   // and electric field
   w[_INDEX_PHI] = x[0] * (1 - x[0]);
-  w[_INDEX_EX] = 1. - 2. * x[0];
+  w[_INDEX_EX] = - 1. + 2. * x[0];
   w[_INDEX_RHO] = 2.; //rho init
   w[_INDEX_VELOCITY] = 0; // u init
   w[_INDEX_PRESSURE] = 0; // p init

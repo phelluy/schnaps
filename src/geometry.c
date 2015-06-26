@@ -53,6 +53,7 @@ void Normalize(real a[3])
   a[2] *= r;
 }
 
+#pragma start_opencl
 void PeriodicCorrection(real xyz[3], real period[3])
 {
   for (int dim = 0; dim < 3; ++dim) {
@@ -66,6 +67,7 @@ void PeriodicCorrection(real xyz[3], real period[3])
     }
   }
 }
+#pragma end_opencl
 
 void PeriodicCorrectionB(real xyz[3],real period[3], real xmin[3], real xmax[3])
 {

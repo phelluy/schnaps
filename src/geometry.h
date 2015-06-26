@@ -112,7 +112,9 @@ void Normalize(real a[3]);
 //! \param[in] period:  sizes of the box in each direction
 //! if period[dim]<0 -> non periodic in direction dim
 //! the box is of the form [0,period[0]]x[0,period[1]]x[0,period[2]]
+#pragma start_opencl
 void PeriodicCorrection(real xyz[3],real period[3]);
+#pragma end_opencl
 
 //! \brief periodic correction
 //! \param[inout] xyz: the vector to be put inside the periodic box

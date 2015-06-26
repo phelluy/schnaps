@@ -1,4 +1,16 @@
 // Return the 1d derivative of lagrange polynomial ib at glop ipg
+
+#ifndef _PERIODX
+#define _PERIODX -1
+#endif
+#ifndef _PERIODY
+#define _PERIODY -1
+#endif
+#ifndef _PERIODZ
+#define _PERIODZ -1
+#endif
+
+
 real dlag(int deg, int ib, int ipg) {
   return gauss_lob_dpsi[gauss_lob_dpsi_offset[deg] + ib * (deg + 1) + ipg];
 }
@@ -957,12 +969,14 @@ void DGMacroCellInterface(__constant int *param,        // 0: interp param
   
   real xrefL[3];
   {
+    real period[3] = {_PERIODX,_PERIODY,_PERIODZ};
     real xpg_in[3];
     Ref2Phy(physnodeL,
 	    xpgref_in,
 	    NULL, -1, // dpsiref, ifa
 	    xpg_in, NULL,
 	    NULL, NULL, NULL); // codtau, dpsi,vnds
+    PeriodicCorrection(xpg_in,period);
     Phy2Ref(physnodeR, xpg_in, xrefL);
   }
 
