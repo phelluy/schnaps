@@ -478,10 +478,69 @@ void ReadFile(char filename[], char **s){
 
 //! \brief scan all *.h and *.c in order to find the code
 //! to be shared with opencl
-//! such code is enclosed between #pragma start_opencl and 
-//! #pragma end_opencl
+//! such code is enclosed between \#pragma start_opencl and 
+// \#pragma end_opencl
 void GetOpenCLCode(void){
   int status;
   status = system("sh get_opencl_code.sh");
-  assert(!status);
+  assert(status == 0);
+}
+
+double cl_dev_gflops(char *platform_name)
+{
+  //if(strcmp(platform_name, "Intel(R) Core(TM) i3-4010U CPU @ 1.70GHz") == 0)
+  //  return 2;
+  if(strcmp(platform_name, "Intel(R) Many Integrated Core Acceleration Card")
+     == 0)
+    return 1011.0;
+  if(strcmp(platform_name, "Tahiti") == 0)
+    return (sizeof(real) == sizeof(float)) ? 3788.8 : 947.2;
+  if(strcmp(platform_name, "Tesla K80") == 0)
+    return 2910;
+  if(strcmp(platform_name, "GeForce GT 540M") == 0)
+    return 258.048;
+  return 0;
+}
+
+double cl_dev_bwidth(char *platform_name)
+{
+  //if(strcmp(platform_name, "Intel(R) Core(TM) i3-4010U CPU @ 1.70GHz") == 0)
+  //  return 2;
+
+  if(strcmp(platform_name, "Intel(R) Many Integrated Core Acceleration Card")
+     == 0)
+    return 320.0;
+  if(strcmp(platform_name, "Tesla K80") == 0)
+    return 264.0;
+  if(strcmp(platform_name, "Tahiti") == 0)
+    return 480;
+  if(strcmp(platform_name, "GeForce GT 540M") == 0)
+    return 28.8;
+  return 0;
+}
+
+// Given the dev_flops (in gflop/s) and the bandwidth (in GB/s), the
+// number of operations (flop_count), and the number of real io
+// transfers (io_count), compute the theoretical execution time.
+double kernel_min_time(double dev_flops, double bandwidth,
+		       unsigned long int flop_count, unsigned long int io_count)
+{
+  return flop_count / (1e9 * dev_flops); 
+  + io_count * sizeof(real)  / (1e9 * bandwidth); 
+}
+
+void print_kernel_perf(double dev_gflops, double dev_bwidth,
+		       unsigned long int flop_count, unsigned long int io_count,
+		       cl_ulong kernel_time_ns)
+{
+  if(dev_gflops > 0 && dev_bwidth > 0) {
+    printf("\tKernel flop count:\t\t%lu\n", flop_count);
+    printf("\tKernel io count:\t\t%lu\n", io_count);
+    double total_time = 1e-9 * kernel_time_ns;
+    printf("\tKernel time:\t\t\t%f s\n", total_time);
+    double min_time_total = kernel_min_time(dev_gflops, dev_bwidth,
+					    flop_count, io_count);
+    printf("\tTheoretical kernel time:\t%f s\n", min_time_total);
+    printf("\tEfficiency:\t\t\t%f%%\n", 100.0 * min_time_total / total_time);
+  } 
 }

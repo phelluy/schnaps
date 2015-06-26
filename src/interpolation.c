@@ -179,10 +179,11 @@ int NPGF(int param[], int ifa) {
 }
 
 #pragma start_opencl
-void xyz_to_ipg(int* raf, int* deg, int* ic, int* ix, int *ipg) {
-  
-  int nc = ic[0] + raf[0] * (ic[1] + raf[1] * ic[2]);
-  int offset = (deg[0] + 1) * (deg[1] + 1) * (deg[2] + 1)*nc;
+void xyz_to_ipg(const int *raf, const int *deg, const int *ic, const int *ix, 
+		int *ipg) 
+{
+  const int nc = ic[0] + raf[0] * (ic[1] + raf[1] * ic[2]);
+  const int offset = (deg[0] + 1) * (deg[1] + 1) * (deg[2] + 1)*nc;
 
   *ipg= ix[0] + (deg[0] + 1) * (ix[1] + (deg[1] + 1) * ix[2]) + offset;
 }

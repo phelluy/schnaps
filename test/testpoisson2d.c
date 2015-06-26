@@ -12,7 +12,8 @@ void TestPoisson_InitData(real x[3],real w[]);
 void TestPoisson_BoundaryFlux(real x[3],real t,real wL[],real* vnorm,
 			      real* flux);
 
-int main(void) {
+int main(void) 
+{
   
   // unit tests
     
@@ -22,10 +23,10 @@ int main(void) {
   else printf("2d poisson test failed !\n");
 
   return !resu;
-} 
+}
 
-int TestPoisson2d(void) {
-
+int TestPoisson2d(void) 
+{
   bool test = true;
 
   field f;
@@ -84,7 +85,6 @@ int TestPoisson2d(void) {
   printf("cfl param =%f\n",f.hmin);
 
 
-
   PoissonSolver ps;
 
   InitPoissonSolver(&ps,&f,_INDEX_PHI);
@@ -107,7 +107,8 @@ int TestPoisson2d(void) {
   return test;
 }
 
-void TestPoisson_ImposedData(const real x[3],const real t,real w[]){
+void TestPoisson_ImposedData(const real x[3], const real t, real w[])
+{
   for(int i = 0; i < _INDEX_MAX; i++){
     w[i] = 0;
   }
@@ -119,21 +120,20 @@ void TestPoisson_ImposedData(const real x[3],const real t,real w[]){
   /* w[_INDEX_PHI] = x[0] ; */
   /* w[_INDEX_EX] =  -1; */
   /* w[_INDEX_RHO] = 0; //rho init */
-};
+}
 
-void TestPoisson_InitData(real x[3],real w[]){
+void TestPoisson_InitData(real x[3], real w[])
+{
+  real t = 0;
+  TestPoisson_ImposedData(x, t, w);
+}
 
-  real t=0;
-  TestPoisson_ImposedData(x,t,w);
-
-};
-
-
-void TestPoisson_BoundaryFlux(real x[3],real t,real wL[],real* vnorm,
-				       real* flux){
+void TestPoisson_BoundaryFlux(real x[3], real t, real wL[], real *vnorm, 
+			      real *flux)
+{
   real wR[_INDEX_MAX];
-  TestPoisson_ImposedData(x,t,wR);
-  VlasovP_Lagrangian_NumFlux(wL,wR,vnorm,flux);
-};
+  TestPoisson_ImposedData(x, t, wR);
+  VlasovP_Lagrangian_NumFlux(wL, wR, vnorm, flux);
+}
 
 

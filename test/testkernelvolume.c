@@ -74,9 +74,9 @@ int TestKernelVolume(void){
 
   clFinish(f.cli.commandqueue);
   for(int ie = 0; ie < f.macromesh.nbelems; ++ie) {
-    update_physnode_cl(&f, ie, f.physnode_cl, f.physnode, NULL,
-		       0, NULL, NULL);
-    clFinish(f.cli.commandqueue);
+    /* update_physnode_cl(&f, ie, f.physnode_cl, f.physnode, NULL, */
+    /* 		       0, NULL, NULL); */
+    /* clFinish(f.cli.commandqueue); */
 
     DGVolume_CL((void*) &(f.mcell[ie]), &f, &(f.wn_cl), 0, NULL, NULL);
     clFinish(f.cli.commandqueue);

@@ -28,7 +28,7 @@ typedef struct Model {
   //! \param[out] flux : the flux
   void (*NumFlux)(real wL[], real wR[], real vn[3], real flux[]);
 
-  //! \briefA pointer to the boundary flux function
+  //! \brief A pointer to the boundary flux function
   //! \param[in] x : space position
   //! \param[in] t : time
   //! \param[in] wL : left state

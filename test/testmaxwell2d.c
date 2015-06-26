@@ -14,8 +14,9 @@ int TestMaxwell2D(void) {
   f.model.cfl = 0.05;  
   f.model.m = 7; // num of conservative variables
 
-  f.model.NumFlux = Maxwell2DNumFlux;
-  f.model.BoundaryFlux = Maxwell2DBoundaryFlux;
+  f.model.NumFlux = Maxwell2DNumFlux_centered;
+  //f.model.NumFlux = Maxwell2DNumFlux_centered;
+  f.model.BoundaryFlux = Maxwell2DBoundaryFlux_centered;
   f.model.InitData = Maxwell2DInitData;
   f.model.ImposedData = Maxwell2DImposedData;
   f.varindex = GenericVarindex;
@@ -39,31 +40,34 @@ int TestMaxwell2D(void) {
   char buf[1000];
   sprintf(buf, "-D _M=%d", f.model.m);
   strcat(cl_buildoptions, buf);
-  //set_source_CL(&f, "Maxwell2DSource");
 
-  sprintf(numflux_cl_name, "%s", "Maxwell2DNumFlux");
+  set_source_CL(&f, "Maxwell2DSource");
+  sprintf(numflux_cl_name, "%s", "Maxwell2DNumFlux_uncentered");
   sprintf(buf," -D NUMFLUX=");
   strcat(buf, numflux_cl_name);
   strcat(cl_buildoptions, buf);
 
-
-  sprintf(buf, " -D BOUNDARYFLUX=%s", "Maxwell2DBoundaryFlux");
+  sprintf(buf, " -D BOUNDARYFLUX=%s", "Maxwell2DBoundaryFlux_centered");
   strcat(cl_buildoptions, buf);
-
 
   Initfield(&f);
   
   CheckMacroMesh(&(f.macromesh), f.interp.interp_param + 1);
 
-  real tmax = 1.0;
+  real tmax = 0.1;
   f.vmax = 1;
   real dt = set_dt(&f);
 
-#if 1
+#if 0
+  // C version
   RK2(&f, tmax, dt);
 #else
+  // OpenCL version
   RK2_CL(&f, tmax, dt, 0, 0, 0);
-  CopyfieldtoCPU(&f); 
+  CopyfieldtoCPU(&f);
+  printf("\nOpenCL Kernel time:\n");
+  show_cl_timing(&f);
+  printf("\n");
 #endif
 
   // Save the results and the error
@@ -71,7 +75,7 @@ int TestMaxwell2D(void) {
   Plotfield(0, true, &f, "error", "dgerror.msh");
 
   real dd = L2error(&f);
-  real tolerance = 8e-3;
+  real tolerance = 1.1e-2;
   test = test && (dd < tolerance);
   printf("L2 error: %f\n", dd);
 
