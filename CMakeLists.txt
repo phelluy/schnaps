@@ -101,6 +101,8 @@ list(APPEND
   src/pic.h
   src/pic.c
   src/skyline.h
+  src/dpackfgmres.h
+  src/dpackfgmres.c
   src/linear_solver.h
   src/linear_solver.c
   src/solverpoisson.h
@@ -508,15 +510,15 @@ IF(BUILD_PARALUTION)
 target_link_libraries(testlinearsolver paralution_c ${LIBS})
 add_test(testlinearsolver testlinearsolver)
 
- add_executable(
-  testgmres
-  test/test.h
-  test/testgmres.c
-  )
-target_link_libraries(testgmres paralution_c ${LIBS})
-add_test(testgmres testgmres)
+ELSE()
 
- ## ADD_EXECUTABLE(gmres test/testgmres.c)
- ## TARGET_LINK_LIBRARIES(gmres paralution_c ${LIBS})
+ add_executable(
+  testlinearsolver
+  test/test.h
+  test/testlinearsolver.c
+  )
+target_link_libraries(testlinearsolver ${LIBS})
+add_test(testlinearsolver testlinearsolver)
+
 
 ENDIF()

@@ -2,8 +2,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
+#include <math.h>
 #include "skyline.h"
 #include "paralution_c.h"
+#include "dpackfgmres.h"
 
 
 void InitLinearSolver(LinearSolver* lsol,int n,
@@ -191,20 +193,18 @@ void MatVecLinearSolver(LinearSolver* lsol,real x[],real prod[]){
   
 }
 
-void Vector_copy(real x[],real prod[],int N){
+void Vector_copy(double x[],double prod[],int N){
   int i;
  
     for(i=0;i<N;i++)
       {
 	prod[i] = x[i];
-      }     
-  
+      }      
 }
 
 
-real Vector_norm2(real x[],int  N){
+double Vector_norm2(double x[],int  N){
   int i;
-  real norm_f=0;
   double norm=0;
  
   for(i=0;i<N;i++)
@@ -212,18 +212,22 @@ real Vector_norm2(real x[],int  N){
       norm += x[i]*x[i];
     }
   norm=sqrt(norm);
-  norm_f = (real) norm;
-  return norm_f;
+  return norm;
 }
 
-void Vector_prodot(real x[],real y[],real prod[],int N){
+
+
+
+double Vector_prodot(double x[],double y[],int N){
   int i;
- 
+  double prod;
+
+  prod=0;
     for(i=0;i<N;i++)
       {
-	prod[i] = x[i]*y[i];
+	prod += x[i]*y[i];
       }     
-  
+    return prod;
 }
 
 
@@ -380,8 +384,6 @@ void Solver_Paralution(LinearSolver* lsol){
   
  switch(lsol->storage_type) {
   case SKYLINE :
-    /**nnz=Matrix_Skyline_to_COO(lsol->matrix,rows,cols,coefs);
-       assert(rows);**/
 
     mat = lsol->matrix;
     
@@ -448,122 +450,132 @@ void Solver_Paralution(LinearSolver* lsol){
 
 
 void GMRESSolver(LinearSolver* lsol){
-  int revcom, colx, coly, colz, nbscal, lwork, li_maxiter;
-  int irc[5], icntl[8], info[3];
-  int ierr,N,m,c,i;
-  real cntl[5];
-  real rinfo[2];
-  real sum,err,sum_rhs,lr_tol;
-  real* work;
-  real*loc_x;
-  real*loc_z;
-  real*loc_y;
+  int revcom, colx, coly, colz, nbscal;
+  int li_maxiter;
+  int m,lwork,N;
+  int * pt_m;
+  int * pt_lwork;
+  int * pt_Size;
+
+  int irc[5+1];
+  int icntl[8+1];
+  int info[3+1];
+  double cntl[5+1];
+  double rinfo[2+1];
+  double sum,err,sum_rhs,lr_tol;
+  double * work;
+  double *loc_x;
+  double *loc_y;
+  double *loc_z;
+  double prodot=0.0;
+  int res=0;
   int matvec=1, precondLeft=2, precondRight=3, dotProd=4;
- 
-    
-  assert(lsol->is_init);
-  assert(lsol->is_alloc);
-  assert(lsol->rhs);
-  assert(lsol->sol);
+
+
+  res=init_dgmres(icntl,cntl);
   
-  //call init_dgmres(icntl,cntl) DECALER INDICE TABLEAU ICNTL
-     
-  icntl[2]  = 6 ;           // output unit
-  icntl[6]  = 2000; // Maximum number of iterations
-  icntl[3]  = 0; //!1            // preconditioner (1) = left preconditioner
-  icntl[4]  = 1; ////3            // orthogonalization scheme
-  icntl[5]  = 1; //1            // initial guess  (1) = user supplied guess
-  icntl[7]  = 1; //1            
+  icntl[3]  = 6 ;           // output unit
+  icntl[7]  = 2000; // Maximum number of iterations
+  icntl[4]  = 0; //!1            // preconditioner (1) = left preconditioner
+  icntl[5]  = 1; ////3            // orthogonalization scheme
+  icntl[6]  = 1; //1            // initial guess  (1) = user supplied guess
+  icntl[8]  = 1; //1            
    
      
-  cntl[0]  = 0.00000001; //       ! stopping tolerance
-  cntl[1]  = 1.0;
+  cntl[1]  = 0.000000001; //       ! stopping tolerance
   cntl[2]  = 1.0;
-  cntl[2]  = 1.0;         
-  cntl[4]  = 1.0;
+  cntl[3]  = 1.0;
+  cntl[4]  = 1.0;         
+  cntl[5]  = 1.0;
 
-  m = 30; 
   N = lsol->neq;
-  lwork = m*m + m*(N+5) + 5*N + m + 1;
+  
+  if(N<61) {
+    m = (int) (N/2)+1;
+  }
+  else {
+    m = 30;
+  }
+  lwork = m*m + m*(N+5) + 5*N + m + 1 +1; //(+ one because  ) ??
 
-  work = calloc(lwork, sizeof(real));
-  loc_x = calloc(N, sizeof(real));
-  loc_z = calloc(N, sizeof(real));
-  loc_y = calloc(N, sizeof(real));
+  pt_m = &m;
+  pt_Size = &N;
+  pt_lwork = &lwork;
+
+  work = calloc(lwork, sizeof(double));
+  loc_x = calloc(N, sizeof(double));
+  loc_y = calloc(N, sizeof(double));
+  loc_z = calloc(N, sizeof(double));
   
   for(int ivec = 0; ivec < N; ivec++) {
-    work[ivec]     = lsol->sol[ivec];                    
-    work[N+ivec]    = lsol->rhs[ivec];
+    work[ivec+1]     = lsol->sol[ivec];                    
+    work[N+ivec+1]    = lsol->rhs[ivec];
   }
 
   
   //*****************************************
   //** Reverse communication implementation
   //*****************************************
-  //L10:    drive_dgmres(N,N,m,lwork,work,irc,icntl,cntl,info,rinfo)
-   
-  //revcom = irc(1);
-  //colx   = irc(2);
-  //coly   = irc(3);
-  //colz   = irc(4);
-  //nbscal = irc(5);
-  
-  colx=N;
-  colz=0;
-  coly=N;
-  revcom=4;
+  L10:    res=drive_dgmres(pt_Size,pt_Size,pt_m,pt_lwork,&work[1],&irc[1],&icntl[1],&cntl[1],&info[1],&rinfo[1]);
+
+  revcom = irc[1];
+  colx   = irc[2];
+  coly   = irc[3];
+  colz   = irc[4];
+  nbscal = irc[5];
+
   
   for(int ivec = 0; ivec < N; ivec++) {
-    loc_z[ivec]=work[colz+ivec];                    
-    loc_x[ivec]=work[colx+ivec];
-    loc_y[ivec]=work[coly+ivec];
+  
+    loc_z[ivec]= work[colz+ivec];                    
+    loc_x[ivec]= work[colx+ivec];
+    loc_y[ivec]= work[coly+ivec];    
   }
 
   if (revcom == matvec) {                 // perform the matrix vector product
-    // work(colz) <-- A * work(colx)  
-    MatVecLinearSolver(lsol,loc_x,loc_z);
-    for(int ivec = 0; ivec < N; ivec++) {
-      work[colz+ivec]=loc_z[ivec];                    
-      work[colx+ivec]=loc_x[ivec]; 
+    // work(colz) <-- A * work(colx)
+    MatVecLinearSolver(lsol,loc_x,loc_z);//MatVecLinearSolver(lsol,loc_x,loc_z);
+    for(int ivec = 0; ivec < N; ivec++) {       
+      work[colz+ivec]= loc_z[ivec];                    
+      work[colx+ivec]= loc_x[ivec]; 
     }
-    // goto L10;
+     goto L10;
   }
   else if(revcom == precondLeft)  {                 // perform the matrix vector product
-    // work(colz) <-- A * work(colx)  
+    // work(colz) <-- M-1 * work(colx)  
     Vector_copy(loc_x,loc_z,N);
     for(int ivec = 0; ivec < N; ivec++) {
-      work[colz+ivec]=loc_z[ivec];                    
-      work[colx+ivec]=loc_x[ivec]; 
+      work[colz+ivec]= loc_z[ivec];                    
+      work[colx+ivec]= loc_x[ivec]; 
     }
-    // goto L10;
+     goto L10;
   }
 
   else if(revcom == precondRight)  {                 // perform the matrix vector product
-    // work(colz) <-- A * work(colx)  
+    // work(colz) <-- M-1 * work(colx)  
     Vector_copy(loc_x,loc_z,N);
     for(int ivec = 0; ivec < N; ivec++) {
-      work[colz+ivec]=loc_z[ivec];                    
-      work[colx+ivec]=loc_x[ivec]; 
+      work[colz+ivec]= loc_z[ivec];                    
+      work[colx+ivec]= loc_x[ivec]; 
     }
-    //  goto L10;
+      goto L10;
   }
 
-  else if(revcom == dotProd)  {                 // perform the matrix vector product
-    // work(colz) <-- A * work(colx)  
-    Vector_prodot(loc_x,loc_y,loc_z,N);
+  else if(revcom == dotProd)  {// perform the matrix vector product
+    // work(colz) <-- work(colx) work(coly)
+    prodot=Vector_prodot(loc_x,loc_y,N);
     for(int ivec = 0; ivec < N; ivec++) {
-      work[colz+ivec]=loc_z[ivec];                    
-      work[colx+ivec]=loc_x[ivec];
-      work[coly+ivec]=loc_y[ivec]; 
+      work[colx+ivec]= loc_x[ivec];
+      work[coly+ivec]= loc_y[ivec]; 
     }
-    //	 goto L10;
+    work[colz]= prodot;  
+    	 goto L10;
   }
 
   //******************************** end of GMRES reverse communication
   
-
   for(int ivec = 0; ivec < N; ivec++) {
-    lsol->sol[ivec] = work[ivec];                    
+    lsol->sol[ivec] = work[ivec+1];                    
   }
   
 
