@@ -73,8 +73,6 @@ int TestLandau_Damping_1D(void) {
   // mesh preparation
   f.macromesh.period[0]=2.0*pi/k;
   BuildConnectivity(&(f.macromesh));
-
-  //AffineMapMacroMesh(&(f.macromesh));
  
   // prepare the initial fields
   f.model.cfl=0.5;

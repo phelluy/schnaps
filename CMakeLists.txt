@@ -360,6 +360,14 @@ target_link_libraries(testlandau_damping_1D ${LIBS})
 # This test is too slow.  Please re-enable after decreasing execution time.
 #add_test(testlandau_damping_1D testlandau_damping_1D)
 
+
+ add_executable(
+    testwave2d
+    test/test.h
+    test/testwave2d.c
+    )
+  target_link_libraries(testwave2d ${LIBS})
+
 ##########  OpenCL unit tests  ##########
 if(OPENCL_FOUND)
   add_test(testclinfo testclinfo)
