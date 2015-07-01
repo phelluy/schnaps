@@ -11,7 +11,8 @@ void TestPeriodic_Wave_InitData(real *x, real *w);
 void Wave_Upwind_BoundaryFlux(real *x, real t, real *wL, real *vnorm,real *flux);
 void Wave_Upwind_NumFlux(real wL[],real wR[],real* vnorm,real* flux);
 
-#define _SPEED_WAVE (1)
+#define _SPEED_WAVE (10)
+#define _LENGTH_DOMAIN (2.0)
 
 int main(void) {
   
@@ -48,8 +49,8 @@ int Test_Wave_Periodic(void) {
   f.interp.interp_param[1] = 2;  // x direction degree
   f.interp.interp_param[2] = 2;  // y direction degree
   f.interp.interp_param[3] = 0;  // z direction degree
-  f.interp.interp_param[4] = 32;  // x direction refinement
-  f.interp.interp_param[5] = 32;  // y direction refinement
+  f.interp.interp_param[4] = 24;  // x direction refinement
+  f.interp.interp_param[5] = 24;  // y direction refinement
   f.interp.interp_param[6] = 1;  // z direction refinement
  // read the gmsh file
 
@@ -58,17 +59,17 @@ int Test_Wave_Periodic(void) {
   Detect2DMacroMesh(&(f.macromesh));
   assert(f.macromesh.is2d);
 
-  real A[3][3] = {{2.0, 0, 0}, {0, 2.0, 0}, {0, 0,1}};
+  real A[3][3] = {{_LENGTH_DOMAIN, 0, 0}, {0, _LENGTH_DOMAIN, 0}, {0, 0,1}};
   real x0[3] = {0, 0, 0};
   AffineMapMacroMesh(&(f.macromesh),A,x0);
 
-  f.macromesh.period[0]=2.0;
-  f.macromesh.period[1]=2.0;
+  f.macromesh.period[0]=_LENGTH_DOMAIN;
+  f.macromesh.period[1]=_LENGTH_DOMAIN;
   BuildConnectivity(&(f.macromesh));
 
   // prepare the initial fields
   f.vmax = _SPEED_WAVE;
-  f.model.cfl = 0.2;
+  f.model.cfl = 0.1;
   Initfield(&f);
    // maximal wave speed
   f.nb_diags = 0;
@@ -118,10 +119,13 @@ void Wave_Upwind_NumFlux(real wL[],real wR[],real* vnorm,real* flux){
 
 void TestPeriodic_Wave_ImposedData(const real *x, const real t, real *w) {
   real pi=4.0*atan(1.0);
+  real L=_LENGTH_DOMAIN;
+  real Coef=(2.0*pi)/L;
+  real a=_SPEED_WAVE;
 
-  w[0] = -pi*sqrt(2.0)*sin(pi*sqrt(2.0)*t)*cos(pi*x[0])*cos(pi*x[1]);
-  w[1] = pi*cos(pi*sqrt(2.0)*t)*sin(pi*x[0])*cos(pi*x[1]);
-  w[2] = pi*cos(pi*sqrt(2.0)*t)*cos(pi*x[0])*sin(pi*x[1]);
+  w[0] = -a*Coef*sqrt(2.0)*sin(a*Coef*sqrt(2.0)*t)*cos(Coef*x[0])*cos(Coef*x[1]);
+  w[1] = a*Coef*cos(Coef*a*sqrt(2.0)*t)*sin(Coef*x[0])*cos(Coef*x[1]);
+  w[2] = a*Coef*cos(Coef*a*sqrt(2.0)*t)*cos(Coef*x[0])*sin(Coef*x[1]);
   
 
 }
