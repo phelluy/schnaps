@@ -48,8 +48,8 @@ int Test_Wave_Periodic(void) {
   f.interp.interp_param[1] = 2;  // x direction degree
   f.interp.interp_param[2] = 2;  // y direction degree
   f.interp.interp_param[3] = 0;  // z direction degree
-  f.interp.interp_param[4] = 8;  // x direction refinement
-  f.interp.interp_param[5] = 8;  // y direction refinement
+  f.interp.interp_param[4] = 32;  // x direction refinement
+  f.interp.interp_param[5] = 32;  // y direction refinement
   f.interp.interp_param[6] = 1;  // z direction refinement
  // read the gmsh file
 
@@ -67,9 +67,10 @@ int Test_Wave_Periodic(void) {
   BuildConnectivity(&(f.macromesh));
 
   // prepare the initial fields
-  f.model.cfl = 0.5;
+  f.vmax = _SPEED_WAVE;
+  f.model.cfl = 0.2;
   Initfield(&f);
-  f.vmax = _SPEED_WAVE; // maximal wave speed
+   // maximal wave speed
   f.nb_diags = 0;
   f.pre_dtfield = NULL;
   f.update_after_rk = NULL;
@@ -79,19 +80,21 @@ int Test_Wave_Periodic(void) {
 
   printf("cfl param =%f\n", f.hmin);
 
-  real tmax = 0.1;
+  real tmax = 0.2;
   real dt = set_dt(&f);
   RK2(&f, tmax, dt);
-  //RK2(&f,0.03,0.05);
-
-   // Save the results and the error
-  Plotfield(0, false, &f, NULL, "dgvisu.msh");
-  Plotfield(0, true, &f, "error", "dgerror.msh");
 
   real dd = L2error(&f);
   real tolerance = 9e-3;
   test = test && (dd < tolerance);
   printf("L2 error: %f\n", dd);
+
+   // Save the results and the error
+  Plotfield(0,false, &f, "p", "dgvisup.msh");
+  Plotfield(1,false, &f, "u1", "dgvisuu1.msh");
+  Plotfield(2,false, &f, "u2", "dgvisuu2.msh");
+
+  
 
   return test;
 }
@@ -107,8 +110,8 @@ void Wave_Upwind_NumFlux(real wL[],real wR[],real* vnorm,real* flux){
  
 
   flux[0]=_SPEED_WAVE*flux[0];
-  flux[1]=_SPEED_WAVE*flux[0];
-  flux[2]=_SPEED_WAVE*flux[0];
+  flux[1]=_SPEED_WAVE*flux[1];
+  flux[2]=_SPEED_WAVE*flux[2];
   
 };
 
@@ -132,7 +135,7 @@ void TestPeriodic_Wave_InitData(real *x, real *w) {
 
 void Wave_Upwind_BoundaryFlux(real *x, real t, real *wL, real *vnorm,
 				       real *flux) {
-  real wR[_MV + 6];
+  real wR[3];
   TestPeriodic_Wave_ImposedData(x , t, wR);
   Wave_Upwind_NumFlux(wL, wR, vnorm, flux);
 }

@@ -49,7 +49,6 @@ if(OPENMP_FOUND)
 endif()
 
 SET(BUILD_PARALUTION      OFF CACHE BOOL   "Build paralution library")
-SET(USE_PARALUTION      OFF CACHE BOOL   "Use paralution library")
 
 IF(BUILD_PARALUTION)
 

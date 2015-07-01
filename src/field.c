@@ -602,6 +602,7 @@ void Plotfield(int typplot, int compare, field* f, char *fieldname,
 	      real wex[f->model.m];
 	      f->model.ImposedData(Xphy, f->tnow, wex);
 	      value[nodecount] -= wex[typplot];
+
 	    }
 	    nodecount++;
 	    fprintf(gmshfile, "%d %f %f %f\n", nodecount,
