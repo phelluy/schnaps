@@ -4,7 +4,8 @@
 #include "test.h"
 #include "maxwell.h"
 
-void Coil2DImposedData(const real x[3],const real t,real w[]) {
+void Coil2DImposedData(const real x[3],const real t,real w[])
+{
   real r = x[0] * x[0] + x[1] * x[1];
   w[0] = 0;
   w[1] = 0;
@@ -16,20 +17,24 @@ void Coil2DImposedData(const real x[3],const real t,real w[]) {
 }
 
 void Coil2DBoundaryFlux(real x[3], real t, real wL[], real *vnorm,
-			real *flux) {
+			real *flux)
+{
   real wR[7];
   Coil2DImposedData(x, t, wR);
   Maxwell2DNumFlux_uncentered(wL, wR, vnorm, flux);
 }
 
-void Coil2DInitData(real x[3], real w[]) {
+void Coil2DInitData(real x[3], real w[])
+{
   real t = 0;
   Coil2DImposedData(x, t, w);
 }
 
-int TestCoil2D(void) {
+int TestCoil2D(void)
+{
   bool test = true;
   field f;
+  init_empty_field(&f);
 
   f.model.cfl = 0.05;  
   f.model.m = 7; // num of conservative variables
