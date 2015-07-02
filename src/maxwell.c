@@ -6,24 +6,10 @@
 #pragma start_opencl
 void Maxwell2DNumFlux_centered(real *wL, real *wR, real *vnorm, real *flux) 
 {
-  // FIXME: add documentation
+  // w: (Ex, Ey, Hz, Hz, \lambda, rho, Jx, Jy)
 
-  // FIXME: field layout
-  // w[0] : FIXME: Ex?
-  // w[1] : FIXME: Ey?
-  // w[2] : FIXME: Hz?
-  // w[3] : FIXME
-  // w[4] : FIXME
-  // w[5] : FIXME
-  // w[6] : FIXME
-
-  /*
-    Let [[E]] = (ER + EL) / 2, [[H]] = (HR + HL) / 2
-    the flux is 
-    
-    n \times [[E]] + khi * n * s3 // What is s3?
-   */
-
+  // FIXME add documentation
+  
   const real nx = vnorm[0];
   const real ny = vnorm[1];
   const real khi = 1.0;
@@ -47,16 +33,9 @@ void Maxwell2DNumFlux_centered(real *wL, real *wR, real *vnorm, real *flux)
 #pragma start_opencl
 void Maxwell2DNumFlux_uncentered(real *wL, real *wR, real *vnorm, real *flux) 
 {
-  // FIXME: add documentation
+  // w: (Ex, Ey, Hz, Hz, \lambda, rho, Jx, Jy)
 
-  // FIXME: field layout
-  // w[0] : FIXME
-  // w[1] : FIXME
-  // w[2] : FIXME
-  // w[3] : FIXME
-  // w[4] : FIXME
-  // w[5] : FIXME
-  // w[6] : FIXME
+  // FIXME add documentation
 
   const real nx = vnorm[0];
   const real ny = vnorm[1];
@@ -64,7 +43,6 @@ void Maxwell2DNumFlux_uncentered(real *wL, real *wR, real *vnorm, real *flux)
   const real overr = 1.0 / (r + 1e-16);
   const real khi = 1.0;
 
-  // FIXME: improve names for these (refer to E, H, etc).
   const real s0 = 0.5 * ( wR[0] + wL[0] );
   const real s1 = 0.5 * ( wR[1] + wL[1] );
   const real s2 = 0.5 * ( wR[2] + wL[2] );
@@ -91,20 +69,12 @@ void Maxwell2DNumFlux_uncentered(real *wL, real *wR, real *vnorm, real *flux)
 }
 #pragma end_opencl
 
-
 #pragma start_opencl
 void Maxwell2DNumFlux_unoptimised(real *wL, real *wR, real *vnorm, real *flux) 
 {
-  // FIXME: add documentation
+  // w: (Ex, Ey, Hz, Hz, \lambda, rho, Jx, Jy)
 
-  // FIXME: field layout
-  // w[0] : FIXME
-  // w[1] : FIXME
-  // w[2] : FIXME
-  // w[3] : FIXME
-  // w[4] : FIXME
-  // w[5] : FIXME
-  // w[6] : FIXME
+  // FIXME add documentation
 
   const real nx = vnorm[0];
   const real ny = vnorm[1];
@@ -140,6 +110,67 @@ void Maxwell2DNumFlux_unoptimised(real *wL, real *wR, real *vnorm, real *flux)
   flux[4] = 0;
   flux[5] = 0;
   flux[6] = 0;
+}
+#pragma end_opencl
+
+
+
+#pragma start_opencl
+void Maxwell2DImposedData(const real *x, const real t, real *w) 
+{
+  // w: (Ex, Ey, Hz, Hz, \lambda, rho, Jx, Jy)
+
+  // FIXME add documentation
+  
+  const real pi = 4.0 * atan(1.0);
+  const real r = 1.0;
+  const real theta = pi / 4.0;
+  const real u = cos(theta);
+  const real v = sin(theta); 
+  const real k = 2.0 * pi / v;
+  const real c = -cos(k * (u * x[0] + v * x[1] - t));
+  
+  w[0] = -v * c / r;
+  w[1] = u * c / r;
+  w[2] = c / r;
+  w[3] = 0;
+  w[4] = 0;
+  w[5] = 0;
+  w[6] = 0;
+}
+#pragma end_opencl
+
+#pragma start_opencl
+void Maxwell2DBoundaryFlux_uncentered(real *x, real t, 
+				      real *wL, real *vnorm, real *flux)
+{
+  real wR[7];
+  Maxwell2DImposedData(x, t, wR);
+  Maxwell2DNumFlux_uncentered(wL, wR, vnorm, flux);
+}
+#pragma end_opencl
+
+void Maxwell2DInitData(real *x, real *w) 
+{
+  real t = 0;
+  Maxwell2DImposedData(x, t, w);
+}
+
+#pragma start_opencl
+void Maxwell2DSource(const real *x, const real t, const real *w, real *source)
+{
+  // w: (Ex, Ey, Hz, Hz, \lambda, rho, Jx, Jy)
+  
+  // FIXME add documentation
+  
+  const real khi = 1.0;
+  source[0] = w[4];
+  source[1] = w[5];
+  source[2] = 0;
+  source[3] = khi * w[6];
+  source[4] = 0;
+  source[5] = 0;
+  source[6] = 0;
 }
 #pragma end_opencl
 
@@ -199,65 +230,3 @@ void Maxwell3DNumFlux_uncentered(real *wL, real *wR, real *vnorm, real *flux)
 }
 #pragma end_opencl
 
-
-#pragma start_opencl
-void Maxwell2DImposedData(const real *x, const real t, real *w) 
-{
-  // FIXME: field layout
-  // w[0] : FIXME
-  // w[1] : FIXME
-  // w[2] : FIXME
-  // w[3] : FIXME
-  // w[4] : FIXME
-  // w[5] : FIXME
-  // w[6] : FIXME
-
-  const real pi = 4.0 * atan(1.0);
-  const real r = 1.0;
-  const real theta = pi / 4.0;
-  const real u = cos(theta);
-  const real v = sin(theta); 
-  const real k = 2.0 * pi / v;
-  const real c = -cos(k * (u * x[0] + v * x[1] - t));
-  
-  w[0] = -v * c / r;
-  w[1] = u * c / r;
-  w[2] = c / r;
-  w[3] = 0;
-  w[4] = 0;
-  w[5] = 0;
-  w[6] = 0;
-}
-#pragma end_opencl
-
-#pragma start_opencl
-void Maxwell2DBoundaryFlux_uncentered(real *x, real t, 
-				      real *wL, real *vnorm, real *flux)
-{
-  real wR[7];
-  Maxwell2DImposedData(x, t, wR);
-  Maxwell2DNumFlux_uncentered(wL, wR, vnorm, flux);
-}
-#pragma end_opencl
-
-void Maxwell2DInitData(real *x, real *w) 
-{
-  real t = 0;
-  Maxwell2DImposedData(x, t, w);
-}
-
-#pragma start_opencl
-void Maxwell2DSource(const real *x, const real t, const real *w, real *source)
-{
-  // FIXME: documentation
-
-  const real khi = 1.0;
-  source[0] = w[4]; // Ex
-  source[1] = w[5]; // Ey
-  source[2] = 0;    // Hz
-  source[3] = khi * w[6]; // div-cleaning variable 
-  source[4] = 0; // rho
-  source[5] = 0; // Jx
-  source[6] = 0; // Jy
-}
-#pragma end_opencl

@@ -1,6 +1,11 @@
 #ifndef _GYRO_H
 #define _GYRO_H
 
+// FIXME:
+
+// The use of defines to set varialbes is going to cause massive
+// problems with maintainability.  Please stop doing this.
+
 #define _NB_ELEM_V 4
 #define _DEG_V 2
 
