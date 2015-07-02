@@ -273,15 +273,6 @@ add_executable(
 target_link_libraries(testmeq2 ${LIBS})
 add_test(testmeq2 testmeq2)
 
-add_test(testmaxwell2d testmaxwell2d)
-add_executable(
-  testmaxwell2d
-  test/test.h
-  test/testmaxwell2d.c
-  )
-target_link_libraries(testmaxwell2d ${LIBS})
-add_test(testmaxwell2d testmaxwell2d)
-
 add_executable(
   testgyro
   test/test.h
@@ -312,8 +303,7 @@ add_executable(
   test/testperiodic.c
 )
 target_link_libraries(testperiodic ${LIBS})
-# This test is too slow.  Please re-enable after decreasing execution time.
-#add_test(testperiodic testperiodic)
+add_test(testperiodic testperiodic)
 
 
 add_test(testskyline testskyline)
@@ -466,7 +456,14 @@ if(OPENCL_FOUND)
     )
   target_link_libraries(testmeq2_cl ${LIBS})
 
-
+  add_executable(
+    testmaxwell2d
+    test/test.h
+    test/testmaxwell2d.c
+    )
+  target_link_libraries(testmaxwell2d ${LIBS})
+  add_test(testmaxwell2d testmaxwell2d)
+  
   add_test(testmhd testmhd)
   add_executable(
     testmhd

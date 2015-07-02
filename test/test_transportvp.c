@@ -73,6 +73,7 @@ int Test_TransportVP(void) {
   f.vmax = _VMAX; // maximal wave speed
   f.nb_diags = 3;
   f.pre_dtfield = UpdateVlasovPoisson;
+  f.post_dtfield=NULL;
   f.update_after_rk = PlotVlasovPoisson;
   f.model.Source = VlasovP_Lagrangian_Source;
   // prudence...
@@ -137,7 +138,7 @@ real TransportVP_ImposedKinetic_Data(const real *x, const real t, real v) {
 
 void Test_TransportVP_BoundaryFlux(real *x, real t, real *wL, real *vnorm,
 				       real *flux) {
-  real wR[_MV + 6];
+  real wR[_INDEX_MAX];
   Test_TransportVP_ImposedData(x , t, wR);
   VlasovP_Lagrangian_NumFlux(wL, wR, vnorm, flux);
 }
@@ -146,8 +147,8 @@ void UpdateVlasovPoisson(void *vf, real *w) {
   field *f = vf;
   
   int type_bc = 1;
-  real bc_l = 0;
-  real bc_r = 1;
+  real bc_l = 1;
+  real bc_r = 0;
     
   // Computation_charge_density(f,w);
   

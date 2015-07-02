@@ -1,4 +1,16 @@
 // Return the 1d derivative of lagrange polynomial ib at glop ipg
+
+#ifndef _PERIODX
+#define _PERIODX -1
+#endif
+#ifndef _PERIODY
+#define _PERIODY -1
+#endif
+#ifndef _PERIODZ
+#define _PERIODZ -1
+#endif
+
+
 real dlag(int deg, int ib, int ipg) {
   return gauss_lob_dpsi[gauss_lob_dpsi_offset[deg] + ib * (deg + 1) + ipg];
 }
@@ -494,16 +506,18 @@ __kernel
 void DGFlux(__constant int *param,       // 0: interp param
 	    int ie,                      // 1: macrocel index
 	    int dim0,                    // 2: face direction
-	    __constant real *physnode, // 3: macrocell nodes
+	    __constant real *physnodes, // 3: macrocell nodes
 	    __global   real *wn,       // 4: field values
 	    __global   real *dtwn,     // 5: time derivative
 	    __local    real *wnloc     // 6: wn and dtwn in local memory
 	    )
 {
-  int m = param[0];
-  int deg[3] = {param[1], param[2], param[3]};
-  int npg[3] = {deg[0] + 1, deg[1] + 1, deg[2] + 1};
-  int nraf[3] = {param[4], param[5], param[6]};
+  __constant real *physnode = physnodes + ie * 60;
+
+  const int m = param[0];
+  const int deg[3] = {param[1], param[2], param[3]};
+  const int npg[3] = {deg[0] + 1, deg[1] + 1, deg[2] + 1};
+  const int nraf[3] = {param[4], param[5], param[6]};
 
   int dim1 = (dim0 + 1) % 3;
   int dim2 = (dim1 + 1) % 3;
@@ -681,12 +695,14 @@ void set_buffer_to_zero(__global real *w)
 __kernel
 void DGVolume(__constant int *param,     // 0: interp param
 	      int ie,                    // 1: macrocel index
-	      __constant real *physnode, // 2: macrocell nodes
+	      __constant real *physnodes, // 2: macrocell nodes
               __global real *wn,         // 3: field values
 	      __global real *dtwn,       // 4: time derivative
 	      __local real *wnloc        // 5: cache for wn and dtwn
 	      )
 {
+  __constant real *physnode = physnodes + ie * 60;
+
   const int m = param[0];
   const int deg[3] = {param[1],param[2], param[3]};
   const int npg[3] = {deg[0] + 1, deg[1] + 1, deg[2] + 1};
@@ -842,9 +858,11 @@ void DGVolume(__constant int *param,     // 0: interp param
 __kernel
 void DGMass(__constant int *param,       // 0: interp param
             int ie,                      // 1: macrocel index
-            __constant real *physnode, // 2: macrocell nodes
+            __constant real *physnodes, // 2: macrocell nodes
             __global real *dtwn)       // 3: time derivative
 {
+  __constant real *physnode = physnodes + 60 * ie;
+  
   int ipg = get_global_id(0);
   int m = param[0];
   int npg[3] = {param[1] + 1, param[2] + 1, param[3] + 1};
@@ -911,14 +929,17 @@ void DGMacroCellInterface(__constant int *param,        // 0: interp param
 			  int ieR,                      // 2: right macrocell
                           int locfaL,                   // 3: left face index
 			  int locfaR,                   // 4: right face index
-                          __constant real *physnodeL, // 5: left physnode
-                          __constant real *physnodeR, // 6: right physnode
-                          __global real *wn,          // 7: field 
-                          __global real *dtwn,        // 8: time derivative
-			  __local real *cache         // 9: local mem
+                          __constant real *physnodes,   // 5: left physnode
+                          //__constant real *physnodes0,  // 6: right physnode
+                          __global real *wn,            // 7: field 
+                          __global real *dtwn,          // 8: time derivative
+			  __local real *cache           // 9: local mem
 			  )
 {
   // TODO: use __local real *cache.
+
+  __constant real *physnodeL = physnodes + ieL * 60;
+  __constant real *physnodeR = physnodes + ieR * 60;
 
   int ipgfL = get_global_id(0);
 
@@ -948,12 +969,14 @@ void DGMacroCellInterface(__constant int *param,        // 0: interp param
   
   real xrefL[3];
   {
+    real period[3] = {_PERIODX,_PERIODY,_PERIODZ};
     real xpg_in[3];
     Ref2Phy(physnodeL,
 	    xpgref_in,
 	    NULL, -1, // dpsiref, ifa
 	    xpg_in, NULL,
 	    NULL, NULL, NULL); // codtau, dpsi,vnds
+    PeriodicCorrection(xpg_in,period);
     Phy2Ref(physnodeR, xpg_in, xrefL);
   }
 
@@ -994,17 +1017,19 @@ void DGMacroCellInterface(__constant int *param,        // 0: interp param
 // Compute the Discontinuous Galerkin inter-macrocells boundary terms.
 // Second implementation with a loop on the faces.
 __kernel
-void DGBoundary(__constant int *param,        // 0: interp param
+void DGBoundary(__constant int *param,      // 0: interp param
 		real tnow,                  // 1: current time
-		int ieL,                      // 2: left macrocell 
-		int locfaL,                   // 3: left face index
-		__constant real *physnodeL, // 4: left physnode
+		int ieL,                    // 2: left macrocell 
+		int locfaL,                 // 3: left face index
+		__constant real *physnodes, // 4: geometry for all mcells
 		__global real *wn,          // 5: field 
 		__global real *dtwn,        // 6: time derivative
 		__local real *cache         // 7: local mem
 		)
 {
   // TODO: use __local real *cache.
+
+  __constant real *physnodeL = physnodes + ieL * 60;
 
   int ipgfL = get_global_id(0);
 
@@ -1235,13 +1260,15 @@ void OneSource(const real *x, const real t, const real *w, real *source) {
 __kernel
 void DGSource(__constant int *param,     // 0: interp param
 	      int ie,                    // 1: macrocel index
-	      __constant real *physnode, // 2: macrocell nodes
+	      __constant real *physnodes, // 2: macrocell nodes
 	      const real tnow,           // 3: the current time
               __global real *wn,         // 4: field values
 	      __global real *dtwn,       // 5: time derivative
 	      __local real *wnloc        // 6: cache for wn and dtwn
 	      )
 {
+  __constant real *physnode = physnodes + ie * 60;
+
   const int m = param[0];
   const int deg[3] = {param[1],param[2], param[3]};
   const int npg[3] = {deg[0] + 1, deg[1] + 1, deg[2] + 1};
@@ -1270,10 +1297,10 @@ void DGSource(__constant int *param,     // 0: interp param
   const int ipgL = get_local_id(0);
     
   // subcell id
-  int icL[3];
-  icL[0] = icell % nraf[0];
-  icL[1] = (icell / nraf[0]) % nraf[1];
-  icL[2]= icell / nraf[0] / nraf[1];
+  /* int icL[3]; */
+  /* icL[0] = icell % nraf[0]; */
+  /* icL[1] = (icell / nraf[0]) % nraf[1]; */
+  /* icL[2]= icell / nraf[0] / nraf[1]; */
 
   // Compute xref
   real xref[3];

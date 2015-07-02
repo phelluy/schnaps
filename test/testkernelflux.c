@@ -77,9 +77,9 @@ int TestKernelFlux()
   for(int ie = 0; ie < f.macromesh.nbelems; ++ie) {
     // printf("\nie: %d\n", ie);
 
-    update_physnode_cl(&f, ie, f.physnode_cl, f.physnode, NULL,
-    		       0, NULL, NULL);
-    clFinish(f.cli.commandqueue);
+    /* update_physnode_cl(&f, ie, f.physnode_cl, f.physnode, NULL, */
+    /* 		       0, NULL, NULL); */
+    /* clFinish(f.cli.commandqueue); */
     
     DGFlux_CL(&f, 0, ie, &(f.wn_cl), 0, NULL, NULL);
     clFinish(f.cli.commandqueue);

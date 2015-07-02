@@ -180,12 +180,13 @@ void InitPoissonSolver(PoissonSolver* ps, field* fd,int charge_index){
 
 void SolvePoisson1D(field *f,real * w,int type_bc, real bc_l, real bc_r,Solver solver_sys,PC precon){
 
-
   real charge_average;
+  real *bounds = malloc(6 * sizeof(real));
   charge_average=0;
 
   if(type_bc == _Periodic_Poisson_BC){
     charge_average=Computation_charge_average(f,w);
+    //printf(" chare average %e\n",charge_average);
     bc_l=0;
     bc_r=0;
   }
@@ -315,7 +316,7 @@ void SolvePoisson1D(field *f,real * w,int type_bc, real bc_l, real bc_r,Solver s
 	
   FreeLinearSolver(&sky);
 
-
+  //ComputeElectricField(f);
   Compute_electric_field(f,w);
 
 }

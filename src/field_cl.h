@@ -28,6 +28,8 @@ void DGVolume_CL(void *mcell, field *f, cl_mem *dtwn_cl,
 		 cl_uint nwait, cl_event *wait, cl_event *done);
 void DGMacroCellInterface_CL(void *mface, field *f, cl_mem *wn_cl,
 			     cl_uint nwait, cl_event *wait, cl_event *done);
+void DGBoundary_CL(void *mface, field *f, cl_mem *wn_cl,
+		   cl_uint nwait, cl_event *wait, cl_event *done);
 void DGMass_CL(void *mcell, field *f,
 	       cl_uint nwait, cl_event *wait, cl_event *done);
 

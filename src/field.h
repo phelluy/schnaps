@@ -101,6 +101,7 @@ typedef struct field {
   cl_mem param_cl;
   //! \brief copy physnode
   cl_mem physnode_cl;
+  cl_mem physnodes_cl; // The physnodes for all the macrocells
   real *physnode;
 
   cl_mem physnodeR_cl;
@@ -123,31 +124,25 @@ typedef struct field {
 
   // OpenCL events
 
-  // used in update_physnode_cl
-  cl_event clv_mapdone; 
-  
   // set_buf_to_zero event
   cl_event clv_zbuf; 
   
-  cl_event clv_physnodeupdate;
-
   // Subcell mass events
-  cl_event clv_mass; 
+  cl_event *clv_mass; 
 
   // Subcell flux events
-  cl_event *clv_flux;
+  cl_event *clv_flux0, *clv_flux1, *clv_flux2;
 
   // Subcell volume events
-  cl_event clv_volume; 
+  cl_event *clv_volume; 
 
   // Subcell volume events
-  cl_event clv_source; 
+  cl_event *clv_source; 
 
   // Macrocell interface events
-  cl_event clv_mci;
-  cl_event clv_interkernel; 
-  cl_event clv_interupdate;
-  cl_event clv_interupdateR;
+  cl_event *clv_mci;
+  // Boundary term events
+  cl_event *clv_boundary;
 
   // OpenCL timing
   cl_ulong zbuf_time;
@@ -240,7 +235,7 @@ void DGMacroCellInterfaceSlow(void *mcell, field *f, real *w, real *dtw);
 //! \brief  compute the Discontinuous Galerkin inter-macrocells boundary terms second implementation with a loop on the faces
 //! The argument has to be void* (for compatibility with pthread)
 //! but it is logically a MacroCell*
-//! \param[inout] mcell a MacroCell
+//! \param[inout] mface a MacroFace
 void DGMacroCellInterface(void *mface, field *f, real *w, real *dtw);
 
 //! \brief compute the Discontinuous Galerkin volume terms

@@ -89,7 +89,7 @@ int TestfieldRK2_CL(void){
   CheckMacroMesh(&(f.macromesh), f.interp.interp_param + 1);
  
   real tmax = 0.1;
-  f.vmax=1;
+  f.vmax = 1;
   real dt = 0;
   RK2_CL(&f, tmax, dt,  0, NULL, NULL);
   
@@ -109,7 +109,7 @@ int TestfieldRK2_CL(void){
   test = dd < tolerance;
   
   return test;
-};
+}
 
 int main(void) {
   int resu = TestfieldRK2_CL();

@@ -75,6 +75,23 @@ testdtfield_cl
 testfieldrk4
 testfieldrk4_cl
 testmacrocellinterface
+test_transportvp
+testcache_cl
+testcoil2d
+testgyro
+testkernelflux
+testlandau_damping_1D
+testlinearsolver
+testmaxwell2d
+testmeq2_cl
+testmhd
+testmhd1d
+testperiodic
+testpic
+testpic_accumulate
+testpoisson
+testpoisson2d
+testskyline
 
 #output files
 *.csv

@@ -11,7 +11,7 @@ const int h20_refnormal[6][3]={{0,-1,0},
 			       {0,0,-1} };
 
 // 20 nodes of the reference element
-const real h20_ref_node[20][3]={
+const real h20_ref_node[20][3] = {
   0  ,0  ,0  ,
   1  ,0  ,0  ,
   1  ,1  ,0  ,
@@ -40,43 +40,45 @@ real dot_product(real a[3], real b[3])
   return a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
 }
 
-// Return the dot-product of the reals a[3] and b[3]
 real norm(real a[3])
 {
   return sqrt(a[0] * a[0] + a[1] * a[1] + a[2] * a[2]);
 }
 
-// Return the dot-product of the reals a[3] and b[3]
 void Normalize(real a[3])
 {
-  real r=norm(a);
-  a[0] /= r;
-  a[1] /= r;
-  a[2] /= r;
+  real r = 1.0 / norm(a);
+  a[0] *= r;
+  a[1] *= r;
+  a[2] *= r;
 }
 
-void PeriodicCorrection(real xyz[3],real period[3]){
-  for (int dim=0;dim<3;++dim){
-    if (period[dim] > 0){
-      if (xyz[dim] > period[dim]){
+#pragma start_opencl
+void PeriodicCorrection(real xyz[3], real period[3])
+{
+  for (int dim = 0; dim < 3; ++dim) {
+    if (period[dim] > 0) {
+      if (xyz[dim] > period[dim]) {
 	xyz[dim] -= period[dim];
       }
-      else if (xyz[dim] < 0){
+      else if (xyz[dim] < 0) {
 	xyz[dim] += period[dim];
       }
     }
   }
 }
+#pragma end_opencl
 
-void PeriodicCorrectionB(real xyz[3],real period[3], real xmin[3], real xmax[3]){
-  for (int dim=0;dim<3;++dim){
+void PeriodicCorrectionB(real xyz[3],real period[3], real xmin[3], real xmax[3])
+{
+  for (int dim = 0; dim < 3; ++dim) {
     if (period[dim] > 0){
       //if (xyz[dim] > period[dim]){
-      if (xyz[dim] > xmax[dim]){
+      if (xyz[dim] > xmax[dim]) {
 	xyz[dim] -= period[dim];
       }
       //else if (xyz[dim] < 0){
-      else if (xyz[dim] < xmin[dim]){
+      else if (xyz[dim] < xmin[dim]) {
 	xyz[dim] += period[dim];
       }
     }

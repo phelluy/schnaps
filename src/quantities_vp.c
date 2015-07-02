@@ -93,40 +93,49 @@ void ComputeElectricField(field* f){
 		f->interp_param[2] + 1,
 		f->interp_param[3] + 1};
     
+  int nbel = f->macromesh.nbelems * nraf[0] * nraf[1] * nraf[2];
+
   int nnodes = npg[0] * npg[1] * npg[2] ;
  
   int npgmacrocell = nnodes * nraf[0] * nraf[1] * nraf[2];
 
 
-  for (int ie=0;ie<f->macromesh.nbelems;ie++){
+  for (int ie = 0; ie < nbel; ie++){
+
     // get the physical nodes of element ie
+
+    int iemacro = ie / (nraf[0] * nraf[1] * nraf[2]);
+    int isubcell = ie % (nraf[0] * nraf[1] * nraf[2]);
+
     real physnode[20][3];
-    for(int inoloc=0;inoloc<20;inoloc++){
-      int ino=f->macromesh.elem2node[20*ie+inoloc];
-      physnode[inoloc][0]=f->macromesh.node[3*ino+0];
-      physnode[inoloc][1]=f->macromesh.node[3*ino+1];
-      physnode[inoloc][2]=f->macromesh.node[3*ino+2];
+    for(int ino = 0; ino < 20; ino++) {
+      int numnoe = f->macromesh.elem2node[20 * iemacro + ino];
+      for(int ii = 0; ii < 3; ii++) {
+	physnode[ino][ii] = f->macromesh.node[3 * numnoe + ii];
+      }
     }
 
-    for(int ipg = 0;ipg < npgmacrocell; ipg++){
+    for(int ipg = 0;ipg < nnodes; ipg++){
       //real wpg;
       real xref[3];
+      int ipgmacro= ipg + isubcell * nnodes;
 
-      ref_pg_vol(f->interp_param+1,ipg,xref,NULL,NULL);
-      int iex = f->varindex(f->interp_param,ie,
-			    ipg,_INDEX_EX);
+      ref_pg_vol(f->interp_param+1,ipgmacro,xref,NULL,NULL);
+      int iex = f->varindex(f->interp_param,iemacro,
+			    ipgmacro,_INDEX_EX);
       f->wn[iex] = 0;
       
-      for(int ib=0; ib < npgmacrocell; ib++){
+      for(int ib=0; ib < nnodes; ib++){
 	real dtau[3][3],codtau[3][3];
 	real dphiref[3];
 	real dphi[3];
-	grad_psi_pg(f->interp_param+1,ib,ipg,dphiref);
+	int ibmacro = ib + isubcell * nnodes;
+	grad_psi_pg(f->interp_param+1,ibmacro,ipgmacro,dphiref);
 	Ref2Phy(physnode,xref,dphiref,0,NULL,
 		  dtau,codtau,dphi,NULL);
 	real det = dot_product(dtau[0], codtau[0]);
-	int ipot = f->varindex(f->interp_param,ie,
-			   ib,_INDEX_PHI);
+	int ipot = f->varindex(f->interp_param,iemacro,
+			   ibmacro,_INDEX_PHI);
 	f->wn[iex] -= f->wn[ipot] * dphi[0] / det;
       }
     }
@@ -183,8 +192,58 @@ void Compute_electric_field(field* f, real * w){
       }
     }
   }
+}
+
+//void Compute_electric_field(field* f, real * w)/* { */
+
+/*   int nraf[3] = {f->interp_param[4],  */
+/* 		 f->interp_param[5], */
+/* 		 f->interp_param[6]}; */
   
-}  
+/*   int npg[3] = {f->interp_param[1] + 1,  */
+/* 		f->interp_param[2] + 1, */
+/* 		f->interp_param[3] + 1}; */
+    
+/*   int nnodes = npg[0] * npg[1] * npg[2] ; */
+ 
+/*   int npgmacrocell = nnodes * nraf[0] * nraf[1] * nraf[2]; */
+
+
+/*   for (int ie=0;ie<f->macromesh.nbelems;ie++){ */
+/*     // get the physical nodes of element ie */
+/*     real physnode[20][3]; */
+/*     for(int inoloc=0;inoloc<20;inoloc++){ */
+/*       int ino=f->macromesh.elem2node[20*ie+inoloc]; */
+/*       physnode[inoloc][0]=f->macromesh.node[3*ino+0]; */
+/*       physnode[inoloc][1]=f->macromesh.node[3*ino+1]; */
+/*       physnode[inoloc][2]=f->macromesh.node[3*ino+2]; */
+/*     } */
+
+/*     for(int ipg = 0;ipg < npgmacrocell; ipg++){ */
+/*       //real wpg; */
+/*       real xref[3]; */
+
+/*       ref_pg_vol(f->interp_param+1,ipg,xref,NULL,NULL); */
+/*       int iex = f->varindex(f->interp_param,ie, */
+/* 			    ipg,_INDEX_EX); */
+/*       w[iex] = 0; */
+      
+/*       for(int ib=0; ib < npgmacrocell; ib++){ */
+/* 	real dtau[3][3],codtau[3][3]; */
+/* 	real dphiref[3]; */
+/* 	real dphi[3]; */
+/* 	grad_psi_pg(f->interp_param+1,ib,ipg,dphiref); */
+/* 	Ref2Phy(physnode,xref,dphiref,0,NULL, */
+/* 		  dtau,codtau,dphi,NULL); */
+/* 	real det = dot_product(dtau[0], codtau[0]); */
+/* 	int ipot = f->varindex(f->interp_param,ie, */
+/* 			   ib,_INDEX_PHI); */
+/* 	w[iex] -= w[ipot] * dphi[0] / det; */
+/*       } */
+/*     } */
+/*   } */
+  
+/* } */  
   /*
   for (int ie=0;ie<f->macromesh.nbelems;ie++){
     // get the physical nodes of element ie
