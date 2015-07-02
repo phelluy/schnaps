@@ -14,6 +14,8 @@ int TestKernelVolume(void){
   }
 
   field f;
+  init_empty_field(&f);
+
   f.model.cfl = 0.05;
   f.model.m = 1; // only one conservative variable
   f.model.NumFlux = TransNumFlux2d;
@@ -72,9 +74,9 @@ int TestKernelVolume(void){
 
   clFinish(f.cli.commandqueue);
   for(int ie = 0; ie < f.macromesh.nbelems; ++ie) {
-    update_physnode_cl(&f, ie, f.physnode_cl, f.physnode, NULL,
-		       0, NULL, NULL);
-    clFinish(f.cli.commandqueue);
+    /* update_physnode_cl(&f, ie, f.physnode_cl, f.physnode, NULL, */
+    /* 		       0, NULL, NULL); */
+    /* clFinish(f.cli.commandqueue); */
 
     DGVolume_CL((void*) &(f.mcell[ie]), &f, &(f.wn_cl), 0, NULL, NULL);
     clFinish(f.cli.commandqueue);

@@ -16,6 +16,8 @@ int TestCache(void){
   int my = 1;
 
   field f;
+  init_empty_field(&f);
+  
   f.varindex = GenericVarindex;
   f.model.vlasov_mz = 1;
   f.model.cfl = cfl;

@@ -8,7 +8,8 @@ int TestfieldRK2(void){
   int test = true;
 
   field f;
-  
+  init_empty_field(&f);
+
   // 2D meshes:
   // test/disque2d.msh
   // test/testdisque2d.msh
@@ -97,9 +98,10 @@ int TestfieldRK2(void){
 
   CheckMacroMesh(&(f.macromesh), f.interp.interp_param + 1);
  
-  real tmax = 0.1;
+  real tmax = 0.01;
   f.vmax=1;
-  RK2(&f, tmax);
+  real dt = 0;
+  RK2(&f, tmax, dt);
  
   Plotfield(0, false, &f, NULL, "dgvisu.msh");
   Plotfield(0, true , &f, "error", "dgerror.msh");

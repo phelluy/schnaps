@@ -46,9 +46,6 @@ typedef struct field {
 
   // TODO: once the output of the diagnostics is done by appending,
   // remove dt, ieter_time, itermax, nb_diags, and Diagnostics.
-  //! Time step
-  //! dt has to be smaller than hmin / vmax
-  real dt;
   int iter_time;
   //! final time iter
   int itermax;
@@ -104,15 +101,20 @@ typedef struct field {
   cl_mem param_cl;
   //! \brief copy physnode
   cl_mem physnode_cl;
+  cl_mem physnodes_cl; // The physnodes for all the macrocells
   real *physnode;
 
   cl_mem physnodeR_cl;
   real *physnodeR;
 
+  bool use_source_cl;
+  char *sourcename_cl;
+
   //! opencl kernels
   cl_kernel dgmass;
   cl_kernel dgflux;
   cl_kernel dgvolume;
+  cl_kernel dgsource;
   cl_kernel dginterface;
   cl_kernel dgboundary;
   cl_kernel RK_out_CL;
@@ -122,28 +124,25 @@ typedef struct field {
 
   // OpenCL events
 
-  // used in update_physnode_cl
-  cl_event clv_mapdone; 
-  
   // set_buf_to_zero event
   cl_event clv_zbuf; 
   
-  cl_event clv_physnodeupdate;
-
   // Subcell mass events
-  cl_event clv_mass; 
+  cl_event *clv_mass; 
 
   // Subcell flux events
-  cl_event *clv_flux;
+  cl_event *clv_flux0, *clv_flux1, *clv_flux2;
 
   // Subcell volume events
-  cl_event clv_volume; 
+  cl_event *clv_volume; 
+
+  // Subcell volume events
+  cl_event *clv_source; 
 
   // Macrocell interface events
-  cl_event clv_mci;
-  cl_event clv_interkernel; 
-  cl_event clv_interupdate;
-  cl_event clv_interupdateR;
+  cl_event *clv_mci;
+  // Boundary term events
+  cl_event *clv_boundary;
 
   // OpenCL timing
   cl_ulong zbuf_time;
@@ -152,9 +151,13 @@ typedef struct field {
   cl_ulong flux_time;
   cl_ulong minter_time;
   cl_ulong boundary_time;
+  cl_ulong source_time;
   cl_ulong rk_time;
-#endif
 
+  // OpenCL roofline measurements
+  unsigned long int flops_vol, flops_flux, flops_mass; 
+  unsigned long int reads_vol, reads_flux, reads_mass; 
+#endif
 } field;
 
 //! \brief memory arrangement of field components.
@@ -201,6 +204,8 @@ int GenericVarindex(__constant int *param, int elem, int ipg, int iv);
 //! \param[inout] f a field
 void Initfield(field *f);
 
+void init_empty_field(field *f);
+
 //! free the buffers created in Initfield.
 //! \param[inout] f a field
 void Freefield(field *f);
@@ -230,7 +235,7 @@ void DGMacroCellInterfaceSlow(void *mcell, field *f, real *w, real *dtw);
 //! \brief  compute the Discontinuous Galerkin inter-macrocells boundary terms second implementation with a loop on the faces
 //! The argument has to be void* (for compatibility with pthread)
 //! but it is logically a MacroCell*
-//! \param[inout] mcell a MacroCell
+//! \param[inout] mface a MacroFace
 void DGMacroCellInterface(void *mface, field *f, real *w, real *dtw);
 
 //! \brief compute the Discontinuous Galerkin volume terms
@@ -269,24 +274,26 @@ void RK_out(real *fwnp1, real *fwn, real *fdtwn, const real dt,
 //! \param[in] size of the field buffer
 void RK_in(real *fwnp1, real *fdtwn, const real dt, const int sizew);
 
-//! \brief Time integration by a second order Runge-Kutta algorithm
-//! \param[inout] f a field
-//! \param[in] tmax physical duration of the simulation
-void RK2(field *f, real tmax);
+real set_dt(field *f);
 
 //! \brief Time integration by a second order Runge-Kutta algorithm
 //! \param[inout] f a field
 //! \param[in] tmax physical duration of the simulation
-void RK4(field *f, real tmax);
+void RK2(field *f, real tmax, real dt);
+
+//! \brief Time integration by a second order Runge-Kutta algorithm
+//! \param[inout] f a field
+//! \param[in] tmax physical duration of the simulation
+void RK4(field *f, real tmax, real dt);
 
 #ifdef _WITH_OPENCL
 //! \brief OpenCL version of RK2
 //! time integration by a second order Runge-Kutta algorithm
 //! \param[inout] f a field
 //! \param[in] tmax physical duration of the simulation
-void RK2_CL(field *f, real tmax, 
+void RK2_CL(field *f, real tmax, real dt,
 	    cl_uint nwait, cl_event *wait, cl_event *done);
-void RK4_CL(field *f, real tmax, 
+void RK4_CL(field *f, real tmax, real dt,
 	    cl_uint nwait, cl_event *wait, cl_event *done);
 #endif
 

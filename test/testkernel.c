@@ -15,6 +15,8 @@ int TestKernel(void)
   }
 
   field f;
+  init_empty_field(&f);
+
   f.model.cfl = 0.05;
   f.model.m = 1; // only one conservative variable
   f.model.NumFlux = TransNumFlux2d;
@@ -78,9 +80,9 @@ int TestKernel(void)
  
   for(int ie = 0; ie < f.macromesh.nbelems; ++ie) {
     printf("ie: %d\n", ie);
-    update_physnode_cl(&f, ie, f.physnode_cl, f.physnode, NULL,
-		       0, NULL, NULL);
-    clFinish(f.cli.commandqueue);
+    /* update_physnode_cl(&f, ie, f.physnode_cl, f.physnode, NULL, */
+    /* 		       0, NULL, NULL); */
+    /* clFinish(f.cli.commandqueue); */
 
     DGMass_CL((void*) &(f.mcell[ie]), &f, 0, NULL, NULL);
     clFinish(f.cli.commandqueue);

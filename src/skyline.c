@@ -75,7 +75,7 @@ void AllocateSkyline(Skyline* sky){
     sky->vkgs[k]=0;
      if (! sky->is_sym) sky->vkgi[k]=0;
   }
-  
+
 
 }
 
@@ -166,11 +166,9 @@ void DisplaySkyline(Skyline* sky){
   for(int i=0;i<n;i++){
     for(int j=0;j<n;j++){
       printf("%f ",GetSkyline(sky,i,j));
-    }
+    }   
     printf("\n");
   }
-
-    
 }
 
 
@@ -234,23 +232,6 @@ void FreeSkyline(Skyline* sky){
 
 }
 
-
-
-
-/* sol.f -- translated by f2c (version 20100827).
-   You must link the resulting object file with libf2c:
-	on Microsoft Windows system, link with libf2c.lib;
-	on Linux or Unix systems, link with .../path/to/libf2c.a -lm
-	or, if you install libf2c.a in a standard place, with -lf2c -lm
-	-- in that order, at the end of the command line, as in
-		cc *.o -lf2c -lm
-	Source for libf2c is in /netlib/f2c/libf2c.zip, e.g.,
-
-		http://www.netlib.org/f2c/libf2c.zip
-*/
-
-//#include "f2c.h"
-
 /* Table of constant values */
 
 static int c__1 = 1;
@@ -265,7 +246,7 @@ static int c__1 = 1;
     static real vzero = 0.;
 
     /* Format strings */
-    static char fmt_8000[] = "(\002 * sol pivot nul equation\002,i5)";
+    static char fmt_8000[] = "sol pivot nul equation";
 
     /* System generated locals */
     int i__1, i__2, i__3, i__4;
@@ -281,10 +262,6 @@ static int c__1 = 1;
     extern real scal_(real *, real *, int *);
     static int imin, imax, imin1;
     static real cdiag;
-
-    /* Fortran I/O blocks */
-    //static cilist io___22 = { 0, 0, 0, fmt_8000, 0 };
-
 
 /*   resolution d'un systeme lineaire symetrique ou non. la matrice est */
 /*   stockee par ligne de ciel,en memoire dans les tables vkgs,vkgd,vkgi */
@@ -343,6 +320,7 @@ static int c__1 = 1;
     jhk = 1;
     i__1 = neq;
     for (ik = 2; ik <= i__1; ++ik) {
+      //printf("factolu %d/%d\n",ik,neq);
 
 /* -------  pointeur du haut de la colonne suivante ik+1 */
 
@@ -512,7 +490,7 @@ L150:
 
 L800:
 	/* io___22.ciunit = *mp; */
-      printf("%s\n",fmt_8000);
+    printf("%s %d\n",fmt_8000,ik);
 	/* s_wsfe(&io___22); */
 	/* do_fio(&c__1, (char *)&ik, (ftnlen)sizeof(int)); */
 	/* e_wsfe(); */
@@ -556,4 +534,5 @@ real scal_(real *x, real *y, int *n)
     }
     return ret_val;
 } /* scal_ */
+
 

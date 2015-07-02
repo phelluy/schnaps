@@ -37,7 +37,8 @@ void VlasovP_Lagrangian_NumFlux(real wL[],real wR[],real* vnorm,real* flux){
 
 //! \brief compute compute the source term of the collision
 //! model: electric force + true collisions
-void VlasovP_Lagrangian_Source(real* x,real t,real* w, real* source){
+void VlasovP_Lagrangian_Source(const real* x, const real t, const real* w, 
+			       real* source) {
 
   real E=w[_INDEX_EX]; // electric field
   real Md[_INDEX_MAX_KIN+1];
@@ -48,7 +49,7 @@ void VlasovP_Lagrangian_Source(real* x,real t,real* w, real* source){
   }
   
   
-  for(int iv=0;iv<_MV+2;iv++){
+  for(int iv=0;iv<_INDEX_MAX_KIN+1;iv++){
     source[iv]=0;
   }
   // no source on the potential for the moment

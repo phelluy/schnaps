@@ -108,7 +108,8 @@ int main(int argc, char *argv[]) {
 
   bool test = true;
   field f;
-  
+  init_empty_field(&f);
+
   f.varindex = GenericVarindex;
   f.model.vlasov_mz = 1;
   f.model.cfl = cfl;
@@ -161,10 +162,13 @@ int main(int argc, char *argv[]) {
   BuildConnectivity(&(f.macromesh));
  
   // Prepare the initial fields
+
   Initfield(&f);
-  f.vmax=f.model.vlasov_vmax;
-  if(dt != 0.0)
-    f.dt = dt;
+  f.vmax = f.model.vlasov_vmax;
+
+  if(dt <= 0.0)
+    dt = set_dt(&f);
+  printf("dt: %f\n", dt);
 
   // Prudence...
   CheckMacroMesh(&(f.macromesh), f.interp.interp_param + 1);
@@ -175,7 +179,7 @@ int main(int argc, char *argv[]) {
 
     printf("Using OpenCL:\n");
     //clock_gettime(CLOCK_MONOTONIC, &tstart);
-    RK2_CL(&f, tmax, 0, NULL, NULL);
+    RK2_CL(&f, tmax, dt,  0, NULL, NULL);
     //clock_gettime(CLOCK_MONOTONIC, &tend);
 
     CopyfieldtoCPU(&f);
@@ -187,7 +191,7 @@ int main(int argc, char *argv[]) {
   } else {
     printf("Using C:\n");
     //clock_gettime(CLOCK_MONOTONIC, &tstart);
-    RK2(&f, tmax);
+    RK2(&f, tmax, dt);
     //clock_gettime(CLOCK_MONOTONIC, &tend);
   }
   /* executiontime = seconds(tend, tstart); */
@@ -221,7 +225,7 @@ int main(int argc, char *argv[]) {
   printf("%f\n", f.hmin);
 
   printf("deltat:\n");
-  printf("%f\n", f.dt);
+  printf("%f\n", dt);
 
   printf("DOF:\n");
   printf("%d\n", f.wsize);

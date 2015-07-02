@@ -23,6 +23,7 @@ real maxerr(real *a, real *b, int n)
 int TestmEq2(void) {
   bool test = true;
   field f;
+  init_empty_field(&f);
   
   f.model.cfl = 0.05;  
   f.model.m = 2; 
@@ -84,9 +85,9 @@ int TestmEq2(void) {
   clFinish(f.cli.commandqueue);
 
   for(int ie = 0; ie < f.macromesh.nbelems; ++ie) {
-    update_physnode_cl(&f, ie, f.physnode_cl, f.physnode, NULL,
-		       0, NULL, NULL);
-    clFinish(f.cli.commandqueue);
+    /* update_physnode_cl(&f, ie, f.physnode_cl, f.physnode, NULL, */
+    /* 		       0, NULL, NULL); */
+    /* clFinish(f.cli.commandqueue); */
 
     DGVolume_CL((void*) &(f.mcell[ie]), &f, &(f.wn_cl), 0, NULL, NULL);
     clFinish(f.cli.commandqueue);
@@ -142,9 +143,9 @@ int TestmEq2(void) {
   clFinish(f.cli.commandqueue);
 
   for(int ie = 0; ie < f.macromesh.nbelems; ++ie) {
-    update_physnode_cl(&f, ie, f.physnode_cl, f.physnode, NULL,
-    		       0, NULL, NULL);
-    clFinish(f.cli.commandqueue);
+    /* update_physnode_cl(&f, ie, f.physnode_cl, f.physnode, NULL, */
+    /* 		       0, NULL, NULL); */
+    /* clFinish(f.cli.commandqueue); */
     
     DGFlux_CL(&f, 0, ie, &(f.wn_cl), 0, NULL, NULL);
     clFinish(f.cli.commandqueue);

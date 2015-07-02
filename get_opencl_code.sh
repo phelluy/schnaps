@@ -19,6 +19,7 @@ echo "#define NULL 0" >> schnaps.cl
 sed -n '/#pragma start_opencl/,/#pragma end_opencl/p' src/*.h  >> schnaps.cl
 sed -n '/#pragma start_opencl/,/#pragma end_opencl/p' src/*.c  >> schnaps.cl
 
+
 # Remove undefined pragmas
 cat schnaps.cl | sed 's/\#pragma\ end_opencl//' > schnaps0.cl
 mv schnaps0.cl schnaps.cl

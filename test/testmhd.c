@@ -29,12 +29,13 @@ int main(int argc, char *argv[]) {
 
 int TestMHD(int argc, char *argv[]) {
   real cfl = 0.2;
-  real tmax = 1.0;
+  real tmax = 1;
   bool writemsh = false;
   real vmax = 6.0;
   bool usegpu = false;
   real dt = 0.0;
-
+  real periodsize = 6.2831853;
+  
   for (;;) {
     int cc = getopt(argc, argv, "c:t:w:D:P:g:s:");
     if (cc == -1) break;
@@ -69,23 +70,27 @@ int TestMHD(int argc, char *argv[]) {
 
   bool test = true;
   field f;
-  
+  init_empty_field(&f);  
+
   f.varindex = GenericVarindex;
   f.model.m = 9;
   f.model.cfl = cfl;
 
   strcpy(f.model.name,"MHD");
 
-  f.model.NumFlux=MHDNumFlux;
+  f.model.NumFlux=MHDNumFluxRusanov;
   f.model.BoundaryFlux=MHDBoundaryFlux;
   f.model.InitData=MHDInitData;
   f.model.ImposedData=MHDImposedData;
   
   char buf[1000];
-  sprintf(buf, "-D _M=%d", f.model.m);
+  sprintf(buf, "-D _M=%d -D _PERIODX=%f -D _PERIODY=%f",
+          f.model.m,
+          periodsize,
+          periodsize);
   strcat(cl_buildoptions, buf);
 
-  sprintf(numflux_cl_name, "%s", "MHDNumFlux");
+  sprintf(numflux_cl_name, "%s", "MHDNumFluxRusanov");
   sprintf(buf," -D NUMFLUX=");
   strcat(buf, numflux_cl_name);
   strcat(cl_buildoptions, buf);
@@ -98,22 +103,24 @@ int TestMHD(int argc, char *argv[]) {
   f.interp.interp_param[1] = 1; // x direction degree
   f.interp.interp_param[2] = 1; // y direction degree
   f.interp.interp_param[3] = 0; // z direction degree
-  f.interp.interp_param[4] = 10; // x direction refinement
-  f.interp.interp_param[5] = 1; // y direction refinement
+  f.interp.interp_param[4] = 4; // x direction refinement
+  f.interp.interp_param[5] = 4; // y direction refinement
   f.interp.interp_param[6] = 1; // z direction refinement
 
 
   //set_vlasov_params(&(f.model));
 
   // Read the gmsh file
-  ReadMacroMesh(&(f.macromesh), "test/testcartesiangrid2d2.msh");
+  //ReadMacroMesh(&(f.macromesh), "test/testcartesiangrid2d2.msh");
+  ReadMacroMesh(&(f.macromesh), "test/testOTgrid.msh");
   //ReadMacroMesh(&(f.macromesh), "test/testcube.msh");
   // Try to detect a 2d mesh
-  Detect2DMacroMesh(&(f.macromesh));
+  Detect2DMacroMesh(&(f.macromesh)); 
   bool is2d=f.macromesh.is2d; 
   assert(is2d);  
 
-  f.macromesh.period[1]=10;
+  f.macromesh.period[0]=periodsize;
+  f.macromesh.period[1]=periodsize;
   
   // Mesh preparation
   BuildConnectivity(&(f.macromesh));
@@ -125,7 +132,7 @@ int TestMHD(int argc, char *argv[]) {
   // Prudence...
   CheckMacroMesh(&(f.macromesh), f.interp.interp_param + 1);
 
-  Plotfield(0, (1==0), &f, "Rho", "dginit.msh");
+  //Plotfield(0, (1==0), &f, "Rho", "dginit.msh");
 
   f.vmax=vmax;
 
@@ -133,18 +140,20 @@ int TestMHD(int argc, char *argv[]) {
   if(usegpu) {
     printf("Using OpenCL:\n");
     //executiontime = seconds();
-    assert(1==2);
-    RK2(&f, tmax);
+    //assert(1==2);
+    RK2_CL(&f, tmax, dt, 0, NULL, NULL);
     //executiontime = seconds() - executiontime;
+    show_cl_timing(&f);
   } else { 
     printf("Using C:\n");
     //executiontime = seconds();
-    RK2(&f, tmax);
+    RK2(&f, tmax, dt);
     //executiontime = seconds() - executiontime;
   }
 
   Plotfield(0,false,&f, "Rho", "dgvisu.msh");
-  Gnuplot(&f,0,0.0,"data1D.dat");
+  //Gnuplot(&f,0,0.0,"data1D.dat");
+
 
   printf("tmax: %f, cfl: %f\n", tmax, f.model.cfl);
 
@@ -152,7 +161,7 @@ int TestMHD(int argc, char *argv[]) {
   printf("%f\n", f.hmin);
 
   printf("deltat:\n");
-  printf("%f\n", f.dt);
+  printf("%f\n", dt);
 
   printf("DOF:\n");
   printf("%d\n", f.wsize);

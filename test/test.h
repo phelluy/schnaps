@@ -49,6 +49,8 @@ int TestLinearSolver(void);
 
 int TestPoisson(void);
 
+int TestPoisson2d(void);
+
 int Test_TransportVP(void);
 
 int TestCLInfo(void);
@@ -64,5 +66,7 @@ int TestKernelInterface(void);
 int TestFieldRK2_CL(void);
 
 int TestLandau_Damping_1D(void);
+
+int Test_Wave_Periodic(void);
 
 #endif

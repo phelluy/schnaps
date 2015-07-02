@@ -4,7 +4,7 @@
 #include "test.h"
 #include "maxwell.h"
 
-void Coil2DImposedData(real x[3], real t,real w[]) {
+void Coil2DImposedData(const real x[3],const real t,real w[]) {
   real r = x[0] * x[0] + x[1] * x[1];
   w[0] = 0;
   w[1] = 0;
@@ -19,7 +19,7 @@ void Coil2DBoundaryFlux(real x[3], real t, real wL[], real *vnorm,
 			real *flux) {
   real wR[7];
   Coil2DImposedData(x, t, wR);
-  Maxwell2DNumFlux(wL, wR, vnorm, flux);
+  Maxwell2DNumFlux_uncentered(wL, wR, vnorm, flux);
 }
 
 void Coil2DInitData(real x[3], real w[]) {
@@ -34,7 +34,7 @@ int TestCoil2D(void) {
   f.model.cfl = 0.05;  
   f.model.m = 7; // num of conservative variables
 
-  f.model.NumFlux = Maxwell2DNumFlux;
+  f.model.NumFlux = Maxwell2DNumFlux_uncentered;
   f.model.BoundaryFlux = Coil2DBoundaryFlux;
   f.model.InitData = Coil2DInitData;
   f.model.ImposedData = Coil2DImposedData;
@@ -80,9 +80,10 @@ int TestCoil2D(void) {
   PlotParticles(&pic, &f.macromesh);
 
   // time evolution
-  real tmax = 0.3;
+  real tmax = 0.;
   f.vmax = 1;
-  RK2(&f, tmax);
+  real dt = set_dt(&f);
+  RK2(&f, tmax, dt);
  
   // Save the results and the error
   Plotfield(2, false, &f, NULL, "dgvisu.msh");

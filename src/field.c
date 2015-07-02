@@ -134,6 +134,13 @@ real min_grid_spacing(field *f)
   return hmin;
 }
 
+void init_empty_field(field *f)
+{
+#ifdef _WITH_OPENCL
+  f->use_source_cl = false;
+#endif
+}
+
 void init_data(field *f)
 {
   for(int ie = 0; ie < f->macromesh.nbelems; ie++) {
@@ -175,9 +182,41 @@ void init_data(field *f)
 }
 
 #ifdef _WITH_OPENCL
+void set_physnodes_cl(field *f) 
+{
+  const int nmacro = f->macromesh.nbelems;
+  real buf_size = sizeof(real) * 60 * nmacro;
+  real *physnode = malloc(buf_size);
+  
+  for(int ie = 0; ie < nmacro; ++ie) {
+    int ie20 = 20 * ie;
+    for(int inoloc = 0; inoloc < 20; ++inoloc) {
+      int ino = 3 * f->macromesh.elem2node[ie20 + inoloc];
+      real *iphysnode = physnode + 3 * ie20 + 3 * inoloc;
+      real *nodeino = f->macromesh.node + ino;
+      iphysnode[0] = nodeino[0];
+      iphysnode[1] = nodeino[1];
+      iphysnode[2] = nodeino[2];
+    }
+  }
+  
+  cl_int status;
+  status = clEnqueueWriteBuffer(f->cli.commandqueue,
+  				f->physnodes_cl, // cl_mem buffer,
+  				CL_TRUE,// cl_bool blocking_read,
+  				0, // size_t offset
+  				buf_size, // size_t cb
+  				physnode, //  	void *ptr,
+  				0, 0, 0);
+  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status >= CL_SUCCESS);
+  
+  free(physnode);
+}
+
 void init_field_cl(field *f)
 {
-  InitCLInfo(&(f->cli), nplatform_cl, ndevice_cl);
+  InitCLInfo(&f->cli, nplatform_cl, ndevice_cl);
   cl_int status;
 
   f->wn_cl = clCreateBuffer(f->cli.context,
@@ -204,8 +243,8 @@ void init_field_cl(field *f)
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 
+  // Allocate one physnode buffer
   f->physnode = calloc(60, sizeof(real));
-
   f->physnode_cl = clCreateBuffer(f->cli.context,
 				  CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR,
 				  sizeof(real) * 60,
@@ -214,14 +253,25 @@ void init_field_cl(field *f)
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 
-  f->physnodeR = calloc(60, sizeof(real));
+  // Allocate and fill buffer for all macrocell geometries.
+  const int nmacro = f->macromesh.nbelems;
+  const size_t buf_size = sizeof(real) * 60 * nmacro;
+  f->physnodes_cl = clCreateBuffer(f->cli.context,
+				   CL_MEM_READ_ONLY,
+				   buf_size,
+				   NULL,
+				   &status);
+  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status >= CL_SUCCESS);
+  set_physnodes_cl(f);
 
+  // Allocate one physnode buffer for R macrocell
+  f->physnodeR = calloc(60, sizeof(real));
   f->physnodeR_cl = clCreateBuffer(f->cli.context,
 				   CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR,
 				   sizeof(real) * 60,
 				   f->physnodeR,
 				   &status);
-
 
   // Program compilation
   char *strprog;
@@ -231,7 +281,24 @@ void init_field_cl(field *f)
   printf("\t%s\n", numflux_cl_name);
   //printf("\t%s\n", strprog);
 
-  BuildKernels(&(f->cli), strprog, cl_buildoptions);
+  // If the source term is set (via set_source_CL) then add it to the
+  // buildoptions and compile using the new buildoptions.
+  if(f->use_source_cl) {
+    char *temp;
+    int len0 = strlen(cl_buildoptions);
+    char *D_SOURCE_FUNC = " -D_SOURCE_FUNC=";
+    int len1 = strlen(D_SOURCE_FUNC);
+    int len2 = strlen(f->sourcename_cl);
+    temp = calloc(sizeof(char), len0 + len1 + len2 + 2);
+    strcat(temp, cl_buildoptions);
+    strcat(temp, D_SOURCE_FUNC);
+    strcat(temp, f->sourcename_cl);
+    strcat(temp, " ");
+    BuildKernels(&f->cli, strprog, temp);
+  } else {
+    printf("No source term\n");
+    BuildKernels(&f->cli, strprog, cl_buildoptions);
+  }
 
   f->dgmass = clCreateKernel(f->cli.program,
 			     "DGMass",
@@ -247,6 +314,12 @@ void init_field_cl(field *f)
 
   f->dgvolume = clCreateKernel(f->cli.program,
 			       "DGVolume",
+			       &status);
+  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status >= CL_SUCCESS);
+
+  f->dgsource = clCreateKernel(f->cli.program,
+			       "DGSource",
 			       &status);
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
@@ -289,25 +362,44 @@ void init_field_cl(field *f)
 
   // Initialize events. // FIXME: free on exit
   f->clv_zbuf = clCreateUserEvent(f->cli.context, &status);
+
+  const int ninterfaces = f->macromesh.nmacrointerfaces;
+  if(ninterfaces > 0) {
+    f->clv_mci = calloc(ninterfaces, sizeof(cl_event));
+    for(int ifa = 0; ifa < ninterfaces; ++ifa)
+      f->clv_mci[ifa] = clCreateUserEvent(f->cli.context, &status);
+  }
+    
+  const int nbound = f->macromesh.nboundaryfaces;
+  if(nbound > 0) {
+    f->clv_boundary = calloc(nbound, sizeof(cl_event));
+    for(int ifa = 0; ifa < nbound; ++ifa)
+      f->clv_boundary[ifa] = clCreateUserEvent(f->cli.context, &status);
+  }
   
-  f->clv_mapdone = clCreateUserEvent(f->cli.context, &status);
+  f->clv_mass = calloc(nmacro, sizeof(cl_event));
+  for(int ie = 0; ie < nmacro; ++ie)
+    f->clv_mass[ie] = clCreateUserEvent(f->cli.context, &status);
 
-  f->clv_physnodeupdate = clCreateUserEvent(f->cli.context, &status);
+  f->clv_flux0 = calloc(nmacro, sizeof(cl_event));
+  f->clv_flux1 = calloc(nmacro, sizeof(cl_event));
+  f->clv_flux2 = calloc(nmacro, sizeof(cl_event));
+  for(int ie = 0; ie < nmacro; ++ie) {
+    f->clv_flux0[ie] = clCreateUserEvent(f->cli.context, &status);
+    f->clv_flux1[ie] = clCreateUserEvent(f->cli.context, &status);
+    f->clv_flux2[ie] = clCreateUserEvent(f->cli.context, &status);
+  }
+  
+  f->clv_volume = calloc(nmacro, sizeof(cl_event));
+  for(int ie = 0; ie < nmacro; ++ie) {
+    f->clv_volume[ie] = clCreateUserEvent(f->cli.context, &status);
+  }
 
-  f->clv_mci = clCreateUserEvent(f->cli.context, &status);
-  f->clv_interkernel = clCreateUserEvent(f->cli.context, &status);
-  f->clv_interupdate = clCreateUserEvent(f->cli.context, &status);
-  f->clv_interupdateR = clCreateUserEvent(f->cli.context, &status);
-
-  f->clv_mass = clCreateUserEvent(f->cli.context, &status);
-
-  f->clv_flux = calloc(3, sizeof(cl_event));
-  f->clv_flux[0] = clCreateUserEvent(f->cli.context, &status);
-  f->clv_flux[1] = clCreateUserEvent(f->cli.context, &status);
-  f->clv_flux[2] = clCreateUserEvent(f->cli.context, &status);
-
-  f->clv_volume = clCreateUserEvent(f->cli.context, &status);
-
+  f->clv_source = calloc(nmacro, sizeof(cl_event));
+  for(int ie = 0; ie < nmacro; ++ie) {
+    f->clv_source[ie] = clCreateUserEvent(f->cli.context, &status);
+  }
+    
   // Set timers to zero
   f->zbuf_time = 0;
   f->mass_time = 0;
@@ -315,7 +407,16 @@ void init_field_cl(field *f)
   f->flux_time = 0;
   f->minter_time = 0;
   f->boundary_time = 0;
+  f->source_time = 0;
   f->rk_time = 0;
+
+  // Set roofline counts to zero
+  f->flops_vol = 0;
+  f->flops_flux = 0;
+  f->flops_mass = 0; 
+  f->reads_vol = 0;
+  f->reads_flux = 0;
+  f->reads_mass = 0; 
 }
 #endif
 
@@ -337,6 +438,7 @@ void Initfield(field *f) {
   assert(f->dtwn);
   f->Diagnostics = NULL;
   f->pre_dtfield = NULL;
+  f->post_dtfield = NULL;
   f->update_after_rk = NULL;
   f->model.Source = NULL;
 
@@ -352,8 +454,6 @@ void Initfield(field *f) {
 
   // Compute cfl parameter min_i vol_i/surf_i
   f->hmin = min_grid_spacing(f);
-
-  f->dt = 0;
 
   printf("hmin=%f\n", f->hmin);
 
@@ -564,13 +664,9 @@ void Plotfield(int typplot, int compare, field* f, char *fieldname,
 	      real wex[f->model.m];
 	      f->model.ImposedData(Xphy, f->tnow, wex);
 	      value[nodecount] -= wex[typplot];
+
 	    }
 	    nodecount++;
-
-	    // fwrite((char*) &nnoe, sizeof(int), 1, gmshfile);
-	    // fwrite((char*) &(Xplot[0]), sizeof(real), 1, gmshfile);
-	    // fwrite((char*) &(Xplot[1]), sizeof(real), 1, gmshfile);
-	    // fwrite((char*) &(Xplot[2]), sizeof(real), 1, gmshfile);
 	    fprintf(gmshfile, "%d %f %f %f\n", nodecount,
 		    Xplot[0], Xplot[1], Xplot[2]);
 	  }
@@ -1000,7 +1096,7 @@ void DGMacroCellInterfaceSlow(void *mc, field *f, real *w, real *dtw) {
 void DGMacroCellInterface(void *mc, field *f, real *w, real *dtw) 
 {
   MacroFace *mface = (MacroFace*) mc;
-  MacroMesh *msh = &(f->macromesh);
+  MacroMesh *msh = &f->macromesh;
   const unsigned int m = f->model.m;
 
   int iparam[8];
@@ -1191,9 +1287,9 @@ void DGMass(void *mc, field *f, real *dtw)
 // Apply the source term
 void DGSource(void *mc, field *f, real *w, real *dtw) 
 {
-  if (f->model.Source == NULL) 
+  if (f->model.Source == NULL) {
     return;
-
+  }
   MacroCell *mcell = (MacroCell*)mc;
 
   const int m = f->model.m;
@@ -1223,10 +1319,11 @@ void DGSource(void *mc, field *f, real *w, real *dtw)
       }
       
       f->model.Source(xphy, f->tnow, wL, source);
-
+      
       for(int iv = 0; iv < m; ++iv) {
 	int imem = f->varindex(f->interp_param, ie, ipg, iv);
 	dtw[imem] += source[iv];
+	
       }
     }
   }
@@ -1351,8 +1448,9 @@ void DGVolume(void *mc, field *f, real *w, real *dtw)
 		    int ipgR = offsetL+q[0]+npg[0]*(q[1]+npg[1]*q[2]);
 		    for(int iv = 0; iv < m; iv++) {
 		      int imemR = f->varindex(f_interp_param, ie, ipgR, iv);
-		      assert(imemR == imems[m * (ipgR - offsetL) + iv]);
-		      dtw[imems[m*(ipgR-offsetL)+iv]]+=flux[iv]*wpgL;
+		      int temp = m * (ipgR - offsetL) + iv;  
+		      assert(imemR == imems[temp]);
+		      dtw[imems[temp]] += flux[iv] * wpgL;
 		    }
 		  } // iq
 		} // p2
@@ -1395,7 +1493,7 @@ void dtfield_pthread(field *f)
   // subcell fluxes
   if (!facealgo) {
     for(int ie = 0; ie < f->macromesh.nbelems; ie++) {
-      status = pthread_create (&(tmcell[ie]), // thread
+      status = pthread_create (&tmcell[ie], // thread
 			       NULL,                 // default attributes
 			       DGMacroCellInterfaceSlow,  // called function
 			       (void*) (mcell+ie));  // function params
@@ -1408,7 +1506,7 @@ void dtfield_pthread(field *f)
   }
 
   for(int ie = 0; ie < f->macromesh.nbelems; ie++) {
-    status = pthread_create (&(tmcell[ie]), // thread
+    status = pthread_create (&tmcell[ie], // thread
 			     NULL,                 // default attributes
 			     DGSubCellInterface,  // called function
 			     (void*) (mcell+ie));  // function params
@@ -1420,7 +1518,7 @@ void dtfield_pthread(field *f)
   }
 
   for(int ie = 0; ie < f->macromesh.nbelems; ie++) {
-    status = pthread_create (&(tmcell[ie]), // thread
+    status = pthread_create (&tmcell[ie], // thread
 			     NULL,                 // default attributes
 			     DGVolume,  // called function
 			     (void*) (mcell+ie));  // function params
@@ -1432,7 +1530,7 @@ void dtfield_pthread(field *f)
   }
 
   for(int ie = 0; ie < f->macromesh.nbelems; ie++) {
-    status = pthread_create (&(tmcell[ie]), // thread
+    status = pthread_create (&tmcell[ie], // thread
 			     NULL,                 // default attributes
 			     DGMass,  // called function
 			     (void*) (mcell+ie));  // function params
@@ -1477,8 +1575,12 @@ void dtfield(field *f, real *w, real *dtw) {
     DGVolume(mcelli, f, w, dtw);
     DGMass(mcelli, f, dtw);
     DGSource(mcelli, f, w, dtw);
+
   }
 #endif
+
+  if(f->post_dtfield != NULL) // FIXME: rename to after dtfield
+      f->post_dtfield(f, w);
 }
 
 // Apply the Discontinuous Galerkin approximation for computing the
@@ -1693,14 +1795,18 @@ void RK_in(real *fwnp1, real *fdtwn, const real dt, const int sizew)
   }
 }
 
-// Time integration by a second-order Runge-Kutta algorithm
-void RK2(field *f, real tmax) 
+real set_dt(field *f)
 {
-  f->dt = f->model.cfl * f->hmin / f->vmax;
+  return f->model.cfl * f->hmin / f->vmax; 
+}
 
-  //printf("dt=%f cfl=%f hmin=%f, vmax=%f\n",f->dt, f->model.cfl, f->hmin, f->vmax);
+// Time integration by a second-order Runge-Kutta algorithm
+void RK2(field *f, real tmax, real dt) 
+{
+  if(dt <= 0)
+    dt = set_dt(f);
 
-  f->itermax = tmax / f->dt;
+  f->itermax = tmax / dt;
   int size_diags;
   int freq = (1 >= f->itermax / 10)? 1 : f->itermax / 10;
   int sizew = f->macromesh.nbelems * f->model.m * NPG(f->interp_param + 1);
@@ -1712,23 +1818,23 @@ void RK2(field *f, real tmax)
   // FIXME: remove
   size_diags = f->nb_diags * f->itermax;
   f->iter_time = iter;
-  
+
   if(f->nb_diags != 0)
     f->Diagnostics = malloc(size_diags * sizeof(real));
 
   while(f->tnow < tmax) {
     if (iter % freq == 0)
-      printf("t=%f iter=%d/%d dt=%f\n", f->tnow, iter, f->itermax, f->dt);
+      printf("t=%f iter=%d/%d dt=%f\n", f->tnow, iter, f->itermax, dt);
 
     dtfield(f, f->wn, f->dtwn);
-    RK_out(wnp1, f->wn, f->dtwn, 0.5 * f->dt, sizew);
+    RK_out(wnp1, f->wn, f->dtwn, 0.5 * dt, sizew);
 
-    f->tnow += 0.5 * f->dt;
+    f->tnow += 0.5 * dt;
 
     dtfield(f, wnp1, f->dtwn);
-    RK_in(f->wn, f->dtwn, f->dt, sizew);
+    RK_in(f->wn, f->dtwn, dt, sizew);
 
-    f->tnow += 0.5 * f->dt;
+    f->tnow += 0.5 * dt;
 
     if(f->update_after_rk != NULL)
       f->update_after_rk(f, f->wn);
@@ -1736,7 +1842,7 @@ void RK2(field *f, real tmax)
     iter++;
     f->iter_time=iter;
   }
-  printf("t=%f iter=%d/%d dt=%f\n", f->tnow, iter, f->itermax, f->dt);
+  printf("t=%f iter=%d/%d dt=%f\n", f->tnow, iter, f->itermax, dt);
   free(wnp1);
 }
 
@@ -1759,11 +1865,13 @@ void RK4_final_inplace(real *w, real *l1, real *l2, real *l3,
 }
 
 // Time integration by a fourth-order Runge-Kutta algorithm
-void RK4(field *f, real tmax) 
+void RK4(field *f, real tmax, real dt) 
 {
-  f->dt = f->model.cfl * f->hmin / f->vmax;
+  if(dt <= 0)
+    dt = set_dt(f);
 
-  f->itermax = tmax / f->dt;
+  f->itermax = tmax / dt;
+  int size_diags;
   int freq = (1 >= f->itermax / 10)? 1 : f->itermax / 10;
   int sizew = f->macromesh.nbelems * f->model.m * NPG(f->interp_param + 1);
   int iter = 0;
@@ -1773,34 +1881,45 @@ void RK4(field *f, real tmax)
   l1 = calloc(sizew, sizeof(real));
   l2 = calloc(sizew, sizeof(real));
   l3 = calloc(sizew, sizeof(real));
-
+  
+  size_diags = f->nb_diags * f->itermax;
+  f->iter_time = iter;
+  
+    if(f->nb_diags != 0)
+    f->Diagnostics = malloc(size_diags * sizeof(real));
+  
   while(f->tnow < tmax) {
     if (iter % freq == 0)
-      printf("t=%f iter=%d/%d dt=%f\n", f->tnow, iter, f->itermax, f->dt);
+      printf("t=%f iter=%d/%d dt=%f\n", f->tnow, iter, f->itermax, dt);
 
     // l_1 = w_n + 0.5dt * S(w_n, t_0)
     dtfield(f, f->wn, f->dtwn);
-    RK_out(l1, f->wn, f->dtwn, 0.5 * f->dt, sizew);
+    RK_out(l1, f->wn, f->dtwn, 0.5 * dt, sizew);
 
-    f->tnow += 0.5 * f->dt;
+    f->tnow += 0.5 * dt;
 
     // l_2 = w_n + 0.5dt * S(l_1, t_0 + 0.5 * dt)
     dtfield(f, l1, f->dtwn);
-    RK_out(l2, f->wn, f->dtwn, 0.5 * f->dt, sizew);
+    RK_out(l2, f->wn, f->dtwn, 0.5 * dt, sizew);
 
     // l_3 = w_n + dt * S(l_2, t_0 + 0.5 * dt)
     dtfield(f, l2, f->dtwn);
-    RK_out(l3, f->wn, f->dtwn, f->dt, sizew);
+    RK_out(l3, f->wn, f->dtwn, dt, sizew);
 
-    f->tnow += 0.5 * f->dt;
+    f->tnow += 0.5 * dt;
 
     // Compute S(l_3, t_0 + dt)
     dtfield(f, l3, f->dtwn);
-    RK4_final_inplace(f->wn, l1, l2, l3, f->dtwn, f->dt, sizew);
+    RK4_final_inplace(f->wn, l1, l2, l3, f->dtwn, dt, sizew);
 
+    
+    if(f->update_after_rk != NULL)
+      f->update_after_rk(f, f->wn);
+    
     iter++;
+     f->iter_time=iter;
   }
-  printf("t=%f iter=%d/%d dt=%f\n", f->tnow, iter, f->itermax, f->dt);
+  printf("t=%f iter=%d/%d dt=%f\n", f->tnow, iter, f->itermax, dt);
 
   free(l3);
   free(l2);

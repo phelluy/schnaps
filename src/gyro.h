@@ -1,6 +1,11 @@
 #ifndef _GYRO_H
 #define _GYRO_H
 
+// FIXME:
+
+// The use of defines to set varialbes is going to cause massive
+// problems with maintainability.  Please stop doing this.
+
 #define _NB_ELEM_V 4
 #define _DEG_V 2
 
@@ -42,12 +47,12 @@ void GyroInitData(real* x,real* w);
 //! \brief particular imposed data for the  gyro model
 //! \param[in] x : space position
 //! \param[out] w : init state at point x
-void GyroImposedData(real* x,real t,real* w);
+void GyroImposedData(const real* x, const real t,real* w);
 
 //! \brief particular imposed data for the  gyro model
 //! \param[in] x,t : space and time position
 //! \param[out] w : imposed state at point x and time t
-real Gyro_ImposedKinetic_Data(real* x,real t,real v);
+real Gyro_ImposedKinetic_Data(const real* x, const real t,real v);
 
 //! \brief compute gyro L2 error in x and v
 //! \param[in] f : a field
@@ -60,7 +65,7 @@ real GyroL2VelError(real* x,real t,real *w);
 
 //! \brief compute compute the source term of the collision
 //! model: electric force + true collisions
-void GyroSource(real* x,real t, real* w, real* source);
+void GyroSource(const real *x, const real t, const real *w, real *source);
 
 //! \brief gnuplot file for the distribution function
 //! \param[in] w : values of f at glops

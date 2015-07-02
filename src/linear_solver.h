@@ -6,7 +6,8 @@
 
 
 typedef enum MatrixStorage{SKYLINE,CSR} MatrixStorage;
-typedef enum Solver{LU,GMRES} Solver;
+typedef enum Solver{LU,GMRES,PAR_GMRES,PAR_FGMRES,PAR_CG,PAR_BICGSTAB,PAR_AMG,PAR_LU,PAR_QR} Solver;
+typedef enum PC{NONE,PAR_JACOBI,PAR_ILU,PAR_MULTICOLOREDSGS,PAR_MULTICOLOREDGS,PAR_MULTICOLOREDILU,PAR_AMG_PC,PAR_ELIMI} PC;
 
 //! class for managing linear solvers
 typedef struct LinearSolver{
@@ -30,8 +31,14 @@ typedef struct LinearSolver{
   //! \brief true if the arrays are allocated
   bool is_alloc;
 
+   //! \brief true if the matrix is assembly
+  bool is_assembly;
+
+  //! solver type;
+  Solver solver_type;
+
   //! name of the storage method;
-  Solver solver_type; 
+  PC pc_type; 
 
   //! \brief solution of the linear system
   real* sol;
@@ -89,7 +96,7 @@ void DisplayLinearSolver(LinearSolver* lsol);
 //! \param[in] lsol the LinearSolver object containing matrix A
 //! \param[in] x a vector
 //! \param[out] prod Ax
-void MatVecLinearSolver(LinearSolver* lsol,real* x,real* prod);
+void MatVecLinearSolver(LinearSolver* lsol,real x[],real prod[]);
 
 //! \brief compute the inplace LU decomposition
 //! \param[inout] lsol the LinearSolver object
@@ -101,7 +108,27 @@ void LUDecompLinearSolver(LinearSolver* lsol);
 //! \param[in] sol the solution
 void SolveLinearSolver(LinearSolver* lsol);
 
+//! \brief copy vector
+//! \param[in] x vector
+//! \param[in] N size
+//! \param[in] copy x in prod
+void Vector_copy(real x[],real prod[],int N);
 
+  //! \brief dot product
+//! \param[in] x vector
+//! \param[in] y vector
+//! \param[in] N size
+//! \param[in] prod dot product between x and y
+double Vector_prodot(double x[],double y[],int N);
+
+//! \brief solve the linear system with paralution
+//! \param[in] lsol contains the matrices rhs and sol
+void Solver_Paralution(LinearSolver* lsol);
+
+
+real Vector_norm2(real x[],int  N);
+
+void GMRESSolver(LinearSolver* lsol);
 
 
 #endif

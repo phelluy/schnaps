@@ -54,9 +54,9 @@ typedef struct Geom{
 //! \param[in] dphiref: gradient of a function in the reference frame (optional)
 //! \param[in] ifa: face index if computation of the normal vector (optional)
 //! \param[out] xphy: coordinates of the mapped point in the physical frame
-//! \param[out] dphi: gradient of the function in the physical frame (optional)
 //! \param[out] dtau: jacobian of the mapping tau (optional)
 //! \param[out] codtau: comatrix of dtau (optional)
+//! \param[out] dphi: gradient of the function in the physical frame (optional)
 //! \param[out] vnds: normal vector times the elementary surface ds (optional)
 void Ref2Phy(real physnode[20][3],
              real xref[3],
@@ -112,7 +112,9 @@ void Normalize(real a[3]);
 //! \param[in] period:  sizes of the box in each direction
 //! if period[dim]<0 -> non periodic in direction dim
 //! the box is of the form [0,period[0]]x[0,period[1]]x[0,period[2]]
+#pragma start_opencl
 void PeriodicCorrection(real xyz[3],real period[3]);
+#pragma end_opencl
 
 //! \brief periodic correction
 //! \param[inout] xyz: the vector to be put inside the periodic box

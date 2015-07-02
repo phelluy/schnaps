@@ -18,20 +18,21 @@
 
 void ReadMacroMesh(MacroMesh *m, char *filename)
 {
-
-  // first set default values
+  // First, set default values
   m->is2d = false;
   m->is1d = false;
-  m->period[0]=-1;
-  m->period[1]=-1;
-  m->period[2]=-1;
+  m->period[0] = -1;
+  m->period[1] = -1;
+  m->period[2] = -1;
+
+  m->connec_ok = false;
 
   FILE *f = NULL;
   char *line = NULL;
   size_t linesize = 0;
   size_t ret;
 
-  printf("Read mesh file %s\n",filename);
+  printf("Read mesh file %s\n", filename);
 
   f = fopen(filename,"r");
   assert(f != NULL);
@@ -275,13 +276,65 @@ void macromesh_bounds(MacroMesh *m, real *bounds)
   bounds[4] = zmin;
   bounds[5] = zmax;
 
-  m->xmin[0]=xmin;
-  m->xmax[0]=xmax;
-  m->xmin[1]=ymin;
-  m->xmax[1]=ymax;
-  m->xmin[2]=zmin;
-  m->xmax[2]=zmax;
+  m->xmin[0] = xmin;
+  m->xmax[0] = xmax;
+  m->xmin[1] = ymin;
+  m->xmax[1] = ymax;
+  m->xmin[2] = zmin;
+  m->xmax[2] = zmax;
 
+}
+
+int* build_boundarylist(MacroMesh *m)
+{
+  int nbound = 0;
+  for(int ifa = 0; ifa < m->nbfaces; ++ifa) {
+    int ieR = m->face2elem[4 * ifa + 2];
+    if(ieR == -1)
+      nbound++;
+  }
+  m->nboundaryfaces = nbound;
+  
+  printf("m->nboundaryfaces: %d\n", m->nboundaryfaces);
+  if(m->nboundaryfaces > 0) {
+    int *bf = malloc(sizeof(int) * m->nboundaryfaces);
+
+    int ibound = 0;
+    for(int ifa = 0; ifa < m->nbfaces; ++ifa) {
+      int ieR = m->face2elem[4 * ifa + 2];
+      if(ieR == -1)
+  	bf[ibound++] = ifa;
+    }
+    return bf;
+  } else {
+    return NULL;
+  }
+}
+
+int* build_interfacelist(MacroMesh *m)
+{
+  int ninter = 0;
+  for(int ifa = 0; ifa < m->nbfaces; ++ifa) {
+    int ieR = m->face2elem[4 * ifa + 2];
+    if(ieR != -1)
+      ninter++;
+  }
+  m->nmacrointerfaces = ninter;
+  
+  printf("m->nmacrointerfaces: %d\n", m->nmacrointerfaces);
+  if(m->nmacrointerfaces > 0) {
+    int *mif = malloc(sizeof(int) * m->nmacrointerfaces);
+
+    int iinter = 0;
+    for(int ifa = 0; ifa < m->nbfaces; ++ifa) {
+      int ieR = m->face2elem[4 * ifa + 2];
+      if(ieR != -1)
+  	mif[iinter++] = ifa;
+    }
+    return mif;
+  } else {
+    return NULL;
+  }
 }
 
 // Allocate and fill the elem2elem array, which provides macrocell
@@ -296,7 +349,7 @@ void build_elem2elem(MacroMesh *m, Face4Sort *face)
   // Initialize to -1 (value for faces on a boundary)
   for(int i = 0; i < 6 * m->nbelems; i++)
     m->elem2elem[i] = -1;
-
+  
   // Two successive equal faces correspond to two neighbours in the
   // element list
   m->nbfaces = 0;
@@ -311,7 +364,7 @@ void build_elem2elem(MacroMesh *m, Face4Sort *face)
       int ie2 = f2->left;
       int if2 = f2->locfaceleft;
       m->elem2elem[if1 + 6 * ie1] = ie2;
-      m->elem2elem[if2 + 6 * ie2] = ie1;
+      m->elem2elem[if2 + 6 * ie2] = ie1;      
     }
     m->nbfaces++;
   }
@@ -343,7 +396,7 @@ void build_elem2elem(MacroMesh *m, Face4Sort *face)
   /*   } */
   /*   m->nbfaces++; */
   /* } */
-
+  
   // Loop over the face of the macro elements
   int facecount = 0;
   for(int ie = 0; ie < m->nbelems; ie++) {
@@ -380,9 +433,12 @@ void build_elem2elem(MacroMesh *m, Face4Sort *face)
         facecount++;
       }
     }
-  }
-
+  }  
   assert(facecount == m->nbfaces);
+
+  m->boundaryface = build_boundarylist(m);
+
+  m->macrointerface = build_interfacelist(m);
 }
 
 // Remove the faces in the third z dimension from the list.
@@ -391,9 +447,10 @@ void suppress_zfaces(MacroMesh *m)
   printf("Suppress 3d faces...\n");
   int newfacecount = 0;
   for(int ifa = 0; ifa < m->nbfaces; ifa++) {
-    if(m->face2elem[4 * ifa + 1] < 4) newfacecount++;
+    if(m->face2elem[4 * ifa + 1] < 4)
+      newfacecount++;
   }
-
+    
   printf("Old num faces=%d, new num faces=%d\n", m->nbfaces, newfacecount);
 
   int* oldf = m->face2elem;
@@ -404,14 +461,22 @@ void suppress_zfaces(MacroMesh *m)
     if(oldf[4 * ifa + 1] < 4) {
       m->face2elem[4 * newfacecount + 0] = oldf[4 * ifa + 0];
       m->face2elem[4 * newfacecount + 1] = oldf[4 * ifa + 1];
-      m->face2elem[4 * newfacecount + 2] = oldf[4  *ifa + 2];
-      m->face2elem[4 * newfacecount + 3] = oldf[4  *ifa + 3];
+      m->face2elem[4 * newfacecount + 2] = oldf[4 * ifa + 2];
+      m->face2elem[4 * newfacecount + 3] = oldf[4 * ifa + 3];
       newfacecount++;
     }
   }
 
-  m->nbfaces=newfacecount;
+  m->nbfaces = newfacecount;
   free(oldf);
+
+  if(m->nboundaryfaces > 0)
+    free(m->boundaryface);
+  m->boundaryface = build_boundarylist(m);
+
+  if(m->nmacrointerfaces > 0)
+    free(m->macrointerface);
+  m->macrointerface = build_interfacelist(m);
 }
 
 // Remove the faces in the y direction from the list.
@@ -440,8 +505,16 @@ void suppress_yfaces(MacroMesh *m)
     }
   }
 
-  m->nbfaces=newfacecount;
+  m->nbfaces = newfacecount;
   free(oldf);
+
+  if(m->nboundaryfaces > 0)
+    free(m->boundaryface);
+  m->boundaryface = build_boundarylist(m);
+  
+  if(m->nmacrointerfaces > 0)
+    free(m->macrointerface);
+  m->macrointerface = build_interfacelist(m);
 }
 
 // Remove the doubled faces from the list.
@@ -471,6 +544,14 @@ void suppress_double_faces(MacroMesh *m)
 
   m->nbfaces=newfacecount;
   free(oldf);
+
+  if(m->nboundaryfaces > 0)
+    free(m->boundaryface);
+  m->boundaryface = build_boundarylist(m);
+  
+  if(m->nmacrointerfaces > 0)
+    free(m->macrointerface);
+  m->macrointerface = build_interfacelist(m);
 }
 
 // Build the node 2 elems connectivity
@@ -588,7 +669,7 @@ void BuildConnectivity(MacroMesh* m)
 	int param2[7]={0,0,0,1,1,1,0};
 	ref_pg_face(param2, ifa, ipgf, xpgref, NULL, xpgref_in);
 	real dtau[3][3],xpg_in[3];
-	real codtau[3][3],vnds[3];
+	real codtau[3][3],vnds[3]={0,0,0};
 	Ref2Phy(physnode,
 		xpgref_in,
 		NULL, ifa, // dpsiref,ifa
@@ -601,27 +682,27 @@ void BuildConnectivity(MacroMesh* m)
 	int dim=0;
 	while(Dist(vnds,diag[dim]) > 1e-2 && dim<3) dim++;
 	//assert(dim < 3);
-	printf("xpg_in_before=%f\n",xpg_in[dim]);
+	//printf("xpg_in_before=%f\n",xpg_in[dim]);
 	if (dim < 3 && m->period[dim]  > 0){
 	  //if (xpg_in[dim] > m->period[dim]){
           if (xpg_in[dim] > m->xmax[dim]){
 	    xpg_in[dim] -= m->period[dim];
-	    printf("xpg_in_after=%f\n",xpg_in[dim]);
+	    //printf("xpg_in_after=%f\n",xpg_in[dim]);
 	  }
 	  //else if (xpg_in[dim] < 0){
           else if (xpg_in[dim] < m->xmin[dim]){
 	    xpg_in[dim] += m->period[dim];
-	    printf("xpg_in_after=%f\n",xpg_in[dim]);
+	    //printf("xpg_in_after=%f\n",xpg_in[dim]);
 	  }
 	  else {
             //printf("xpg_in=%f\n",xpg_in[dim]);
 	    assert(1==2);
 	  }
 	  m->elem2elem[6 * ie + ifa] = NumElemFromPoint(m,xpg_in,NULL);
-	  printf("ie=%d ifa=%d numelem=%d vnds=%f %f %f xpg_in=%f %f %f \n",
-	  	 ie,ifa,NumElemFromPoint(m,xpg_in,NULL),
-	  	 vnds[0],vnds[1],vnds[2],
-	  	 xpg_in[0],xpg_in[1],xpg_in[2]);
+	  /* printf("ie=%d ifa=%d numelem=%d vnds=%f %f %f xpg_in=%f %f %f \n", */
+	  /* 	 ie,ifa,NumElemFromPoint(m,xpg_in,NULL), */
+	  /* 	 vnds[0],vnds[1],vnds[2], */
+	  /* 	 xpg_in[0],xpg_in[1],xpg_in[2]); */
 	}
       }
     }
@@ -655,6 +736,8 @@ void BuildConnectivity(MacroMesh* m)
 
   //assert(1==5);
   free(bounds);
+
+  m->connec_ok = true;
 
 /* #ifdef _PERIOD */
 /*   assert(m->is1d); // TODO : generalize to 2D */
@@ -707,6 +790,8 @@ void CheckMacroMesh(MacroMesh *m, int *param) {
   /* real refnormal[6][3]={{0,-1,0},{1,0,0}, */
   /* 			  {0,1,0},{-1,0,0}, */
   /* 			  {0,0,1},{0,0,-1}}; */
+
+  assert(m->connec_ok);
 
   for(int ie = 0; ie < m->nbelems; ie++) {
     // Load geometry for macro element ie:
@@ -827,7 +912,9 @@ void CheckMacroMesh(MacroMesh *m, int *param) {
 
 	// Get the right elem or the boundary id
 	int ieR = m->elem2elem[6 * ie + ifa];
-  	if(ieR >= 0) {  // The right element exists
+	// If the right element exists and is not
+	// the left element (may arrive in periodic cases)
+  	if(ieR >= 0 && ieR != ie) {
 	  // Get the coordinates of the Gauss point from the
 	  // face-local point index and the point slightly inside the
 	  // macrocell.

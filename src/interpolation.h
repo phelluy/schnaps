@@ -76,7 +76,8 @@ int NPGF(int param[],int ifa);
 //! \param[out] ic the 3 subcell indices in x,y,z directions
 //! \param[out] ix the 3 glop indices in the subcell
 #pragma start_opencl
-void ipg_to_xyz(int* raf,int* deg,int* ic,int* ix,int *ipg);
+void ipg_to_xyz(const int *raf, const int *deg, int *ic, int *ix, const 
+		int *ipg);
 #pragma end_opencl
 
 //! \brief compute the index of the glop in the macrocell
@@ -87,7 +88,8 @@ void ipg_to_xyz(int* raf,int* deg,int* ic,int* ix,int *ipg);
 //! \param[in] ic the 3 subcell indices in x,y,z directions
 //! \param[in] ix the 3 glop indices in the subcell
 #pragma start_opencl
-void xyz_to_ipg(int* raf,int* deg,int* ic,int* ix,int *ipg);
+void xyz_to_ipg(const int *raf, const int *deg, const int *ic, const int *ix,
+		int *ipg);
 #pragma end_opencl
 
 //! \brief return the reference coordinates xpg[3] and weight wpg of the GLOP ipg
@@ -133,7 +135,7 @@ void ref_pg_face(int* param,int ifa,int ipgf,real* xpg,real* wpg,
 //! \param[out] dpsiref gradient of the basis function in the reference element
 void psi_ref(int* param, int ib, real* xref, real* psi, real* dpsiref);
 
-//! \brief  gradient of a basis function at a given glop (case of one subcell)
+//! \brief  gradient of a basis function at a given glop 
 //! \param[in]  param interpolation parammeters (degrees and refinements)
 //! \param[in] ib basis function index
 //! \param[in] ipg glop index
