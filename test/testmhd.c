@@ -103,8 +103,8 @@ int TestMHD(int argc, char *argv[]) {
   f.interp.interp_param[1] = 1; // x direction degree
   f.interp.interp_param[2] = 1; // y direction degree
   f.interp.interp_param[3] = 0; // z direction degree
-  f.interp.interp_param[4] = 10; // x direction refinement
-  f.interp.interp_param[5] = 10; // y direction refinement
+  f.interp.interp_param[4] = 4; // x direction refinement
+  f.interp.interp_param[5] = 4; // y direction refinement
   f.interp.interp_param[6] = 1; // z direction refinement
 
 
@@ -143,6 +143,7 @@ int TestMHD(int argc, char *argv[]) {
     //assert(1==2);
     RK2_CL(&f, tmax, dt, 0, NULL, NULL);
     //executiontime = seconds() - executiontime;
+    show_cl_timing(&f);
   } else { 
     printf("Using C:\n");
     //executiontime = seconds();
@@ -153,7 +154,6 @@ int TestMHD(int argc, char *argv[]) {
   Plotfield(0,false,&f, "Rho", "dgvisu.msh");
   //Gnuplot(&f,0,0.0,"data1D.dat");
 
-  show_cl_timing(&f);
 
   printf("tmax: %f, cfl: %f\n", tmax, f.model.cfl);
 
