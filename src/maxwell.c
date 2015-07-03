@@ -6,7 +6,7 @@
 #pragma start_opencl
 void Maxwell2DNumFlux_centered(real *wL, real *wR, real *vnorm, real *flux) 
 {
-  // w: (Ex, Ey, Hz, Hz, \lambda, rho, Jx, Jy)
+  // w: (Ex, Ey, Hz, \lambda, rho, Jx, Jy)
 
   // FIXME add documentation
   
@@ -33,7 +33,7 @@ void Maxwell2DNumFlux_centered(real *wL, real *wR, real *vnorm, real *flux)
 #pragma start_opencl
 void Maxwell2DNumFlux_uncentered(real *wL, real *wR, real *vnorm, real *flux) 
 {
-  // w: (Ex, Ey, Hz, Hz, \lambda, rho, Jx, Jy)
+  // w: (Ex, Ey, Hz, \lambda, rho, Jx, Jy)
 
   // FIXME add documentation
 
@@ -72,7 +72,7 @@ void Maxwell2DNumFlux_uncentered(real *wL, real *wR, real *vnorm, real *flux)
 #pragma start_opencl
 void Maxwell2DNumFlux_unoptimised(real *wL, real *wR, real *vnorm, real *flux) 
 {
-  // w: (Ex, Ey, Hz, Hz, \lambda, rho, Jx, Jy)
+  // w: (Ex, Ey, Hz, \lambda, rho, Jx, Jy)
 
   // FIXME add documentation
 
@@ -113,12 +113,10 @@ void Maxwell2DNumFlux_unoptimised(real *wL, real *wR, real *vnorm, real *flux)
 }
 #pragma end_opencl
 
-
-
 #pragma start_opencl
 void Maxwell2DImposedData(const real *x, const real t, real *w) 
 {
-  // w: (Ex, Ey, Hz, Hz, \lambda, rho, Jx, Jy)
+  // w: (Ex, Ey, Hz, \lambda, rho, Jx, Jy)
 
   // FIXME add documentation
   
@@ -159,7 +157,7 @@ void Maxwell2DInitData(real *x, real *w)
 #pragma start_opencl
 void Maxwell2DSource(const real *x, const real t, const real *w, real *source)
 {
-  // w: (Ex, Ey, Hz, Hz, \lambda, rho, Jx, Jy)
+  // w: (Ex, Ey, Hz, \lambda, rho, Jx, Jy)
   
   // FIXME add documentation
   
@@ -183,7 +181,7 @@ void Maxwell3DNumFlux_uncentered(real *wL, real *wR, real *vnorm, real *flux)
 
   // Let {{E}} = ( ER + EL ) / 2, [[E]] = ( ER - EL ) / 2 
   // The first three components of the flux are
-  // - n x {{H}} +  n x n x [[E]] / r 
+  // - n x {{H}} + n x n x [[E]] / r 
   // and the last three are
   //   n x {{E}} + n x n x [[H]] / r 
   
@@ -313,6 +311,59 @@ void Maxwell3DNumFluxClean_uncentered(real *wL, real *wR, real *vnorm,
 
   // Flux for lambda_H
   // c_2 * ( n \cdot \mean{H} + r \jump{\lambda_H} )
-  flux[6] = c2 * (n0 * Hs0 + n1 * Hs1 + n2 * Hs2 + r * lHd );
+  flux[7] = c2 * (n0 * Hs0 + n1 * Hs1 + n2 * Hs2 + r * lHd );
 }
 #pragma end_opencl
+
+#pragma start_opencl
+void Maxwell3DImposedData(const real *x, const real t, real *w) 
+{
+  // Data layout: w = {Ex, Ey, Ez, Hx, Hy, Hz, lambda_E, lambda_H}
+
+  // FIXME add documentation
+  
+  // FIXME
+  /*
+  const real pi = 4.0 * atan(1.0);
+  const real theta = pi / 4.0;
+  const real r = 1.0;
+
+  const real u = cos(theta);
+  const real v = sin(theta); 
+  const real k = 2.0 * pi / v;
+  const real c = -cos(k * (u * x[0] + v * x[1] - t));
+  */  
+
+  // set E
+  w[0] = 0.0; // FIXME
+  w[1] = 0.0; // FIXME
+  w[2] = 0.0; // FIXME
+  // set H
+  w[3] = 0.0; // FIXME
+  w[4] = 0.0; // FIXME
+  w[5] = 0.0; // FIXME
+  // set cleaners
+  w[6] = 0.0;
+  w[7] = 0.0;
+}
+#pragma end_opencl
+
+#pragma start_opencl
+void Maxwell3DInitData(real *x, real *w) 
+{
+  real t = 0;
+  Maxwell3DImposedData(x, t, w);
+}
+#pragma end_opencl
+
+#pragma start_opencl
+void Maxwell3DBoundaryFlux_uncentered(real *x, real t, 
+				      real *wL, real *vnorm, real *flux)
+{
+  real wR[8];
+  Maxwell3DImposedData(x, t, wR);
+  Maxwell3DNumFluxClean_uncentered(wL, wR, vnorm, flux);
+}
+#pragma end_opencl
+
+// TODO: add 3D clean source.

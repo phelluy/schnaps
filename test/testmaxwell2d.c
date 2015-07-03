@@ -18,7 +18,7 @@ int TestMaxwell2D(void) {
   f.model.InitData = Maxwell2DInitData;
   f.model.ImposedData = Maxwell2DImposedData;
   f.varindex = GenericVarindex;
-  //f.model.Source = Maxwell2DSource;
+  f.model.Source = Maxwell2DSource;
   
   f.interp.interp_param[0] = f.model.m;
   f.interp.interp_param[1] = 3; // x direction degree

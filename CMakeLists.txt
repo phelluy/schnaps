@@ -472,6 +472,14 @@ if(OPENCL_FOUND)
     )
   target_link_libraries(testmaxwell2d ${LIBS})
   add_test(testmaxwell2d testmaxwell2d)
+
+  add_executable(
+    testmaxwell3d
+    test/test.h
+    test/testmaxwell3d.c
+    )
+  target_link_libraries(testmaxwell3d ${LIBS})
+  add_test(testmaxwell3d testmaxwell3d)
   
   add_test(testmhd testmhd)
   add_executable(
