@@ -25,6 +25,11 @@ void Maxwell2DNumFlux_unoptimised(real *wL, real *wR, real *vnorm, real *flux);
 void Maxwell3DNumFlux_uncentered(real *wL, real *wR, real *vnorm, real *flux);
 #pragma end_opencl
 
+#pragma start_opencl
+void Maxwell3DNumFluxClean_uncentered(real *wL, real *wR, real *vnorm, 
+					real *flux);
+#pragma end_opencl
+
 //! \brief The particular imposed data for the maxwell2d model
 //! \param[in] x, t : space and time position
 //! \param[out] w : imposed state at point x and time t
