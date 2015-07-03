@@ -77,7 +77,7 @@
 \begin_body
 
 \begin_layout Title
-SCHNAPS
+CLAC, SCHNAPS et StarPU
 \end_layout
 
 \begin_layout Frame
@@ -95,11 +95,20 @@ Passé
 
 \begin_deeper
 \begin_layout Itemize
-Solveur DG explicite C+OpenMP ou OpenCL: RK2, RK4
+SCHNAPS: 
+\begin_inset Quotes fld
+\end_inset
+
+antichambre
+\begin_inset Quotes frd
+\end_inset
+
+ en C de CLAC.
+ Plus facile à apprendre, mais moins robuste.
 \end_layout
 
 \begin_layout Itemize
-Modèles: MHD, Maxwell 2D, transport, Vlasov réduit
+Solveur DG explicite C+OpenMP ou OpenCL: RK2, RK4
 \end_layout
 
 \begin_layout Itemize
@@ -108,54 +117,21 @@ Maillages: courbes, conformes, 1D, 2D, 3D, périodiques ou non.
 \end_layout
 
 \begin_layout Itemize
+Modèles: MHD, Maxwell 2D-3D, transport, Vlasov réduit
+\end_layout
+
+\begin_layout Itemize
 PIC, Poisson 1D et 2D
 \end_layout
 
-\begin_layout Standard
-\begin_inset Note Note
+\begin_layout Itemize
+Voir: 
+\begin_inset Flex URL
 status open
 
 \begin_layout Plain Layout
-Structurer l'exposé est une tâche difficile et la structure suivante pourrait
- ne pas convenir.
- Voici quelques règles à appliquer pour cet exemple ci :
-\end_layout
 
-\begin_layout Itemize
-avoir exactement deux ou trois sections (autre que le sommaire); 
-\end_layout
-
-\begin_layout Itemize
-tout au plus trois sous-sections par section; 
-\end_layout
-
-\begin_layout Itemize
-parler approximativement entre 30 secondes et 2 minutes par transparent.
- Il  devrait donc y avoir entre 15 et 30 transparents, pour tout dire;
-\end_layout
-
-\begin_layout Itemize
-le public d'une conférence connaîtra probablement peu de chose sur le sujet
-  que vous serez en train de traiter.
- Donc, *simplifier*
-\begin_inset space ~
-\end_inset
-
-!
-\end_layout
-
-\begin_layout Itemize
-dans un exposé de 20 minutes, garder à l'esprit les idées principales est
- largement  suffisant pour votre assistance.
- Laissez tomber certains détails, même s'ils vous  semblent nécessaires;
- 
-\end_layout
-
-\begin_layout Itemize
-si un détail qui est vital pour une preuve/mise en oeuvre est omis,  le
- dire simplement une fois.
- Ce sera suffisant pour l'auditoire.
- 
+http://schnaps.gforge.inria.fr/
 \end_layout
 
 \end_inset
@@ -183,20 +159,24 @@ Présent
 
 \begin_deeper
 \begin_layout Itemize
-bilan des perfs
+bilan des perfs (speedup=3).
 \end_layout
 
 \begin_layout Itemize
-solveurs linéaires: skyline, paralution, umfpack
+Petits essais avec StarPU.
 \end_layout
 
 \begin_layout Itemize
-finir MHD, PIC, Maxwell 3D
+solveurs linéaires: skyline, paralution, umfpack.
+\end_layout
+
+\begin_layout Itemize
+finir MHD, PIC, Maxwell 3D (tester les perfs).
 \end_layout
 
 \begin_layout Itemize
 TODO: float, nettoyage (indentation (clang-format), documentation, commentaires,
- merging)
+ merging).
 \end_layout
 
 \end_deeper
@@ -219,7 +199,7 @@ Futur
 
 \begin_deeper
 \begin_layout Standard
-Courte échéance:
+Proche:
 \end_layout
 
 \begin_layout Itemize
@@ -227,31 +207,145 @@ Algorithmes implicites (CEMRACS)
 \end_layout
 
 \begin_layout Itemize
-Collisions
-\end_layout
 
-\begin_layout Itemize
-Gyrocinétique
+\series bold
+StarPU
+\series default
+ (que devient OpenMP ?)
 \end_layout
 
 \begin_layout Standard
-Plus longue échéance:
+Plus lointain:
 \end_layout
 
 \begin_layout Itemize
-Macromaillages non conformes
-\end_layout
-
-\begin_layout Itemize
-StarPU (que devient OpenMP ?)
+Macromaillages non conformes, pas de temps local.
 \end_layout
 
 \begin_layout Itemize
 MHD faible Mach, couplage cinétique/fluide
 \end_layout
 
+\end_deeper
+\begin_layout Separator
+
+\end_layout
+
+\begin_layout Frame
+\begin_inset Argument 4
+status open
+
+\begin_layout Plain Layout
+StarPU
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_deeper
+\begin_layout Standard
+StarPU logiciel développé à l'Inria Bordeaux pour dérouler un graphe des
+ tâches:
+\end_layout
+
+\begin_layout Standard
+\align center
+\begin_inset Graphics
+	filename exemple-task.png
+	width 3cm
+
+\end_inset
+
+
+\end_layout
+
 \begin_layout Itemize
-???
+Soumission des tâches dans un ordre séquentiel
+\end_layout
+
+\begin_layout Itemize
+tâches décrites dans des 
+\begin_inset Quotes fld
+\end_inset
+
+codelettes
+\begin_inset Quotes frd
+\end_inset
+
+ de signature 
+\family typewriter
+my_func(void *buffers[], void *_args)
+\family default
+.
+ Plusieurs codelettes possibles pour la même tâche.
+\end_layout
+
+\begin_layout Itemize
+Dépendances construites automatiquement par les données
+\end_layout
+
+\begin_layout Itemize
+Ordonnancement automatique des calculs, des duplications mémoire et des
+ communications.
+\end_layout
+
+\end_deeper
+\begin_layout Separator
+
+\end_layout
+
+\begin_layout Frame
+\begin_inset Argument 4
+status open
+
+\begin_layout Plain Layout
+StarPU
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_deeper
+\begin_layout Standard
+Success stories:
+\end_layout
+
+\begin_layout Itemize
+Algèbre linéaire.
+ clMAGMA (UTK, Inria)
+\begin_inset Newline newline
+\end_inset
+
+
+\begin_inset space \qquad{}
+\end_inset
+
+
+\begin_inset space \qquad{}
+\end_inset
+
+
+\begin_inset Graphics
+	filename qr-starpu.png
+	width 7cm
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Itemize
+Airbus: thèse de Benoît Lizé.
+ Solveur direct H-matrice sous StarPU.
+ Speedup >10 comparé à FMM !
+\end_layout
+
+\begin_layout Itemize
+TOTAL/Inria: solveur DG géophysique.
 \end_layout
 
 \end_deeper
@@ -349,7 +443,7 @@ task->cl = &cl;
 \begin_inset Newline newline
 \end_inset
 
- starpu_task_submit(task);
+starpu_task_submit(task);
 \end_layout
 
 \end_deeper
@@ -400,8 +494,8 @@ task->cl = &cl;
 \end_layout
 
 \begin_layout Itemize
-On peut cacher ça dans des fonctions SCHNAPS, mais elles doivent retourner
- immédiatement.
+On peut cacher ça dans des fonctions SCHNAPS ou CLAC, mais elles doivent
+ retourner immédiatement.
 \end_layout
 
 \begin_layout Standard
