@@ -29,6 +29,11 @@ int TestMaxwell3D()
 
   ReadMacroMesh(&(f.macromesh), "test/testcube.msh");
 
+  // FIXME: temp
+  //Detect2DMacroMesh(&(f.macromesh));
+  //assert(f.macromesh.is2d);
+
+
   BuildConnectivity(&(f.macromesh));
 
   char buf[1000];

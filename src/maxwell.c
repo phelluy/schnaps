@@ -322,8 +322,6 @@ void Maxwell3DImposedData(const real *x, const real t, real *w)
 
   // FIXME add documentation
   
-  // FIXME
-  /*
   const real pi = 4.0 * atan(1.0);
   const real theta = pi / 4.0;
   const real r = 1.0;
@@ -332,16 +330,15 @@ void Maxwell3DImposedData(const real *x, const real t, real *w)
   const real v = sin(theta); 
   const real k = 2.0 * pi / v;
   const real c = -cos(k * (u * x[0] + v * x[1] - t));
-  */  
 
   // set E
-  w[0] = 0.0; // FIXME
-  w[1] = 0.0; // FIXME
-  w[2] = 0.0; // FIXME
+  w[0] = -v * c / r;
+  w[1] = u * c / r;
+  w[2] = 0.0;
   // set H
-  w[3] = 0.0; // FIXME
-  w[4] = 0.0; // FIXME
-  w[5] = 0.0; // FIXME
+  w[3] = 0.0;
+  w[4] = 0.0;
+  w[5] = c / r;
   // set cleaners
   w[6] = 0.0;
   w[7] = 0.0;
