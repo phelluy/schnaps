@@ -72,6 +72,7 @@ testkernelvolume
 testmanyv
 testmeq2
 testdtfield_cl
+testdtfield3d_cl
 testfieldrk4
 testfieldrk4_cl
 testmacrocellinterface
