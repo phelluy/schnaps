@@ -60,4 +60,4 @@ int main(void) {
  
   printf("erreur L2=%f\n", dd);
   return 0;
-};
+}
