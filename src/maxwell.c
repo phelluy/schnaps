@@ -257,13 +257,13 @@ void Maxwell3DNumFluxClean_uncentered(real *wL, real *wR, real *vnorm,
   Maxwell3DNumFlux_uncentered(wL, wR, vnorm, flux);
 
   // FIXME: temp
-  flux[6] = 0.0;
-  flux[7] = 0.0;
-  return; 
+  /* flux[6] = 0.0; */
+  /* flux[7] = 0.0; */
+  /* return;  */
 
   // FIXME: how do we set these?  What are good values?
-  const real c1 = 1.0; // E-cleaning parameter
-  const real c2 = 1.0; // H-cleaning parameter
+  const real c1 = 0.1; // E-cleaning parameter
+  const real c2 = 0.1; // H-cleaning parameter
 
   // FIXME: temp
   /* const real c1 = 0.0; */
