@@ -30,9 +30,8 @@ int TestMaxwell3D()
   ReadMacroMesh(&(f.macromesh), "test/testcube.msh");
 
   // FIXME: temp
-  //Detect2DMacroMesh(&(f.macromesh));
-  //assert(f.macromesh.is2d);
-
+  /* Detect2DMacroMesh(&(f.macromesh)); */
+  /* assert(f.macromesh.is2d); */
 
   BuildConnectivity(&(f.macromesh));
 
@@ -55,15 +54,15 @@ int TestMaxwell3D()
   CheckMacroMesh(&(f.macromesh), f.interp.interp_param + 1);
 
   real tmax = 0.1;
-  f.vmax = 1;
+  f.vmax = 1.0;
   real dt = set_dt(&f);
-
+  
 #if 1
   // C version
   RK2(&f, tmax, dt);
 #else
   // OpenCL version
-  RK2_CL(&f, tmax, dt, 0, 0, 0);
+  RK4_CL(&f, tmax, dt, 0, 0, 0);
   CopyfieldtoCPU(&f);
   printf("\nOpenCL Kernel time:\n");
   show_cl_timing(&f);

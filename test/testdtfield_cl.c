@@ -42,14 +42,13 @@ int TestDtfield_CL(void){
   Detect2DMacroMesh(&f.macromesh);
   BuildConnectivity(&f.macromesh);
 
-#if 1
+#if 0
   // 2D version
   assert(f.macromesh.is2d);
 
   f.model.cfl = 0.05;
   f.model.m = 1;
   m = f.model.m;
-
 
   f.model.NumFlux = TransNumFlux2d;
   f.model.BoundaryFlux = TransBoundaryFlux2d;
