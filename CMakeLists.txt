@@ -393,6 +393,14 @@ if(OPENCL_FOUND)
     )
   target_link_libraries(testdtfield_cl ${LIBS})
 
+  add_test(testdtfield_3dcl testdtfield3d_cl)
+  add_executable(
+    testdtfield3d_cl
+    test/test.h
+    test/testdtfield3d_cl.c
+    )
+  target_link_libraries(testdtfield3d_cl ${LIBS})
+
   add_test(testcache_cl testcache_cl)
   add_executable(
     testcache_cl
