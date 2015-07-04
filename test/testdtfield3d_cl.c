@@ -82,7 +82,7 @@ int TestDtfield3D_CL(void){
   }
   printf("max error: %f\n", maxerr);
 
-  test = (maxerr < 1e-8);
+  test = (maxerr < 0.000005);
 
   return test;
 }
