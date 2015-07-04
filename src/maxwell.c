@@ -300,14 +300,14 @@ void Maxwell3DNumFluxClean_uncentered(real *wL, real *wR, real *vnorm,
   const real lHd = 0.5 * ( wR[7] - wL[7] );
 
   // Add correction term to E flux
-  // c_1 * (n \cdot \jump{E} + \mean{\lambda_E} )
+  // c_1 * ( n \cdot \jump{E} + \mean{\lambda_E} )
   const real Ec = c1 * (nx * Edx + ny * Edy + nz * Edz + lEs );
   flux[0] += nx * Ec;
   flux[1] += ny * Ec;
   flux[2] += nz * Ec;
 
   // Add correction term to H flux
-  // c_2 * (n \cdot \jump{E} + \mean{\lambda_E})
+  // c_2 * ( n \cdot \jump{E} + \mean{\lambda_E} )
   const real Hc = c2 * (nx * Hdx + ny * Hdy + nz * Hdz + lHs);
   flux[3] += nx * Hc;
   flux[4] += ny * Hc;
