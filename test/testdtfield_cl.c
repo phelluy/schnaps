@@ -42,7 +42,7 @@ int TestDtfield_CL(void){
   Detect2DMacroMesh(&f.macromesh);
   BuildConnectivity(&f.macromesh);
 
-#if 0
+#if 1
   // 2D version
   assert(f.macromesh.is2d);
 
