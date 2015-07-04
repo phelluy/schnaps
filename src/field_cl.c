@@ -832,12 +832,10 @@ void dtfield_CL(field *f, cl_mem *wn_cl,
   
   for(int i = 0; i < ninterfaces; ++i) {
     int ifa = f->macromesh.macrointerface[i];
-
     DGMacroCellInterface_CL((void*) (f->mface + ifa), f, wn_cl,
     			    1,
     			    i == 0 ? &f->clv_zbuf : f->clv_mci + i - 1,
     			    f->clv_mci + i);
-    f->minter_time += clv_duration(f->clv_mci[i]);
   }
 
   cl_event *startboundary = ninterfaces > 0 ?
@@ -847,14 +845,11 @@ void dtfield_CL(field *f, cl_mem *wn_cl,
   const int nboundaryfaces = f->macromesh.nboundaryfaces;
   for(int i = 0; i < nboundaryfaces; ++i) {
     int ifa = f->macromesh.boundaryface[i];
-    
     DGBoundary_CL((void*) (f->mface + ifa), f, wn_cl,
 		  1,
 		  i == 0 ?  startboundary : f->clv_boundary + i - 1,
 		  f->clv_boundary + i);
-    f->boundary_time += clv_duration(f->clv_boundary[i]);
   }
-
 
   // If there are no interfaces and no boundaries, just wait for zerobuf.
   cl_event *startmacroloop;
@@ -891,43 +886,58 @@ void dtfield_CL(field *f, cl_mem *wn_cl,
     DGFlux_CL(f, 0, ie, wn_cl, 
 	      1, startmacroloop,
 	      f->clv_flux0 + ie);
-    f->flux_time += clv_duration(f->clv_flux0[ie]);
 
     if(ndim > 1) {
       DGFlux_CL(f, 1, ie, wn_cl, 
 		1, f->clv_flux0 + ie,
 		f->clv_flux1 + ie);
-      f->flux_time += clv_duration(f->clv_flux1[ie]);
     }
     
     if(ndim > 2) {
       DGFlux_CL(f, 2, ie, wn_cl, 
 		1, f->clv_flux1 + ie, 
 		f->clv_flux2 + ie);
-      f->flux_time += clv_duration(f->clv_flux2[ie]);
     }
     
     DGVolume_CL(mcelli, f, wn_cl,
   		1,
   		fluxdone + ie,
   		f->clv_volume + ie);
-    f->vol_time += clv_duration(f->clv_volume[ie]);
 
     DGMass_CL(mcelli, f,
   	      1,
   	      f->clv_volume + ie,
   	      f->clv_mass + ie);
-    f->mass_time += clv_duration(f->clv_mass[ie]);
 
     if(f->use_source_cl) {
       DGSource_CL(mcelli, f, wn_cl, 
 		  1,
 		  f->clv_mass + ie,
 		  f->clv_source + ie);
-      f->source_time += clv_duration(f->clv_source[ie]);
     }
   }
   clWaitForEvents(nmacro, dtfielddone);
+
+  // Add times for sources here (may help scheduling)
+  for(int i = 0; i < ninterfaces; ++i)
+    f->minter_time += clv_duration(f->clv_mci[i]);
+
+  for(int i = 0; i < nboundaryfaces; ++i)
+    f->boundary_time += clv_duration(f->clv_boundary[i]);
+
+  for(int ie = 0; ie < nmacro; ++ie) {
+
+    if(f->use_source_cl)
+      f->source_time += clv_duration(f->clv_source[ie]);
+    f->flux_time += clv_duration(f->clv_flux0[ie]);
+    if(ndim > 1) 
+      f->flux_time += clv_duration(f->clv_flux1[ie]);
+    if(ndim > 2)
+      f->flux_time += clv_duration(f->clv_flux2[ie]);
+    f->vol_time += clv_duration(f->clv_volume[ie]);
+    f->mass_time += clv_duration(f->clv_mass[ie]);
+  }
+
   if(done != NULL)
     clSetUserEventStatus(*done, CL_COMPLETE);
 }
