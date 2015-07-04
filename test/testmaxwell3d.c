@@ -23,9 +23,9 @@ int TestMaxwell3D()
   f.interp.interp_param[1] = 3; // x direction degree
   f.interp.interp_param[2] = 3; // y direction degree
   f.interp.interp_param[3] = 3; // z direction degree
-  f.interp.interp_param[4] = 4; // x direction refinement
-  f.interp.interp_param[5] = 4; // y direction refinement
-  f.interp.interp_param[6] = 4; // z direction refinement
+  f.interp.interp_param[4] = 2; // x direction refinement
+  f.interp.interp_param[5] = 2; // y direction refinement
+  f.interp.interp_param[6] = 2; // z direction refinement
 
   ReadMacroMesh(&(f.macromesh), "test/testcube.msh");
 
@@ -75,7 +75,7 @@ int TestMaxwell3D()
   Plotfield(0, true, &f, "error", "dgerror.msh");
 
   real dd = L2error(&f);
-  real tolerance = 1.1e-2;
+  real tolerance = 0.08;
   test = test && (dd < tolerance);
   printf("L2 error: %f\n", dd);
 
