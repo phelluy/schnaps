@@ -3,6 +3,11 @@
 #include <assert.h>
 #include <string.h>
 #include "getopt.h"
+#ifdef _WITH_OPENCL
+#include "clutils.h"
+#include "clinfo.h"
+#endif
+#include <time.h>
 
 int main(int argc, char *argv[]) 
 {
@@ -23,6 +28,7 @@ int main(int argc, char *argv[])
   char *initdatadefault = "TransInitData2d";
   char *imposeddatadefault = "TransImposedData2d";
   int m = 1;
+  bool writeout = true;
 
   int len;
   
@@ -46,8 +52,6 @@ int main(int argc, char *argv[])
   char *mshname = malloc(len);
   strncpy(mshname, mshdefault, len);
 
-  
-
   char *usage = "./schnaps\n \
 \t-c <float> set CFL\n\
 \t-n <int> Dimension of simulation (1, 2, or 3)\n\
@@ -58,15 +62,16 @@ int main(int argc, char *argv[])
 \t-b <string> Boundary flux\n\
 \t-i <string> Initialization function\n\
 \t-I <string> Imposed data function\n\
-\t-G <string> gmsh filenam\n\
+\t-G <string> gmsh filename\n\
 \t-s <float> dt\n\
-\t-T <float> tmax\n";
+\t-T <float> tmax\n\
+\t-w <0=false or 1=true> Write output to disk.\n";
   char *openclusage = "\t-g <0=false or 1=true> Use OpenCL\n\
 \t-P <int> OpencL platform number\n \
 \t-D <int> OpencL device number\n";
 
   for (;;) {
-    int cc = getopt(argc, argv, "c:n:m:d:r:s:f:b:i:I:T:P:D:g:G:h");
+    int cc = getopt(argc, argv, "c:n:m:d:r:s:f:b:w:i:I:T:P:D:g:G:h");
     if (cc == -1) break;
     switch (cc) {
     case 0:
@@ -136,6 +141,9 @@ int main(int argc, char *argv[])
 	mshname = malloc(len);
 	strncpy(mshname, optarg, len);
       }
+      break;
+    case 'w':
+      writeout = atoi(optarg);
       break;
 #ifdef _WITH_OPENCL
     case 'g':
@@ -220,7 +228,7 @@ int main(int argc, char *argv[])
   }
 
   if(dimension == 1) {
-    Detect2DMacroMesh(&f.macromesh);
+    Detect1DMacroMesh(&f.macromesh);
     assert(f.macromesh.is1d);
   }
 
@@ -265,9 +273,18 @@ int main(int argc, char *argv[])
 
   if(usegpu) {
 #ifdef _WITH_OPENCL
-    RK2_CL(&f, tmax, dt,  0, NULL, NULL);
+    clock_t start, diff;
+    start = clock();
+    RK2_CL(&f, tmax, dt, 0, 0, 0);
+    diff = clock() - start;
+    
+    //printf("RK time:\t%ld\n", seconds/3600);
+
+    int msec = diff * 1000 / CLOCKS_PER_SEC;
+    printf("\nTotal RK time (s):\n %f\n", msec/1000.0);
 
     CopyfieldtoCPU(&f);
+
 
     printf("\nOpenCL Kernel time:\n");
     show_cl_timing(&f);
@@ -281,8 +298,10 @@ int main(int argc, char *argv[])
   }
 
   // Save the results and the error
-  Plotfield(0, false, &f, NULL, "dgvisu.msh");
-  Plotfield(0, true, &f, "Error", "dgerror.msh");
+  if(writeout) {
+    Plotfield(0, false, &f, NULL, "dgvisu.msh");
+    Plotfield(0, true, &f, "Error", "dgerror.msh");
+  }
 
   real dd = L2error(&f);
  

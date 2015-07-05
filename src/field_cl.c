@@ -45,33 +45,6 @@ void CopyfieldtoCPU(field *f)
   assert(status >= CL_SUCCESS);
 }
 
-cl_ulong clv_startime(cl_event clv) 
-{
-  cl_ulong time;
-  clWaitForEvents(1, &clv);
-  clGetEventProfilingInfo(clv,
-			  CL_PROFILING_COMMAND_START,
-			  sizeof(time),
-			  &time, NULL);
-  return time;
-}
-
-cl_ulong clv_endtime(cl_event clv) 
-{
-  cl_ulong time;
-  clWaitForEvents(1, &clv);
-  clGetEventProfilingInfo(clv,
-			  CL_PROFILING_COMMAND_END,
-			  sizeof(time),
-			  &time, NULL);
-  return time;
-}
-
-cl_ulong clv_duration(cl_event clv)
-{
-  return clv_endtime(clv) - clv_startime(clv);
-}
-
 void set_source_CL(field *f, char *sourcename_cl) 
 {
 #ifdef _WITH_OPENCL
@@ -805,6 +778,7 @@ void set_buf_to_zero_cl(cl_mem *buf, int size, field *f,
 
   size_t numworkitems = size;
   status = clEnqueueNDRangeKernel(f->cli.commandqueue,
+
 				  kernel,
 				  1, NULL,
 				  &numworkitems,
@@ -1303,13 +1277,15 @@ void RK2_CL(field *f, real tmax, real dt,
   init_RK2_CL_stage2(f, dt);
 
   cl_event source1 = clCreateUserEvent(f->cli.context, &status);
-  cl_event stage1 = clCreateUserEvent(f->cli.context, &status);
+  cl_event stage1 =  clCreateUserEvent(f->cli.context, &status);
   cl_event source2 = clCreateUserEvent(f->cli.context, &status);
-  cl_event stage2 = clCreateUserEvent(f->cli.context, &status);
+  cl_event stage2 =  clCreateUserEvent(f->cli.context, &status);
+
   status = clSetUserEventStatus(stage2, CL_COMPLETE);
 
   if(nwait > 0)
     clWaitForEvents(nwait, wait);
+
   while(f->tnow < tmax) {
     //printf("iter: %d\n", iter);
     if (iter % freq == 0)
@@ -1323,11 +1299,15 @@ void RK2_CL(field *f, real tmax, real dt,
     dtfield_CL(f, &wnp1_cl, 1, &stage1, &source2);
     RK2_CL_stage2(f, f->wsize, 1, &source2, &stage2);
 
+
     f->tnow += 0.5 * dt;
+
     iter++;
   }
   if(done != NULL) 
     status = clSetUserEventStatus(*done, CL_COMPLETE);
+
+  // FIXME: free events
 
   printf("t=%f iter=%d/%d dt=%f\n", f->tnow, iter, f->itermax, dt);
 }

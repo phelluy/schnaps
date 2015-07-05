@@ -6,6 +6,33 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+cl_ulong clv_starttime(cl_event clv) 
+{
+  cl_ulong time;
+  clWaitForEvents(1, &clv);
+  clGetEventProfilingInfo(clv,
+			  CL_PROFILING_COMMAND_START,
+			  sizeof(time),
+			  &time, NULL);
+  return time;
+}
+
+cl_ulong clv_endtime(cl_event clv) 
+{
+  cl_ulong time;
+  clWaitForEvents(1, &clv);
+  clGetEventProfilingInfo(clv,
+			  CL_PROFILING_COMMAND_END,
+			  sizeof(time),
+			  &time, NULL);
+  return time;
+}
+
+cl_ulong clv_duration(cl_event clv)
+{
+  return clv_endtime(clv) - clv_starttime(clv);
+}
+
 const char* clErrorString(const cl_int err)
 {
   char* errString = NULL;
