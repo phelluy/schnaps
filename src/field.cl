@@ -501,8 +501,6 @@ int ipg(const int npg[], const int p[], const int icell)
     + p[0] + npg[0] * (p[1] + npg[1] * p[2]);
 }
 
-// Use __local memory in DGFlux kernel?
-#define DGFLUX_LOCAL 1
 
 // Compute the surface terms inside one macrocell
 __kernel
@@ -515,6 +513,9 @@ void DGFlux(__constant int *param,       // 0: interp param
 	    __local    real *wnloc     // 6: wn and dtwn in local memory
 	    )
 {
+  // Use __local memory in DGFlux kernel?
+#define DGFLUX_LOCAL 1
+
   __constant real *physnode = physnodes + ie * 60;
 
   const int m = param[0];
@@ -756,6 +757,9 @@ void DGVolume(__constant int *param,     // 0: interp param
 	      __local real *wnloc        // 5: cache for wn and dtwn
 	      )
 {
+  // Use __local memory in DGVolume kernel?
+#define DGVolume_LOCAL 1
+
   __constant real *physnode = physnodes + ie * 60;
 
   const int m = param[0];
@@ -763,10 +767,11 @@ void DGVolume(__constant int *param,     // 0: interp param
   const int npg[3] = {deg[0] + 1, deg[1] + 1, deg[2] + 1};
   const int nraf[3] = {param[4], param[5], param[6]};
 
-  __local real *dtwnloc = wnloc  + m * npg[0] * npg[1] * npg[2];
-
-  // Prefetch: m reads of wn
   int icell = get_group_id(0);
+
+  __local real *dtwnloc = wnloc  + m * npg[0] * npg[1] * npg[2];
+#if DGVolume_LOCAL
+  // Prefetch: m reads of wn
   for(int i = 0; i < m ; ++i){
     int iread = get_local_id(0) + i * get_local_size(0);
     int iv = iread % m;
@@ -784,6 +789,7 @@ void DGVolume(__constant int *param,     // 0: interp param
 
   //barrier(CLK_LOCAL_MEM_FENCE | CLK_GLOBAL_MEM_FENCE);
   barrier(CLK_LOCAL_MEM_FENCE);
+#endif
 
   // subcell id
   int icL[3];
@@ -842,14 +848,16 @@ void DGVolume(__constant int *param,     // 0: interp param
   __local real *wnloc0 = wnloc + ipgL * m;
   //printf("ipgL * m: %d\n", ipgL * m);
   for(int iv = 0; iv < m; iv++) {
-    // gauss point id in the macrocell
-    /* int ipgL = ipg(npg, p, icell); */
-    /* int imemL = VARINDEX(param, ie, ipgL, iv); */
-    /* wL[iv] = wn[imemL]; */
-
+#if DGVolume_LOCAL
     // Copy to register from local memory
     //wL[iv] = wnloc[ipgL * m + iv];
     wL[iv] = wnloc0[iv];
+#else
+    // gauss point id in the macrocell
+    int ipgL = ipg(npg, p, icell);
+    int imemL = VARINDEX(param, ie, ipgL, iv);
+    wL[iv] = wn[imemL];
+#endif
   }
 
   real flux[_M];
@@ -876,6 +884,7 @@ void DGVolume(__constant int *param,     // 0: interp param
 
       NUMFLUX(wL, wL, dphi, flux); // 3m mults when using NumFlux
 
+#if DGVolume_LOCAL
       int ipgR = ipg(npg, q, 0);
       //int imemR0 = VARINDEX(param, ie, ipgR, 0);
       //__global real *dtwn0 = dtwn + imemR0; 
@@ -890,10 +899,20 @@ void DGVolume(__constant int *param,     // 0: interp param
 	//dtwnloc[ipgR * m + iv] += flux[iv] * wpg;
 	dtwnloc0[iv] += flux[iv] * wpg;
       }
+#else
+      int ipgR = ipg(npg, q, icell);
+      int imemR0 = VARINDEX(param, ie, ipgR, 0);
+      __global double *dtwn0 = dtwn + imemR0; 
+      for(int iv = 0; iv < m; iv++) {
+     	dtwn0[iv] += flux[iv] * wpg;
+      }
+#endif
     }
 
   } // dim0 loop
 
+
+#if DGVolume_LOCAL
   //barrier(CLK_LOCAL_MEM_FENCE | CLK_GLOBAL_MEM_FENCE);
   barrier(CLK_LOCAL_MEM_FENCE);
 
@@ -907,6 +926,9 @@ void DGVolume(__constant int *param,     // 0: interp param
     int imemloc = ipgloc * m + iv;
     dtwn[imem] += dtwnloc[imemloc];
   }
+#else
+
+#endif
 }
 
 // Apply division by the mass matrix on one macrocell
