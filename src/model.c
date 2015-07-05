@@ -5,20 +5,22 @@
 #include <string.h>
 #include <stdbool.h>
 
-fluxptr numflux(const char *numfluxname) 
+fluxptr numflux(const char *fluxname) 
 {
-  //printf("%s\n", numfluxname);
-  if(strcmp(numfluxname, "VecTransNumFlux2d") == 0)
+  if(strcmp(fluxname, "VecTransNumFlux2d") == 0)
     return &VecTransNumFlux2d;
-  return 0; // FIXME: assert that something is found?
+  printf("Numerical flux %s not found!\n", fluxname);
+  assert(false);
+  return 0;
 }
 
 bfluxptr bflux(const char *bfluxname) 
 {
-  //printf("%s\n", bfluxname);
   if(strcmp(bfluxname, "TransBoundaryFlux2d") == 0)
     return &TransBoundaryFlux2d;
-  return 0; // FIXME: assert that something is found?
+  printf("Boundary flux %s not found!\n", bfluxname);
+  assert(false);
+  return 0; 
 }
 
 

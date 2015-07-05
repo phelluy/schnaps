@@ -103,11 +103,11 @@ int main(int argc, char *argv[])
     case 'g':
       usegpu = atoi(optarg);
       break;
-    case 'D':
-      ndevice_cl = atoi(optarg);
-      break;
     case 'P':
       nplatform_cl = atoi(optarg);
+      break;
+    case 'D':
+      ndevice_cl = atoi(optarg);
       break;
 #endif
     case 'h':
@@ -141,8 +141,10 @@ int main(int argc, char *argv[])
 
   f.model.cfl = cfl;
   f.model.m = 1; // only one conservative variable
-  f.model.NumFlux = numflux(fluxname);
-  f.model.BoundaryFlux = bflux(bfluxname);
+  if(!usegpu) {
+    f.model.NumFlux = numflux(fluxname);
+    f.model.BoundaryFlux = bflux(bfluxname);
+  }
   f.model.InitData = TransInitData2d;
   f.model.ImposedData = TransImposedData2d;
   f.varindex = GenericVarindex;
@@ -199,7 +201,14 @@ int main(int argc, char *argv[])
     dt = set_dt(&f);
 
   printf("\n\n");
-
+  
+  if(!usegpu) {
+    printf("C version\n");
+  } else {
+    printf("OpenCL version\n");
+    printf("OpenCL platform: %d\n", nplatform_cl);
+    printf("OpenCL device: %d\n", ndevice_cl);
+  }
   printf("Working in dimension %d\n", dimension);
   printf("Polynomial degree: %d, %d, %d\n", deg[0], deg[1], deg[2]);
   printf("Number of subcells: %d, %d, %d\n", raf[0], raf[1], raf[2]);
