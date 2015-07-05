@@ -16,7 +16,8 @@
 /*     + 1e-9 * (real)(ta.tv_nsec - tb.tv_nsec); */
 /* } */
 
-int main(int argc, char *argv[]) {
+int main(int argc, char *argv[]) 
+{
   // Unit tests
   real cfl = 0.5;
   int deg = 3;

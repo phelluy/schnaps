@@ -2,9 +2,28 @@
 #include <math.h>
 #include <stdio.h>
 #include <assert.h>
+#include <string.h>
+#include <stdbool.h>
 
-#define ONE_OVER_SQRT_3 (0.57735026918962584)
-#define ONE_OVER_SQRT_2 (0.707106781186547524400844362105)
+fluxptr numflux(const char *numfluxname) 
+{
+  //printf("%s\n", numfluxname);
+  if(strcmp(numfluxname, "VecTransNumFlux2d") == 0)
+    return &VecTransNumFlux2d;
+  return 0; // FIXME: assert that something is found?
+}
+
+bfluxptr bflux(const char *bfluxname) 
+{
+  //printf("%s\n", bfluxname);
+  if(strcmp(bfluxname, "TransBoundaryFlux2d") == 0)
+    return &TransBoundaryFlux2d;
+  return 0; // FIXME: assert that something is found?
+}
+
+
+#define ONE_OVER_SQRT_3 0.57735026918962584
+#define ONE_OVER_SQRT_2 0.707106781186547524400844362105
 
 const real transport_v[] = {ONE_OVER_SQRT_3,
 			      ONE_OVER_SQRT_3,
@@ -53,20 +72,21 @@ void VecTransNumFlux2d(__private real *wL, real *wR, real *vnorm, real *flux)
 }
 #pragma end_opencl
 
-void TransBoundaryFlux(real x[3], real t, real wL[], real *vnorm,
-		       real *flux)
+void TransBoundaryFlux(real *x, real t, real *wL, real *vnorm, real *flux)
 {
   real wR[1];
   TransImposedData(x, t, wR);
   TransNumFlux(wL, wR, vnorm, flux);
 }
 
-void TransBoundaryFlux2d(real x[3], real t, real wL[], real *vnorm,
-			 real *flux) {
+#pragma start_opencl
+void TransBoundaryFlux2d(real *x, real t, real *wL, real *vnorm, real *flux) 
+{
   real wR[1];
   TransImposedData2d(x, t, wR);
   TransNumFlux2d(wL, wR, vnorm, flux);
 }
+#pragma end_opencl
 
 // m = 2 test-case
 #pragma start_opencl

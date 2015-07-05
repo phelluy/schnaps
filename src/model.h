@@ -3,6 +3,18 @@
 
 #include "global.h"
 
+// typedefs for function pointers
+// Numerical flux function pointer
+typedef void (*fluxptr)(real*, real*, real*, real*);
+
+// Boundary flux function pointer
+typedef void (*bfluxptr)(real*, real, real*, real*, real*);
+
+// Return a pointer to a numflux function based on the string given.
+fluxptr numflux(const char *numfluxname);
+
+// Return a pointer to a boundary blux function based on the string given.
+bfluxptr bflux(const char *bfluxname);
 
 //! \brief a unified framework for all physical models
 typedef struct Model {
@@ -26,7 +38,7 @@ typedef struct Model {
   //! \param[in] wL, wR : left and right states
   //! \param[in] vn : normal vector
   //! \param[out] flux : the flux
-  void (*NumFlux)(real wL[], real wR[], real vn[3], real flux[]);
+  void (*NumFlux)(real *wL, real *wR, real *vn, real *flux);
 
   //! \brief A pointer to the boundary flux function
   //! \param[in] x : space position
@@ -80,8 +92,7 @@ void VecTransNumFlux2d(__private real *wL, real *wR, real *vn, real *flux);
 //! \param[in] wL : left state
 //! \param[in] vn : normal vector
 //! \param[out] flux : the flux
-void TransBoundaryFlux(real* x, real t, real* wL, real* vn,
-		       real* flux);
+void TransBoundaryFlux(real* x, real t, real* wL, real* vn, real* flux);
 
 //! \brief The particular boundary flux for the 2d transport model
 //! \param[in] x : space position
@@ -89,8 +100,9 @@ void TransBoundaryFlux(real* x, real t, real* wL, real* vn,
 //! \param[in] wL : left state
 //! \param[in] vn : normal vector
 //! \param[out] flux : the flux
-void TransBoundaryFlux2d(real* x, real t, real* wL, real* vn,
-			 real* flux);
+#pragma start_opencl
+void TransBoundaryFlux2d(real* x, real t, real* wL, real* vn, real* flux);
+#pragma end_opencl
 
 //! \brief The particular init data for the transport model
 //! \param[in] x : space position
@@ -114,7 +126,9 @@ void TransImposedData(const real* x, const real t, real* w);
 //! \brief The particular imposed data for the 2d transport model
 //! \param[in] x, t : space and time position
 //! \param[out] w : imposed state at point x and time t
+#pragma start_opencl
 void TransImposedData2d(const real *x, const real t, real* w);
+#pragma end_opencl
 
 #pragma start_opencl
 void VecTransImposedData2d(const real* x, const real t, real* w);
