@@ -58,7 +58,7 @@ int TestMaxwell3D()
   real dt = set_dt(&f);
   //  dt = 1e-4;
 
-#if 1
+#if 0
   // C version
   RK2(&f, tmax, dt);
 #else
