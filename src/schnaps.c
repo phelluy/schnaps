@@ -7,6 +7,11 @@
 int main(int argc, char *argv[]) 
 {
   int dimension = 2; // Dimension of simulation
+#ifdef _WITH_OPENCL
+  bool usegpu = true;
+#else
+  bool usegpu = false;
+#endif
   int deg[3] = {3, 3, 3}; // Poynomial egree
   int raf[3] = {4, 4, 4}; // Number of subcells per macrocell
   real cfl = 0.05;
@@ -15,6 +20,7 @@ int main(int argc, char *argv[])
   char *fluxdefault = "VecTransNumFlux2d";
   char *bfluxdefault = "TransBoundaryFlux2d";
   char *mshdefault = "disque.msh";
+  int m = 1;
 
   int len;
   
@@ -30,16 +36,15 @@ int main(int argc, char *argv[])
   char *mshname = malloc(len);
   strncpy(mshname, mshdefault, len);
 
-  bool usegpu = false;
-
   char *usage = "./schnaps\n \
 \t-c <float> set CFL\n\
 \t-n <int> Dimension of simulation (1, 2, or 3)\n\
+\t-m <int> Number of hyperbolicly conserved variables\n\
 \t-d <int> Interpolation degree\n\
 \t-r <int> Number of subcells in each direction\n\
 \t-f <string> Numerical flux dt\n\
 \t-b <string> Boundary flux dt\n\
-\t-m <string> gmsh filenam dt\n\
+\t-G <string> gmsh filenam dt\n\
 \t-s <float> dt\n\
 \t-T <float> tmax\n";
   char *openclusage = "\t-g <0=false or 1=true> Use OpenCL\n\
@@ -47,7 +52,7 @@ int main(int argc, char *argv[])
 \t-D <int> OpencL device number\n";
 
   for (;;) {
-    int cc = getopt(argc, argv, "c:n:d:r:s:f:T:P:D:g:m:h");
+    int cc = getopt(argc, argv, "c:n:d:r:s:f:T:P:D:g:G:h");
     if (cc == -1) break;
     switch (cc) {
     case 0:
@@ -58,6 +63,9 @@ int main(int argc, char *argv[])
     case 'n':
       dimension = atoi(optarg);
       // TODO: check that argument is 1, 2, or 3
+      break;
+    case 'm':
+      m = atoi(optarg);
       break;
     case 'd':
       deg[0] = deg[1] = deg[2] = atoi(optarg);
@@ -91,7 +99,7 @@ int main(int argc, char *argv[])
 	strncpy(bfluxname, optarg, len);
       }
       break;
-    case 'm':
+    case 'G':
       {
 	int len = strlen(optarg) + 1;
 	free(mshname);
@@ -210,14 +218,16 @@ int main(int argc, char *argv[])
     printf("OpenCL device: %d\n", ndevice_cl);
   }
   printf("Working in dimension %d\n", dimension);
+  printf("m: %d\n", m);
+  printf("Numerical flux: %s\n", fluxname);
+  printf("Boundary flux: %s\n", bfluxname);  
+  printf("gmsh file: %s\n", mshname);
   printf("Polynomial degree: %d, %d, %d\n", deg[0], deg[1], deg[2]);
   printf("Number of subcells: %d, %d, %d\n", raf[0], raf[1], raf[2]);
   printf("cfl param: %f\n", f.hmin);
   printf("dt: %f\n", dt);
   printf("tmax: %f\n", tmax);
-  printf("Numerical flux: %s\n", fluxname);
-  printf("Boundary flux: %s\n", bfluxname);  
-  printf("gmsh file: %s\n", mshname);
+
 
   printf("\n\n");
 
