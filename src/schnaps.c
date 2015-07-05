@@ -20,6 +20,8 @@ int main(int argc, char *argv[])
   char *fluxdefault = "VecTransNumFlux2d";
   char *bfluxdefault = "TransBoundaryFlux2d";
   char *mshdefault = "disque.msh";
+  char *initdatadefault = "TransInitData2d";
+  char *imposeddatadefault = "TransImposedData2d";
   int m = 1;
 
   int len;
@@ -32,9 +34,19 @@ int main(int argc, char *argv[])
   char *bfluxname = malloc(len);
   strncpy(bfluxname, bfluxdefault, len);
 
+  len = strlen(bfluxdefault) + 1;
+  char *initdataname = malloc(len);
+  strncpy(initdataname, initdatadefault, len);
+
+  len = strlen(bfluxdefault) + 1;
+  char *imposeddataname = malloc(len);
+  strncpy(imposeddataname, imposeddatadefault, len);
+
   len = strlen(mshdefault) + 1;
   char *mshname = malloc(len);
   strncpy(mshname, mshdefault, len);
+
+  
 
   char *usage = "./schnaps\n \
 \t-c <float> set CFL\n\
@@ -42,9 +54,11 @@ int main(int argc, char *argv[])
 \t-m <int> Number of hyperbolicly conserved variables\n\
 \t-d <int> Interpolation degree\n\
 \t-r <int> Number of subcells in each direction\n\
-\t-f <string> Numerical flux dt\n\
-\t-b <string> Boundary flux dt\n\
-\t-G <string> gmsh filenam dt\n\
+\t-f <string> Numerical flux\n\
+\t-b <string> Boundary flux\n\
+\t-i <string> Initialization function\n\
+\t-I <string> Imposed data function\n\
+\t-G <string> gmsh filenam\n\
 \t-s <float> dt\n\
 \t-T <float> tmax\n";
   char *openclusage = "\t-g <0=false or 1=true> Use OpenCL\n\
@@ -52,7 +66,7 @@ int main(int argc, char *argv[])
 \t-D <int> OpencL device number\n";
 
   for (;;) {
-    int cc = getopt(argc, argv, "c:n:d:r:s:f:T:P:D:g:G:h");
+    int cc = getopt(argc, argv, "c:n:m:d:r:s:f:b:i:I:T:P:D:g:G:h");
     if (cc == -1) break;
     switch (cc) {
     case 0:
@@ -97,6 +111,22 @@ int main(int argc, char *argv[])
 	free(bfluxname);
 	bfluxname = malloc(len);
 	strncpy(bfluxname, optarg, len);
+      }
+      break;
+    case 'i':
+      {
+	int len = strlen(optarg) + 1;
+	free(initdataname);
+	initdataname = malloc(len);
+	strncpy(initdataname, optarg, len);
+      }
+      break;
+    case 'I':
+      {
+	int len = strlen(optarg) + 1;
+	free(imposeddataname);
+	imposeddataname = malloc(len);
+	strncpy(imposeddataname, optarg, len);
       }
       break;
     case 'G':
@@ -148,13 +178,13 @@ int main(int argc, char *argv[])
   init_empty_field(&f);
 
   f.model.cfl = cfl;
-  f.model.m = 1; // only one conservative variable
+  f.model.m = m; // only one conservative variable
   if(!usegpu) {
     f.model.NumFlux = numflux(fluxname);
     f.model.BoundaryFlux = bflux(bfluxname);
   }
-  f.model.InitData = TransInitData2d;
-  f.model.ImposedData = TransImposedData2d;
+  f.model.InitData = initdata(initdataname);
+  f.model.ImposedData = imposeddata(imposeddataname);
   f.varindex = GenericVarindex;
 
   f.interp.interp_param[0] = f.model.m; // _M
@@ -221,6 +251,9 @@ int main(int argc, char *argv[])
   printf("m: %d\n", m);
   printf("Numerical flux: %s\n", fluxname);
   printf("Boundary flux: %s\n", bfluxname);  
+  printf("Init function: %s\n", initdataname);
+  printf("Imposed data function: %s\n", imposeddataname);
+
   printf("gmsh file: %s\n", mshname);
   printf("Polynomial degree: %d, %d, %d\n", deg[0], deg[1], deg[2]);
   printf("Number of subcells: %d, %d, %d\n", raf[0], raf[1], raf[2]);
@@ -228,13 +261,14 @@ int main(int argc, char *argv[])
   printf("dt: %f\n", dt);
   printf("tmax: %f\n", tmax);
 
-
   printf("\n\n");
 
   if(usegpu) {
 #ifdef _WITH_OPENCL
     RK2_CL(&f, tmax, dt,  0, NULL, NULL);
+
     CopyfieldtoCPU(&f);
+
     printf("\nOpenCL Kernel time:\n");
     show_cl_timing(&f);
     printf("\n");

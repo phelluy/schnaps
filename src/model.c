@@ -4,25 +4,59 @@
 #include <assert.h>
 #include <string.h>
 #include <stdbool.h>
+#include "maxwell.h"
 
-fluxptr numflux(const char *fluxname) 
+fluxptr numflux(const char *name) 
 {
-  if(strcmp(fluxname, "VecTransNumFlux2d") == 0)
+  if(strcmp(name, "VecTransNumFlux2d") == 0)
     return &VecTransNumFlux2d;
-  printf("Numerical flux %s not found!\n", fluxname);
+
+  if(strcmp(name, "Maxwell3DNumFluxClean_uncentered") == 0)
+    return &Maxwell3DNumFluxClean_uncentered;
+
+  printf("Numerical flux %s not found!\n", name);
   assert(false);
   return 0;
 }
 
-bfluxptr bflux(const char *bfluxname) 
+bfluxptr bflux(const char *name) 
 {
-  if(strcmp(bfluxname, "TransBoundaryFlux2d") == 0)
+  if(strcmp(name, "TransBoundaryFlux2d") == 0)
     return &TransBoundaryFlux2d;
-  printf("Boundary flux %s not found!\n", bfluxname);
+
+  if(strcmp(name, "Maxwell3DBoundaryFlux_uncentered") == 0)
+    return &Maxwell3DBoundaryFlux_uncentered;
+
+  printf("Boundary flux %s not found!\n", name);
   assert(false);
   return 0; 
 }
 
+initdataptr initdata(const char *name)
+{
+  if(strcmp(name, "TransInitData2d") == 0)
+    return &TransInitData2d;
+
+  if(strcmp(name, "Maxwell3DInitData") == 0)
+    return &Maxwell3DInitData;
+
+  printf("Init data %s not found!\n", name);
+  assert(false);
+  return 0; 
+}
+
+imposeddataptr imposeddata(const char *name)
+{
+  if(strcmp(name, "TransImposedData2d") == 0)
+    return &TransImposedData2d;
+
+  if(strcmp(name, "Maxwell3DImposedData") == 0)
+    return &Maxwell3DImposedData;
+
+  printf("Imposed data %s not found!\n", name);
+  assert(false);
+  return 0; 
+}
 
 #define ONE_OVER_SQRT_3 0.57735026918962584
 #define ONE_OVER_SQRT_2 0.707106781186547524400844362105

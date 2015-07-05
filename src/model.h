@@ -6,15 +6,24 @@
 // typedefs for function pointers
 // Numerical flux function pointer
 typedef void (*fluxptr)(real*, real*, real*, real*);
-
 // Boundary flux function pointer
 typedef void (*bfluxptr)(real*, real, real*, real*, real*);
+// Init data function pointer
+typedef void (*initdataptr)(real*, real*);
+// Imposed data function pointer
+typedef void (*imposeddataptr)(const real*, const real, real* w); 
 
 // Return a pointer to a numflux function based on the string given.
 fluxptr numflux(const char *numfluxname);
 
 // Return a pointer to a boundary blux function based on the string given.
 bfluxptr bflux(const char *bfluxname);
+
+// Return a pointer to an init data function based on the string given.
+initdataptr initdata(const char *name);
+
+// Return a pointer to an imposed data function based on the string given.
+imposeddataptr imposeddata(const char *name);
 
 //! \brief a unified framework for all physical models
 typedef struct Model {
