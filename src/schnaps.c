@@ -14,6 +14,7 @@ int main(int argc, char *argv[])
   real dt = 0;
   char *fluxdefault = "VecTransNumFlux2d";
   char *bfluxdefault = "TransBoundaryFlux2d";
+  char *mshdefault = "disque.msh";
 
   int len;
   
@@ -25,6 +26,10 @@ int main(int argc, char *argv[])
   char *bfluxname = malloc(len);
   strncpy(bfluxname, bfluxdefault, len);
 
+  len = strlen(mshdefault) + 1;
+  char *mshname = malloc(len);
+  strncpy(mshname, mshdefault, len);
+
   bool usegpu = false;
 
   char *usage = "./schnaps\n \
@@ -34,6 +39,7 @@ int main(int argc, char *argv[])
 \t-r <int> Number of subcells in each direction\n\
 \t-f <string> Numerical flux dt\n\
 \t-b <string> Boundary flux dt\n\
+\t-m <string> gmsh filenam dt\n\
 \t-s <float> dt\n\
 \t-T <float> tmax\n";
   char *openclusage = "\t-g <0=false or 1=true> Use OpenCL\n\
@@ -41,7 +47,7 @@ int main(int argc, char *argv[])
 \t-D <int> OpencL device number\n";
 
   for (;;) {
-    int cc = getopt(argc, argv, "c:n:d:r:s:f:T:P:D:g:h");
+    int cc = getopt(argc, argv, "c:n:d:r:s:f:T:P:D:g:m:h");
     if (cc == -1) break;
     switch (cc) {
     case 0:
@@ -83,6 +89,14 @@ int main(int argc, char *argv[])
 	free(bfluxname);
 	bfluxname = malloc(len);
 	strncpy(bfluxname, optarg, len);
+      }
+      break;
+    case 'm':
+      {
+	int len = strlen(optarg) + 1;
+	free(mshname);
+	mshname = malloc(len);
+	strncpy(mshname, optarg, len);
       }
       break;
 #ifdef _WITH_OPENCL
@@ -144,6 +158,9 @@ int main(int argc, char *argv[])
 #ifdef _WITH_OPENCL
   char buf[1000];
 
+  sprintf(buf, "-D _M=%d", f.model.m);
+  strcat(cl_buildoptions, buf);
+
   sprintf(numflux_cl_name, "%s", fluxname);
   sprintf(buf," -D NUMFLUX=");
   strcat(buf, numflux_cl_name);
@@ -151,11 +168,10 @@ int main(int argc, char *argv[])
 
   sprintf(buf, " -D BOUNDARYFLUX=%s", bfluxname);
   strcat(cl_buildoptions, buf);
-
 #endif
 
   // Read the gmsh file
-  ReadMacroMesh(&f.macromesh, "disque.msh");
+  ReadMacroMesh(&f.macromesh, mshname);
   //ReadMacroMesh(&(f.macromesh), "geo/cube.msh");
 
   if(dimension == 2) {
@@ -191,7 +207,8 @@ int main(int argc, char *argv[])
   printf("dt: %f\n", dt);
   printf("tmax: %f\n", tmax);
   printf("Numerical flux: %s\n", fluxname);
-  printf("Boundary flux: %s\n", bfluxname);
+  printf("Boundary flux: %s\n", bfluxname);  
+  printf("gmsh file: %s\n", mshname);
 
   printf("\n\n");
 
