@@ -19,22 +19,23 @@
 //}
 
 int main(int argc, char *argv[]) {
-  int resu = TestMHD1D(argc,argv);
+  int resu = TestKelvinHelmotz(argc,argv);
   if (resu)
-    printf("MHD 1D test OK !\n");
+    printf("KelvinHelmotz test OK !\n");
   else 
-    printf("MHD 1D test failed !\n");
+    printf("KelvinHelmotz test failed !\n");
   return !resu;
 }
 
-int TestMHD1D(int argc, char *argv[]) {
-  real cfl = 0.2;
-  real tmax = 1.0;
+int TestKelvinHelmotz(int argc, char *argv[]) {
+  real cfl = 0.1;
+  real tmax = 0.1;
   bool writemsh = false;
   real vmax = 6.0;
   bool usegpu = false;
   real dt = 0.0;
-
+  real periodsize = 1.;
+  
   for (;;) {
     int cc = getopt(argc, argv, "c:t:w:D:P:g:s:");
     if (cc == -1) break;
@@ -78,12 +79,15 @@ int TestMHD1D(int argc, char *argv[]) {
   strcpy(f.model.name,"MHD");
 
   f.model.NumFlux=MHDNumFluxRusanov;
-  f.model.BoundaryFlux=MHDBoundaryFlux;
-  f.model.InitData=MHDInitData;
-  f.model.ImposedData=MHDImposedData;
+  f.model.BoundaryFlux=MHDBoundaryFluxKelvinHelmotz;
+  f.model.InitData=MHDInitDataKelvinHelmotz;
+  f.model.ImposedData=MHDImposedDataKelvinHelmotz;
   
   char buf[1000];
-  sprintf(buf, "-D _M=%d", f.model.m);
+  sprintf(buf, "-D _M=%d -D _PERIODX=%f -D _PERIODY=%f",
+          f.model.m,
+          periodsize,
+          periodsize);
   strcat(cl_buildoptions, buf);
 
   sprintf(numflux_cl_name, "%s", "MHDNumFluxRusanov");
@@ -91,30 +95,29 @@ int TestMHD1D(int argc, char *argv[]) {
   strcat(buf, numflux_cl_name);
   strcat(cl_buildoptions, buf);
 
-  sprintf(buf, " -D BOUNDARYFLUX=%s", "MHDBoundaryFlux");
+  sprintf(buf, " -D BOUNDARYFLUX=%s", "MHDBoundaryFluxKelvinHelmotz");
   strcat(cl_buildoptions, buf);
   
   // Set the global parameters for the Vlasov equation
   f.interp.interp_param[0] = f.model.m; // _M
   f.interp.interp_param[1] = 1; // x direction degree
-  f.interp.interp_param[2] = 0; // y direction degree
+  f.interp.interp_param[2] = 1; // y direction degree
   f.interp.interp_param[3] = 0; // z direction degree
   f.interp.interp_param[4] = 10; // x direction refinement
-  f.interp.interp_param[5] = 1; // y direction refinement
+  f.interp.interp_param[5] = 10; // y direction refinement
   f.interp.interp_param[6] = 1; // z direction refinement
 
 
   //set_vlasov_params(&(f.model));
 
   // Read the gmsh file
-  ReadMacroMesh(&(f.macromesh), "test/testcartesiangrid1d.msh");
-  //ReadMacroMesh(&(f.macromesh), "test/testcube.msh");
+  ReadMacroMesh(&(f.macromesh), "test/testKHgrid.msh");
   // Try to detect a 2d mesh
-  Detect1DMacroMesh(&(f.macromesh));
-  bool is1d=f.macromesh.is1d; 
-  assert(is1d);  
+  Detect2DMacroMesh(&(f.macromesh)); 
+  bool is2d=f.macromesh.is2d; 
+  assert(is2d);  
 
-  f.macromesh.period[0]=10;
+  f.macromesh.period[0]=periodsize;
   
   // Mesh preparation
   BuildConnectivity(&(f.macromesh));
@@ -126,46 +129,27 @@ int TestMHD1D(int argc, char *argv[]) {
   // Prudence...
   CheckMacroMesh(&(f.macromesh), f.interp.interp_param + 1);
 
-  Plotfield(0, (1==0), &f, "Rho", "dginit.msh");
+  Plotfield(5, false, &f, "By", "dginit.msh");
 
   f.vmax=vmax;
-
-  if(dt <= 0)
-    dt = set_dt(&f);
 
   real executiontime;
   if(usegpu) {
     printf("Using OpenCL:\n");
-    //executiontime = seconds();
-    assert(1==2);
-    RK2(&f, tmax, dt);
-    //executiontime = seconds() - executiontime;
-  } else { 
+
+    RK4_CL(&f, 0.873, dt, 0, NULL, NULL);
+    CopyfieldtoCPU(&f);
+    show_cl_timing(&f);
+    }
+  else { 
     printf("Using C:\n");
-    //executiontime = seconds();
-    RK2(&f, tmax, dt);
-    //executiontime = seconds() - executiontime;
+  
+    RK4(&f, tmax, dt);
   }
 
   Plotfield(0,false,&f, "Rho", "dgvisu.msh");
   //Gnuplot(&f,0,0.0,"data1D.dat");
 
-  printf("tmax: %f, cfl: %f\n", tmax, f.model.cfl);
-
-  printf("deltax:\n");
-  printf("%f\n", f.hmin);
-
-  printf("deltat:\n");
-  printf("%f\n", dt);
-
-  printf("DOF:\n");
-  printf("%d\n", f.wsize);
-
-  printf("executiontime (s):\n");
-  printf("%f\n", executiontime);
-
-  printf("time per RK2 (s):\n");
-  printf("%f\n", executiontime / (real)f.itermax);
 
   return test;
 }
