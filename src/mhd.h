@@ -37,6 +37,10 @@ void MHDNumFlux1D(real *wL,real *wR,real *vn, real *flux);
 //! \param[out] flux : the flux
 #pragma start_opencl
 void MHDBoundaryFlux(real *x, real t, real *wL, real *vn, real *flux);
+void MHDBoundaryFluxOrszagTang(real *x, real t, real *wL, real *vn, real *flux);
+void MHDBoundaryFluxReconnexion(real *x, real t, real *wL, real *vn, real *flux);
+void MHDBoundaryFluxKelvinHelmotz(real *x, real t, real *wL, real *vn, real *flux);
+void MHDBoundaryFluxDoubleTearing(real *x, real t, real *wL, real *vn, real *flux);
 #pragma end_opencl
 
 //! \brief particular init data for the MHD model
@@ -44,6 +48,10 @@ void MHDBoundaryFlux(real *x, real t, real *wL, real *vn, real *flux);
 //! \param[out] w : init state at point x
 #pragma start_opencl
 void MHDInitData(real *x, real *w);
+void MHDInitDataOrszagTang(real *x, real *w);
+void MHDInitDataReconnexion(real *x, real *w);
+void MHDInitDataKelvinHelmotz(real *x, real *w);
+void MHDInitDataDoubleTearing(real *x, real *w);
 #pragma end_opencl
 
 //! \brief particular imposed data for the MHD model
@@ -51,6 +59,10 @@ void MHDInitData(real *x, real *w);
 //! \param[out] w : imposed state at point x and time t
 #pragma start_opencl
 void MHDImposedData(const real *x,const real t, real *w);
+void MHDImposedDataOrszagTang(const real *x,const  real t, real *w);
+void MHDImposedDataReconnexion(const real *x,const  real t, real *w);
+void MHDImposedDataKelvinHelmotz(const real *x,const  real t, real *w);
+void MHDImposedDataDoubleTearing(const real *x,const  real t, real *w);
 #pragma end_opencl
 
 // FIXME: using "real var[]" instead of "real *var" breaks OpenCL on

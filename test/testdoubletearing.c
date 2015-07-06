@@ -19,22 +19,22 @@
 //}
 
 int main(int argc, char *argv[]) {
-  int resu = TestMHD(argc,argv);
+  int resu = TestDoubleTearing(argc,argv);
   if (resu)
-    printf("MHD test OK !\n");
+    printf("DoubleTearing test OK !\n");
   else 
-    printf("MHD test failed !\n");
+    printf("DoubleTearing test failed !\n");
   return !resu;
 }
 
-int TestMHD(int argc, char *argv[]) {
+int TestDoubleTearing(int argc, char *argv[]) {
   real cfl = 0.1;
   real tmax = 0.1;
   bool writemsh = false;
   real vmax = 6.0;
-  bool usegpu = true;
+  bool usegpu = false;
   real dt = 0.0;
-  real periodsize = 6.2831853;
+  real periodsize = 4.;
   
   for (;;) {
     int cc = getopt(argc, argv, "c:t:w:D:P:g:s:");
@@ -78,10 +78,10 @@ int TestMHD(int argc, char *argv[]) {
 
   strcpy(f.model.name,"MHD");
 
-  f.model.NumFlux=MHDNumFluxP2;
-  f.model.BoundaryFlux=MHDBoundaryFlux;
-  f.model.InitData=MHDInitData;
-  f.model.ImposedData=MHDImposedData;
+  f.model.NumFlux=MHDNumFluxRusanov;
+  f.model.BoundaryFlux=MHDBoundaryFluxDoubleTearing;
+  f.model.InitData=MHDInitDataDoubleTearing;
+  f.model.ImposedData=MHDImposedDataDoubleTearing;
   
   char buf[1000];
   sprintf(buf, "-D _M=%d -D _PERIODX=%f -D _PERIODY=%f",
@@ -90,12 +90,12 @@ int TestMHD(int argc, char *argv[]) {
           periodsize);
   strcat(cl_buildoptions, buf);
 
-  sprintf(numflux_cl_name, "%s", "MHDNumFluxP2");
+  sprintf(numflux_cl_name, "%s", "MHDNumFluxRusanov");
   sprintf(buf," -D NUMFLUX=");
   strcat(buf, numflux_cl_name);
   strcat(cl_buildoptions, buf);
 
-  sprintf(buf, " -D BOUNDARYFLUX=%s", "MHDBoundaryFlux");
+  sprintf(buf, " -D BOUNDARYFLUX=%s", "MHDBoundaryFluxDoubleTearing");
   strcat(cl_buildoptions, buf);
   
   // Set the global parameters for the Vlasov equation
@@ -111,15 +111,12 @@ int TestMHD(int argc, char *argv[]) {
   //set_vlasov_params(&(f.model));
 
   // Read the gmsh file
-  //ReadMacroMesh(&(f.macromesh), "test/testcartesiangrid2d2.msh");
-  ReadMacroMesh(&(f.macromesh), "test/testOTgrid.msh");
-  //ReadMacroMesh(&(f.macromesh), "test/testcube.msh");
+  ReadMacroMesh(&(f.macromesh), "test/testdoubletearinggrid.msh");
   // Try to detect a 2d mesh
   Detect2DMacroMesh(&(f.macromesh)); 
   bool is2d=f.macromesh.is2d; 
   assert(is2d);  
 
-  f.macromesh.period[0]=periodsize;
   f.macromesh.period[1]=periodsize;
   
   // Mesh preparation
@@ -132,48 +129,26 @@ int TestMHD(int argc, char *argv[]) {
   // Prudence...
   CheckMacroMesh(&(f.macromesh), f.interp.interp_param + 1);
 
-  //Plotfield(0, (1==0), &f, "Rho", "dginit.msh");
+  //Plotfield(5, false, &f, "By", "dginit.msh");
 
   f.vmax=vmax;
 
   real executiontime;
   if(usegpu) {
     printf("Using OpenCL:\n");
-    //executiontime = seconds();
-    //assert(1==2);
-    RK4_CL(&f, tmax, dt, 0, NULL, NULL);
+
+    RK4_CL(&f, 0.873, dt, 0, NULL, NULL);
     CopyfieldtoCPU(&f);
     show_cl_timing(&f);
-  
-    //executiontime = seconds() - executiontime;
-  } else { 
+    }
+  else { 
     printf("Using C:\n");
-    //executiontime = seconds();
     RK4(&f, tmax, dt);
-    //executiontime = seconds() - executiontime;
   }
 
-  Plotfield(0,false,&f, "Rho", "rho.msh");
-  Plotfield(2,false,&f, "P", "p.msh");
+  Plotfield(2,false,&f, "P", "dgvisu.msh");
   //Gnuplot(&f,0,0.0,"data1D.dat");
 
-
-  printf("tmax: %f, cfl: %f\n", tmax, f.model.cfl);
-
-  printf("deltax:\n");
-  printf("%f\n", f.hmin);
-
-  printf("deltat:\n");
-  printf("%f\n", dt);
-
-  printf("DOF:\n");
-  printf("%d\n", f.wsize);
-
-  printf("executiontime (s):\n");
-  printf("%f\n", executiontime);
-
-  printf("time per RK2 (s):\n");
-  printf("%f\n", executiontime / (real)f.itermax);
 
   return test;
 }
