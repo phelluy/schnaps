@@ -274,8 +274,14 @@ int main(int argc, char *argv[])
 
   if(usegpu) {
 #ifdef _WITH_OPENCL
+    clock_t start, diff;
+    start = clock();
     RK2_CL(&f, tmax, dt, 0, NULL, NULL);
-    
+    diff = clock() - start;
+
+    int msec = diff * 1000 / CLOCKS_PER_SEC;
+    printf("\nTotal RK time (s):\n%f\n", msec/1000.0);
+
     cl_int status = clFinish(f.cli.commandqueue);
     if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
     assert(status >= CL_SUCCESS);
