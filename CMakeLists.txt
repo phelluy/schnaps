@@ -158,6 +158,7 @@ add_executable(
   src/schnaps.c
   )
 target_link_libraries(schnaps ${LIBS})
+add_test(schnaps schnaps)
 
 # list of tests
 add_executable(

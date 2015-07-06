@@ -18,15 +18,15 @@ int main(int argc, char *argv[])
   bool usegpu = false;
 #endif
   int deg[3] = {3, 3, 3}; // Poynomial egree
-  int raf[3] = {4, 4, 4}; // Number of subcells per macrocell
+  int raf[3] = {2, 2, 2}; // Number of subcells per macrocell
   real cfl = 0.05;
   real tmax = 0.1;
   real dt = 0;
-  char *fluxdefault = "VecTransNumFlux2d";
+  char *fluxdefault = "TransNumFlux2d";
   char *bfluxdefault = "TransBoundaryFlux2d";
-  char *mshdefault = "disque.msh";
   char *initdatadefault = "TransInitData2d";
   char *imposeddatadefault = "TransImposedData2d";
+  char *mshdefault = "disque.msh";
   int m = 1;
   bool writeout = true;
 
@@ -177,6 +177,7 @@ int main(int argc, char *argv[])
     deg[2] = 0;
     raf[2] = 1;
   }
+  
   if(dimension < 2) {
     deg[1] = 0;
     raf[1] = 1;
@@ -273,8 +274,12 @@ int main(int argc, char *argv[])
 
   if(usegpu) {
 #ifdef _WITH_OPENCL
-    RK2_CL(&f, tmax, dt, 0, 0, 0);
-
+    RK2_CL(&f, tmax, dt, 0, NULL, NULL);
+    
+    cl_int status = clFinish(f.cli.commandqueue);
+    if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+    assert(status >= CL_SUCCESS);
+    
     CopyfieldtoCPU(&f);
 
     printf("\nOpenCL Kernel time:\n");
