@@ -58,20 +58,9 @@ imposeddataptr imposeddata(const char *name)
   return 0; 
 }
 
-#define ONE_OVER_SQRT_3 0.57735026918962584
-#define ONE_OVER_SQRT_2 0.707106781186547524400844362105
-
-const real transport_v[] = {ONE_OVER_SQRT_3,
-			      ONE_OVER_SQRT_3,
-			      ONE_OVER_SQRT_3};
-
-//const real transport_v[] = {1, 0, 0};
-
-const real transport_v2d[] = {ONE_OVER_SQRT_2,
-				ONE_OVER_SQRT_2,
-				0};
-
 void TransNumFlux(real wL[], real wR[], real* vnorm, real* flux) {
+  const real sqrt_third =  sqrt(1.0/3.0);
+  const real transport_v[] = {sqrt_third, sqrt_third, sqrt_third};
   real vn 
     = transport_v[0] * vnorm[0] 
     + transport_v[1] * vnorm[1]
@@ -81,7 +70,10 @@ void TransNumFlux(real wL[], real wR[], real* vnorm, real* flux) {
   flux[0] = vnp * wL[0] + vnm * wR[0];
 }
 
-void TransNumFlux2d(real wL[], real wR[], real* vnorm, real* flux) {
+#pragma start_opencl
+void TransNumFlux2d(real *wL, real *wR, real *vnorm, real *flux)
+{
+  const real transport_v2d[] = {sqrt(0.5), sqrt(0.5), 0};
   real vn 
     = transport_v2d[0] * vnorm[0]
     + transport_v2d[1] * vnorm[1]
@@ -96,6 +88,7 @@ void TransNumFlux2d(real wL[], real wR[], real* vnorm, real* flux) {
   // activated
   //assert(fabs(vnorm[2]) < 1e-8);
 }
+#pragma end_opencl
 
 #pragma start_opencl
 void VecTransNumFlux2d(__private real *wL, real *wR, real *vnorm, real *flux) 
@@ -164,6 +157,8 @@ void VecTransInitData2d(real x[3], real w[]) {
 }
 
 void TransImposedData(const real x[3], const real t, real w[]) {
+  const real sqrt_third =  sqrt(1.0/3.0);
+  const real transport_v[] = {sqrt_third, sqrt_third, sqrt_third};
   real vx =
     transport_v[0] * x[0] +
     transport_v[1] * x[1] +
@@ -172,12 +167,14 @@ void TransImposedData(const real x[3], const real t, real w[]) {
   w[0]=cos(xx);
 }
 
+#pragma start_opencl
 void TransImposedData2d(const real *x, const real t, real *w) 
 {
   real vx  = sqrt(0.5) * x[0] + sqrt(0.5) * x[1];
   real xx = vx - t;
   w[0] = cos(xx);
 }
+#pragma end_opencl
 
 void TestTransBoundaryFlux(real x[3], real t, 
 			       real wL[], real* vnorm,
@@ -205,6 +202,8 @@ void TestTransInitData2d(real x[3], real w[]) {
 }
 
 void TestTransImposedData(const real x[3], const real t, real w[]) {
+  const real sqrt_third =  sqrt(1.0/3.0);
+  const real transport_v[] = {sqrt_third, sqrt_third, sqrt_third};
   real vx 
     = transport_v[0] * x[0] 
     + transport_v[1] * x[1] 
@@ -215,6 +214,7 @@ void TestTransImposedData(const real x[3], const real t, real w[]) {
 }
 
 void TestTransImposedData2d(const real x[3], const real t, real w[]) {
+  const real transport_v2d[] = {sqrt(0.5), sqrt(0.5), 0};
   real vx 
     = transport_v2d[0] * x[0] 
     + transport_v2d[1] * x[1] 
@@ -255,9 +255,9 @@ real vlasov_vel(const int id, const int md, real vlasov_vmax)
   return (id - mid) * dv;
 }
 
-// 3m multiplies
 void vlaTransNumFlux2d(real wL[], real wR[], real *vnorm, real *flux) 
 {
+  // 3m multiplies
   for(int ix = 0; ix < vlasov_mx; ++ix) {
     real vx = vlasov_vel(ix, vlasov_mx, vlasov_vmax);
 

@@ -273,18 +273,9 @@ int main(int argc, char *argv[])
 
   if(usegpu) {
 #ifdef _WITH_OPENCL
-    clock_t start, diff;
-    start = clock();
     RK2_CL(&f, tmax, dt, 0, 0, 0);
-    diff = clock() - start;
-    
-    //printf("RK time:\t%ld\n", seconds/3600);
-
-    int msec = diff * 1000 / CLOCKS_PER_SEC;
-    printf("\nTotal RK time (s):\n %f\n", msec/1000.0);
 
     CopyfieldtoCPU(&f);
-
 
     printf("\nOpenCL Kernel time:\n");
     show_cl_timing(&f);
