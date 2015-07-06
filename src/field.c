@@ -438,6 +438,7 @@ void Initfield(field *f) {
   assert(f->dtwn);
   f->Diagnostics = NULL;
   f->pre_dtfield = NULL;
+  f->post_dtfield = NULL;
   f->update_after_rk = NULL;
   f->model.Source = NULL;
 
@@ -663,6 +664,7 @@ void Plotfield(int typplot, int compare, field* f, char *fieldname,
 	      real wex[f->model.m];
 	      f->model.ImposedData(Xphy, f->tnow, wex);
 	      value[nodecount] -= wex[typplot];
+
 	    }
 	    nodecount++;
 	    fprintf(gmshfile, "%d %f %f %f\n", nodecount,
@@ -1007,13 +1009,13 @@ void DGMacroCellInterfaceSlow(void *mc, field *f, real *w, real *dtw) {
   	ref_pg_face(iparam + 1, ifa, ipgf, xpgref, &wpg, xpgref_in);
 
 /* #ifdef _PERIOD */
-/* 	assert(f->is1d); // TODO: generalize to 2d */
+/* 	assert(f->macromesh.is1d); // TODO: generalize to 2d */
 /* 	if (xpgref_in[0] > _PERIOD) { */
 /* 	  //printf("à droite ifa= %d x=%f ipgf=%d ieL=%d ieR=%d\n", */
 /* 	  //	 ifa,xpgref_in[0],ipgf,ie,ieR); */
 /* 	  xpgref_in[0] -= _PERIOD; */
 /* 	} */
-/* 	else if (xpgref_in[0] < 0) {  */
+/* 	else if (xpgref_in[0] < 0) { */
 /* 	  //printf("à gauche ifa= %d  x=%f ieL=%d ieR=%d \n", */
 /* 	  //ifa,xpgref_in[0],ie,ieR); */
 /* 	  xpgref_in[0] += _PERIOD; */
@@ -1143,13 +1145,13 @@ void DGMacroCellInterface(void *mc, field *f, real *w, real *dtw)
       ref_pg_face(iparam + 1, locfaL, ipgfL, xpgref, &wpg, xpgref_in);
 
 /* #ifdef _PERIOD */
-/*       assert(f->is1d); // TODO: generalize to 2d */
+/*       assert(f->macromesh.is1d); // TODO: generalize to 2d */
 /*       if (xpgref_in[0] > _PERIOD) { */
 /* 	//printf("à droite ifa= %d x=%f ipgf=%d ieL=%d ieR=%d\n", */
 /* 	//	 ifa,xpgref_in[0],ipgf,ie,ieR); */
 /* 	xpgref_in[0] -= _PERIOD; */
 /*       } */
-/*       else if (xpgref_in[0] < 0) {  */
+/*       else if (xpgref_in[0] < 0) { */
 /* 	//printf("à gauche ifa= %d  x=%f ieL=%d ieR=%d \n", */
 /* 	//ifa,xpgref_in[0],ie,ieR); */
 /* 	xpgref_in[0] += _PERIOD; */
@@ -1288,7 +1290,6 @@ void DGSource(void *mc, field *f, real *w, real *dtw)
   if (f->model.Source == NULL) {
     return;
   }
-
   MacroCell *mcell = (MacroCell*)mc;
 
   const int m = f->model.m;
@@ -1322,6 +1323,7 @@ void DGSource(void *mc, field *f, real *w, real *dtw)
       for(int iv = 0; iv < m; ++iv) {
 	int imem = f->varindex(f->interp_param, ie, ipg, iv);
 	dtw[imem] += source[iv];
+	
       }
     }
   }
@@ -1573,8 +1575,12 @@ void dtfield(field *f, real *w, real *dtw) {
     DGVolume(mcelli, f, w, dtw);
     DGMass(mcelli, f, dtw);
     DGSource(mcelli, f, w, dtw);
+
   }
 #endif
+
+  if(f->post_dtfield != NULL) // FIXME: rename to after dtfield
+      f->post_dtfield(f, w);
 }
 
 // Apply the Discontinuous Galerkin approximation for computing the
@@ -1865,6 +1871,7 @@ void RK4(field *f, real tmax, real dt)
     dt = set_dt(f);
 
   f->itermax = tmax / dt;
+  int size_diags;
   int freq = (1 >= f->itermax / 10)? 1 : f->itermax / 10;
   int sizew = f->macromesh.nbelems * f->model.m * NPG(f->interp_param + 1);
   int iter = 0;
@@ -1874,7 +1881,13 @@ void RK4(field *f, real tmax, real dt)
   l1 = calloc(sizew, sizeof(real));
   l2 = calloc(sizew, sizeof(real));
   l3 = calloc(sizew, sizeof(real));
-
+  
+  size_diags = f->nb_diags * f->itermax;
+  f->iter_time = iter;
+  
+    if(f->nb_diags != 0)
+    f->Diagnostics = malloc(size_diags * sizeof(real));
+  
   while(f->tnow < tmax) {
     if (iter % freq == 0)
       printf("t=%f iter=%d/%d dt=%f\n", f->tnow, iter, f->itermax, dt);
@@ -1899,7 +1912,12 @@ void RK4(field *f, real tmax, real dt)
     dtfield(f, l3, f->dtwn);
     RK4_final_inplace(f->wn, l1, l2, l3, f->dtwn, dt, sizew);
 
+    
+    if(f->update_after_rk != NULL)
+      f->update_after_rk(f, f->wn);
+    
     iter++;
+     f->iter_time=iter;
   }
   printf("t=%f iter=%d/%d dt=%f\n", f->tnow, iter, f->itermax, dt);
 

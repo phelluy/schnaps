@@ -7,7 +7,7 @@
 #include <assert.h>
 #include "geometry.h"
 #include "interpolation.h"
-#include "skyline.h"
+#include "linear_solver.h"
 
 #define _Dirichlet_Poisson_BC (1)
 #define _Periodic_Poisson_BC (2)
@@ -38,14 +38,17 @@ typedef struct PoissonSolver{
   //! \brief a field (gives the mesh and the charge)
   field* fd;
 
+  //! linear solver
+  LinearSolver lsol;
+  
   //! \brief charge index in the conservative variables vector
   int charge_index;
 
   //! \brief vector containing the charge (right hand side)
-  real* rhs;
+  //real* rhs;
 
   //! \brief vector containing the potential (solution)
-  real* sol;
+  //real* sol;
 
   //! \brief number of FE nodes
   int nb_fe_nodes;
@@ -95,7 +98,7 @@ void InitPoissonSolver(PoissonSolver* ps, field* fd,int charge_index);
 //! \param[in] bc_l left boundary value (dirichlet case)
 //! \param[in] bc_r right boundary value (dirichlet case)
 void SolvePoisson1D(field *f,real * w,
-		    int type_bc, real bc_l, real bc_r);
+		    int type_bc, real bc_l, real bc_r,Solver solver_sys, PC precon);
 
 
 

@@ -12,8 +12,7 @@
 
 #pragma start_opencl
 void conservatives(real *y, real *w) {
-  real gam = 1.6666666666; // FIXME: this should not be a #define
-
+  real gam = 1.6666666666;
 
   w[0] = y[0];
   w[1] = y[0]*y[1];
@@ -33,7 +32,6 @@ void conservatives(real *y, real *w) {
 void primitives(real *W, real *Y) {
   real gam = 1.6666666666;
 
-
   Y[0] = W[0];
   Y[1] = W[1]/W[0];
   Y[2] = (gam - 1) * (W[2] - W[0] * (W[1]/W[0]*W[1]/W[0]
@@ -51,7 +49,6 @@ void primitives(real *W, real *Y) {
 
 #pragma start_opencl
 void jacobmhd(real* W,real* vn, real *M){
-
   real gam = 1.6666666666;
   real Y[9];
 
@@ -168,17 +165,19 @@ void fluxnum(real *W,real *vn, real *flux) {
   real un = W[1]/W[0]*vn[0]+W[3]/W[0]*vn[1]+W[4]/W[0]*vn[2];
   real bn = W[7]*vn[0]+W[5]*vn[1]+W[6]*vn[2];
 
-  real p = (gam-1)*(W[2] - W[0]*(W[1]/W[0]*W[1]/W[0] + W[3]/W[0]*W[3]/W[0]\
-				   + W[4]/W[0]*W[4]/W[0])/2 - (W[7]*W[7]+W[5]*W[5]+W[6]*W[6])/2);
+  real p = (gam-1)*(W[2] - W[0]*(W[1]/W[0]*W[1]/W[0]
+				 + W[3]/W[0]*W[3]/W[0]
+				 + W[4]/W[0]*W[4]/W[0])/2
+		    - (W[7]*W[7]+W[5]*W[5]+W[6]*W[6])/2);
 
   flux[0] = W[0]*un;
-  flux[1] = W[0]*un*W[1]/W[0] + (p + (W[7]*W[7] + W[5]*W[5] + W[6]*W[6])/2)\
+  flux[1] = W[0]*un*W[1]/W[0] + (p + (W[7]*W[7] + W[5]*W[5] + W[6]*W[6])/2)
     *vn[0] - bn*W[7];
-  flux[2] = (W[2] + p + (W[7]*W[7] + W[5]*W[5] + W[6]*W[6])/2)*un\
+  flux[2] = (W[2] + p + (W[7]*W[7] + W[5]*W[5] + W[6]*W[6])/2)*un
     - (W[7]*W[1]/W[0] + W[5]*W[3]/W[0] + W[6]*W[4]/W[0])*bn;
-  flux[3] = W[0]*un*W[3]/W[0] + (p + (W[7]*W[7] + W[5]*W[5]\
+  flux[3] = W[0]*un*W[3]/W[0] + (p + (W[7]*W[7] + W[5]*W[5]
 				      + W[6]*W[6])/2)*vn[1] - bn*W[5];
-  flux[4] = W[0]*un*W[4]/W[0] + (p + (W[7]*W[7] + W[5]*W[5]\
+  flux[4] = W[0]*un*W[4]/W[0] + (p + (W[7]*W[7] + W[5]*W[5]
 				      + W[6]*W[6])/2)*vn[2] - bn*W[6];
 
   flux[5] = -bn*W[3]/W[0] + un*W[5] + W[8]*vn[1];
@@ -190,23 +189,23 @@ void fluxnum(real *W,real *vn, real *flux) {
 #pragma end_opencl
 
 #pragma start_opencl
-void MHDNumFluxRusanov(real *wL, real *wR,real *vnorm, real *flux) {
+void MHDNumFluxRusanov(real *wL, real *wR,real *vnorm, real *flux)
+{
   real fluxL[9];
   real fluxR[9];
   
   fluxnum(wL, vnorm, fluxL);
   fluxnum(wR, vnorm, fluxR);
 
-  for(int i = 0; i < 9; i++){
+  for(int i = 0; i < 9; i++) {
     flux[i] = (fluxL[i] + fluxR[i]) / 2 - 6 * (wR[i] - wL[i]) / 2;
   }
-
 }
 #pragma end_opencl
 
 #pragma start_opencl
-void MHDNumFluxP2(real *wL, real *wR, real *vn, real *flux) {
-
+void MHDNumFluxP2(real *wL, real *wR, real *vn, real *flux)
+{
   real wmil[9];
   real wRmwL[9];
 
@@ -261,8 +260,8 @@ void MHDNumFluxP2(real *wL, real *wR, real *vn, real *flux) {
 #pragma end_opencl
 
 #pragma start_opencl
-void MHDNumFlux1D(real *WL, real *WR, real *vn, real *flux) {
-  
+void MHDNumFlux1D(real *WL, real *WR, real *vn, real *flux)
+{
   real gam = 1.6666666666;
 
   real piL, piR, piyL, piyR, pizL, pizR;
@@ -300,65 +299,75 @@ void MHDNumFlux1D(real *WL, real *WR, real *vn, real *flux) {
 
   a = sqrt(gam*ymil[2]/ymil[0]);
   real cf = sqrt(\
-            0.5*((b*b + ymil[5]*ymil[5] + ymil[6]*ymil[6])/(ymil[0])+a*a)\
-            + sqrt(\
-                   0.25*(pow((b*b + ymil[5]*ymil[5] + ymil[6]*ymil[6])/(ymil[0])+a*a,2))-(a*a*b*b)/(ymil[0])\
-		   )\
-	    );
+		 0.5*((b*b + ymil[5]*ymil[5] + ymil[6]*ymil[6])/(ymil[0])+a*a)
+		 + sqrt(
+			0.25*(pow((b*b + ymil[5]*ymil[5]
+				   + ymil[6]*ymil[6])/(ymil[0])+a*a,2))
+			-(a*a*b*b)/(ymil[0])
+			)
+		 );
 
 
   aL = sqrt(gam*YL[2]/YL[0]);
   cfL = sqrt(\
-	     0.5*((b*b + YL[5]*YL[5] + YL[6]*YL[6])/(YL[0])+aL*aL)\
-	     + sqrt(\
-		    0.25*(pow((b*b + YL[5]*YL[5] + YL[6]*YL[6])/(YL[0])+aL*aL,2))-(aL*aL*b*b)/(YL[0])\
-		    )\
+	     0.5*((b*b + YL[5]*YL[5] + YL[6]*YL[6])/(YL[0])+aL*aL)
+	     + sqrt(
+		    0.25*(pow((b*b + YL[5]*YL[5]
+			       + YL[6]*YL[6])/(YL[0])+aL*aL,2))
+		    -(aL*aL*b*b)/(YL[0]) 
+		    )
 	     );
-
 
   aR = sqrt(gam*YR[2]/YR[0]);
   cfR = sqrt(\
-	     0.5*((b*b + YR[5]*YR[5] + YR[6]*YR[6])/(YR[0])+aR*aR)\
-	     + sqrt(\
-		    0.25*(pow((b*b + YR[5]*YR[5] + YR[6]*YR[6])/(YR[0])+aR*aR,2))-(aR*aR*b*b)/(YR[0])\
-		    )\
+	     0.5*((b*b + YR[5]*YR[5] + YR[6]*YR[6])/(YR[0])+aR*aR)
+	     + sqrt(
+		    0.25*(pow((b*b + YR[5]*YR[5]
+			       + YR[6]*YR[6])/(YR[0])+aR*aR,2))
+		    -(aR*aR*b*b)/(YR[0])
+		    )
 	     );
-
 
   // calcul des vitesses relaxees a gauche et a droite
   alpha = (gam-1)/2.;
 
-  Xl = (fmax(YL[1]-YR[1], 0.0) + (fmax(piR-piL, 0.0))/(YL[0]*cfL+YR[0]*cfR))/cfL;
-  Xr = (fmax(YL[1]-YR[1], 0.0) + (fmax(piL-piR, 0.0))/(YL[0]*cfL+YR[0]*cfR))/cfR;
+  Xl = (fmax(YL[1]-YR[1], 0.0)
+	+ (fmax(piR-piL, 0.0))/(YL[0]*cfL+YR[0]*cfR))/cfL;
+  Xr = (fmax(YL[1]-YR[1], 0.0)
+	+ (fmax(piL-piR, 0.0))/(YL[0]*cfL+YR[0]*cfR))/cfR;
 
   pxl = 1 - Xl/(1+alpha*Xl);
   pxr = 1 - Xr/(1+alpha*Xr);
 
   al0 = sqrt(\
 	     0.5*((b*b + YL[5]*YL[5] + YL[6]*YL[6])/(YL[0]*pxl)+aL*aL)\
-	     + sqrt(\
-		    0.25*(pow((b*b + YL[5]*YL[5] + YL[6]*YL[6])/(YL[0]*pxl)+aL*aL,2))-(aL*aL*b*b)/(YL[0]*pxl)\
-		    )\
+	     + sqrt(
+		    0.25*(pow((b*b + YL[5]*YL[5]
+			       + YL[6]*YL[6])/(YL[0]*pxl)+aL*aL,2))
+		    -(aL*aL*b*b)/(YL[0]*pxl) 
+		    )
 	     );
-
 
   ar0 = sqrt(\
-	     0.5*((b*b + YR[5]*YR[5] + YR[6]*YR[6])/(YR[0]*pxr)+aR*aR)\
-	     + sqrt(\
-		    0.25*(pow((b*b + YR[5]*YR[5] + YR[6]*YR[6])/(YR[0]*pxr)+aR*aR,2))-(aR*aR*b*b)/(YR[0]*pxr)\
-		    )\
+	     0.5*((b*b + YR[5]*YR[5] + YR[6]*YR[6])/(YR[0]*pxr)+aR*aR)
+	     + sqrt(
+		    0.25*(pow((b*b + YR[5]*YR[5]
+			       + YR[6]*YR[6])/(YR[0]*pxr)+aR*aR,2))
+		    -(aR*aR*b*b)/(YR[0]*pxr)
+		    )
 	     );
 
-  cL = al0*YL[0] + alpha*YL[0]*(fmax(YL[1]-YR[1],0.0) + (fmax(piR-piL,0.0))/(YL[0]*cfL+YR[0]*cfR));
-  cR = ar0*YR[0] + alpha*YR[0]*(fmax(YL[1]-YR[1],0.0) + (fmax(piL-piR,0.0))/(YL[0]*cfL+YR[0]*cfR));
+  cL = al0*YL[0] + alpha*YL[0]*(fmax(YL[1]-YR[1],0.0)
+				+ (fmax(piR-piL,0.0))/(YL[0]*cfL+YR[0]*cfR));
+  cR = ar0*YR[0] + alpha*YR[0]*(fmax(YL[1]-YR[1],0.0)
+				+ (fmax(piL-piR,0.0))/(YL[0]*cfL+YR[0]*cfR));
 
   // pour le 3-ondes ondes on prend des vitesses simples
   //real cA = cf;
   //real cB = cf;
   //real b2 = 0.0;
 
-
-// calcul des etats intermediaires
+  // calcul des etats intermediaires
   us = (cL*YL[1] + cR*YR[1] + piL-piR)/(cL+cR);
   pis = (cR*piL + cL*piR - cL*cR*(YR[1]-YL[1]))/(cL+cR);
 
@@ -369,7 +378,7 @@ void MHDNumFlux1D(real *WL, real *WR, real *vn, real *flux) {
   pizs = (cR*pizL + cL*pizR - cL*cR*(YR[4]-YL[4]))/(cL+cR);
 
 
-// calcul des vitesses caracteristiques
+  // calcul des vitesses caracteristiques
   sigma1 = YL[1] - cL/YL[0];
   sigma2 = us;
   sigma3 = YR[2] + cR/YR[0];
@@ -398,11 +407,15 @@ void MHDNumFlux1D(real *WL, real *WR, real *vn, real *flux) {
       pi = pis;
       piy = piys;
       piz = pizs;
-      ystar[2] = ystar[0]*(gam-1)*(YL[2]/((gam-1)*YL[0])\
-				   + ((b*b + YL[5]*YL[5] + YL[6]*YL[6])/(2.0*YL[0]))\
-				   - piL*piL/(2.0*cL*cL) - (piyL*piyL+pizL*pizL)/(2.0*cL*cL)\
-				   - ((b*b+ystar[5]*ystar[5]+ystar[6]*ystar[6])/(2.0*ystar[0]))\
-				   + pis*pis/(2.0*cL*cL) + (piys*piys+pizs*pizs)/(2.0*cL*cL));
+      ystar[2] = ystar[0]*(gam-1)*(YL[2]/((gam-1)*YL[0])
+				   + ((b*b + YL[5]*YL[5]
+				       + YL[6]*YL[6])/(2.0*YL[0]))
+				   - piL*piL/(2.0*cL*cL)
+				   - (piyL*piyL+pizL*pizL)/(2.0*cL*cL)
+				   - ((b*b+ystar[5]*ystar[5]
+				       +ystar[6]*ystar[6])/(2.0*ystar[0]))
+				   + pis*pis/(2.0*cL*cL)
+				   + (piys*piys+pizs*pizs)/(2.0*cL*cL));
     }
     else
       if(sigma3 > 0.0){
@@ -415,11 +428,15 @@ void MHDNumFlux1D(real *WL, real *WR, real *vn, real *flux) {
 	pi = pis;
 	piy = piys;
 	piz = pizs;
-	ystar[2] = ystar[0]*(gam-1)*(YR[2]/((gam-1)*YR[0])\
-				     + ((b*b + YR[5]*YR[5] + YR[6]*YR[6])/(2.0*YR[0]))\
-				     - piR*piR/(2.0*cR*cR) - (piyR*piyR+pizR*pizR)/(2.0*cR*cR)\
-				     - ((b*b+ystar[5]*ystar[5]+ystar[6]*ystar[6])/(2.0*ystar[0]))\
-				     + pis*pis/(2.0*cR*cR) + (piys*piys+pizs*pizs)/(2.0*cR*cR));
+	ystar[2] = ystar[0]*(gam-1)*(YR[2]/((gam-1)*YR[0])
+				     + ((b*b + YR[5]*YR[5]
+					 + YR[6]*YR[6])/(2.0*YR[0]))
+				     - piR*piR/(2.0*cR*cR)
+				     - (piyR*piyR+pizR*pizR)/(2.0*cR*cR)
+				     - ((b*b+ystar[5]*ystar[5]
+					 +ystar[6]*ystar[6])/(2.0*ystar[0]))
+				     + pis*pis/(2.0*cR*cR)
+				     + (piys*piys+pizs*pizs)/(2.0*cR*cR));
       }
       else{
 	ystar[0] = YR[0];
@@ -436,8 +453,11 @@ void MHDNumFlux1D(real *WL, real *WR, real *vn, real *flux) {
 
   flux[0] = ystar[0]*ystar[1];
   flux[1] = ystar[0]*(ystar[1]*ystar[1]) + pi;
-  flux[2] = ystar[1]*(0.5*ystar[0]*(ystar[1]*ystar[1]+ystar[3]*ystar[3]+ystar[4]*ystar[4])\
-                      + ystar[2]/(gam-1) + 0.5*(b*b+ystar[5]*ystar[5]+ystar[6]*ystar[6]) + pi)\
+  flux[2] = ystar[1]*(0.5*ystar[0]*(ystar[1]*ystar[1]
+				    +ystar[3]*ystar[3]
+				    +ystar[4]*ystar[4])
+                      + ystar[2]/(gam-1)
+		      + 0.5*(b*b+ystar[5]*ystar[5]+ystar[6]*ystar[6]) + pi)
     + piy*ystar[3] + piz*ystar[4];
   flux[3]  = ystar[0]*ystar[1]*ystar[3] + piy;
   flux[4]  = ystar[0]*ystar[1]*ystar[4] + piz;
@@ -486,39 +506,39 @@ void MHDImposedData(const real *x,const  real t, real *w) {
   //real wL[9];
   //real wR[9];
   
-//  yL[0] = 3.;
-//  yL[1] = 1.3;
-//  yL[3] = 0.;
-//  yL[4] = 0.;
-//  yL[2] = 3.;
-//  yL[5] = 1.;
-//  yL[7] = 1.;
-//  yL[7] = 1.5;
-//  yL[8] = 0.;
-//
-//  yR[0] = 1.;
-//  yR[1] = 1.3;
-//  yR[3] = 0.;
-//  yR[4] = 0.;
-//  yR[2] = 1.;
-//  yR[5] = 0.0707372016677029;
-//  yR[6] = 0.9974949866040544;
-//  yR[7] = 1.5;
-//  yR[8] = 0.;
-//
-//  conservatives(yL, wL);
-//  conservatives(yR, wR);
-//
-//  if(x[0] < 5)
-//    for(int i=0; i<9; i++){
-//      w[i] = wL[i];
-//    }
-//  else
-//    for(int i=0; i<9; i++){
-//      w[i] = wR[i];
-//    }
+  //  yL[0] = 3.;
+  //  yL[1] = 1.3;
+  //  yL[3] = 0.;
+  //  yL[4] = 0.;
+  //  yL[2] = 3.;
+  //  yL[5] = 1.;
+  //  yL[7] = 1.;
+  //  yL[7] = 1.5;
+  //  yL[8] = 0.;
+  //
+  //  yR[0] = 1.;
+  //  yR[1] = 1.3;
+  //  yR[3] = 0.;
+  //  yR[4] = 0.;
+  //  yR[2] = 1.;
+  //  yR[5] = 0.0707372016677029;
+  //  yR[6] = 0.9974949866040544;
+  //  yR[7] = 1.5;
+  //  yR[8] = 0.;
+  //
+  //  conservatives(yL, wL);
+  //  conservatives(yR, wR);
+  //
+  //  if(x[0] < 5)
+  //    for(int i=0; i<9; i++){
+  //      w[i] = wL[i];
+  //    }
+  //  else
+  //    for(int i=0; i<9; i++){
+  //      w[i] = wR[i];
+  //    }
 
-  yL[0] = gam*gam;
+  yL[0] = gam * gam;
   yL[1] = -sin(x[1]);
   yL[2] = gam;
   yL[3] = sin(x[0]);
@@ -529,7 +549,6 @@ void MHDImposedData(const real *x,const  real t, real *w) {
   yL[8] = 0.0;
 
   conservatives(yL, w);
-  
 }
 #pragma end_opencl
 

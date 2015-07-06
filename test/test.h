@@ -75,4 +75,7 @@ int TestKelvinHelmotz(int argc, char *argv[]);
 
 int TestDoubleTearing(int argc, char *argv[]);
 
+int Test_Wave_Periodic(void);
+
+
 #endif

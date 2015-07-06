@@ -37,6 +37,7 @@ int Test_TransportVP(void) {
   init_empty_field(&f);
 
   int vec=1;
+  
   f.model.m=_INDEX_MAX; // num of conservative variables f(vi) for each vi, phi, E, rho, u, p, e (ou T)
   f.model.NumFlux=VlasovP_Lagrangian_NumFlux;
  
@@ -49,10 +50,10 @@ int Test_TransportVP(void) {
   f.varindex = GenericVarindex;
     
   f.interp.interp_param[0] = f.model.m;  // _M
-  f.interp.interp_param[1] = 3;  // x direction degree
+  f.interp.interp_param[1] = 2;  // x direction degree
   f.interp.interp_param[2] = 0;  // y direction degree
   f.interp.interp_param[3] = 0;  // z direction degree
-  f.interp.interp_param[4] = 32;  // x direction refinement
+  f.interp.interp_param[4] = 16;  // x direction refinement
   f.interp.interp_param[5] = 1;  // y direction refinement
   f.interp.interp_param[6] = 1;  // z direction refinement
  // read the gmsh file
@@ -73,6 +74,7 @@ int Test_TransportVP(void) {
   f.vmax = _VMAX; // maximal wave speed
   f.nb_diags = 3;
   f.pre_dtfield = UpdateVlasovPoisson;
+  f.post_dtfield=NULL;
   f.update_after_rk = PlotVlasovPoisson;
   f.model.Source = VlasovP_Lagrangian_Source;
   // prudence...
@@ -112,7 +114,7 @@ void Test_TransportVP_ImposedData(const real *x, const real t, real *w) {
     w[i] = TransportVP_ImposedKinetic_Data(x, t, vi);
   }
   // exact value of the potential and electric field
-  w[_INDEX_PHI] = x[0];
+  w[_INDEX_PHI] = -x[0];
   w[_INDEX_EX] = 1;
   w[_INDEX_RHO] = 0.; //rho init
   w[_INDEX_VELOCITY] = 0; // u init
@@ -137,7 +139,7 @@ real TransportVP_ImposedKinetic_Data(const real *x, const real t, real v) {
 
 void Test_TransportVP_BoundaryFlux(real *x, real t, real *wL, real *vnorm,
 				       real *flux) {
-  real wR[_MV + 6];
+  real wR[_INDEX_MAX];
   Test_TransportVP_ImposedData(x , t, wR);
   VlasovP_Lagrangian_NumFlux(wL, wR, vnorm, flux);
 }
@@ -146,13 +148,13 @@ void UpdateVlasovPoisson(void *vf, real *w) {
   field *f = vf;
   
   int type_bc = 1;
-  real bc_l = 0;
-  real bc_r = 1;
+  real bc_l = 1;
+  real bc_r = 0;
     
   // Computation_charge_density(f,w);
   
   // Solving poisson
-  SolvePoisson1D(f,w,type_bc,bc_l,bc_r);    
+  SolvePoisson1D(f,w,type_bc,bc_l,bc_r,LU,NONE);    
   
 }
 
@@ -161,6 +163,6 @@ void PlotVlasovPoisson(void *vf, real *w) {
   
   field *f = vf;
   
-  Energies(f, w, k_energy, e_energy, t_energy);
+  Energies(f, w, k_energy, e_energy, t_energy,1);
   vf = f;
 }

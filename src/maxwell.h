@@ -1,5 +1,5 @@
-#ifndef _MAXWELL2D_H
-#define _MAXWELL2D_H
+#ifndef _MAXWELL_H
+#define _MAXWELL_H
 
 #include "model.h"
 
@@ -20,11 +20,6 @@ void Maxwell2DNumFlux_centered(real *wL, real *wR, real *vn, real *flux);
 #pragma end_opencl
 
 void Maxwell2DNumFlux_unoptimised(real *wL, real *wR, real *vnorm, real *flux);
-
-#pragma start_opencl
-void Maxwell3DNumFlux(real *wL, real *wR, real *vnorm, real *flux);
-#pragma end_opencl
-
 //! \brief The particular imposed data for the maxwell2d model
 //! \param[in] x, t : space and time position
 //! \param[out] w : imposed state at point x and time t
@@ -39,7 +34,7 @@ void Maxwell2DImposedData(const real * x, const real t, real *w);
 //! \param[in] vn : normal vector
 //! \param[out] flux : the flux
 #pragma start_opencl
-void Maxwell2DBoundaryFlux_centered(real *x, real t, real *wL, 
+void Maxwell2DBoundaryFlux_uncentered(real *x, real t, real *wL, 
 				    real *vn, real *flux);
 #pragma end_opencl
 
@@ -50,6 +45,30 @@ void Maxwell2DInitData(real *x, real *w);
 
 #pragma start_opencl
 void Maxwell2DSource(const real *x, const real t, const real *w, real *source);
+#pragma end_opencl
+
+
+
+#pragma start_opencl
+void Maxwell3DNumFlux_uncentered(real *wL, real *wR, real *vnorm, real *flux);
+#pragma end_opencl
+
+#pragma start_opencl
+void Maxwell3DNumFluxClean_uncentered(real *wL, real *wR, real *vnorm, 
+					real *flux);
+#pragma end_opencl
+
+#pragma start_opencl
+void Maxwell3DImposedData(const real *x, const real t, real *w);
+#pragma end_opencl
+
+#pragma start_opencl
+void Maxwell3DInitData(real *x, real *w);
+#pragma end_opencl
+
+#pragma start_opencl
+void Maxwell3DBoundaryFlux_uncentered(real *x, real t, 
+					real *wL, real *vnorm, real *flux);
 #pragma end_opencl
 
 #endif

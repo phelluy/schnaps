@@ -72,6 +72,7 @@ testkernelvolume
 testmanyv
 testmeq2
 testdtfield_cl
+testdtfield3d_cl
 testfieldrk4
 testfieldrk4_cl
 testmacrocellinterface
@@ -92,6 +93,10 @@ testpic_accumulate
 testpoisson
 testpoisson2d
 testskyline
+testgmres
+testmaxwell3d
+testwave2d
+
 
 #output files
 *.csv
@@ -104,4 +109,11 @@ toto.c
 *.swp
 /build/
 
-wisdom3.txt
+paralution-1.0.0-prefix
+
+*.dat
+*.pdf
+
+gmres
+paralution_cg
+gr_30_30.mtx

@@ -26,16 +26,16 @@ int TestfieldSubCellDGVol(void){
   f.interp.interp_param[5] = 2; // y direction refinement
   f.interp.interp_param[6] = 1; // z direction refinement
 
-  ReadMacroMesh(&(f.macromesh), "test/testcube.msh");
-  //ReadMacroMesh(&(f.macromesh),"test/testdisque.msh");
-  BuildConnectivity(&(f.macromesh));
+  ReadMacroMesh(&f.macromesh, "test/testcube.msh");
+  //ReadMacroMesh(&f.macromesh,"test/testdisque.msh");
+  BuildConnectivity(&f.macromesh);
 
-  PrintMacroMesh(&(f.macromesh));
-  //AffineMapMacroMesh(&(f.macromesh));
-  PrintMacroMesh(&(f.macromesh));
+  PrintMacroMesh(&f.macromesh);
+  //AffineMapMacroMesh(&f.macromesh);
+  PrintMacroMesh(&f.macromesh);
   
   Initfield(&f);
-  CheckMacroMesh(&(f.macromesh), f.interp.interp_param + 1);
+  CheckMacroMesh(&f.macromesh, f.interp.interp_param + 1);
 
   for(int ie = 0;ie < f.macromesh.nbelems; ie++)
     DGMacroCellInterfaceSlow((void*) (f.mcell+ie), &f, f.wn, f.dtwn);

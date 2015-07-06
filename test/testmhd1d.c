@@ -148,7 +148,7 @@ int TestMHD1D(int argc, char *argv[]) {
   }
 
   Plotfield(0,false,&f, "Rho", "dgvisu.msh");
-  Gnuplot(&f,0,0.0,"data1D.dat");
+  //Gnuplot(&f,0,0.0,"data1D.dat");
 
   printf("tmax: %f, cfl: %f\n", tmax, f.model.cfl);
 

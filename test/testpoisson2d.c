@@ -5,6 +5,7 @@
 #include "collision.h"
 #include "quantities_vp.h"
 #include "solverpoisson.h"
+#include "linear_solver.h"
 
 
 void TestPoisson_ImposedData(const real x[3],const real t,real w[]);
@@ -84,10 +85,16 @@ int TestPoisson2d(void)
 
   printf("cfl param =%f\n",f.hmin);
 
-
   PoissonSolver ps;
-
   InitPoissonSolver(&ps,&f,_INDEX_PHI);
+
+#ifdef PARALUTION
+  ps.lsol.solver_type = PAR_AMG;
+  ps.lsol.pc_type=NONE;
+#else
+  ps.lsol.solver_type = LU;
+  ps.lsol.pc_type=NONE;
+#endif
 
   SolvePoisson2D(&ps,_Dirichlet_Poisson_BC);
 

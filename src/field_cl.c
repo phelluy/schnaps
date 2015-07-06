@@ -892,7 +892,7 @@ void dtfield_CL(field *f, cl_mem *wn_cl,
 	      1, startmacroloop,
 	      f->clv_flux0 + ie);
     f->flux_time += clv_duration(f->clv_flux0[ie]);
-    
+
     if(ndim > 1) {
       DGFlux_CL(f, 1, ie, wn_cl, 
 		1, f->clv_flux0 + ie,
@@ -901,12 +901,12 @@ void dtfield_CL(field *f, cl_mem *wn_cl,
     }
     
     if(ndim > 2) {
-      DGFlux_CL(f, 1, ie, wn_cl, 
+      DGFlux_CL(f, 2, ie, wn_cl, 
 		1, f->clv_flux1 + ie, 
 		f->clv_flux2 + ie);
       f->flux_time += clv_duration(f->clv_flux2[ie]);
     }
-        
+    
     DGVolume_CL(mcelli, f, wn_cl,
   		1,
   		fluxdone + ie,

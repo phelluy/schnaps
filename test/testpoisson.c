@@ -5,7 +5,7 @@
 #include "collision.h"
 #include "quantities_vp.h"
 #include "solverpoisson.h"
-
+#include "linear_solver.h"
 
 void TestPoisson_ImposedData(const real x[3], const real t,real w[]);
 void TestPoisson_InitData(real x[3],real w[]);
@@ -106,19 +106,19 @@ int TestPoisson(void) {
 
   //Computation_charge_density(f);
   
-  SolvePoisson1D(&f,f.wn,1,0.0,0.0);
+  SolvePoisson1D(&f,f.wn,1,0.0,0.0,LU,NONE);
 
   // check the gradient given by the poisson solver
   for(int ie=0;ie<f.macromesh.nbelems;ie++){
-    printf("elem %d\n",ie);
+    //printf("elem %d\n",ie);
     for(int ipg=0;ipg<NPG(f.interp_param+1);ipg++){
       real xref[3],wpg;
       ref_pg_vol(f.interp_param+1,ipg,xref,&wpg,NULL);
-      printf("Gauss point %d %f %f %f \n",ipg,xref[0],xref[1],xref[2]);
+      //printf("Gauss point %d %f %f %f \n",ipg,xref[0],xref[1],xref[2]);
       int imem=f.varindex(f.interp_param,ie,ipg,_MV+1);
-      printf("gradphi exact=%f gradphinum=%f rap=%f\n",
-	     1-2*xref[0],f.wn[imem],(1-2*xref[0])/f.wn[imem]);
-      test=test && (fabs(f.wn[imem]-(1-2*xref[0]))<1e-10);
+      // printf("gradphi exact=%f gradphinum=%f rap=%f\n",
+      //1-2*xref[0],f.wn[imem],(1-2*xref[0])/f.wn[imem]);
+      test=test && (fabs(f.wn[imem]-(-1+2*xref[0]))<1e-6);
     }
   }
   return test;
@@ -136,7 +136,7 @@ void TestPoisson_ImposedData(const real x[3], const real t,real w[]){
   // exact value of the potential
   // and electric field
   w[_INDEX_PHI] = x[0] * (1 - x[0]);
-  w[_INDEX_EX] = 1. - 2. * x[0];
+  w[_INDEX_EX] = -1. + 2. * x[0];
   w[_INDEX_RHO] = 2.; //rho init
   w[_INDEX_VELOCITY] = 0; // u init
   w[_INDEX_PRESSURE] = 0; // p init

@@ -5,26 +5,41 @@
 #define _M 2
 const double velocity[_M]={1,-1};
 // polynomial degree
-#define _D 4
+#define _D 2
+// number of interior elements
+#define _NBELEMS_IN 200
+
+#define _CFL 0.15
+
+// activate ader predictor
+#define _ADER
+
+
+
+// nb of gauss lobatto points in one element
+#define _NGLOPS (_D+1)
+// nb of internal elements (not counting the two boundary
+// elements)
+#define _NBELEMS (_NBELEMS_IN+2)
+#define _NBFACES (_NBELEMS_IN+1)
 
 
 
 typedef struct ADERDG{
 
-  int nbelems;
-  int nbfaces; // = nbelems +1
-
   double xmin,xmax;
 
-  double* face;
+  double face[_NBFACES];
 
-  // two arrays for maintaining previous and next
+  // three arrays for maintaining previous and next
   // values of the _M conservatives variables at the _D+1
+  // and there derivatives
   // Gauss points of each cell -> size = _M * (_D+1) * nbelems
-  double* wnow;
-  double* wnext;
+  double wnow[_NBELEMS][_D+1][_M];
+  double wnext[_NBELEMS][_D+1][_M];
+  double dtw[_NBELEMS][_D+1][_M];
   // one array for the current predicted values
-  double* wpred;
+  double wpred[_NBELEMS][_D+1][_M];
 
   // current time evolution on the bigger cells
   double tnow;
@@ -32,22 +47,35 @@ typedef struct ADERDG{
   double dt;
   // maximal cell size
   double dx;
+  // time step of the smalles cells
+  double dt_small;
+
+  double cfl;
 
   // number of CFL levels
   int ncfl;
 
-  int* cell_level;  
-  int* face_level;  
+  // current time iteration
+  int iter;
+
+  int cell_level[_NBELEMS];  
+  int face_level[_NBFACES];  
   
 
 } ADERDG;
 
-void InitADERDG(ADERDG* adg,int nbelems,double xmin,double xmax);
+void InitADERDG(ADERDG* adg,double xmin,double xmax);
 
 void Predictor(ADERDG* adg,int ie,double s);
 
 void VolumeTerms(ADERDG* adg,int ie);
 
+
+// perform a resolution by the ADER method
+void ADERSolve(ADERDG* adg,double tmax);
+
+// perform a standard time step of the ADER method
+void ADERTimeStep(ADERDG* adg);
 
 // perform a macro time step of the ADER method
 void BigStep(ADERDG* adg);
@@ -58,7 +86,7 @@ double stretching(double xh);
 void NumFlux(double* wL,double* wR,double* flux);
 
 
-void ExactSol(double x,double t,double* w);
+void ExactSol(double x,double t,double w[_M]);
 
 
 // plotting in gnuplot

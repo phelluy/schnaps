@@ -103,8 +103,8 @@ int TestMHD(int argc, char *argv[]) {
   f.interp.interp_param[1] = 1; // x direction degree
   f.interp.interp_param[2] = 1; // y direction degree
   f.interp.interp_param[3] = 0; // z direction degree
-  f.interp.interp_param[4] = 10; // x direction refinement
-  f.interp.interp_param[5] = 10; // y direction refinement
+  f.interp.interp_param[4] = 4; // x direction refinement
+  f.interp.interp_param[5] = 4; // y direction refinement
   f.interp.interp_param[6] = 1; // z direction refinement
 
 
@@ -146,6 +146,7 @@ int TestMHD(int argc, char *argv[]) {
     show_cl_timing(&f);
   
     //executiontime = seconds() - executiontime;
+    show_cl_timing(&f);
   } else { 
     printf("Using C:\n");
     //executiontime = seconds();

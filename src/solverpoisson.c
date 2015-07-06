@@ -1,7 +1,7 @@
 #include "solverpoisson.h"
 #include "geometry.h"
 #include "quantities_vp.h"
-
+#include "linear_solver.h"
 
 
 int CompareFatNode(const void* a,const void* b){
@@ -167,24 +167,26 @@ void InitPoissonSolver(PoissonSolver* ps, field* fd,int charge_index){
   }
 
 	
-  ps->rhs = malloc(ps->nb_fe_nodes * sizeof(real));
-  assert(ps->rhs);
+  InitLinearSolver(&ps->lsol,ps->nb_fe_nodes,NULL,NULL); //InitSkyline(&sky, neq);
 
-  ps->sol = malloc(ps->nb_fe_nodes * sizeof(real));
-  assert(ps->sol);
+  ps->lsol.rhs = malloc(ps->nb_fe_nodes * sizeof(real));
+  assert(ps->lsol.rhs);
 
-
+  ps->lsol.sol = malloc(ps->nb_fe_nodes * sizeof(real));
+  assert(ps->lsol.sol);
+  
 
 }
 
-void SolvePoisson1D(field *f,real * w,int type_bc, real bc_l, real bc_r){
-
+void SolvePoisson1D(field *f,real * w,int type_bc, real bc_l, real bc_r,Solver solver_sys,PC precon){
 
   real charge_average;
+  real *bounds = malloc(6 * sizeof(real));
   charge_average=0;
 
   if(type_bc == _Periodic_Poisson_BC){
     charge_average=Computation_charge_average(f,w);
+    //printf(" chare average %e\n",charge_average);
     bc_l=0;
     bc_r=0;
   }
@@ -197,76 +199,83 @@ void SolvePoisson1D(field *f,real * w,int type_bc, real bc_l, real bc_r){
 
   // assembly of the rigidity matrix
 
-  Skyline sky;
+  LinearSolver sky;
 
   // number of equation of the Poisson solver
   // = number of nodes in the mesh
   int degx=f->interp.interp_param[1];
   int nelx=f->interp.interp_param[4];
-  real xmin=0;
-  real xmax=1;  // TO DO: compute the maximal x coordinate
+  real xmin=f->macromesh.xmin[0];
+  real xmax=f->macromesh.xmax[0];  //
+  real dx=(xmax-xmin)/nelx;
   int neq=degx*nelx+1;
   
   // number of conservatives variables
   // = number of velocity glops + 1 (potential)
   int m = f->model.m;
 
-  InitSkyline(&sky, neq);
+  InitLinearSolver(&sky,neq,NULL,NULL); //InitSkyline(&sky, neq);
+  
+  sky.solver_type = solver_sys;
+  sky.pc_type=precon;
 
+  if(!sky.is_alloc){
   // compute the profile of the matrix
-  for(int ie = 0; ie < nelx; ie++){
-    for(int iloc = 0; iloc < degx + 1; iloc++){
-      for(int jloc = 0; jloc < degx + 1; jloc++){
-	int ino = iloc + ie * degx;
-	int jno = jloc + ie * degx;
-	SwitchOn(&sky, ino, jno);
+    for(int ie = 0; ie < nelx; ie++){
+      for(int iloc = 0; iloc < degx + 1; iloc++){
+	for(int jloc = 0; jloc < degx + 1; jloc++){
+	  int ino = iloc + ie * degx;
+	  int jno = jloc + ie * degx;
+	  IsNonZero(&sky, ino, jno);
+	}
       }
-    }
+    }    
+    AllocateLinearSolver(&sky);
   }
 
-  AllocateSkyline(&sky);
-
+  if(!sky.is_assembly){
   // local matrix (assuming identical finite elements)
-  real aloc[degx+1][degx+1];
-  for(int iloc=0;iloc<degx+1;iloc++){
-    for(int jloc=0;jloc<degx+1;jloc++){
-      aloc[iloc][jloc]=0;
-    }
-  }
-  for(int ipg=0;ipg<degx+1;ipg++){
-    real omega=wglop(degx,ipg);
+    real aloc[degx+1][degx+1];
     for(int iloc=0;iloc<degx+1;iloc++){
       for(int jloc=0;jloc<degx+1;jloc++){
-	real dxi=dlag(degx,iloc,ipg);
-	real dxj=dlag(degx,jloc,ipg);
-	aloc[iloc][jloc]+=dxi*dxj*omega*nelx;
+	aloc[iloc][jloc]=0;
       }
     }
-  }
-
-  // assembly of the matrix
-  for(int ie=0;ie<nelx;ie++){
-    for(int iloc=0;iloc<degx+1;iloc++){
-      for(int jloc=0;jloc<degx+1;jloc++){
-	int ino=iloc + ie * degx;
-	int jno=jloc + ie * degx;
-	real val = aloc[iloc][jloc];
-	SetSkyline(&sky,ino,jno,val);
+    for(int ipg=0;ipg<degx+1;ipg++){
+      real omega=wglop(degx,ipg);
+      for(int iloc=0;iloc<degx+1;iloc++){
+	for(int jloc=0;jloc<degx+1;jloc++){
+	  real dxi=dlag(degx,iloc,ipg);
+	  real dxj=dlag(degx,jloc,ipg);
+	  aloc[iloc][jloc]+=dxi*dxj*omega/dx;
+	}
       }
     }
+    
+    // assembly of the matrix
+    for(int ie=0;ie<nelx;ie++){
+      for(int iloc=0;iloc<degx+1;iloc++){
+	for(int jloc=0;jloc<degx+1;jloc++){
+	  int ino=iloc + ie * degx;
+	  int jno=jloc + ie * degx;
+	  real val = aloc[iloc][jloc];
+	  AddLinearSolver(&sky,ino,jno,val);
+	}
+      }
+    }
+    
+    // dirichlet boundary condition at the first and last location
+    if(type_bc == _Dirichlet_Poisson_BC){
+      AddLinearSolver(&sky,0,0,1e20);
+      AddLinearSolver(&sky,neq-1,neq-1,1e20);
+    }
+
+    sky.is_assembly=true;
   }
 
-
-  // dirichlet boundary condition at the first and last location
-  if(type_bc == _Dirichlet_Poisson_BC){
-    SetSkyline(&sky,0,0,1e20);
-    SetSkyline(&sky,neq-1,neq-1,1e20);
-  }
-
-  //DisplaySkyline(&sky);
-
-  FactoLU(&sky);
-
+  //DisplayLinearSolver(&sky);
+  //sleep(1000);
+  
   // source assembly 
   real source[neq];
   for(int i=0;i<neq;i++){
@@ -279,7 +288,7 @@ void SolvePoisson1D(field *f,real * w,int type_bc, real bc_l, real bc_r){
       int ino=iloc + ie * degx;  
       int imem=f->varindex(f->interp_param,0,iloc+ie*(degx+1),_INDEX_RHO);
       real charge=w[imem];          
-      source[ino]+= (charge-charge_average)*omega/nelx;
+      source[ino]+= (charge-charge_average)*omega*dx;
     }
   }
 
@@ -288,8 +297,10 @@ void SolvePoisson1D(field *f,real * w,int type_bc, real bc_l, real bc_r){
   source[0]=1e20*bc_l;
   source[neq-1]=1e20*bc_r;
   
-  real sol[neq];
-  SolveSkyline(&sky,source,sol);
+  real solution[neq];
+  sky.rhs=source;
+  sky.sol=solution;
+  SolveLinearSolver(&sky);
 
 
   // now put the solution at the right place
@@ -299,21 +310,20 @@ void SolvePoisson1D(field *f,real * w,int type_bc, real bc_l, real bc_r){
       int ino=ipg + ie * degx;
       // position in the DG vector
       int imem=f->varindex(f->interp_param,0,ipg+ie*(degx+1),_INDEX_PHI);
-      w[imem]=sol[ino];
+      w[imem]=solution[ino];
     }
   }
 	
-  FreeSkyline(&sky);
+  FreeLinearSolver(&sky);
 
-
+  //ComputeElectricField(f);
   Compute_electric_field(f,w);
 
 }
 
 void SolvePoisson2D(PoissonSolver* ps,int type_bc){
 
-
-  static bool is_lu = false;
+  //static bool is_lu = false;
 
   real charge_average;
   charge_average=0;
@@ -330,13 +340,7 @@ void SolvePoisson2D(PoissonSolver* ps,int type_bc){
     charge_average=0;
   }
   
-
-
   printf("Init...\n");
-
-  // assembly of the rigidity matrix
-
-  static Skyline sky;
 
   // number of equation of the Poisson solver
   int neq=ps->nb_fe_nodes;
@@ -365,12 +369,10 @@ void SolvePoisson2D(PoissonSolver* ps,int type_bc){
  
   int npgmacrocell = nnodes * nraf[0] * nraf[1] * nraf[2];
 
-  if (!is_lu){
 
-    is_lu = true;
-
-    InitSkyline(&sky, neq);
-  
+ 
+  printf("Allocation...\n");
+  if(!ps->lsol.is_alloc){
 
     // compute the profile of the matrix
     for(int ie = 0; ie < nbel; ie++){
@@ -380,17 +382,18 @@ void SolvePoisson2D(PoissonSolver* ps,int type_bc){
 	  int jno_dg = jloc + ie * nnodes;
 	  int ino_fe = ps->dg_to_fe_index[ino_dg];
 	  int jno_fe = ps->dg_to_fe_index[jno_dg];
-	  SwitchOn(&sky, ino_fe, jno_fe);
+	  IsNonZero(&ps->lsol, ino_fe, jno_fe);
 	}
       }
     }
-
-    AllocateSkyline(&sky);
-
     
-    printf("Assembly...\n");
-
-
+    
+    AllocateLinearSolver(&ps->lsol);
+  } 
+    
+  
+  printf("Assembly...\n");
+  if(!ps->lsol.is_assembly){
     for(int ie = 0; ie < nbel; ie++){  
 
       // local matrix 
@@ -454,34 +457,25 @@ void SolvePoisson2D(PoissonSolver* ps,int type_bc){
 	  int ino_fe = ps->dg_to_fe_index[ino_dg];
 	  int jno_fe = ps->dg_to_fe_index[jno_dg];
 	  real val = aloc[iloc][jloc];
-	  SetSkyline(&sky,ino_fe,jno_fe,val);
+	  AddLinearSolver(&ps->lsol,ino_fe,jno_fe,val);
 	}
       }
-  
-
- 
+   
     }
 
-  for(int ino=0; ino<ps->nb_fe_nodes; ino++){
-    real bigval = 1e20;
-    if (ps->is_boundary_node[ino]) SetSkyline(&sky,ino,ino,bigval);
-  }
-
-
-  printf("Factorization...\n");
-
-  FactoLU(&sky);
+    for(int ino=0; ino<ps->nb_fe_nodes; ino++){
+      real bigval = 1e20;
+      if (ps->is_boundary_node[ino]) AddLinearSolver(&ps->lsol,ino,ino,bigval);
+    }
+    ps->lsol.is_assembly=true;
+  } 
   
 
-  }
-
-
-
-  printf("RHS assembly...\n");
+  printf("RHS assembly.....\n");
 
   // right hand side assembly
   for(int ino = 0; ino < ps->nb_fe_nodes; ino++){
-    ps->rhs[ino] = 0;
+    ps->lsol.rhs[ino] = 0;
   }
 
   real surf = 0;
@@ -515,16 +509,14 @@ void SolvePoisson2D(PoissonSolver* ps,int type_bc){
       int imem = ps->fd->varindex(ps->fd->interp_param,iemacro,
 				  ilocmacro,_INDEX_RHO);
       real rho = ps->fd->wn[imem];
-      ps->rhs[ino_fe] += rho  * wpg * det ; // TODO: put the actual charge	
+      ps->lsol.rhs[ino_fe] += rho  * wpg * det ; // TODO: put the actual charge	
       surf += wpg * det ;
       //printf("ie=%d det=%f surf=%f\n",ie,det,surf);    
     }
-  
-
  
   }
 
-  //printf("surf=%f\n",surf);
+  
   //assert(1==2);
 
   // apply non homogeneous dirichlet boundary conditions
@@ -541,18 +533,14 @@ void SolvePoisson2D(PoissonSolver* ps,int type_bc){
 			   ipg,_INDEX_PHI);
 	if (ps->is_boundary_node[ino_fe]){
 	  real bigval = 1e20;
-	  ps->rhs[ino_fe] = ps->fd->wn[ipot] * bigval;
+	  ps->lsol.rhs[ino_fe] = ps->fd->wn[ipot] * bigval;
 	  //printf("ino_dg=%d ino_fe=%d ipot=%d\n",ino_dg,ino_fe,ipot);
 	}
     }
   }
-
-
   printf("Solution...\n");
 
-  // resolution
-  SolveSkyline(&sky,ps->rhs,ps->sol);
-
+  SolveLinearSolver(&ps->lsol);
 
   printf("Copy...\n");
 
@@ -563,7 +551,7 @@ void SolvePoisson2D(PoissonSolver* ps,int type_bc){
 	int ino_fe = ps->dg_to_fe_index[ino_dg];
 	int ipot = ps->fd->varindex(ps->fd->interp_param,ie,
 			   ipg,_INDEX_PHI);
-	ps->fd->wn[ipot]=ps->sol[ino_fe];
+	ps->fd->wn[ipot]=ps->lsol.sol[ino_fe];
     }
   }
 

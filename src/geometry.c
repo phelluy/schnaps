@@ -3,6 +3,8 @@
 #include<stdio.h>
 #include <math.h>
 #include <assert.h>
+#include <stdbool.h>
+
 const int h20_refnormal[6][3]={{0,-1,0},
 			       {1,0,0},
 			       {0,1,0},
@@ -241,8 +243,8 @@ void Phy2Ref(real physnode[20][3], real xphy[3], real xref[3])
 
 void RobustPhy2Ref(real physnode[20][3], real xphy[3], real xref[3]) 
 {
-#define _ITERNEWTON 8
-#define _NTHETA 5
+#define _ITERNEWTON 5
+#define _NTHETA 100
 
   real dtau[3][3], codtau[3][3];
   real dxref[3], dxphy[3],xphy0[3];
@@ -289,6 +291,11 @@ void RobustPhy2Ref(real physnode[20][3], real xphy[3], real xref[3])
       }
       //printf("iter= %d dxref=%f %f %f xref=%f %f %f\n",iter,dxref[0],dxref[1],dxref[2],xref[0],xref[1],xref[2]);
     }
+    bool is_in_elem = (xref[0] >=0) && (xref[0]<= 1)
+      && (xref[1] >=0) && (xref[1]<= 1)
+      && (xref[2] >=0) && (xref[2]<= 1);  
+    if ( ! is_in_elem) return;
+   
   }
 
 }

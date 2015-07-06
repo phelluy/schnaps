@@ -75,6 +75,48 @@ void BoxMuller3d(real *xx,int* k1, int* k2)
 
 }
 
+void CreateCoil2DParticles(PIC* pic,MacroMesh *m){
+
+  real delta=1; // coil radius
+  real current=1; // electric current
+  real v0=1;  // tangential particle velocity
+  real pi=4*atan(1.);
+
+  pic->weight= 2*pi*delta*current/v0/pic->nbparts;
+
+
+  for(int np=0;np<pic->nbparts;np++){
+
+    real xphi[3];
+
+    real rax=corput(np+1,5,3);
+    xphi[0]=delta*cos(rax*2*pi);
+    xphi[1]=delta*sin(rax*2*pi);
+    xphi[2]=0.5;
+    real vx=-v0*sin(rax*2*pi);
+    real vy=v0*cos(rax*2*pi);
+    real vz=0;
+
+    real weight=2*pi*delta*current/v0/pic->nbparts;
+
+    real xref[3];
+
+    int num_elem=NumElemFromPoint(m,xphi,xref);
+    pic->cell_id[np]=num_elem;
+    pic->old_cell_id[np]=num_elem;
+
+    pic->xv[np*6+0]=xref[0];
+    pic->xv[np*6+1]=xref[1];
+    pic->xv[np*6+2]=xref[2];
+    pic->xv[np*6+3]=vx;
+    pic->xv[np*6+4]=vy;
+    pic->xv[np*6+5]=vz;
+  
+
+  }
+  
+
+}
 
 void CreateParticles(PIC* pic,MacroMesh *m){
 

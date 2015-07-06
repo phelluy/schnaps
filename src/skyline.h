@@ -93,6 +93,4 @@ void FactoLU(Skyline* sky);
 //! \param[in] sol the solution
 void SolveSkyline(Skyline* sky,real* rhs,real* sol);
 
-
-
 #endif
