@@ -429,7 +429,13 @@ void Initfield(field *f) {
 
   int nmem = f->model.m * f->macromesh.nbelems * NPG(f->interp_param + 1);
   f->wsize = nmem;
-  printf("allocate %d reals\n", nmem);
+
+  double g_memsize = nmem * sizeof(real) * 1e-9;
+  if(sizeof(real) == sizeof(double))
+    printf("Allocating %d doubles per array (%f GB).\n", nmem, g_memsize);
+  else
+    printf("Allocating %d floats per array (%f GB)\n", nmem, g_memsize);
+
   f->wn = calloc(nmem, sizeof(real));
   assert(f->wn);
   f->dtwn = calloc(nmem, sizeof(real));

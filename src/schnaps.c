@@ -267,6 +267,7 @@ int main(int argc, char *argv[])
   printf("cfl param: %f\n", f.hmin);
   printf("dt: %f\n", dt);
   printf("tmax: %f\n", tmax);
+  printf("Buffer size (GB): %f\n", f.wsize * sizeof(real) * 1e-9);
 
   printf("\n\n");
 
