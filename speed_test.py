@@ -95,8 +95,9 @@ while(deg <= degmax):
             
         if (prc == 0):
             exectime = lineafter("Total RK time", out)
+            print "\texectime:", exectime
             perRK2time = lineafter("Total RK time per time-step", out)
-            itermax = lineafter("itermax", out)
+            print "\tperRK2time:", perRK2time
 
             f = open(filename, 'a') # now we append
             datawriter = csv.writer(f, delimiter = '\t')
