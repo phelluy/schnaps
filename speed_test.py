@@ -11,9 +11,6 @@ import re # regexp package
 filename = sys.argv[1]
 progname = "schnaps"
 
-degmax = 4
-nrafmax = 4
-
 f = open(filename, 'wb') # erase file
 f.write("#deg\tnraf\tdof\texectime\tperRK2time\n")
 f.close()
@@ -39,8 +36,8 @@ def lineafter(searchstring, output):
             return dataline
     return ""
 
-deg = 3
-degmax = 3
+deg = 1
+degmax = 4
 while(deg <= degmax):
 
     if(deg == 1):
@@ -58,7 +55,11 @@ while(deg <= degmax):
     dim = 3
     nraf = 1
     dof = (deg + 1) * (deg + 1) * (deg + 1) * nraf * nraf * nraf * m
-    while(dof < 1e7):
+    
+    devmem = 3e9 # 3GB on the Tahiti of gpu3
+    nbuffers = 3 # RK2 has wn, wnp, and dtw
+
+    while(3 * dof * 8 < devmem):
         dof = (deg + 1) * (deg + 1) * (deg + 1) * nraf * nraf * nraf * m
         print "deg: " + str(deg)
         print "nraf: " + str(nraf)
