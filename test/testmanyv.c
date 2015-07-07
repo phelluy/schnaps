@@ -11,11 +11,6 @@
 #include <time.h>
 #define _XOPEN_SOURCE 700
 
-/* real seconds(struct timespec ta, struct timespec tb) { */
-/*   return (real)(ta.tv_sec - tb.tv_sec)  */
-/*     + 1e-9 * (real)(ta.tv_nsec - tb.tv_nsec); */
-/* } */
-
 int main(int argc, char *argv[]) 
 {
   // Unit tests

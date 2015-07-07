@@ -4,6 +4,7 @@
 #include "clutils.h"
 #include <assert.h>
 #include <string.h>
+#include <sys/time.h>
 
 #ifdef _WITH_OPENCL
 void CopyfieldtoCPU(field *f)
@@ -1285,7 +1286,10 @@ void RK2_CL(field *f, real tmax, real dt,
 
   if(nwait > 0)
     clWaitForEvents(nwait, wait);
-
+  
+  struct timeval t_start;
+  struct timeval t_end;
+  gettimeofday(&t_start, NULL);
   while(f->tnow < tmax) {
     //printf("iter: %d\n", iter);
     if (iter % freq == 0)
@@ -1304,12 +1308,18 @@ void RK2_CL(field *f, real tmax, real dt,
 
     iter++;
   }
+  gettimeofday(&t_end, NULL);
   if(done != NULL) 
     status = clSetUserEventStatus(*done, CL_COMPLETE);
 
   // FIXME: free events
 
-  printf("t=%f iter=%d/%d dt=%f\n", f->tnow, iter, f->itermax, dt);
+  double rkseconds = (t_end.tv_sec - t_start.tv_sec) * 1.0 // seconds
+    + (t_end.tv_usec - t_start.tv_usec) * 1e-6; // microseconds
+  printf("\nTotal RK time (s):\n%f\n", rkseconds);
+  printf("\nTotal RK time per time-step (s):\n%f\n", rkseconds / iter );
+
+  printf("\nt=%f iter=%d/%d dt=%f\n", f->tnow, iter, f->itermax, dt);
 }
 
 void show_cl_timing(field *f)

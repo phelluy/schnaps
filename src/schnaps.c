@@ -7,8 +7,6 @@
 #include "clutils.h"
 #include "clinfo.h"
 #endif
-#include <time.h>
-
 int main(int argc, char *argv[]) 
 {
   int dimension = 2; // Dimension of simulation
@@ -17,7 +15,7 @@ int main(int argc, char *argv[])
 #else
   bool usegpu = false;
 #endif
-  int deg[3] = {3, 3, 3}; // Poynomial egree
+  int deg[3] = {3, 3, 3}; // Poynomial degree
   int raf[3] = {2, 2, 2}; // Number of subcells per macrocell
   real cfl = 0.05;
   real tmax = 0.1;
@@ -274,13 +272,7 @@ int main(int argc, char *argv[])
 
   if(usegpu) {
 #ifdef _WITH_OPENCL
-    clock_t start, diff;
-    start = clock();
     RK2_CL(&f, tmax, dt, 0, NULL, NULL);
-    diff = clock() - start;
-
-    int msec = diff * 1000 / CLOCKS_PER_SEC;
-    printf("\nTotal RK time (s):\n%f\n", msec/1000.0);
 
     cl_int status = clFinish(f.cli.commandqueue);
     if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
