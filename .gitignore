@@ -96,6 +96,10 @@ testskyline
 testgmres
 testmaxwell3d
 testwave2d
+testdoubletearing
+testkelvinhelmotz
+testorszagtang
+testreconnexion
 
 
 #output files
