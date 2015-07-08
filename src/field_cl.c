@@ -402,7 +402,6 @@ void DGMass_CL(void *mc, field *f,
 				    done); // cl_event *event
     if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
     assert(status >= CL_SUCCESS);
-    //f->mass_time += clv_duration(f->clv_mass);
   }
 }
 
@@ -647,7 +646,6 @@ void DGVolume_CL(void *mc, field *f, cl_mem *wn_cl,
 				    done);
     if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
     assert(status >= CL_SUCCESS);
-    //f->vol_time += clv_duration(f->clv_volkernel);
   }
 }
 
@@ -779,7 +777,6 @@ void set_buf_to_zero_cl(cl_mem *buf, int size, field *f,
 
   size_t numworkitems = size;
   status = clEnqueueNDRangeKernel(f->cli.commandqueue,
-
 				  kernel,
 				  1, NULL,
 				  &numworkitems,
@@ -789,8 +786,6 @@ void set_buf_to_zero_cl(cl_mem *buf, int size, field *f,
 				  done);
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
-  if(done != NULL)
-    f->zbuf_time += clv_duration(f->clv_zbuf);
 }
 
 // Apply the Discontinuous Galerkin approximation for computing the
@@ -893,7 +888,9 @@ void dtfield_CL(field *f, cl_mem *wn_cl,
   }
   clWaitForEvents(nmacro, dtfielddone);
 
-  // Add times for sources here (may help scheduling)
+  // Add times for sources after everything is finished
+  f->zbuf_time += clv_duration(f->clv_zbuf);
+
   for(int i = 0; i < ninterfaces; ++i)
     f->minter_time += clv_duration(f->clv_mci[i]);
 
@@ -901,7 +898,6 @@ void dtfield_CL(field *f, cl_mem *wn_cl,
     f->boundary_time += clv_duration(f->clv_boundary[i]);
 
   for(int ie = 0; ie < nmacro; ++ie) {
-
     if(f->use_source_cl)
       f->source_time += clv_duration(f->clv_source[ie]);
     f->flux_time += clv_duration(f->clv_flux0[ie]);
@@ -974,8 +970,6 @@ void RK2_CL_stage1(field *f, size_t numworkitems,
 				  done);
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
-  if(done != NULL)
-    f->rk_time += clv_duration(*done);
 }
 
 // Set kernel arguments for second stage of RK2
@@ -1019,8 +1013,6 @@ void RK2_CL_stage2(field *f, size_t numworkitems,
 				  nwait, wait, done);
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
-  if(done != NULL)
-    f->rk_time += clv_duration(*done);
 }
 
 void RK4_CL_stageA(field *f, 
@@ -1077,9 +1069,6 @@ void RK4_CL_stageA(field *f,
   				  done);
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
-
-  if(done != NULL) 
-    f->rk_time += clv_duration(*done);
 }
 
 void RK4_final_inplace_CL(field *f, 
@@ -1152,9 +1141,6 @@ void RK4_final_inplace_CL(field *f,
   				  done);
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
-
-  if(done != NULL)
-    f->rk_time += clv_duration(*done);
 }
 
 // Time integration by a fourth-order Runge-Kutta algorithm, OpenCL
@@ -1164,8 +1150,6 @@ void RK4_CL(field *f, real tmax, real dt,
 {
   if(dt <= 0)
     dt = set_dt(f);
-
-  clWaitForEvents(nwait, wait);
 
   f->itermax = tmax / dt;
   int freq = (1 >= f->itermax / 10)? 1 : f->itermax / 10;
@@ -1209,8 +1193,15 @@ void RK4_CL(field *f, real tmax, real dt,
     stage[i] = clCreateUserEvent(f->cli.context, &status);
   }
 
+  clWaitForEvents(nwait, wait);
+
+  printf("Starting RK4_CL\n");
+  
   status = clSetUserEventStatus(stage[3], CL_COMPLETE);
 
+  struct timeval t_start;
+  struct timeval t_end;
+  gettimeofday(&t_start, NULL);
   while(f->tnow < tmax) {
     if (iter % freq == 0)
       printf("t=%f iter=%d/%d dt=%f\n", f->tnow, iter, f->itermax, dt);
@@ -1243,12 +1234,29 @@ void RK4_CL(field *f, real tmax, real dt,
 			 1, source + 3, stage + 3);
 
     f->tnow += dt;
+
+    for(int i = 0; i < nstages; ++i)
+      f->rk_time += clv_duration(stage[i]);
+    
     iter++;
   }
+  gettimeofday(&t_end, NULL); 
+
   if(done != NULL)
     status = clSetUserEventStatus(*done, CL_COMPLETE);
 
-  printf("t=%f iter=%d/%d dt=%f\n", f->tnow, iter, f->itermax, dt);
+ double rkseconds = (t_end.tv_sec - t_start.tv_sec) * 1.0 // seconds
+    + (t_end.tv_usec - t_start.tv_usec) * 1e-6; // microseconds
+  printf("\nTotal RK time (s):\n%f\n", rkseconds);
+  printf("\nTotal RK time per time-step (s):\n%f\n", rkseconds / iter );
+ 
+  
+  for(int i = 0; i < nstages; ++i) {
+    clReleaseEvent(source[i]);
+    clReleaseEvent(stage[i]);
+  }
+  
+  printf("\nt=%f iter=%d/%d dt=%f\n", f->tnow, iter, f->itermax, dt);
 }
 
 
@@ -1286,6 +1294,8 @@ void RK2_CL(field *f, real tmax, real dt,
 
   if(nwait > 0)
     clWaitForEvents(nwait, wait);
+
+  printf("Starting RK2_CL\n");
   
   struct timeval t_start;
   struct timeval t_end;
@@ -1306,19 +1316,22 @@ void RK2_CL(field *f, real tmax, real dt,
 
     f->tnow += 0.5 * dt;
 
+    f->rk_time += clv_duration(stage1);
+    f->rk_time += clv_duration(stage2);
     iter++;
   }
   gettimeofday(&t_end, NULL);
   if(done != NULL) 
     status = clSetUserEventStatus(*done, CL_COMPLETE);
 
-  // FIXME: free events
-
+  clReleaseEvent(stage2);
+  clReleaseEvent(stage1);
+  
   double rkseconds = (t_end.tv_sec - t_start.tv_sec) * 1.0 // seconds
     + (t_end.tv_usec - t_start.tv_usec) * 1e-6; // microseconds
   printf("\nTotal RK time (s):\n%f\n", rkseconds);
   printf("\nTotal RK time per time-step (s):\n%f\n", rkseconds / iter );
-
+ 
   printf("\nt=%f iter=%d/%d dt=%f\n", f->tnow, iter, f->itermax, dt);
 }
 
@@ -1429,10 +1442,8 @@ void show_cl_timing(field *f)
 	 ns*N, (unsigned long) ns, total_time);
 
   printf("\n");
-  printf("Total kernel performance:\n");
   print_kernel_perf(dev_gflops, dev_bwidth,
 		    flops_total, reads_total, total);
-  
   printf("\n");
 }
 
