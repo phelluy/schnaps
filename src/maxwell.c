@@ -184,6 +184,8 @@ void Maxwell3DNumFlux_uncentered(real *wL, real *wR, real *vnorm, real *flux)
   // - n x {{H}} + n x n x [[E]] / r 
   // and the last three are
   //   n x {{E}} + n x n x [[H]] / r 
+
+  // Operation count: 57 *, 31 +, 15 -, 1 /, 1 sqrt
   
   const real nx = vnorm[0];
   const real ny = vnorm[1];
@@ -228,7 +230,6 @@ void Maxwell3DNumFlux_uncentered(real *wL, real *wR, real *vnorm, real *flux)
     + nxy * Hdx -(nxx + nzz) * Hdy + nyz * Hdz; 
   flux[5] = - ny * Esx + nx * Esy  
     + nxz * Hdx + nyz * Hdy -(nxx + nyy) * Hdz;
-    
 }
 #pragma end_opencl
 
@@ -252,6 +253,9 @@ void Maxwell3DNumFluxClean_uncentered(real *wL, real *wR, real *vnorm,
   // The lambda_H flux is
   // c2 * ( n . {{H}} + r [[lambda_H]] )
 
+  // Operation count (not including Maxwell3DNumFlux_uncentered):
+  // 43 *, 28 +, 8 -, 1 sqrt
+  
   // We first compute the uncleaned flux, and then add the cleaning
   // (which is cleaner, though perhaps uses a few extra operations).
   Maxwell3DNumFlux_uncentered(wL, wR, vnorm, flux);
