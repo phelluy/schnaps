@@ -43,6 +43,8 @@ typedef struct field {
   //! CFL parameter min_i (vol_i / surf_i)
   real hmin;
 
+  //! PIC struct pointer (=NULL if not used)
+  void *pic;
 
   // TODO: once the output of the diagnostics is done by appending,
   // remove dt, ieter_time, itermax, nb_diags, and Diagnostics.
@@ -62,6 +64,8 @@ typedef struct field {
   real *dtwn;
   //! vmax
   real vmax;
+
+  
 
   //! \brief Pointer to a generic function called before computing dtfield. 
   //! \param[inout] f a field (to be converted from void*)

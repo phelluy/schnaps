@@ -61,7 +61,7 @@ void CreateCoil2DParticles(PIC* pic,MacroMesh *m);
 //! \brief compute charge and current associated to particles
 //! \param[in] pic a PIC struct containing the particles
 //! \param[inout] f a maxwell field updated with charge and current sources
-void AccumulateParticles(PIC* pic,field *f);
+void AccumulateParticles(void *fv,real *w);
 
 
 //! brief pseudo-random van der corput number generator

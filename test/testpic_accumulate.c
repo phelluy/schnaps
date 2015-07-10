@@ -44,6 +44,7 @@ int TestPICAccumulate(void)
 
   PIC pic;
 
+
   InitPIC(&pic,1); 
   CreateParticles(&pic,&(f.macromesh));
   PlotParticles(&pic,&(f.macromesh));
@@ -66,6 +67,7 @@ int TestPICAccumulate(void)
 
   Initfield(&f);
 
+  f.pic = &pic;
   // place the particle at (0,1,0) and v=(1,0,0)
   pic.xv[0]=0;
   pic.xv[1]=0;
@@ -79,6 +81,8 @@ int TestPICAccumulate(void)
   pic.xv[4]=0;
   pic.xv[5]=0;
 
+  pic.weight = 1;
+
   PlotParticles(&pic,&(f.macromesh));
 
   int ie=2;
@@ -87,7 +91,7 @@ int TestPICAccumulate(void)
 
   int imem=f.varindex(f.interp_param, ie, ipg, iv);
 
-  AccumulateParticles(&pic,&f);
+  AccumulateParticles(&f,f.wn);
 
 
   printf("w=%f wex=%f\n",f.wn[imem],1/1.96);

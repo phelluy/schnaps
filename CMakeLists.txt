@@ -144,7 +144,7 @@ else()
 endif (OPENCL_FOUND)
 
 # nearest neighbour fast search library
-find_package(flann)
+#find_package(flann)
 if(FLANN_FOUND)
   MESSAGE(STATUS "Delicious!")
   list(APPEND LIBS ${FLANN_LIBRARY})

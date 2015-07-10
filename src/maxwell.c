@@ -164,8 +164,8 @@ void Maxwell2DSource(const real *x, const real t, const real *w, real *source)
   // FIXME add documentation
   
   const real khi = 1.0;
-  source[0] = w[4];
-  source[1] = w[5];
+  source[0] = -w[4];
+  source[1] = -w[5];
   source[2] = 0;
   source[3] = khi * w[6];
   source[4] = 0;

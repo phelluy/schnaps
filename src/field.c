@@ -441,6 +441,7 @@ void Initfield(field *f) {
   f->post_dtfield = NULL;
   f->update_after_rk = NULL;
   f->model.Source = NULL;
+  f->pic = NULL;
 
   // TODO: move this to the integrator code
   f->tnow=0;

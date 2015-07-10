@@ -79,6 +79,8 @@ int TestPIC(void)
   pic.xv[4]=0;
   pic.xv[5]=0;
 
+  f.pic = &pic;
+
   real final_pos_phy[3]={0,-1,0.5};
   real final_pos[3];
   int final_cell=NumElemFromPoint(&f.macromesh,
@@ -97,7 +99,7 @@ int TestPIC(void)
 
   test = test && (final_cell == pic.cell_id[0]);
 
-  AccumulateParticles(&pic,&f);
+  AccumulateParticles(&f,f.wn);
 
   return test;
 }

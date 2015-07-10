@@ -15,6 +15,32 @@ void Coil2DImposedData(const real x[3],const real t,real w[]) {
   w[6] = 0;
 }
 
+void coil_pre_dtfield(void *f, real *w);
+
+void coil_pre_dtfield(void *fv, real *w){
+  AccumulateParticles(fv,w);
+}
+
+
+void Coil2DSource(const real *x, const real t, const real *w, real *source)
+{
+  // w: (Ex, Ey, Hz, Hz, \lambda, rho, Jx, Jy)
+  
+  // FIXME add documentation
+  
+  const real khi = 1.0;
+  source[0] = -w[4];
+  source[1] = -w[5];
+  source[2] = 0;
+  source[3] = 0;//instead of khi * w[6]: we want div E =0
+  source[4] = 0;
+  source[5] = 0;
+  source[6] = 0;
+}
+
+
+
+
 void Coil2DBoundaryFlux(real x[3], real t, real wL[], real *vnorm,
 			real *flux) {
   real wR[7];
@@ -31,7 +57,9 @@ int TestCoil2D(void) {
   bool test = true;
   field f;
 
-  f.model.cfl = 0.05;  
+  init_empty_field(&f);
+
+  f.model.cfl = 0.2;  
   f.model.m = 7; // num of conservative variables
 
   f.model.NumFlux = Maxwell2DNumFlux_uncentered;
@@ -41,11 +69,11 @@ int TestCoil2D(void) {
   f.varindex = GenericVarindex;
     
   f.interp.interp_param[0] = f.model.m;
-  f.interp.interp_param[1] = 3; // x direction degree
-  f.interp.interp_param[2] = 3; // y direction degree
+  f.interp.interp_param[1] = 2; // x direction degree
+  f.interp.interp_param[2] = 2; // y direction degree
   f.interp.interp_param[3] = 0; // z direction degree
-  f.interp.interp_param[4] = 8; // x direction refinement
-  f.interp.interp_param[5] = 8; // y direction refinement
+  f.interp.interp_param[4] = 4; // x direction refinement
+  f.interp.interp_param[5] = 4; // y direction refinement
   f.interp.interp_param[6] = 1; // z direction refinement
 
   // Read the gmsh file
@@ -61,7 +89,8 @@ int TestCoil2D(void) {
  
   // Prepare the initial fields
   Initfield(&f);
-  f.model.Source = Maxwell2DSource;
+  f.model.Source = Coil2DSource;
+  f.pre_dtfield = coil_pre_dtfield;
   //f.dt = 1e-3;
   
   // Prudence...
@@ -75,12 +104,14 @@ int TestCoil2D(void) {
  
   // init the particles on a circle
   PIC pic;
-  InitPIC(&pic, 1000);
+  InitPIC(&pic, 100);
   CreateCoil2DParticles(&pic, &f.macromesh);
   PlotParticles(&pic, &f.macromesh);
 
+  f.pic = &pic;
+
   // time evolution
-  real tmax = 0.;
+  real tmax = 0.1;
   f.vmax = 1;
   real dt = set_dt(&f);
   RK2(&f, tmax, dt);
@@ -90,7 +121,7 @@ int TestCoil2D(void) {
   Plotfield(2, true, &f, "error", "dgerror.msh");
 
   real dd = L2error(&f);
-  real tolerance = 8e-3;
+  real tolerance = 0.3;
   test = test && (dd < tolerance);
   printf("L2 error: %f\n", dd);
 
