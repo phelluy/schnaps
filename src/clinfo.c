@@ -530,14 +530,16 @@ double kernel_min_time(double dev_flops, double bandwidth,
 }
 
 void print_kernel_perf(double dev_gflops, double dev_bwidth,
-		       unsigned long int flop_count, unsigned long int io_count,
+		       unsigned long int flop_count,
+		       unsigned long int io_count,
 		       cl_ulong kernel_time_ns)
 {
+  printf("Total kernel performance:\n");
+  printf("\tKernel flop count:\t\t%lu\n", flop_count);
+  printf("\tKernel io count:\t\t%lu\n", io_count);
+  double total_time = 1e-9 * kernel_time_ns;
+  printf("\tKernel time:\t\t\t%f s\n", total_time);
   if(dev_gflops > 0 && dev_bwidth > 0) {
-    printf("\tKernel flop count:\t\t%lu\n", flop_count);
-    printf("\tKernel io count:\t\t%lu\n", io_count);
-    double total_time = 1e-9 * kernel_time_ns;
-    printf("\tKernel time:\t\t\t%f s\n", total_time);
     double min_time_total = kernel_min_time(dev_gflops, dev_bwidth,
 					    flop_count, io_count);
     printf("\tTheoretical kernel time:\t%f s\n", min_time_total);

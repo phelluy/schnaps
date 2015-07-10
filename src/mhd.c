@@ -551,3 +551,204 @@ void MHDImposedData(const real *x,const  real t, real *w) {
   conservatives(yL, w);
 }
 #pragma end_opencl
+
+
+////////////////////////////////////////////////////////////////////////////////
+//                               Orszag-Tang                                  //
+////////////////////////////////////////////////////////////////////////////////
+
+#pragma start_opencl
+void MHDBoundaryFluxOrszagTang(real *x, real t, real *wL, real *vnorm,
+                                 real *flux) {
+  real wR[9];
+
+  MHDImposedDataOrszagTang(x,t,wR);
+  MHDNumFluxRusanov(wL,wR,vnorm,flux);
+
+}
+#pragma end_opencl
+
+#pragma start_opencl
+void MHDInitDataOrszagTang(real *x, real *w) {
+  real t = 0;
+  MHDImposedDataOrszagTang(x, t, w);
+}
+#pragma end_opencl
+
+#pragma start_opencl
+void MHDImposedDataOrszagTang(const real *x,const  real t, real *w) {
+  real gam = 1.6666666666;
+  real yL[9];
+
+  yL[0] = gam*gam;
+  yL[1] = -sin(x[1]);
+  yL[2] = gam;
+  yL[3] = sin(x[0]);
+  yL[4] = 0.0;
+  yL[5] = sin(2*(x[0]));
+  yL[6] = 0.0;
+  yL[7] = -sin(x[1]);
+  yL[8] = 0.0;
+
+  conservatives(yL, w);
+  
+}
+#pragma end_opencl
+
+
+////////////////////////////////////////////////////////////////////////////////
+//                               Reconnexion                                  //
+////////////////////////////////////////////////////////////////////////////////
+
+#pragma start_opencl
+void MHDBoundaryFluxReconnexion(real *x, real t, real *wL, real *vnorm,
+                                 real *flux) {
+  real wR[9];
+  MHDImposedDataReconnexion(x,t,wR);
+  MHDNumFluxRusanov(wL,wR,vnorm,flux);
+}
+#pragma end_opencl
+
+#pragma start_opencl
+void MHDInitDataReconnexion(real *x, real *w) {
+  real t = 0;
+  MHDImposedDataReconnexion(x, t, w);
+}
+#pragma end_opencl
+
+#pragma start_opencl
+void MHDImposedDataReconnexion(const real *x,const  real t, real *w) {
+  real gam = 1.6666666666;
+  real yL[9];
+
+  yL[0] = 1.0;
+  yL[1] = 0.1*sin(3.14159265359*(x[1]));
+  yL[2] = 0.1;
+  yL[3] = 0.0;
+  yL[4] = 0.0;
+  if((x[0])<(2./3.)){
+    yL[5] = 1.0;
+  }
+  else if(((x[0])>4./3.)){
+    yL[5] = 1.0;
+  }
+  else{
+    yL[5] = -1.0;
+  }
+  yL[6] = 0.0;
+  yL[7] = 0.0;
+  yL[8] = 0.0;
+
+  conservatives(yL, w);
+  
+}
+#pragma end_opencl
+
+
+////////////////////////////////////////////////////////////////////////////////
+//                            Kelvin-Helmotz                                  //
+////////////////////////////////////////////////////////////////////////////////
+
+#pragma start_opencl
+void MHDBoundaryFluxKelvinHelmotz(real *x, real t, real *wL, real *vnorm,
+                                 real *flux) {
+
+  real wR[9];
+
+  if(vnorm[1] > 0.0001 || vnorm[1] < -0.0001){
+    for(int i=0; i<9; i++){
+      wR[i] = wL[i];
+    }
+  }
+  else{
+    MHDImposedDataKelvinHelmotz(x,t,wR);
+  }
+
+  MHDNumFluxRusanov(wL,wR,vnorm,flux);
+  
+}
+#pragma end_opencl
+
+#pragma start_opencl
+void MHDInitDataKelvinHelmotz(real *x, real *w) {
+  real t = 0;
+  MHDImposedDataKelvinHelmotz(x, t, w);
+}
+#pragma end_opencl
+
+#pragma start_opencl
+void MHDImposedDataKelvinHelmotz(const real *x,const  real t, real *w) {
+  real gam = 1.6666666666;
+  real yL[9];
+
+  yL[0] = 1.0; //reprendre 1.29 a la place de 1.806 et prendre Bx = 1.29/3.33 = 0.39
+  yL[1] = (1.29/2)*tanh((x[1])/0.05);
+  yL[2] = 1.0;
+  yL[3] = 0.01*sin(2*3.14159265359*(x[0]))*exp(-((x[1])/0.2)*((x[1])/0.2));
+  yL[4] = 0.0;
+  yL[7] = 0.39; // pour le Bx on prend le 1.29 et on divise pas le mac
+  yL[5] = 0.0;
+  yL[6] = 0.0;
+  yL[8] = 0.0;
+  
+  conservatives(yL, w);
+  
+}
+#pragma end_opencl
+
+
+////////////////////////////////////////////////////////////////////////////////
+//                            Double tearing                                  //
+////////////////////////////////////////////////////////////////////////////////
+
+#pragma start_opencl
+void MHDBoundaryFluxDoubleTearing(real *x, real t, real *wL, real *vnorm,
+                                 real *flux) {
+  real wR[9];
+
+  //if(vnorm[1] > 0.0001 || vnorm[1] < -0.0001){
+  //  for(int i=0; i<9; i++){
+  //    MHDImposedDataDoubleTearing(x,t,wR);
+  //  }
+  //}
+  //else{
+  //  MHDImposedDataDoubleTearing(x,t,wR);
+  //}
+
+  MHDImposedDataDoubleTearing(x,t,wR);
+  MHDNumFluxRusanov(wL,wR,vnorm,flux);
+}
+#pragma end_opencl
+
+#pragma start_opencl
+void MHDInitDataDoubleTearing(real *x, real *w) {
+  real t = 0;
+  MHDImposedDataDoubleTearing(x, t, w);
+}
+#pragma end_opencl
+
+#pragma start_opencl
+void MHDImposedDataDoubleTearing(const real *x,const  real t, real *w) {
+  real gam = 1.6666666666;
+  real yL[9];
+
+  yL[5] = 1 + tanh( (x[0]-0.5)/0.2 ) - tanh( (x[0]+0.5)/0.2 );     // By
+  yL[2] = -yL[5]*yL[5]/2 + 0.6;                                  // P
+  yL[0] = 2*yL[2]/0.2;                                          // Rho
+
+  if((x[0]) < -1.5 && (x[0]) > 1.5)
+    yL[7] = 0;
+  else
+    yL[7] = 0.003*sin(3.14159265359*(x[1])/2)*exp(-( (x[0])*(x[0])-0.5 )/0.1 );   // Bx essayer de forcer les bord a 0. si on est < -1.5 x>1.5 je met 0
+
+  yL[1] = 0.0;                                                 // Ux
+  yL[3] = 0.0;                                                 // Uy
+  yL[4] = 0.0;                                                 // Uz
+  yL[6] = 0.0;                                                 // Bz
+  yL[8] = 0.0;                                                 // Psi
+
+  
+  conservatives(yL, w);
+  
+}
+#pragma end_opencl

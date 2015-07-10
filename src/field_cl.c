@@ -4,6 +4,7 @@
 #include "clutils.h"
 #include <assert.h>
 #include <string.h>
+#include <sys/time.h>
 
 #ifdef _WITH_OPENCL
 void CopyfieldtoCPU(field *f)
@@ -43,33 +44,6 @@ void CopyfieldtoCPU(field *f)
   status = clFinish(f->cli.commandqueue);
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
-}
-
-cl_ulong clv_startime(cl_event clv) 
-{
-  cl_ulong time;
-  clWaitForEvents(1, &clv);
-  clGetEventProfilingInfo(clv,
-			  CL_PROFILING_COMMAND_START,
-			  sizeof(time),
-			  &time, NULL);
-  return time;
-}
-
-cl_ulong clv_endtime(cl_event clv) 
-{
-  cl_ulong time;
-  clWaitForEvents(1, &clv);
-  clGetEventProfilingInfo(clv,
-			  CL_PROFILING_COMMAND_END,
-			  sizeof(time),
-			  &time, NULL);
-  return time;
-}
-
-cl_ulong clv_duration(cl_event clv)
-{
-  return clv_endtime(clv) - clv_startime(clv);
 }
 
 void set_source_CL(field *f, char *sourcename_cl) 
@@ -428,7 +402,6 @@ void DGMass_CL(void *mc, field *f,
 				    done); // cl_event *event
     if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
     assert(status >= CL_SUCCESS);
-    //f->mass_time += clv_duration(f->clv_mass);
   }
 }
 
@@ -673,7 +646,6 @@ void DGVolume_CL(void *mc, field *f, cl_mem *wn_cl,
 				    done);
     if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
     assert(status >= CL_SUCCESS);
-    //f->vol_time += clv_duration(f->clv_volkernel);
   }
 }
 
@@ -814,8 +786,6 @@ void set_buf_to_zero_cl(cl_mem *buf, int size, field *f,
 				  done);
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
-  if(done != NULL)
-    f->zbuf_time += clv_duration(f->clv_zbuf);
 }
 
 // Apply the Discontinuous Galerkin approximation for computing the
@@ -832,12 +802,10 @@ void dtfield_CL(field *f, cl_mem *wn_cl,
   
   for(int i = 0; i < ninterfaces; ++i) {
     int ifa = f->macromesh.macrointerface[i];
-
     DGMacroCellInterface_CL((void*) (f->mface + ifa), f, wn_cl,
     			    1,
     			    i == 0 ? &f->clv_zbuf : f->clv_mci + i - 1,
     			    f->clv_mci + i);
-    f->minter_time += clv_duration(f->clv_mci[i]);
   }
 
   cl_event *startboundary = ninterfaces > 0 ?
@@ -847,14 +815,11 @@ void dtfield_CL(field *f, cl_mem *wn_cl,
   const int nboundaryfaces = f->macromesh.nboundaryfaces;
   for(int i = 0; i < nboundaryfaces; ++i) {
     int ifa = f->macromesh.boundaryface[i];
-    
     DGBoundary_CL((void*) (f->mface + ifa), f, wn_cl,
 		  1,
 		  i == 0 ?  startboundary : f->clv_boundary + i - 1,
 		  f->clv_boundary + i);
-    f->boundary_time += clv_duration(f->clv_boundary[i]);
   }
-
 
   // If there are no interfaces and no boundaries, just wait for zerobuf.
   cl_event *startmacroloop;
@@ -891,43 +856,59 @@ void dtfield_CL(field *f, cl_mem *wn_cl,
     DGFlux_CL(f, 0, ie, wn_cl, 
 	      1, startmacroloop,
 	      f->clv_flux0 + ie);
-    f->flux_time += clv_duration(f->clv_flux0[ie]);
-    
+
     if(ndim > 1) {
       DGFlux_CL(f, 1, ie, wn_cl, 
 		1, f->clv_flux0 + ie,
 		f->clv_flux1 + ie);
-      f->flux_time += clv_duration(f->clv_flux1[ie]);
     }
     
     if(ndim > 2) {
-      DGFlux_CL(f, 1, ie, wn_cl, 
+      DGFlux_CL(f, 2, ie, wn_cl, 
 		1, f->clv_flux1 + ie, 
 		f->clv_flux2 + ie);
-      f->flux_time += clv_duration(f->clv_flux2[ie]);
     }
-        
+    
     DGVolume_CL(mcelli, f, wn_cl,
   		1,
   		fluxdone + ie,
   		f->clv_volume + ie);
-    f->vol_time += clv_duration(f->clv_volume[ie]);
 
     DGMass_CL(mcelli, f,
   	      1,
   	      f->clv_volume + ie,
   	      f->clv_mass + ie);
-    f->mass_time += clv_duration(f->clv_mass[ie]);
 
     if(f->use_source_cl) {
       DGSource_CL(mcelli, f, wn_cl, 
 		  1,
 		  f->clv_mass + ie,
 		  f->clv_source + ie);
-      f->source_time += clv_duration(f->clv_source[ie]);
     }
   }
   clWaitForEvents(nmacro, dtfielddone);
+
+  // Add times for sources after everything is finished
+  f->zbuf_time += clv_duration(f->clv_zbuf);
+
+  for(int i = 0; i < ninterfaces; ++i)
+    f->minter_time += clv_duration(f->clv_mci[i]);
+
+  for(int i = 0; i < nboundaryfaces; ++i)
+    f->boundary_time += clv_duration(f->clv_boundary[i]);
+
+  for(int ie = 0; ie < nmacro; ++ie) {
+    if(f->use_source_cl)
+      f->source_time += clv_duration(f->clv_source[ie]);
+    f->flux_time += clv_duration(f->clv_flux0[ie]);
+    if(ndim > 1) 
+      f->flux_time += clv_duration(f->clv_flux1[ie]);
+    if(ndim > 2)
+      f->flux_time += clv_duration(f->clv_flux2[ie]);
+    f->vol_time += clv_duration(f->clv_volume[ie]);
+    f->mass_time += clv_duration(f->clv_mass[ie]);
+  }
+
   if(done != NULL)
     clSetUserEventStatus(*done, CL_COMPLETE);
 }
@@ -989,8 +970,6 @@ void RK2_CL_stage1(field *f, size_t numworkitems,
 				  done);
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
-  if(done != NULL)
-    f->rk_time += clv_duration(*done);
 }
 
 // Set kernel arguments for second stage of RK2
@@ -1034,8 +1013,6 @@ void RK2_CL_stage2(field *f, size_t numworkitems,
 				  nwait, wait, done);
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
-  if(done != NULL)
-    f->rk_time += clv_duration(*done);
 }
 
 void RK4_CL_stageA(field *f, 
@@ -1092,9 +1069,6 @@ void RK4_CL_stageA(field *f,
   				  done);
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
-
-  if(done != NULL) 
-    f->rk_time += clv_duration(*done);
 }
 
 void RK4_final_inplace_CL(field *f, 
@@ -1167,9 +1141,6 @@ void RK4_final_inplace_CL(field *f,
   				  done);
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
-
-  if(done != NULL)
-    f->rk_time += clv_duration(*done);
 }
 
 // Time integration by a fourth-order Runge-Kutta algorithm, OpenCL
@@ -1179,8 +1150,6 @@ void RK4_CL(field *f, real tmax, real dt,
 {
   if(dt <= 0)
     dt = set_dt(f);
-
-  clWaitForEvents(nwait, wait);
 
   f->itermax = tmax / dt;
   int freq = (1 >= f->itermax / 10)? 1 : f->itermax / 10;
@@ -1224,8 +1193,15 @@ void RK4_CL(field *f, real tmax, real dt,
     stage[i] = clCreateUserEvent(f->cli.context, &status);
   }
 
+  clWaitForEvents(nwait, wait);
+
+  printf("Starting RK4_CL\n");
+  
   status = clSetUserEventStatus(stage[3], CL_COMPLETE);
 
+  struct timeval t_start;
+  struct timeval t_end;
+  gettimeofday(&t_start, NULL);
   while(f->tnow < tmax) {
     if (iter % freq == 0)
       printf("t=%f iter=%d/%d dt=%f\n", f->tnow, iter, f->itermax, dt);
@@ -1258,12 +1234,29 @@ void RK4_CL(field *f, real tmax, real dt,
 			 1, source + 3, stage + 3);
 
     f->tnow += dt;
+
+    for(int i = 0; i < nstages; ++i)
+      f->rk_time += clv_duration(stage[i]);
+    
     iter++;
   }
+  gettimeofday(&t_end, NULL); 
+
   if(done != NULL)
     status = clSetUserEventStatus(*done, CL_COMPLETE);
 
-  printf("t=%f iter=%d/%d dt=%f\n", f->tnow, iter, f->itermax, dt);
+ double rkseconds = (t_end.tv_sec - t_start.tv_sec) * 1.0 // seconds
+    + (t_end.tv_usec - t_start.tv_usec) * 1e-6; // microseconds
+  printf("\nTotal RK time (s):\n%f\n", rkseconds);
+  printf("\nTotal RK time per time-step (s):\n%f\n", rkseconds / iter );
+ 
+  
+  for(int i = 0; i < nstages; ++i) {
+    clReleaseEvent(source[i]);
+    clReleaseEvent(stage[i]);
+  }
+  
+  printf("\nt=%f iter=%d/%d dt=%f\n", f->tnow, iter, f->itermax, dt);
 }
 
 
@@ -1293,13 +1286,20 @@ void RK2_CL(field *f, real tmax, real dt,
   init_RK2_CL_stage2(f, dt);
 
   cl_event source1 = clCreateUserEvent(f->cli.context, &status);
-  cl_event stage1 = clCreateUserEvent(f->cli.context, &status);
+  cl_event stage1 =  clCreateUserEvent(f->cli.context, &status);
   cl_event source2 = clCreateUserEvent(f->cli.context, &status);
-  cl_event stage2 = clCreateUserEvent(f->cli.context, &status);
+  cl_event stage2 =  clCreateUserEvent(f->cli.context, &status);
+
   status = clSetUserEventStatus(stage2, CL_COMPLETE);
 
   if(nwait > 0)
     clWaitForEvents(nwait, wait);
+
+  printf("Starting RK2_CL\n");
+  
+  struct timeval t_start;
+  struct timeval t_end;
+  gettimeofday(&t_start, NULL);
   while(f->tnow < tmax) {
     //printf("iter: %d\n", iter);
     if (iter % freq == 0)
@@ -1313,13 +1313,26 @@ void RK2_CL(field *f, real tmax, real dt,
     dtfield_CL(f, &wnp1_cl, 1, &stage1, &source2);
     RK2_CL_stage2(f, f->wsize, 1, &source2, &stage2);
 
+
     f->tnow += 0.5 * dt;
+
+    f->rk_time += clv_duration(stage1);
+    f->rk_time += clv_duration(stage2);
     iter++;
   }
+  gettimeofday(&t_end, NULL);
   if(done != NULL) 
     status = clSetUserEventStatus(*done, CL_COMPLETE);
 
-  printf("t=%f iter=%d/%d dt=%f\n", f->tnow, iter, f->itermax, dt);
+  clReleaseEvent(stage2);
+  clReleaseEvent(stage1);
+  
+  double rkseconds = (t_end.tv_sec - t_start.tv_sec) * 1.0 // seconds
+    + (t_end.tv_usec - t_start.tv_usec) * 1e-6; // microseconds
+  printf("\nTotal RK time (s):\n%f\n", rkseconds);
+  printf("\nTotal RK time per time-step (s):\n%f\n", rkseconds / iter );
+ 
+  printf("\nt=%f iter=%d/%d dt=%f\n", f->tnow, iter, f->itermax, dt);
 }
 
 void show_cl_timing(field *f)
@@ -1429,10 +1442,8 @@ void show_cl_timing(field *f)
 	 ns*N, (unsigned long) ns, total_time);
 
   printf("\n");
-  printf("Total kernel performance:\n");
   print_kernel_perf(dev_gflops, dev_bwidth,
 		    flops_total, reads_total, total);
-  
   printf("\n");
 }
 

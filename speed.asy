@@ -1,7 +1,7 @@
 import graph;
 import markers;
 
-// Reads the output of convergence_test.py and produces a pdf or eps file.
+// Reads the output of speed_test.py
 
 size(200, 150, IgnoreAspect);
 
@@ -16,10 +16,9 @@ real[] deg = a[0];
 real[] nraf = a[1];
 real[] dof = a[2];
 real[] time = a[3];
-real[] timeperrk = a[5];
-real[] err = a[6];
+real[] timeperrk = a[4];
 string xvals =  getstring("DOF or nraf");
-string yvals =  getstring("err, timeperrk, or time");
+string yvals =  getstring("timeperrk, or time");
 
 // Find the dimensions in the file
 real[] dimlist;
@@ -44,14 +43,12 @@ for(int d = 0; d < dimlist.length; ++d) {
   real[] dtime = {};
   real[] dnraf = {};
   real[] ddof = {};
-  real[] derr = {};
   for(int i = 0; i < deg.length; ++i) {
     if(deg[i] == dim) {
       dtimeperrk.push(timeperrk[i]);
       dtime.push(time[i]);
       dnraf.push(nraf[i]);
       ddof.push(dof[i]);
-      derr.push(err[i]);
     }
   }
 
@@ -61,8 +58,6 @@ for(int d = 0; d < dimlist.length; ++d) {
     y = dtimeperrk;
   if(yvals == "time")
     y = dtime;
-  if(yvals == "err")
-    y = derr;
 
   pen p = Pen(d);
   if(d == 1) p += dashed;
@@ -83,7 +78,4 @@ if(yvals == "timeperrk")
   yaxis("Computation time", LeftRight, RightTicks);
 if(yvals == "time")
   yaxis("Computation time", LeftRight, RightTicks);
-if(yvals == "err")
-  yaxis("L2 error", LeftRight, RightTicks);
-
-//attach(legend(),point(plain.E),20plain.E);
+attach(legend(),point(plain.E),20plain.E);

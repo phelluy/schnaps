@@ -158,6 +158,7 @@ add_executable(
   src/schnaps.c
   )
 target_link_libraries(schnaps ${LIBS})
+add_test(schnaps schnaps)
 
 # list of tests
 add_executable(
@@ -393,6 +394,14 @@ if(OPENCL_FOUND)
     )
   target_link_libraries(testdtfield_cl ${LIBS})
 
+  add_test(testdtfield_3dcl testdtfield3d_cl)
+  add_executable(
+    testdtfield3d_cl
+    test/test.h
+    test/testdtfield3d_cl.c
+    )
+  target_link_libraries(testdtfield3d_cl ${LIBS})
+
   add_test(testcache_cl testcache_cl)
   add_executable(
     testcache_cl
@@ -472,6 +481,14 @@ if(OPENCL_FOUND)
     )
   target_link_libraries(testmaxwell2d ${LIBS})
   add_test(testmaxwell2d testmaxwell2d)
+
+  add_executable(
+    testmaxwell3d
+    test/test.h
+    test/testmaxwell3d.c
+    )
+  target_link_libraries(testmaxwell3d ${LIBS})
+  add_test(testmaxwell3d testmaxwell3d)
   
   add_test(testmhd testmhd)
   add_executable(
@@ -488,6 +505,39 @@ if(OPENCL_FOUND)
     test/testmhd1d.c
     )
   target_link_libraries(testmhd1d ${LIBS})
+
+  add_test(testorszagtang testorszagtang)
+  add_executable(
+    testorszagtang
+    test/test.h
+    test/testorszagtang.c
+    )
+  target_link_libraries(testorszagtang ${LIBS})
+
+  add_test(testreconnexion testreconnexion)
+  add_executable(
+    testreconnexion
+    test/test.h
+    test/testreconnexion.c
+    )
+  target_link_libraries(testreconnexion ${LIBS})
+
+  add_test(testkelvinhelmotz testkelvinhelmotz)
+  add_executable(
+    testkelvinhelmotz
+    test/test.h
+    test/testkelvinhelmotz.c
+    )
+  target_link_libraries(testkelvinhelmotz ${LIBS})
+
+  add_test(testdoubletearing testdoubletearing)
+  add_executable(
+    testdoubletearing
+    test/test.h
+    test/testdoubletearing.c
+    )
+  target_link_libraries(testdoubletearing ${LIBS})
+
 
 endif(OPENCL_FOUND)
 

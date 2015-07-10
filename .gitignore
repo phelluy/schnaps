@@ -72,6 +72,7 @@ testkernelvolume
 testmanyv
 testmeq2
 testdtfield_cl
+testdtfield3d_cl
 testfieldrk4
 testfieldrk4_cl
 testmacrocellinterface
@@ -92,6 +93,14 @@ testpic_accumulate
 testpoisson
 testpoisson2d
 testskyline
+testgmres
+testmaxwell3d
+testwave2d
+testdoubletearing
+testkelvinhelmotz
+testorszagtang
+testreconnexion
+
 
 #output files
 *.csv
@@ -106,50 +115,9 @@ toto.c
 
 paralution-1.0.0-prefix
 
-data1D.dat
-
-Diagnostics.dat
+*.dat
+*.pdf
 
 gmres
-
-fvel.dat
-
 paralution_cg
-
-testskyline
-
-testpoisson2d
-
-testpoisson
-
-testpic_accumulate
-
-testpic
-
-testperiodic
-
-testmhd1d
-
-testmhd
-
-testmeq2_cl
-
-testmaxwell2d
-
-testlinearsolver
-
-testlandau_damping_1D
-
-testkernelflux
-
-testgyro
-
-testgmres
-
-testcache_cl
-
-test_transportvp
-
-partplot.dat
-
 gr_30_30.mtx

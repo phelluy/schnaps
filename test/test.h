@@ -67,6 +67,15 @@ int TestFieldRK2_CL(void);
 
 int TestLandau_Damping_1D(void);
 
+int TestOrszagTang(int argc, char *argv[]);
+
+int TestReconnexion(int argc, char *argv[]);
+
+int TestKelvinHelmotz(int argc, char *argv[]);
+
+int TestDoubleTearing(int argc, char *argv[]);
+
 int Test_Wave_Periodic(void);
+
 
 #endif

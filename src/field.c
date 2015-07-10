@@ -10,6 +10,7 @@
 #include <string.h>
 #include "quantities_vp.h"
 #include "solverpoisson.h"
+#include "model.h"
 
 #ifdef _WITH_OPENCL 
 #include "clutils.h"
@@ -144,7 +145,6 @@ void init_empty_field(field *f)
 void init_data(field *f)
 {
   for(int ie = 0; ie < f->macromesh.nbelems; ie++) {
-    
     real physnode[20][3];
     for(int inoloc = 0; inoloc < 20; inoloc++) {
       int ino = f->macromesh.elem2node[20 * ie + inoloc];
@@ -172,10 +172,8 @@ void init_data(field *f)
       real w[f->model.m];
       f->model.InitData(xpg, w);
       for(int iv = 0; iv < f->model.m; iv++) {
-	int imem;
-	imem = f->varindex(f->interp_param, ie, ipg, iv);
+	int imem = f->varindex(f->interp_param, ie, ipg, iv);
 	f->wn[imem] = w[iv];
-
       }
     }
   }
@@ -431,7 +429,13 @@ void Initfield(field *f) {
 
   int nmem = f->model.m * f->macromesh.nbelems * NPG(f->interp_param + 1);
   f->wsize = nmem;
-  printf("allocate %d reals\n", nmem);
+
+  double g_memsize = nmem * sizeof(real) * 1e-9;
+  if(sizeof(real) == sizeof(double))
+    printf("Allocating %d doubles per array (%f GB).\n", nmem, g_memsize);
+  else
+    printf("Allocating %d floats per array (%f GB)\n", nmem, g_memsize);
+
   f->wn = calloc(nmem, sizeof(real));
   assert(f->wn);
   f->dtwn = calloc(nmem, sizeof(real));

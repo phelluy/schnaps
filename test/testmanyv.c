@@ -11,12 +11,8 @@
 #include <time.h>
 #define _XOPEN_SOURCE 700
 
-/* real seconds(struct timespec ta, struct timespec tb) { */
-/*   return (real)(ta.tv_sec - tb.tv_sec)  */
-/*     + 1e-9 * (real)(ta.tv_nsec - tb.tv_nsec); */
-/* } */
-
-int main(int argc, char *argv[]) {
+int main(int argc, char *argv[]) 
+{
   // Unit tests
   real cfl = 0.5;
   int deg = 3;
@@ -150,16 +146,16 @@ int main(int argc, char *argv[]) {
   f.interp.interp_param[5] = ny; // y direction refinement
   f.interp.interp_param[6] = 1; // z direction refinement
 
-  set_vlasov_params(&(f.model));
+  set_vlasov_params(&f.model);
 
   // Read the gmsh file
-  ReadMacroMesh(&(f.macromesh), "geo/square.msh");
+  ReadMacroMesh(&f.macromesh, "geo/square.msh");
   // Try to detect a 2d mesh
-  Detect2DMacroMesh(&(f.macromesh));
-  assert(f.macromesh.is2d);  
+  Detect2DMacroMesh(&f.macromesh);
+  assert(f.macromesh.is2d);
 
   // Mesh preparation
-  BuildConnectivity(&(f.macromesh));
+  BuildConnectivity(&f.macromesh);
  
   // Prepare the initial fields
 
@@ -171,12 +167,11 @@ int main(int argc, char *argv[]) {
   printf("dt: %f\n", dt);
 
   // Prudence...
-  CheckMacroMesh(&(f.macromesh), f.interp.interp_param + 1);
+  CheckMacroMesh(&f.macromesh, f.interp.interp_param + 1);
 
   /* real executiontime; */
   /* struct timespec tstart, tend; */
   if(usegpu) {
-
     printf("Using OpenCL:\n");
     //clock_gettime(CLOCK_MONOTONIC, &tstart);
     RK2_CL(&f, tmax, dt,  0, NULL, NULL);

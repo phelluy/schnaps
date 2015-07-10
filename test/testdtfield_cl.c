@@ -27,6 +27,7 @@ int TestDtfield_CL(void){
   }
 
   field f;
+  init_empty_field(&f);
   
   // 2D meshes:
   // test/disque2d.msh
@@ -48,7 +49,6 @@ int TestDtfield_CL(void){
   f.model.cfl = 0.05;
   f.model.m = 1;
   m = f.model.m;
-
 
   f.model.NumFlux = TransNumFlux2d;
   f.model.BoundaryFlux = TransBoundaryFlux2d;

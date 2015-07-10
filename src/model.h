@@ -3,6 +3,27 @@
 
 #include "global.h"
 
+// typedefs for function pointers
+// Numerical flux function pointer
+typedef void (*fluxptr)(real*, real*, real*, real*);
+// Boundary flux function pointer
+typedef void (*bfluxptr)(real*, real, real*, real*, real*);
+// Init data function pointer
+typedef void (*initdataptr)(real*, real*);
+// Imposed data function pointer
+typedef void (*imposeddataptr)(const real*, const real, real* w); 
+
+// Return a pointer to a numflux function based on the string given.
+fluxptr numflux(const char *numfluxname);
+
+// Return a pointer to a boundary blux function based on the string given.
+bfluxptr bflux(const char *bfluxname);
+
+// Return a pointer to an init data function based on the string given.
+initdataptr initdata(const char *name);
+
+// Return a pointer to an imposed data function based on the string given.
+imposeddataptr imposeddata(const char *name);
 
 //! \brief a unified framework for all physical models
 typedef struct Model {
@@ -26,7 +47,7 @@ typedef struct Model {
   //! \param[in] wL, wR : left and right states
   //! \param[in] vn : normal vector
   //! \param[out] flux : the flux
-  void (*NumFlux)(real wL[], real wR[], real vn[3], real flux[]);
+  void (*NumFlux)(real *wL, real *wR, real *vn, real *flux);
 
   //! \brief A pointer to the boundary flux function
   //! \param[in] x : space position
@@ -34,8 +55,7 @@ typedef struct Model {
   //! \param[in] wL : left state
   //! \param[in] vn : normal vector
   //! \param[out] flux : the flux
-  void (*BoundaryFlux)(real x[3], real t, real wL[], real vn[3],
-		       real flux[]);
+  void (*BoundaryFlux)(real *x, real t, real *wL, real *vn, real *flux);
 
    //! \brief a pointer to the source function
   //! \param[in] x : space position
@@ -47,12 +67,12 @@ typedef struct Model {
   //! \brief A pointer to the init data function
   // !\param[in] x : space position
   //! \param[out] w : init state at point x
-  void (*InitData)(real x[3], real w[]);
+  void (*InitData)(real *x, real *w);
 
   //! \brief A pointer to the imposed data function
   //!\param[in] x, t : space and time position
   //! \param[out] w : imposed state at point x and time t
-  void (*ImposedData)(const real x[3], const real t, real w[]);
+  void (*ImposedData)(const real *x, const real t, real *w);
 
 } Model;
 
@@ -80,8 +100,7 @@ void VecTransNumFlux2d(__private real *wL, real *wR, real *vn, real *flux);
 //! \param[in] wL : left state
 //! \param[in] vn : normal vector
 //! \param[out] flux : the flux
-void TransBoundaryFlux(real* x, real t, real* wL, real* vn,
-		       real* flux);
+void TransBoundaryFlux(real* x, real t, real* wL, real* vn, real* flux);
 
 //! \brief The particular boundary flux for the 2d transport model
 //! \param[in] x : space position
@@ -89,8 +108,9 @@ void TransBoundaryFlux(real* x, real t, real* wL, real* vn,
 //! \param[in] wL : left state
 //! \param[in] vn : normal vector
 //! \param[out] flux : the flux
-void TransBoundaryFlux2d(real* x, real t, real* wL, real* vn,
-			 real* flux);
+#pragma start_opencl
+void TransBoundaryFlux2d(real* x, real t, real* wL, real* vn, real* flux);
+#pragma end_opencl
 
 //! \brief The particular init data for the transport model
 //! \param[in] x : space position
@@ -114,10 +134,12 @@ void TransImposedData(const real* x, const real t, real* w);
 //! \brief The particular imposed data for the 2d transport model
 //! \param[in] x, t : space and time position
 //! \param[out] w : imposed state at point x and time t
-void TransImposedData2d(const real *x, const real t, real* w);
+#pragma start_opencl
+void TransImposedData2d(const real *x, const real t, real *w);
+#pragma end_opencl
 
 #pragma start_opencl
-void VecTransImposedData2d(const real* x, const real t, real* w);
+void VecTransImposedData2d(const real* x, const real t, real *w);
 #pragma end_opencl
 
 //! \brief The particular flux for testing the transport model
@@ -173,22 +195,22 @@ static real vlasov_vmax;
 void set_global_m(int m0);
 void set_vlasov_params(Model *mod);
 real vlasov_vel(const int id, const int md, real vlasov_vmax);
-void vlaTransInitData2d(real x[3], real w[]);
-void vlaTransNumFlux2d(real wL[], real wR[], real* vnorm, real* flux);
-void vlaTransBoundaryFlux2d(real x[3], real t, 
-			    real wL[], real* vnorm,
+void vlaTransInitData2d(real *x, real *w);
+void vlaTransNumFlux2d(real *wL, real *wR, real* vnorm, real* flux);
+void vlaTransBoundaryFlux2d(real *x, real t, 
+			    real *wL, real* vnorm,
 			    real* flux);
-void vlaTransImposedData2d(const real x[3], const real t, real* w);
+void vlaTransImposedData2d(const real *x, const real t, real* w);
 real compact_bump(real r);
 real icgaussian(real r, real c);
 
-void cemracs2014_TransBoundaryFlux(real x[3], real t, 
-				   real wL[], real *vnorm,
+void cemracs2014_TransBoundaryFlux(real *x, real t, 
+				   real *wL, real *vnorm,
 				   real *flux);
-void cemracs2014_TransInitData(real x[3], real w[]);
-void cemcracs2014_imposed_data(const real x[3], const real t, real *w); 
-void cemracs2014a_TransInitData(real x[3], real w[]);
-void cemcracs2014a_imposed_data(const real x[3], const real t, real *w); 
+void cemracs2014_TransInitData(real *x, real *w);
+void cemcracs2014_imposed_data(const real *x, const real t, real *w); 
+void cemracs2014a_TransInitData(real *x, real *w);
+void cemcracs2014a_imposed_data(const real *x, const real t, real *w); 
 
 void OneSource(const real *x, const real t, const real *w, real *source);
 
