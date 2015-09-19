@@ -54,7 +54,7 @@ int TestPeriodic(void) {
   f.interp.interp_param[5] = 1;  // y direction refinement
   f.interp.interp_param[6] = 1;  // z direction refinement
   // read the gmsh file
-  ReadMacroMesh(&f.macromesh, "test/testcube.msh");
+  ReadMacroMesh(&f.macromesh, "../test/testcube.msh");
   // try to detect a 2d mesh
   Detect1DMacroMesh(&(f.macromesh));
   assert(f.macromesh.is1d);

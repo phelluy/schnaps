@@ -111,7 +111,7 @@ int TestReconnexion(int argc, char *argv[]) {
   //set_vlasov_params(&(f.model));
 
   // Read the gmsh file
-  ReadMacroMesh(&(f.macromesh), "test/testrecogrid.msh");
+  ReadMacroMesh(&(f.macromesh), "../test/testrecogrid.msh");
   // Try to detect a 2d mesh
   Detect2DMacroMesh(&(f.macromesh)); 
   bool is2d=f.macromesh.is2d; 

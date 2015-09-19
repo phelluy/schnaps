@@ -25,7 +25,7 @@ int TestfieldRK2_2D(void) {
   f.interp.interp_param[5] = 1; // y direction refinement
   f.interp.interp_param[6] = 1; // z direction refinement
 
-  ReadMacroMesh(&(f.macromesh), "test/testdisque2d.msh");
+  ReadMacroMesh(&(f.macromesh), "../test/testdisque2d.msh");
   Detect2DMacroMesh(&(f.macromesh));
   // require a 2d computation
   assert(f.macromesh.is2d);

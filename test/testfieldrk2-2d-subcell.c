@@ -26,7 +26,7 @@ int TestfieldRK2_2D_SubCell(void) {
   f.interp.interp_param[5] = 4; // y direction refinement
   f.interp.interp_param[6] = 1; // z direction refinement
 
-  ReadMacroMesh(&(f.macromesh), "test/testmacromesh.msh");
+  ReadMacroMesh(&(f.macromesh), "../test/testmacromesh.msh");
   Detect2DMacroMesh(&(f.macromesh));
   assert(f.macromesh.is2d);
   BuildConnectivity(&(f.macromesh));

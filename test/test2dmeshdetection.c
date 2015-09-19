@@ -29,7 +29,7 @@ int Test2DMeshDetection(void) {
   // 2D mesh tests:
 
   MacroMesh mm1;
-  ReadMacroMesh(&mm1, "test/permutcube.msh");
+  ReadMacroMesh(&mm1, "../test/permutcube.msh");
   Detect2DMacroMesh(&mm1);
   BuildConnectivity(&mm1);
   CheckMacroMesh(&mm1, param);
@@ -38,7 +38,7 @@ int Test2DMeshDetection(void) {
 
  
   MacroMesh mm2;
-  ReadMacroMesh(&mm2, "test/disque2d.msh");
+  ReadMacroMesh(&mm2, "../test/disque2d.msh");
   Detect2DMacroMesh(&mm2);
   BuildConnectivity(&mm2);
   CheckMacroMesh(&mm2, param);
@@ -46,7 +46,7 @@ int Test2DMeshDetection(void) {
   test = test && mm2.is2d;
 
   MacroMesh mm3;
-  ReadMacroMesh(&mm3, "test/unit-cube.msh");
+  ReadMacroMesh(&mm3, "../test/unit-cube.msh");
   Detect2DMacroMesh(&mm3);
   BuildConnectivity(&mm3);
   CheckMacroMesh(&mm3, param);
@@ -57,7 +57,7 @@ int Test2DMeshDetection(void) {
   param[2] = 4;
 
   MacroMesh mm4;
-  ReadMacroMesh(&mm4, "test/testdisque.msh");
+  ReadMacroMesh(&mm4, "../test/testdisque.msh");
   Detect2DMacroMesh(&mm4);
   BuildConnectivity(&mm4);
   CheckMacroMesh(&mm4, param);

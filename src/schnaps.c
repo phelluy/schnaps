@@ -24,7 +24,7 @@ int main(int argc, char *argv[])
   char *bfluxdefault = "TransBoundaryFlux2d";
   char *initdatadefault = "TransInitData2d";
   char *imposeddatadefault = "TransImposedData2d";
-  char *mshdefault = "disque.msh";
+  char *mshdefault = "../disque.msh";
   int m = 1;
   bool writeout = true;
 

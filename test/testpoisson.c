@@ -58,7 +58,7 @@ int TestPoisson(void) {
   f.interp.interp_param[5] = 1;  // y direction refinement
   f.interp.interp_param[6] = 1;  // z direction refinement
   // read the gmsh file
-  ReadMacroMesh(&(f.macromesh),"test/testcube.msh");
+  ReadMacroMesh(&(f.macromesh),"../test/testcube.msh");
   // try to detect a 2d mesh
   //bool is1d=Detect1DMacroMesh(&(f.macromesh));
   Detect1DMacroMesh(&(f.macromesh));

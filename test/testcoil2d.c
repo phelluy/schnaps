@@ -82,7 +82,7 @@ int TestCoil2D(void)
   f.interp.interp_param[6] = 1; // z direction refinement
 
   // Read the gmsh file
-  ReadMacroMesh(&(f.macromesh), "test/testmacromesh.msh");
+  ReadMacroMesh(&(f.macromesh), "../test/testmacromesh.msh");
   // Try to detect a 2d mesh
   Detect2DMacroMesh(&(f.macromesh));
   assert(f.macromesh.is2d);

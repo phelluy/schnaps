@@ -26,7 +26,7 @@ int TestMacroFace(void){
   // 3D meshes"
   // test/testdisque.msh
 
-  char *mshname =  "test/disque2d.msh";
+  char *mshname =  "../test/disque2d.msh";
   
   ReadMacroMesh(&(f.macromesh), mshname);
 

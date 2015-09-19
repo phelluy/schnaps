@@ -40,7 +40,7 @@ int TestCache(void){
 
   set_vlasov_params(&(f.model));
 
-  ReadMacroMesh(&(f.macromesh),"test/testmacromesh.msh");
+  ReadMacroMesh(&(f.macromesh),"../test/testmacromesh.msh");
   // Try to detect a 2d mesh
   Detect2DMacroMesh(&(f.macromesh));
   assert(f.macromesh.is2d);  

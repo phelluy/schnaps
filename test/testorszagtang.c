@@ -111,7 +111,7 @@ int TestOrszagTang(int argc, char *argv[]) {
   //set_vlasov_params(&(f.model));
 
   // Read the gmsh file
-  ReadMacroMesh(&(f.macromesh), "test/testOTgrid.msh");
+  ReadMacroMesh(&(f.macromesh), "../test/testOTgrid.msh");
   // Try to detect a 2d mesh
   Detect2DMacroMesh(&(f.macromesh)); 
   bool is2d=f.macromesh.is2d; 

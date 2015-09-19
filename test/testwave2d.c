@@ -5,10 +5,10 @@
 #include "test.h"
 #include "collision.h"
 
-
 void TestPeriodic_Wave_ImposedData(const real *x, const real t, real *w);
 void TestPeriodic_Wave_InitData(real *x, real *w);
-void Wave_Upwind_BoundaryFlux(real *x, real t, real *wL, real *vnorm,real *flux);
+void Wave_Upwind_BoundaryFlux(real *x, real t, real *wL, real *vnorm,
+			      real *flux);
 void Wave_Upwind_NumFlux(real wL[],real wR[],real* vnorm,real* flux);
 
 #define _SPEED_WAVE (10)
@@ -54,7 +54,7 @@ int Test_Wave_Periodic(void) {
   f.interp.interp_param[6] = 1;  // z direction refinement
  // read the gmsh file
 
-  ReadMacroMesh(&(f.macromesh), "test/testcube.msh");
+  ReadMacroMesh(&(f.macromesh), "../test/testcube.msh");
 
   Detect2DMacroMesh(&(f.macromesh));
   assert(f.macromesh.is2d);

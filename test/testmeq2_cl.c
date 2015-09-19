@@ -52,7 +52,7 @@ int TestmEq2(void) {
   strcat(cl_buildoptions, buf);
 
   // Read the gmsh file
-  ReadMacroMesh(&(f.macromesh), "test/testcube.msh");
+  ReadMacroMesh(&(f.macromesh), "../test/testcube.msh");
 
   // Try to detect a 2d mesh
   Detect2DMacroMesh(&(f.macromesh));

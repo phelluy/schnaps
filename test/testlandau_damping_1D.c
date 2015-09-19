@@ -59,7 +59,7 @@ int TestLandau_Damping_1D(void) {
   f.interp.interp_param[5]=1;  // y direction refinement
   f.interp.interp_param[6]=1;  // z direction refinement
  // read the gmsh file
-  ReadMacroMesh(&(f.macromesh),"test/testcube.msh");
+  ReadMacroMesh(&(f.macromesh),"../test/testcube.msh");
   
   real A[3][3] = {{2.0*pi/k, 0, 0}, {0, 1, 0}, {0, 0,1}};
   real x0[3] = {0, 0, 0};

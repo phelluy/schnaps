@@ -37,7 +37,7 @@ int TestPICAccumulate(void)
   init_empty_field(&f);
   
   // test gmsh file reading
-  ReadMacroMesh(&(f.macromesh), "test/testmacromesh.msh");
+  ReadMacroMesh(&(f.macromesh), "../test/testmacromesh.msh");
   BuildConnectivity(&(f.macromesh));
   CheckMacroMesh(&(f.macromesh), param);
   //PrintMacroMesh(&m);

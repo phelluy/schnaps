@@ -26,7 +26,7 @@ int Testfield(void){
   f.interp.interp_param[5] = 2; // y direction refinement
   f.interp.interp_param[6] = 2; // z direction refinement
 
-  ReadMacroMesh(&(f.macromesh),"test/testmacromesh.msh");
+  ReadMacroMesh(&(f.macromesh),"../test/testmacromesh.msh");
   BuildConnectivity(&(f.macromesh));
 
   Initfield(&f);

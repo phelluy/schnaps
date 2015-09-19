@@ -112,7 +112,7 @@ int TestMHD(int argc, char *argv[]) {
 
   // Read the gmsh file
   //ReadMacroMesh(&(f.macromesh), "test/testcartesiangrid2d2.msh");
-  ReadMacroMesh(&(f.macromesh), "test/testOTgrid.msh");
+  ReadMacroMesh(&(f.macromesh), "../test/testOTgrid.msh");
   //ReadMacroMesh(&(f.macromesh), "test/testcube.msh");
   // Try to detect a 2d mesh
   Detect2DMacroMesh(&(f.macromesh)); 

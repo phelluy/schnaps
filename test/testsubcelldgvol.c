@@ -26,7 +26,7 @@ int TestfieldSubCellDGVol(void){
   f.interp.interp_param[5] = 2; // y direction refinement
   f.interp.interp_param[6] = 1; // z direction refinement
 
-  ReadMacroMesh(&f.macromesh, "test/testcube.msh");
+  ReadMacroMesh(&f.macromesh, "../test/testcube.msh");
   //ReadMacroMesh(&f.macromesh,"test/testdisque.msh");
   BuildConnectivity(&f.macromesh);
 

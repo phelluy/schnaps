@@ -17,7 +17,7 @@ int TestGeometry(void){
   int test = true;
   MacroMesh mc;
 
-  ReadMacroMesh(&mc,"test/testgeometry.msh");
+  ReadMacroMesh(&mc,"../test/testgeometry.msh");
   BuildConnectivity(&mc);
   PrintMacroMesh(&mc);
 

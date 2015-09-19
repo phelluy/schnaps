@@ -35,7 +35,7 @@ int TestDtfield3D_CL(void){
   f.interp.interp_param[5] = 4; // y direction refinement
   f.interp.interp_param[6] = 4; // z direction refinement
 
-  ReadMacroMesh(&(f.macromesh), "test/testcube.msh");
+  ReadMacroMesh(&(f.macromesh), "../test/testcube.msh");
 
   // FIXME: temp
   /* Detect2DMacroMesh(&(f.macromesh)); */

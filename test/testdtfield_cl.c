@@ -35,7 +35,7 @@ int TestDtfield_CL(void){
   // test/testmacromesh.msh
   // test/unit-cube.msh
 
-  char *mshname = "test/disque2d.msh";
+  char *mshname = "../test/disque2d.msh";
   //char *mshname = "test/unit-cube.msh";
   
   ReadMacroMesh(&(f.macromesh), mshname);

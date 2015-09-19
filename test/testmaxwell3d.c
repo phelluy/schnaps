@@ -27,7 +27,7 @@ int TestMaxwell3D()
   f.interp.interp_param[5] = 2; // y direction refinement
   f.interp.interp_param[6] = 2; // z direction refinement
 
-  ReadMacroMesh(&(f.macromesh), "test/testcube.msh");
+  ReadMacroMesh(&(f.macromesh), "../test/testcube.msh");
 
   // FIXME: temp
   /* Detect2DMacroMesh(&(f.macromesh)); */

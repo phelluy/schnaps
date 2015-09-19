@@ -21,7 +21,7 @@ int TestMacroMesh(void)
   int param[]={4, 4, 4, 1, 1, 1, 0};
   
   // test gmsh file reading
-  ReadMacroMesh(&m, "test/testmacromesh.msh");
+  ReadMacroMesh(&m, "../test/testmacromesh.msh");
   BuildConnectivity(&m);
   CheckMacroMesh(&m, param);
   PrintMacroMesh(&m);
