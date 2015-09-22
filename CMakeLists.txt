@@ -160,428 +160,47 @@ add_executable(
 target_link_libraries(schnaps ${LIBS})
 add_test(schnaps schnaps)
 
-# list of tests
-add_executable(
-  testmacromesh
-  test/test.h
-  test/testmacromesh.c
-  )
-target_link_libraries(testmacromesh ${LIBS})
-add_test(testmacromesh testmacromesh)
 
-add_executable(
-  testgeometry
-  test/test.h
-  test/testgeometry.c
-  )
-target_link_libraries(testgeometry ${LIBS})
-add_test(testgeometry testgeometry)
+# Find all of the files ending in .c in the test directory
+file(GLOB globtest test/*.c)
+MESSAGE(STATUS "globtest")
+foreach(test IN LISTS globtest)
+  string(REPLACE  ".c"  ""  test  ${test})
+  string(REGEX REPLACE  "([^/]+$)"  ""  dir  ${test})
+  string(REPLACE  ${dir}  ""  test  ${test})
+  #MESSAGE(STATUS ${test})
+  list(APPEND testlist ${test})
+endforeach(test)
 
-add_executable(
-  testinterpolation
-  test/test.h
-  test/testinterpolation.c
-  )
-target_link_libraries(testinterpolation ${LIBS})
-add_test(testinterpolation testinterpolation)
-
-add_executable(
-  testmodel
-  test/test.h
-  test/testmodel.c
-  )
-target_link_libraries(testmodel ${LIBS})
-
-add_test(testfield testfield)
-add_executable(
-  testfield
-  test/test.h
-  test/testfield.c
-  )
-target_link_libraries(testfield ${LIBS})
-add_test(testfield testfield)
-
-add_test(testfielddg testfielddg)
-add_executable(
-  testfielddg
-  test/test.h
-  test/testfielddg.c
-  )
-target_link_libraries(testfielddg ${LIBS})
-add_test(testfielddg testfielddg)
-
-add_test(testfieldrk2 testfieldrk2)
-add_executable(
-  testfieldrk2
-  test/test.h
-  test/testfieldrk2.c
-  )
-target_link_libraries(testfieldrk2 ${LIBS})
-add_test(testfieldrk2 testfieldrk2)
-
-add_test(testfieldrk4 testfieldrk4)
-add_executable(
-  testfieldrk4
-  test/test.h
-  test/testfieldrk4.c
-  )
-target_link_libraries(testfieldrk4 ${LIBS})
-add_test(testfieldrk4 testfieldrk4)
-
-add_test(test2dmeshdetection test2dmeshdetection)
-add_executable(
-  test2dmeshdetection
-  test/test.h
-  test/test2dmeshdetection.c
-  )
-target_link_libraries(test2dmeshdetection ${LIBS})
-add_test(test2dmeshdetection test2dmeshdetection)
-
-add_test(testfieldrk2-2d testfieldrk2-2d)
-add_executable(
-  testfieldrk2-2d
-  test/test.h
-  test/testfieldrk2-2d.c
-  )
-target_link_libraries(testfieldrk2-2d ${LIBS})
-add_test(testfieldrk2-2d testfieldrk2-2d)
-
-add_test(testsubcelldgvol testsubcelldgvol)
-add_executable(
-  testsubcelldgvol
-  test/test.h
-  test/testsubcelldgvol.c
-  )
-target_link_libraries(testsubcelldgvol ${LIBS})
-add_test(testsubcelldgvol testsubcelldgvol)
-
-add_test(testfieldrk2-2d-subcell testfieldrk2-2d-subcell)
-
-add_executable(
-  testfieldrk2-2d-subcell
-  test/test.h
-  test/testfieldrk2-2d-subcell.c
-  )
-target_link_libraries(testfieldrk2-2d-subcell ${LIBS})
-add_test(testfieldrk2-2d-subcell testfieldrk2-2d-subcell)
-
-add_test(testmeq2 testmeq2)
-add_executable(
-  testmeq2
-  test/test.h
-  test/testmeq2.c
-  )
-target_link_libraries(testmeq2 ${LIBS})
-add_test(testmeq2 testmeq2)
-
-add_executable(
-  testgyro
-  test/test.h
-  test/testgyro.c
-  )
-target_link_libraries(testgyro ${LIBS})
-add_test(testgyro testgyro)
-
-add_executable(
-  testpic
-  test/test.h
-  test/testpic.c
-  )
-target_link_libraries(testpic ${LIBS})
-add_test(testpic testpic)
-
-add_executable(
-  testcoil2d
-  test/test.h
-  test/testcoil2d.c
-  )
-target_link_libraries(testcoil2d ${LIBS})
-add_test(testcoil2d testcoil2d)
-
-#add_test(testpic testpic)
-add_executable(
-  testpic_accumulate
-  test/test.h
-  test/testpic_accumulate.c
-  )
-target_link_libraries(testpic_accumulate ${LIBS})
-add_test(testpic_accumulate testpic_accumulate)
-
-add_executable(
-  testperiodic
-  test/test.h
-  test/testperiodic.c
-)
-target_link_libraries(testperiodic ${LIBS})
-add_test(testperiodic testperiodic)
-
-
-add_test(testskyline testskyline)
-add_executable(
-  testskyline
-  test/test.h
-  test/testskyline.c
-  )
-target_link_libraries(testskyline ${LIBS})
-add_test(testskyline testskyline)
-
-
-add_executable(
-  testpoisson
-  test/test.h
-  test/testpoisson.c
-)
-target_link_libraries(testpoisson ${LIBS})
-add_test(testpoisson testpoisson)
-
-add_executable(
-  testpoisson2d
-  test/test.h
-  test/testpoisson2d.c
-)
-target_link_libraries(testpoisson2d ${LIBS})
-add_test(testpoisson2d testpoisson2d)
-
-add_executable(
-  test_transportvp
-  test/test.h
-  test/test_transportvp.c
-)
-target_link_libraries(test_transportvp ${LIBS})
-add_test(test_transportvp test_transportvp)
-
-add_executable(
-  testlandau_damping_1D
-  test/test.h
-  test/testlandau_damping_1D.c
-)
-target_link_libraries(testlandau_damping_1D ${LIBS})
-# This test is too slow.  Please re-enable after decreasing execution time.
-#add_test(testlandau_damping_1D testlandau_damping_1D)
-
-
- add_executable(
-    testwave2d
-    test/test.h
-    test/testwave2d.c
-    )
-  target_link_libraries(testwave2d ${LIBS})
-
-##########  OpenCL unit tests  ##########
-if(OPENCL_FOUND)
-  add_test(testclinfo testclinfo)
+foreach(test IN LISTS testlist)
+  MESSAGE(STATUS "Adding test " ${test})
   add_executable(
-    testclinfo
+    ${test}
     test/test.h
-    test/testclinfo.c
+    test/${test}.c
     )
-  target_link_libraries(testclinfo ${LIBS})
+  target_link_libraries(${test} ${LIBS})
+  add_test(${test} ${test})
+endforeach(test)
 
-  add_test(testmanyv testmanyv)
+
+# Find all of the files ending in .c in the example directory
+file(GLOB globexample example/*.c)
+MESSAGE(STATUS "globexample")
+foreach(example IN LISTS globexample)
+  string(REPLACE  ".c"  ""  example  ${example})
+  string(REGEX REPLACE  "([^/]+$)"  ""  dir  ${example})
+  string(REPLACE  ${dir}  ""  example  ${example})
+  #MESSAGE(STATUS ${example})
+  list(APPEND examplelist ${example})
+endforeach(example)
+
+foreach(example IN LISTS examplelist)
+  MESSAGE(STATUS "Adding example " ${example})
   add_executable(
-    testmanyv
+    ${example}
     test/test.h
-    test/testmanyv.c
+    example/${example}.c
     )
-  target_link_libraries(testmanyv ${LIBS})
-  add_test(testmanyv testmanyv)
-
-  add_test(testdtfield_cl testdtfield_cl)
-  add_executable(
-    testdtfield_cl
-    test/test.h
-    test/testdtfield_cl.c
-    )
-  target_link_libraries(testdtfield_cl ${LIBS})
-
-  add_test(testdtfield_3dcl testdtfield3d_cl)
-  add_executable(
-    testdtfield3d_cl
-    test/test.h
-    test/testdtfield3d_cl.c
-    )
-  target_link_libraries(testdtfield3d_cl ${LIBS})
-
-  add_test(testcache_cl testcache_cl)
-  add_executable(
-    testcache_cl
-    test/test.h
-    test/testcache_cl.c
-    )
-  target_link_libraries(testcache_cl ${LIBS})
-
-  add_test(testmacrocellinterface testmacrocellinterface)
-  add_executable(
-    testmacrocellinterface
-    test/test.h
-    test/testmacrocellinterface.c
-    )
-  target_link_libraries(testmacrocellinterface ${LIBS})
-
-  add_test(testfieldrk4_cl testfieldrk4_cl)
-  add_executable(
-    testfieldrk4_cl
-    test/test.h
-    test/testfieldrk4_cl.c
-    )
-  target_link_libraries(testfieldrk4_cl ${LIBS})
-
-  add_test(testkernelinterface testkernelinterface)
-  add_executable(
-    testkernelinterface
-    test/test.h
-    test/testkernelinterface.c
-    )
-  target_link_libraries(testkernelinterface ${LIBS})
-
-  add_test(testfieldrk2_cl testfieldrk2_cl)
-  add_executable(
-    testfieldrk2_cl
-    test/test.h
-    test/testfieldrk2_cl.c
-    )
-  target_link_libraries(testfieldrk2_cl ${LIBS})
-
-  add_test(testkernel testkernel)
-  add_executable(
-    testkernel
-    test/test.h
-    test/testkernel.c
-    )
-  target_link_libraries(testkernel ${LIBS})
-
-  add_test(testkernelvolume testkernelvolume)
-  add_executable(
-    testkernelvolume
-    test/test.h
-    test/testkernelvolume.c
-    )
-  target_link_libraries(testkernelvolume ${LIBS})
-
-  add_test(testkernelflux testkernelflux)
-  add_executable(
-    testkernelflux
-    test/test.h
-    test/testkernelflux.c
-    )
-  target_link_libraries(testkernelflux ${LIBS})
-
-  add_test(testmeq2_cl testmeq2_cl)
-  add_executable(
-    testmeq2_cl
-    test/test.h
-    test/testmeq2_cl.c
-    )
-  target_link_libraries(testmeq2_cl ${LIBS})
-
-  add_executable(
-    testmaxwell2d
-    test/test.h
-    test/testmaxwell2d.c
-    )
-  target_link_libraries(testmaxwell2d ${LIBS})
-  add_test(testmaxwell2d testmaxwell2d)
-
-  add_executable(
-    testmaxwell3d
-    test/test.h
-    test/testmaxwell3d.c
-    )
-  target_link_libraries(testmaxwell3d ${LIBS})
-  add_test(testmaxwell3d testmaxwell3d)
-  
-  add_test(testmhd testmhd)
-  add_executable(
-    testmhd
-    test/test.h
-    test/testmhd.c
-    )
-  target_link_libraries(testmhd ${LIBS})
-  
-  add_test(testmhd1d testmhd1d)
-  add_executable(
-    testmhd1d
-    test/test.h
-    test/testmhd1d.c
-    )
-  target_link_libraries(testmhd1d ${LIBS})
-
-  add_test(testorszagtang testorszagtang)
-  add_executable(
-    testorszagtang
-    test/test.h
-    test/testorszagtang.c
-    )
-  target_link_libraries(testorszagtang ${LIBS})
-
-  add_test(testreconnexion testreconnexion)
-  add_executable(
-    testreconnexion
-    test/test.h
-    test/testreconnexion.c
-    )
-  target_link_libraries(testreconnexion ${LIBS})
-
-  add_test(testkelvinhelmotz testkelvinhelmotz)
-  add_executable(
-    testkelvinhelmotz
-    test/test.h
-    test/testkelvinhelmotz.c
-    )
-  target_link_libraries(testkelvinhelmotz ${LIBS})
-
-  add_test(testdoubletearing testdoubletearing)
-  add_executable(
-    testdoubletearing
-    test/test.h
-    test/testdoubletearing.c
-    )
-  target_link_libraries(testdoubletearing ${LIBS})
-
-
-endif(OPENCL_FOUND)
-
-
-IF(BUILD_PARALUTION)
-
-
-  SET(MATRIX_FILE gr_30_30.mtx)
-
-  IF(EXISTS ${MATRIX_FILE})
-  ELSE()
-    FILE(DOWNLOAD "ftp://math.nist.gov/pub/MatrixMarket2/Harwell-Boeing/laplace/${MATRIX_FILE}.gz" 
-                  ${CMAKE_BINARY_DIR}/${MATRIX_FILE}.gz)
-
-    FIND_PROGRAM(GZIP_TOOL
-               NAMES gzip
-               PATHS /bin /usr/bin /usr/local/bin /opt/local/bin)
-
-    EXECUTE_PROCESS( COMMAND ${GZIP_TOOL} -d ${MATRIX_FILE}.gz
-                     WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
-  ENDIF()
-
-  ADD_EXECUTABLE(paralution_cg test/cg.cpp)
-  TARGET_LINK_LIBRARIES(paralution_cg paralution)
-
-  ADD_TEST(NAME testparalution COMMAND paralution_cg ${MATRIX_FILE} 4)
-
- add_executable(
-  testlinearsolver
-  test/test.h
-  test/testlinearsolver.c
-  )
-target_link_libraries(testlinearsolver paralution_c ${LIBS})
-add_test(testlinearsolver testlinearsolver)
-
-ELSE()
-
- add_executable(
-  testlinearsolver
-  test/test.h
-  test/testlinearsolver.c
-  )
-target_link_libraries(testlinearsolver ${LIBS})
-add_test(testlinearsolver testlinearsolver)
-
-
-ENDIF()
+  target_link_libraries(${example} ${LIBS})
+endforeach(example)

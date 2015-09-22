@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
-#include "test.h"
+#include "../test/test.h"
 #include "collision.h"
 
 void TestPeriodic_Wave_ImposedData(const real *x, const real t, real *w);

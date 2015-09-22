@@ -1,7 +1,7 @@
 #include "schnaps.h"
 #include <stdio.h>
 #include <assert.h>
-#include "test.h"
+#include "../test/test.h"
 #include "getopt.h"
 #include <stdlib.h>     /* atoi */
 #include "mhd.h"

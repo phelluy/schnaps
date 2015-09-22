@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
-#include "test.h"
+#include "../test/test.h"
 #include "collision.h"
 #include "quantities_vp.h"
 #include "diagnostics_vp.h"
