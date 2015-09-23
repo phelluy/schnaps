@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
-#include "test.h"
+#include "../test/test.h"
 #include "collision.h"
 #include "quantities_vp.h"
 #include "diagnostics_vp.h"
@@ -17,8 +17,8 @@ void Test_TransportVP_BoundaryFlux(real *x, real t, real *wL, real *vnorm,
 void UpdateVlasovPoisson(void *field, real *w);
 void PlotVlasovPoisson(void *vf, real *w);
 
-int main(void) {
-  
+int main()
+{
   // unit tests
     
   int resu = Test_TransportVP();
@@ -29,8 +29,8 @@ int main(void) {
   return !resu;
 } 
 
-int Test_TransportVP(void) {
-
+int Test_TransportVP()
+{
   bool test = true;
 
   field f;
@@ -38,7 +38,8 @@ int Test_TransportVP(void) {
 
   int vec=1;
   
-  f.model.m=_INDEX_MAX; // num of conservative variables f(vi) for each vi, phi, E, rho, u, p, e (ou T)
+  f.model.m=_INDEX_MAX; // num of conservative variables f(vi) for
+			// each vi, phi, E, rho, u, p, e (ou T)
   f.model.NumFlux=VlasovP_Lagrangian_NumFlux;
  
   //f.model.Source = NULL;
@@ -56,7 +57,7 @@ int Test_TransportVP(void) {
   f.interp.interp_param[4] = 16;  // x direction refinement
   f.interp.interp_param[5] = 1;  // y direction refinement
   f.interp.interp_param[6] = 1;  // z direction refinement
- // read the gmsh file
+  // read the gmsh file
   ReadMacroMesh(&(f.macromesh), "../test/testcube.msh");
   // try to detect a 2d mesh
   Detect1DMacroMesh(&(f.macromesh));
@@ -87,7 +88,7 @@ int Test_TransportVP(void) {
   RK2(&f, tmax, dt);
   //RK2(&f,0.03,0.05);
 
-   // save the results and the error
+  // save the results and the error
   int iel = 2 * _NB_ELEM_V / 3;
   int iloc = _DEG_V;
   printf("Trace vi=%f\n", -_VMAX + iel * _DV + _DV * glop(_DEG_V, iloc));
@@ -138,7 +139,7 @@ real TransportVP_ImposedKinetic_Data(const real *x, const real t, real v) {
 }
 
 void Test_TransportVP_BoundaryFlux(real *x, real t, real *wL, real *vnorm,
-				       real *flux) {
+				   real *flux) {
   real wR[_INDEX_MAX];
   Test_TransportVP_ImposedData(x , t, wR);
   VlasovP_Lagrangian_NumFlux(wL, wR, vnorm, flux);
