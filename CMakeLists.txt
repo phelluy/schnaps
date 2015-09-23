@@ -162,6 +162,7 @@ add_test(schnaps schnaps)
 
 
 # Find all of the files ending in .c in the test directory
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "test/")
 file(GLOB globtest test/*.c)
 MESSAGE(STATUS "globtest")
 foreach(test IN LISTS globtest)
@@ -180,11 +181,12 @@ foreach(test IN LISTS testlist)
     test/${test}.c
     )
   target_link_libraries(${test} ${LIBS})
-  add_test(${test} ${test})
+  add_test(test/${test} test/${test})
 endforeach(test)
 
 
 # Find all of the files ending in .c in the example directory
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "example/")
 file(GLOB globexample example/*.c)
 MESSAGE(STATUS "globexample")
 foreach(example IN LISTS globexample)
