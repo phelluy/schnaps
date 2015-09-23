@@ -3,7 +3,8 @@
 #include <assert.h>
 #include "test.h"
 
-int TestmEq2(void) {
+int TestmEq2()
+{
   bool test = true;
   field f;
   init_empty_field(&f);
@@ -61,8 +62,8 @@ int TestmEq2(void) {
   RK2(&f, tmax, dt);
  
   // Save the results and the error
-  Plotfield(0, false, &f, NULL, "dgvisu.msh");
-  Plotfield(0, true, &f, "error", "dgerror.msh");
+  /* Plotfield(0, false, &f, NULL, "dgvisu.msh"); */
+  /* Plotfield(0, true, &f, "error", "dgerror.msh"); */
 
   real dd = L2error(&f);
   real tolerance = 1e-4;
@@ -70,7 +71,7 @@ int TestmEq2(void) {
   printf("L2 error: %f\n", dd);
 
   return test;
-};
+}
 
 int main(void) {
   int resu = TestmEq2();

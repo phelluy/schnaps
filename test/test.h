@@ -37,10 +37,6 @@ int TestMHD(int argc, char *argv[]);
 
 int TestMHD1D(int argc, char *argv[]);
 
-int TestPIC(void);
-
-int TestPICAccumulate(void);
-
 int TestPeriodic(void);
 
 int TestSkyline(void);

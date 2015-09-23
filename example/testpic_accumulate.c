@@ -2,16 +2,7 @@
 #include <math.h>
 #include <assert.h>
 
-#include "test.h"
 #include "schnaps.h"
-
-int main(void) {
-  // Unit tests
-  int resu=TestPICAccumulate();
-  if (resu) printf("PIC accumulate test OK !\n");
-  else printf("PIC accumulate  test failed !\n");
-  return !resu;
-} 
 
 void Maxwell2DConstInitData(real x[3], real w[]) {
   w[0]=0;
@@ -102,3 +93,11 @@ int TestPICAccumulate(void)
 
   return test;
 }
+
+int main(void) {
+  // Unit tests
+  int resu=TestPICAccumulate();
+  if (resu) printf("PIC accumulate test OK !\n");
+  else printf("PIC accumulate  test failed !\n");
+  return !resu;
+} 

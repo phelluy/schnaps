@@ -4,7 +4,8 @@
 #include <assert.h>
 #include <math.h>
 
-int TestfieldRK2_CL(void){
+int TestfieldRK2_CL()
+{
   int test = true;
 
   if(!cldevice_is_acceptable(nplatform_cl, ndevice_cl)) {

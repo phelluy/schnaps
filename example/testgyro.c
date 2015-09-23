@@ -1,13 +1,12 @@
 #include "schnaps.h"
 #include <stdio.h>
 #include <assert.h>
-#include "test.h"
+#include "../test/test.h"
 #include "gyro.h"
 
-
-
-int main(void) {
-  
+int main(void)
+{
+ 
   // unit tests
     
   int resu=TestGyro();
@@ -18,8 +17,8 @@ int main(void) {
   return !resu;
 } 
 
-
-int TestGyro(void) {
+int TestGyro()
+{
 
   bool test=true;
 

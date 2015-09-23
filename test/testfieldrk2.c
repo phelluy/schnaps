@@ -103,8 +103,8 @@ int TestfieldRK2(void){
   real dt = 0;
   RK2(&f, tmax, dt);
  
-  Plotfield(0, false, &f, NULL, "dgvisu.msh");
-  Plotfield(0, true , &f, "error", "dgerror.msh");
+  //Plotfield(0, false, &f, NULL, "dgvisu.msh");
+  //Plotfield(0, true , &f, "error", "dgerror.msh");
 
   real dd = L2error(&f);
 

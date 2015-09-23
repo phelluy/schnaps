@@ -1,7 +1,6 @@
 #include "schnaps.h"
 #include <stdio.h>
 #include <assert.h>
-#include "test.h"
 #include "maxwell.h"
 
 void Coil2DImposedData(const real x[3],const real t,real w[])
@@ -82,9 +81,9 @@ int TestCoil2D(void)
   f.interp.interp_param[6] = 1; // z direction refinement
 
   // Read the gmsh file
-  ReadMacroMesh(&(f.macromesh), "../test/testmacromesh.msh");
+  ReadMacroMesh(&f.macromesh, "../test/testmacromesh.msh");
   // Try to detect a 2d mesh
-  Detect2DMacroMesh(&(f.macromesh));
+  Detect2DMacroMesh(&f.macromesh);
   assert(f.macromesh.is2d);
 
   // Mesh preparation
@@ -122,8 +121,8 @@ int TestCoil2D(void)
   RK2(&f, tmax, dt);
  
   // Save the results and the error
-  Plotfield(2, false, &f, NULL, "dgvisu.msh");
-  Plotfield(2, true, &f, "error", "dgerror.msh");
+  //Plotfield(2, false, &f, NULL, "dgvisu.msh");
+  //Plotfield(2, true, &f, "error", "dgerror.msh");
 
   real dd = L2error(&f);
   real tolerance = 0.3;

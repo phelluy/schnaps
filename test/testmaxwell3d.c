@@ -71,8 +71,8 @@ int TestMaxwell3D()
 #endif
 
   // Save the results and the error
-  Plotfield(0, false, &f, NULL, "dgvisu.msh");
-  Plotfield(0, true, &f, "error", "dgerror.msh");
+  /* Plotfield(0, false, &f, NULL, "dgvisu.msh"); */
+  /* Plotfield(0, true, &f, "error", "dgerror.msh"); */
 
   real dd = L2error(&f);
   real tolerance = 0.08;

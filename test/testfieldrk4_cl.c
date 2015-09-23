@@ -23,9 +23,9 @@ int TestfieldRK4_CL(void){
 
   char *mshname =  "../test/disque2d.msh";
   
-  ReadMacroMesh(&(f.macromesh), mshname);
-  Detect2DMacroMesh(&(f.macromesh));
-  BuildConnectivity(&(f.macromesh));
+  ReadMacroMesh(&f.macromesh, mshname);
+  Detect2DMacroMesh(&f.macromesh);
+  BuildConnectivity(&f.macromesh);
 
   /* f.model.cfl = 0.05; */
   /* f.model.m = 1; */
@@ -97,8 +97,8 @@ int TestfieldRK4_CL(void){
 
   CopyfieldtoCPU(&f);
     
-  Plotfield(0, false, &f, NULL, "dgvisu.msh");
-  Plotfield(0, true , &f, "error", "dgerror.msh");
+  /* Plotfield(0, false, &f, NULL, "dgvisu.msh"); */
+  /* Plotfield(0, true , &f, "error", "dgerror.msh"); */
 
   real dd = L2error(&f);
 

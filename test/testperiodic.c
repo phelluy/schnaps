@@ -13,7 +13,8 @@ void TestPeriodic_InitData(real *x, real *w);
 void TestPeriodic_BoundaryFlux(real *x, real t, real *wL, real *vnorm,
 			       real *flux);
 
-int main(void) {
+int main()
+{
   // unit tests
     
   int resu = TestPeriodic();
@@ -81,8 +82,8 @@ int TestPeriodic(void) {
   RK2(&f, tmax, dt);
  
   // save the results and the error
-  Plotfield(0, false, &f, "sol","dgvisu.msh");
-  Plotfield(0, true, &f, "error","dgerror.msh");
+  /* Plotfield(0, false, &f, "sol","dgvisu.msh"); */
+  /* Plotfield(0, true, &f, "error","dgerror.msh"); */
 
   real dd = L2error(&f);
   real dd_Kinetic = L2_Kinetic_error(&f);

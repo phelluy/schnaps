@@ -154,8 +154,8 @@ int TestMHD(int argc, char *argv[]) {
     //executiontime = seconds() - executiontime;
   }
 
-  Plotfield(0,false,&f, "Rho", "rho.msh");
-  Plotfield(2,false,&f, "P", "p.msh");
+  //Plotfield(0,false,&f, "Rho", "rho.msh");
+  //Plotfield(2,false,&f, "P", "p.msh");
   //Gnuplot(&f,0,0.0,"data1D.dat");
 
 

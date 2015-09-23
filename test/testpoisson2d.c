@@ -107,8 +107,8 @@ int TestPoisson2d(void)
   printf("Plot...\n");
 
 
-  Plotfield(_INDEX_PHI, false, &f, NULL, "dgvisu.msh");
-  Plotfield(_INDEX_EX, false, &f, NULL, "dgex.msh");
+  /* Plotfield(_INDEX_PHI, false, &f, NULL, "dgvisu.msh"); */
+  /* Plotfield(_INDEX_EX, false, &f, NULL, "dgex.msh"); */
 
 
   return test;

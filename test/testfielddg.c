@@ -4,9 +4,8 @@
 #include <assert.h>
 #include <math.h>
 
-
-int TestfieldDG(void){
-
+int TestfieldDG()
+{
   int test = true;
 
   field f;
@@ -44,8 +43,8 @@ int TestfieldDG(void){
   
   Displayfield(&f);
 
-  Plotfield(0, false, &f, NULL, "visu.msh");
-  Plotfield(0, true, &f, "error", "error.msh");
+  /* Plotfield(0, false, &f, NULL, "visu.msh"); */
+  /* Plotfield(0, true, &f, "error", "error.msh"); */
 
   // Test the time derivative with the exact solution
   for(int i = 0; 

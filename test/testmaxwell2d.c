@@ -4,7 +4,8 @@
 #include "test.h"
 #include <string.h>
 
-int TestMaxwell2D(void) {
+int TestMaxwell2D()
+{
   bool test = true;
   field f;
   init_empty_field(&f);
@@ -69,8 +70,8 @@ int TestMaxwell2D(void) {
 #endif
 
   // Save the results and the error
-  Plotfield(0, false, &f, NULL, "dgvisu.msh");
-  Plotfield(0, true, &f, "error", "dgerror.msh");
+  /* Plotfield(0, false, &f, NULL, "dgvisu.msh"); */
+  /* Plotfield(0, true, &f, "error", "dgerror.msh"); */
 
   real dd = L2error(&f);
   real tolerance = 1.1e-2;

@@ -1,16 +1,17 @@
 #include "test.h"
 #include "schnaps.h"
-#include<stdio.h>
+#include <stdio.h>
 #include <assert.h>
 #include <math.h>
 
-int TestfieldRK2_2D(void) {
+int TestfieldRK2_2D()
+{
   bool test = true;
   field f;
   init_empty_field(&f);
 
   f.model.cfl = 0.05;
-  f.model.m = 1; // only one conservative variable
+  f.model.m = 1;
   f.model.NumFlux = TransNumFlux2d;
   f.model.BoundaryFlux = TransBoundaryFlux2d;
   f.model.InitData = TransInitData2d;
@@ -25,27 +26,24 @@ int TestfieldRK2_2D(void) {
   f.interp.interp_param[5] = 1; // y direction refinement
   f.interp.interp_param[6] = 1; // z direction refinement
 
-  ReadMacroMesh(&(f.macromesh), "../test/testdisque2d.msh");
-  Detect2DMacroMesh(&(f.macromesh));
-  // require a 2d computation
+  ReadMacroMesh(&f.macromesh, "../test/testdisque2d.msh");
+  Detect2DMacroMesh(&f.macromesh);
   assert(f.macromesh.is2d);
-  BuildConnectivity(&(f.macromesh));
-
-  //AffineMapMacroMesh(&(f.macromesh));
+  BuildConnectivity(&f.macromesh);
   
   Initfield(&f);
 
-  CheckMacroMesh(&(f.macromesh), f.interp.interp_param + 1);
+  CheckMacroMesh(&f.macromesh, f.interp.interp_param + 1);
 
   printf("cfl param =%f\n",f.hmin);
 
-  real tmax = 0.2;
+  real tmax = 0.1;
   f.vmax=1;
   real dt = 0;
   RK2(&f, tmax, dt);
  
-  Plotfield(0, false, &f, NULL, "dgvisu.msh");
-  Plotfield(0, true, &f, "error", "dgerror.msh");
+  //Plotfield(0, false, &f, NULL, "dgvisu.msh");
+  //Plotfield(0, true, &f, "error", "dgerror.msh");
 
   real dd = L2error(&f);
 
@@ -56,7 +54,8 @@ int TestfieldRK2_2D(void) {
   return test;
 }
 
-int main(void) {
+int main()
+{
   int resu = TestfieldRK2_2D();
   if (resu) 
     printf("field RK2 2D test OK !\n");

@@ -18,7 +18,8 @@
 //  return (real)ts.tv_sec + 1e-9 * (real)ts.tv_nsec;
 //}
 
-int main(int argc, char *argv[]) {
+int main(int argc, char *argv[])
+{
   int resu = TestMHD1D(argc,argv);
   if (resu)
     printf("MHD 1D test OK !\n");
@@ -104,29 +105,29 @@ int TestMHD1D(int argc, char *argv[]) {
   f.interp.interp_param[6] = 1; // z direction refinement
 
 
-  //set_vlasov_params(&(f.model));
+  //set_vlasov_params(&f.model);
 
   // Read the gmsh file
-  ReadMacroMesh(&(f.macromesh), "../test/testcartesiangrid1d.msh");
-  //ReadMacroMesh(&(f.macromesh), "test/testcube.msh");
+  ReadMacroMesh(&f.macromesh, "../test/testcartesiangrid1d.msh");
+  //ReadMacroMesh(&f.macromesh, "test/testcube.msh");
   // Try to detect a 2d mesh
-  Detect1DMacroMesh(&(f.macromesh));
+  Detect1DMacroMesh(&f.macromesh);
   bool is1d=f.macromesh.is1d; 
   assert(is1d);  
 
   f.macromesh.period[0]=10;
   
   // Mesh preparation
-  BuildConnectivity(&(f.macromesh));
+  BuildConnectivity(&f.macromesh);
 
   // Prepare the initial fields
   Initfield(&f);
 
   
   // Prudence...
-  CheckMacroMesh(&(f.macromesh), f.interp.interp_param + 1);
+  CheckMacroMesh(&f.macromesh, f.interp.interp_param + 1);
 
-  Plotfield(0, (1==0), &f, "Rho", "dginit.msh");
+  //Plotfield(0, (1==0), &f, "Rho", "dginit.msh");
 
   f.vmax=vmax;
 
@@ -147,7 +148,7 @@ int TestMHD1D(int argc, char *argv[]) {
     //executiontime = seconds() - executiontime;
   }
 
-  Plotfield(0,false,&f, "Rho", "dgvisu.msh");
+  //Plotfield(0,false,&f, "Rho", "dgvisu.msh");
   //Gnuplot(&f,0,0.0,"data1D.dat");
 
   printf("tmax: %f, cfl: %f\n", tmax, f.model.cfl);

@@ -249,19 +249,16 @@ void AccumulateParticles(void *fv, real *w){
       imem = f->varindex(f->interp_param, ie, ib, iv);
       w[imem] += pic->xv[6 * i + 4] * psi / wpg * pic->weight;
     }
-      
-    
-    
     
   nexti:  
     assert(1==1);
   }
-  
 }
 
-
-
-void PlotParticles(PIC* pic,MacroMesh *m){
+void PlotParticles(PIC* pic,MacroMesh *m)
+{
+  // FIXME: the output filenames should be specified.
+  // FIXME: the output files should be closed at some point.
   
   FILE * gmshfile;
   FILE * gnufile;

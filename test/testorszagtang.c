@@ -108,12 +108,12 @@ int TestOrszagTang(int argc, char *argv[]) {
   f.interp.interp_param[6] = 1; // z direction refinement
 
 
-  //set_vlasov_params(&(f.model));
+  //set_vlasov_params(&f.model);
 
   // Read the gmsh file
-  ReadMacroMesh(&(f.macromesh), "../test/testOTgrid.msh");
+  ReadMacroMesh(&f.macromesh, "../test/testOTgrid.msh");
   // Try to detect a 2d mesh
-  Detect2DMacroMesh(&(f.macromesh)); 
+  Detect2DMacroMesh(&f.macromesh); 
   bool is2d=f.macromesh.is2d; 
   assert(is2d);  
 
@@ -121,14 +121,14 @@ int TestOrszagTang(int argc, char *argv[]) {
   f.macromesh.period[1]=periodsize;
   
   // Mesh preparation
-  BuildConnectivity(&(f.macromesh));
+  BuildConnectivity(&f.macromesh);
 
   // Prepare the initial fields
   Initfield(&f);
 
   
   // Prudence...
-  CheckMacroMesh(&(f.macromesh), f.interp.interp_param + 1);
+  CheckMacroMesh(&f.macromesh, f.interp.interp_param + 1);
 
   //Plotfield(0, (1==0), &f, "Rho", "dginit.msh");
 
@@ -148,7 +148,7 @@ int TestOrszagTang(int argc, char *argv[]) {
     RK4(&f, tmax, dt);
   }
 
-  Plotfield(0,false,&f, "Rho", "dgvisu.msh");
+  //Plotfield(0,false,&f, "Rho", "dgvisu.msh");
   //Gnuplot(&f,0,0.0,"data1D.dat");
 
 
