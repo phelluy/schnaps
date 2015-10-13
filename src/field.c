@@ -464,22 +464,13 @@ void Initfield(field *f) {
   f->mface = calloc(f->macromesh.nbfaces, sizeof(MacroFace));
   for(int ifa = 0; ifa < f->macromesh.nbfaces; ifa++) {
     f->mface[ifa].ifa = ifa;
-
-    // FIXME: remove
-    f->mface[ifa].first = ifa;
-    f->mface[ifa].last_p1 = ifa + 1;
   }
 
   // Allocate and set MacroCells
   f->mcell = calloc(f->macromesh.nbelems, sizeof(MacroCell));
   for(int ie = 0; ie < f->macromesh.nbelems; ie++) {
     f->mcell[ie].ie = ie;
-
-    // FIXME: remove
-    f->mcell[ie].first = ie;
-    f->mcell[ie].last_p1 = ie + 1;
   }
-
 
 #ifdef _WITH_OPENCL
   // opencl inits

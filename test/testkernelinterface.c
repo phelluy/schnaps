@@ -49,10 +49,6 @@ int TestKernelInterface()
   MacroFace mface[f.macromesh.nbfaces];
   for(int ifa = 0; ifa < f.macromesh.nbfaces; ++ifa){
     mface[ifa].ifa = ifa;
-
-    // FIXME: remove this
-    mface[ifa].first = ifa;
-    mface[ifa].last_p1 = ifa + 1;
   }
 
   void* chkptr;

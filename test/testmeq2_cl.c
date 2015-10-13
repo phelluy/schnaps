@@ -180,8 +180,6 @@ int TestmEq2(void) {
   MacroFace mface[f.macromesh.nbfaces];
   for(int ifa = 0; ifa < f.macromesh.nbfaces; ifa++) {
     mface[ifa].ifa = ifa;
-    mface[ifa].first = ifa;
-    mface[ifa].last_p1 = ifa + 1;
   }
   
   f.dtwn = dtwn_cl;

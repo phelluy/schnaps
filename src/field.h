@@ -14,8 +14,6 @@
 //! as a void* pointer.
 typedef struct MacroFace {
   int ifa;
-  int first; //!< first cell/face index
-  int last_p1;  //!< last cell/face index + 1
   //field *field; //! pointer to a  field
 } MacroFace;
 
@@ -24,9 +22,6 @@ typedef struct MacroFace {
 //! as a void* pointer.
 typedef struct MacroCell {
   int ie;
-  int first; //!< first cell/face index
-  int last_p1;  //!< last cell/face index + 1
-  //  field *field; //! pointer to a  field
 } MacroCell;
 
 //! \brief Data structure for managing a  discrete vector field
