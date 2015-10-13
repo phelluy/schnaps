@@ -1290,7 +1290,7 @@ void DGMass(void *mc, field *f, real *dtw)
 }
 
 // Apply the source term
-void DGSource(void *mc, field *f, real *w, real *dtw) 
+void DGSource(void *mc, field *f, real tnow, real *w, real *dtw) 
 {
   if (f->model.Source == NULL) {
     return;
@@ -1323,7 +1323,7 @@ void DGSource(void *mc, field *f, real *w, real *dtw)
 	wL[iv] = w[imem];
       }
       
-      f->model.Source(xphy, f->tnow, wL, source);
+      f->model.Source(xphy, tnow, wL, source);
       
       for(int iv = 0; iv < m; ++iv) {
 	int imem = f->varindex(f->interp_param, ie, ipg, iv);
@@ -1503,8 +1503,7 @@ void dtfield(field *f, real tnow, real *w, real *dtw) {
     DGSubCellInterface(mcelli, f, w, dtw);
     DGVolume(mcelli, f, w, dtw);
     DGMass(mcelli, f, dtw);
-    DGSource(mcelli, f, w, dtw);
-
+    DGSource(mcelli, f, tnow, w, dtw);
   }
 
   if(f->post_dtfield != NULL) // FIXME: rename to after dtfield

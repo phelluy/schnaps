@@ -255,7 +255,7 @@ void DGMass(void *mcell, field *f, real *dtw);
 //! \param[inout] mcell a MacroCell
 //! \param[in] w: the field
 //! \param[out] dtw: the derivative
-void DGSource(void *mcell, field *f, real *w, real *dtw);
+void DGSource(void *mcell, field *f, real tnow, real *w, real *dtw);
 
 //! \brief An out-of-place RK stage
 //! \param[out] fwnp1 field at time n+1
