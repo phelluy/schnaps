@@ -1476,87 +1476,11 @@ void DGVolume(void *mc, field *f, real *w, real *dtw)
   }
 }
 
-
-void dtfield_pthread(field *f) 
-{
-#ifdef _WITH_PTHREAD
-  bool facealgo = true;
-  //facealgo=false;
-  if(facealgo) {
-    for(int iw = 0; iw < f->wsize; iw++)
-      f->dtwn[iw] = 0;
-    for(int ifa = 0; ifa < f->macromesh.nbfaces; ifa++)
-      DGMacroCellInterface((void*) (f->mface + ifa), f, f->wn, f->dtwn);
-  }
-
-
-  // One flying thread per macrocell
-  pthread_t tmcell[f->macromesh.nbelems];
-  int status;
-
-  // Launch a thread for each macro cell computation of the inter
-  // subcell fluxes
-  if (!facealgo) {
-    for(int ie = 0; ie < f->macromesh.nbelems; ie++) {
-      status = pthread_create (&tmcell[ie], // thread
-			       NULL,                 // default attributes
-			       DGMacroCellInterfaceSlow,  // called function
-			       (void*) (mcell+ie));  // function params
-      assert(status==0);
-    }
-    // Wait the end of the threads before next step
-    for (int ie = 0; ie < f->macromesh.nbelems; ie++) {
-      pthread_join(tmcell[ie], NULL);
-    }
-  }
-
-  for(int ie = 0; ie < f->macromesh.nbelems; ie++) {
-    status = pthread_create (&tmcell[ie], // thread
-			     NULL,                 // default attributes
-			     DGSubCellInterface,  // called function
-			     (void*) (mcell+ie));  // function params
-    assert(status==0);
-  }
-  // wait the end of the threads before next step
-  for (int ie = 0; ie < f->macromesh.nbelems; ie++) {
-    pthread_join(tmcell[ie], NULL);
-  }
-
-  for(int ie = 0; ie < f->macromesh.nbelems; ie++) {
-    status = pthread_create (&tmcell[ie], // thread
-			     NULL,                 // default attributes
-			     DGVolume,  // called function
-			     (void*) (mcell+ie));  // function params
-    assert(status==0);
-  }
-  // Wait the end of the threads before next step
-  for (int ie = 0; ie < f->macromesh.nbelems; ie++) {
-    pthread_join(tmcell[ie], NULL);
-  }
-
-  for(int ie = 0; ie < f->macromesh.nbelems; ie++) {
-    status = pthread_create (&tmcell[ie], // thread
-			     NULL,                 // default attributes
-			     DGMass,  // called function
-			     (void*) (mcell+ie));  // function params
-    assert(status==0);
-  }
-  // Wait the end of the threads before next step
-  for (int ie = 0; ie < f->macromesh.nbelems; ie++) {
-    pthread_join(tmcell[ie], NULL);
-  }
-#endif
-}
-
 // Apply the Discontinuous Galerkin approximation for computing the
 // time derivative of the field
 void dtfield(field *f, real *w, real *dtw) {
   if(f->pre_dtfield != NULL) // FIXME: rename to before dtfield
       f->pre_dtfield(f, w);
-
-#ifdef _WITH_PTHREAD
-  dtfield_pthread(f, w, dtw);
-#else
 
 #ifdef _OPENMP
 #pragma omp parallel
@@ -1582,7 +1506,6 @@ void dtfield(field *f, real *w, real *dtw) {
     DGSource(mcelli, f, w, dtw);
 
   }
-#endif
 
   if(f->post_dtfield != NULL) // FIXME: rename to after dtfield
       f->post_dtfield(f, w);

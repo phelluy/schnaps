@@ -220,11 +220,6 @@ void Freefield(field *f);
 void DGVolumeSlow(field *f);
 
 //! \brief apply the Discontinuous Galerkin approximation for computing
-//! the time derivative of the field. One subcell implementation.
-//! \param[inout] f a field
-void dtfieldSlow(field *f);
-
-//! \brief apply the Discontinuous Galerkin approximation for computing
 //! the time derivative of the field. Works with several subcells.
 //! Fast version: multithreaded and with tensor products optimizations
 //! \param[inout] f a field
