@@ -206,6 +206,8 @@ int TestmEq2(void) {
     dtwn_cl[i] = 0.0;
     dtwn[i] = 0.0;
   }
+
+  real tnow = 0.0;
   
   f.dtwn = dtwn_cl;
   dtfield_CL(&f, &(f.wn_cl), 0, NULL, NULL);
@@ -215,7 +217,7 @@ int TestmEq2(void) {
   clFinish(f.cli.commandqueue);
   
   f.dtwn = dtwn;
-  dtfield(&f, f.wn, f.dtwn);
+  dtfield(&f, tnow, f.wn, f.dtwn);
 
   err = maxerr(dtwn, dtwn_cl, f.wsize);
   printf("\tmax error: %f\n", err);

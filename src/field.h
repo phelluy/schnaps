@@ -223,7 +223,7 @@ void DGVolumeSlow(field *f);
 //! the time derivative of the field. Works with several subcells.
 //! Fast version: multithreaded and with tensor products optimizations
 //! \param[inout] f a field
-void dtfield(field *f, real *w, real *dtw);
+void dtfield(field *f, real tnow, real *w, real *dtw);
 
 //! \brief  compute the Discontinuous Galerkin inter-macrocells boundary terms
 //! The argument has to be void* (for compatibility with pthread)

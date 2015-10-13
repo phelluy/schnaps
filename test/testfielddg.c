@@ -35,11 +35,13 @@ int TestfieldDG()
   PrintMacroMesh(&(f.macromesh));
   //AffineMapMacroMesh(&(f.macromesh));
   PrintMacroMesh(&(f.macromesh));
+
+  real tnow = 0.0;
   
   Initfield(&f);
   CheckMacroMesh(&(f.macromesh), f.interp.interp_param + 1);
 
-  dtfield(&f, f.wn, f.dtwn);
+  dtfield(&f, tnow, f.wn, f.dtwn);
   
   Displayfield(&f);
 

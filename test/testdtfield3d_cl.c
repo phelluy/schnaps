@@ -60,6 +60,8 @@ int TestDtfield3D_CL(void){
   Initfield(&f);
   
   cl_event clv_dtfield = clCreateUserEvent(f.cli.context, NULL);
+
+  real tnow = 0.0;
   
   dtfield_CL(&f, &f.wn_cl, 0, NULL, &clv_dtfield);
   clWaitForEvents(1, &clv_dtfield);
@@ -72,7 +74,7 @@ int TestDtfield3D_CL(void){
   f.dtwn = calloc(f.wsize, sizeof(real));
 
   //f.model.Source = OneSource;
-  dtfield(&f, f.wn, f.dtwn);
+  dtfield(&f, tnow, f.wn, f.dtwn);
  
   real maxerr = 0;
   for(int i = 0; i < f.wsize; i++) {

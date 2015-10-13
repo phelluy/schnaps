@@ -1478,7 +1478,7 @@ void DGVolume(void *mc, field *f, real *w, real *dtw)
 
 // Apply the Discontinuous Galerkin approximation for computing the
 // time derivative of the field
-void dtfield(field *f, real *w, real *dtw) {
+void dtfield(field *f, real tnow, real *w, real *dtw) {
   if(f->pre_dtfield != NULL) // FIXME: rename to before dtfield
       f->pre_dtfield(f, w);
 
@@ -1754,12 +1754,12 @@ void RK2(field *f, real tmax, real dt)
     if (iter % freq == 0)
       printf("t=%f iter=%d/%d dt=%f\n", f->tnow, iter, f->itermax, dt);
 
-    dtfield(f, f->wn, f->dtwn);
+    dtfield(f, f->tnow, f->wn, f->dtwn);
     RK_out(wnp1, f->wn, f->dtwn, 0.5 * dt, sizew);
 
     f->tnow += 0.5 * dt;
 
-    dtfield(f, wnp1, f->dtwn);
+    dtfield(f, f->tnow, wnp1, f->dtwn);
     RK_in(f->wn, f->dtwn, dt, sizew);
 
     f->tnow += 0.5 * dt;
@@ -1821,23 +1821,23 @@ void RK4(field *f, real tmax, real dt)
       printf("t=%f iter=%d/%d dt=%f\n", f->tnow, iter, f->itermax, dt);
 
     // l_1 = w_n + 0.5dt * S(w_n, t_0)
-    dtfield(f, f->wn, f->dtwn);
+    dtfield(f, f->tnow, f->wn, f->dtwn);
     RK_out(l1, f->wn, f->dtwn, 0.5 * dt, sizew);
 
     f->tnow += 0.5 * dt;
 
     // l_2 = w_n + 0.5dt * S(l_1, t_0 + 0.5 * dt)
-    dtfield(f, l1, f->dtwn);
+    dtfield(f, f->tnow, l1, f->dtwn);
     RK_out(l2, f->wn, f->dtwn, 0.5 * dt, sizew);
 
     // l_3 = w_n + dt * S(l_2, t_0 + 0.5 * dt)
-    dtfield(f, l2, f->dtwn);
+    dtfield(f, f->tnow, l2, f->dtwn);
     RK_out(l3, f->wn, f->dtwn, dt, sizew);
 
     f->tnow += 0.5 * dt;
 
     // Compute S(l_3, t_0 + dt)
-    dtfield(f, l3, f->dtwn);
+    dtfield(f, f->tnow, l3, f->dtwn);
     RK4_final_inplace(f->wn, l1, l2, l3, f->dtwn, dt, sizew);
 
     
