@@ -1246,32 +1246,32 @@ void DGMacroCellInterface(MacroFace *mface, field *f, real *w, real *dtw)
 void DGMass(MacroCell *mcell, field *f, real *dtw) 
 {
   int m = f->model.m;
+  int ie = mcell->ie;
 
-  // loop on the elements
-  for (int ie = mcell->first; ie < mcell->last_p1; ie++) {
-    // get the physical nodes of element ie
-    real physnode[20][3];
-    for(int inoloc = 0; inoloc < 20; inoloc++) {
-      int ino = f->macromesh.elem2node[20 * ie + inoloc];
-      physnode[inoloc][0] = f->macromesh.node[3 * ino + 0];
-      physnode[inoloc][1] = f->macromesh.node[3 * ino + 1];
-      physnode[inoloc][2] = f->macromesh.node[3 * ino + 2];
-    }
-    for(int ipg = 0; ipg < NPG(f->interp_param + 1); ipg++) {
-      real dtau[3][3], codtau[3][3], xpgref[3], xphy[3], wpg;
-      ref_pg_vol(f->interp_param + 1, ipg, xpgref, &wpg, NULL);
-      Ref2Phy(physnode, // phys. nodes
-	      xpgref, // xref
-	      NULL, -1, // dpsiref, ifa
-	      xphy, dtau, // xphy, dtau
-	      codtau, NULL, NULL); // codtau, dpsi, vnds
-      real det = dot_product(dtau[0], codtau[0]);
-      for(int iv = 0; iv < f->model.m; iv++) {
-	int imem = f->varindex(f->interp_param, ie, ipg, iv);
-	dtw[imem] /= (wpg * det);
-      }
+  // get the physical nodes of element ie
+  real physnode[20][3];
+  for(int inoloc = 0; inoloc < 20; inoloc++) {
+    int ino = f->macromesh.elem2node[20 * ie + inoloc];
+    physnode[inoloc][0] = f->macromesh.node[3 * ino + 0];
+    physnode[inoloc][1] = f->macromesh.node[3 * ino + 1];
+    physnode[inoloc][2] = f->macromesh.node[3 * ino + 2];
+  }
+
+  for(int ipg = 0; ipg < NPG(f->interp_param + 1); ipg++) {
+    real dtau[3][3], codtau[3][3], xpgref[3], xphy[3], wpg;
+    ref_pg_vol(f->interp_param + 1, ipg, xpgref, &wpg, NULL);
+    Ref2Phy(physnode, // phys. nodes
+	    xpgref, // xref
+	    NULL, -1, // dpsiref, ifa
+	    xphy, dtau, // xphy, dtau
+	    codtau, NULL, NULL); // codtau, dpsi, vnds
+    real det = dot_product(dtau[0], codtau[0]);
+    for(int iv = 0; iv < f->model.m; iv++) {
+      int imem = f->varindex(f->interp_param, ie, ipg, iv);
+      dtw[imem] /= (wpg * det);
     }
   }
+
 }
 
 // Apply the source term
@@ -1282,180 +1282,178 @@ void DGSource(MacroCell *mcell, field *f, real tnow, real *w, real *dtw)
   }
 
   const int m = f->model.m;
+  int ie = mcell->ie;
 
-  // Loop on the elements
-  for (int ie = mcell->first; ie < mcell->last_p1; ie++) {
-    // Get the physical nodes of element ie
-    real physnode[20][3];
-    for(int inoloc = 0; inoloc < 20; inoloc++) {
-      int ino = f->macromesh.elem2node[20 * ie + inoloc];
-      physnode[inoloc][0] = f->macromesh.node[3 * ino + 0];
-      physnode[inoloc][1] = f->macromesh.node[3 * ino + 1];
-      physnode[inoloc][2] = f->macromesh.node[3 * ino + 2];
+  // Get the physical nodes of element ie
+  real physnode[20][3];
+  for(int inoloc = 0; inoloc < 20; inoloc++) {
+    int ino = f->macromesh.elem2node[20 * ie + inoloc];
+    physnode[inoloc][0] = f->macromesh.node[3 * ino + 0];
+    physnode[inoloc][1] = f->macromesh.node[3 * ino + 1];
+    physnode[inoloc][2] = f->macromesh.node[3 * ino + 2];
+  }
+
+  for(int ipg = 0; ipg < NPG(f->interp_param + 1); ipg++) {
+    real dtau[3][3], codtau[3][3], xpgref[3], xphy[3], wpg;
+    ref_pg_vol(f->interp_param + 1, ipg, xpgref, &wpg, NULL);
+    Ref2Phy(physnode, // phys. nodes
+	    xpgref, // xref
+	    NULL, -1, // dpsiref, ifa
+	    xphy, dtau, // xphy, dtau
+	    codtau, NULL, NULL); // codtau, dpsi, vnds
+    real wL[m], source[m];
+    for(int iv = 0; iv < m; ++iv){
+      int imem = f->varindex(f->interp_param, ie, ipg, iv);
+      wL[iv] = w[imem];
     }
-    for(int ipg = 0; ipg < NPG(f->interp_param + 1); ipg++) {
-      real dtau[3][3], codtau[3][3], xpgref[3], xphy[3], wpg;
-      ref_pg_vol(f->interp_param + 1, ipg, xpgref, &wpg, NULL);
-      Ref2Phy(physnode, // phys. nodes
-	      xpgref, // xref
-	      NULL, -1, // dpsiref, ifa
-	      xphy, dtau, // xphy, dtau
-	      codtau, NULL, NULL); // codtau, dpsi, vnds
-      real wL[m], source[m];
-      for(int iv = 0; iv < m; ++iv){
-	int imem = f->varindex(f->interp_param, ie, ipg, iv);
-	wL[iv] = w[imem];
-      }
       
-      f->model.Source(xphy, tnow, wL, source);
+    f->model.Source(xphy, tnow, wL, source);
       
-      for(int iv = 0; iv < m; ++iv) {
-	int imem = f->varindex(f->interp_param, ie, ipg, iv);
-	dtw[imem] += source[iv];
+    for(int iv = 0; iv < m; ++iv) {
+      int imem = f->varindex(f->interp_param, ie, ipg, iv);
+      dtw[imem] += source[iv];
 	
-      }
     }
   }
+
 }
 
 // Compute the Discontinuous Galerkin volume terms, fast version
 void DGVolume(MacroCell *mcell, field *f, real *w, real *dtw) 
 {
-  // loop on the elements
-  for (int ie = mcell->first; ie < mcell->last_p1; ie++) {
-    // get the physical nodes of element ie
-    real physnode[20][3];
-    for(int inoloc = 0; inoloc < 20; inoloc++) {
-      int ino = f->macromesh.elem2node[20*ie+inoloc];
-      physnode[inoloc][0] = f->macromesh.node[3 * ino + 0];
-      physnode[inoloc][1] = f->macromesh.node[3 * ino + 1];
-      physnode[inoloc][2] = f->macromesh.node[3 * ino + 2];
-    }
-
-    const int m = f->model.m;
-    const int deg[3] = {f->interp_param[1],
-			f->interp_param[2],
-			f->interp_param[3]};
-    const int npg[3] = {deg[0] + 1,
-			deg[1] + 1,
-			deg[2] + 1};
-    const int nraf[3] = {f->interp_param[4],
-			 f->interp_param[5],
-			 f->interp_param[6]};
-
-    const unsigned int sc_npg = npg[0] * npg[1] * npg[2];
-
-    int f_interp_param[8] = {f->interp_param[0],
-			     f->interp_param[1],
-			     f->interp_param[2],
-			     f->interp_param[3],
-			     f->interp_param[4],
-			     f->interp_param[5],
-			     f->interp_param[6],
-			     f->interp_param[7]};
-
-    // Loop on the subcells
-    for(int icL0 = 0; icL0 < nraf[0]; icL0++) {
-      for(int icL1 = 0; icL1 < nraf[1]; icL1++) {
-	for(int icL2 = 0; icL2 < nraf[2]; icL2++) {
-
-	  int icL[3] = {icL0, icL1, icL2};
-	  // get the L subcell id
-	  int ncL = icL[0] + nraf[0] * (icL[1] + nraf[1] * icL[2]);
-	  // first glop index in the subcell
-	  int offsetL = npg[0] * npg[1] * npg[2] * ncL;
-
-	  // compute all of the xref for the subcell
-	  real *xref0 = malloc(sc_npg * sizeof(real));
-	  real *xref1 = malloc(sc_npg * sizeof(real));
-	  real *xref2 = malloc(sc_npg * sizeof(real));
-	  real *omega = malloc(sc_npg * sizeof(real));
-	  int *imems = malloc(m * sc_npg * sizeof(int));
-	  int pos = 0;
-	  for(unsigned int p = 0; p < sc_npg; ++p) {
-	    real xref[3];
-	    real tomega;
-
-	    ref_pg_vol(f->interp_param + 1, offsetL + p, xref, &tomega, NULL);
-	    xref0[p] = xref[0];
-	    xref1[p] = xref[1];
-	    xref2[p] = xref[2];
-	    omega[p] = tomega;
-
-	    for(int im = 0; im < m; ++im) {
-	      imems[pos++] = f->varindex(f_interp_param, ie, offsetL + p, im);
-	    }
-	  }
-
-	  // loop in the "cross" in the three directions
-	  for(int dim0 = 0; dim0 < 3; dim0++) {
-	    // for(int dim0 = 0; dim0 < 2; dim0++) {  // TODO : return to 3d !
-	    // point p at which we compute the flux
-
-	    for(int p0 = 0; p0 < npg[0]; p0++) {
-	      for(int p1 = 0; p1 < npg[1]; p1++) {
-		for(int p2 = 0; p2 < npg[2]; p2++) {
-		  real wL[m], flux[m];
-		  int p[3] = {p0, p1, p2};
-		  int ipgL = offsetL + p[0] + npg[0] * (p[1] + npg[1] * p[2]);
-		  for(int iv = 0; iv < m; iv++) {
-		    ///int imemL = f->varindex(f_interp_param, ie, ipgL, iv);
-		    wL[iv] = w[imems[m * (ipgL - offsetL) + iv]];
-		  }
-		  int q[3] = {p[0], p[1], p[2]};
-		  // loop on the direction dim0 on the "cross"
-		  for(int iq = 0; iq < npg[dim0]; iq++) {
-		    q[dim0] = (p[dim0] + iq) % npg[dim0];
-		    real dphiref[3] = {0, 0, 0};
-		    // compute grad phi_q at glop p
-		    dphiref[dim0] = dlag(deg[dim0], q[dim0], p[dim0]) 
-		      * nraf[dim0];
-
-		    real xrefL[3] = {xref0[ipgL - offsetL],
-				     xref1[ipgL - offsetL],
-				     xref2[ipgL - offsetL]};
-		    real wpgL = omega[ipgL - offsetL];
-		    /* real xrefL[3], wpgL; */
-		    /* ref_pg_vol(f->interp_param+1,ipgL,xrefL, &wpgL, NULL); */
-
-		    // mapping from the ref glop to the physical glop
-		    real dtau[3][3], codtau[3][3], dphiL[3];
-		    Ref2Phy(physnode,
-			    xrefL,
-			    dphiref, // dphiref
-			    -1,  // ifa
-			    NULL, // xphy
-			    dtau,
-			    codtau,
-			    dphiL, // dphi
-			    NULL);  // vnds
-
-		    f->model.NumFlux(wL, wL, dphiL, flux);
-
-		    int ipgR = offsetL+q[0]+npg[0]*(q[1]+npg[1]*q[2]);
-		    for(int iv = 0; iv < m; iv++) {
-		      int imemR = f->varindex(f_interp_param, ie, ipgR, iv);
-		      int temp = m * (ipgR - offsetL) + iv;  
-		      assert(imemR == imems[temp]);
-		      dtw[imems[temp]] += flux[iv] * wpgL;
-		    }
-		  } // iq
-		} // p2
-	      } // p1
-	    } // p0
-
-	  } // dim loop
-
-	  free(omega);
-	  free(xref0);
-	  free(xref1);
-	  free(xref2);
-	  free(imems);
-
-	} // icl2
-      } //icl1
-    } // icl0
+  int ie = mcell->ie;
+  // get the physical nodes of element ie
+  real physnode[20][3];
+  for(int inoloc = 0; inoloc < 20; inoloc++) {
+    int ino = f->macromesh.elem2node[20*ie+inoloc];
+    physnode[inoloc][0] = f->macromesh.node[3 * ino + 0];
+    physnode[inoloc][1] = f->macromesh.node[3 * ino + 1];
+    physnode[inoloc][2] = f->macromesh.node[3 * ino + 2];
   }
+
+  const int m = f->model.m;
+  const int deg[3] = {f->interp_param[1],
+		      f->interp_param[2],
+		      f->interp_param[3]};
+  const int npg[3] = {deg[0] + 1,
+		      deg[1] + 1,
+		      deg[2] + 1};
+  const int nraf[3] = {f->interp_param[4],
+		       f->interp_param[5],
+		       f->interp_param[6]};
+
+  const unsigned int sc_npg = npg[0] * npg[1] * npg[2];
+
+  int f_interp_param[8] = {f->interp_param[0],
+			   f->interp_param[1],
+			   f->interp_param[2],
+			   f->interp_param[3],
+			   f->interp_param[4],
+			   f->interp_param[5],
+			   f->interp_param[6],
+			   f->interp_param[7]};
+
+  // Loop on the subcells
+  for(int icL0 = 0; icL0 < nraf[0]; icL0++) {
+    for(int icL1 = 0; icL1 < nraf[1]; icL1++) {
+      for(int icL2 = 0; icL2 < nraf[2]; icL2++) {
+
+	int icL[3] = {icL0, icL1, icL2};
+	// get the L subcell id
+	int ncL = icL[0] + nraf[0] * (icL[1] + nraf[1] * icL[2]);
+	// first glop index in the subcell
+	int offsetL = npg[0] * npg[1] * npg[2] * ncL;
+
+	// compute all of the xref for the subcell
+	real *xref0 = malloc(sc_npg * sizeof(real));
+	real *xref1 = malloc(sc_npg * sizeof(real));
+	real *xref2 = malloc(sc_npg * sizeof(real));
+	real *omega = malloc(sc_npg * sizeof(real));
+	int *imems = malloc(m * sc_npg * sizeof(int));
+	int pos = 0;
+	for(unsigned int p = 0; p < sc_npg; ++p) {
+	  real xref[3];
+	  real tomega;
+
+	  ref_pg_vol(f->interp_param + 1, offsetL + p, xref, &tomega, NULL);
+	  xref0[p] = xref[0];
+	  xref1[p] = xref[1];
+	  xref2[p] = xref[2];
+	  omega[p] = tomega;
+
+	  for(int im = 0; im < m; ++im) {
+	    imems[pos++] = f->varindex(f_interp_param, ie, offsetL + p, im);
+	  }
+	}
+
+	// loop in the "cross" in the three directions
+	for(int dim0 = 0; dim0 < 3; dim0++) {
+	  // for(int dim0 = 0; dim0 < 2; dim0++) {  // TODO : return to 3d !
+	  // point p at which we compute the flux
+
+	  for(int p0 = 0; p0 < npg[0]; p0++) {
+	    for(int p1 = 0; p1 < npg[1]; p1++) {
+	      for(int p2 = 0; p2 < npg[2]; p2++) {
+		real wL[m], flux[m];
+		int p[3] = {p0, p1, p2};
+		int ipgL = offsetL + p[0] + npg[0] * (p[1] + npg[1] * p[2]);
+		for(int iv = 0; iv < m; iv++) {
+		  ///int imemL = f->varindex(f_interp_param, ie, ipgL, iv);
+		  wL[iv] = w[imems[m * (ipgL - offsetL) + iv]];
+		}
+		int q[3] = {p[0], p[1], p[2]};
+		// loop on the direction dim0 on the "cross"
+		for(int iq = 0; iq < npg[dim0]; iq++) {
+		  q[dim0] = (p[dim0] + iq) % npg[dim0];
+		  real dphiref[3] = {0, 0, 0};
+		  // compute grad phi_q at glop p
+		  dphiref[dim0] = dlag(deg[dim0], q[dim0], p[dim0]) 
+		    * nraf[dim0];
+
+		  real xrefL[3] = {xref0[ipgL - offsetL],
+				   xref1[ipgL - offsetL],
+				   xref2[ipgL - offsetL]};
+		  real wpgL = omega[ipgL - offsetL];
+		  /* real xrefL[3], wpgL; */
+		  /* ref_pg_vol(f->interp_param+1,ipgL,xrefL, &wpgL, NULL); */
+
+		  // mapping from the ref glop to the physical glop
+		  real dtau[3][3], codtau[3][3], dphiL[3];
+		  Ref2Phy(physnode,
+			  xrefL,
+			  dphiref, // dphiref
+			  -1,  // ifa
+			  NULL, // xphy
+			  dtau,
+			  codtau,
+			  dphiL, // dphi
+			  NULL);  // vnds
+
+		  f->model.NumFlux(wL, wL, dphiL, flux);
+
+		  int ipgR = offsetL+q[0]+npg[0]*(q[1]+npg[1]*q[2]);
+		  for(int iv = 0; iv < m; iv++) {
+		    int imemR = f->varindex(f_interp_param, ie, ipgR, iv);
+		    int temp = m * (ipgR - offsetL) + iv;  
+		    assert(imemR == imems[temp]);
+		    dtw[imems[temp]] += flux[iv] * wpgL;
+		  }
+		} // iq
+	      } // p2
+	    } // p1
+	  } // p0
+
+	} // dim loop
+
+	free(omega);
+	free(xref0);
+	free(xref1);
+	free(xref2);
+	free(imems);
+
+      } // icl2
+    } //icl1
+  } // icl0
 }
 
 // Apply the Discontinuous Galerkin approximation for computing the
