@@ -861,15 +861,18 @@ void DGSubCellInterface(void *mc, field *f, real *w, real *dtw)
 	      // FIXME: write only write to L-values (and do both
 	      // faces) to parallelise better.
 
+	      // non-coalescent access
+	      //int dim1 = (dim0 + 1)%3, dim2 = (dim0+2)%3;
+
+	      // coalescent access (pairs of xyz are in the correct order).
 	      const int altdim1[3] = {1, 0, 0};
 	      const int altdim2[3] = {2, 2, 1};
-
-	      // now loop on the left glops of the subface
-	      //int dim1 = (dim0 + 1)%3, dim2 = (dim0+2)%3;
 	      int dim1 = altdim1[dim0];
 	      int dim2 = altdim2[dim0];
+
 	      int iL[3];
 	      iL[dim0] = deg[dim0];
+	      // Now loop on the left glops of the subface
 	      for(iL[dim2] = 0; iL[dim2] < npg[dim2]; iL[dim2]++) {
 		for(iL[dim1] = 0; iL[dim1] < npg[dim1]; iL[dim1]++) {
 		  // find the right and left glops volume indices
