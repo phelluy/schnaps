@@ -210,7 +210,7 @@ int TestmEq2(void) {
   real tnow = 0.0;
   
   f.dtwn = dtwn_cl;
-  dtfield_CL(&f, &(f.wn_cl), 0, NULL, NULL);
+  dtfield_CL(&f, tnow, &f.wn_cl, 0, NULL, NULL);
   clFinish(f.cli.commandqueue);
   
   CopyfieldtoCPU(&f);

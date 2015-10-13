@@ -50,6 +50,7 @@ int TestMaxwell3D()
   strcat(cl_buildoptions, buf);
 
   Initfield(&f);
+  f.tnow = 0.0;
   
   CheckMacroMesh(&(f.macromesh), f.interp.interp_param + 1);
 
@@ -60,7 +61,7 @@ int TestMaxwell3D()
 
 #if 0
   // C version
-  RK2(&f, tmax, dt);
+  RK4(&f, tmax, dt);
 #else
   // OpenCL version
   RK4_CL(&f, tmax, dt, 0, 0, 0);

@@ -650,7 +650,7 @@ void DGVolume_CL(void *mc, field *f, cl_mem *wn_cl,
 }
 
 // Set kernel argument for DGVolume_CL
-void init_DGSource_CL(field *f, cl_mem *wn_cl, size_t cachesize)
+void init_DGSource_CL(field *f, real tnow, cl_mem *wn_cl, size_t cachesize)
 {
   //printf("DGVolume cachesize:%zu\n", cachesize);
 
@@ -678,7 +678,7 @@ void init_DGSource_CL(field *f, cl_mem *wn_cl, size_t cachesize)
   status = clSetKernelArg(kernel,
   			  argnum++,
   			  sizeof(real),
-  			  &f->tnow);
+  			  &tnow);
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 
@@ -705,7 +705,7 @@ void init_DGSource_CL(field *f, cl_mem *wn_cl, size_t cachesize)
 }
 
 // Apply division by the mass matrix OpenCL version
-void DGSource_CL(void *mc, field *f, cl_mem *wn_cl,
+void DGSource_CL(void *mc, field *f, real tnow, cl_mem *wn_cl,
 		 cl_uint nwait, cl_event *wait, cl_event *done) 
 {
   MacroCell *mcell = (MacroCell*) mc; // FIXME: just pass ie, it'll be easier.
@@ -726,7 +726,7 @@ void DGSource_CL(void *mc, field *f, cl_mem *wn_cl,
   /* f->nmults += numworkitems * nmultsdgvol; */
   /* f->nreads += numworkitems * nreadsdgvol; */
    
-  init_DGSource_CL(f, wn_cl, 2 * groupsize * m);
+  init_DGSource_CL(f, tnow, wn_cl, 2 * groupsize * m);
   
   const int start = mcell->first;
   const int end = mcell->last_p1;
@@ -790,7 +790,7 @@ void set_buf_to_zero_cl(cl_mem *buf, int size, field *f,
 
 // Apply the Discontinuous Galerkin approximation for computing the
 // time derivative of the field. OpenCL version.
-void dtfield_CL(field *f, cl_mem *wn_cl,
+void dtfield_CL(field *f, real tnow, cl_mem *wn_cl,
 		cl_uint nwait, cl_event *wait, cl_event *done)
 {
 
@@ -880,7 +880,7 @@ void dtfield_CL(field *f, cl_mem *wn_cl,
   	      f->clv_mass + ie);
 
     if(f->use_source_cl) {
-      DGSource_CL(mcelli, f, wn_cl, 
+      DGSource_CL(mcelli, f, tnow, wn_cl, 
 		  1,
 		  f->clv_mass + ie,
 		  f->clv_source + ie);
@@ -1207,33 +1207,37 @@ void RK4_CL(field *f, real tmax, real dt,
       printf("t=%f iter=%d/%d dt=%f\n", f->tnow, iter, f->itermax, dt);
 
     // stage 0
-    dtfield_CL(f, w, 
+    dtfield_CL(f, f->tnow, w, 
 	       1, stage + 3, source);
     RK4_CL_stageA(f, &l1, w, dtw,
     		  0.5 * dt, sizew, numworkitems,
 		  1, source, stage);
+
+    f->tnow += 0.5 * dt;
     
     // stage 1
-    dtfield_CL(f, &l1, 1, stage, source + 1);
+    dtfield_CL(f, f->tnow, &l1, 1, stage, source + 1);
     RK4_CL_stageA(f, &l2, w, dtw,
     		  0.5 * dt, sizew, numworkitems,
 		  1, source + 1, stage + 1);
     
     // stage 2
-    dtfield_CL(f, &l2, 
+    dtfield_CL(f, f->tnow, &l2, 
 	       1, stage + 1, source + 2);
     RK4_CL_stageA(f, &l3, w, dtw,
     		  dt, sizew, numworkitems,
 		  1, source + 2, stage + 2);
+
+    f->tnow += 0.5 * dt;
     
     // stage 3
-    dtfield_CL(f, &l3, 
+    dtfield_CL(f, f->tnow, &l3, 
 	       1, stage + 2, source + 3);
     RK4_final_inplace_CL(f, w, &l1, &l2, &l3, 
 			 dtw, dt, numworkitems,
 			 1, source + 3, stage + 3);
 
-    f->tnow += dt;
+
 
     for(int i = 0; i < nstages; ++i)
       f->rk_time += clv_duration(stage[i]);
@@ -1305,12 +1309,12 @@ void RK2_CL(field *f, real tmax, real dt,
     if (iter % freq == 0)
       printf("t=%f iter=%d/%d dt=%f\n", f->tnow, iter, f->itermax, dt);
 
-    dtfield_CL(f, &f->wn_cl, 1, &stage2, &source1);
+    dtfield_CL(f, f->tnow, &f->wn_cl, 1, &stage2, &source1);
     RK2_CL_stage1(f, f->wsize, 1, &source1, &stage1);
 
     f->tnow += 0.5 * dt;
 
-    dtfield_CL(f, &wnp1_cl, 1, &stage1, &source2);
+    dtfield_CL(f, f->tnow, &wnp1_cl, 1, &stage1, &source2);
     RK2_CL_stage2(f, f->wsize, 1, &source2, &stage2);
 
 

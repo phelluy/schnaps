@@ -91,7 +91,7 @@ int TestDtfield_CL(void){
 
   real tnow = 0.0;
   
-  dtfield_CL(&f, &f.wn_cl, 0, NULL, &clv_dtfield);
+  dtfield_CL(&f, tnow, &f.wn_cl, 0, NULL, &clv_dtfield);
   clWaitForEvents(1, &clv_dtfield);
   CopyfieldtoCPU(&f);
 
