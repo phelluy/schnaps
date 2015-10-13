@@ -5,7 +5,8 @@
 #include <assert.h>
 #include <math.h>
 
-int TestKernelInterface(void){
+int TestKernelInterface()
+{
   bool test = true;
 
   if(!cldevice_is_acceptable(nplatform_cl, ndevice_cl)) {
@@ -33,20 +34,23 @@ int TestKernelInterface(void){
   f.interp.interp_param[5] = 3; // y direction refinement
   f.interp.interp_param[6] = 1; // z direction refinement
 
-  ReadMacroMesh(&(f.macromesh),"../test/testmacromesh.msh");
-  //ReadMacroMesh(&(f.macromesh),"test/testcube.msh");
-  Detect2DMacroMesh(&(f.macromesh));
+  ReadMacroMesh(&f.macromesh, "../test/testmacromesh.msh");
+  //ReadMacroMesh(&f.macromesh, "test/testcube.msh");
+  Detect2DMacroMesh(&f.macromesh);
   assert(f.macromesh.is2d);
 
-  BuildConnectivity(&(f.macromesh));
-  PrintMacroMesh(&(f.macromesh));
+  BuildConnectivity(&f.macromesh);
+  PrintMacroMesh(&f.macromesh);
 
-  //AffineMapMacroMesh(&(f.macromesh));
+  //AffineMapMacroMesh(&f.macromesh);
  
   Initfield(&f);
 
   MacroFace mface[f.macromesh.nbfaces];
   for(int ifa = 0; ifa < f.macromesh.nbfaces; ++ifa){
+    mface[ifa].ifa = ifa;
+
+    // FIXME: remove this
     mface[ifa].first = ifa;
     mface[ifa].last_p1 = ifa + 1;
   }
@@ -76,11 +80,12 @@ int TestKernelInterface(void){
   assert(status == CL_SUCCESS);
 
   // OpenCL version
+  printf("OpenCL version:\n");
   
   const int ninterfaces = f.macromesh.nmacrointerfaces;
   for(int i = 0; i < ninterfaces; ++i) {
     int ifa = f.macromesh.macrointerface[i];
-    DGMacroCellInterface_CL((void*) (mface + ifa), &f, &(f.wn_cl), 
+    DGMacroCellInterface_CL(mface + ifa, &f, &f.wn_cl, 
 			    0, NULL, NULL);
     clFinish(f.cli.commandqueue);
   }
@@ -88,8 +93,8 @@ int TestKernelInterface(void){
   const int nboundaryfaces = f.macromesh.nboundaryfaces;
   for(int i = 0; i < nboundaryfaces; ++i) {
     int ifa = f.macromesh.boundaryface[i];
-    DGBoundary_CL((void*) (mface + ifa), &f, &(f.wn_cl),
-			    0, NULL, NULL);
+    DGBoundary_CL(mface + ifa, &f, &f.wn_cl,
+		  0, NULL, NULL);
     clFinish(f.cli.commandqueue);
   }
   clFinish(f.cli.commandqueue);
@@ -98,11 +103,12 @@ int TestKernelInterface(void){
   real *fdtwn_opencl = f.dtwn;
 
   // OpenMP version
+  printf("OpenMP version:\n");
   f.dtwn = calloc(f.wsize, sizeof(real));
   for(int iw = 0; iw < f.wsize; iw++)
     f.dtwn[iw] = 0;
   for(int ifa = 0; ifa < f.macromesh.nbfaces; ifa++)
-    DGMacroCellInterface((void*) (mface + ifa), &f, f.wn, f.dtwn);
+    DGMacroCellInterface(mface + ifa, &f, f.wn, f.dtwn);
   //Displayfield(&f);
   real *fdtwn_openmp = f.dtwn;
 
@@ -120,7 +126,8 @@ int TestKernelInterface(void){
   return test;
 }
 
-int main(void) {
+int main()
+{
   int resu = TestKernelInterface();
   if(resu) 
     printf("Interface Kernel test OK !\n");

@@ -177,11 +177,18 @@ int TestmEq2(void) {
     dtwn[i] = 0.0;
   }
 
+  MacroFace mface[f.macromesh.nbfaces];
+  for(int ifa = 0; ifa < f.macromesh.nbfaces; ifa++) {
+    mface[ifa].ifa = ifa;
+    mface[ifa].first = ifa;
+    mface[ifa].last_p1 = ifa + 1;
+  }
+  
   f.dtwn = dtwn_cl;
   set_buf_to_zero_cl(&(f.dtwn_cl), f.wsize, &f, 0, NULL, NULL);
   clFinish(f.cli.commandqueue);
   for(int ifa = 0; ifa < f.macromesh.nbfaces; ++ifa) {
-    DGMacroCellInterface_CL((void*) (f.mface + ifa), &f, &f.wn_cl,
+    DGMacroCellInterface_CL(mface + ifa, &f, &f.wn_cl,
     			    0, NULL, NULL);
     clFinish(f.cli.commandqueue);
   }
@@ -189,13 +196,8 @@ int TestmEq2(void) {
   clFinish(f.cli.commandqueue);
   
   f.dtwn = dtwn;
-  MacroFace mface[f.macromesh.nbfaces];
   for(int ifa = 0; ifa < f.macromesh.nbfaces; ifa++) {
-    mface[ifa].first = ifa;
-    mface[ifa].last_p1 = ifa + 1;
-  }
-  for(int ifa = 0; ifa < f.macromesh.nbfaces; ifa++) {
-    DGMacroCellInterface((void*) (mface + ifa), &f, f.wn, f.dtwn);
+    DGMacroCellInterface(mface + ifa, &f, f.wn, f.dtwn);
   }
   err = maxerr(dtwn, dtwn_cl, f.wsize);
   printf("\tmax error: %f\n", err);

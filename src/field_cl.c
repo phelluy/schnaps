@@ -138,10 +138,9 @@ void init_DGBoundary_CL(field *f,
   assert(status >= CL_SUCCESS);
 }
 
-void DGBoundary_CL(void *mf, field *f, cl_mem *wn_cl,
+void DGBoundary_CL(MacroFace *mface, field *f, cl_mem *wn_cl,
 		   cl_uint nwait, cl_event *wait, cl_event *done) 
 {
-  MacroFace *mface = (MacroFace*) mf;
   int *param = f->interp_param;
   cl_int status;
 
@@ -264,10 +263,9 @@ void init_DGMacroCellInterface_CL(field *f,
   assert(status >= CL_SUCCESS);
 }
 
-void DGMacroCellInterface_CL(void *mf, field *f, cl_mem *wn_cl,
+void DGMacroCellInterface_CL(MacroFace *mface, field *f, cl_mem *wn_cl,
 			     cl_uint nwait, cl_event *wait, cl_event *done) 
 {
-  MacroFace *mface = (MacroFace*) mf;
   int *param = f->interp_param;
   cl_int status;
   cl_kernel kernel = f->dginterface;
@@ -352,12 +350,10 @@ void init_DGMass_CL(field *f)
 }
 
 // Apply division by the mass matrix OpenCL version
-void DGMass_CL(void *mc, field *f,
+void DGMass_CL(MacroCell *mcell, field *f,
 	       cl_uint nwait, cl_event *wait, cl_event *done) 
 {
   //printf("DGMass_CL\n");
-
-  MacroCell *mcell = (MacroCell*) mc;
   int *param = f->interp_param;
   cl_int status;
 
@@ -587,10 +583,9 @@ void init_DGVolume_CL(field *f, cl_mem *wn_cl, size_t cachesize)
 }
 
 // Apply division by the mass matrix OpenCL version
-void DGVolume_CL(void *mc, field *f, cl_mem *wn_cl,
+void DGVolume_CL(MacroCell *mcell, field *f, cl_mem *wn_cl,
 		 cl_uint nwait, cl_event *wait, cl_event *done) 
 {
-  MacroCell *mcell = (MacroCell*) mc; // FIXME: just pass ie, it'll be easier.
   cl_kernel kernel = f->dgvolume;
   int *param = f->interp_param;
 
@@ -705,10 +700,9 @@ void init_DGSource_CL(field *f, real tnow, cl_mem *wn_cl, size_t cachesize)
 }
 
 // Apply division by the mass matrix OpenCL version
-void DGSource_CL(void *mc, field *f, real tnow, cl_mem *wn_cl,
+void DGSource_CL(MacroCell *mcell, field *f, real tnow, cl_mem *wn_cl,
 		 cl_uint nwait, cl_event *wait, cl_event *done) 
 {
-  MacroCell *mcell = (MacroCell*) mc; // FIXME: just pass ie, it'll be easier.
   cl_kernel kernel = f->dgsource;
   int *param = f->interp_param;
 

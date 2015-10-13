@@ -640,12 +640,12 @@ void BuildConnectivity(MacroMesh* m)
   /*   } */
   /* } */
     
-  if(m->is2d) suppress_zfaces(m);
+  if(m->is2d)
+    suppress_zfaces(m);
   if(m->is1d) {
     suppress_zfaces(m);
     suppress_yfaces(m);
   }
-
 
   // update connectivity if the mesh is periodic
   // in some directions
@@ -664,23 +664,23 @@ void BuildConnectivity(MacroMesh* m)
     }
     for(int ifa = 0; ifa < 6; ifa++) {
       if (m->elem2elem[6 * ie + ifa] < 0){
-	real xpgref[3],xpgref_in[3];
+	real xpgref[3], xpgref_in[3];
 	int ipgf=0;
 	int param2[7]={0,0,0,1,1,1,0};
 	ref_pg_face(param2, ifa, ipgf, xpgref, NULL, xpgref_in);
-	real dtau[3][3],xpg_in[3];
-	real codtau[3][3],vnds[3]={0,0,0};
+	real dtau[3][3], xpg_in[3];
+	real codtau[3][3], vnds[3]={0,0,0};
 	Ref2Phy(physnode,
 		xpgref_in,
 		NULL, ifa, // dpsiref,ifa
 		xpg_in, dtau,
 		codtau, NULL, vnds); // codtau,dpsi,vnds
 	Normalize(vnds);
-	vnds[0]=fabs(vnds[0]);
-	vnds[1]=fabs(vnds[1]);
-	vnds[2]=fabs(vnds[2]);
+	vnds[0] = fabs(vnds[0]);
+	vnds[1] = fabs(vnds[1]);
+	vnds[2] = fabs(vnds[2]);
 	int dim=0;
-	while(Dist(vnds,diag[dim]) > 1e-2 && dim<3) dim++;
+	while(Dist(vnds,diag[dim]) > 1e-2 && dim < 3) dim++;
 	//assert(dim < 3);
 	//printf("xpg_in_before=%f\n",xpg_in[dim]);
 	if (dim < 3 && m->period[dim]  > 0){

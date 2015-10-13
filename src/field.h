@@ -13,6 +13,7 @@
 //! and a faces range.  To be passed to a thread
 //! as a void* pointer.
 typedef struct MacroFace {
+  int ifa;
   int first; //!< first cell/face index
   int last_p1;  //!< last cell/face index + 1
   //field *field; //! pointer to a  field
@@ -22,6 +23,7 @@ typedef struct MacroFace {
 //! and a cells range.  To be passed to a thread
 //! as a void* pointer.
 typedef struct MacroCell {
+  int ie;
   int first; //!< first cell/face index
   int last_p1;  //!< last cell/face index + 1
   //  field *field; //! pointer to a  field
@@ -229,33 +231,33 @@ void dtfield(field *f, real tnow, real *w, real *dtw);
 //! The argument has to be void* (for compatibility with pthread)
 //! but it is logically a MacroCell*
 //! \param[inout] mcell a MacroCell
-void DGMacroCellInterfaceSlow(void *mcell, field *f, real *w, real *dtw);
+void DGMacroCellInterfaceSlow(MacroCell *mcell, field *f, real *w, real *dtw);
 
 //! \brief  compute the Discontinuous Galerkin inter-macrocells boundary terms second implementation with a loop on the faces
 //! The argument has to be void* (for compatibility with pthread)
 //! but it is logically a MacroCell*
 //! \param[inout] mface a MacroFace
-void DGMacroCellInterface(void *mface, field *f, real *w, real *dtw);
+void DGMacroCellInterface(MacroFace *mface, field *f, real *w, real *dtw);
 
 //! \brief compute the Discontinuous Galerkin volume terms
 //! The argument has to be void* (for compatibility with pthread)
 //! but it is logically a MacroCell*
 //! \param[inout] mcell a MacroCell
-void DGVolume(void *mcell, field *f, real *w, real *dtw);
+void DGVolume(MacroCell *mcell, field *f, real *w, real *dtw);
 
 //! \brief compute the Discontinuous Galerkin inter-subcells terms
 //! \param[inout] mcell a MacroCell
-void DGSubCellInterface(void *mcell, field *f, real *w, real *dtw);
+void DGSubCellInterface(MacroCell *mcell, field *f, real *w, real *dtw);
 
 //! \brief  apply the DG mass term
 //! \param[inout] mcell a MacroCell
-void DGMass(void *mcell, field *f, real *dtw);
+void DGMass(MacroCell *mcell, field *f, real *dtw);
 
 //! \brief Add the source term
 //! \param[inout] mcell a MacroCell
 //! \param[in] w: the field
 //! \param[out] dtw: the derivative
-void DGSource(void *mcell, field *f, real tnow, real *w, real *dtw);
+void DGSource(MacroCell *mcell, field *f, real tnow, real *w, real *dtw);
 
 //! \brief An out-of-place RK stage
 //! \param[out] fwnp1 field at time n+1
