@@ -144,28 +144,24 @@ void DGBoundary_CL(MacroFace *mface, field *f, cl_mem *wn_cl,
   int *param = f->interp_param;
   cl_int status;
 
-  // Loop on the macro faces
-  int start = mface->first;
-  int end = mface->last_p1;
-  for(int ifa = start; ifa < end; ++ifa) {
-    int ieL =    f->macromesh.face2elem[4 * ifa];
-    int locfaL = f->macromesh.face2elem[4 * ifa + 1];
+  int ifa = mface->ifa;
+  int ieL =    f->macromesh.face2elem[4 * ifa];
+  int locfaL = f->macromesh.face2elem[4 * ifa + 1];
     
-    size_t numworkitems = NPGF(f->interp_param + 1, locfaL);
-    size_t cachesize = 1; // TODO make use of cache
-    init_DGBoundary_CL(f, ieL, locfaL, f->physnodes_cl, wn_cl, cachesize);
-    status = clEnqueueNDRangeKernel(f->cli.commandqueue,
-				    f->dgboundary,
-				    1, // cl_uint work_dim,
-				    NULL, // global_work_offset,
-				    &numworkitems, // global_work_size, 
-				    NULL, // size_t *local_work_size, 
-				    nwait, 
-				    wait, // *wait_list,
-				    done); // *event
-    if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
-    assert(status >= CL_SUCCESS);
-  }
+  size_t numworkitems = NPGF(f->interp_param + 1, locfaL);
+  size_t cachesize = 1; // TODO make use of cache
+  init_DGBoundary_CL(f, ieL, locfaL, f->physnodes_cl, wn_cl, cachesize);
+  status = clEnqueueNDRangeKernel(f->cli.commandqueue,
+				  f->dgboundary,
+				  1, // cl_uint work_dim,
+				  NULL, // global_work_offset,
+				  &numworkitems, // global_work_size, 
+				  NULL, // size_t *local_work_size, 
+				  nwait, 
+				  wait, // *wait_list,
+				  done); // *event
+  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status >= CL_SUCCESS);
 }
 
 // Set the loop-dependant kernel arguments for DGMacroCellInterface_CL
@@ -276,41 +272,39 @@ void DGMacroCellInterface_CL(MacroFace *mface, field *f, cl_mem *wn_cl,
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 
-  // Loop on the macro faces
-  int start = mface->first;
-  int end = mface->last_p1;
-  for(int ifa = start; ifa < end; ++ifa) {
-    int ieL =    f->macromesh.face2elem[4 * ifa];
-    int locfaL = f->macromesh.face2elem[4 * ifa + 1];
-    int ieR =    f->macromesh.face2elem[4 * ifa + 2];
-    int locfaR = f->macromesh.face2elem[4 * ifa + 3];
 
-    size_t numworkitems = NPGF(f->interp_param + 1, locfaL);
-    if(ieR >= 0) {
-      // Set the remaining loop-dependant kernel arguments
-      size_t kernel_cachesize = 1;
-      init_DGMacroCellInterface_CL(f, 
-				   ieL, ieR, locfaL, locfaR, 
-				   f->physnodes_cl,
-				   wn_cl, 
-				   kernel_cachesize);
+  int ifa = mface->ifa;
 
-      status = clEnqueueNDRangeKernel(f->cli.commandqueue,
-				      kernel,
-				      1, // cl_uint work_dim,
-				      NULL, // global_work_offset,
-				      &numworkitems, // global_work_size, 
-				      NULL, // size_t *local_work_size, 
-				      nwait,  // nwait, 
-				      wait, // *wait_list,
-				      done); // *event
-      if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
-      assert(status >= CL_SUCCESS);
-    } else {
-      // Set the event to completed status.
-      if(done != NULL)
-	clSetUserEventStatus(*done, CL_COMPLETE);
-    }
+  int ieL =    f->macromesh.face2elem[4 * ifa];
+  int locfaL = f->macromesh.face2elem[4 * ifa + 1];
+  int ieR =    f->macromesh.face2elem[4 * ifa + 2];
+  int locfaR = f->macromesh.face2elem[4 * ifa + 3];
+
+  size_t numworkitems = NPGF(f->interp_param + 1, locfaL);
+  if(ieR >= 0) {
+    // Set the remaining loop-dependant kernel arguments
+    size_t kernel_cachesize = 1;
+    init_DGMacroCellInterface_CL(f, 
+				 ieL, ieR, locfaL, locfaR, 
+				 f->physnodes_cl,
+				 wn_cl, 
+				 kernel_cachesize);
+
+    status = clEnqueueNDRangeKernel(f->cli.commandqueue,
+				    kernel,
+				    1, // cl_uint work_dim,
+				    NULL, // global_work_offset,
+				    &numworkitems, // global_work_size, 
+				    NULL, // size_t *local_work_size, 
+				    nwait,  // nwait, 
+				    wait, // *wait_list,
+				    done); // *event
+    if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+    assert(status >= CL_SUCCESS);
+  } else {
+    // Set the event to completed status.
+    if(done != NULL)
+      clSetUserEventStatus(*done, CL_COMPLETE);
   }
 }
 
@@ -363,42 +357,37 @@ void DGMass_CL(MacroCell *mcell, field *f,
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 
-  // Loop on the elements
-  const int start = mcell->first;
-  const int end = mcell->last_p1;
-  for(int ie = start; ie < end; ie++) {
-    
-    status = clSetKernelArg(f->dgmass, 
-			    1, 
-			    sizeof(int), 
-			    (void *)&ie);
-    if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
-    assert(status >= CL_SUCCESS);
+  int ie = mcell->ie;
+  status = clSetKernelArg(f->dgmass, 
+			  1, 
+			  sizeof(int), 
+			  (void *)&ie);
+  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status >= CL_SUCCESS);
 
-    // The groupsize is the number of glops in a subcell
-    size_t groupsize = (param[1] + 1) * (param[2] + 1) * (param[3] + 1);
-    // The total work items number is (the number of glops in a
-    // subcell) * (number of subcells)
-    size_t numworkitems = param[4] * param[5] * param[6] * groupsize;
+  // The groupsize is the number of glops in a subcell
+  size_t groupsize = (param[1] + 1) * (param[2] + 1) * (param[3] + 1);
+  // The total work items number is (the number of glops in a
+  // subcell) * (number of subcells)
+  size_t numworkitems = param[4] * param[5] * param[6] * groupsize;
 
-    unsigned int m = f->interp_param[0];
-    unsigned int nreadsdgmass = m;
-    unsigned int nmultsdgmass = 53 + 2 * m + 2601;
-    f->flops_mass += numworkitems * nmultsdgmass;
-    f->reads_mass += numworkitems * nreadsdgmass;
+  unsigned int m = f->interp_param[0];
+  unsigned int nreadsdgmass = m;
+  unsigned int nmultsdgmass = 53 + 2 * m + 2601;
+  f->flops_mass += numworkitems * nmultsdgmass;
+  f->reads_mass += numworkitems * nreadsdgmass;
     
-    status = clEnqueueNDRangeKernel(f->cli.commandqueue,
-				    f->dgmass,
-				    1, // cl_uint work_dim,
-				    NULL, // size_t *global_work_offset, 
-				    &numworkitems, // size_t *global_work_size,
-				    &groupsize, // size_t *local_work_size, 
-				    nwait, // cl_uint num_events_in_wait_list, 
-				    wait, //*event_wait_list, 
-				    done); // cl_event *event
-    if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
-    assert(status >= CL_SUCCESS);
-  }
+  status = clEnqueueNDRangeKernel(f->cli.commandqueue,
+				  f->dgmass,
+				  1, // cl_uint work_dim,
+				  NULL, // size_t *global_work_offset, 
+				  &numworkitems, // size_t *global_work_size,
+				  &groupsize, // size_t *local_work_size, 
+				  nwait, // cl_uint num_events_in_wait_list, 
+				  wait, //*event_wait_list, 
+				  done); // cl_event *event
+  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status >= CL_SUCCESS);
 }
 
 void init_DGFlux_CL(field *f, int ie, int dim0, cl_mem *wn_cl, 
@@ -607,41 +596,38 @@ void DGVolume_CL(MacroCell *mcell, field *f, cl_mem *wn_cl,
   
   init_DGVolume_CL(f, wn_cl, 2 * groupsize * m);
   
-  const int start = mcell->first;
-  const int end = mcell->last_p1;
-  
+
   //printf("DGVolume_CL loop: %d\n", end - start); // This is always 1!!!
 
-  // Loop on the elements
-  for(int ie = start; ie < end; ie++) {
-    f->flops_vol += numworkitems * nmultsdgvol;
-    f->reads_vol += numworkitems * nreadsdgvol;
+  int ie = mcell->ie;
+  
+  f->flops_vol += numworkitems * nmultsdgvol;
+  f->reads_vol += numworkitems * nreadsdgvol;
 
-    status = clSetKernelArg(kernel,
-			    1,
-			    sizeof(int),
-			    &ie);
-    if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
-    assert(status >= CL_SUCCESS);
+  status = clSetKernelArg(kernel,
+			  1,
+			  sizeof(int),
+			  &ie);
+  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status >= CL_SUCCESS);
 
-    // The groupsize is the number of glops in a subcell
-    /* size_t groupsize = (param[1] + 1)* (param[2] + 1)*(param[3] + 1); */
-    /* // The total work items number is the number of glops in a subcell */
-    /* // * number of subcells */
-    /* size_t numworkitems = param[4] * param[5] * param[6] * groupsize; */
-    /* //printf("groupsize=%zd numworkitems=%zd\n", groupsize, numworkitems); */
-    status = clEnqueueNDRangeKernel(f->cli.commandqueue,
-				    kernel,
-				    1,
-				    NULL,
-				    &numworkitems,
-				    &groupsize,
-				    nwait,
-				    wait,
-				    done);
-    if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
-    assert(status >= CL_SUCCESS);
-  }
+  // The groupsize is the number of glops in a subcell
+  /* size_t groupsize = (param[1] + 1)* (param[2] + 1)*(param[3] + 1); */
+  /* // The total work items number is the number of glops in a subcell */
+  /* // * number of subcells */
+  /* size_t numworkitems = param[4] * param[5] * param[6] * groupsize; */
+  /* //printf("groupsize=%zd numworkitems=%zd\n", groupsize, numworkitems); */
+  status = clEnqueueNDRangeKernel(f->cli.commandqueue,
+				  kernel,
+				  1,
+				  NULL,
+				  &numworkitems,
+				  &groupsize,
+				  nwait,
+				  wait,
+				  done);
+  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status >= CL_SUCCESS);
 }
 
 // Set kernel argument for DGVolume_CL
@@ -722,36 +708,32 @@ void DGSource_CL(MacroCell *mcell, field *f, real tnow, cl_mem *wn_cl,
    
   init_DGSource_CL(f, tnow, wn_cl, 2 * groupsize * m);
   
-  const int start = mcell->first;
-  const int end = mcell->last_p1;
+  int ie = mcell->ie;
   
-  // Loop on the elements
-  for(int ie = start; ie < end; ie++) {
-    status = clSetKernelArg(kernel,
-			    1,
-			    sizeof(int),
-			    &ie);
-    if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
-    assert(status >= CL_SUCCESS);
+  status = clSetKernelArg(kernel,
+			  1,
+			  sizeof(int),
+			  &ie);
+  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status >= CL_SUCCESS);
 
-    // The groupsize is the number of glops in a subcell
-    /* size_t groupsize = (param[1] + 1)* (param[2] + 1)*(param[3] + 1); */
-    /* // The total work items number is the number of glops in a subcell */
-    /* // * number of subcells */
-    /* size_t numworkitems = param[4] * param[5] * param[6] * groupsize; */
-    /* //printf("groupsize=%zd numworkitems=%zd\n", groupsize, numworkitems); */
-    status = clEnqueueNDRangeKernel(f->cli.commandqueue,
-				    kernel,
-				    1,
-				    NULL,
-				    &numworkitems,
-				    &groupsize,
-				    nwait,
-				    wait,
-				    done);
-    if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
-    assert(status >= CL_SUCCESS);
-  }
+  // The groupsize is the number of glops in a subcell
+  /* size_t groupsize = (param[1] + 1)* (param[2] + 1)*(param[3] + 1); */
+  /* // The total work items number is the number of glops in a subcell */
+  /* // * number of subcells */
+  /* size_t numworkitems = param[4] * param[5] * param[6] * groupsize; */
+  /* //printf("groupsize=%zd numworkitems=%zd\n", groupsize, numworkitems); */
+  status = clEnqueueNDRangeKernel(f->cli.commandqueue,
+				  kernel,
+				  1,
+				  NULL,
+				  &numworkitems,
+				  &groupsize,
+				  nwait,
+				  wait,
+				  done);
+  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status >= CL_SUCCESS);
 }
 
 void set_buf_to_zero_cl(cl_mem *buf, int size, field *f,
