@@ -436,9 +436,9 @@ void Initfield(field *f) {
   f->pic = NULL;
 
   // TODO: move this to the integrator code
-  f->tnow=0;
-  f->itermax=0;
-  f->iter_time=0;
+  f->tnow = 0;
+  f->itermax = 0;
+  f->iter_time = 0;
   f->nb_diags = 0;
 
   printf("hmin=%f\n", f->hmin);
@@ -451,15 +451,36 @@ void Initfield(field *f) {
 
   // Allocate and set MacroCells
   f->mcell = calloc(f->macromesh.nbelems, sizeof(MacroCell));
+  int wcount = 0;
   for(int ie = 0; ie < f->macromesh.nbelems; ie++) {
     MacroCell *mcell = f->mcell + ie; 
+
     mcell->ie = ie;
+
     for(int inoloc = 0; inoloc < 20; inoloc++) {
       int ino = f->macromesh.elem2node[20 * ie + inoloc];
       mcell->physnode[inoloc][0] = f->macromesh.node[3 * ino + 0];
       mcell->physnode[inoloc][1] = f->macromesh.node[3 * ino + 1];
       mcell->physnode[inoloc][2] = f->macromesh.node[3 * ino + 2];
     }
+
+    mcell->deg[0] = f->interp_param[1];
+    mcell->deg[1] = f->interp_param[2];
+    mcell->deg[2] = f->interp_param[3];
+    mcell->raf[0] = f->interp_param[4];
+    mcell->raf[1] = f->interp_param[5];
+    mcell->raf[2] = f->interp_param[6];
+
+    mcell->nreal = f->model.m
+      * (mcell->deg[1] + 1)
+      * (mcell->deg[2] + 1)
+      * mcell->raf[0]
+      * mcell->raf[1]
+      * mcell->raf[2];
+
+    mcell->wn = f->wn + wcount;
+    mcell->dtwn = f->dtwn + wcount;
+    wcount += mcell->nreal;
   }
 
   // Compute cfl parameter min_i vol_i/surf_i

@@ -23,6 +23,13 @@ typedef struct MacroFace {
 typedef struct MacroCell {
   int ie;
   real physnode[20][3];
+
+  int deg[3];
+  int raf[3];
+  
+  int nreal;
+  double *wn;
+  double *dtwn;
 } MacroCell;
 
 //! \brief Data structure for managing a  discrete vector field
