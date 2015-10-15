@@ -606,14 +606,7 @@ void Plotfield(int typplot, int compare, field* f, char *fieldname,
   // Nodes
   int npgv = NPG(f->interp_param + 1);
   for(int i = 0; i < f->macromesh.nbelems; i++) {
-    // Get the nodes of element L
-    real physnode[20][3];
-    for(int ino = 0; ino < 20; ino++) {
-      int numnoe = elem2nodes[20 * i + ino];
-      for(int ii = 0; ii < 3; ii++) {
-        physnode[ino][ii] = node[3 * numnoe + ii];
-      }
-    }
+    MacroCell *mcell = f->mcell + i;
 
     // Loop on the macro elem subcells
     int icL[3];
@@ -633,7 +626,8 @@ void Plotfield(int typplot, int compare, field* f, char *fieldname,
 	    }
 
 	    real Xphy[3];
-	    Ref2Phy(physnode, Xr, NULL, -1, Xphy, NULL,  NULL, NULL, NULL);
+	    Ref2Phy(mcell->physnode, Xr, NULL, -1, Xphy, NULL,  NULL, NULL,
+		    NULL);
 
 	    real Xplot[3] = {Xphy[0], Xphy[1], Xphy[2]};
 
