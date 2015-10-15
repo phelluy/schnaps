@@ -79,15 +79,9 @@ real min_grid_spacing(field *f)
   real hmin = FLT_MAX;
 
   for (int ie = 0; ie < f->macromesh.nbelems; ie++) {
+    MacroCell *mcell = f->mcell + ie;
+
     real vol = 0, surf = 0;
-    // Get the physical nodes of element ie
-    real physnode[20][3];
-    for(int inoloc = 0; inoloc < 20; inoloc++) {
-      int ino = f->macromesh.elem2node[20*ie+inoloc];
-      physnode[inoloc][0] = f->macromesh.node[3 * ino + 0];
-      physnode[inoloc][1] = f->macromesh.node[3 * ino + 1];
-      physnode[inoloc][2] = f->macromesh.node[3 * ino + 2];
-    }
 
     // Loop on the glops (for numerical integration)
     for(int ipg = 0; ipg < NPG(f->interp_param + 1); ipg++) {
@@ -95,7 +89,7 @@ real min_grid_spacing(field *f)
       // Get the coordinates of the Gauss point
       ref_pg_vol(f->interp_param + 1, ipg, xpgref, &wpg, NULL);
       real codtau[3][3], dtau[3][3];
-      Ref2Phy(physnode, // phys. nodes
+      Ref2Phy(mcell->physnode, // phys. nodes
 	      xpgref, // xref
 	      NULL, -1, // dpsiref, ifa
 	      NULL, dtau, // xphy, dtau
@@ -103,6 +97,7 @@ real min_grid_spacing(field *f)
       real det = dot_product(dtau[0], codtau[0]);
       vol += wpg * det;
     }
+    
     for(int ifa = 0; ifa < 6; ifa++) {
       // loop on the faces
       for(int ipgf = 0; ipgf < NPGF(f->interp_param + 1, ifa); ipgf++) {
@@ -112,7 +107,7 @@ real min_grid_spacing(field *f)
 	real vnds[3];
 	{
 	  real codtau[3][3], dtau[3][3];
-	  Ref2Phy(physnode,
+	  Ref2Phy(mcell->physnode,
 		  xpgref,
 		  NULL, ifa, // dpsiref, ifa
 		  NULL, dtau,
@@ -122,7 +117,6 @@ real min_grid_spacing(field *f)
       }
     }
     hmin = hmin < vol/surf ? hmin : vol/surf;
-
   }
  
   // Now take into account the polynomial degree and the refinement
@@ -447,9 +441,6 @@ void Initfield(field *f) {
   f->iter_time=0;
   f->nb_diags = 0;
 
-  // Compute cfl parameter min_i vol_i/surf_i
-  f->hmin = min_grid_spacing(f);
-
   printf("hmin=%f\n", f->hmin);
 
   // Allocate and set MacroFaces
@@ -470,6 +461,9 @@ void Initfield(field *f) {
       mcell->physnode[inoloc][2] = f->macromesh.node[3 * ino + 2];
     }
   }
+
+  // Compute cfl parameter min_i vol_i/surf_i
+  f->hmin = min_grid_spacing(f);
 
   init_data(f);
   
