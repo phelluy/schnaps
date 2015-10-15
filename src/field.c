@@ -145,27 +145,21 @@ void init_empty_field(field *f)
 void init_data(field *f)
 {
   for(int ie = 0; ie < f->macromesh.nbelems; ie++) {
-    real physnode[20][3];
-    for(int inoloc = 0; inoloc < 20; inoloc++) {
-      int ino = f->macromesh.elem2node[20 * ie + inoloc];
-      physnode[inoloc][0] = f->macromesh.node[3 * ino + 0];
-      physnode[inoloc][1] = f->macromesh.node[3 * ino + 1];
-      physnode[inoloc][2] = f->macromesh.node[3 * ino + 2];
-    }
+    MacroCell *mcell = f->mcell + ie;
     
     for(int ipg = 0; ipg < NPG(f->interp_param + 1); ipg++) {
       real xpg[3];
       real xref[3], omega;
       ref_pg_vol(f->interp_param + 1, ipg, xref, &omega, NULL);
       real dtau[3][3];
-      Ref2Phy(physnode,
+      Ref2Phy(mcell->physnode,
 	      xref,
 	      0, -1, // dphiref, ifa
               xpg, dtau,
 	      NULL, NULL, NULL); // codtau, dphi, vnds
       { // Check the reverse transform at all the GLOPS
  	real xref2[3];
-	Phy2Ref(physnode, xpg, xref2);
+	Phy2Ref(mcell->physnode, xpg, xref2);
 	assert(Dist(xref, xref2) < 1e-8);
       }
 
@@ -453,8 +447,6 @@ void Initfield(field *f) {
   f->iter_time=0;
   f->nb_diags = 0;
 
-  init_data(f);
-
   // Compute cfl parameter min_i vol_i/surf_i
   f->hmin = min_grid_spacing(f);
 
@@ -479,6 +471,8 @@ void Initfield(field *f) {
     }
   }
 
+  init_data(f);
+  
 #ifdef _WITH_OPENCL
   // opencl inits
   if(!cldevice_is_acceptable(nplatform_cl, ndevice_cl)) {
