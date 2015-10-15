@@ -498,8 +498,11 @@ void free_field(field *f)
   status = clReleaseMemObject(f->physnode_cl);
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
-  free(f->physnode);
+
 #endif
+  free(f->physnode);
+
+  // FIXME: free mcells and their contents.
 }
 
 // Display the field on screen
@@ -1446,15 +1449,6 @@ void dtfieldSlow(field* f)
     for(int ifa = 0; ifa < nbfa; ifa++) {
       // get the right elem or the boundary id
       int ieR = f->macromesh.elem2elem[6*ie+ifa];
-      real physnodeR[20][3];
-      if (ieR >= 0) {
-      	for(int inoloc = 0; inoloc < 20; inoloc++) {
-      	  int ino = f->macromesh.elem2node[20 * ieR + inoloc];
-      	  physnodeR[inoloc][0] = f->macromesh.node[3 * ino + 0];
-      	  physnodeR[inoloc][1] = f->macromesh.node[3 * ino + 1];
-      	  physnodeR[inoloc][2] = f->macromesh.node[3 * ino + 2];
-      	}
-      }
 
       // Loop on the glops (numerical integration) of the face ifa
       for(int ipgf = 0; ipgf < NPGF(f->interp_param + 1, ifa); ipgf++) {
@@ -1486,8 +1480,11 @@ void dtfieldSlow(field* f)
   		xpg, dtau,
   		codtau, NULL, vnds); // codtau, dpsi, vnds
   	real flux[f->model.m];
-  	if (ieR >=0) {  // the right element exists
-  	  // find the corresponding point in the right elem
+
+	if (ieR >=0) {  // the right element exists
+	  MacroCell *mcellR = f->mcell + ieR;
+	  
+	  // find the corresponding point in the right elem
 	  real xpg_in[3];
 	  Ref2Phy(mcell->physnode,
 		  xpgref_in,
@@ -1495,11 +1492,11 @@ void dtfieldSlow(field* f)
 		  xpg_in, dtau,
 		  codtau, NULL, vnds); // codtau, dpsi, vnds
   	  real xref[3];
-	  Phy2Ref(physnodeR, xpg_in, xref);
+	  Phy2Ref(mcellR->physnode, xpg_in, xref);
   	  int ipgR = ref_ipg(f->interp_param + 1, xref);
 	  real xpgR[3], xrefR[3], wpgR;
 	  ref_pg_vol(f->interp_param + 1, ipgR, xrefR, &wpgR, NULL);
-	  Ref2Phy(physnodeR,
+	  Ref2Phy(mcellR->physnode,
 		  xrefR,
 		  NULL, -1, // dphiref, ifa
 		  xpgR, NULL,
