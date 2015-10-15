@@ -22,6 +22,7 @@ typedef struct MacroFace {
 //! as a void* pointer.
 typedef struct MacroCell {
   int ie;
+  real physnode[20][3];
 } MacroCell;
 
 //! \brief Data structure for managing a  discrete vector field
