@@ -1230,7 +1230,7 @@ void DGMass(MacroCell *mcell, field *f, real *dtwmc)
 }
 
 // Apply the source term
-void DGSource(MacroCell *mcell, field *f, real tnow, real *w, real *dtw) 
+void DGSource(MacroCell *mcell, field *f, real tnow, real *wmc, real *dtwmc) 
 {
   if (f->model.Source == NULL) {
     return;
@@ -1247,18 +1247,19 @@ void DGSource(MacroCell *mcell, field *f, real tnow, real *w, real *dtw)
 	    xphy, dtau, // xphy, dtau
 	    codtau, NULL, NULL); // codtau, dpsi, vnds
 
+    // TODO: this copy is not necessary, as we are already contiguous.
     real wL[m];
     for(int iv = 0; iv < m; ++iv){
-      int imem = f->varindex(f->interp_param, 0, ipg, iv) + mcell->woffset;
-      wL[iv] = w[imem];
+      int imem = f->varindex(f->interp_param, 0, ipg, iv);
+      wL[iv] = wmc[imem];
     }
 
     real source[m];
     f->model.Source(xphy, tnow, wL, source);
       
     for(int iv = 0; iv < m; ++iv) {
-      int imem = f->varindex(f->interp_param, 0, ipg, iv) + mcell->woffset;
-      dtw[imem] += source[iv];
+      int imem = f->varindex(f->interp_param, 0, ipg, iv);
+      dtwmc[imem] += source[iv];
     }
   }
 }
@@ -1414,11 +1415,12 @@ void dtfield(field *f, real tnow, real *w, real *dtw) {
 
     if(!facealgo) DGMacroCellInterfaceSlow(mcell, f, w, dtw);
 
-    real *dtwnmc = dtw + mcell->woffset;
+    real *dtwmc = dtw + mcell->woffset;
+    real *wmc = w + mcell->woffset;
     DGSubCellInterface(mcell, f, w, dtw);
     DGVolume(mcell, f, w, dtw);
-    DGMass(mcell, f, dtwnmc);
-    DGSource(mcell, f, tnow, w, dtw);
+    DGMass(mcell, f, dtwmc);
+    DGSource(mcell, f, tnow, wmc, dtwmc);
   }
 
   if(f->post_dtfield != NULL) // FIXME: rename to after dtfield
