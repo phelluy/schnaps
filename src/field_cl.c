@@ -515,7 +515,8 @@ void DGFlux_CL(field *f, int dim0, int ie, cl_mem *wn_cl,
 }
 
 // Set kernel argument for DGVolume_CL
-void init_DGVolume_CL(field *f, cl_mem *wn_cl, size_t cachesize)
+void init_DGVolume_CL(MacroCell *mcell, field *f, cl_mem *wn_cl,
+		      size_t cachesize)
 {
   //printf("DGVolume cachesize:%zu\n", cachesize);
 
@@ -531,7 +532,14 @@ void init_DGVolume_CL(field *f, cl_mem *wn_cl, size_t cachesize)
   assert(status >= CL_SUCCESS);
 
   // ie
-  argnum++;
+  status = clSetKernelArg(kernel,
+			  argnum++,
+			  sizeof(int),
+			  &mcell->ie);
+  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status >= CL_SUCCESS);
+
+
 
   status = clSetKernelArg(kernel,
                           argnum++,
@@ -592,22 +600,15 @@ void DGVolume_CL(MacroCell *mcell, field *f, cl_mem *wn_cl,
   // Using NUMFLUX = NumFlux (3 * m multiplies):
   nmultsdgvol += (npgc[0] + npgc[1] + npgc[2]) * 6 * m; 
   
-  init_DGVolume_CL(f, wn_cl, 2 * groupsize * m);
-  
+ 
 
   //printf("DGVolume_CL loop: %d\n", end - start); // This is always 1!!!
 
+  init_DGVolume_CL(mcell, f, wn_cl, 2 * groupsize * m);
   int ie = mcell->ie;
   
   f->flops_vol += numworkitems * nmultsdgvol;
   f->reads_vol += numworkitems * nreadsdgvol;
-
-  status = clSetKernelArg(kernel,
-			  1,
-			  sizeof(int),
-			  &ie);
-  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status >= CL_SUCCESS);
 
   // The groupsize is the number of glops in a subcell
   /* size_t groupsize = (param[1] + 1)* (param[2] + 1)*(param[3] + 1); */
