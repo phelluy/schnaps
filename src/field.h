@@ -242,7 +242,9 @@ void dtfield(field *f, real tnow, real *w, real *dtw);
 //! \param[inout] mcell a MacroCell
 void DGMacroCellInterfaceSlow(MacroCell *mcell, field *f, real *w, real *dtw);
 
-void DGMacroCellInterface(MacroFace *mface, field *f, real *w, real *dtw);
+void DGMacroCellInterface(MacroFace *mface, field *f,
+			  real *wmcL, real *wmcR,
+			  real *dtwmcL, real *dtwmcR);
 void DGMacroCellBoundary(MacroFace *mface, field *f, real *w, real *dtw);
 
 //! \brief compute the Discontinuous Galerkin volume terms

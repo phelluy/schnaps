@@ -109,7 +109,19 @@ int TestKernelInterface()
     const int ninterfaces = f.macromesh.nmacrointerfaces;
     for(int i = 0; i < ninterfaces; ++i) {
       int ifa = f.macromesh.macrointerface[i];
-      DGMacroCellInterface(f.mface + ifa, &f, f.wn, f.dtwn);
+      MacroFace *mface = f.mface + ifa;
+
+      int ieL = mface->ieL;
+      MacroCell *mcellL = f.mcell + ieL;
+      real *wL = f.wn + mcellL->woffset;
+      real *dtwL = f.dtwn + mcellL->woffset;
+
+      int ieR = mface->ieR;
+      MacroCell *mcellR = f.mcell + ieR;
+      real *wR = f.wn + mcellR->woffset;
+      real *dtwR = f.dtwn + mcellR->woffset;
+
+      DGMacroCellInterface(f.mface + ifa, &f, wL, wR, dtwL, dtwR);
     }
   
     // Macrocell boundaries

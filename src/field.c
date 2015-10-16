@@ -951,8 +951,8 @@ void DGSubCellInterface(MacroCell *mcell, field *f, real *wmc, real *dtwmc)
 }
 
 // Compute the Discontinuous Galerkin inter-macrocells boundary terms
-void DGMacroCellInterfaceSlow(MacroCell *mcell, field *f, real *w, real *dtw) {
-  
+void DGMacroCellInterfaceSlow(MacroCell *mcell, field *f, real *w, real *dtw)
+{
   // Local copy of the interpretation parameters
   int iparam[8];
   for(int ip = 0; ip < 8; ip++)
@@ -1133,7 +1133,8 @@ void DGMacroCellBoundary(MacroFace *mface, field *f, real *wmc, real *dtwmc)
 }
 
 // Compute the Discontinuous Galerkin inter-macrocells flux.
-void DGMacroCellInterface(MacroFace *mface, field *f, real *w, real *dtw) 
+void DGMacroCellInterface(MacroFace *mface, field *f,
+			  real *wmcL, real *wmcR, real *dtwmcL, real *dtwmcR) 
 {
   MacroMesh *msh = &f->macromesh;
   const unsigned int m = f->model.m;
@@ -1167,9 +1168,6 @@ void DGMacroCellInterface(MacroFace *mface, field *f, real *w, real *dtw)
 
     // Recover the volume gauss point from the face index
     int ipgL = iparam[7];
-
-    real flux[m];
-    real wL[m];
 
     // Normal vector at gauss point ipgL
     real vnds[3], xpg[3];
@@ -1217,25 +1215,28 @@ void DGMacroCellInterface(MacroFace *mface, field *f, real *w, real *dtw)
     /* #endif */
     /* }	 */
 
+    // TODO: the memory is already contiguous, so no need to copy.
+    real wL[m];
     real wR[m];
     for(int iv = 0; iv < m; iv++) {
-      int imemL = f->varindex(iparam, 0, ipgL, iv) + mcellL->woffset;
-      wL[iv] = w[imemL];
-      int imemR = f->varindex(iparam, 0, ipgR, iv) + mcellR->woffset;
-      wR[iv] = w[imemR];
+      int imemL = f->varindex(iparam, 0, ipgL, iv);
+      wL[iv] = wmcL[imemL];
+      int imemR = f->varindex(iparam, 0, ipgR, iv);
+      wR[iv] = wmcR[imemR];
     }
 
     // int_dL F(wL, wR, grad phi_ib)
 
+    real flux[m];
     f->model.NumFlux(wL, wR, vnds, flux);
-
+    
     // Add flux to both sides
     for(int iv = 0; iv < m; iv++) {
       // The basis functions 1is also the gauss point index
-      int imemL = f->varindex(iparam, 0, ipgL, iv) + mcellL->woffset;
-      int imemR = f->varindex(iparam, 0, ipgR, iv) + mcellR->woffset;
-      dtw[imemL] -= flux[iv] * wpg;
-      dtw[imemR] += flux[iv] * wpg;
+      int imemL = f->varindex(iparam, 0, ipgL, iv);
+      int imemR = f->varindex(iparam, 0, ipgR, iv);
+      dtwmcL[imemL] -= flux[iv] * wpg;
+      dtwmcR[imemR] += flux[iv] * wpg;
     }
 
   }
@@ -1440,18 +1441,31 @@ void dtfield(field *f, real tnow, real *w, real *dtw) {
     const int ninterfaces = f->macromesh.nmacrointerfaces;
     for(int i = 0; i < ninterfaces; ++i) {
       int ifa = f->macromesh.macrointerface[i];
-      DGMacroCellInterface(f->mface + ifa, f, w, dtw);
+      MacroFace *mface = f->mface + ifa;
+
+      int ieL = mface->ieL;
+      MacroCell *mcellL = f->mcell + ieL;
+      real *wL = w + mcellL->woffset;
+      real *dtwL = dtw + mcellL->woffset;
+
+      int ieR = mface->ieR;
+      MacroCell *mcellR = f->mcell + ieR;
+      real *wR = w + mcellR->woffset;
+      real *dtwR = dtw + mcellR->woffset;
+
+      DGMacroCellInterface(f->mface + ifa, f, wL, wR, dtwL, dtwR);
     }
 
     // Macrocell boundaries
     const int nboundaryfaces = f->macromesh.nboundaryfaces;
     for(int i = 0; i < nboundaryfaces; ++i) {
       int ifa = f->macromesh.boundaryface[i];
-      int ie = f->macromesh.face2elem[4 * ifa + 0]; // FIXME: put in ifa
+      MacroFace *mface = f->mface + ifa;
+      int ie = mface->ieL;
       MacroCell *mcell = f->mcell + ie;
       real *wmc = w + mcell->woffset;
       real *dtwmc = dtw + mcell->woffset;
-      DGMacroCellBoundary(f->mface + ifa, f, wmc, dtwmc);
+      DGMacroCellBoundary(mface, f, wmc, dtwmc);
     }
   }
 
