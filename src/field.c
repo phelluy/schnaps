@@ -1265,7 +1265,7 @@ void DGSource(MacroCell *mcell, field *f, real tnow, real *wmc, real *dtwmc)
 }
 
 // Compute the Discontinuous Galerkin volume terms, fast version
-void DGVolume(MacroCell *mcell, field *f, real *w, real *dtw) 
+void DGVolume(MacroCell *mcell, field *f, real *wmc, real *dtwmc) 
 {
   const int m = f->model.m;
   const int deg[3] = {mcell->deg[0],mcell->deg[1],mcell->deg[2]};
@@ -1313,8 +1313,7 @@ void DGVolume(MacroCell *mcell, field *f, real *w, real *dtw)
 	  omega[p] = tomega;
 
 	  for(int im = 0; im < m; ++im) {
-	    imems[pos++] = f->varindex(f_interp_param, 0, offsetL + p, im)
-	      + mcell->woffset;
+	    imems[pos++] = f->varindex(f_interp_param, 0, offsetL + p, im);
 	  }
 	}
 
@@ -1331,7 +1330,7 @@ void DGVolume(MacroCell *mcell, field *f, real *w, real *dtw)
 		int ipgL = offsetL + p[0] + npg[0] * (p[1] + npg[1] * p[2]);
 		for(int iv = 0; iv < m; iv++) {
 		  ///int imemL = f->varindex(f_interp_param, ie, ipgL, iv);
-		  wL[iv] = w[imems[m * (ipgL - offsetL) + iv]];
+		  wL[iv] = wmc[imems[m * (ipgL - offsetL) + iv]];
 		}
 		int q[3] = {p[0], p[1], p[2]};
 		// loop on the direction dim0 on the "cross"
@@ -1365,11 +1364,10 @@ void DGVolume(MacroCell *mcell, field *f, real *w, real *dtw)
 
 		  int ipgR = offsetL+q[0]+npg[0]*(q[1]+npg[1]*q[2]);
 		  for(int iv = 0; iv < m; iv++) {
-		    int imemR = f->varindex(f_interp_param, 0, ipgR, iv)
-		     + mcell->woffset;
+		    int imemR = f->varindex(f_interp_param, 0, ipgR, iv);
 		    int temp = m * (ipgR - offsetL) + iv;  
 		    //assert(imemR == imems[temp]);
-		    dtw[imems[temp]] += flux[iv] * wpgL;
+		    dtwmc[imems[temp]] += flux[iv] * wpgL;
 		  }
 		} // iq
 	      } // p2
@@ -1413,12 +1411,13 @@ void dtfield(field *f, real tnow, real *w, real *dtw) {
   for(int ie = 0; ie < f->macromesh.nbelems; ++ie) {
     MacroCell *mcell = f->mcell + ie;
 
-    if(!facealgo) DGMacroCellInterfaceSlow(mcell, f, w, dtw);
+    if(!facealgo)
+      DGMacroCellInterfaceSlow(mcell, f, w, dtw);
 
     real *dtwmc = dtw + mcell->woffset;
     real *wmc = w + mcell->woffset;
     DGSubCellInterface(mcell, f, w, dtw);
-    DGVolume(mcell, f, w, dtw);
+    DGVolume(mcell, f, wmc, dtwmc);
     DGMass(mcell, f, dtwmc);
     DGSource(mcell, f, tnow, wmc, dtwmc);
   }
