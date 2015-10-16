@@ -1238,9 +1238,8 @@ void DGSource(MacroCell *mcell, field *f, real tnow, real *w, real *dtw)
   }
 
   const int m = f->model.m;
-  int ie = mcell->ie;
 
-  for(int ipg = 0; ipg < NPG(f->interp_param + 1); ipg++) {
+  for(int ipg = 0; ipg < mcell->npg; ipg++) {
     real dtau[3][3], codtau[3][3], xpgref[3], xphy[3], wpg;
     ref_pg_vol(f->interp_param + 1, ipg, xpgref, &wpg, NULL);
     Ref2Phy(mcell->physnode, // phys. nodes
@@ -1248,21 +1247,21 @@ void DGSource(MacroCell *mcell, field *f, real tnow, real *w, real *dtw)
 	    NULL, -1, // dpsiref, ifa
 	    xphy, dtau, // xphy, dtau
 	    codtau, NULL, NULL); // codtau, dpsi, vnds
-    real wL[m], source[m];
+
+    real wL[m];
     for(int iv = 0; iv < m; ++iv){
-      int imem = f->varindex(f->interp_param, ie, ipg, iv);
+      int imem = f->varindex(f->interp_param, 0, ipg, iv) + mcell->woffset;
       wL[iv] = w[imem];
     }
-      
+
+    real source[m];
     f->model.Source(xphy, tnow, wL, source);
       
     for(int iv = 0; iv < m; ++iv) {
-      int imem = f->varindex(f->interp_param, ie, ipg, iv);
+      int imem = f->varindex(f->interp_param, 0, ipg, iv) + mcell->woffset;
       dtw[imem] += source[iv];
-	
     }
   }
-
 }
 
 // Compute the Discontinuous Galerkin volume terms, fast version
