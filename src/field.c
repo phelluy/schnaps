@@ -17,10 +17,6 @@
 #include "clinfo.h"
 #endif
 
-#ifdef _WITH_PTHREAD
-#include <pthread.h>
-#endif
-
 // param[0] = M
 // param[1] = deg x
 // param[2] = deg y
@@ -30,6 +26,8 @@
 // param[6] = raf z
 
 #pragma start_opencl
+// FIXME: remove elem
+// FIXME: split up param
 int GenericVarindex(__constant int *param, int elem, int ipg, int iv) {
   int npg = (param[1] + 1) * (param[2] + 1) * (param[3] + 1)
     * param[4] * param[5] * param[6];
@@ -1209,7 +1207,7 @@ void DGMacroCellInterface(MacroFace *mface, field *f, real *w, real *dtw)
 }
 
 // Apply division by the mass matrix
-void DGMass(MacroCell *mcell, field *f, real *dtw) 
+void DGMass(MacroCell *mcell, field *f, real *dtwmc) 
 {
   int m = f->model.m;
 
@@ -1225,8 +1223,8 @@ void DGMass(MacroCell *mcell, field *f, real *dtw)
 
     real norm = 1.0 / (wpg * det);
     for(int iv = 0; iv < m; iv++) {
-      int imem = f->varindex(f->interp_param, 0, ipg, iv) + mcell->woffset;
-      dtw[imem] *= norm;
+      int imem = f->varindex(f->interp_param, 0, ipg, iv);
+      dtwmc[imem] *= norm;
     }
   }
 }
@@ -1412,12 +1410,15 @@ void dtfield(field *f, real tnow, real *w, real *dtw) {
 #pragma omp parallel for schedule(dynamic, 1)
 #endif
   for(int ie = 0; ie < f->macromesh.nbelems; ++ie) {
-    MacroCell *mcelli = f->mcell + ie;
-    if(!facealgo) DGMacroCellInterfaceSlow(mcelli, f, w, dtw);
-    DGSubCellInterface(mcelli, f, w, dtw);
-    DGVolume(mcelli, f, w, dtw);
-    DGMass(mcelli, f, dtw);
-    DGSource(mcelli, f, tnow, w, dtw);
+    MacroCell *mcell = f->mcell + ie;
+
+    if(!facealgo) DGMacroCellInterfaceSlow(mcell, f, w, dtw);
+
+    real *dtwnmc = dtw + mcell->woffset;
+    DGSubCellInterface(mcell, f, w, dtw);
+    DGVolume(mcell, f, w, dtw);
+    DGMass(mcell, f, dtwnmc);
+    DGSource(mcell, f, tnow, w, dtw);
   }
 
   if(f->post_dtfield != NULL) // FIXME: rename to after dtfield
