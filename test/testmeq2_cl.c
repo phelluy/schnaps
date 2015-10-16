@@ -194,9 +194,27 @@ int TestmEq2(void) {
   clFinish(f.cli.commandqueue);
   
   f.dtwn = dtwn;
-  for(int ifa = 0; ifa < f.macromesh.nbfaces; ifa++) {
-    DGMacroCellInterface(mface + ifa, &f, f.wn, f.dtwn);
+
+  /* for(int ifa = 0; ifa < f.macromesh.nbfaces; ifa++) { */
+  /*   DGMacroCellInterface(mface + ifa, &f, f.wn, f.dtwn); */
+  /* } */
+  
+  {
+    // Macrocell interfaces
+    const int ninterfaces = f.macromesh.nmacrointerfaces;
+    for(int i = 0; i < ninterfaces; ++i) {
+      int ifa = f.macromesh.macrointerface[i];
+      DGMacroCellInterface(f.mface + ifa, &f, f.wn, f.dtwn);
+    }
+  
+    // Macrocell boundaries
+    const int nboundaryfaces = f.macromesh.nboundaryfaces;
+    for(int i = 0; i < nboundaryfaces; ++i) {
+      int ifa = f.macromesh.boundaryface[i];
+      DGMacroCellBoundary(f.mface + ifa, &f, f.wn, f.dtwn);
+    }
   }
+  
   err = maxerr(dtwn, dtwn_cl, f.wsize);
   printf("\tmax error: %f\n", err);
   test = (err < tolerance);

@@ -239,11 +239,8 @@ void dtfield(field *f, real tnow, real *w, real *dtw);
 //! \param[inout] mcell a MacroCell
 void DGMacroCellInterfaceSlow(MacroCell *mcell, field *f, real *w, real *dtw);
 
-//! \brief  compute the Discontinuous Galerkin inter-macrocells boundary terms second implementation with a loop on the faces
-//! The argument has to be void* (for compatibility with pthread)
-//! but it is logically a MacroCell*
-//! \param[inout] mface a MacroFace
 void DGMacroCellInterface(MacroFace *mface, field *f, real *w, real *dtw);
+void DGMacroCellBoundary(MacroFace *mface, field *f, real *w, real *dtw);
 
 //! \brief compute the Discontinuous Galerkin volume terms
 //! The argument has to be void* (for compatibility with pthread)

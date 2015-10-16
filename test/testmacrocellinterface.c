@@ -151,10 +151,26 @@ int TestMacroFace(void){
 
   // OpenMP, new method
   f.dtwn = calloc(f.wsize, sizeof(real));
+
   for(int iw = 0; iw < f.wsize; iw++)
     f.dtwn[iw] = 0;
-  for(int ifa = 0; ifa < f.macromesh.nbfaces; ifa++)
-    DGMacroCellInterface((void*) (mface + ifa), &f, f.wn, f.dtwn);
+  
+  {
+    // Macrocell interfaces
+    const int ninterfaces = f.macromesh.nmacrointerfaces;
+    for(int i = 0; i < ninterfaces; ++i) {
+      int ifa = f.macromesh.macrointerface[i];
+      DGMacroCellInterface(f.mface + ifa, &f, f.wn, f.dtwn);
+    }
+  
+    // Macrocell boundaries
+    const int nboundaryfaces = f.macromesh.nboundaryfaces;
+    for(int i = 0; i < nboundaryfaces; ++i) {
+      int ifa = f.macromesh.boundaryface[i];
+      DGMacroCellBoundary(f.mface + ifa, &f, f.wn, f.dtwn);
+    }
+  }
+
   real *fdtwn_openmp = f.dtwn;
 
   // Check that the results are the same
