@@ -1211,7 +1211,6 @@ void DGMacroCellInterface(MacroFace *mface, field *f, real *w, real *dtw)
 void DGMass(MacroCell *mcell, field *f, real *dtw) 
 {
   int m = f->model.m;
-  int ie = mcell->ie;
 
   for(int ipg = 0; ipg < mcell->npg; ipg++) {
     real dtau[3][3], codtau[3][3], xpgref[3], xphy[3], wpg;
@@ -1224,12 +1223,11 @@ void DGMass(MacroCell *mcell, field *f, real *dtw)
     real det = dot_product(dtau[0], codtau[0]);
 
     real norm = 1.0 / (wpg * det);
-    for(int iv = 0; iv < f->model.m; iv++) {
+    for(int iv = 0; iv < m; iv++) {
       int imem = f->varindex(f->interp_param, 0, ipg, iv) + mcell->woffset;
       dtw[imem] *= norm;
     }
   }
-
 }
 
 // Apply the source term
