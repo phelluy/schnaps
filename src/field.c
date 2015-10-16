@@ -534,6 +534,8 @@ void Displayfield(field *f) {
   printf("Display field...\n");
   for(int ie = 0; ie < f->macromesh.nbelems; ie++) {
     printf("elem %d\n", ie);
+    MacroCell *mcell = f->mcell + ie;
+    
     for(int ipg = 0; ipg < NPG(f->interp_param + 1); ipg++) {
       real xref[3], wpg;
       ref_pg_vol(f->interp_param + 1, ipg, xref, &wpg, NULL);
@@ -541,13 +543,13 @@ void Displayfield(field *f) {
       printf("Gauss point %d %f %f %f \n", ipg, xref[0], xref[1], xref[2]);
       printf("dtw= ");
       for(int iv = 0; iv < f->model.m; iv++) {
-	int imem = f->varindex(f->interp_param, ie, ipg, iv);
+	int imem = f->varindex(f->interp_param, 0, ipg, iv) + mcell->woffset;
 	printf("%f ", f->dtwn[imem]);
       }
       printf("\n");
       printf("w= ");
       for(int iv = 0; iv < f->model.m; iv++) {
-	int imem = f->varindex(f->interp_param, ie, ipg, iv);
+	int imem = f->varindex(f->interp_param, 0, ipg, iv) + mcell->woffset;
 	printf("%f ", f->wn[imem]);
       }
       printf("\n");
@@ -819,15 +821,9 @@ void DGSubCellInterface(MacroCell *mcell, field *f, real *w, real *dtw)
 {
   int ie = mcell->ie;
  
-  const int nraf[3] = {f->interp_param[4],
-		       f->interp_param[5],
-		       f->interp_param[6]};
-  const int deg[3] = {f->interp_param[1],
-		      f->interp_param[2],
-		      f->interp_param[3]};
-  const int npg[3] = {deg[0] + 1,
-		      deg[1] + 1,
-		      deg[2] + 1};
+  const int nraf[3] = {mcell->raf[0], mcell->raf[1], mcell->raf[2]};
+  const int deg[3] = {mcell->deg[0], mcell->deg[1], mcell->deg[2]};
+  const int npg[3] = {deg[0] + 1, deg[1] + 1, deg[2] + 1};
   const int m = f->model.m;
 
   // Loop on the subcells
@@ -914,8 +910,10 @@ void DGSubCellInterface(MacroCell *mcell, field *f, real *w, real *dtw)
 		real wL[m], wR[m], flux[m];
 		for(int iv = 0; iv < m; iv++) {
 		  // TO DO change the varindex signature
-		  int imemL = f->varindex(f->interp_param, ie, ipgL, iv); 
-		  int imemR = f->varindex(f->interp_param, ie, ipgR, iv);
+		  int imemL = f->varindex(f->interp_param, 0, ipgL, iv)
+		    + mcell->woffset; 
+		  int imemR = f->varindex(f->interp_param, 0, ipgR, iv)
+		    + mcell->woffset;
 		  // end TO DO
 		  wL[iv] = w[imemL];
 		  wR[iv] = w[imemR];
@@ -934,8 +932,10 @@ void DGSubCellInterface(MacroCell *mcell, field *f, real *w, real *dtw)
 		// finally distribute the flux on the two sides
 		for(int iv = 0; iv < m; iv++) {
 		  // TO DO change the varindex signature
-		  int imemL = f->varindex(f->interp_param, ie, ipgL, iv);
-		  int imemR = f->varindex(f->interp_param, ie, ipgR, iv);
+		  int imemL = f->varindex(f->interp_param, 0, ipgL, iv)
+		    + mcell->woffset;
+		  int imemR = f->varindex(f->interp_param, 0, ipgR, iv)
+		    + mcell->woffset;
 		  // end TO DO
 		  dtw[imemL] -= flux[iv] * wpg;
 		  dtw[imemR] += flux[iv] * wpg;
