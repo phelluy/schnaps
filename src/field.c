@@ -170,37 +170,6 @@ void set_physnodes_cl(field *f)
 {
   const int nmacro = f->macromesh.nbelems;
 
-  {
-    // FIXME: get rid of this in favour of MacroCell use.
-    real buf_size = sizeof(real) * 60 * nmacro;
-    real *physnode = malloc(buf_size);
-  
-    for(int ie = 0; ie < nmacro; ++ie) {
-      int ie20 = 20 * ie;
-      for(int inoloc = 0; inoloc < 20; ++inoloc) {
-	int ino = 3 * f->macromesh.elem2node[ie20 + inoloc];
-	real *iphysnode = physnode + 3 * ie20 + 3 * inoloc;
-	real *nodeino = f->macromesh.node + ino;
-	iphysnode[0] = nodeino[0];
-	iphysnode[1] = nodeino[1];
-	iphysnode[2] = nodeino[2];
-      }
-    }
-
-    cl_int status;
-    status = clEnqueueWriteBuffer(f->cli.commandqueue,
-				  f->physnodes_cl, // cl_mem buffer,
-				  CL_TRUE,// cl_bool blocking_read,
-				  0, // size_t offset
-				  buf_size, // size_t cb
-				  physnode, //  	void *ptr,
-				  0, 0, 0);
-    if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
-    assert(status >= CL_SUCCESS);
-  
-    free(physnode);
-  }
-
   // Set physnode_cl in MacroCells
   {
     for(int ie = 0; ie < nmacro; ++ie) {
@@ -273,38 +242,8 @@ void init_field_cl(field *f)
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 
-  // Allocate one physnode buffer
-  f->physnode = calloc(60, sizeof(real));
-  f->physnode_cl = clCreateBuffer(f->cli.context,
-				  CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR,
-				  sizeof(real) * 60,
-				  f->physnode,
-				  &status);
-  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status >= CL_SUCCESS);
-
-  // FIXME: remove
-  // Allocate and fill buffer for all macrocell geometries.
-  const int nmacro = f->macromesh.nbelems;
-  const size_t buf_size = sizeof(real) * 60 * nmacro;
-  f->physnodes_cl = clCreateBuffer(f->cli.context,
-				   CL_MEM_READ_ONLY,
-				   buf_size,
-				   NULL,
-				   &status);
-  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status >= CL_SUCCESS);
-
   set_physnodes_cl(f);
-
-  // Allocate one physnode buffer for R macrocell
-  f->physnodeR = calloc(60, sizeof(real));
-  f->physnodeR_cl = clCreateBuffer(f->cli.context,
-				   CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR,
-				   sizeof(real) * 60,
-				   f->physnodeR,
-				   &status);
-
+  
   // Program compilation
   char *strprog;
   GetOpenCLCode();
@@ -395,6 +334,8 @@ void init_field_cl(field *f)
   // Initialize events. // FIXME: free on exit
   f->clv_zbuf = clCreateUserEvent(f->cli.context, &status);
 
+  const int nmacro = f->macromesh.nbelems;
+  
   const int ninterfaces = f->macromesh.nmacrointerfaces;
   if(ninterfaces > 0) {
     f->clv_mci = calloc(ninterfaces, sizeof(cl_event));
@@ -561,14 +502,10 @@ void free_field(field *f)
 {
 
 #ifdef _WITH_OPENCL
-  cl_int status;
+  //  cl_int status;
 
-  status = clReleaseMemObject(f->physnode_cl);
-  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status >= CL_SUCCESS);
 
 #endif
-  free(f->physnode);
 
   // FIXME: free mcells and mface contents.
   free(f->mcell);

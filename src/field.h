@@ -30,7 +30,6 @@ typedef struct MacroCell {
   int deg[3];
   int raf[3];
 
-
   int nreal;
   int npg;
   int woffset;
@@ -117,11 +116,7 @@ typedef struct field {
   //! \brief copy of the params
   cl_mem param_cl;
   //! \brief copy physnode
-  cl_mem physnode_cl;
-  cl_mem physnodes_cl; // The physnodes for all the macrocells
-  real *physnode;
 
-  cl_mem physnodeR_cl;
   real *physnodeR;
 
   bool use_source_cl;

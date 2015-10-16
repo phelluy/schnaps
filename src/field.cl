@@ -515,8 +515,6 @@ void DGFlux(__constant int *param,       // 0: interp param
   // Use __local memory in DGFlux kernel?
 #define DGFLUX_LOCAL 1
 
-  //__constant real *physnode = physnodes + ie * 60;
-
   const int m = param[0];
   const int deg[3] = {param[1], param[2], param[3]};
   const int npg[3] = {deg[0] + 1, deg[1] + 1, deg[2] + 1};
@@ -750,7 +748,7 @@ void set_buffer_to_zero(__global real *w)
 __kernel
 void DGVolume(__constant int *param,     // 0: interp param
 	      int ie,                    // 1: macrocel index
-	      __constant real *physnodes, // 2: macrocell nodes
+	      __constant real *physnode, // 2: macrocell nodes
               __global real *wn,         // 3: field values
 	      __global real *dtwn,       // 4: time derivative
 	      __local real *wnloc        // 5: cache for wn and dtwn
@@ -758,8 +756,6 @@ void DGVolume(__constant int *param,     // 0: interp param
 {
   // Use __local memory in DGVolume kernel?
 #define DGVolume_LOCAL 1
-
-  __constant real *physnode = physnodes + ie * 60;
 
   const int m = param[0];
   const int deg[3] = {param[1],param[2], param[3]};
@@ -934,9 +930,7 @@ void DGMass(__constant int *param,       // interp param
 	    //	    int offset,                   // offset to macrocell's w
             __constant real *physnode,  // macrocell nodes
             __global real *dtwn)         // time derivative
-{
-  //    __constant real *physnode = physnodes + 60 * ie;
-  
+{ 
   int ipg = get_global_id(0);
   int m = param[0];
   int npg[3] = {param[1] + 1, param[2] + 1, param[3] + 1};
@@ -998,22 +992,19 @@ void DGMass(__constant int *param,       // interp param
 // Compute the Discontinuous Galerkin inter-macrocells boundary terms.
 // Second implementation with a loop on the faces.
 __kernel
-void DGMacroCellInterface(__constant int *param,        // 0: interp param
-                          int ieL,                      // 1: left macrocell 
-			  int ieR,                      // 2: right macrocell
-                          int locfaL,                   // 3: left face index
-			  int locfaR,                   // 4: right face index
-                          __constant real *physnodes,   // 5: left physnode
-                          //__constant real *physnodes0,  // 6: right physnode
-                          __global real *wn,            // 7: field 
-                          __global real *dtwn,          // 8: time derivative
-			  __local real *cache           // 9: local mem
+void DGMacroCellInterface(__constant int *param,        // interp param
+                          int ieL,                      // left macrocell 
+			  int ieR,                      // right macrocell
+                          int locfaL,                   // left face index
+			  int locfaR,                   // right face index
+                          __constant real *physnodeL,   // left physnode
+			  __constant real *physnodeR,   // right physnode
+                          __global real *wn,            // field 
+                          __global real *dtwn,          // time derivative
+			  __local real *cache           // local mem
 			  )
 {
   // TODO: use __local real *cache.
-
-  __constant real *physnodeL = physnodes + ieL * 60;
-  __constant real *physnodeR = physnodes + ieR * 60;
 
   int ipgfL = get_global_id(0);
 
@@ -1095,15 +1086,13 @@ void DGBoundary(__constant int *param,      // 0: interp param
 		real tnow,                  // 1: current time
 		int ieL,                    // 2: left macrocell 
 		int locfaL,                 // 3: left face index
-		__constant real *physnodes, // 4: geometry for all mcells
+		__constant real *physnodeL, // 4: geometry for all mcells
 		__global real *wn,          // 5: field 
 		__global real *dtwn,        // 6: time derivative
 		__local real *cache         // 7: local mem
 		)
 {
   // TODO: use __local real *cache.
-
-  __constant real *physnodeL = physnodes + ieL * 60;
 
   int ipgfL = get_global_id(0);
 
@@ -1332,16 +1321,16 @@ void OneSource(const real *x, const real t, const real *w, real *source) {
 
 // Compute the source terms inside  one macrocell
 __kernel
-void DGSource(__constant int *param,     // 0: interp param
-	      int ie,                    // 1: macrocel index
-	      __constant real *physnodes, // 2: macrocell nodes
-	      const real tnow,           // 3: the current time
-              __global real *wn,         // 4: field values
-	      __global real *dtwn,       // 5: time derivative
-	      __local real *wnloc        // 6: cache for wn and dtwn
+void DGSource(__constant int *param,     // interp param
+	      int ie,                    // macrocel index
+	      __constant real *physnode, // macrocell nodes
+	      const real tnow,           // the current time
+              __global real *wn,         // field values
+	      __global real *dtwn,       // time derivative
+	      __local real *wnloc        // cache for wn and dtwn
 	      )
 {
-  __constant real *physnode = physnodes + ie * 60;
+  //  __constant real *physnode = physnodes + ie * 60;
 
   const int m = param[0];
   const int deg[3] = {param[1],param[2], param[3]};
