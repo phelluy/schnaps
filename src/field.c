@@ -1267,18 +1267,10 @@ void DGSource(MacroCell *mcell, field *f, real tnow, real *w, real *dtw)
 // Compute the Discontinuous Galerkin volume terms, fast version
 void DGVolume(MacroCell *mcell, field *f, real *w, real *dtw) 
 {
-  int ie = mcell->ie;
-
   const int m = f->model.m;
-  const int deg[3] = {f->interp_param[1],
-		      f->interp_param[2],
-		      f->interp_param[3]};
-  const int npg[3] = {deg[0] + 1,
-		      deg[1] + 1,
-		      deg[2] + 1};
-  const int nraf[3] = {f->interp_param[4],
-		       f->interp_param[5],
-		       f->interp_param[6]};
+  const int deg[3] = {mcell->deg[0],mcell->deg[1],mcell->deg[2]};
+  const int npg[3] = {deg[0] + 1, deg[1] + 1, deg[2] + 1};
+  const int raf[3] = {mcell->raf[0], mcell->raf[1], mcell->raf[2]};
 
   const unsigned int sc_npg = npg[0] * npg[1] * npg[2];
 
@@ -1292,13 +1284,13 @@ void DGVolume(MacroCell *mcell, field *f, real *w, real *dtw)
 			   f->interp_param[7]};
 
   // Loop on the subcells
-  for(int icL0 = 0; icL0 < nraf[0]; icL0++) {
-    for(int icL1 = 0; icL1 < nraf[1]; icL1++) {
-      for(int icL2 = 0; icL2 < nraf[2]; icL2++) {
+  for(int icL0 = 0; icL0 < raf[0]; icL0++) {
+    for(int icL1 = 0; icL1 < raf[1]; icL1++) {
+      for(int icL2 = 0; icL2 < raf[2]; icL2++) {
 
 	int icL[3] = {icL0, icL1, icL2};
 	// get the L subcell id
-	int ncL = icL[0] + nraf[0] * (icL[1] + nraf[1] * icL[2]);
+	int ncL = icL[0] + raf[0] * (icL[1] + raf[1] * icL[2]);
 	// first glop index in the subcell
 	int offsetL = npg[0] * npg[1] * npg[2] * ncL;
 
@@ -1308,6 +1300,7 @@ void DGVolume(MacroCell *mcell, field *f, real *w, real *dtw)
 	real *xref2 = malloc(sc_npg * sizeof(real));
 	real *omega = malloc(sc_npg * sizeof(real));
 	int *imems = malloc(m * sc_npg * sizeof(int));
+
 	int pos = 0;
 	for(unsigned int p = 0; p < sc_npg; ++p) {
 	  real xref[3];
@@ -1320,7 +1313,8 @@ void DGVolume(MacroCell *mcell, field *f, real *w, real *dtw)
 	  omega[p] = tomega;
 
 	  for(int im = 0; im < m; ++im) {
-	    imems[pos++] = f->varindex(f_interp_param, ie, offsetL + p, im);
+	    imems[pos++] = f->varindex(f_interp_param, 0, offsetL + p, im)
+	      + mcell->woffset;
 	  }
 	}
 
@@ -1346,7 +1340,7 @@ void DGVolume(MacroCell *mcell, field *f, real *w, real *dtw)
 		  real dphiref[3] = {0, 0, 0};
 		  // compute grad phi_q at glop p
 		  dphiref[dim0] = dlag(deg[dim0], q[dim0], p[dim0]) 
-		    * nraf[dim0];
+		    * raf[dim0];
 
 		  real xrefL[3] = {xref0[ipgL - offsetL],
 				   xref1[ipgL - offsetL],
@@ -1371,9 +1365,10 @@ void DGVolume(MacroCell *mcell, field *f, real *w, real *dtw)
 
 		  int ipgR = offsetL+q[0]+npg[0]*(q[1]+npg[1]*q[2]);
 		  for(int iv = 0; iv < m; iv++) {
-		    int imemR = f->varindex(f_interp_param, ie, ipgR, iv);
+		    int imemR = f->varindex(f_interp_param, 0, ipgR, iv)
+		     + mcell->woffset;
 		    int temp = m * (ipgR - offsetL) + iv;  
-		    assert(imemR == imems[temp]);
+		    //assert(imemR == imems[temp]);
 		    dtw[imems[temp]] += flux[iv] * wpgL;
 		  }
 		} // iq
