@@ -467,19 +467,26 @@ void Initfield(field *f) {
     mcell->deg[0] = f->interp_param[1];
     mcell->deg[1] = f->interp_param[2];
     mcell->deg[2] = f->interp_param[3];
+
     mcell->raf[0] = f->interp_param[4];
     mcell->raf[1] = f->interp_param[5];
     mcell->raf[2] = f->interp_param[6];
 
-    mcell->nreal = f->model.m
+    mcell->npg
+      = (mcell->deg[0] + 1)
       * (mcell->deg[1] + 1)
       * (mcell->deg[2] + 1)
       * mcell->raf[0]
       * mcell->raf[1]
       * mcell->raf[2];
 
+    mcell->nreal = f->model.m * mcell->npg;
+    
     mcell->wn = f->wn + wcount;
     mcell->dtwn = f->dtwn + wcount;
+    // FIXME: set up wn_cl as well!
+    // For the moment, just pass an offset?
+
     wcount += mcell->nreal;
   }
 
@@ -1204,7 +1211,7 @@ void DGMass(MacroCell *mcell, field *f, real *dtw)
   int m = f->model.m;
   int ie = mcell->ie;
 
-  for(int ipg = 0; ipg < NPG(f->interp_param + 1); ipg++) {
+  for(int ipg = 0; ipg < mcell->npg; ipg++) {
     real dtau[3][3], codtau[3][3], xpgref[3], xphy[3], wpg;
     ref_pg_vol(f->interp_param + 1, ipg, xpgref, &wpg, NULL);
     Ref2Phy(mcell->physnode, // phys. nodes

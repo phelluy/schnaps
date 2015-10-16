@@ -28,6 +28,7 @@ typedef struct MacroCell {
   int raf[3];
   
   int nreal;
+  int npg;
   double *wn;
   double *dtwn;
 } MacroCell;
