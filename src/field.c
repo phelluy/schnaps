@@ -283,6 +283,7 @@ void init_field_cl(field *f)
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 
+  // FIXME: remove
   // Allocate and fill buffer for all macrocell geometries.
   const int nmacro = f->macromesh.nbelems;
   const size_t buf_size = sizeof(real) * 60 * nmacro;
@@ -293,6 +294,7 @@ void init_field_cl(field *f)
 				   &status);
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
+
   set_physnodes_cl(f);
 
   // Allocate one physnode buffer for R macrocell

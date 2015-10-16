@@ -337,7 +337,6 @@ void init_DGMass_CL(MacroCell *mcell, field *f)
   status = clSetKernelArg(f->dgmass,           // kernel name
                           argnum++,              // arg num
                           sizeof(cl_mem),
-			  //  &f->physnodes_cl);     // opencl buffer
 			  &mcell->physnode_cl);     // opencl buffer
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
@@ -395,6 +394,8 @@ void init_DGFlux_CL(field *f, int ie, int dim0, cl_mem *wn_cl,
   cl_kernel kernel = f->dgflux;
   cl_int status;
   int argnum = 0; 
+
+  MacroCell *mcell = f->mcell + ie;
   
   // __constant int *param, // interp param
   status = clSetKernelArg(kernel,
@@ -424,7 +425,7 @@ void init_DGFlux_CL(field *f, int ie, int dim0, cl_mem *wn_cl,
   status = clSetKernelArg(kernel,
                           argnum++,
                           sizeof(cl_mem),
-                          &f->physnodes_cl);
+                          &mcell->physnode_cl);
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 

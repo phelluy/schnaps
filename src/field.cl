@@ -501,13 +501,12 @@ int ipg(const int npg[], const int p[], const int icell)
     + p[0] + npg[0] * (p[1] + npg[1] * p[2]);
 }
 
-
 // Compute the surface terms inside one macrocell
 __kernel
 void DGFlux(__constant int *param,       // 0: interp param
 	    int ie,                      // 1: macrocel index
 	    int dim0,                    // 2: face direction
-	    __constant real *physnodes, // 3: macrocell nodes
+	    __constant real *physnode, // 3: macrocell nodes
 	    __global   real *wn,       // 4: field values
 	    __global   real *dtwn,     // 5: time derivative
 	    __local    real *wnloc     // 6: wn and dtwn in local memory
@@ -516,7 +515,7 @@ void DGFlux(__constant int *param,       // 0: interp param
   // Use __local memory in DGFlux kernel?
 #define DGFLUX_LOCAL 1
 
-  __constant real *physnode = physnodes + ie * 60;
+  //__constant real *physnode = physnodes + ie * 60;
 
   const int m = param[0];
   const int deg[3] = {param[1], param[2], param[3]};
