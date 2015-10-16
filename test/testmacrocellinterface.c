@@ -167,11 +167,12 @@ int TestMacroFace(void){
     const int nboundaryfaces = f.macromesh.nboundaryfaces;
     for(int i = 0; i < nboundaryfaces; ++i) {
       int ifa = f.macromesh.boundaryface[i];
-      int ie = f.macromesh.face2elem[4 * ifa + 0]; // FIXME: put in ifa
+      MacroFace *mface = f.mface + ifa;
+      int ie = mface->ieL;
       MacroCell *mcell = f.mcell + ie;
       real *wmc = f.wn + mcell->woffset;
       real *dtwmc = f.dtwn + mcell->woffset;
-      DGMacroCellBoundary(f.mface + ifa, &f, wmc, dtwmc);
+      DGMacroCellBoundary(mface, &f, wmc, dtwmc);
     }
   }
 
