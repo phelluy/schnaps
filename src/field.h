@@ -26,6 +26,8 @@ typedef struct MacroCell {
 
   int deg[3];
   int raf[3];
+
+  int woffset;
   
   int nreal;
   int npg;

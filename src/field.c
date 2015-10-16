@@ -481,9 +481,11 @@ void Initfield(field *f) {
       * mcell->raf[2];
 
     mcell->nreal = f->model.m * mcell->npg;
+
+    mcell->woffset = wcount;
     
-    mcell->wn = f->wn + wcount;
-    mcell->dtwn = f->dtwn + wcount;
+    mcell->wn = f->wn + mcell->woffset;
+    mcell->dtwn = f->dtwn + mcell->woffset;
     // FIXME: set up wn_cl as well!
     // For the moment, just pass an offset?
 
@@ -1220,9 +1222,11 @@ void DGMass(MacroCell *mcell, field *f, real *dtw)
 	    xphy, dtau, // xphy, dtau
 	    codtau, NULL, NULL); // codtau, dpsi, vnds
     real det = dot_product(dtau[0], codtau[0]);
+
+    real norm = 1.0 / (wpg * det);
     for(int iv = 0; iv < f->model.m; iv++) {
-      int imem = f->varindex(f->interp_param, ie, ipg, iv);
-      dtw[imem] /= (wpg * det);
+      int imem = f->varindex(f->interp_param, 0, ipg, iv) + mcell->woffset;
+      dtw[imem] *= norm;
     }
   }
 
