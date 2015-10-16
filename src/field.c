@@ -444,7 +444,12 @@ void Initfield(field *f) {
   // Allocate and set MacroFaces
   f->mface = calloc(f->macromesh.nbfaces, sizeof(MacroFace));
   for(int ifa = 0; ifa < f->macromesh.nbfaces; ifa++) {
-    f->mface[ifa].ifa = ifa;
+    MacroFace *mface = f->mface + ifa;
+    mface->ifa = ifa;
+    mface->ieL = f->macromesh.face2elem[4 * ifa + 0];
+    mface->locfaL = f->macromesh.face2elem[4 * ifa + 1];
+    mface->ieR = f->macromesh.face2elem[4 * ifa + 2];
+    mface->locfaR = f->macromesh.face2elem[4 * ifa + 3];
   }
 
   // Allocate and set MacroCells
@@ -1062,7 +1067,7 @@ void DGMacroCellInterfaceSlow(MacroCell *mcell, field *f, real *w, real *dtw) {
 }
 
 // Compute the Discontinuous Galerkin macrocell boundary terms.
-void DGMacroCellBoundary(MacroFace *mface, field *f, real *w, real *dtw) 
+void DGMacroCellBoundary(MacroFace *mface, field *f, real *wmc, real *dtwmc) 
 {
   MacroMesh *msh = &f->macromesh;
   const unsigned int m = f->model.m;
@@ -1113,16 +1118,16 @@ void DGMacroCellBoundary(MacroFace *mface, field *f, real *w, real *dtw)
     }
 
     for(int iv = 0; iv < m; iv++) {
-      int imemL = f->varindex(iparam, 0, ipgL, iv) + mcellL->woffset;
-      wL[iv] = w[imemL];
+      int imemL = f->varindex(iparam, 0, ipgL, iv);
+      wL[iv] = wmc[imemL];
     }
     
     f->model.BoundaryFlux(xpg, f->tnow, wL, vnds, flux);
     
     for(int iv = 0; iv < m; iv++) {
       // The basis functions is also the gauss point index
-      int imemL = f->varindex(iparam, 0, ipgL, iv) + mcellL->woffset;
-      dtw[imemL] -= flux[iv] * wpg;
+      int imemL = f->varindex(iparam, 0, ipgL, iv);
+      dtwmc[imemL] -= flux[iv] * wpg;
     }
   }
 }
@@ -1140,11 +1145,10 @@ void DGMacroCellInterface(MacroFace *mface, field *f, real *w, real *dtw)
   // Assembly of the surface terms loop on the macrocells faces
 
   int ifa = mface->ifa;
-  int ieL = msh->face2elem[4 * ifa + 0];
+  int ieL = mface->ieL;
   MacroCell *mcellL = f->mcell + ieL;
-  int locfaL = msh->face2elem[4 * ifa + 1];
-
-  int ieR = msh->face2elem[4 * ifa + 2];
+  int locfaL = mface->locfaL;
+  int ieR = mface->ieR;
 
   // Loop over the points on a single macro cell interface.
 #ifdef _OPENMP
@@ -1443,7 +1447,11 @@ void dtfield(field *f, real tnow, real *w, real *dtw) {
     const int nboundaryfaces = f->macromesh.nboundaryfaces;
     for(int i = 0; i < nboundaryfaces; ++i) {
       int ifa = f->macromesh.boundaryface[i];
-      DGMacroCellBoundary(f->mface + ifa, f, w, dtw);
+      int ie = f->macromesh.face2elem[4 * ifa + 0]; // FIXME: put in ifa
+      MacroCell *mcell = f->mcell + ie;
+      real *wmc = w + mcell->woffset;
+      real *dtwmc = dtw + mcell->woffset;
+      DGMacroCellBoundary(f->mface + ifa, f, wmc, dtwmc);
     }
   }
 

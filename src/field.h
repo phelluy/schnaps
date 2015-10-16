@@ -14,7 +14,10 @@
 //! as a void* pointer.
 typedef struct MacroFace {
   int ifa;
-  //field *field; //! pointer to a  field
+  int ieL;
+  int locfaL;
+  int ieR;
+  int locfaR;
 } MacroFace;
 
 //! \brief A simple struct for packing a field

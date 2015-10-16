@@ -116,7 +116,11 @@ int TestKernelInterface()
     const int nboundaryfaces = f.macromesh.nboundaryfaces;
     for(int i = 0; i < nboundaryfaces; ++i) {
       int ifa = f.macromesh.boundaryface[i];
-      DGMacroCellBoundary(f.mface + ifa, &f, f.wn, f.dtwn);
+      int ie = f.macromesh.face2elem[4 * ifa + 0]; // FIXME: put in ifa
+      MacroCell *mcell = f.mcell + ie;
+      real *wmc = f.wn + mcell->woffset;
+      real *dtwmc = f.dtwn + mcell->woffset;
+      DGMacroCellBoundary(f.mface + ifa, &f, wmc, dtwmc);
     }
   }
     
