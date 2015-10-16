@@ -816,7 +816,7 @@ void Plotfield(int typplot, int compare, field* f, char *fieldname,
 }
 
 // Compute inter-subcell fluxes
-void DGSubCellInterface(MacroCell *mcell, field *f, real *w, real *dtw) 
+void DGSubCellInterface(MacroCell *mcell, field *f, real *wmc, real *dtwmc) 
 {
   int ie = mcell->ie;
  
@@ -909,13 +909,11 @@ void DGSubCellInterface(MacroCell *mcell, field *f, real *w, real *dtw)
 		real wL[m], wR[m], flux[m];
 		for(int iv = 0; iv < m; iv++) {
 		  // TO DO change the varindex signature
-		  int imemL = f->varindex(f->interp_param, 0, ipgL, iv)
-		    + mcell->woffset; 
-		  int imemR = f->varindex(f->interp_param, 0, ipgR, iv)
-		    + mcell->woffset;
+		  int imemL = f->varindex(f->interp_param, 0, ipgL, iv);
+		  int imemR = f->varindex(f->interp_param, 0, ipgR, iv);
 		  // end TO DO
-		  wL[iv] = w[imemL];
-		  wR[iv] = w[imemR];
+		  wL[iv] = wmc[imemL];
+		  wR[iv] = wmc[imemR];
 		}
 		f->model.NumFlux(wL, wR, vnds, flux);
 
@@ -931,13 +929,11 @@ void DGSubCellInterface(MacroCell *mcell, field *f, real *w, real *dtw)
 		// finally distribute the flux on the two sides
 		for(int iv = 0; iv < m; iv++) {
 		  // TO DO change the varindex signature
-		  int imemL = f->varindex(f->interp_param, 0, ipgL, iv)
-		    + mcell->woffset;
-		  int imemR = f->varindex(f->interp_param, 0, ipgR, iv)
-		    + mcell->woffset;
+		  int imemL = f->varindex(f->interp_param, 0, ipgL, iv);
+		  int imemR = f->varindex(f->interp_param, 0, ipgR, iv);
 		  // end TO DO
-		  dtw[imemL] -= flux[iv] * wpg;
-		  dtw[imemR] += flux[iv] * wpg;
+		  dtwmc[imemL] -= flux[iv] * wpg;
+		  dtwmc[imemR] += flux[iv] * wpg;
 		}
 
 	      }  // face yhat loop
@@ -1414,9 +1410,9 @@ void dtfield(field *f, real tnow, real *w, real *dtw) {
     if(!facealgo)
       DGMacroCellInterfaceSlow(mcell, f, w, dtw);
 
-    real *dtwmc = dtw + mcell->woffset;
     real *wmc = w + mcell->woffset;
-    DGSubCellInterface(mcell, f, w, dtw);
+    real *dtwmc = dtw + mcell->woffset;
+    DGSubCellInterface(mcell, f, wmc, dtwmc);
     DGVolume(mcell, f, wmc, dtwmc);
     DGMass(mcell, f, dtwmc);
     DGSource(mcell, f, tnow, wmc, dtwmc);
