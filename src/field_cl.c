@@ -309,7 +309,7 @@ void DGMacroCellInterface_CL(MacroFace *mface, field *f, cl_mem *wn_cl,
 }
 
 // Set up kernel arguments, etc, for DGMass_CL.
-void init_DGMass_CL(field *f)
+void init_DGMass_CL(MacroCell *mcell, field *f)
 {
   cl_int status;
   cl_kernel kernel = f->dgmass;
@@ -324,13 +324,21 @@ void init_DGMass_CL(field *f)
 
   /* int ie, // macrocel index */
   // Set in loop on call.
-  argnum++;
-      
+
+  int ie = mcell->ie;
+  status = clSetKernelArg(f->dgmass, 
+			  argnum++, 
+			  sizeof(int), 
+			  &ie);
+  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status >= CL_SUCCESS);
+  
   /* __constant real* physnode,  // macrocell nodes */
   status = clSetKernelArg(f->dgmass,           // kernel name
                           argnum++,              // arg num
                           sizeof(cl_mem),
-                          &f->physnodes_cl);     // opencl buffer
+			  //  &f->physnodes_cl);     // opencl buffer
+			  &mcell->physnode_cl);     // opencl buffer
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 
@@ -351,22 +359,11 @@ void DGMass_CL(MacroCell *mcell, field *f,
   int *param = f->interp_param;
   cl_int status;
 
-  init_DGMass_CL(f);
- 
-  //clSetUserEventStatus(f->clv_mass, CL_COMPLETE);
-  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status >= CL_SUCCESS);
-
-  int ie = mcell->ie;
-  status = clSetKernelArg(f->dgmass, 
-			  1, 
-			  sizeof(int), 
-			  (void *)&ie);
-  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status >= CL_SUCCESS);
-
+  init_DGMass_CL(mcell, f);
+  
   // The groupsize is the number of glops in a subcell
   size_t groupsize = (param[1] + 1) * (param[2] + 1) * (param[3] + 1);
+
   // The total work items number is (the number of glops in a
   // subcell) * (number of subcells)
   size_t numworkitems = param[4] * param[5] * param[6] * groupsize;

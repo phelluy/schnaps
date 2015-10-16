@@ -30,12 +30,14 @@ typedef struct MacroCell {
   int deg[3];
   int raf[3];
 
-  int woffset;
-  
+
   int nreal;
   int npg;
-  double *wn;
-  double *dtwn;
+  int woffset;
+  
+#ifdef _WITH_OPENCL
+  cl_mem physnode_cl;
+#endif
 } MacroCell;
 
 //! \brief Data structure for managing a  discrete vector field

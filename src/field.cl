@@ -911,7 +911,6 @@ void DGVolume(__constant int *param,     // 0: interp param
 
   } // dim0 loop
 
-
 #if DGVolume_LOCAL
   //barrier(CLK_LOCAL_MEM_FENCE | CLK_GLOBAL_MEM_FENCE);
   barrier(CLK_LOCAL_MEM_FENCE);
@@ -926,19 +925,18 @@ void DGVolume(__constant int *param,     // 0: interp param
     int imemloc = ipgloc * m + iv;
     dtwn[imem] += dtwnloc[imemloc];
   }
-#else
-
 #endif
 }
 
 // Apply division by the mass matrix on one macrocell
 __kernel
-void DGMass(__constant int *param,       // 0: interp param
-            int ie,                      // 1: macrocel index
-            __constant real *physnodes, // 2: macrocell nodes
-            __global real *dtwn)       // 3: time derivative
+void DGMass(__constant int *param,       // interp param
+            int ie,                      // macrocel index
+	    //	    int offset,                   // offset to macrocell's w
+            __constant real *physnode,  // macrocell nodes
+            __global real *dtwn)         // time derivative
 {
-  __constant real *physnode = physnodes + 60 * ie;
+  //    __constant real *physnode = physnodes + 60 * ie;
   
   int ipg = get_global_id(0);
   int m = param[0];

@@ -169,33 +169,79 @@ void init_data(field *f)
 void set_physnodes_cl(field *f) 
 {
   const int nmacro = f->macromesh.nbelems;
-  real buf_size = sizeof(real) * 60 * nmacro;
-  real *physnode = malloc(buf_size);
+
+  {
+    // FIXME: get rid of this in favour of MacroCell use.
+    real buf_size = sizeof(real) * 60 * nmacro;
+    real *physnode = malloc(buf_size);
   
-  for(int ie = 0; ie < nmacro; ++ie) {
-    int ie20 = 20 * ie;
-    for(int inoloc = 0; inoloc < 20; ++inoloc) {
-      int ino = 3 * f->macromesh.elem2node[ie20 + inoloc];
-      real *iphysnode = physnode + 3 * ie20 + 3 * inoloc;
-      real *nodeino = f->macromesh.node + ino;
-      iphysnode[0] = nodeino[0];
-      iphysnode[1] = nodeino[1];
-      iphysnode[2] = nodeino[2];
+    for(int ie = 0; ie < nmacro; ++ie) {
+      int ie20 = 20 * ie;
+      for(int inoloc = 0; inoloc < 20; ++inoloc) {
+	int ino = 3 * f->macromesh.elem2node[ie20 + inoloc];
+	real *iphysnode = physnode + 3 * ie20 + 3 * inoloc;
+	real *nodeino = f->macromesh.node + ino;
+	iphysnode[0] = nodeino[0];
+	iphysnode[1] = nodeino[1];
+	iphysnode[2] = nodeino[2];
+      }
+    }
+
+    cl_int status;
+    status = clEnqueueWriteBuffer(f->cli.commandqueue,
+				  f->physnodes_cl, // cl_mem buffer,
+				  CL_TRUE,// cl_bool blocking_read,
+				  0, // size_t offset
+				  buf_size, // size_t cb
+				  physnode, //  	void *ptr,
+				  0, 0, 0);
+    if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+    assert(status >= CL_SUCCESS);
+  
+    free(physnode);
+  }
+
+  // Set physnode_cl in MacroCells
+  {
+    for(int ie = 0; ie < nmacro; ++ie) {
+      MacroCell *mcell = f->mcell + ie;
+
+      cl_int status;
+      const size_t buf_size = sizeof(real) * 60;
+      mcell->physnode_cl = clCreateBuffer(f->cli.context,
+					  CL_MEM_READ_ONLY,
+					  buf_size,
+					  NULL,
+					  &status);
+      if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+      assert(status >= CL_SUCCESS);
+
+      real *physnode = malloc(60 * sizeof(real));
+
+      int ie20 = 20 * ie;
+      for(int inoloc = 0; inoloc < 20; ++inoloc) {
+	int ino = 3 * f->macromesh.elem2node[ie20 + inoloc];
+	real *iphysnode = physnode + 3 * inoloc;
+	real *nodeino = f->macromesh.node + ino;
+	iphysnode[0] = nodeino[0];
+	iphysnode[1] = nodeino[1];
+	iphysnode[2] = nodeino[2];
+      }
+   
+      status = clEnqueueWriteBuffer(f->cli.commandqueue,
+				    mcell->physnode_cl, // cl_mem buffer,
+				    CL_TRUE,// cl_bool blocking_read,
+				    0, // size_t offset
+				    buf_size, // size_t cb
+				    physnode, //  	void *ptr,
+				    0, 0, 0);
+      if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+      assert(status >= CL_SUCCESS);
+
+      free(physnode);
     }
   }
-  
-  cl_int status;
-  status = clEnqueueWriteBuffer(f->cli.commandqueue,
-  				f->physnodes_cl, // cl_mem buffer,
-  				CL_TRUE,// cl_bool blocking_read,
-  				0, // size_t offset
-  				buf_size, // size_t cb
-  				physnode, //  	void *ptr,
-  				0, 0, 0);
-  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status >= CL_SUCCESS);
-  
-  free(physnode);
+
 }
 
 void init_field_cl(field *f)
@@ -487,11 +533,6 @@ void Initfield(field *f) {
 
     mcell->woffset = wcount;
     
-    mcell->wn = f->wn + mcell->woffset;
-    mcell->dtwn = f->dtwn + mcell->woffset;
-    // FIXME: set up wn_cl as well!
-    // For the moment, just pass an offset?
-
     wcount += mcell->nreal;
   }
 
@@ -516,8 +557,6 @@ void Initfield(field *f) {
 // This is the destructor for a field
 void free_field(field *f) 
 {
-  free(f->mcell);
-  free(f->mface);
 
 #ifdef _WITH_OPENCL
   cl_int status;
@@ -529,12 +568,16 @@ void free_field(field *f)
 #endif
   free(f->physnode);
 
-  // FIXME: free mcells and their contents.
+  // FIXME: free mcells and mface contents.
+  free(f->mcell);
+  free(f->mface);
 }
 
 // Display the field on screen
-void Displayfield(field *f) {
+void Displayfield(field *f)
+{
   printf("Display field...\n");
+
   for(int ie = 0; ie < f->macromesh.nbelems; ie++) {
     printf("elem %d\n", ie);
     MacroCell *mcell = f->mcell + ie;
