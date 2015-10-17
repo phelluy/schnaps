@@ -26,49 +26,11 @@
 // param[6] = raf z
 
 #pragma start_opencl
-// FIXME: remove elem
-// FIXME: split up param
-int GenericVarindex(__constant int *param, int ipg, int iv) {
+int GenericVarindex(__constant int *param, int ipg, int iv)
+{
   return iv + param[0] * ipg;
 }
 #pragma end_opencl
-
-#pragma start_opencl
-int GenericVarindex3d(int m, int *nx, int *nc,
-		      int elem,
-		      int iv, int *ix, int *ic) 
-{
-  // NB: passing nx and nx separately may allow one to deal with faces better.
-  // Also, keeping the values in registers is theoretically faster than
-  // even __local memory.
-
-  // int nx[3] = {param[1] + 1, param[2] + 1, param[3] + 1};
-  // int nc[3] = {param[4], param[5], param[6]};
-
-  // number of glops in subcell
-  int npgc = nx[0] * nx[1] * nx[2]; 
-  // number of glops in macrocell:
-  int npg = nc[0] * nc[1] * nc[2] * npgc; 
-  
-  // index in subcell: 
-  int ipgc = ix[0] + nx[0] * (ix[1] + nx[1] * ix[2]); 
-  // index of subcell in macrocell:
-  int nsubcell = ic[0] + nc[0] * (ic[1] + nc[1] * ic[2]);
-
-  // index of point in macrocell:
-  int ipg = ipgc + npgc * nsubcell; 
-  return iv + m * (ipg + npg * elem);
-}
-#pragma end_opencl
-
-// Given a the index ipg of a poing in a subcell, determine the three
-// logical coordinates of that point in the subcell.
-/* void ipg_to_xyz(int ipg, int *p, int *npg) */
-/* { */
-/*   p[0] = ipg % npg[0]; */
-/*   p[1] = (ipg / npg[0]) % npg[1]; */
-/*   p[2] = ipg / npg[0] / npg[1]; */
-/* }  */
 
 real min_grid_spacing(field *f)
 {
@@ -167,48 +129,44 @@ void init_data(field *f)
 void set_physnodes_cl(field *f) 
 {
   const int nmacro = f->macromesh.nbelems;
+  real *physnode = malloc(60 * sizeof(real));
 
-  // Set physnode_cl in MacroCells
-  {
-    for(int ie = 0; ie < nmacro; ++ie) {
-      MacroCell *mcell = f->mcell + ie;
+  for(int ie = 0; ie < nmacro; ++ie) {
+    MacroCell *mcell = f->mcell + ie;
 
-      cl_int status;
-      const size_t buf_size = sizeof(real) * 60;
-      mcell->physnode_cl = clCreateBuffer(f->cli.context,
-					  CL_MEM_READ_ONLY,
-					  buf_size,
-					  NULL,
-					  &status);
-      if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
-      assert(status >= CL_SUCCESS);
+    cl_int status;
+    const size_t buf_size = sizeof(real) * 60;
+    mcell->physnode_cl = clCreateBuffer(f->cli.context,
+					CL_MEM_READ_ONLY,
+					buf_size,
+					NULL,
+					&status);
+    if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+    assert(status >= CL_SUCCESS);
 
-      real *physnode = malloc(60 * sizeof(real));
-
-      int ie20 = 20 * ie;
-      for(int inoloc = 0; inoloc < 20; ++inoloc) {
-	int ino = 3 * f->macromesh.elem2node[ie20 + inoloc];
-	real *iphysnode = physnode + 3 * inoloc;
-	real *nodeino = f->macromesh.node + ino;
-	iphysnode[0] = nodeino[0];
-	iphysnode[1] = nodeino[1];
-	iphysnode[2] = nodeino[2];
-      }
-   
-      status = clEnqueueWriteBuffer(f->cli.commandqueue,
-				    mcell->physnode_cl, // cl_mem buffer,
-				    CL_TRUE,// cl_bool blocking_read,
-				    0, // size_t offset
-				    buf_size, // size_t cb
-				    physnode, //  	void *ptr,
-				    0, 0, 0);
-      if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
-      assert(status >= CL_SUCCESS);
-
-      free(physnode);
+    int ie20 = 20 * ie;
+    for(int inoloc = 0; inoloc < 20; ++inoloc) {
+      int ino = 3 * f->macromesh.elem2node[ie20 + inoloc];
+      real *iphysnode = physnode + 3 * inoloc;
+      real *nodeino = f->macromesh.node + ino;
+      iphysnode[0] = nodeino[0];
+      iphysnode[1] = nodeino[1];
+      iphysnode[2] = nodeino[2];
     }
+   
+    status = clEnqueueWriteBuffer(f->cli.commandqueue,
+				  mcell->physnode_cl, // cl_mem buffer,
+				  CL_TRUE,// cl_bool blocking_read,
+				  0, // size_t offset
+				  buf_size, // size_t cb
+				  physnode, //  	void *ptr,
+				  0, 0, 0);
+    if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+    assert(status >= CL_SUCCESS);
+
   }
 
+  free(physnode);
 }
 
 void init_field_cl(field *f)
@@ -393,8 +351,6 @@ void init_field_cl(field *f)
 
 void Initfield(field *f) {
   //int param[8]={f->model.m,_DEGX,_DEGY,_DEGZ,_RAFX,_RAFY,_RAFZ,0};
-  
-  //f->vmax = 1.0; // FIXME: make this variable ??????
 
   // a copy for avoiding too much "->"
   for(int ip = 0; ip < 8; ip++)
