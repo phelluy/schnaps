@@ -399,7 +399,6 @@ void init_DGFlux_CL(field *f, int ie, int dim0, cl_mem *wn_cl,
 
   MacroCell *mcell = f->mcell + ie;
   
-  // __constant int *param, // interp param
   status = clSetKernelArg(kernel,
                           argnum++,
                           sizeof(cl_mem),
@@ -407,11 +406,10 @@ void init_DGFlux_CL(field *f, int ie, int dim0, cl_mem *wn_cl,
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 
-  // int ie, // macrocel index
   status = clSetKernelArg(kernel, 
 			  argnum++, 
 			  sizeof(int), 
-			  (void *)&ie);
+			  &mcell->woffset);
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 

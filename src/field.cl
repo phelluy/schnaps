@@ -503,13 +503,13 @@ int ipg(const int npg[], const int p[], const int icell)
 
 // Compute the surface terms inside one macrocell
 __kernel
-void DGFlux(__constant int *param,       // 0: interp param
-	    int ie,                      // 1: macrocel index
-	    int dim0,                    // 2: face direction
-	    __constant real *physnode, // 3: macrocell nodes
-	    __global   real *wn,       // 4: field values
-	    __global   real *dtwn,     // 5: time derivative
-	    __local    real *wnloc     // 6: wn and dtwn in local memory
+void DGFlux(__constant int *param,     // interp param
+	    int woffset,               // woffset
+	    int dim0,                  // face direction
+	    __constant real *physnode, // macrocell nodes
+	    __global   real *wn,       // field values
+	    __global   real *dtwn,     // time derivative
+	    __local    real *wnloc     // wn and dtwn in local memory
 	    )
 {
   // Use __local memory in DGFlux kernel?
@@ -557,7 +557,7 @@ void DGFlux(__constant int *param,       // 0: interp param
     p[dim0] = deg[dim0];
     int ipgL;
     xyz_to_ipg(nraf, deg, icL, p, &ipgL);
-    int imemL = VARINDEX(param, ie, ipgL, iv);
+    int imemL = VARINDEX(param, 0, ipgL, iv) + woffset;
     // wnlocL[iread] = wn[imemL];
     wnlocL[ipg * m + iv] = wn[imemL];
 
@@ -565,7 +565,7 @@ void DGFlux(__constant int *param,       // 0: interp param
     p[dim0] = 0;
     int ipgR;
     xyz_to_ipg(nraf, deg, icR, p, &ipgR);
-    int imemR = VARINDEX(param, ie, ipgR, iv);
+    int imemR = VARINDEX(param, 0, ipgR, iv) + woffset;
     // wnlocR[iread] = wn[imemR];
     wnlocR[ipg * m + iv] = wn[imemR];
   }
@@ -592,9 +592,9 @@ void DGFlux(__constant int *param,       // 0: interp param
   xyz_to_ipg(nraf, deg, icL, pL, &ipgL);
   xyz_to_ipg(nraf, deg, icR, pR, &ipgR);
   for(int iv = 0; iv < m; iv++) {
-    int imemL = VARINDEX(param, ie, ipgL, iv);
+    int imemL = VARINDEX(param, 0, ipgL, iv) + woffset;
     wL[iv] = wn[imemL];
-    int imemR = VARINDEX(param, ie, ipgR, iv);
+    int imemR = VARINDEX(param, 0, ipgR, iv) + woffset;
     wR[iv] = wn[imemR];
   }
 #endif
@@ -652,8 +652,6 @@ void DGFlux(__constant int *param,       // 0: interp param
   vnds[1] = codtau[1][dim0] * h1h2;
   vnds[2] = codtau[2][dim0] * h1h2;
 
-
-
 #if DGFLUX_LOCAL
   real wL[_M], wR[_M]; // TODO: remove?
   __local real *wnL = wnlocL + get_local_id(0) * m;
@@ -668,9 +666,9 @@ void DGFlux(__constant int *param,       // 0: interp param
   xyz_to_ipg(nraf, deg, icR, pR, &ipgR);
 
   for(int iv = 0; iv < m; iv++) {
-    int imemL = VARINDEX(param, ie, ipgL, iv);
+    int imemL = VARINDEX(param, 0, ipgL, iv) + woffset;
     wL[iv] = wn[imemL];
-    int imemR = VARINDEX(param, ie, ipgR, iv);
+    int imemR = VARINDEX(param, 0, ipgR, iv) + woffset;
     wR[iv] = wn[imemR];
   }
 #endif
@@ -708,7 +706,7 @@ void DGFlux(__constant int *param,       // 0: interp param
     p[dim0] = deg[dim0];
     int ipgL;
     xyz_to_ipg(nraf, deg, icL, p, &ipgL);
-    int imemL = VARINDEX(param, ie, ipgL, iv);
+    int imemL = VARINDEX(param, 0, ipgL, iv) + woffset;
     // wnlocL[iread] = wn[imemL];
     dtwn[imemL] += dtwnlocL[ipg * m + iv];
     
@@ -716,7 +714,7 @@ void DGFlux(__constant int *param,       // 0: interp param
     p[dim0] = 0;
     int ipgR;
     xyz_to_ipg(nraf, deg, icR, p, &ipgR);
-    int imemR = VARINDEX(param, ie, ipgR, iv);
+    int imemR = VARINDEX(param, 0, ipgR, iv) + woffset;
     // wnlocR[iread] = wn[imemR];
     dtwn[imemR] += dtwnlocR[ipg * m + iv];
   }
@@ -725,10 +723,10 @@ void DGFlux(__constant int *param,       // 0: interp param
     //int ipgL = ipg(npg, p, icell);
     //int imemL = VARINDEX(param, ie, ipgL, iv);
 
-    int imemL = VARINDEX(param, ie, ipgL, iv);
+    int imemL = VARINDEX(param, 0, ipgL, iv) + woffset;
     dtwn[imemL] -= flux[iv] * wpgs;
 
-    int imemR = VARINDEX(param, ie, ipgR, iv);
+    int imemR = VARINDEX(param, 0, ipgR, iv) + woffset;
     dtwn[imemR] += flux[iv] * wpgs;
   }
 #endif
