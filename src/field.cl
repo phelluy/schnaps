@@ -926,8 +926,7 @@ void DGVolume(__constant int *param,     // 0: interp param
 // Apply division by the mass matrix on one macrocell
 __kernel
 void DGMass(__constant int *param,       // interp param
-            int ie,                      // macrocel index
-	    //	    int offset,                   // offset to macrocell's w
+            int woffset,                      // woffset
             __constant real *physnode,  // macrocell nodes
             __global real *dtwn)         // time derivative
 { 
@@ -981,7 +980,7 @@ void DGMass(__constant int *param,       // interp param
     - dtau[2][0] * dtau[0][2] * dtau[1][1];
 
   real overwpgget = 1.0 / (wpg * det);
-  int imem0 = m * (get_global_id(0) + npgie * ie);
+  int imem0 = m * get_global_id(0) + woffset;
   __global real *dtwn0 = dtwn + imem0;
   for(int iv = 0; iv < m; iv++) {
     //int imem = iv + imem0;
@@ -1330,8 +1329,6 @@ void DGSource(__constant int *param,     // interp param
 	      __local real *wnloc        // cache for wn and dtwn
 	      )
 {
-  //  __constant real *physnode = physnodes + ie * 60;
-
   const int m = param[0];
   const int deg[3] = {param[1],param[2], param[3]};
   const int npg[3] = {deg[0] + 1, deg[1] + 1, deg[2] + 1};
@@ -1406,7 +1403,6 @@ void DGSource(__constant int *param,     // interp param
     dtwn[imem] += dtwnloc[imemloc];
   }
 }
-
 
 // Out-of-place RK stage
 __kernel

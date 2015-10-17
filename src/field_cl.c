@@ -327,11 +327,11 @@ void init_DGMass_CL(MacroCell *mcell, field *f)
   /* int ie, // macrocel index */
   // Set in loop on call.
 
-  int ie = mcell->ie;
+  int offset = mcell->woffset;
   status = clSetKernelArg(f->dgmass, 
 			  argnum++, 
 			  sizeof(int), 
-			  &ie);
+			  &offset);
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
   
