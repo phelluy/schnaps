@@ -642,11 +642,10 @@ void init_DGSource_CL(MacroCell *mcell, field *f,
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 
-  // ie
   status = clSetKernelArg(kernel,
 			  argnum++,
 			  sizeof(int),
-			  &ie);
+			  &mcell->woffset);
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 

@@ -1319,7 +1319,7 @@ void OneSource(const real *x, const real t, const real *w, real *source) {
 // Compute the source terms inside  one macrocell
 __kernel
 void DGSource(__constant int *param,     // interp param
-	      int ie,                    // macrocel index
+	      int woffset,               // macrocel index
 	      __constant real *physnode, // macrocell nodes
 	      const real tnow,           // the current time
               __global real *wn,         // field values
@@ -1342,7 +1342,7 @@ void DGSource(__constant int *param,     // interp param
     int iv = iread % m;
     int ipgloc = iread / m;
     int ipgL = ipgloc + icell * get_local_size(0);
-    int imem = VARINDEX(param, ie, ipgL, iv);
+    int imem = VARINDEX(param, 0, ipgL, iv) + woffset;
     int imemloc = iv + ipgloc * m;
     
     wnloc[imemloc] = wn[imem];
@@ -1396,7 +1396,7 @@ void DGSource(__constant int *param,     // interp param
     int iv = iread % m;
     int ipgloc = iread / m ;
     int ipgL = ipgloc + icell * get_local_size(0);
-    int imem = VARINDEX(param, ie, ipgL, iv);
+    int imem = VARINDEX(param, 0, ipgL, iv) + woffset;
     int imemloc = ipgloc * m + iv;
     dtwn[imem] += dtwnloc[imemloc];
   }
