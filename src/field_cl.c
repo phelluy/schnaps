@@ -1263,10 +1263,6 @@ void RK2_CL(field *f, real tmax, real dt,
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 
-  // Set up kernels
-
-
-
   const int nmacro = f->macromesh.nbelems;
 
   cl_event *stage1 =  calloc(nmacro, sizeof(cl_event));
@@ -1322,8 +1318,12 @@ void RK2_CL(field *f, real tmax, real dt,
   if(done != NULL) 
     status = clSetUserEventStatus(*done, CL_COMPLETE);
 
-  //clReleaseEvent(stage2);
-  //clReleaseEvent(stage1);
+  for(int ie = 0; ie < nmacro; ++ie) {
+    clReleaseEvent(stage1[ie]);
+    clReleaseEvent(stage2[ie]);
+  }
+  free(stage2);
+  free(stage1);
   
   double rkseconds = (t_end.tv_sec - t_start.tv_sec) * 1.0 // seconds
     + (t_end.tv_usec - t_start.tv_usec) * 1e-6; // microseconds
