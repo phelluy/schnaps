@@ -79,18 +79,13 @@ int TestKernel(void)
   }
  
   for(int ie = 0; ie < f.macromesh.nbelems; ++ie) {
-    printf("ie: %d\n", ie);
-    /* update_physnode_cl(&f, ie, f.physnode_cl, f.physnode, NULL, */
-    /* 		       0, NULL, NULL); */
-    /* clFinish(f.cli.commandqueue); */
-
     DGMass_CL((void*) &f.mcell[ie], &f, 0, NULL, NULL);
     clFinish(f.cli.commandqueue);
   }
 
   CopyfieldtoCPU(&f);
 
-  Displayfield(&f);
+  //Displayfield(&f);
 
   // save the dtwn pointer
   real *saveptr = f.dtwn;
@@ -107,12 +102,12 @@ int TestKernel(void)
     DGMass(f.mcell + ie, &f, dtwnmc);
   }
 
-  Displayfield(&f);
+  //Displayfield(&f);
 
   //check that the results are the same
   real maxerr = 0;
   for(int i = 0; i < f.wsize; i++){
-    printf("error=%f %f %f\n", f.dtwn[i]-saveptr[i], f.dtwn[i],saveptr[i]);
+    //printf("error=%f %f %f\n", f.dtwn[i]-saveptr[i], f.dtwn[i],saveptr[i]);
     maxerr=fmax(fabs(f.dtwn[i] - saveptr[i]), maxerr);
   }
   printf("max error=%f\n",maxerr);

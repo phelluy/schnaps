@@ -471,14 +471,6 @@ void DGFlux_CL(field *f, int dim0, int ie, cl_mem *wn_cl,
   // Number of faces
   int nf = (nraf[dim[0]] - 1) * nraf[dim[1]] * nraf[dim[2]];
 
-  // debugging output
-  /* printf("\ndim0: %d\n", dim0); */
-  /* printf("dim: %d %d %d\n", dim[0], dim[1], dim[2]); */
-  /* printf("deg: %d %d %d\n", deg[0], deg[1], deg[2]); */
-  /* printf("nraf: %d %d %d\n", nraf[0], nraf[1], nraf[2]); */
-  /* printf("npgf: %d\n", npgf); */
-  /* printf("nf: %d\n", nf); */
-
   if(nf > 0) { // If there are faces to work on, launch the kernel
     // Set kernel args
     size_t numworkitems = nf * npgf;
@@ -911,7 +903,6 @@ void init_RK2_CL_stage1(field *f, const real dt, cl_mem *wnp1_cl)
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
   
-  //real dt, // time step for the stage
   real halfdt = 0.5 * dt;
   status = clSetKernelArg(kernel,
 			  argnum++,
@@ -1203,8 +1194,6 @@ void RK4_CL(field *f, real tmax, real dt,
     RK4_final_inplace_CL(f, w, &l1, &l2, &l3, 
 			 dtw, dt, numworkitems,
 			 1, source + 3, stage + 3);
-
-
 
     for(int i = 0; i < nstages; ++i)
       f->rk_time += clv_duration(stage[i]);

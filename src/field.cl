@@ -144,7 +144,7 @@ void compute_gradphi(const real x, const real y, const real z,
   gradphi[19][3] = -4 * t38 * t57;
 }
 
-void compute_codtau(const real dtau[3][3], real codtau[3][3])
+void compute_codtau(real dtau[3][3], real codtau[3][3])
 {
   codtau[0][0] =  dtau[1][1] * dtau[2][2] - dtau[1][2] * dtau[2][1];
   codtau[0][1] = -dtau[1][0] * dtau[2][2] + dtau[1][2] * dtau[2][0];
@@ -540,8 +540,9 @@ void DGFlux(__constant int *param,     // interp param
   __local real *dtwnlocL = wnloc + 2 * get_local_size(0) * m;
   __local real *dtwnlocR = wnloc + 3 * get_local_size(0) * m;
 
-  int pL[3], pR[3];
+  int pL[3];
 
+  
 #if DGFLUX_LOCAL
   // Prefetch: 2m reads from global memory.
   for(int i = 0; i < m; i++) {
@@ -574,6 +575,8 @@ void DGFlux(__constant int *param,     // interp param
   barrier(CLK_LOCAL_MEM_FENCE);
 #else
   // Gauss point id where we compute the jacobian
+
+  int pR[3];
   
   //ipg_to_xyz(get_local_id(0), p, npg
   {
@@ -607,10 +610,6 @@ void DGFlux(__constant int *param,     // interp param
     pL[dim0] = deg[dim0];
     pL[dim1] = ipg % npg[dim1];
     pL[dim2] = ipg / npg[dim1];
-
-    pR[dim0] = 0;
-    pR[dim1] = pL[dim1];
-    pR[dim2] = pL[dim2];
   }
 
   real hx = 1.0 / (real) nraf[0];
@@ -933,7 +932,7 @@ void DGMass(__constant int *param,       // interp param
   int npg[3] = {param[1] + 1, param[2] + 1, param[3] + 1};
   int nraf[3] = {param[4], param[5], param[6]};
 
-  int npgie = npg[0] * npg[1] * npg[2] * nraf[0] * nraf[1] * nraf[2];
+  //  int npgie = npg[0] * npg[1] * npg[2] * nraf[0] * nraf[1] * nraf[2];
 
   //ref_pg_vol(param+1, ipg,xpgref,&wpg,NULL);
   int ix = ipg % npg[0];

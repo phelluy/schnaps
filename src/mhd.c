@@ -618,7 +618,7 @@ void MHDInitDataReconnexion(real *x, real *w) {
 
 #pragma start_opencl
 void MHDImposedDataReconnexion(const real *x,const  real t, real *w) {
-  real gam = 1.6666666666;
+  //real gam = 1.6666666666;
   real yL[9];
 
   yL[0] = 1.0;
@@ -678,7 +678,7 @@ void MHDInitDataKelvinHelmotz(real *x, real *w) {
 
 #pragma start_opencl
 void MHDImposedDataKelvinHelmotz(const real *x,const  real t, real *w) {
-  real gam = 1.6666666666;
+  //real gam = 1.6666666666;
   real yL[9];
 
   yL[0] = 1.0; //reprendre 1.29 a la place de 1.806 et prendre Bx = 1.29/3.33 = 0.39
@@ -729,7 +729,7 @@ void MHDInitDataDoubleTearing(real *x, real *w) {
 
 #pragma start_opencl
 void MHDImposedDataDoubleTearing(const real *x,const  real t, real *w) {
-  real gam = 1.6666666666;
+  //real gam = 1.6666666666;
   real yL[9];
 
   yL[5] = 1 + tanh( (x[0]-0.5)/0.2 ) - tanh( (x[0]+0.5)/0.2 );     // By

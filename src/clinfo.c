@@ -432,7 +432,7 @@ void BuildKernels(CLInfo *cli, char *strprog, char *buildoptions)
     malloc(deflen + 1) :  
     malloc(deflen + strlen(buildoptions) + 1);
 
-#if real == double
+#if _SCHNAPS_DOUBLE_PRECISION
   sprintf(buildoptions0, "-D real=double ");
 #else
   sprintf(buildoptions0, "-D real=float ");
@@ -455,6 +455,10 @@ void BuildKernels(CLInfo *cli, char *strprog, char *buildoptions)
     printf("Compilation output:\n%s\n",
   	   print_build_debug(&(cli->program), &cli->device));
   }
+
+  printf("Compilation output:\n%s\n",
+	 print_build_debug(&(cli->program), &cli->device));
+
   assert(status >= CL_SUCCESS);
 }
 
