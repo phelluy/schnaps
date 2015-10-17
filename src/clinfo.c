@@ -452,13 +452,13 @@ void BuildKernels(CLInfo *cli, char *strprog, char *buildoptions)
   if(status < CL_SUCCESS) {
     //printf("%s\n", strprog); // Print the OpenCL code
     printf("%s\n", clErrorString(status));
-    printf("Compilation output:\n%s\n",
-  	   print_build_debug(&(cli->program), &cli->device));
+    printf("Compilation output:\n");
+    print_build_debug(&cli->program, &cli->device);
+  } else {
+    printf("Compilation output:\n");
+    print_build_debug(&cli->program, &cli->device);
   }
-
-  printf("Compilation output:\n%s\n",
-	 print_build_debug(&(cli->program), &cli->device));
-
+    
   assert(status >= CL_SUCCESS);
 }
 

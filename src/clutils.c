@@ -230,7 +230,7 @@ const char* clErrorString(const cl_int err)
   return errString;
 }
 
-char *print_build_debug(cl_program* program, cl_device_id *device) 
+void print_build_debug(cl_program* program, cl_device_id *device) 
 {
   size_t log_size;
   clGetProgramBuildInfo(*program,
@@ -248,5 +248,5 @@ char *print_build_debug(cl_program* program, cl_device_id *device)
 			log, 
 			NULL);
   printf("%s\n",log);
-  return log;
+  free(log);
 }
