@@ -1310,8 +1310,12 @@ void RK2_CL(field *f, real tmax, real dt,
     
     f->tnow += 0.5 * dt;
 
-    //f->rk_time += clv_duration(stage1); //FIXME: restore
-    //f->rk_time += clv_duration(stage2);
+    // FIXME: this includes a wait, so we might want to disable it.
+    for(int ie = 0; ie < nmacro; ++ie) {
+      f->rk_time += clv_duration(stage1[ie]);
+      f->rk_time += clv_duration(stage2[ie]);
+    }
+
     iter++;
   }
   gettimeofday(&t_end, NULL);
