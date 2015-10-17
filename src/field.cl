@@ -1417,9 +1417,10 @@ void RK_out_CL(__global real *wnp1,
 __kernel
 void RK_in_CL(__global real *wnp1, 
 	      __global real *dtwn, 
-	      const real dt)
+	      const real dt,
+	      const int woffset)
 {
-  int ipg = get_global_id(0);
+  int ipg = get_global_id(0) + woffset;
   wnp1[ipg] += dt * dtwn[ipg];
 }
 
