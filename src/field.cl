@@ -1406,9 +1406,10 @@ __kernel
 void RK_out_CL(__global real *wnp1, 
 	       __global const real *wn, 
 	       __global const real *dtwn, 
-	       const real dt)
+	       const real dt,
+	       const int woffset)
 {
-  int ipg = get_global_id(0);
+  int ipg = get_global_id(0) + woffset;
   wnp1[ipg] = wn[ipg] + dt * dtwn[ipg];
 }
 
@@ -1422,6 +1423,17 @@ void RK_in_CL(__global real *wnp1,
   wnp1[ipg] += dt * dtwn[ipg];
 }
 
+
+// Out-of-place RK stage
+__kernel
+void RK4_first_stages(__global real *wnp1, 
+		     __global const real *wn, 
+		     __global const real *dtwn, 
+		     const real dt)
+{
+  int ipg = get_global_id(0);
+  wnp1[ipg] = wn[ipg] + dt * dtwn[ipg];
+}
 
 // RK4 final stage
 __kernel

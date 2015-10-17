@@ -269,6 +269,12 @@ void init_field_cl(field *f)
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 
+  f->RK4_first_stages = clCreateKernel(f->cli.program,
+				       "RK4_first_stages",
+				       &status);
+  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status >= CL_SUCCESS);
+
   f->RK4_final_stage = clCreateKernel(f->cli.program,
 				      "RK4_final_stage",
 				      &status);

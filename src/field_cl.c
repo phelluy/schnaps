@@ -873,7 +873,8 @@ void dtfield_CL(field *f, real tnow, cl_mem *wn_cl,
 }
 
 // Set kernel arguments for first stage of RK2
-void init_RK2_CL_stage1(field *f, const real dt, cl_mem *wnp1_cl)
+void init_RK2_CL_stage1(MacroCell *mcell, field *f,
+			const real dt, cl_mem *wnp1_cl)
 {
   cl_kernel kernel = f->RK_out_CL;
   cl_int status;
@@ -910,18 +911,28 @@ void init_RK2_CL_stage1(field *f, const real dt, cl_mem *wnp1_cl)
 			  &halfdt);
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
+
+  status = clSetKernelArg(kernel,
+			  argnum++,
+			  sizeof(int),
+			  &mcell->woffset);
+  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status >= CL_SUCCESS);
 }
 
 // Launch first stage of RK2 integration
-void RK2_CL_stage1(field *f, size_t numworkitems,
+void RK2_CL_stage1(MacroCell *mcell, field *f,
+		   size_t numworkitems, // FIXME: remove
 		   cl_uint nwait, cl_event *wait, cl_event *done)
 {
   cl_int status;
+  size_t nwork = mcell->nreal;
+  
   status = clEnqueueNDRangeKernel(f->cli.commandqueue,
 				  f->RK_out_CL,
 				  1, 
 				  NULL,
-				  &numworkitems,
+				  &nwork,
 				  NULL,
 				  nwait, 
 				  wait, 
@@ -980,7 +991,7 @@ void RK4_CL_stageA(field *f,
 {
   // l_1 = w_n + 0.5dt * S(w_n, t_0)
   
-  cl_kernel kernel = f->RK_out_CL;
+  cl_kernel kernel = f->RK4_first_stages;
   cl_int status;
   int argnum = 0;
 
@@ -1242,11 +1253,18 @@ void RK2_CL(field *f, real tmax, real dt,
   assert(status >= CL_SUCCESS);
 
   // Set up kernels
-  init_RK2_CL_stage1(f, dt, &wnp1_cl);
+
   init_RK2_CL_stage2(f, dt);
 
+  const int nmacro = f->macromesh.nbelems;
+
+  cl_event *stage1 =  calloc(nmacro, sizeof(cl_event));
+  for(int ie = 0; ie < nmacro; ++ie) {
+    stage1[ie] = clCreateUserEvent(f->cli.context, &status);
+  }
+  
   cl_event source1 = clCreateUserEvent(f->cli.context, &status);
-  cl_event stage1 =  clCreateUserEvent(f->cli.context, &status);
+  //cl_event stage1 =  clCreateUserEvent(f->cli.context, &status);
   cl_event source2 = clCreateUserEvent(f->cli.context, &status);
   cl_event stage2 =  clCreateUserEvent(f->cli.context, &status);
 
@@ -1264,19 +1282,23 @@ void RK2_CL(field *f, real tmax, real dt,
     //printf("iter: %d\n", iter);
     if (iter % freq == 0)
       printf("t=%f iter=%d/%d dt=%f\n", f->tnow, iter, f->itermax, dt);
-
+    
     dtfield_CL(f, f->tnow, &f->wn_cl, 1, &stage2, &source1);
-    RK2_CL_stage1(f, f->wsize, 1, &source1, &stage1);
-
+    
+    for(int ie = 0; ie < nmacro; ++ie) { 
+      MacroCell *mcell = f->mcell + ie;
+      init_RK2_CL_stage1(mcell, f, dt, &wnp1_cl);
+      RK2_CL_stage1(mcell, f, f->wsize, 1, &source1, stage1 + ie);
+    }
+    
     f->tnow += 0.5 * dt;
 
-    dtfield_CL(f, f->tnow, &wnp1_cl, 1, &stage1, &source2);
+    dtfield_CL(f, f->tnow, &wnp1_cl, nmacro, stage1, &source2);
     RK2_CL_stage2(f, f->wsize, 1, &source2, &stage2);
 
-
     f->tnow += 0.5 * dt;
 
-    f->rk_time += clv_duration(stage1);
+    //f->rk_time += clv_duration(stage1); //FIXME: restore
     f->rk_time += clv_duration(stage2);
     iter++;
   }
@@ -1285,7 +1307,7 @@ void RK2_CL(field *f, real tmax, real dt,
     status = clSetUserEventStatus(*done, CL_COMPLETE);
 
   clReleaseEvent(stage2);
-  clReleaseEvent(stage1);
+  //clReleaseEvent(stage1);
   
   double rkseconds = (t_end.tv_sec - t_start.tv_sec) * 1.0 // seconds
     + (t_end.tv_usec - t_start.tv_usec) * 1e-6; // microseconds

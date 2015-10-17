@@ -377,7 +377,9 @@ void InitCLInfo(CLInfo *cli, int platform_num, int device_num)
 
 #if 0
   //#ifdef CL_VERSION_2_0
-  cl_queue_properties queue_properties = CL_QUEUE_PROFILING_ENABLE;
+  cl_queue_properties queue_properties = CL_QUEUE_PROFILING_ENABLE
+    || CL_QUEUE_PROFILING_ENABLE;
+
   cli->commandqueue 
     = clCreateCommandQueueWithProperties(cli->context,
 					 cli->device,
@@ -386,7 +388,9 @@ void InitCLInfo(CLInfo *cli, int platform_num, int device_num)
 #else
   cli->commandqueue = clCreateCommandQueue(cli->context,
 					   cli->device,
-					   CL_QUEUE_PROFILING_ENABLE,
+					   CL_QUEUE_PROFILING_ENABLE
+					   //|| CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE
+					   ,
 					   &status);
 #endif
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
