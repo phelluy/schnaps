@@ -990,8 +990,8 @@ void DGMass(__constant int *param,       // interp param
 // Second implementation with a loop on the faces.
 __kernel
 void DGMacroCellInterface(__constant int *param,        // interp param
-                          int ieL,                      // left macrocell 
-			  int ieR,                      // right macrocell
+                          int woffsetL,                 // woffsetL
+			  int woffsetR,                 // woffsetR
                           int locfaL,                   // left face index
 			  int locfaR,                   // right face index
                           __constant real *physnodeL,   // left physnode
@@ -1056,8 +1056,8 @@ void DGMacroCellInterface(__constant int *param,        // interp param
   /*   assert(Dist(xpgR, xpg) < 1e-10); */
   /* }	 */
 
-  int imemL0 = VARINDEX(param, ieL, ipgL, 0);
-  int imemR0 = VARINDEX(param, ieR, ipgR, 0);
+  int imemL0 = VARINDEX(param, 0, ipgL, 0) + woffsetL;
+  int imemR0 = VARINDEX(param, 0, ipgR, 0) + woffsetR;
   __global real *wnL0 = wn + imemL0;
   __global real *wnR0 = wn + imemR0;
   for(int iv = 0; iv < m; iv++) {

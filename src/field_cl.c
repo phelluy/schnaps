@@ -181,7 +181,6 @@ void init_DGMacroCellInterface_CL(field *f,
   // Set kernel arguments
   unsigned int argnum = 0;
 
-  //__constant int *param,        // 0: interp param
   status = clSetKernelArg(kernel,
 			 argnum++,
                           sizeof(cl_mem),
@@ -189,11 +188,10 @@ void init_DGMacroCellInterface_CL(field *f,
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 
-  //int ieL,                      // 1: left macrocell 
   status = clSetKernelArg(kernel,
 			  argnum++,
 			  sizeof(int),
-			  &ieL);
+			  &mcellL->woffset);
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 
@@ -201,7 +199,7 @@ void init_DGMacroCellInterface_CL(field *f,
   status = clSetKernelArg(kernel,
 			  argnum++,
 			  sizeof(int),
-			  &ieR);
+			  &mcellR->woffset);
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 
