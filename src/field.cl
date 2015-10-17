@@ -1443,11 +1443,12 @@ void RK4_final_stage(__global real *w,
 		     __global real *l2,
 		     __global real *l3,
 		     __global real *dtw, 
-		     const real dt)
+		     const real dt,
+		     const int woffset)
 {
   const real b = -1.0 / 3.0;
   const real a[] = {1.0 / 3.0, 2.0 / 3.0, 1.0 / 3.0, dt / 6.0};
-  int i = get_global_id(0);
+  int i = get_global_id(0) + woffset;
   w[i] = 
     b * w[i] +
     a[0] * l1[i] +
