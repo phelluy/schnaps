@@ -1252,19 +1252,28 @@ void RK4_CL(field *f, real tmax, real dt,
   }
   gettimeofday(&t_end, NULL); 
 
-  if(done != NULL)
+  if(done != NULL) {
+    // FIXME: use void kernel instead
     status = clSetUserEventStatus(*done, CL_COMPLETE);
-
+  }
+    
  double rkseconds = (t_end.tv_sec - t_start.tv_sec) * 1.0 // seconds
     + (t_end.tv_usec - t_start.tv_usec) * 1e-6; // microseconds
   printf("\nTotal RK time (s):\n%f\n", rkseconds);
   printf("\nTotal RK time per time-step (s):\n%f\n", rkseconds / iter );
- 
-  
+   
   for(int i = 0; i < nstages; ++i) {
     clReleaseEvent(source[i]);
+  }
+
+  for(int i = 0; i < nstages - 1; ++i) {
     clReleaseEvent(stage[i]);
   }
+
+  for(int ie = 0; ie < nmacro; ++ie) {
+    clReleaseEvent(stage3[ie]);
+  }
+  free(stage3);
   
   printf("\nt=%f iter=%d/%d dt=%f\n", f->tnow, iter, f->itermax, dt);
 }
