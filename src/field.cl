@@ -744,12 +744,12 @@ void set_buffer_to_zero(__global real *w)
 
 // Compute the volume  terms inside  one macrocell
 __kernel
-void DGVolume(__constant int *param,     // 0: interp param
-	      int ie,                    // 1: macrocel index
-	      __constant real *physnode, // 2: macrocell nodes
-              __global real *wn,         // 3: field values
-	      __global real *dtwn,       // 4: time derivative
-	      __local real *wnloc        // 5: cache for wn and dtwn
+void DGVolume(__constant int *param,     // interp param
+	      int woffset,               // woffset
+	      __constant real *physnode, // macrocell nodes
+              __global real *wn,         // field values
+	      __global real *dtwn,       // time derivative
+	      __local real *wnloc        // cache for wn and dtwn
 	      )
 {
   // Use __local memory in DGVolume kernel?
@@ -770,7 +770,7 @@ void DGVolume(__constant int *param,     // 0: interp param
     int iv = iread % m;
     int ipgloc = iread / m;
     int ipg = ipgloc + icell * get_local_size(0);
-    int imem = VARINDEX(param, ie, ipg, iv);
+    int imem = VARINDEX(param, 0, ipg, iv) + woffset;
     int imemloc = iv + ipgloc * m;
     
     wnloc[imemloc] = wn[imem];
@@ -848,7 +848,7 @@ void DGVolume(__constant int *param,     // 0: interp param
 #else
     // gauss point id in the macrocell
     int ipgL = ipg(npg, p, icell);
-    int imemL = VARINDEX(param, ie, ipgL, iv);
+    int imemL = VARINDEX(param, 0, ipgL, iv) + woffset;
     wL[iv] = wn[imemL];
 #endif
   }
@@ -894,7 +894,7 @@ void DGVolume(__constant int *param,     // 0: interp param
       }
 #else
       int ipgR = ipg(npg, q, icell);
-      int imemR0 = VARINDEX(param, ie, ipgR, 0);
+      int imemR0 = VARINDEX(param, 0, ipgR, 0) + woffset;
       __global double *dtwn0 = dtwn + imemR0; 
       for(int iv = 0; iv < m; iv++) {
      	dtwn0[iv] += flux[iv] * wpg;
@@ -914,7 +914,7 @@ void DGVolume(__constant int *param,     // 0: interp param
     int iv = iread % m;
     int ipgloc = iread / m ;
     int ipg = ipgloc + icell * get_local_size(0);
-    int imem = VARINDEX(param, ie, ipg, iv);
+    int imem = VARINDEX(param, 0, ipg, iv) + woffset;
     int imemloc = ipgloc * m + iv;
     dtwn[imem] += dtwnloc[imemloc];
   }

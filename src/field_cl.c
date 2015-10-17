@@ -531,11 +531,10 @@ void init_DGVolume_CL(MacroCell *mcell, field *f, cl_mem *wn_cl,
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 
-  // ie
   status = clSetKernelArg(kernel,
 			  argnum++,
 			  sizeof(int),
-			  &mcell->ie);
+			  &mcell->woffset);
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 
