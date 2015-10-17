@@ -3,9 +3,8 @@
 #include "quantities_vp.h"
 #include "linear_solver.h"
 
-
-int CompareFatNode(const void* a,const void* b){
-
+int CompareFatNode(const void* a,const void* b)
+{
   FatNode* fna = (FatNode*) a;
   FatNode* fnb = (FatNode*) b;
 
@@ -20,9 +19,8 @@ int CompareFatNode(const void* a,const void* b){
 
 }
 
-int BuildFatNodeList(field* f,FatNode* fn_list){
-
-
+int BuildFatNodeList(field* f, FatNode* fn_list)
+{
   int big_int = 1 << 28; // 2**28 = 268 435 456
 
   int nb_dg_nodes =  NPG(f->interp_param+1) * f->macromesh.nbelems;
@@ -282,13 +280,17 @@ void SolvePoisson1D(field *f,real * w,int type_bc, real bc_l, real bc_r,Solver s
     source[i]=0;
   }
 
-  for(int ie=0;ie<nelx;ie++){
-    for(int iloc=0;iloc<degx+1;iloc++){
-      real omega=wglop(degx,iloc);
-      int ino=iloc + ie * degx;  
-      int imem=f->varindex(f->interp_param,0,iloc+ie*(degx+1),_INDEX_RHO);
-      real charge=w[imem];          
-      source[ino]+= (charge-charge_average)*omega*dx;
+  for(int ie = 0; ie < nelx; ie++) {
+    MacroCell *mcell = f->mcell + ie;
+    for(int iloc=0; iloc < degx + 1; iloc++) {
+      real omega = wglop(degx, iloc);
+      int ino = iloc + ie * degx;
+
+      // FIXME: this used to have ie=0, how can that be correct?
+      int imem = f->varindex(f->interp_param, iloc + ie * (degx + 1),
+			     _INDEX_RHO);
+      real charge = w[imem];          
+      source[ino] += (charge - charge_average) * omega * dx;
     }
   }
 
@@ -302,14 +304,13 @@ void SolvePoisson1D(field *f,real * w,int type_bc, real bc_l, real bc_r,Solver s
   sky.sol=solution;
   SolveLinearSolver(&sky);
 
-
   // now put the solution at the right place
-  for(int ie=0;ie<nelx;ie++){
-    for(int ipg=0;ipg<degx+1;ipg++){
+  for(int ie = 0; ie < nelx; ie++) {
+    for(int ipg=0;ipg<degx+1;ipg++) {
       // position in the continuous vector
-      int ino=ipg + ie * degx;
+      int ino = ipg + ie * degx;
       // position in the DG vector
-      int imem=f->varindex(f->interp_param,0,ipg+ie*(degx+1),_INDEX_PHI);
+      int imem = f->varindex(f->interp_param, ipg + ie * (degx + 1),_INDEX_PHI);
       w[imem]=solution[ino];
     }
   }
@@ -321,12 +322,9 @@ void SolvePoisson1D(field *f,real * w,int type_bc, real bc_l, real bc_r,Solver s
 
 }
 
-void SolvePoisson2D(PoissonSolver* ps,int type_bc){
-
-  //static bool is_lu = false;
-
-  real charge_average;
-  charge_average=0;
+void SolvePoisson2D(PoissonSolver* ps, int type_bc)
+{
+  real charge_average = 0.0;
 
   field* f=ps->fd;
 
@@ -361,15 +359,10 @@ void SolvePoisson2D(PoissonSolver* ps,int type_bc){
   int npg[3] = {ps->fd->interp_param[1] + 1, 
 		ps->fd->interp_param[2] + 1,
 		ps->fd->interp_param[3] + 1};
-  
+
   int nbel = ps->fd->macromesh.nbelems * nraf[0] * nraf[1] * nraf[2];
-  
-  
   int nnodes = npg[0] * npg[1] * npg[2] ;
- 
   int npgmacrocell = nnodes * nraf[0] * nraf[1] * nraf[2];
-
-
  
   printf("Allocation...\n");
   if(!ps->lsol.is_alloc){
@@ -386,8 +379,6 @@ void SolvePoisson2D(PoissonSolver* ps,int type_bc){
 	}
       }
     }
-    
-    
     AllocateLinearSolver(&ps->lsol);
   } 
     
@@ -437,8 +428,7 @@ void SolvePoisson2D(PoissonSolver* ps,int type_bc){
 	  Ref2Phy(physnode,xref,dphiref_i,0,NULL,
 		  dtau,codtau,dphi_i,NULL);
 	  real det = dot_product(dtau[0], codtau[0]);
-	  /* printf("ipg=%d det=%f xref=%f %f %f dphiref=%f %f %f \n",ipg,det, */
-	  /* 	 xref[0],xref[1],xref[2],dphiref_i[0],dphiref_i[1],dphiref_i[2]); */
+
 	  for(int jloc = 0; jloc < nnodes; jloc++){
 	    int jlocmacro = jloc + isubcell * nnodes;
 	    grad_psi_pg(ps->fd->interp_param+1,jlocmacro,ipgmacro,dphiref_j);
@@ -448,7 +438,6 @@ void SolvePoisson2D(PoissonSolver* ps,int type_bc){
 	  }
 	}
       }
-
 
       for(int iloc = 0; iloc < nnodes; iloc++){
 	for(int jloc = 0; jloc < nnodes; jloc++){
@@ -480,10 +469,13 @@ void SolvePoisson2D(PoissonSolver* ps,int type_bc){
 
   real surf = 0;
 
+  // FIXME: ie is the subcell, please rename to match rest of code
+  // where ie is the macrocell.
   for(int ie = 0; ie < nbel; ie++){  
-
     int iemacro = ie / (nraf[0] * nraf[1] * nraf[2]);
     int isubcell = ie % (nraf[0] * nraf[1] * nraf[2]);
+
+    MacroCell *mcell = f->mcell + iemacro;
     
     real physnode[20][3];
     for(int ino = 0; ino < 20; ino++) {
@@ -493,7 +485,6 @@ void SolvePoisson2D(PoissonSolver* ps,int type_bc){
       }
     }
     
- 
     for(int iloc = 0; iloc < nnodes; iloc++){
       real wpg;
       real xref[3];
@@ -506,18 +497,13 @@ void SolvePoisson2D(PoissonSolver* ps,int type_bc){
       real det = dot_product(dtau[0], codtau[0]);	
       int ino_dg = iloc + ie * nnodes;
       int ino_fe = ps->dg_to_fe_index[ino_dg];
-      int imem = ps->fd->varindex(ps->fd->interp_param,iemacro,
-				  ilocmacro,_INDEX_RHO);
+      int imem = ps->fd->varindex(ps->fd->interp_param, ilocmacro, _INDEX_RHO)
+	+ mcell->woffset;
       real rho = ps->fd->wn[imem];
       ps->lsol.rhs[ino_fe] += rho  * wpg * det ; // TODO: put the actual charge	
       surf += wpg * det ;
-      //printf("ie=%d det=%f surf=%f\n",ie,det,surf);    
     }
- 
   }
-
-  
-  //assert(1==2);
 
   // apply non homogeneous dirichlet boundary conditions
   /* for(int ino=0; ino<ps->nb_fe_nodes; ino++){ */
@@ -526,11 +512,12 @@ void SolvePoisson2D(PoissonSolver* ps,int type_bc){
   /* } */
 
   for(int ie = 0; ie < ps->fd->macromesh.nbelems; ie++){  
+    MacroCell *mcell = f->mcell + ie;
     for(int ipg = 0;ipg < npgmacrocell; ipg++){
 	int ino_dg = ipg + ie * npgmacrocell;
 	int ino_fe = ps->dg_to_fe_index[ino_dg];
-	int ipot = ps->fd->varindex(ps->fd->interp_param,ie,
-			   ipg,_INDEX_PHI);
+	int ipot = ps->fd->varindex(ps->fd->interp_param,
+			   ipg,_INDEX_PHI) + mcell->woffset;
 	if (ps->is_boundary_node[ino_fe]){
 	  real bigval = 1e20;
 	  ps->lsol.rhs[ino_fe] = ps->fd->wn[ipot] * bigval;
@@ -546,30 +533,18 @@ void SolvePoisson2D(PoissonSolver* ps,int type_bc){
 
   // copy the potential at the right place 
   for(int ie = 0; ie < ps->fd->macromesh.nbelems; ie++){  
+    MacroCell *mcell = f->mcell + ie;
     for(int ipg = 0;ipg < npgmacrocell; ipg++){
 	int ino_dg = ipg + ie * npgmacrocell;
 	int ino_fe = ps->dg_to_fe_index[ino_dg];
-	int ipot = ps->fd->varindex(ps->fd->interp_param,ie,
-			   ipg,_INDEX_PHI);
+	int ipot = ps->fd->varindex(ps->fd->interp_param,
+			   ipg,_INDEX_PHI) + mcell->woffset;
 	ps->fd->wn[ipot]=ps->lsol.sol[ino_fe];
     }
   }
 
-  //assert(1==2);
-
-  // boundary condition
-  /* for(int ino=0; ino<ps->nb_fe_nodes; ino++){ */
-  /*   ps->rhs[ino] += 1e20 * ps->is_boundary_node[ino]; */
-  /* } */
-
-
-
-
   printf("Compute electric field...\n");
-
-  
   ComputeElectricField(ps->fd);
 
   printf("End SolvePoisson2D.\n");
-
 }

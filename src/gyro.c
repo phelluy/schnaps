@@ -136,7 +136,9 @@ real GyroL2_Kinetic_error(field* f)
   real moy=0; // mean value
   real moy_space=0;
 
-  for (int ie=0;ie<f->macromesh.nbelems;ie++){
+  for (int ie = 0; ie < f->macromesh.nbelems; ie++) {
+    MacroCell *mcell = f->mcell + ie;
+
     // get the physical nodes of element ie
     real physnode[20][3];
     for(int inoloc=0;inoloc<20;inoloc++){
@@ -163,7 +165,7 @@ real GyroL2_Kinetic_error(field* f)
 	+ dtau[0][2] * codtau[0][2]; 
       real w[f->model.m];
       for(int iv=0;iv<f->model.m;iv++){
-	int imem=f->varindex(f->interp_param,ie,ipg,iv);
+	int imem=f->varindex(f->interp_param,ipg,iv) + mcell->woffset;
 	w[iv]=f->wn[imem];
       }
       // get the exact value

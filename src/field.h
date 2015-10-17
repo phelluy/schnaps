@@ -100,7 +100,7 @@ typedef struct field {
   //! \param[in] elem macro element index
   //! \param[in] ipg glop index
   //! \param[in] iv field component index
-  int (*varindex)(int* param, int elem, int ipg, int iv);
+  int (*varindex)(int* param, int ipg, int iv);
 
   // Array of pointers to MacroFaces used for DGMacroCellInterface
   MacroFace *mface;
@@ -187,7 +187,7 @@ typedef struct field {
 //! \param[in] iv field component index
 //! \returns the memory position in the arrays wn wnp1 or dtwn.
 #pragma start_opencl
-int GenericVarindex(__constant int *param, int elem, int ipg, int iv);
+int GenericVarindex(__constant int *param, int ipg, int iv);
 #pragma end_opencl
 
 //! \brief memory arrangement of field components.

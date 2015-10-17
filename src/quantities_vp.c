@@ -8,15 +8,13 @@
 #include "skyline.h"
 #include "quantities_vp.h"
 
-
-
-
-
-void Computation_charge_density(field *f, real * w){
-  
-  for(int ie=0;ie<f->macromesh.nbelems;ie++){
+void Computation_charge_density(field *f, real * w)
+{ 
+  for(int ie=0; ie < f->macromesh.nbelems; ie++) {
+    MacroCell *mcell = f->mcell + ie;
+    
     for(int ipg=0;ipg<NPG(f->interp_param+1);ipg++){
-      int imemc=f->varindex(f->interp_param,ie,ipg,_INDEX_RHO);
+      int imemc=f->varindex(f->interp_param,ipg,_INDEX_RHO) + mcell->woffset;
       w[imemc]=0;
   
       for(int ielv=0;ielv<_NB_ELEM_V;ielv++){
@@ -25,7 +23,7 @@ void Computation_charge_density(field *f, real * w){
 	  real omega=wglop(_DEG_V,iloc);
 	  real vi=-_VMAX+ielv*_DV+_DV*glop(_DEG_V,iloc);
 	  int ipgv=iloc+ielv*_DEG_V;
-	  int imem=f->varindex(f->interp_param,ie,ipg,ipgv);
+	  int imem = f->varindex(f->interp_param, ipg, ipgv) + mcell->woffset;
 	  w[imemc]+=omega*_DV*w[imem];
 	}
       }
@@ -42,6 +40,8 @@ real Computation_charge_average(field *f,real * w) {
   real size_domain = 0;
 
   for (int ie = 0; ie < f->macromesh.nbelems; ie++) {
+    MacroCell *mcell = f->mcell + ie;
+
     // Get the physical nodes of element ie
     real physnode[20][3];
     for(int inoloc = 0; inoloc < 20; inoloc++) {
@@ -54,7 +54,8 @@ real Computation_charge_average(field *f,real * w) {
     // Loop on the glops (for numerical integration)
     const int npg = NPG(f->interp_param + 1);
     for(int ipg = 0; ipg < npg; ipg++) {
-	int imem = f->varindex(f->interp_param, ie, ipg, _INDEX_RHO);
+	int imem = f->varindex(f->interp_param, ipg, _INDEX_RHO)
+	  + mcell->woffset;
 	rho_imem = f->wn[imem];
       
       real wpg, det;
@@ -100,13 +101,15 @@ void ComputeElectricField(field* f){
   int npgmacrocell = nnodes * nraf[0] * nraf[1] * nraf[2];
 
 
+  // FIXME: wrong naming convention for ie.
   for (int ie = 0; ie < nbel; ie++){
 
     // get the physical nodes of element ie
 
     int iemacro = ie / (nraf[0] * nraf[1] * nraf[2]);
     int isubcell = ie % (nraf[0] * nraf[1] * nraf[2]);
-
+    MacroCell *mcell = f->mcell + iemacro;
+    
     real physnode[20][3];
     for(int ino = 0; ino < 20; ino++) {
       int numnoe = f->macromesh.elem2node[20 * iemacro + ino];
@@ -121,8 +124,8 @@ void ComputeElectricField(field* f){
       int ipgmacro= ipg + isubcell * nnodes;
 
       ref_pg_vol(f->interp_param+1,ipgmacro,xref,NULL,NULL);
-      int iex = f->varindex(f->interp_param,iemacro,
-			    ipgmacro,_INDEX_EX);
+      int iex = f->varindex(f->interp_param, ipgmacro, _INDEX_EX)
+	+ mcell->woffset;
       f->wn[iex] = 0;
       
       for(int ib=0; ib < nnodes; ib++){
@@ -134,12 +137,11 @@ void ComputeElectricField(field* f){
 	Ref2Phy(physnode,xref,dphiref,0,NULL,
 		  dtau,codtau,dphi,NULL);
 	real det = dot_product(dtau[0], codtau[0]);
-	int ipot = f->varindex(f->interp_param,iemacro,
-			   ibmacro,_INDEX_PHI);
+	int ipot = f->varindex(f->interp_param, ibmacro, _INDEX_PHI)
+	  + mcell->woffset;
 	f->wn[iex] -= f->wn[ipot] * dphi[0] / det;
       }
     }
- 
 
   }
 }
@@ -160,6 +162,8 @@ void Compute_electric_field(field* f, real * w){
 
 
   for (int ie=0;ie<f->macromesh.nbelems;ie++){
+    MacroCell *mcell = f->mcell + ie;
+
     // get the physical nodes of element ie
     real physnode[20][3];
     for(int inoloc=0;inoloc<20;inoloc++){
@@ -174,8 +178,8 @@ void Compute_electric_field(field* f, real * w){
       real xref[3];
 
       ref_pg_vol(f->interp_param+1,ipg,xref,NULL,NULL);
-      int iex = f->varindex(f->interp_param,ie,
-			    ipg,_INDEX_EX);
+      int iex = f->varindex(f->interp_param, ipg, _INDEX_EX)
+	+ mcell->woffset;
       w[iex] = 0;
       
       for(int ib=0; ib < npgmacrocell; ib++){
@@ -186,8 +190,8 @@ void Compute_electric_field(field* f, real * w){
 	Ref2Phy(physnode,xref,dphiref,0,NULL,
 		  dtau,codtau,dphi,NULL);
 	real det = dot_product(dtau[0], codtau[0]);
-	int ipot = f->varindex(f->interp_param,ie,
-			   ib,_INDEX_PHI);
+	int ipot = f->varindex(f->interp_param, ib, _INDEX_PHI)
+	  + mcell->woffset;
 	w[iex] -= w[ipot] * dphi[0] / det;
       }
     }
@@ -319,7 +323,7 @@ void Compute_electric_field(field* f, real * w){
 		for(int p2 = 0; p2 < npg[2]; p2++){
 		  int p[3]={p0,p1,p2};
 		  int ipgL=offsetL+p[0]+npg[0]*(p[1]+npg[1]*p[2]);*/
-		  /* for(int iv=0; iv < m; iv++){ */
+		  /* for(int iv=0; iv < m; ivx++){ */
 		  /*   ///int imemL=f->varindex(f_interp_param,ie,ipgL,iv); */
 		  /*   wL[iv] = f->wn[imems[m*(ipgL-offsetL)+iv]];  */
 

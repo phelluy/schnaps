@@ -80,21 +80,21 @@ int TestPICAccumulate(void)
   int ipg=2;
   int iv=4;
 
-  int imem=f.varindex(f.interp_param, ie, ipg, iv);
+  MacroCell *mcell = f.mcell + ie;
+  int imem=f.varindex(f.interp_param, ipg, iv) + mcell->woffset;
 
   AccumulateParticles(&f,f.wn);
 
-
   printf("w=%f wex=%f\n",f.wn[imem],1/1.96);
   test = test && (fabs(f.wn[imem]-1/1.96) < 1e-8);
-
 
   Displayfield(&f);
 
   return test;
 }
 
-int main(void) {
+int main()
+{
   // Unit tests
   int resu=TestPICAccumulate();
   if (resu) printf("PIC accumulate test OK !\n");

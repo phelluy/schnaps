@@ -192,16 +192,17 @@ void AccumulateParticles(void *fv, real *w){
   int npg=NPG(f->interp_param + 1);
   
   for(int ie = 0; ie < f->macromesh.nbelems; ie++){
-
+    MacroCell *mcell = f->mcell + ie;
+    
     for(int ipg = 0; ipg < npg; ipg++){
       int iv = 4;
-      int imem = f->varindex(f->interp_param, ie, ipg, iv);
+      int imem = f->varindex(f->interp_param, ipg, iv) + mcell->woffset;
       f->wn[imem]=0;
       iv = 5;
-      imem = f->varindex(f->interp_param, ie, ipg, iv);
+      imem = f->varindex(f->interp_param, ipg, iv) + mcell->woffset;
       f->wn[imem]=0;
       iv = 6;
-      imem = f->varindex(f->interp_param, ie, ipg, iv);
+      imem = f->varindex(f->interp_param, ipg, iv) + mcell->woffset;
       f->wn[imem]=0;
     } 
 
@@ -210,9 +211,12 @@ void AccumulateParticles(void *fv, real *w){
   for(int i=0;i<pic->nbparts;i++) {
     
     int ie=pic->old_cell_id[i];
-    
+
+    // FIXME: remove goto
     if (ie < 0) goto nexti;
- 
+
+    MacroCell *mcell = f->mcell + ie;
+    
     int npg=NPG(f->interp_param + 1);
     real physnode[20][3];
     for(int inoloc = 0; inoloc < 20; inoloc++) {
@@ -238,15 +242,15 @@ void AccumulateParticles(void *fv, real *w){
       psi_ref(f->interp_param+1,ib,pic->xv + 6*i,&psi,NULL);
 
       int iv = 6;  // rho index
-      int imem = f->varindex(f->interp_param, ie, ib, iv);
+      int imem = f->varindex(f->interp_param, ib, iv) + mcell->woffset;
       w[imem] += psi / wpg * pic->weight;
  
       iv = 4;  // j1 index
-      imem = f->varindex(f->interp_param, ie, ib, iv);
+      imem = f->varindex(f->interp_param, ib, iv) + mcell->woffset;
       w[imem] += pic->xv[6 * i + 3] * psi / wpg * pic->weight;
 
       iv = 5;  // j2 index
-      imem = f->varindex(f->interp_param, ie, ib, iv);
+      imem = f->varindex(f->interp_param, ib, iv) + mcell->woffset;
       w[imem] += pic->xv[6 * i + 4] * psi / wpg * pic->weight;
     }
     

@@ -15,8 +15,8 @@
 //! \param[in] t : time
 //! \param[in] t : type of L2norm. if type_norm=0 this is the
 //! numerical solution if type_norm=1 this is the error
-real L2VelError(field *f, real *x, real *w){
-
+real L2VelError(field *f, real *x, real *w)
+{
   real wex[_INDEX_MAX];
   real err2 = 0;
   real t = f->tnow;
@@ -39,6 +39,8 @@ real L2_Kinetic_error(field* f){
   real error = 0;
 
   for (int ie = 0; ie < f->macromesh.nbelems; ie++){
+
+    MacroCell *mcell = f->mcell + ie;
     // get the physical nodes of element ie
     real physnode[20][3];
     for(int inoloc = 0; inoloc < 20; inoloc++){
@@ -65,7 +67,7 @@ real L2_Kinetic_error(field* f){
 	+ dtau[0][2] * codtau[0][2]; 
       real w[f->model.m];
       for(int iv = 0;iv < f->model.m; iv++){
-	int imem = f->varindex(f->interp_param, ie, ipg, iv);
+	int imem = f->varindex(f->interp_param, ipg, iv) + mcell->woffset;
 	w[iv] = f->wn[imem];
       }
       // get the exact value
@@ -104,6 +106,8 @@ void Energies(field *f, real *w, real k_energy, real e_energy, real t_energy,int
   t_energy = 0;
 
   for (int ie = 0; ie < f->macromesh.nbelems; ie++){
+    MacroCell *mcell = f->mcell + ie;
+    
     // get the physical nodes of element ie
     real physnode[20][3];
     for(int inoloc = 0; inoloc < 20; inoloc++){
@@ -130,7 +134,7 @@ void Energies(field *f, real *w, real k_energy, real e_energy, real t_energy,int
 	+ dtau[0][2] * codtau[0][2]; 
       real wn[f->model.m];
       for(int iv = 0; iv < _INDEX_MAX + 1; iv++){ 
-	int imem = f->varindex(f->interp_param, ie, ipg, iv);
+	int imem = f->varindex(f->interp_param, ipg, iv) + mcell->woffset;
 	wn[iv] = w[imem];
       }
       // get the exact value
@@ -151,7 +155,9 @@ void Charge_total(field *f, real *w, real t_charge,int first_diag) {
   
   t_charge=0;
 
-  for (int ie = 0; ie < f->macromesh.nbelems; ie++){
+  for (int ie = 0; ie < f->macromesh.nbelems; ie++) {
+    MacroCell *mcell = f->mcell + ie;
+
     // get the physical nodes of element ie
     real physnode[20][3];
     for(int inoloc = 0; inoloc < 20; inoloc++){
@@ -178,7 +184,7 @@ void Charge_total(field *f, real *w, real t_charge,int first_diag) {
 	+ dtau[0][2] * codtau[0][2]; 
       real wn[f->model.m];
       for(int iv = 0; iv < _INDEX_MAX + 1; iv++){ 
-	int imem = f->varindex(f->interp_param, ie, ipg, iv);
+	int imem = f->varindex(f->interp_param, ipg, iv) + mcell->woffset;
 	wn[iv] = w[imem];
       }
       t_charge += wn[_INDEX_RHO] * wpg * det;

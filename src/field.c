@@ -28,10 +28,8 @@
 #pragma start_opencl
 // FIXME: remove elem
 // FIXME: split up param
-int GenericVarindex(__constant int *param, int elem, int ipg, int iv) {
-  int npg = (param[1] + 1) * (param[2] + 1) * (param[3] + 1)
-    * param[4] * param[5] * param[6];
-  return iv + param[0] * (ipg + npg * elem);
+int GenericVarindex(__constant int *param, int ipg, int iv) {
+  return iv + param[0] * ipg;
 }
 #pragma end_opencl
 
@@ -158,7 +156,7 @@ void init_data(field *f)
       real w[f->model.m];
       f->model.InitData(xpg, w);
       for(int iv = 0; iv < f->model.m; iv++) {
-	int imem = f->varindex(f->interp_param, 0, ipg, iv) + mcell->woffset;
+	int imem = f->varindex(f->interp_param, ipg, iv) + mcell->woffset;
 	f->wn[imem] = w[iv];
       }
     }
@@ -528,13 +526,13 @@ void Displayfield(field *f)
       printf("Gauss point %d %f %f %f \n", ipg, xref[0], xref[1], xref[2]);
       printf("dtw= ");
       for(int iv = 0; iv < f->model.m; iv++) {
-	int imem = f->varindex(f->interp_param, 0, ipg, iv) + mcell->woffset;
+	int imem = f->varindex(f->interp_param, ipg, iv) + mcell->woffset;
 	printf("%f ", f->dtwn[imem]);
       }
       printf("\n");
       printf("w= ");
       for(int iv = 0; iv < f->model.m; iv++) {
-	int imem = f->varindex(f->interp_param, 0, ipg, iv) + mcell->woffset;
+	int imem = f->varindex(f->interp_param, ipg, iv) + mcell->woffset;
 	printf("%f ", f->wn[imem]);
       }
       printf("\n");
@@ -570,7 +568,7 @@ void Gnuplot(field *f, int dir, real fixval, char *filename)
 	fprintf(gmshfile, "%f ",xphy[1-dir]);
 
 	for(int iv = 0; iv < f->model.m; iv++) {
-	  int imem = f->varindex(f->interp_param, 0, ipg, iv) + mcell->woffset;
+	  int imem = f->varindex(f->interp_param, ipg, iv) + mcell->woffset;
 	  fprintf(gmshfile, "%f ",f->wn[imem]);
 	}
 	fprintf(gmshfile, "\n");
@@ -654,7 +652,7 @@ void Plotfield(int typplot, int compare, field* f, char *fieldname,
 	      real psi;
 	      psi_ref_subcell(f->interp_param + 1, icL, ib, Xr, &psi, NULL);
 	      testpsi += psi;
-	      int vi = f->varindex(f->interp_param, 0, ib, typplot)
+	      int vi = f->varindex(f->interp_param, ib, typplot)
 		+ mcell->woffset;
 	      value[nodecount] += psi * f->wn[vi];
 	    }
@@ -896,8 +894,8 @@ void DGSubCellInterface(MacroCell *mcell, field *f, real *wmc, real *dtwmc)
 		real wL[m], wR[m], flux[m];
 		for(int iv = 0; iv < m; iv++) {
 		  // TO DO change the varindex signature
-		  int imemL = f->varindex(f->interp_param, 0, ipgL, iv);
-		  int imemR = f->varindex(f->interp_param, 0, ipgR, iv);
+		  int imemL = f->varindex(f->interp_param, ipgL, iv);
+		  int imemR = f->varindex(f->interp_param, ipgR, iv);
 		  // end TO DO
 		  wL[iv] = wmc[imemL];
 		  wR[iv] = wmc[imemR];
@@ -916,8 +914,8 @@ void DGSubCellInterface(MacroCell *mcell, field *f, real *wmc, real *dtwmc)
 		// finally distribute the flux on the two sides
 		for(int iv = 0; iv < m; iv++) {
 		  // TO DO change the varindex signature
-		  int imemL = f->varindex(f->interp_param, 0, ipgL, iv);
-		  int imemR = f->varindex(f->interp_param, 0, ipgR, iv);
+		  int imemL = f->varindex(f->interp_param, ipgL, iv);
+		  int imemR = f->varindex(f->interp_param, ipgR, iv);
 		  // end TO DO
 		  dtwmc[imemL] -= flux[iv] * wpg;
 		  dtwmc[imemR] += flux[iv] * wpg;
@@ -982,7 +980,7 @@ void DGMacroCellInterfaceSlow(MacroCell *mcell, field *f, real *w, real *dtw)
       // get the left value of w at the gauss point
       real wL[f->model.m], wR[f->model.m];
       for(int iv = 0; iv < f->model.m; iv++) {
-	int imem = f->varindex(iparam, 0, ipg, iv) + mcell->woffset;
+	int imem = f->varindex(iparam, ipg, iv) + mcell->woffset;
 	wL[iv] = f->wn[imem];
       }
 
@@ -1028,7 +1026,7 @@ void DGMacroCellInterfaceSlow(MacroCell *mcell, field *f, real *w, real *dtw)
 	/* #endif */
 	  
 	for(int iv = 0; iv < f->model.m; iv++) {
-	  int imem = f->varindex(iparam, 0, ipgR, iv) + mcellR->woffset;
+	  int imem = f->varindex(iparam, ipgR, iv) + mcellR->woffset;
 	  wR[iv] = f->wn[imem];
 	}
 	// int_dL F(wL, wR, grad phi_ib )
@@ -1039,7 +1037,7 @@ void DGMacroCellInterfaceSlow(MacroCell *mcell, field *f, real *w, real *dtw)
 	f->model.BoundaryFlux(xpg, f->tnow, wL, vnds, flux);
       }
       for(int iv = 0; iv < f->model.m; iv++) {
-	int imem = f->varindex(iparam, 0, ib, iv) + mcell->woffset;
+	int imem = f->varindex(iparam, ib, iv) + mcell->woffset;
 	f->dtwn[imem] -= flux[iv] * wpg;
       }
 
@@ -1100,7 +1098,7 @@ void DGMacroCellBoundary(MacroFace *mface, field *f, real *wmc, real *dtwmc)
     }
 
     for(int iv = 0; iv < m; iv++) {
-      int imemL = f->varindex(iparam, 0, ipgL, iv);
+      int imemL = f->varindex(iparam, ipgL, iv);
       wL[iv] = wmc[imemL];
     }
     
@@ -1108,7 +1106,7 @@ void DGMacroCellBoundary(MacroFace *mface, field *f, real *wmc, real *dtwmc)
     
     for(int iv = 0; iv < m; iv++) {
       // The basis functions is also the gauss point index
-      int imemL = f->varindex(iparam, 0, ipgL, iv);
+      int imemL = f->varindex(iparam, ipgL, iv);
       dtwmc[imemL] -= flux[iv] * wpg;
     }
   }
@@ -1201,9 +1199,9 @@ void DGMacroCellInterface(MacroFace *mface, field *f,
     real wL[m];
     real wR[m];
     for(int iv = 0; iv < m; iv++) {
-      int imemL = f->varindex(iparam, 0, ipgL, iv);
+      int imemL = f->varindex(iparam, ipgL, iv);
       wL[iv] = wmcL[imemL];
-      int imemR = f->varindex(iparam, 0, ipgR, iv);
+      int imemR = f->varindex(iparam, ipgR, iv);
       wR[iv] = wmcR[imemR];
     }
 
@@ -1215,8 +1213,8 @@ void DGMacroCellInterface(MacroFace *mface, field *f,
     // Add flux to both sides
     for(int iv = 0; iv < m; iv++) {
       // The basis functions 1is also the gauss point index
-      int imemL = f->varindex(iparam, 0, ipgL, iv);
-      int imemR = f->varindex(iparam, 0, ipgR, iv);
+      int imemL = f->varindex(iparam, ipgL, iv);
+      int imemR = f->varindex(iparam, ipgR, iv);
       dtwmcL[imemL] -= flux[iv] * wpg;
       dtwmcR[imemR] += flux[iv] * wpg;
     }
@@ -1241,7 +1239,7 @@ void DGMass(MacroCell *mcell, field *f, real *dtwmc)
 
     real norm = 1.0 / (wpg * det);
     for(int iv = 0; iv < m; iv++) {
-      int imem = f->varindex(f->interp_param, 0, ipg, iv);
+      int imem = f->varindex(f->interp_param, ipg, iv);
       dtwmc[imem] *= norm;
     }
   }
@@ -1268,7 +1266,7 @@ void DGSource(MacroCell *mcell, field *f, real tnow, real *wmc, real *dtwmc)
     // TODO: this copy is not necessary, as we are already contiguous.
     real wL[m];
     for(int iv = 0; iv < m; ++iv){
-      int imem = f->varindex(f->interp_param, 0, ipg, iv);
+      int imem = f->varindex(f->interp_param, ipg, iv);
       wL[iv] = wmc[imem];
     }
 
@@ -1276,7 +1274,7 @@ void DGSource(MacroCell *mcell, field *f, real tnow, real *wmc, real *dtwmc)
     f->model.Source(xphy, tnow, wL, source);
       
     for(int iv = 0; iv < m; ++iv) {
-      int imem = f->varindex(f->interp_param, 0, ipg, iv);
+      int imem = f->varindex(f->interp_param, ipg, iv);
       dtwmc[imem] += source[iv];
     }
   }
@@ -1331,7 +1329,7 @@ void DGVolume(MacroCell *mcell, field *f, real *wmc, real *dtwmc)
 	  omega[p] = tomega;
 
 	  for(int im = 0; im < m; ++im) {
-	    imems[pos++] = f->varindex(f_interp_param, 0, offsetL + p, im);
+	    imems[pos++] = f->varindex(f_interp_param, offsetL + p, im);
 	  }
 	}
 
@@ -1382,7 +1380,7 @@ void DGVolume(MacroCell *mcell, field *f, real *wmc, real *dtwmc)
 
 		  int ipgR = offsetL+q[0]+npg[0]*(q[1]+npg[1]*q[2]);
 		  for(int iv = 0; iv < m; iv++) {
-		    int imemR = f->varindex(f_interp_param, 0, ipgR, iv);
+		    int imemR = f->varindex(f_interp_param, ipgR, iv);
 		    int temp = m * (ipgR - offsetL) + iv;  
 		    //assert(imemR == imems[temp]);
 		    dtwmc[imems[temp]] += flux[iv] * wpgL;
@@ -1492,7 +1490,7 @@ void dtfieldSlow(field* f)
     MacroCell *mcell = f->mcell + ie;
     for(int ipg = 0; ipg < NPG(f->interp_param + 1); ipg++) {
       for(int iv = 0; iv < f->model.m; iv++) {
-	int imem = f->varindex(f->interp_param, 0, ipg, iv) + mcell->woffset;
+	int imem = f->varindex(f->interp_param, ipg, iv) + mcell->woffset;
 	f->dtwn[imem] = 0;
         sizew++;
       }
@@ -1527,7 +1525,7 @@ void dtfieldSlow(field* f)
   	// get the left value of w at the gauss point
   	real wL[f->model.m], wR[f->model.m];
   	for(int iv = 0; iv < f->model.m; iv++) {
-  	  int imem = f->varindex(f->interp_param, 0, ipg, iv) + mcell->woffset;
+  	  int imem = f->varindex(f->interp_param, ipg, iv) + mcell->woffset;
   	  wL[iv] = f->wn[imem];
   	}
   	// the basis functions is also the gauss point index
@@ -1565,7 +1563,7 @@ void dtfieldSlow(field* f)
 		  NULL, NULL, NULL); // codtau, dphi, vnds
 	  assert(Dist(xpgR, xpg) < 1e-10);
   	  for(int iv = 0; iv < f->model.m; iv++) {
-  	    int imem = f->varindex(f->interp_param, 0, ipgR, iv)
+  	    int imem = f->varindex(f->interp_param, ipgR, iv)
 	      + mcellR->woffset;
   	    wR[iv] = f->wn[imem];
   	  }
@@ -1577,7 +1575,7 @@ void dtfieldSlow(field* f)
   	  f->model.BoundaryFlux(xpg, f->tnow, wL, vnds, flux);
   	}
   	for(int iv = 0; iv < f->model.m; iv++) {
-  	  int imem = f->varindex(f->interp_param, 0, ib, iv)
+  	  int imem = f->varindex(f->interp_param, ib, iv)
 	    + mcell->woffset;
   	  f->dtwn[imem] -= flux[iv]*wpg;
   	}
@@ -1602,7 +1600,7 @@ void dtfieldSlow(field* f)
       // Get the value of w at the gauss point
       real w[f->model.m];
       for(int iv = 0; iv < f->model.m; iv++) {
-	int imem = f->varindex(f->interp_param, 0, ipg, iv) + mcell->woffset;
+	int imem = f->varindex(f->interp_param, ipg, iv) + mcell->woffset;
 	w[iv] = f->wn[imem];
       }
 
@@ -1627,7 +1625,7 @@ void dtfieldSlow(field* f)
 	f->model.NumFlux(w, w, dpsi, flux);
 
 	for(int iv = 0; iv < f->model.m; iv++) {
-	  int imem = f->varindex(f->interp_param, 0, ib, iv) + mcell->woffset;
+	  int imem = f->varindex(f->interp_param, ib, iv) + mcell->woffset;
 	  f->dtwn[imem] += flux[iv] * wpg;
 	}
       }
@@ -1636,7 +1634,7 @@ void dtfieldSlow(field* f)
     for(int ipg = 0; ipg < NPG(f->interp_param + 1); ipg++) {
       // apply the inverse of the diagonal mass matrix
       for(int iv = 0; iv < f->model.m; iv++) {
-	int imem = f->varindex(f->interp_param, 0, ipg, iv) + mcell->woffset;
+	int imem = f->varindex(f->interp_param, ipg, iv) + mcell->woffset;
 	f->dtwn[imem] /= masspg[ipg];
       }
     }
@@ -1812,7 +1810,7 @@ real L2error(field *f) {
     for(int ipg = 0; ipg < npg; ipg++) {
       real w[f->model.m];
       for(int iv = 0; iv < f->model.m; iv++) {
-	int imem = f->varindex(f->interp_param, 0, ipg, iv) + mcell->woffset;
+	int imem = f->varindex(f->interp_param, ipg, iv) + mcell->woffset;
 	w[iv] = f->wn[imem];
       }
 
@@ -1871,7 +1869,7 @@ void InterpField(field *f, int ie, real *xref, real *w){
     psi_ref_subcell(f->interp_param + 1, is, ib, xref, &psi, NULL);
     
     for(int iv=0;iv<f->model.m;iv++){
-      int imem = f->varindex(f->interp_param, 0, ib, iv) + mcell->woffset;
+      int imem = f->varindex(f->interp_param, ib, iv) + mcell->woffset;
       w[iv] += psi * f->wn[imem];
     }
   }

@@ -114,11 +114,14 @@ int TestmEq2(void) {
 		      deg[2] + 1};
   
   for(int ie = 0; ie < f.macromesh.nbelems; ++ie){
+    MacroCell *mcell = f.mcell + ie;
+
     for(int ic=0;ic<nraf[0]*nraf[1]*nraf[2];++ic){
       for(int ipg=0;ipg<npg[0]*npg[1]*npg[2];++ipg){
 	printf("ie=%d ic=%d ipg=%d ",ie,ic,ipg);
 	for(int iv=0;iv<2;++iv){
-	  int imem=f.varindex(f.interp_param,ie,ipg+ic*NPG(f.interp_param+1), iv); 
+	  int imem=f.varindex(f.interp_param,ipg+ic*NPG(f.interp_param+1), iv)
+	    + mcell->woffset;
 	  //printf("NPG=%d\n",NPG(f.interp_param+1));
 	  printf("iv=%d \ndtwcl=%f dtwcpu=%f\n\n",iv,dtwn_cl[imem],dtwn[imem]);
 	}
