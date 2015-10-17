@@ -1284,8 +1284,8 @@ void RK2_CL(field *f, real tmax, real dt,
   printf("Starting RK2_CL\n");
   
   struct timeval t_start;
-  struct timeval t_end;
   gettimeofday(&t_start, NULL);
+
   while(f->tnow < tmax) {
     //printf("iter: %d\n", iter);
     if (iter % freq == 0)
@@ -1318,10 +1318,15 @@ void RK2_CL(field *f, real tmax, real dt,
 
     iter++;
   }
+  
+  struct timeval t_end;
   gettimeofday(&t_end, NULL);
-  if(done != NULL) 
-    status = clSetUserEventStatus(*done, CL_COMPLETE);
 
+  if(done != NULL) {
+    // FIXME: replace with null kernel
+    status = clSetUserEventStatus(*done, CL_COMPLETE);
+  }
+    
   for(int ie = 0; ie < nmacro; ++ie) {
     clReleaseEvent(stage1[ie]);
     clReleaseEvent(stage2[ie]);
