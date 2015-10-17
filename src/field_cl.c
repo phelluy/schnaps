@@ -995,7 +995,7 @@ void RK2_CL_stage2(MacroCell *mcell, field *f,
   assert(status >= CL_SUCCESS);
 }
 
-void RK4_CL_stageA(field *f, 
+void RK4_CL_stageA(MacroCell *mcell, field *f, 
 		   cl_mem *wnp1, cl_mem *wn, cl_mem *dtw, 
 		   const real dt, const int sizew, size_t numworkitems, 
 		   cl_uint nwait, cl_event *wait, cl_event *done)
@@ -1038,11 +1038,19 @@ void RK4_CL_stageA(field *f,
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 
+  status = clSetKernelArg(kernel,
+			  argnum++,
+			  sizeof(int),
+			  &mcell->woffset);
+  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status >= CL_SUCCESS);
+
+  size_t nwork = mcell->nreal;
   status = clEnqueueNDRangeKernel(f->cli.commandqueue,
   				  kernel,
   				  1,
   				  NULL,
-  				  &numworkitems,
+  				  &nwork,
   				  NULL,
   				  nwait,
   				  wait,
@@ -1174,73 +1182,78 @@ void RK4_CL(field *f, real tmax, real dt,
   cl_mem *w = &f->wn_cl;
   cl_mem *dtw = &f->dtwn_cl;
 
-  int nstages = 4;
-
-  // FIXME: these need to be updated, yo.
-  cl_event source[nstages];
-  cl_event stage[nstages - 1];
-  for(int i = 0; i < nstages; ++i) {
-    source[i] = clCreateUserEvent(f->cli.context, &status);
-    stage[i] = clCreateUserEvent(f->cli.context, &status);
-  }
-
+  // FIXME: replace with void kernel call
   clWaitForEvents(nwait, wait);
 
   printf("Starting RK4_CL\n");
 
   const int nmacro = f->macromesh.nbelems;
+
+  cl_event source0 = clCreateUserEvent(f->cli.context, &status);
+  cl_event source1 = clCreateUserEvent(f->cli.context, &status);
+  cl_event source2 = clCreateUserEvent(f->cli.context, &status);
+  cl_event source3 = clCreateUserEvent(f->cli.context, &status);
   
-  cl_event *stage3 =  calloc(nmacro, sizeof(cl_event));
+  cl_event *stage0 = calloc(nmacro, sizeof(cl_event));
+  cl_event *stage1 = calloc(nmacro, sizeof(cl_event));
+  cl_event *stage2 = calloc(nmacro, sizeof(cl_event));
+  cl_event *stage3 = calloc(nmacro, sizeof(cl_event));
   for(int ie = 0; ie < nmacro; ++ie) {
+    stage0[ie] = clCreateUserEvent(f->cli.context, &status);
+    stage1[ie] = clCreateUserEvent(f->cli.context, &status);
+    stage2[ie] = clCreateUserEvent(f->cli.context, &status);
     stage3[ie] = clCreateUserEvent(f->cli.context, &status);
     status = clSetUserEventStatus(stage3[ie], CL_COMPLETE);
   }
 
   struct timeval t_start;
-  struct timeval t_end;
   gettimeofday(&t_start, NULL);
+
   while(f->tnow < tmax) {
     if (iter % freq == 0)
       printf("t=%f iter=%d/%d dt=%f\n", f->tnow, iter, f->itermax, dt);
 
     // stage 0
     dtfield_CL(f, f->tnow, w, 
-	       nmacro, stage3, source);
-    RK4_CL_stageA(f, &l1, w, dtw,
-    		  0.5 * dt, sizew, numworkitems,
-		  1, source, stage);
-
+	       nmacro, stage3, &source0);
+    for(int ie = 0; ie < nmacro; ++ie) { 
+      MacroCell *mcell = f->mcell + ie;
+      RK4_CL_stageA(mcell, f, &l1, w, dtw,
+		    0.5 * dt, sizew, numworkitems,
+		    1, &source0, stage0 + ie);
+    }
+    
     f->tnow += 0.5 * dt;
     
     // stage 1
-    dtfield_CL(f, f->tnow, &l1, 1, stage, source + 1);
-    RK4_CL_stageA(f, &l2, w, dtw,
-    		  0.5 * dt, sizew, numworkitems,
-		  1, source + 1, stage + 1);
+    dtfield_CL(f, f->tnow, &l1, nmacro, stage0, &source1);
+    for(int ie = 0; ie < nmacro; ++ie) { 
+      MacroCell *mcell = f->mcell + ie;
+      RK4_CL_stageA(mcell, f, &l2, w, dtw,
+		    0.5 * dt, sizew, numworkitems,
+		    1, &source1, stage1 + ie);
+    }
     
     // stage 2
     dtfield_CL(f, f->tnow, &l2, 
-	       1, stage + 1, source + 2);
-    RK4_CL_stageA(f, &l3, w, dtw,
-    		  dt, sizew, numworkitems,
-		  1, source + 2, stage + 2);
-
+	       nmacro, stage1, &source2);
+    for(int ie = 0; ie < nmacro; ++ie) { 
+      MacroCell *mcell = f->mcell + ie;
+      RK4_CL_stageA(mcell, f, &l3, w, dtw,
+		    dt, sizew, numworkitems,
+		    1, &source2, stage2 + ie);
+    }
+    
     f->tnow += 0.5 * dt;
     
     // stage 3
     dtfield_CL(f, f->tnow, &l3, 
-	       1, stage + 2, source + 3);
+	       nmacro, stage2, &source3);
     for(int ie = 0; ie < nmacro; ++ie) { 
       MacroCell *mcell = f->mcell + ie;
       RK4_final_inplace_CL(mcell, f, w, &l1, &l2, &l3, 
 			   dtw, dt, numworkitems,
-			   1, source + 3, stage3 + ie);
-    }
-
-
-    // FIXME: this is a temporary hack.
-    for(int i = 0; i < nstages-1; ++i) {
-      f->rk_time += clv_duration(stage[i]);
+			   1, &source3, stage3 + ie);
     }
 
     // TODO: this includes a wait, so we might want to disable it.
@@ -1250,6 +1263,8 @@ void RK4_CL(field *f, real tmax, real dt,
       
     iter++;
   }
+
+  struct timeval t_end;
   gettimeofday(&t_end, NULL); 
 
   if(done != NULL) {
@@ -1261,18 +1276,21 @@ void RK4_CL(field *f, real tmax, real dt,
     + (t_end.tv_usec - t_start.tv_usec) * 1e-6; // microseconds
   printf("\nTotal RK time (s):\n%f\n", rkseconds);
   printf("\nTotal RK time per time-step (s):\n%f\n", rkseconds / iter );
-   
-  for(int i = 0; i < nstages; ++i) {
-    clReleaseEvent(source[i]);
-  }
-
-  for(int i = 0; i < nstages - 1; ++i) {
-    clReleaseEvent(stage[i]);
-  }
+  
+  clReleaseEvent(source0);
+  clReleaseEvent(source1);
+  clReleaseEvent(source2);
+  clReleaseEvent(source3);
 
   for(int ie = 0; ie < nmacro; ++ie) {
+    clReleaseEvent(stage0[ie]);
+    clReleaseEvent(stage1[ie]);
+    clReleaseEvent(stage2[ie]);
     clReleaseEvent(stage3[ie]);
   }
+  free(stage0);
+  free(stage1);
+  free(stage2);
   free(stage3);
   
   printf("\nt=%f iter=%d/%d dt=%f\n", f->tnow, iter, f->itermax, dt);

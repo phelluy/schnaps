@@ -1430,9 +1430,10 @@ __kernel
 void RK4_first_stages(__global real *wnp1, 
 		     __global const real *wn, 
 		     __global const real *dtwn, 
-		     const real dt)
+		      const real dt,
+		      const int woffset)
 {
-  int ipg = get_global_id(0);
+  int ipg = get_global_id(0) + woffset;
   wnp1[ipg] = wn[ipg] + dt * dtwn[ipg];
 }
 
