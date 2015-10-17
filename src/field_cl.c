@@ -1258,6 +1258,9 @@ void RK4_CL(field *f, real tmax, real dt,
 
     // TODO: this includes a wait, so we might want to disable it.
     for(int ie = 0; ie < nmacro; ++ie) {
+      f->rk_time += clv_duration(stage0[ie]);
+      f->rk_time += clv_duration(stage1[ie]);
+      f->rk_time += clv_duration(stage2[ie]);
       f->rk_time += clv_duration(stage3[ie]);
     }
       
