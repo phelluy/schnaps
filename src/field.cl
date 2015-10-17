@@ -1079,14 +1079,14 @@ void DGMacroCellInterface(__constant int *param,        // interp param
 // Compute the Discontinuous Galerkin inter-macrocells boundary terms.
 // Second implementation with a loop on the faces.
 __kernel
-void DGBoundary(__constant int *param,      // 0: interp param
-		real tnow,                  // 1: current time
-		int ieL,                    // 2: left macrocell 
-		int locfaL,                 // 3: left face index
-		__constant real *physnodeL, // 4: geometry for all mcells
-		__global real *wn,          // 5: field 
-		__global real *dtwn,        // 6: time derivative
-		__local real *cache         // 7: local mem
+void DGBoundary(__constant int *param,      // interp param
+		real tnow,                  // current time
+		int woffset,                // woffset
+		int locfaL,                 // left face index
+		__constant real *physnodeL, // geometry for all mcells
+		__global real *wn,          // field 
+		__global real *dtwn,        // time derivative
+		__local real *cache         // local mem
 		)
 {
   // TODO: use __local real *cache.
@@ -1116,7 +1116,7 @@ void DGBoundary(__constant int *param,      // 0: interp param
   real wL[_M];
   real flux[_M];
   
-  int imemL0 = VARINDEX(param, ieL, ipgL, 0);
+  int imemL0 = VARINDEX(param, 0, ipgL, 0) + woffset;
   __global real *wn0 = wn + imemL0;
   for(int iv = 0; iv < m; ++iv) {
     wL[iv] = wn0[iv];

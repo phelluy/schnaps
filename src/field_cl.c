@@ -90,11 +90,10 @@ void init_DGBoundary_CL(field *f,
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 
-  // int ieL,                      // 2: left macrocell
   status = clSetKernelArg(kernel,
   			  argnum++,
   			  sizeof(int),
-  			  &ieL);
+  			  &mcell->woffset);
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 
