@@ -725,22 +725,30 @@ void DGSource_CL(MacroCell *mcell, field *f, real tnow, cl_mem *wn_cl,
   assert(status >= CL_SUCCESS);
 }
 
-void set_buf_to_zero_cl(cl_mem *buf, int size, field *f,
+void set_buf_to_zero_cl(cl_mem *buf, MacroCell *mcell, field *f,
 			cl_uint nwait, cl_event *wait,  cl_event *done)
 {
   cl_int status;
 
   cl_kernel kernel = f->zero_buf;
 
-  // associates the param buffer to the 0th kernel argument
+  int argnum = 0;
+  
   status = clSetKernelArg(kernel,
-                          0, 
+                          argnum++, 
                           sizeof(cl_mem),
                           buf);
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
+  
+  status = clSetKernelArg(kernel,
+                          argnum++, 
+			  sizeof(int),
+			  &mcell->woffset);
+  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status >= CL_SUCCESS);
 
-  size_t numworkitems = size;
+  size_t numworkitems = mcell->nreal;
   status = clEnqueueNDRangeKernel(f->cli.commandqueue,
 				  kernel,
 				  1, NULL,
@@ -758,44 +766,53 @@ void set_buf_to_zero_cl(cl_mem *buf, int size, field *f,
 void dtfield_CL(field *f, real tnow, cl_mem *wn_cl,
 		cl_uint nwait, cl_event *wait, cl_event *done)
 {
+  const int nmacro = f->macromesh.nbelems;
 
-  set_buf_to_zero_cl(&f->dtwn_cl, f->wsize, f,
-  		     nwait, wait, &f->clv_zbuf);
-  
+  for(int ie = 0; ie < nmacro; ++ie) {
+    MacroCell *mcell = f->mcell + ie;
+    set_buf_to_zero_cl(&f->dtwn_cl, mcell, f,
+		       nwait, wait, f->clv_zbuf + ie);
+  }
+    
   // Macrocell interfaces must be launched serially
   const int ninterfaces = f->macromesh.nmacrointerfaces;
   
   for(int i = 0; i < ninterfaces; ++i) {
     int ifa = f->macromesh.macrointerface[i];
-    DGMacroCellInterface_CL((void*) (f->mface + ifa), f, wn_cl,
-    			    1,
-    			    i == 0 ? &f->clv_zbuf : f->clv_mci + i - 1,
+    DGMacroCellInterface_CL(f->mface + ifa, f, wn_cl,
+    			    i == 0 ? nmacro : 1,
+    			    i == 0 ? f->clv_zbuf : f->clv_mci + i - 1,
     			    f->clv_mci + i);
   }
 
   cl_event *startboundary = ninterfaces > 0 ?
-    f->clv_mci + ninterfaces - 1: &f->clv_zbuf;
+    f->clv_mci + ninterfaces - 1: f->clv_zbuf;
+  int nwaitstartboundary =  ninterfaces > 0 ? 1 : nmacro;
   
   // Boundary terms may also need to be launched serially.
   const int nboundaryfaces = f->macromesh.nboundaryfaces;
   for(int i = 0; i < nboundaryfaces; ++i) {
     int ifa = f->macromesh.boundaryface[i];
-    DGBoundary_CL((void*) (f->mface + ifa), f, wn_cl,
-		  1,
+    DGBoundary_CL(f->mface + ifa, f, wn_cl,
+		  nwaitstartboundary,
 		  i == 0 ?  startboundary : f->clv_boundary + i - 1,
 		  f->clv_boundary + i);
   }
 
   // If there are no interfaces and no boundaries, just wait for zerobuf.
   cl_event *startmacroloop;
+  int nwaitstartmacroloop;
   if(ninterfaces == 0 && nboundaryfaces == 0) {
-    startmacroloop = &f->clv_zbuf;
+    startmacroloop = f->clv_zbuf;
+    nwaitstartmacroloop = nmacro;
   } else {
     if(nboundaryfaces > 0) {
       startmacroloop = f->clv_boundary + nboundaryfaces - 1;
     } else {
       startmacroloop = f->clv_mci + ninterfaces - 1;
     }
+    // TODO: interfaces and boundaries might be parallealized
+    nwaitstartmacroloop = 1;
   }
 
   cl_event *fluxdone = f->clv_flux2;
@@ -813,13 +830,12 @@ void dtfield_CL(field *f, real tnow, cl_mem *wn_cl,
   
   // The kernels for the intra-macrocell computations can be launched
   // in parallel between macrocells.
-  const int nmacro = f->macromesh.nbelems;
+  //const int nmacro = f->macromesh.nbelems;
   for(int ie = 0; ie < nmacro; ++ie) {
-    //printf("ie: %d\n", ie);
-    MacroCell *mcelli = f->mcell + ie;
+    MacroCell *mcell = f->mcell + ie;
     
     DGFlux_CL(f, 0, ie, wn_cl, 
-	      1, startmacroloop,
+	      nwaitstartmacroloop, startmacroloop,
 	      f->clv_flux0 + ie);
 
     if(ndim > 1) {
@@ -834,18 +850,18 @@ void dtfield_CL(field *f, real tnow, cl_mem *wn_cl,
 		f->clv_flux2 + ie);
     }
     
-    DGVolume_CL(mcelli, f, wn_cl,
+    DGVolume_CL(mcell, f, wn_cl,
   		1,
   		fluxdone + ie,
   		f->clv_volume + ie);
 
-    DGMass_CL(mcelli, f,
+    DGMass_CL(mcell, f,
   	      1,
   	      f->clv_volume + ie,
   	      f->clv_mass + ie);
 
     if(f->use_source_cl) {
-      DGSource_CL(mcelli, f, tnow, wn_cl, 
+      DGSource_CL(mcell, f, tnow, wn_cl, 
 		  1,
 		  f->clv_mass + ie,
 		  f->clv_source + ie);
@@ -854,7 +870,7 @@ void dtfield_CL(field *f, real tnow, cl_mem *wn_cl,
   clWaitForEvents(nmacro, dtfielddone);
 
   // Add times for sources after everything is finished
-  f->zbuf_time += clv_duration(f->clv_zbuf);
+  //f->zbuf_time += clv_duration(f->clv_zbuf);
 
   for(int i = 0; i < ninterfaces; ++i)
     f->minter_time += clv_duration(f->clv_mci[i]);

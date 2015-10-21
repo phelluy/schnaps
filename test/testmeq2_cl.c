@@ -81,7 +81,13 @@ int TestmEq2(void) {
   
   f.dtwn = dtwn_cl;
 
-  set_buf_to_zero_cl(&(f.dtwn_cl), f.wsize, &f, 0, NULL, NULL);
+  const int nmacro = f.macromesh.nbelems;
+  
+  for(int ie = 0; ie < nmacro; ++ie) {
+    MacroCell *mcell = f.mcell + ie;
+    set_buf_to_zero_cl(&f.dtwn_cl, mcell, &f,
+		       0, NULL, NULL);
+  }
   clFinish(f.cli.commandqueue);
 
   for(int ie = 0; ie < f.macromesh.nbelems; ++ie) {
@@ -141,8 +147,12 @@ int TestmEq2(void) {
     dtwn[i] = 0.0;
   }
   f.dtwn = dtwn_cl;
-
-  set_buf_to_zero_cl(&(f.dtwn_cl), f.wsize, &f, 0, NULL, NULL);
+  
+  for(int ie = 0; ie < nmacro; ++ie) {
+    MacroCell *mcell = f.mcell + ie;
+    set_buf_to_zero_cl(&f.dtwn_cl, mcell, &f,
+		       0, NULL, NULL);
+  }
   clFinish(f.cli.commandqueue);
 
   for(int ie = 0; ie < f.macromesh.nbelems; ++ie) {
@@ -186,8 +196,14 @@ int TestmEq2(void) {
   }
   
   f.dtwn = dtwn_cl;
-  set_buf_to_zero_cl(&(f.dtwn_cl), f.wsize, &f, 0, NULL, NULL);
+  
+  for(int ie = 0; ie < nmacro; ++ie) {
+    MacroCell *mcell = f.mcell + ie;
+    set_buf_to_zero_cl(&f.dtwn_cl, mcell, &f,
+		       0, NULL, NULL);
+  }
   clFinish(f.cli.commandqueue);
+
   for(int ifa = 0; ifa < f.macromesh.nbfaces; ++ifa) {
     DGMacroCellInterface_CL(mface + ifa, &f, &f.wn_cl,
     			    0, NULL, NULL);

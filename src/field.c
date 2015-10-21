@@ -294,9 +294,12 @@ void init_field_cl(field *f)
   assert(status >= CL_SUCCESS);
 
   // Initialize events. // FIXME: free on exit
-  f->clv_zbuf = clCreateUserEvent(f->cli.context, &status);
 
   const int nmacro = f->macromesh.nbelems;
+
+  f->clv_zbuf = calloc(nmacro, sizeof(cl_event));
+  for(int ie = 0; ie < nmacro; ++ie)
+    f->clv_zbuf[ie] = clCreateUserEvent(f->cli.context, &status);
   
   const int ninterfaces = f->macromesh.nmacrointerfaces;
   if(ninterfaces > 0) {

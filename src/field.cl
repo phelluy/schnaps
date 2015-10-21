@@ -732,9 +732,9 @@ void DGFlux(__constant int *param,     // interp param
 }
 
 __kernel
-void set_buffer_to_zero(__global real *w)
+void set_buffer_to_zero(__global real *w, int woffset)
 {
-  w[get_global_id(0)] = 0.0;
+  w[get_global_id(0) + woffset] = 0.0;
 }
 
 #ifndef BOUNDARYFLUX

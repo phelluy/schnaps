@@ -137,8 +137,10 @@ typedef struct field {
 
   // OpenCL events
 
-  // set_buf_to_zero event
-  cl_event clv_zbuf; 
+  // TODO: move some of these event to MacroCells
+
+  // set_buf_to_zero events
+  cl_event *clv_zbuf;
   
   // Subcell mass events
   cl_event *clv_mass; 
