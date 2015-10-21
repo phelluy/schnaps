@@ -194,7 +194,6 @@ void init_DGMacroCellInterface_CL(field *f,
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 
-  //int ieR,                      // 2: right macrocell
   status = clSetKernelArg(kernel,
 			  argnum++,
 			  sizeof(int),
@@ -202,7 +201,6 @@ void init_DGMacroCellInterface_CL(field *f,
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 
-  //int locfaL,                   // 3: left face index
   status = clSetKernelArg(kernel,
 			  argnum++,
 			  sizeof(int),
@@ -210,7 +208,6 @@ void init_DGMacroCellInterface_CL(field *f,
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 
-  //int locfaR,                   // 4: right face index
   status = clSetKernelArg(kernel,
 			  argnum++,
 			  sizeof(int),
@@ -218,7 +215,6 @@ void init_DGMacroCellInterface_CL(field *f,
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 
-  //__constant real *physnodeL,
   status = clSetKernelArg(kernel,
                           argnum++,
                           sizeof(cl_mem),
@@ -226,7 +222,6 @@ void init_DGMacroCellInterface_CL(field *f,
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 
-  //__constant real *physnodeR,
   status = clSetKernelArg(kernel,
                           argnum++,
                           sizeof(cl_mem),
@@ -234,7 +229,6 @@ void init_DGMacroCellInterface_CL(field *f,
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 
-  //__global real *wn,          // 7: field 
   status = clSetKernelArg(kernel,
                           argnum++,
                           sizeof(cl_mem),
@@ -242,7 +236,20 @@ void init_DGMacroCellInterface_CL(field *f,
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 
-  //__global real *dtwn,        // 8: time derivative
+  status = clSetKernelArg(kernel,
+                          argnum++,
+                          sizeof(cl_mem),
+                          &f->dtwn_cl);
+  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+
+  assert(status >= CL_SUCCESS);
+  status = clSetKernelArg(kernel,
+                          argnum++,
+                          sizeof(cl_mem),
+                          wn_cl);
+  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status >= CL_SUCCESS);
+
   status = clSetKernelArg(kernel,
                           argnum++,
                           sizeof(cl_mem),
@@ -250,7 +257,6 @@ void init_DGMacroCellInterface_CL(field *f,
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 
-  //__local real *cache         // 9: local mem
   status = clSetKernelArg(kernel,
                           argnum++,
                           sizeof(real) * cachesize,

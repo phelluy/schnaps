@@ -995,8 +995,10 @@ void DGMacroCellInterface(__constant int *param,        // interp param
 			  int locfaR,                   // right face index
                           __constant real *physnodeL,   // left physnode
 			  __constant real *physnodeR,   // right physnode
-                          __global real *wn,            // field 
-                          __global real *dtwn,          // time derivative
+                          __global real *wnL,           // field 
+                          __global real *dtwnL,         // time derivative
+                          __global real *wnR,           // field 
+                          __global real *dtwnR,         // time derivative
 			  __local real *cache           // local mem
 			  )
 {
@@ -1057,8 +1059,8 @@ void DGMacroCellInterface(__constant int *param,        // interp param
 
   int imemL0 = VARINDEX(param, ipgL, 0) + woffsetL;
   int imemR0 = VARINDEX(param, ipgR, 0) + woffsetR;
-  __global real *wnL0 = wn + imemL0;
-  __global real *wnR0 = wn + imemR0;
+  __global real *wnL0 = wnL + imemL0;
+  __global real *wnR0 = wnR + imemR0;
   for(int iv = 0; iv < m; iv++) {
     wL[iv] = wnL0[iv];
     wR[iv] = wnR0[iv];
@@ -1066,8 +1068,8 @@ void DGMacroCellInterface(__constant int *param,        // interp param
 
   NUMFLUX(wL, wR, vnds, flux);
 
-  __global real *dtwnL0 = dtwn + imemL0;
-  __global real *dtwnR0 = dtwn + imemR0;
+  __global real *dtwnL0 = dtwnL + imemL0;
+  __global real *dtwnR0 = dtwnR + imemR0;
   for(int iv = 0; iv < m; ++iv) {
     real fluxwpg = flux[iv] * wpg;
     dtwnL0[iv] -= fluxwpg;
