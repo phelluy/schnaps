@@ -867,18 +867,17 @@ void dtfield_CL(field *f, real tnow, cl_mem *wn_cl,
 		  f->clv_source + ie);
     }
   }
+
   clWaitForEvents(nmacro, dtfielddone);
 
-  // Add times for sources after everything is finished
-  //f->zbuf_time += clv_duration(f->clv_zbuf);
 
+  // Add times for sources after everything is finished
   for(int i = 0; i < ninterfaces; ++i)
     f->minter_time += clv_duration(f->clv_mci[i]);
-
   for(int i = 0; i < nboundaryfaces; ++i)
     f->boundary_time += clv_duration(f->clv_boundary[i]);
-
   for(int ie = 0; ie < nmacro; ++ie) {
+    f->zbuf_time += clv_duration(f->clv_zbuf[ie]);
     if(f->use_source_cl)
       f->source_time += clv_duration(f->clv_source[ie]);
     f->flux_time += clv_duration(f->clv_flux0[ie]);
