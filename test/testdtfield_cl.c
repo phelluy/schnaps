@@ -73,13 +73,11 @@ int TestDtfield_CL(void){
   set_global_m(f.model.m);
   set_source_CL(&f, "OneSource");
   Initfield(&f);
+  CopyfieldtoGPU(&f);
   
-  cl_event clv_dtfield = clCreateUserEvent(f.cli.context, NULL);
-
   real tnow = 0.0;
-  
-  dtfield_CL(&f, tnow, f.wn_cl, 0, NULL, &clv_dtfield);
-  clWaitForEvents(1, &clv_dtfield);
+  dtfield_CL(&f, tnow, f.wn_cl, 0, NULL, NULL);
+
   CopyfieldtoCPU(&f);
 
   // Displayfield(&f);

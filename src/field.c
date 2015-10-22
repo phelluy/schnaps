@@ -99,7 +99,7 @@ void init_data(field *f)
   for(int ie = 0; ie < f->macromesh.nbelems; ie++) {
     MacroCell *mcell = f->mcell + ie;
     
-    for(int ipg = 0; ipg < NPG(f->interp_param + 1); ipg++) {
+    for(int ipg = 0; ipg < mcell->npg; ipg++) {
       real xpg[3];
       real xref[3], omega;
       ref_pg_vol(f->interp_param + 1, ipg, xref, &omega, NULL);
@@ -397,42 +397,8 @@ void init_field_cl(field *f)
 }
 #endif
 
-void Initfield(field *f) {
-  //int param[8]={f->model.m,_DEGX,_DEGY,_DEGZ,_RAFX,_RAFY,_RAFZ,0};
-
-  // a copy for avoiding too much "->"
-  for(int ip = 0; ip < 8; ip++)
-    f->interp_param[ip] = f->interp.interp_param[ip];
-
-  int nmem = f->model.m * f->macromesh.nbelems * NPG(f->interp_param + 1);
-  f->wsize = nmem;
-
-  double g_memsize = nmem * sizeof(real) * 1e-9;
-  if(sizeof(real) == sizeof(double))
-    printf("Allocating %d doubles per array (%f GB).\n", nmem, g_memsize);
-  else
-    printf("Allocating %d floats per array (%f GB)\n", nmem, g_memsize);
-
-  f->wn = calloc(nmem, sizeof(real));
-  assert(f->wn);
-  f->dtwn = calloc(nmem, sizeof(real));
-  assert(f->dtwn);
-  f->Diagnostics = NULL;
-  f->pre_dtfield = NULL;
-  f->post_dtfield = NULL;
-  f->update_after_rk = NULL;
-  f->model.Source = NULL;
-  f->pic = NULL;
-
-  // TODO: move this to the integrator code
-  f->tnow = 0;
-  f->itermax = 0;
-  f->iter_time = 0;
-  f->nb_diags = 0;
-
-  printf("hmin=%f\n", f->hmin);
-
-  // Allocate and set MacroFaces
+void init_field_macrofaces(field *f)
+{
   f->mface = calloc(f->macromesh.nbfaces, sizeof(MacroFace));
   for(int ifa = 0; ifa < f->macromesh.nbfaces; ifa++) {
     MacroFace *mface = f->mface + ifa;
@@ -442,7 +408,10 @@ void Initfield(field *f) {
     mface->ieR = f->macromesh.face2elem[4 * ifa + 2];
     mface->locfaR = f->macromesh.face2elem[4 * ifa + 3];
   }
+}
 
+void init_field_macrocells(field *f)
+{
   // Allocate and set MacroCells
   f->mcell = calloc(f->macromesh.nbelems, sizeof(MacroCell));
   int wcount = 0;
@@ -481,6 +450,50 @@ void Initfield(field *f) {
     wcount += mcell->nreal;
   }
 
+}
+
+void Initfield(field *f)
+{
+  //int param[8]={f->model.m,_DEGX,_DEGY,_DEGZ,_RAFX,_RAFY,_RAFZ,0};
+
+  // a copy for avoiding too much "->"
+  for(int ip = 0; ip < 8; ip++)
+    f->interp_param[ip] = f->interp.interp_param[ip];
+
+  // TODO: generalize to use MacroCells
+  int nmem = f->model.m * f->macromesh.nbelems * NPG(f->interp_param + 1);
+  f->wsize = nmem;
+
+  double g_memsize = nmem * sizeof(real) * 1e-9;
+  if(sizeof(real) == sizeof(double))
+    printf("Allocating %d doubles per array (%f GB).\n", nmem, g_memsize);
+  else
+    printf("Allocating %d floats per array (%f GB)\n", nmem, g_memsize);
+
+  f->wn = calloc(nmem, sizeof(real));
+  assert(f->wn);
+  f->dtwn = calloc(nmem, sizeof(real));
+  assert(f->dtwn);
+
+  f->Diagnostics = NULL;
+  f->pre_dtfield = NULL;
+  f->post_dtfield = NULL;
+  f->update_after_rk = NULL;
+  f->model.Source = NULL;
+  f->pic = NULL;
+
+  // TODO: move this to the integrator code
+  f->tnow = 0;
+  f->itermax = 0;
+  f->iter_time = 0;
+  f->nb_diags = 0;
+
+  printf("hmin=%f\n", f->hmin);
+
+  init_field_macrofaces(f);
+  
+  init_field_macrocells(f);
+  
   // Compute cfl parameter min_i vol_i/surf_i
   f->hmin = min_grid_spacing(f);
 
@@ -521,7 +534,7 @@ void Displayfield(field *f)
     printf("elem %d\n", ie);
     MacroCell *mcell = f->mcell + ie;
     
-    for(int ipg = 0; ipg < NPG(f->interp_param + 1); ipg++) {
+    for(int ipg = 0; ipg < mcell->npg; ipg++) {
       real xref[3], wpg;
       ref_pg_vol(f->interp_param + 1, ipg, xref, &wpg, NULL);
 
@@ -553,7 +566,7 @@ void Gnuplot(field *f, int dir, real fixval, char *filename)
 
     MacroCell *mcell = f->mcell + ie;
     
-    for(int ipg = 0; ipg < NPG(f->interp_param + 1); ipg++) {
+    for(int ipg = 0; ipg < mcell->npg; ipg++) {
 
       real xref[3], xphy[3], wpg;
       real dtau[3][3];

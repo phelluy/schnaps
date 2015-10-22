@@ -456,6 +456,7 @@ void DGMass_CL(MacroCell *mcell, field *f,
   assert(status >= CL_SUCCESS);
 }
 
+// wn_cl is a pointer to a macrocell's wn_cl
 void init_DGFlux_CL(field *f, int ie, int dim0, cl_mem *wn_cl, 
 		    size_t cachesize)
 {
@@ -517,6 +518,7 @@ void init_DGFlux_CL(field *f, int ie, int dim0, cl_mem *wn_cl,
   assert(status >= CL_SUCCESS);
 }
 
+// wn_cl is a pointer to a macrocell's wn_cl
 void DGFlux_CL(field *f, int dim0, int ie, cl_mem *wn_cl,
 	       cl_uint nwait, cl_event *wait, cl_event *done) 
 {
@@ -611,7 +613,7 @@ void init_DGVolume_CL(MacroCell *mcell, field *f, cl_mem *wn_cl,
   status = clSetKernelArg(kernel,
                           argnum++,
                           sizeof(cl_mem),
-                          &f->dtwn_cl);
+                          f->dtwn_cl + mcell->ie);
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 
@@ -653,8 +655,6 @@ void DGVolume_CL(MacroCell *mcell, field *f, cl_mem *wn_cl,
   // Using NUMFLUX = NumFlux (3 * m multiplies):
   nmultsdgvol += (npgc[0] + npgc[1] + npgc[2]) * 6 * m; 
   
- 
-
   //printf("DGVolume_CL loop: %d\n", end - start); // This is always 1!!!
 
   init_DGVolume_CL(mcell, f, wn_cl, 2 * groupsize * m);
@@ -682,12 +682,9 @@ void DGVolume_CL(MacroCell *mcell, field *f, cl_mem *wn_cl,
   assert(status >= CL_SUCCESS);
 }
 
-// Set kernel argument for DGVolume_CL
 void init_DGSource_CL(MacroCell *mcell, field *f,
 		      real tnow, cl_mem *wn_cl, size_t cachesize)
 {
-  //printf("DGVolume cachesize:%zu\n", cachesize);
-
   cl_int status;
   int argnum = 0;
   cl_kernel kernel = f->dgsource;
@@ -732,7 +729,7 @@ void init_DGSource_CL(MacroCell *mcell, field *f,
   status = clSetKernelArg(kernel,
                           argnum++,
                           sizeof(cl_mem),
-                          &f->dtwn_cl);
+                          f->dtwn_cl + mcell->ie);
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 
@@ -753,26 +750,17 @@ void DGSource_CL(MacroCell *mcell, field *f, real tnow, cl_mem *wn_cl,
 
   cl_int status;
   int m = param[0];
+
+  // TODO: base on mcell
   size_t groupsize = (param[1] + 1) * (param[2] + 1) * (param[3] + 1);
+
   // The total work items number is the number of glops in a subcell
   // times the number of subcells
+  // TODO: base on mcell
   size_t numworkitems = param[4] * param[5] * param[6] * groupsize;
-  
-  /* unsigned int nreadsdgvol = 2 * m; // read m from wn, write m to dtwn */
-  /* unsigned int nmultsdgvol = 1296 + m; */
-  /* nmultsdgvol += 3 * m; // Using NUMFLUX = NumFlux */
-  
-  /* f->nmults += numworkitems * nmultsdgvol; */
-  /* f->nreads += numworkitems * nreadsdgvol; */
-   
+     
   init_DGSource_CL(mcell, f, tnow, wn_cl, 2 * groupsize * m);
   
-  // The groupsize is the number of glops in a subcell
-  /* size_t groupsize = (param[1] + 1)* (param[2] + 1)*(param[3] + 1); */
-  /* // The total work items number is the number of glops in a subcell */
-  /* // * number of subcells */
-  /* size_t numworkitems = param[4] * param[5] * param[6] * groupsize; */
-  /* //printf("groupsize=%zd numworkitems=%zd\n", groupsize, numworkitems); */
   status = clEnqueueNDRangeKernel(f->cli.commandqueue,
 				  kernel,
 				  1,

@@ -32,18 +32,20 @@ int TestKernelVolume(void){
   f.interp.interp_param[5] = 3;  // y direction refinement
   f.interp.interp_param[6] = 1;  // z direction refinement
 
-  ReadMacroMesh(&(f.macromesh),"../test/testmacromesh.msh");
-  //ReadMacroMesh(&(f.macromesh),"test/testcube.msh");
-  Detect2DMacroMesh(&(f.macromesh));
+  ReadMacroMesh(&f.macromesh,"../test/testmacromesh.msh");
+  //ReadMacroMesh(&f.macromesh,"test/testcube.msh");
+  Detect2DMacroMesh(&f.macromesh);
   assert(f.macromesh.is2d);
-  BuildConnectivity(&(f.macromesh));
+  BuildConnectivity(&f.macromesh);
 
-  PrintMacroMesh(&(f.macromesh));
+  //PrintMacroMesh(&f.macromesh);
 
-  //AffineMapMacroMesh(&(f.macromesh));
+  //AffineMapMacroMesh(&f.macromesh);
  
   Initfield(&f);
 
+  CopyfieldtoGPU(&f);
+  
   /* // set dtwn to 1 for testing */
   
   /* void* chkptr; */
@@ -74,9 +76,11 @@ int TestKernelVolume(void){
 
   clFinish(f.cli.commandqueue);
   for(int ie = 0; ie < f.macromesh.nbelems; ++ie) {
-    DGVolume_CL(f.mcell + ie, &f, f.wn_cl, 0, NULL, NULL);
-    clFinish(f.cli.commandqueue);
+    DGVolume_CL(f.mcell + ie, &f, f.wn_cl + ie, 0, NULL, NULL);
   }
+  
+  clFinish(f.cli.commandqueue);
+  
   CopyfieldtoCPU(&f);
 
   Displayfield(&f);

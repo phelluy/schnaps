@@ -59,6 +59,8 @@ int TestDtfield3D_CL()
   strcat(cl_buildoptions, buf);
 
   Initfield(&f);
+
+  CopyfieldtoGPU(&f);  
   
   cl_event clv_dtfield = clCreateUserEvent(f.cli.context, NULL);
 
@@ -66,6 +68,7 @@ int TestDtfield3D_CL()
   
   dtfield_CL(&f, tnow, f.wn_cl, 0, NULL, &clv_dtfield);
   clWaitForEvents(1, &clv_dtfield);
+
   CopyfieldtoCPU(&f);
 
   // Displayfield(&f);
