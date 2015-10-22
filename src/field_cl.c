@@ -1069,13 +1069,10 @@ void RK4_CL_stageA(MacroCell *mcell, field *f,
 		   const real dt, const int sizew, size_t numworkitems, 
 		   cl_uint nwait, cl_event *wait, cl_event *done)
 {
-  // l_1 = w_n + 0.5dt * S(w_n, t_0)
-  
   cl_kernel kernel = f->RK4_first_stages;
   cl_int status;
   int argnum = 0;
 
-  //__global real *wnp1 // field values
   status = clSetKernelArg(kernel,
 			  argnum++, 
                           sizeof(cl_mem),
@@ -1083,7 +1080,6 @@ void RK4_CL_stageA(MacroCell *mcell, field *f,
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
   
-  // __global real *wn, 
   status = clSetKernelArg(kernel,
 			  argnum++, 
                           sizeof(cl_mem),
@@ -1091,11 +1087,10 @@ void RK4_CL_stageA(MacroCell *mcell, field *f,
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 
-  //__global real *dtwn // time derivative
   status = clSetKernelArg(kernel,
 			  argnum++, 
                           sizeof(cl_mem),
-                          dtw);
+                          dtw + mcell->ie);
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 
@@ -1138,7 +1133,6 @@ void RK4_final_inplace_CL(MacroCell *mcell, field *f,
   cl_int status;
   int argnum = 0;
 
-  // __global real *w,
   status = clSetKernelArg(kernel,
 			  argnum++, 
                           sizeof(cl_mem),
@@ -1146,7 +1140,6 @@ void RK4_final_inplace_CL(MacroCell *mcell, field *f,
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 
-  // __global real *l1,
   status = clSetKernelArg(kernel,
 			  argnum++, 
                           sizeof(cl_mem),
@@ -1154,7 +1147,6 @@ void RK4_final_inplace_CL(MacroCell *mcell, field *f,
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 
-  // __global real *l2,
   status = clSetKernelArg(kernel,
 			  argnum++, 
                           sizeof(cl_mem),
@@ -1162,7 +1154,6 @@ void RK4_final_inplace_CL(MacroCell *mcell, field *f,
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 
-  // __global real *l3,
   status = clSetKernelArg(kernel,
 			  argnum++, 
                           sizeof(cl_mem),
@@ -1170,15 +1161,13 @@ void RK4_final_inplace_CL(MacroCell *mcell, field *f,
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 
-  // __global real *dtw, 
   status = clSetKernelArg(kernel,
 			  argnum++, 
                           sizeof(cl_mem),
-                          dtw_cl);
+                          dtw_cl + mcell->ie);
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 
-  // const real dt
   real halfdt = 0.5 * dt;
   status = clSetKernelArg(kernel,
 			  argnum++,
@@ -1294,7 +1283,7 @@ void RK4_CL(field *f, real tmax, real dt,
 	       nmacro, stage3, &source0);
     for(int ie = 0; ie < nmacro; ++ie) { 
       MacroCell *mcell = f->mcell + ie;
-      RK4_CL_stageA(mcell, f, l1 + ie, w, dtw,
+      RK4_CL_stageA(mcell, f, l1 + ie, w + ie, dtw,
 		    0.5 * dt, sizew, numworkitems,
 		    1, &source0, stage0 + ie);
     }
@@ -1306,7 +1295,7 @@ void RK4_CL(field *f, real tmax, real dt,
 	       nmacro, stage0, &source1);
     for(int ie = 0; ie < nmacro; ++ie) { 
       MacroCell *mcell = f->mcell + ie;
-      RK4_CL_stageA(mcell, f, l2 + ie, w, dtw,
+      RK4_CL_stageA(mcell, f, l2 + ie, w + ie, dtw,
 		    0.5 * dt, sizew, numworkitems,
 		    1, &source1, stage1 + ie);
     }
@@ -1316,7 +1305,7 @@ void RK4_CL(field *f, real tmax, real dt,
 	       nmacro, stage1, &source2);
     for(int ie = 0; ie < nmacro; ++ie) { 
       MacroCell *mcell = f->mcell + ie;
-      RK4_CL_stageA(mcell, f, l3 + ie, w, dtw,
+      RK4_CL_stageA(mcell, f, l3 + ie, w + ie, dtw,
 		    dt, sizew, numworkitems,
 		    1, &source2, stage2 + ie);
     }
@@ -1328,7 +1317,7 @@ void RK4_CL(field *f, real tmax, real dt,
 	       nmacro, stage2, &source3);
     for(int ie = 0; ie < nmacro; ++ie) { 
       MacroCell *mcell = f->mcell + ie;
-      RK4_final_inplace_CL(mcell, f, w, l1 + ie, l2 + ie, l3 + ie, 
+      RK4_final_inplace_CL(mcell, f, w + ie, l1 + ie, l2 + ie, l3 + ie, 
 			   dtw, dt, numworkitems,
 			   1, &source3, stage3 + ie);
     }
