@@ -53,7 +53,7 @@ void CopyfieldtoCPU(field *f)
     MacroCell *mcell = f->mcell + ie;
 
     status = clEnqueueReadBuffer(f->cli.commandqueue,
-				 f->wn_cl[ie],
+				 mcell->wn_cl,
 				 CL_TRUE,
 				 0,
 				 mcell->nreal * sizeof(real),
@@ -63,7 +63,7 @@ void CopyfieldtoCPU(field *f)
     assert(status >= CL_SUCCESS);
 
     status = clEnqueueReadBuffer(f->cli.commandqueue,
-				 f->dtwn_cl[ie],
+				 mcell->dtwn_cl,
 				 CL_TRUE,
 				 0,
 				 mcell->nreal * sizeof(real),
@@ -103,7 +103,7 @@ void CopyfieldtoGPU(field *f)
     assert(status >= CL_SUCCESS);
 
     status = clEnqueueWriteBuffer(f->cli.commandqueue,
-				  f->dtwn_cl[ie],
+				  mcell->dtwn_cl,
 				  CL_TRUE,
 				  0,
 				  mcell->nreal * sizeof(real),
@@ -506,7 +506,7 @@ void init_DGFlux_CL(field *f, int ie, int dim0, cl_mem *wn_cl,
   status = clSetKernelArg(kernel,
                           argnum++,
                           sizeof(cl_mem),
-                          f->dtwn_cl + ie);
+                          f->dtwn_cl + mcell->ie);
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 
@@ -971,7 +971,7 @@ void init_RK2_CL_stage1(MacroCell *mcell, field *f,
   status = clSetKernelArg(kernel,
 			  argnum++, 
                           sizeof(cl_mem),
-                          &f->dtwn_cl);
+                          f->dtwn_cl + mcell->ie);
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
   
@@ -1028,7 +1028,7 @@ void init_RK2_CL_stage2(MacroCell *mcell, field *f, const real dt)
   status = clSetKernelArg(kernel,
 			  argnum++,
                           sizeof(cl_mem),
-                          &f->dtwn_cl);
+                          f->dtwn_cl + mcell->ie);
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 
