@@ -169,9 +169,8 @@ void set_physnodes_cl(field *f)
   free(physnode);
 }
 
-void init_field_cl(field *f)
+void init_field_buffers_cl(field *f)
 {
-  InitCLInfo(&f->cli, nplatform_cl, ndevice_cl);
   cl_int status;
 
   f->wn_cl = clCreateBuffer(f->cli.context,
@@ -199,34 +198,12 @@ void init_field_cl(field *f)
   assert(status >= CL_SUCCESS);
 
   set_physnodes_cl(f);
+}
+
+void init_field_kernels_cl(field *f)
+{
+  cl_int status;
   
-  // Program compilation
-  char *strprog;
-  GetOpenCLCode();
-  ReadFile("schnaps.cl", &strprog);
-
-  printf("\t%s\n", numflux_cl_name);
-  //printf("\t%s\n", strprog);
-
-  // If the source term is set (via set_source_CL) then add it to the
-  // buildoptions and compile using the new buildoptions.
-  if(f->use_source_cl) {
-    char *temp;
-    int len0 = strlen(cl_buildoptions);
-    char *D_SOURCE_FUNC = " -D_SOURCE_FUNC=";
-    int len1 = strlen(D_SOURCE_FUNC);
-    int len2 = strlen(f->sourcename_cl);
-    temp = calloc(sizeof(char), len0 + len1 + len2 + 2);
-    strcat(temp, cl_buildoptions);
-    strcat(temp, D_SOURCE_FUNC);
-    strcat(temp, f->sourcename_cl);
-    strcat(temp, " ");
-    BuildKernels(&f->cli, strprog, temp);
-  } else {
-    printf("No source term\n");
-    BuildKernels(&f->cli, strprog, cl_buildoptions);
-  }
-
   f->dgmass = clCreateKernel(f->cli.program,
 			     "DGMass",
 			     &status);
@@ -292,11 +269,14 @@ void init_field_cl(field *f)
 			       &status);
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
+}
 
-  // Initialize events. // FIXME: free on exit
-
+void init_field_events_cl(field *f)
+{
+  cl_int status;
+  
   const int nmacro = f->macromesh.nbelems;
-
+  
   f->clv_zbuf = calloc(nmacro, sizeof(cl_event));
   for(int ie = 0; ie < nmacro; ++ie)
     f->clv_zbuf[ie] = clCreateUserEvent(f->cli.context, &status);
@@ -337,6 +317,44 @@ void init_field_cl(field *f)
   for(int ie = 0; ie < nmacro; ++ie) {
     f->clv_source[ie] = clCreateUserEvent(f->cli.context, &status);
   }
+
+}
+
+void init_field_cl(field *f)
+{
+  InitCLInfo(&f->cli, nplatform_cl, ndevice_cl);
+
+  init_field_buffers_cl(f);
+  
+  // Program compilation
+  char *strprog;
+  GetOpenCLCode();
+  ReadFile("schnaps.cl", &strprog);
+
+  printf("\t%s\n", numflux_cl_name);
+  //printf("\t%s\n", strprog);
+
+  // If the source term is set (via set_source_CL) then add it to the
+  // buildoptions and compile using the new buildoptions.
+  if(f->use_source_cl) {
+    char *temp;
+    int len0 = strlen(cl_buildoptions);
+    char *D_SOURCE_FUNC = " -D_SOURCE_FUNC=";
+    int len1 = strlen(D_SOURCE_FUNC);
+    int len2 = strlen(f->sourcename_cl);
+    temp = calloc(sizeof(char), len0 + len1 + len2 + 2);
+    strcat(temp, cl_buildoptions);
+    strcat(temp, D_SOURCE_FUNC);
+    strcat(temp, f->sourcename_cl);
+    strcat(temp, " ");
+    BuildKernels(&f->cli, strprog, temp);
+  } else {
+    printf("No source term\n");
+    BuildKernels(&f->cli, strprog, cl_buildoptions);
+  }
+
+  init_field_kernels_cl(f);
+  init_field_events_cl(f);
     
   // Set timers to zero
   f->zbuf_time = 0;
@@ -448,14 +466,12 @@ void Initfield(field *f) {
   init_data(f);
   
 #ifdef _WITH_OPENCL
-  // opencl inits
   if(!cldevice_is_acceptable(nplatform_cl, ndevice_cl)) {
     printf("OpenCL device not acceptable; OpenCL initialization disabled.\n");
   } else {
-
     init_field_cl(f);
   }
-#endif // _WITH_OPENCL
+#endif
   
   printf("field init done\n");
 }
