@@ -93,22 +93,22 @@ void CopyfieldtoGPU(field *f)
     MacroCell *mcell = f->mcell + ie;
 
     status = clEnqueueWriteBuffer(f->cli.commandqueue,
-				 f->wn_cl[ie],
-				 CL_TRUE,
-				 0,
-				 mcell->nreal * sizeof(real),
-				 f->wn + mcell->woffset,
-				 0, NULL, NULL);
+				  f->wn_cl[ie],
+				  CL_TRUE,
+				  0,
+				  mcell->nreal * sizeof(real),
+				  f->wn + mcell->woffset,
+				  0, NULL, NULL);
     if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
     assert(status >= CL_SUCCESS);
 
     status = clEnqueueWriteBuffer(f->cli.commandqueue,
-				 f->dtwn_cl[ie],
-				 CL_TRUE,
-				 0,
-				 mcell->nreal * sizeof(real),
-				 f->dtwn + mcell->woffset,
-				 0, NULL, NULL);
+				  f->dtwn_cl[ie],
+				  CL_TRUE,
+				  0,
+				  mcell->nreal * sizeof(real),
+				  f->dtwn + mcell->woffset,
+				  0, NULL, NULL);
     if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
     assert(status >= CL_SUCCESS);
   }
@@ -415,7 +415,7 @@ void init_DGMass_CL(MacroCell *mcell, field *f)
   status = clSetKernelArg(kernel,
                           argnum++,
                           sizeof(cl_mem),
-                          &f->dtwn_cl);
+                          f->dtwn_cl + mcell->ie);
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 }

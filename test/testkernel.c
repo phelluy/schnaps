@@ -6,7 +6,7 @@
 #include <math.h>
 #include "clutils.h"
 
-int TestKernel(void)
+int TestKernel()
 {
   bool test = true;
 
@@ -34,13 +34,13 @@ int TestKernel(void)
   f.interp.interp_param[5] = 2; // y direction refinement
   f.interp.interp_param[6] = 1; // z direction refinement
 
-  ReadMacroMesh(&(f.macromesh), "../test/testmacromesh.msh");
-  //ReadMacroMesh(&(f.macromesh),"test/testcube.msh");
-  Detect2DMacroMesh(&(f.macromesh));
+  ReadMacroMesh(&f.macromesh, "../test/testmacromesh.msh");
+  //ReadMacroMesh(&f.macromesh,"test/testcube.msh");
+  Detect2DMacroMesh(&f.macromesh);
   assert(f.macromesh.is2d);  
-  BuildConnectivity(&(f.macromesh));
+  BuildConnectivity(&f.macromesh);
 
-  //AffineMapMacroMesh(&(f.macromesh));
+  //AffineMapMacroMesh(&f.macromesh);
  
   Initfield(&f);
 
@@ -53,14 +53,14 @@ int TestKernel(void)
   CopyfieldtoGPU(&f);
   
   for(int ie = 0; ie < f.macromesh.nbelems; ++ie) {
-    DGMass_CL((void*) &f.mcell[ie], &f, 0, NULL, NULL);
+    MacroCell *mcell = f.mcell + ie;
+    DGMass_CL(mcell, &f, 0, NULL, NULL);
     clFinish(f.cli.commandqueue);
   }
 
   CopyfieldtoCPU(&f);
 
   //Displayfield(&f);
-
   // save the dtwn pointer
   real *saveptr = f.dtwn;
 
@@ -84,14 +84,15 @@ int TestKernel(void)
     //printf("error=%f %f %f\n", f.dtwn[i]-saveptr[i], f.dtwn[i],saveptr[i]);
     maxerr=fmax(fabs(f.dtwn[i] - saveptr[i]), maxerr);
   }
-  printf("max error=%f\n",maxerr);
+  printf("\nmax error=%f\n",maxerr);
 
   test = (maxerr < 1e-8);
 
   return test;
 }
 
-int main(void) {
+int main()
+{
   // Unit tests
   int resu = TestKernel();
   if (resu) 
