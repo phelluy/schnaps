@@ -6,7 +6,8 @@
 #include <math.h>
 #include <string.h>
 
-int TestDtfield3D_CL(void){
+int TestDtfield3D_CL()
+{
   bool test = true;
 
   if(!cldevice_is_acceptable(nplatform_cl, ndevice_cl)) {
@@ -63,7 +64,7 @@ int TestDtfield3D_CL(void){
 
   real tnow = 0.0;
   
-  dtfield_CL(&f, tnow, &f.wn_cl, 0, NULL, &clv_dtfield);
+  dtfield_CL(&f, tnow, f.wn_cl, 0, NULL, &clv_dtfield);
   clWaitForEvents(1, &clv_dtfield);
   CopyfieldtoCPU(&f);
 

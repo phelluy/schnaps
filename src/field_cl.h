@@ -14,6 +14,8 @@
 //! \param[inout] f a field
 void CopyfieldtoCPU(field *f);
 
+void CopyfieldtoGPU(field *f);
+
 void update_physnode_cl(field *f, int ie, cl_mem physnode_cl, real *physnode,
 			cl_ulong *time,
 			cl_uint nwait, cl_event *wait, cl_event *done);

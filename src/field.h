@@ -113,8 +113,8 @@ typedef struct field {
   //! \brief opencl data
   CLInfo cli;
   //! \brief copy of the dtwn array
-  cl_mem wn_cl;
-  cl_mem dtwn_cl;
+  cl_mem *wn_cl;
+  cl_mem *dtwn_cl;
   //! \brief copy of the params
   cl_mem param_cl;
   //! \brief copy physnode

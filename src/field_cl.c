@@ -16,6 +16,7 @@ void CopyfieldtoCPU(field *f)
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 
+  /*
   void *chkptr;
   chkptr = clEnqueueMapBuffer(f->cli.commandqueue,
 			      f->dtwn_cl, // buffer to copy from
@@ -44,36 +45,79 @@ void CopyfieldtoCPU(field *f)
   status = clFinish(f->cli.commandqueue);
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
-
-
-  /*
-  status = clEnqueueReadBuffer(f->cli.commandqueue,
-			       f->wn_cl,
-			       CL_TRUE,
-			       0,
-			       f->wsize * sizeof(real),
-			       f->wn,
-			       0, NULL, NULL);
-  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status >= CL_SUCCESS);
   */
-  
-  /*
-  status = clEnqueueReadBuffer(f->cli.commandqueue,
-			       f->dtwn_cl,
-			       CL_TRUE,
-			       0,
-			       f->wsize * sizeof(real),
-			       f->dtwn,
-			       0, NULL, NULL);
-  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status >= CL_SUCCESS);
-  
+
+  const int nmacro = f->macromesh.nbelems;
+
+  for(int ie = 0; ie < nmacro; ++ie) {
+    MacroCell *mcell = f->mcell + ie;
+
+    status = clEnqueueReadBuffer(f->cli.commandqueue,
+				 f->wn_cl[ie],
+				 CL_TRUE,
+				 0,
+				 mcell->nreal * sizeof(real),
+				 f->wn + mcell->woffset,
+				 0, NULL, NULL);
+    if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+    assert(status >= CL_SUCCESS);
+
+    status = clEnqueueReadBuffer(f->cli.commandqueue,
+				 f->dtwn_cl[ie],
+				 CL_TRUE,
+				 0,
+				 mcell->nreal * sizeof(real),
+				 f->dtwn + mcell->woffset,
+				 0, NULL, NULL);
+    if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+    assert(status >= CL_SUCCESS);
+  }
+
   status = clFinish(f->cli.commandqueue);
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
-  */
 }
+
+void CopyfieldtoGPU(field *f)
+{
+  cl_int status;
+
+  // Ensure that all the buffers are mapped
+  status = clFinish(f->cli.commandqueue);
+  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status >= CL_SUCCESS);
+
+  const int nmacro = f->macromesh.nbelems;
+
+  for(int ie = 0; ie < nmacro; ++ie) {
+    MacroCell *mcell = f->mcell + ie;
+
+    status = clEnqueueWriteBuffer(f->cli.commandqueue,
+				 f->wn_cl[ie],
+				 CL_TRUE,
+				 0,
+				 mcell->nreal * sizeof(real),
+				 f->wn + mcell->woffset,
+				 0, NULL, NULL);
+    if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+    assert(status >= CL_SUCCESS);
+
+    status = clEnqueueWriteBuffer(f->cli.commandqueue,
+				 f->dtwn_cl[ie],
+				 CL_TRUE,
+				 0,
+				 mcell->nreal * sizeof(real),
+				 f->dtwn + mcell->woffset,
+				 0, NULL, NULL);
+    if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+    assert(status >= CL_SUCCESS);
+  }
+
+  status = clFinish(f->cli.commandqueue);
+  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status >= CL_SUCCESS);
+}
+
 
 void set_source_CL(field *f, char *sourcename_cl) 
 {
@@ -91,6 +135,7 @@ void set_source_CL(field *f, char *sourcename_cl)
 #endif
 }
 
+// wn_cl is an array of cl_mems, one per macrocell
 void init_DGBoundary_CL(field *f, 
 			int ieL, int locfaL,
 			cl_mem *wn_cl,
@@ -103,7 +148,6 @@ void init_DGBoundary_CL(field *f,
   
   unsigned int argnum = 0;
   
-  // __constant int *param,        // 0: interp param
   status = clSetKernelArg(kernel,
                           argnum++,
                           sizeof(cl_mem),
@@ -111,7 +155,6 @@ void init_DGBoundary_CL(field *f,
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 
-  // real tnow,                  // 1: current time
   status = clSetKernelArg(kernel,
   			  argnum++,
   			  sizeof(real),
@@ -126,7 +169,6 @@ void init_DGBoundary_CL(field *f,
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 
-  // int locfaL,                   // 3: left face index
   status = clSetKernelArg(kernel,
   			  argnum++,
   			  sizeof(int),
@@ -134,7 +176,6 @@ void init_DGBoundary_CL(field *f,
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 
-  // __constant real *physnodeL, // 4: left physnode
   status = clSetKernelArg(kernel,
                           argnum++,
                           sizeof(cl_mem),
@@ -142,23 +183,20 @@ void init_DGBoundary_CL(field *f,
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 
-  // __global real *wn,          // 5: field
   status = clSetKernelArg(kernel,
                           argnum++,
                           sizeof(cl_mem),
-                          wn_cl);
+                          wn_cl + ieL);
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 
-  // __global real *dtwn,        // 6: time derivative
   status = clSetKernelArg(kernel,
                           argnum++,
                           sizeof(cl_mem),
-                          &f->dtwn_cl);
+                          f->dtwn_cl + ieL);
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 
-  // __local real *cache         // 7: local mem
   status = clSetKernelArg(kernel,
                           argnum++,
                           sizeof(real) * cachesize,
@@ -167,6 +205,7 @@ void init_DGBoundary_CL(field *f,
   assert(status >= CL_SUCCESS);
 }
 
+// wn_cl is an array of cl_mems, one per macrocell
 void DGBoundary_CL(MacroFace *mface, field *f, cl_mem *wn_cl,
 		   cl_uint nwait, cl_event *wait, cl_event *done) 
 {
@@ -180,6 +219,7 @@ void DGBoundary_CL(MacroFace *mface, field *f, cl_mem *wn_cl,
   size_t numworkitems = NPGF(f->interp_param + 1, locfaL);
   size_t cachesize = 1; // TODO make use of cache
   init_DGBoundary_CL(f, ieL, locfaL, wn_cl, cachesize);
+  
   status = clEnqueueNDRangeKernel(f->cli.commandqueue,
 				  f->dgboundary,
 				  1, // cl_uint work_dim,
@@ -194,6 +234,7 @@ void DGBoundary_CL(MacroFace *mface, field *f, cl_mem *wn_cl,
 }
 
 // Set the loop-dependant kernel arguments for DGMacroCellInterface_CL
+// wn_cl is an array of cl_mems, one per macrocell.
 void init_DGMacroCellInterface_CL(field *f, 
 				  int ieL, int ieR, int locfaL, int locfaR,
 				  cl_mem *wn_cl,
@@ -261,28 +302,28 @@ void init_DGMacroCellInterface_CL(field *f,
   status = clSetKernelArg(kernel,
                           argnum++,
                           sizeof(cl_mem),
-                          wn_cl);
+                          wn_cl + ieL);
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 
   status = clSetKernelArg(kernel,
                           argnum++,
                           sizeof(cl_mem),
-                          &f->dtwn_cl);
+                          f->dtwn_cl + ieL);
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
 
   assert(status >= CL_SUCCESS);
   status = clSetKernelArg(kernel,
                           argnum++,
                           sizeof(cl_mem),
-                          wn_cl);
+                          wn_cl + ieR);
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 
   status = clSetKernelArg(kernel,
                           argnum++,
                           sizeof(cl_mem),
-                          &f->dtwn_cl);
+                          f->dtwn_cl + ieR);
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 
@@ -356,9 +397,6 @@ void init_DGMass_CL(MacroCell *mcell, field *f)
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 
-  /* int ie, // macrocel index */
-  // Set in loop on call.
-
   int offset = mcell->woffset;
   status = clSetKernelArg(f->dgmass, 
 			  argnum++, 
@@ -367,15 +405,13 @@ void init_DGMass_CL(MacroCell *mcell, field *f)
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
   
-  /* __constant real* physnode,  // macrocell nodes */
-  status = clSetKernelArg(f->dgmass,           // kernel name
-                          argnum++,              // arg num
+  status = clSetKernelArg(f->dgmass,
+                          argnum++,
                           sizeof(cl_mem),
-			  &mcell->physnode_cl);     // opencl buffer
+			  &mcell->physnode_cl);
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 
-  /* __global real* dtwn // time derivative */
   status = clSetKernelArg(kernel,
                           argnum++,
                           sizeof(cl_mem),
@@ -445,7 +481,6 @@ void init_DGFlux_CL(field *f, int ie, int dim0, cl_mem *wn_cl,
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 
-  // int dim0, // face direction
   status = clSetKernelArg(kernel, 
 			  argnum++, 
 			  sizeof(int), 
@@ -453,7 +488,6 @@ void init_DGFlux_CL(field *f, int ie, int dim0, cl_mem *wn_cl,
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
     
-  // __constant real *physnode, // macrocell nodes
   status = clSetKernelArg(kernel,
                           argnum++,
                           sizeof(cl_mem),
@@ -461,7 +495,6 @@ void init_DGFlux_CL(field *f, int ie, int dim0, cl_mem *wn_cl,
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 
-  //  __global real *wn, // field values
   status = clSetKernelArg(kernel,
                           argnum++,
                           sizeof(cl_mem),
@@ -469,15 +502,13 @@ void init_DGFlux_CL(field *f, int ie, int dim0, cl_mem *wn_cl,
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 
-  // __global real *dtwn // time derivative
   status = clSetKernelArg(kernel,
                           argnum++,
                           sizeof(cl_mem),
-                          &f->dtwn_cl);
+                          f->dtwn_cl + ie);
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 
-  // __local real* wnloc,       // 6: wn local memory
   status = clSetKernelArg(kernel,
                           argnum++,
                           sizeof(real) * cachesize,
@@ -495,6 +526,7 @@ void DGFlux_CL(field *f, int dim0, int ie, cl_mem *wn_cl,
   int deg[3] = {param[1], param[2], param[3]};
   int nraf[3] = {param[4], param[5], param[6]};
 
+  // TODO: make memory access more contiguous?
   int dim[3];
   dim[0] = dim0;
   dim[1] = (dim[0] + 1) % 3;
@@ -792,6 +824,7 @@ void set_buf_to_zero_cl(cl_mem *buf, MacroCell *mcell, field *f,
 
 // Apply the Discontinuous Galerkin approximation for computing the
 // time derivative of the field. OpenCL version.
+// wn_cl is an array of pointers to the macrocell wn_cls.
 void dtfield_CL(field *f, real tnow, cl_mem *wn_cl,
 		cl_uint nwait, cl_event *wait, cl_event *done)
 {
@@ -799,7 +832,7 @@ void dtfield_CL(field *f, real tnow, cl_mem *wn_cl,
 
   for(int ie = 0; ie < nmacro; ++ie) {
     MacroCell *mcell = f->mcell + ie;
-    set_buf_to_zero_cl(&f->dtwn_cl, mcell, f,
+    set_buf_to_zero_cl(f->dtwn_cl + ie, mcell, f,
 		       nwait, wait, f->clv_zbuf + ie);
   }
     
@@ -863,23 +896,23 @@ void dtfield_CL(field *f, real tnow, cl_mem *wn_cl,
   for(int ie = 0; ie < nmacro; ++ie) {
     MacroCell *mcell = f->mcell + ie;
     
-    DGFlux_CL(f, 0, ie, wn_cl, 
+    DGFlux_CL(f, 0, ie, wn_cl + ie, 
 	      nwaitstartmacroloop, startmacroloop,
 	      f->clv_flux0 + ie);
 
     if(ndim > 1) {
-      DGFlux_CL(f, 1, ie, wn_cl, 
+      DGFlux_CL(f, 1, ie, wn_cl + ie, 
 		1, f->clv_flux0 + ie,
 		f->clv_flux1 + ie);
     }
     
     if(ndim > 2) {
-      DGFlux_CL(f, 2, ie, wn_cl, 
+      DGFlux_CL(f, 2, ie, wn_cl + ie, 
 		1, f->clv_flux1 + ie, 
 		f->clv_flux2 + ie);
     }
     
-    DGVolume_CL(mcell, f, wn_cl,
+    DGVolume_CL(mcell, f, wn_cl + ie,
   		1,
   		fluxdone + ie,
   		f->clv_volume + ie);
@@ -890,7 +923,7 @@ void dtfield_CL(field *f, real tnow, cl_mem *wn_cl,
   	      f->clv_mass + ie);
 
     if(f->use_source_cl) {
-      DGSource_CL(mcell, f, tnow, wn_cl, 
+      DGSource_CL(mcell, f, tnow, wn_cl + ie, 
 		  1,
 		  f->clv_mass + ie,
 		  f->clv_source + ie);
@@ -1203,41 +1236,44 @@ void RK4_CL(field *f, real tmax, real dt,
   int iter = 0;
 
   cl_int status;  
-  cl_mem l1 = clCreateBuffer(f->cli.context,
-			     0,
-			     sizeof(real) * f->wsize,
-			     NULL,
-			     &status);
-  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status >= CL_SUCCESS);
 
-  cl_mem l2 = clCreateBuffer(f->cli.context,
-			     0,
-			     sizeof(real) * f->wsize,
-			     NULL,
-			     &status);
-  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status >= CL_SUCCESS);
+  const int nmacro = f->macromesh.nbelems;
 
-  cl_mem l3 = clCreateBuffer(f->cli.context,
-			     0,
-			     sizeof(real) * f->wsize,
-			     NULL,
-			     &status);
-  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status >= CL_SUCCESS);
+  cl_mem *l1 = calloc(nmacro, sizeof(cl_mem));
+  cl_mem *l2 = calloc(nmacro, sizeof(cl_mem));
+  cl_mem *l3 = calloc(nmacro, sizeof(cl_mem));
+  for(int ie = 0; ie < nmacro; ++ie) {
+    MacroCell *mcell = f->mcell + ie;
+    
+    l1[ie] = clCreateBuffer(f->cli.context,
+			    0,
+			    sizeof(real) * mcell->nreal,
+			    NULL,
+			    &status);
+    if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+    assert(status >= CL_SUCCESS);
+
+    l2[ie] = clCreateBuffer(f->cli.context,
+			    0,
+			    sizeof(real) * mcell->nreal,
+			    NULL,
+			    &status);
+    if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+    assert(status >= CL_SUCCESS);
+
+    l3[ie] = clCreateBuffer(f->cli.context,
+			    0,
+			    sizeof(real) * mcell->nreal,
+			    NULL,
+			    &status);
+    if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+    assert(status >= CL_SUCCESS);
+  }
 
   size_t numworkitems = f->wsize;
 
-  cl_mem *w = &f->wn_cl;
-  cl_mem *dtw = &f->dtwn_cl;
-
-  // FIXME: replace with void kernel call
-  clWaitForEvents(nwait, wait);
-
-  printf("Starting RK4_CL\n");
-
-  const int nmacro = f->macromesh.nbelems;
+  cl_mem *w = f->wn_cl;
+  cl_mem *dtw = f->dtwn_cl;
 
   cl_event source0 = clCreateUserEvent(f->cli.context, &status);
   cl_event source1 = clCreateUserEvent(f->cli.context, &status);
@@ -1255,6 +1291,10 @@ void RK4_CL(field *f, real tmax, real dt,
     stage3[ie] = clCreateUserEvent(f->cli.context, &status);
     status = clSetUserEventStatus(stage3[ie], CL_COMPLETE);
   }
+  
+  clWaitForEvents(nwait, wait);
+  
+  printf("Starting RK4_CL\n");
 
   struct timeval t_start;
   gettimeofday(&t_start, NULL);
@@ -1268,7 +1308,7 @@ void RK4_CL(field *f, real tmax, real dt,
 	       nmacro, stage3, &source0);
     for(int ie = 0; ie < nmacro; ++ie) { 
       MacroCell *mcell = f->mcell + ie;
-      RK4_CL_stageA(mcell, f, &l1, w, dtw,
+      RK4_CL_stageA(mcell, f, l1 + ie, w, dtw,
 		    0.5 * dt, sizew, numworkitems,
 		    1, &source0, stage0 + ie);
     }
@@ -1276,20 +1316,21 @@ void RK4_CL(field *f, real tmax, real dt,
     f->tnow += 0.5 * dt;
     
     // stage 1
-    dtfield_CL(f, f->tnow, &l1, nmacro, stage0, &source1);
+    dtfield_CL(f, f->tnow, l1,
+	       nmacro, stage0, &source1);
     for(int ie = 0; ie < nmacro; ++ie) { 
       MacroCell *mcell = f->mcell + ie;
-      RK4_CL_stageA(mcell, f, &l2, w, dtw,
+      RK4_CL_stageA(mcell, f, l2 + ie, w, dtw,
 		    0.5 * dt, sizew, numworkitems,
 		    1, &source1, stage1 + ie);
     }
     
     // stage 2
-    dtfield_CL(f, f->tnow, &l2, 
+    dtfield_CL(f, f->tnow, l2, 
 	       nmacro, stage1, &source2);
     for(int ie = 0; ie < nmacro; ++ie) { 
       MacroCell *mcell = f->mcell + ie;
-      RK4_CL_stageA(mcell, f, &l3, w, dtw,
+      RK4_CL_stageA(mcell, f, l3 + ie, w, dtw,
 		    dt, sizew, numworkitems,
 		    1, &source2, stage2 + ie);
     }
@@ -1297,11 +1338,11 @@ void RK4_CL(field *f, real tmax, real dt,
     f->tnow += 0.5 * dt;
     
     // stage 3
-    dtfield_CL(f, f->tnow, &l3, 
+    dtfield_CL(f, f->tnow, l3, 
 	       nmacro, stage2, &source3);
     for(int ie = 0; ie < nmacro; ++ie) { 
       MacroCell *mcell = f->mcell + ie;
-      RK4_final_inplace_CL(mcell, f, w, &l1, &l2, &l3, 
+      RK4_final_inplace_CL(mcell, f, w, l1 + ie, l2 + ie, l3 + ie, 
 			   dtw, dt, numworkitems,
 			   1, &source3, stage3 + ie);
     }
@@ -1321,10 +1362,11 @@ void RK4_CL(field *f, real tmax, real dt,
   gettimeofday(&t_end, NULL); 
 
   if(done != NULL) {
-    // FIXME: use void kernel instead
     status = clSetUserEventStatus(*done, CL_COMPLETE);
   }
-    
+
+  // TODO: free cl_mems
+  
  double rkseconds = (t_end.tv_sec - t_start.tv_sec) * 1.0 // seconds
     + (t_end.tv_usec - t_start.tv_usec) * 1e-6; // microseconds
   printf("\nTotal RK time (s):\n%f\n", rkseconds);
@@ -1363,15 +1405,21 @@ void RK2_CL(field *f, real tmax, real dt,
   int iter = 0;
 
   cl_int status;
-  cl_mem wnp1_cl = clCreateBuffer(f->cli.context,
-				  0, // no flags
-				  sizeof(real) * f->wsize,
-				  NULL, // do not use a host pointer
-				  &status);
-  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status >= CL_SUCCESS);
 
   const int nmacro = f->macromesh.nbelems;
+  
+  cl_mem *wnp1_cl = calloc(nmacro, sizeof(cl_mem));
+  for(int ie = 0; ie < nmacro; ++ie) {
+    MacroCell *mcell = f->mcell + ie;
+    
+    wnp1_cl[ie] = clCreateBuffer(f->cli.context,
+				 0,
+				 sizeof(real) * mcell->nreal,
+				 NULL,
+				 &status);
+    if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+    assert(status >= CL_SUCCESS);
+  }
 
   cl_event *stage1 =  calloc(nmacro, sizeof(cl_event));
   cl_event *stage2 =  calloc(nmacro, sizeof(cl_event));
@@ -1399,17 +1447,19 @@ void RK2_CL(field *f, real tmax, real dt,
     if (iter % freq == 0)
       printf("t=%f iter=%d/%d dt=%f\n", f->tnow, iter, f->itermax, dt);
     
-    dtfield_CL(f, f->tnow, &f->wn_cl, nmacro, stage2, &source1);
+    dtfield_CL(f, f->tnow, f->wn_cl,
+	       nmacro, stage2, &source1);
     
     for(int ie = 0; ie < nmacro; ++ie) { 
       MacroCell *mcell = f->mcell + ie;
-      init_RK2_CL_stage1(mcell, f, dt, &wnp1_cl);
+      init_RK2_CL_stage1(mcell, f, dt, wnp1_cl);
       RK2_CL_stage1(mcell, f, f->wsize, 1, &source1, stage1 + ie);
     }
     
     f->tnow += 0.5 * dt;
 
-    dtfield_CL(f, f->tnow, &wnp1_cl, nmacro, stage1, &source2);
+    dtfield_CL(f, f->tnow, wnp1_cl,
+	       nmacro, stage1, &source2);
     for(int ie = 0; ie < nmacro; ++ie) { 
       MacroCell *mcell = f->mcell + ie;
       init_RK2_CL_stage2(mcell, f, dt);

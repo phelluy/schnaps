@@ -51,37 +51,19 @@ int TestKernelInterface()
     mface[ifa].ifa = ifa;
   }
 
-  void* chkptr;
-  cl_int status;
-  chkptr = clEnqueueMapBuffer(f.cli.commandqueue,
-			      f.dtwn_cl,
-			      CL_TRUE,
-			      CL_MAP_WRITE,
-			      0, // offset
-			      sizeof(real) * (f.wsize),
-			      0, NULL, NULL, // events management
-			      &status);
-  assert(status == CL_SUCCESS);
-  assert(chkptr == f.dtwn);
-
+  
   for(int i = 0; i < f.wsize; i++)
     f.dtwn[i] = 0.0;
 
-  status = clEnqueueUnmapMemObject(f.cli.commandqueue,
-				   f.dtwn_cl,
-				   f.dtwn,
-				   0, NULL, NULL);
-  assert(status == CL_SUCCESS);
-  status = clFinish(f.cli.commandqueue);
-  assert(status == CL_SUCCESS);
-
+  CopyfieldtoGPU(&f);
+  
   // OpenCL version
   printf("OpenCL version:\n");
   
   const int ninterfaces = f.macromesh.nmacrointerfaces;
   for(int i = 0; i < ninterfaces; ++i) {
     int ifa = f.macromesh.macrointerface[i];
-    DGMacroCellInterface_CL(mface + ifa, &f, &f.wn_cl, 
+    DGMacroCellInterface_CL(mface + ifa, &f, f.wn_cl, 
 			    0, NULL, NULL);
     clFinish(f.cli.commandqueue);
   }
@@ -89,7 +71,7 @@ int TestKernelInterface()
   const int nboundaryfaces = f.macromesh.nboundaryfaces;
   for(int i = 0; i < nboundaryfaces; ++i) {
     int ifa = f.macromesh.boundaryface[i];
-    DGBoundary_CL(mface + ifa, &f, &f.wn_cl,
+    DGBoundary_CL(mface + ifa, &f, f.wn_cl,
 		  0, NULL, NULL);
     clFinish(f.cli.commandqueue);
   }

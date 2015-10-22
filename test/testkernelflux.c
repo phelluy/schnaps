@@ -81,14 +81,14 @@ int TestKernelFlux()
     /* 		       0, NULL, NULL); */
     /* clFinish(f.cli.commandqueue); */
     
-    DGFlux_CL(&f, 0, ie, &(f.wn_cl), 0, NULL, NULL);
+    DGFlux_CL(&f, 0, ie, f.wn_cl, 0, NULL, NULL);
     clFinish(f.cli.commandqueue);
 
-    DGFlux_CL(&f, 1, ie, &(f.wn_cl), 0, NULL, NULL);
+    DGFlux_CL(&f, 1, ie, f.wn_cl, 0, NULL, NULL);
     clFinish(f.cli.commandqueue);
 
     if(!f.macromesh.is2d) {
-      DGFlux_CL(&f, 2, ie, &(f.wn_cl), 0, NULL, NULL);
+      DGFlux_CL(&f, 2, ie, f.wn_cl, 0, NULL, NULL);
       clFinish(f.cli.commandqueue);
     }
   }

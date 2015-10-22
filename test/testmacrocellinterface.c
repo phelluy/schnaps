@@ -102,38 +102,17 @@ int TestMacroFace(void){
  
   //f.is2d = true;
 
-  // OpenCL method
-  // NB: Initfield expects a certain address for dtwn, so the OpenCL
-  // version must come before the other versions.
-  cl_int status;
-  void* chkptr = clEnqueueMapBuffer(f.cli.commandqueue,
-  				    f.dtwn_cl,
-  				    CL_TRUE,
-  				    CL_MAP_WRITE,
-  				    0, // offset
-  				    sizeof(real) * 60,
-  				    0, NULL, NULL,
-  				    &status);
-  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status == CL_SUCCESS);
-  assert(chkptr == f.dtwn);
-
   for(int iw = 0; iw < f.wsize; iw++)
     f.dtwn[iw] = 0;
 
-  status = clEnqueueUnmapMemObject(f.cli.commandqueue,
-  				   f.dtwn_cl,
-  				   f.dtwn,
-  				   0, NULL, NULL);
-  if(status != CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status == CL_SUCCESS);
-
+  CopyfieldtoGPU(&f);
+  
   clFinish(f.cli.commandqueue);
 
   const int ninterfaces = f.macromesh.nmacrointerfaces;
   for(int i = 0; i < ninterfaces; ++i) {
     int ifa = f.macromesh.macrointerface[i];
-    DGMacroCellInterface_CL((void*) (mface + ifa), &f, &(f.wn_cl),
+    DGMacroCellInterface_CL(mface + ifa, &f, f.wn_cl,
 			    0, NULL, NULL);
     clFinish(f.cli.commandqueue);
   }
@@ -141,7 +120,7 @@ int TestMacroFace(void){
   const int nboundaryfaces = f.macromesh.nboundaryfaces;
   for(int i = 0; i < nboundaryfaces; ++i) {
     int ifa = f.macromesh.boundaryface[i];
-    DGBoundary_CL((void*) (mface + ifa), &f, &(f.wn_cl),
+    DGBoundary_CL(mface + ifa, &f, f.wn_cl,
 			    0, NULL, NULL);
     clFinish(f.cli.commandqueue);
   }

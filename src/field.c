@@ -173,21 +173,10 @@ void init_field_buffers_cl(field *f)
 {
   cl_int status;
 
-  f->wn_cl = clCreateBuffer(f->cli.context,
-			    CL_MEM_READ_WRITE | CL_MEM_USE_HOST_PTR,
-			    sizeof(real) * f->wsize,
-			    f->wn,
-			    &status);
-  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status >= CL_SUCCESS);
+  const int nmacro = f->macromesh.nbelems;
 
-  f->dtwn_cl = clCreateBuffer(f->cli.context,
-			      CL_MEM_READ_WRITE | CL_MEM_USE_HOST_PTR,
-			      sizeof(real) * f->wsize,
-			      f->dtwn,
-			      &status);
-  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status >= CL_SUCCESS);
+  f->wn_cl = calloc(nmacro, sizeof(cl_mem));
+  f->dtwn_cl = calloc(nmacro, sizeof(cl_mem));
 
   f->param_cl = clCreateBuffer(f->cli.context,
 			       CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR,
@@ -335,6 +324,8 @@ void init_field_macrocells_cl(field *f)
     if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
     assert(status >= CL_SUCCESS);
 
+    f->wn_cl[ie] = mcell->wn_cl;
+    
     mcell->dtwn_cl = clCreateBuffer(f->cli.context,
 				    CL_MEM_READ_WRITE,
 				    sizeof(real) * mcell->nreal,
@@ -342,7 +333,8 @@ void init_field_macrocells_cl(field *f)
 				    &status);
     if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
     assert(status >= CL_SUCCESS);
-   
+
+    f->dtwn_cl[ie] = mcell->dtwn_cl;
   }
 }
 

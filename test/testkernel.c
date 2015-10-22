@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <math.h>
+#include "clutils.h"
 
 int TestKernel(void)
 {
@@ -44,40 +45,13 @@ int TestKernel(void)
   Initfield(&f);
 
   printf("&f=%p\n",&f);
-
-  // Set dtwn to 1 for testing
-  { 
-    void *chkptr;
-    cl_int status;
-    chkptr = clEnqueueMapBuffer(f.cli.commandqueue,
-				f.dtwn_cl,  // buffer to copy from
-				CL_TRUE,  // block until the buffer is available
-				CL_MAP_WRITE, 
-				0, // offset
-				sizeof(real) * (f.wsize), // buffersize
-				0,
-				NULL,
-				NULL, // events management
-				&status);
-    assert(status == CL_SUCCESS);
-    assert(chkptr == f.dtwn);
-
-    for(int i = 0; i < f.wsize; i++){
-      f.dtwn[i] = 1;
-    }
-
-    status = clEnqueueUnmapMemObject(f.cli.commandqueue,
-				     f.dtwn_cl,
-				     f.dtwn,
-				     0,
-				     NULL,
-				     NULL);
-    assert(status == CL_SUCCESS);
-
-    status = clFinish(f.cli.commandqueue);
-    assert(status == CL_SUCCESS);
+    
+  for(int i = 0; i < f.wsize; i++){
+    f.dtwn[i] = 1;
   }
- 
+
+  CopyfieldtoGPU(&f);
+  
   for(int ie = 0; ie < f.macromesh.nbelems; ++ie) {
     DGMass_CL((void*) &f.mcell[ie], &f, 0, NULL, NULL);
     clFinish(f.cli.commandqueue);
@@ -91,7 +65,7 @@ int TestKernel(void)
   real *saveptr = f.dtwn;
 
   // malloc a new dtwn.
-  f.dtwn = calloc(f.wsize,sizeof(real));
+  f.dtwn = calloc(f.wsize, sizeof(real));
   for(int i = 0; i < f.wsize; i++){
     f.dtwn[i] = 1;
   }

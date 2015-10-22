@@ -52,19 +52,19 @@ int TestmEq2(void) {
   strcat(cl_buildoptions, buf);
 
   // Read the gmsh file
-  ReadMacroMesh(&(f.macromesh), "../test/testcube.msh");
+  ReadMacroMesh(&f.macromesh, "../test/testcube.msh");
 
   // Try to detect a 2d mesh
-  Detect2DMacroMesh(&(f.macromesh));
+  Detect2DMacroMesh(&f.macromesh);
   assert(f.macromesh.is2d);
 
-  BuildConnectivity(&(f.macromesh));
+  BuildConnectivity(&f.macromesh);
 
-  //AffineMapMacroMesh(&(f.macromesh));
+  //AffineMapMacroMesh(&f.macromesh);
  
   Initfield(&f);
   
-  CheckMacroMesh(&(f.macromesh), f.interp.interp_param + 1);
+  CheckMacroMesh(&f.macromesh, f.interp.interp_param + 1);
 
   real *dtwn_cl = f.dtwn;
   real *dtwn = calloc(f.wsize, sizeof(real));
@@ -85,7 +85,7 @@ int TestmEq2(void) {
   
   for(int ie = 0; ie < nmacro; ++ie) {
     MacroCell *mcell = f.mcell + ie;
-    set_buf_to_zero_cl(&f.dtwn_cl, mcell, &f,
+    set_buf_to_zero_cl(f.dtwn_cl + ie, mcell, &f,
 		       0, NULL, NULL);
   }
   clFinish(f.cli.commandqueue);
@@ -95,7 +95,7 @@ int TestmEq2(void) {
     /* 		       0, NULL, NULL); */
     /* clFinish(f.cli.commandqueue); */
 
-    DGVolume_CL((void*) &(f.mcell[ie]), &f, &(f.wn_cl), 0, NULL, NULL);
+    DGVolume_CL(f.mcell + ie, &f, f.wn_cl, 0, NULL, NULL);
     clFinish(f.cli.commandqueue);
   }
 
@@ -104,7 +104,7 @@ int TestmEq2(void) {
   
   f.dtwn = dtwn;
   for(int ie = 0; ie < f.macromesh.nbelems; ++ie) {
-    DGVolume((void*) &(f.mcell[ie]), &f, f.wn, f.dtwn);
+    DGVolume(f.mcell + ie, &f, f.wn, f.dtwn);
   }
 
 
@@ -150,7 +150,7 @@ int TestmEq2(void) {
   
   for(int ie = 0; ie < nmacro; ++ie) {
     MacroCell *mcell = f.mcell + ie;
-    set_buf_to_zero_cl(&f.dtwn_cl, mcell, &f,
+    set_buf_to_zero_cl(f.dtwn_cl + ie, mcell, &f,
 		       0, NULL, NULL);
   }
   clFinish(f.cli.commandqueue);
@@ -160,14 +160,14 @@ int TestmEq2(void) {
     /* 		       0, NULL, NULL); */
     /* clFinish(f.cli.commandqueue); */
     
-    DGFlux_CL(&f, 0, ie, &(f.wn_cl), 0, NULL, NULL);
+    DGFlux_CL(&f, 0, ie, f.wn_cl, 0, NULL, NULL);
     clFinish(f.cli.commandqueue);
 
-    DGFlux_CL(&f, 1, ie, &(f.wn_cl), 0, NULL, NULL);
+    DGFlux_CL(&f, 1, ie, f.wn_cl, 0, NULL, NULL);
     clFinish(f.cli.commandqueue);
 
     if(!f.macromesh.is2d) {
-      DGFlux_CL(&f, 2, ie, &(f.wn_cl), 0, NULL, NULL);
+      DGFlux_CL(&f, 2, ie, f.wn_cl, 0, NULL, NULL);
       clFinish(f.cli.commandqueue);
     }
   }
@@ -176,7 +176,7 @@ int TestmEq2(void) {
 
   f.dtwn = dtwn;
   for(int ie = 0; ie < f.macromesh.nbelems; ++ie) {
-    DGSubCellInterface((void*) &(f.mcell[ie]), &f, f.wn, f.dtwn);
+    DGSubCellInterface(f.mcell + ie, &f, f.wn, f.dtwn);
   }
 
   err = maxerr(dtwn, dtwn_cl, f.wsize);
@@ -199,13 +199,13 @@ int TestmEq2(void) {
   
   for(int ie = 0; ie < nmacro; ++ie) {
     MacroCell *mcell = f.mcell + ie;
-    set_buf_to_zero_cl(&f.dtwn_cl, mcell, &f,
+    set_buf_to_zero_cl(f.dtwn_cl, mcell, &f,
 		       0, NULL, NULL);
   }
   clFinish(f.cli.commandqueue);
 
   for(int ifa = 0; ifa < f.macromesh.nbfaces; ++ifa) {
-    DGMacroCellInterface_CL(mface + ifa, &f, &f.wn_cl,
+    DGMacroCellInterface_CL(mface + ifa, &f, f.wn_cl,
     			    0, NULL, NULL);
     clFinish(f.cli.commandqueue);
   }
@@ -264,7 +264,7 @@ int TestmEq2(void) {
   real tnow = 0.0;
   
   f.dtwn = dtwn_cl;
-  dtfield_CL(&f, tnow, &f.wn_cl, 0, NULL, NULL);
+  dtfield_CL(&f, tnow, f.wn_cl, 0, NULL, NULL);
   clFinish(f.cli.commandqueue);
   
   CopyfieldtoCPU(&f);
