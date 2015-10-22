@@ -320,6 +320,32 @@ void init_field_events_cl(field *f)
 
 }
 
+void init_field_macrocells_cl(field *f)
+{
+  cl_int status;
+  
+  for(int ie = 0; ie < f->macromesh.nbelems; ie++) {
+    MacroCell *mcell = f->mcell + ie; 
+
+    mcell->wn_cl = clCreateBuffer(f->cli.context,
+				  CL_MEM_READ_WRITE,
+				  sizeof(real) * mcell->nreal,
+				  NULL,
+				  &status);
+    if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+    assert(status >= CL_SUCCESS);
+
+    mcell->dtwn_cl = clCreateBuffer(f->cli.context,
+				    CL_MEM_READ_WRITE,
+				    sizeof(real) * mcell->nreal,
+				    NULL,
+				    &status);
+    if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+    assert(status >= CL_SUCCESS);
+   
+  }
+}
+
 void init_field_cl(field *f)
 {
   InitCLInfo(&f->cli, nplatform_cl, ndevice_cl);
@@ -354,8 +380,11 @@ void init_field_cl(field *f)
   }
 
   init_field_kernels_cl(f);
+
   init_field_events_cl(f);
-    
+
+  init_field_macrocells_cl(f);
+  
   // Set timers to zero
   f->zbuf_time = 0;
   f->mass_time = 0;

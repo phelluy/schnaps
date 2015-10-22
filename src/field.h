@@ -37,6 +37,7 @@ typedef struct MacroCell {
 #ifdef _WITH_OPENCL
   cl_mem physnode_cl;
   cl_mem wn_cl;
+  cl_mem dtwn_cl;
 #endif
 } MacroCell;
 

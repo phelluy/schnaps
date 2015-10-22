@@ -44,6 +44,35 @@ void CopyfieldtoCPU(field *f)
   status = clFinish(f->cli.commandqueue);
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
+
+
+  /*
+  status = clEnqueueReadBuffer(f->cli.commandqueue,
+			       f->wn_cl,
+			       CL_TRUE,
+			       0,
+			       f->wsize * sizeof(real),
+			       f->wn,
+			       0, NULL, NULL);
+  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status >= CL_SUCCESS);
+  */
+  
+  /*
+  status = clEnqueueReadBuffer(f->cli.commandqueue,
+			       f->dtwn_cl,
+			       CL_TRUE,
+			       0,
+			       f->wsize * sizeof(real),
+			       f->dtwn,
+			       0, NULL, NULL);
+  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status >= CL_SUCCESS);
+  
+  status = clFinish(f->cli.commandqueue);
+  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status >= CL_SUCCESS);
+  */
 }
 
 void set_source_CL(field *f, char *sourcename_cl) 
