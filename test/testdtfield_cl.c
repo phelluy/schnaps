@@ -5,19 +5,6 @@
 #include <assert.h>
 #include <math.h>
 
-int TestDtfield_CL(void);
-
-int main(void) {
-  int resu = TestDtfield_CL();
-
-  if (resu) 
-    printf("Dtfield_CL test OK !\n");
-  else 
-    printf("Dtfield_CL test failed !\n");
-
-  return !resu;
-} 
-
 int TestDtfield_CL(void){
   bool test = true;
 
@@ -116,3 +103,15 @@ int TestDtfield_CL(void){
 
   return test;
 }
+
+int main()
+{
+  int resu = TestDtfield_CL();
+
+  if (resu) 
+    printf("Dtfield_CL test OK !\n");
+  else 
+    printf("Dtfield_CL test failed !\n");
+
+  return !resu;
+} 
