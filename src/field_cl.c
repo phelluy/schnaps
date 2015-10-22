@@ -944,6 +944,7 @@ void dtfield_CL(field *f, real tnow, cl_mem *wn_cl,
 }
 
 // Set kernel arguments for first stage of RK2
+// wnp1_cl is a pointer to an array of cl_mems, one per macrocell
 void init_RK2_CL_stage1(MacroCell *mcell, field *f,
 			const real dt, cl_mem *wnp1_cl)
 {
@@ -951,23 +952,20 @@ void init_RK2_CL_stage1(MacroCell *mcell, field *f,
   cl_int status;
   int argnum = 0;
 
-  //__global real *wnp1 // field values
   status = clSetKernelArg(kernel,
 			  argnum++, 
                           sizeof(cl_mem),
-                          wnp1_cl);
+                          wnp1_cl + mcell->ie);
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
   
-  // __global real *wn, 
   status = clSetKernelArg(kernel,
 			  argnum++, 
                           sizeof(cl_mem),
-                          &f->wn_cl);
+                          f->wn_cl + mcell->ie);
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 
-  //__global real* dtwn // time derivative
   status = clSetKernelArg(kernel,
 			  argnum++, 
                           sizeof(cl_mem),
@@ -1022,7 +1020,7 @@ void init_RK2_CL_stage2(MacroCell *mcell, field *f, const real dt)
   status = clSetKernelArg(kernel,
 			  argnum++, 
                           sizeof(cl_mem),
-                          &f->wn_cl);
+                          f->wn_cl + mcell->ie);
   assert(status >= CL_SUCCESS);
 
   status = clSetKernelArg(kernel,
@@ -1418,9 +1416,7 @@ void RK2_CL(field *f, real tmax, real dt,
   }
   
   cl_event source1 = clCreateUserEvent(f->cli.context, &status);
-  //cl_event stage1 =  clCreateUserEvent(f->cli.context, &status);
   cl_event source2 = clCreateUserEvent(f->cli.context, &status);
-  //cl_event stage2 =  clCreateUserEvent(f->cli.context, &status);
 
   if(nwait > 0)
     clWaitForEvents(nwait, wait);

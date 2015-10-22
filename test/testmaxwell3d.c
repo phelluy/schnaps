@@ -64,6 +64,7 @@ int TestMaxwell3D()
   RK4(&f, tmax, dt);
 #else
   // OpenCL version
+  CopyfieldtoGPU(&f);
   RK4_CL(&f, tmax, dt, 0, 0, 0);
   CopyfieldtoCPU(&f);
   printf("\nOpenCL Kernel time:\n");

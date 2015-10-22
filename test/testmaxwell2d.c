@@ -62,6 +62,7 @@ int TestMaxwell2D()
   RK2(&f, tmax, dt);
 #else
   // OpenCL version
+  CopyfieldtoGPU(&f);
   RK2_CL(&f, tmax, dt, 0, 0, 0);
   CopyfieldtoCPU(&f);
   printf("\nOpenCL Kernel time:\n");

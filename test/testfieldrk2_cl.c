@@ -86,7 +86,8 @@ int TestfieldRK2_CL()
 
   //AffineMapMacroMesh(&(f.macromesh));
   Initfield(&f);
-
+  CopyfieldtoGPU(&f);
+  
   CheckMacroMesh(&(f.macromesh), f.interp.interp_param + 1);
  
   real tmax = 0.1;

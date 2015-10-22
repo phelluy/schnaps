@@ -92,6 +92,7 @@ int TestfieldRK4_CL(void){
   //RK4(&f, tmax);
   f.vmax=1;
   real dt = set_dt(&f);
+  CopyfieldtoGPU(&f);
   RK4_CL(&f, tmax, dt, 0, NULL, NULL);
   clFinish(f.cli.commandqueue); 
 
@@ -111,9 +112,10 @@ int TestfieldRK4_CL(void){
   test = dd < tolerance;
   
   return test;
-};
+}
 
-int main(void) {
+int main()
+{
   int resu = TestfieldRK4_CL();
 
   if(resu) 
