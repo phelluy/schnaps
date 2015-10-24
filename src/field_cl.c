@@ -16,6 +16,7 @@ void CopyfieldtoCPU(field *f)
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 
+  // TODO: restore map instead of read / writes.
   /*
   void *chkptr;
   chkptr = clEnqueueMapBuffer(f->cli.commandqueue,
@@ -165,13 +166,6 @@ void init_DGBoundary_CL(field *f,
   status = clSetKernelArg(kernel,
   			  argnum++,
   			  sizeof(int),
-  			  &mcell->woffset);
-  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status >= CL_SUCCESS);
-
-  status = clSetKernelArg(kernel,
-  			  argnum++,
-  			  sizeof(int),
   			  &locfaL);
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
@@ -254,20 +248,6 @@ void init_DGMacroCellInterface_CL(field *f,
 			 argnum++,
                           sizeof(cl_mem),
                           &f->param_cl);
-  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status >= CL_SUCCESS);
-
-  status = clSetKernelArg(kernel,
-			  argnum++,
-			  sizeof(int),
-			  &mcellL->woffset);
-  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status >= CL_SUCCESS);
-
-  status = clSetKernelArg(kernel,
-			  argnum++,
-			  sizeof(int),
-			  &mcellR->woffset);
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 
@@ -396,14 +376,6 @@ void init_DGMass_CL(MacroCell *mcell, field *f)
                           &f->param_cl);
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
-
-  int offset = mcell->woffset;
-  status = clSetKernelArg(f->dgmass, 
-			  argnum++, 
-			  sizeof(int), 
-			  &offset);
-  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status >= CL_SUCCESS);
   
   status = clSetKernelArg(f->dgmass,
                           argnum++,
@@ -472,13 +444,6 @@ void init_DGFlux_CL(field *f, int ie, int dim0, cl_mem *wn_cl,
                           argnum++,
                           sizeof(cl_mem),
                           &f->param_cl);
-  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status >= CL_SUCCESS);
-
-  status = clSetKernelArg(kernel, 
-			  argnum++, 
-			  sizeof(int), 
-			  &mcell->woffset);
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 
@@ -590,13 +555,6 @@ void init_DGVolume_CL(MacroCell *mcell, field *f, cl_mem *wn_cl,
   assert(status >= CL_SUCCESS);
 
   status = clSetKernelArg(kernel,
-			  argnum++,
-			  sizeof(int),
-			  &mcell->woffset);
-  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status >= CL_SUCCESS);
-
-  status = clSetKernelArg(kernel,
                           argnum++,
                           sizeof(cl_mem),
                           &mcell->physnode_cl);
@@ -699,13 +657,6 @@ void init_DGSource_CL(MacroCell *mcell, field *f,
   assert(status >= CL_SUCCESS);
 
   status = clSetKernelArg(kernel,
-			  argnum++,
-			  sizeof(int),
-			  &mcell->woffset);
-  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status >= CL_SUCCESS);
-
-  status = clSetKernelArg(kernel,
                           argnum++,
                           sizeof(cl_mem),
                           &mcell->physnode_cl);
@@ -790,13 +741,6 @@ void set_buf_to_zero_cl(cl_mem *buf, MacroCell *mcell, field *f,
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
   
-  status = clSetKernelArg(kernel,
-                          argnum++, 
-			  sizeof(int),
-			  &mcell->woffset);
-  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status >= CL_SUCCESS);
-
   size_t numworkitems = mcell->nreal;
   status = clEnqueueNDRangeKernel(f->cli.commandqueue,
 				  kernel,
@@ -980,13 +924,6 @@ void init_RK2_CL_stage1(MacroCell *mcell, field *f,
 			  &halfdt);
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
-
-  status = clSetKernelArg(kernel,
-			  argnum++,
-			  sizeof(int),
-			  &mcell->woffset);
-  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status >= CL_SUCCESS);
 }
 
 // Launch first stage of RK2 integration
@@ -1034,13 +971,6 @@ void init_RK2_CL_stage2(MacroCell *mcell, field *f, const real dt)
 			  argnum++,
 			  sizeof(real),
 			  &dt);
-  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status >= CL_SUCCESS);
-
-  status = clSetKernelArg(kernel,
-			  argnum++,
-			  sizeof(int),
-			  &mcell->woffset);
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 }

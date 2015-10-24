@@ -504,7 +504,6 @@ int ipg(const int npg[], const int p[], const int icell)
 // Compute the surface terms inside one macrocell
 __kernel
 void DGFlux(__constant int *param,     // interp param
-	    int woffset,               // woffset
 	    int dim0,                  // face direction
 	    __constant real *physnode, // macrocell nodes
 	    __global   real *wn,       // field values
@@ -732,7 +731,7 @@ void DGFlux(__constant int *param,     // interp param
 }
 
 __kernel
-void set_buffer_to_zero(__global real *w, int woffset)
+void set_buffer_to_zero(__global real *w)
 {
   w[get_global_id(0)] = 0.0;
 }
@@ -744,7 +743,6 @@ void set_buffer_to_zero(__global real *w, int woffset)
 // Compute the volume  terms inside  one macrocell
 __kernel
 void DGVolume(__constant int *param,     // interp param
-	      int woffset,               // woffset
 	      __constant real *physnode, // macrocell nodes
               __global real *wn,         // field values
 	      __global real *dtwn,       // time derivative
@@ -922,10 +920,9 @@ void DGVolume(__constant int *param,     // interp param
 
 // Apply division by the mass matrix on one macrocell
 __kernel
-void DGMass(__constant int *param,       // interp param
-            int woffset,                      // woffset
+void DGMass(__constant int *param,      // interp param
             __constant real *physnode,  // macrocell nodes
-            __global real *dtwn)         // time derivative
+            __global real *dtwn)        // time derivative
 { 
   int ipg = get_global_id(0);
   int m = param[0];
@@ -989,8 +986,6 @@ void DGMass(__constant int *param,       // interp param
 // Second implementation with a loop on the faces.
 __kernel
 void DGMacroCellInterface(__constant int *param,        // interp param
-                          int woffsetL,                 // woffsetL
-			  int woffsetR,                 // woffsetR
                           int locfaL,                   // left face index
 			  int locfaR,                   // right face index
                           __constant real *physnodeL,   // left physnode
@@ -1082,7 +1077,6 @@ void DGMacroCellInterface(__constant int *param,        // interp param
 __kernel
 void DGBoundary(__constant int *param,      // interp param
 		real tnow,                  // current time
-		int woffset,                // woffset
 		int locfaL,                 // left face index
 		__constant real *physnodeL, // geometry for all mcells
 		__global real *wn,          // field 
@@ -1320,7 +1314,6 @@ void OneSource(const real *x, const real t, const real *w, real *source) {
 // Compute the source terms inside  one macrocell
 __kernel
 void DGSource(__constant int *param,     // interp param
-	      int woffset,               // macrocel index
 	      __constant real *physnode, // macrocell nodes
 	      const real tnow,           // the current time
               __global real *wn,         // field values
@@ -1408,8 +1401,7 @@ __kernel
 void RK_out_CL(__global real *wnp1, 
 	       __global const real *wn, 
 	       __global const real *dtwn, 
-	       const real dt,
-	       const int woffset)
+	       const real dt)
 {
   int ipg = get_global_id(0);
   wnp1[ipg] = wn[ipg] + dt * dtwn[ipg];
@@ -1419,8 +1411,7 @@ void RK_out_CL(__global real *wnp1,
 __kernel
 void RK_in_CL(__global real *wnp1, 
 	      __global real *dtwn, 
-	      const real dt,
-	      const int woffset)
+	      const real dt)
 {
   int ipg = get_global_id(0);
   wnp1[ipg] += dt * dtwn[ipg];
