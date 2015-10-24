@@ -1032,13 +1032,6 @@ void RK4_CL_stageA(MacroCell *mcell, field *f,
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 
-  status = clSetKernelArg(kernel,
-			  argnum++,
-			  sizeof(int),
-			  &mcell->woffset);
-  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status >= CL_SUCCESS);
-
   size_t nwork = mcell->nreal;
   status = clEnqueueNDRangeKernel(f->cli.commandqueue,
   				  kernel,
@@ -1103,13 +1096,6 @@ void RK4_final_inplace_CL(MacroCell *mcell, field *f,
 			  argnum++,
 			  sizeof(real),
 			  &dt);
-  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status >= CL_SUCCESS);
-
-  status = clSetKernelArg(kernel,
-			  argnum++,
-			  sizeof(int),
-			  &mcell->woffset);
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 

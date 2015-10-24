@@ -1423,8 +1423,7 @@ __kernel
 void RK4_first_stages(__global real *wnp1, 
 		     __global const real *wn, 
 		     __global const real *dtwn, 
-		      const real dt,
-		      const int woffset)
+		      const real dt)
 {
   int ipg = get_global_id(0);
   wnp1[ipg] = wn[ipg] + dt * dtwn[ipg];
@@ -1437,8 +1436,7 @@ void RK4_final_stage(__global real *w,
 		     __global real *l2,
 		     __global real *l3,
 		     __global real *dtw, 
-		     const real dt,
-		     const int woffset)
+		     const real dt)
 {
   const real b = -1.0 / 3.0;
   const real a[] = {1.0 / 3.0, 2.0 / 3.0, 1.0 / 3.0, dt / 6.0};
@@ -1450,4 +1448,3 @@ void RK4_final_stage(__global real *w,
     a[2] * l3[i] +
     a[3] * dtw[i];
 }
-
