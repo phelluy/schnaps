@@ -918,9 +918,9 @@ void DGVolume(__constant int *param,     // interp param
 #endif
 }
 
-real mass_pg(int *deg,
+real mass_pg(const int *deg,
 	     __constant real *physnode,  // macrocell nodes
-	     int *nraf, int ix, int iy, int iz, int ncx, int ncy, int ncz)
+	     const int *nraf, int ix, int iy, int iz, int ncx, int ncy, int ncz)
 {
 
   real hx = 1.0 / (real) nraf[0];
@@ -982,7 +982,7 @@ void DGMass(__constant int *param,      // interp param
   ipg /= nraf[1];
   int ncz = ipg;
 
-  real mass =   mass_pg(deg, physnode, nraf, ix, iy, iz, ncx, ncy, ncz);
+  real mass = mass_pg(deg, physnode, nraf, ix, iy, iz, ncx, ncy, ncz);
   real overmass = 1.0 / mass;
 
   int imem0 = m * get_global_id(0);
@@ -1366,7 +1366,7 @@ void DGSource(__constant int *param,     // interp param
   barrier(CLK_LOCAL_MEM_FENCE);
 
   // Compute Gauss point id where we compute the jacobian
-  const int ipg = get_local_id(0);
+  int ipg = get_local_id(0);
     
   // subcell id
   /* int icL[3]; */
@@ -1395,12 +1395,28 @@ void DGSource(__constant int *param,     // interp param
   // Compute source using w and xref
   real source[_M];
   _SOURCE_FUNC(xphy, tnow, w, source, _M);
-  
+
+  int ix = ipg % npg[0];
+  ipg /= npg[0];
+  int iy = ipg % npg[1];
+  ipg /= npg[1];
+  int iz = ipg % npg[2];
+  ipg /= npg[2];
+
+  int ncx = ipg % nraf[0];
+  ipg /= nraf[0];
+  int ncy = ipg % nraf[1];
+  ipg /= nraf[1];
+  int ncz = ipg;
+
+  real mass = mass_pg(deg, physnode, nraf, ix, iy, iz, ncx, ncy, ncz);
+
   // Add the source buffer to dtw
+  ipg = get_local_id(0);
   int imemR0loc = ipg * m;
   __local real *dtwnloc0 =  dtwnloc + imemR0loc;
   for(int iv = 0; iv < m; iv++) {
-    dtwnloc0[iv] = source[iv];
+    dtwnloc0[iv] = source[iv] * mass;
   }
 
   barrier(CLK_LOCAL_MEM_FENCE);
