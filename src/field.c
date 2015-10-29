@@ -1252,10 +1252,10 @@ void DGMass(MacroCell *mcell, field *f, real *dtwmc)
 	    codtau, NULL, NULL); // codtau, dpsi, vnds
     real det = dot_product(dtau[0], codtau[0]);
 
-    real norm = 1.0 / (wpg * det);
+    real overmass = 1.0 / (wpg * det);
     for(int iv = 0; iv < m; iv++) {
       int imem = f->varindex(f->interp_param, ipg, iv);
-      dtwmc[imem] *= norm;
+      dtwmc[imem] *= overmass;
     }
   }
 }
@@ -1277,6 +1277,8 @@ void DGSource(MacroCell *mcell, field *f, real tnow, real *wmc, real *dtwmc)
 	    NULL, -1, // dpsiref, ifa
 	    xphy, dtau, // xphy, dtau
 	    codtau, NULL, NULL); // codtau, dpsi, vnds
+    real det = dot_product(dtau[0], codtau[0]);
+    real mass = wpg * det;
 
     // TODO: this copy is not necessary, as we are already contiguous.
     real wL[m];
@@ -1290,7 +1292,7 @@ void DGSource(MacroCell *mcell, field *f, real tnow, real *wmc, real *dtwmc)
       
     for(int iv = 0; iv < m; ++iv) {
       int imem = f->varindex(f->interp_param, ipg, iv);
-      dtwmc[imem] += source[iv];
+      dtwmc[imem] += source[iv] * mass;
     }
   }
 }
@@ -1477,8 +1479,8 @@ void dtfield(field *f, real tnow, real *w, real *dtw) {
     real *dtwmc = dtw + mcell->woffset;
     DGSubCellInterface(mcell, f, wmc, dtwmc);
     DGVolume(mcell, f, wmc, dtwmc);
-    DGMass(mcell, f, dtwmc);
     DGSource(mcell, f, tnow, wmc, dtwmc);
+    DGMass(mcell, f, dtwmc);
   }
 
   if(f->post_dtfield != NULL) // FIXME: rename to after dtfield
