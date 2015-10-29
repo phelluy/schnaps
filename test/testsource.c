@@ -9,8 +9,6 @@
 void testSource(const real *x, const real t, const real *w, real *source,
 		int m) 
 {
-  //int m = sourceparams[0];
-  printf("m: %d\n", m);
   for(int i = 0; i < m; ++i) {
     source[i] = 1.0;
   }
@@ -73,6 +71,16 @@ int TestKernel()
 
   CopyfieldtoCPU(&f);
 
+  real maxerr = 0;
+  for(int i = 0; i < f.wsize; i++){
+    maxerr=fmax(fabs(f.dtwn[i] - 1.0), maxerr);
+  }
+  printf("\nOpenCL max error\t%f\n",maxerr);
+
+  if(maxerr > 1e-8)
+    retval += 1;
+
+  
   //Displayfield(&f);
 
   // save the dtwn pointer
@@ -94,12 +102,11 @@ int TestKernel()
 
   assert(f.dtwn != saveptr);
   
-  real maxerr = 0;
+  maxerr = 0;
   for(int i = 0; i < f.wsize; i++){
-    //printf("error=%f %f %f\n", f.dtwn[i]-saveptr[i], f.dtwn[i],saveptr[i]);
     maxerr=fmax(fabs(f.dtwn[i] - 1.0), maxerr);
   }
-  printf("\nmax error=%f\n",maxerr);
+  printf("\nC max error:      \t%f\n",maxerr);
 
   if(maxerr > 1e-8)
     retval += 1;
