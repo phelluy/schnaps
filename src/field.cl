@@ -918,32 +918,10 @@ void DGVolume(__constant int *param,     // interp param
 #endif
 }
 
-// Apply division by the mass matrix on one macrocell
-__kernel
-void DGMass(__constant int *param,      // interp param
-            __constant real *physnode,  // macrocell nodes
-            __global real *dtwn)        // time derivative
-{ 
-  int ipg = get_global_id(0);
-  int m = param[0];
-  int npg[3] = {param[1] + 1, param[2] + 1, param[3] + 1};
-  int nraf[3] = {param[4], param[5], param[6]};
-
-  //  int npgie = npg[0] * npg[1] * npg[2] * nraf[0] * nraf[1] * nraf[2];
-
-  //ref_pg_vol(param+1, ipg,xpgref,&wpg,NULL);
-  int ix = ipg % npg[0];
-  ipg /= npg[0];
-  int iy = ipg % npg[1];
-  ipg /= npg[1];
-  int iz = ipg % npg[2];
-  ipg /= npg[2];
-
-  int ncx = ipg % nraf[0];
-  ipg /= nraf[0];
-  int ncy = ipg % nraf[1];
-  ipg /= nraf[1];
-  int ncz = ipg;
+real mass_pg(__constant int *param,      // interp param
+	     __constant real *physnode,  // macrocell nodes
+	     int *nraf, int ix, int iy, int iz, int ncx, int ncy, int ncz)
+{
 
   real hx = 1.0 / (real) nraf[0];
   real hy = 1.0 / (real) nraf[1];
@@ -973,7 +951,39 @@ void DGMass(__constant int *param,      // interp param
     + dtau[2][0] * dtau[0][1] * dtau[1][2]
     - dtau[2][0] * dtau[0][2] * dtau[1][1];
 
-  real overmass = 1.0 / (wpg * det);
+  return (wpg * det);
+}
+
+// Apply division by the mass matrix on one macrocell
+__kernel
+void DGMass(__constant int *param,      // interp param
+            __constant real *physnode,  // macrocell nodes
+            __global real *dtwn)        // time derivative
+{ 
+  int ipg = get_global_id(0);
+  int m = param[0];
+  int npg[3] = {param[1] + 1, param[2] + 1, param[3] + 1};
+  int nraf[3] = {param[4], param[5], param[6]};
+
+  //  int npgie = npg[0] * npg[1] * npg[2] * nraf[0] * nraf[1] * nraf[2];
+
+  //ref_pg_vol(param+1, ipg,xpgref,&wpg,NULL);
+  int ix = ipg % npg[0];
+  ipg /= npg[0];
+  int iy = ipg % npg[1];
+  ipg /= npg[1];
+  int iz = ipg % npg[2];
+  ipg /= npg[2];
+
+  int ncx = ipg % nraf[0];
+  ipg /= nraf[0];
+  int ncy = ipg % nraf[1];
+  ipg /= nraf[1];
+  int ncz = ipg;
+
+  real overmass = 1.0 /  mass_pg(param, physnode, nraf,
+				 ix, iy, iz, ncx, ncy, ncz);
+
   int imem0 = m * get_global_id(0);
   __global real *dtwn0 = dtwn + imem0;
   for(int iv = 0; iv < m; iv++) {
