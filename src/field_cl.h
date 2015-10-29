@@ -32,6 +32,8 @@ void DGMacroCellInterface_CL(MacroFace *mface, field *f, cl_mem *wn_cl,
 			     cl_uint nwait, cl_event *wait, cl_event *done);
 void DGBoundary_CL(MacroFace *mface, field *f, cl_mem *wn_cl,
 		   cl_uint nwait, cl_event *wait, cl_event *done);
+void DGSource_CL(MacroCell *mcell, field *f, real tnow, cl_mem *wn_cl,
+		 cl_uint nwait, cl_event *wait, cl_event *done);
 void DGMass_CL(MacroCell *mcell, field *f,
 	       cl_uint nwait, cl_event *wait, cl_event *done);
 

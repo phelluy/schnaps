@@ -44,7 +44,8 @@ void Maxwell2DBoundaryFlux_uncentered(real *x, real t, real *wL,
 void Maxwell2DInitData(real *x, real *w);
 
 #pragma start_opencl
-void Maxwell2DSource(const real *x, const real t, const real *w, real *source);
+void Maxwell2DSource(const real *x, const real t, const real *w, real *source,
+		     int m);
 #pragma end_opencl
 
 

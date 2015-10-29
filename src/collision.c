@@ -7,10 +7,8 @@
 #include "skyline.h"
 #include "quantities_vp.h"
 
-
-
-void VlasovP_Lagrangian_NumFlux(real wL[],real wR[],real* vnorm,real* flux){
-  
+void VlasovP_Lagrangian_NumFlux(real wL[],real wR[],real* vnorm,real* flux)
+{
   for(int i=0;i<_INDEX_MAX_KIN+1;i++){
     int j=i%_DEG_V; // local connectivity put in function
     int nel=i/_DEG_V; // element num (TODO : function)
@@ -31,15 +29,12 @@ void VlasovP_Lagrangian_NumFlux(real wL[],real wR[],real* vnorm,real* flux){
   flux[_INDEX_VELOCITY]=0; // flux for u
   flux[_INDEX_PRESSURE]=0; // flux for p
   flux[_INDEX_TEMP]=0; // flux for e ou T
-
-};
-
+}
 
 //! \brief compute compute the source term of the collision
 //! model: electric force + true collisions
 void VlasovP_Lagrangian_Source(const real* x, const real t, const real* w, 
-			       real* source) {
-
+			       real* source, int m) {
   real E=w[_INDEX_EX]; // electric field
   real Md[_INDEX_MAX_KIN+1];
   real db[_INDEX_MAX_KIN+1];
@@ -47,8 +42,7 @@ void VlasovP_Lagrangian_Source(const real* x, const real t, const real* w,
     Md[iv]=0;
     db[iv]=0;
   }
-  
-  
+    
   for(int iv=0;iv<_INDEX_MAX_KIN+1;iv++){
     source[iv]=0;
   }
@@ -88,10 +82,6 @@ void VlasovP_Lagrangian_Source(const real* x, const real t, const real* w,
     source[iv]/=Md[iv];
     //printf("%f ",source[iv]);
   }
-  //printf("\n");
-  //assert(1==2);
-  
-
-};
+}
 
 

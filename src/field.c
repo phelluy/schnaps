@@ -1288,7 +1288,7 @@ void DGSource(MacroCell *mcell, field *f, real tnow, real *wmc, real *dtwmc)
     }
 
     real source[m];
-    f->model.Source(xphy, tnow, wL, source);
+    f->model.Source(xphy, tnow, wL, source, m);
       
     for(int iv = 0; iv < m; ++iv) {
       int imem = f->varindex(f->interp_param, ipg, iv);

@@ -427,7 +427,7 @@ void cemracs2014_TransBoundaryFlux(real *x, real t,
   vlaTransNumFlux2d(wL, wR, vnorm, flux);
 }
 
-void OneSource(const real *x, const real t, const real *w, real *source) 
+void OneSource(const real *x, const real t, const real *w, real *source, int m) 
 {
   for(int i = 0; i < m; ++i) {
     source[i] = 1.0;

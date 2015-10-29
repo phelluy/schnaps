@@ -1301,17 +1301,22 @@ int ref_ipg(__constant int *param, real *xref)
 #define _SOURCE_FUNC ZeroSource
 #endif
 
-void ZeroSource(const real *x, const real t, const real *w, real *source) {
-  for(int i = 0; i < _M; ++i) 
+void ZeroSource(const real *x, const real t, const real *w, real *source,
+		int m)
+{
+  for(int i = 0; i < m; ++i) 
     source[i] = 0.0;
 }
 
-void OneSource(const real *x, const real t, const real *w, real *source) {
-  for(int i = 0; i < _M; ++i) 
+void OneSource(const real *x, const real t, const real *w, real *source,
+	       int m)
+{
+  for(int i = 0; i < m; ++i) 
     source[i] = 1.0;
 }
 
-void Sourcex(const real *x, const real t, const real *w, real *source) {
+void Sourcex(const real *x, const real t, const real *w, real *source, int m)
+{
   for(int i = 0; i < _M; ++i) 
     source[i] = x[0];
 }
@@ -1379,7 +1384,7 @@ void DGSource(__constant int *param,     // interp param
 
   // Compute source using w and xref
   real source[_M];
-  _SOURCE_FUNC(xphy, tnow, w, source);
+  _SOURCE_FUNC(xphy, tnow, w, source, _M);
   
   // Add the source buffer to dtw
   int imemR0loc = ipgL * m;

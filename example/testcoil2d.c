@@ -15,14 +15,13 @@ void Coil2DImposedData(const real x[3],const real t,real w[])
   w[6] = 0;
 }
 
-void coil_pre_dtfield(void *f, real *w);
-
-void coil_pre_dtfield(void *fv, real *w){
+void coil_pre_dtfield(void *fv, real *w)
+{
   AccumulateParticles(fv,w);
 }
 
-
-void Coil2DSource(const real *x, const real t, const real *w, real *source)
+void Coil2DSource(const real *x, const real t, const real *w, real *source,
+		  int m)
 {
   // w: (Ex, Ey, Hz, Hz, \lambda, rho, Jx, Jy)
   
@@ -37,9 +36,6 @@ void Coil2DSource(const real *x, const real t, const real *w, real *source)
   source[5] = 0;
   source[6] = 0;
 }
-
-
-
 
 void Coil2DBoundaryFlux(real x[3], real t, real wL[], real *vnorm,
 			real *flux)

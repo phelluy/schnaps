@@ -6,26 +6,8 @@
 #include "geometry.h"
 #include "gyro.h"
 
-
-/* void Gyro_Lagrangian_NumFlux(real wL[],real wR[],real* vnorm,real* flux){ */
-  
-/*   for(int i=0;i<_MV;i++){ */
-/*     int j=i%_DEG_V; // local connectivity put in function */
-/*     int nel=i/_DEG_V; // element num (TODO : function) */
-
-/*     real vn = (nel*_DV + */
-/* 		 _DV* glop(_DEG_V,j))*vnorm[0]; */
-    
-/*     real vnp = vn>0 ? vn : 0; */
-/*     real vnm = vn-vnp; */
-
-/*     flux[i] = vnp * wL[i] + vnm * wR[i]; */
-/*   } */
-  
-/* } */
-
-//flux num gyro
-void Gyro_Lagrangian_NumFlux(real wL[],real wR[],real* vnorm,real* flux){
+void Gyro_Lagrangian_NumFlux(real wL[],real wR[],real* vnorm,real* flux)
+{
   real eps =0; //if not equal 0 => decentered flux
   /* real E_x =0; //firstly consider the electric field is const */
   /* real E_y =1; */
@@ -117,9 +99,7 @@ void GyroImposedData(const real x[3], const real t, real w[])
   w[_INDEX_EX]=0;//1;
   w[_INDEX_EY]=0;//1;
   w[_INDEX_EZ]=0;
-
 }
-
 
 real Gyro_ImposedKinetic_Data(const real x[3], const real t, real v)
 {
@@ -180,7 +160,8 @@ real GyroL2_Kinetic_error(field* f)
 
 //! \brief compute compute the source term of the collision
 //! model: electric force + true collisions
-void GyroSource(const real *x, const real t, const real *w, real *source)
+void GyroSource(const real *x, const real t, const real *w, real *source,
+		int m)
 {
   real Ez=w[_INDEX_EZ]; // electric field
   real Md[_MV];

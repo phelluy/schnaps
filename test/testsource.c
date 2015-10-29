@@ -6,8 +6,11 @@
 #include <math.h>
 #include "clutils.h"
 
-void testSource(const real *x, const real t, const real *w, real *source) 
+void testSource(const real *x, const real t, const real *w, real *source,
+		int m) 
 {
+  //int m = sourceparams[0];
+  printf("m: %d\n", m);
   for(int i = 0; i < m; ++i) {
     source[i] = 1.0;
   }
@@ -50,7 +53,7 @@ int TestKernel()
 
   Initfield(&f);
 
-  set_source_CL(&f, "Sourcex");
+  set_source_CL(&f, "OneSource");
   f.model.Source = testSource;
     
   for(int i = 0; i < f.wsize; i++){
@@ -62,6 +65,8 @@ int TestKernel()
   real tnow = 0;
   for(int ie = 0; ie < f.macromesh.nbelems; ++ie) {
     MacroCell *mcell = f.mcell + ie;
+    DGSource_CL(mcell, &f, tnow, f.wn_cl + ie, 0, NULL, NULL);
+    clFinish(f.cli.commandqueue);
     DGMass_CL(mcell, &f, 0, NULL, NULL);
     clFinish(f.cli.commandqueue);
   }
@@ -69,6 +74,7 @@ int TestKernel()
   CopyfieldtoCPU(&f);
 
   //Displayfield(&f);
+
   // save the dtwn pointer
   real *saveptr = f.dtwn;
 

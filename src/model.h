@@ -62,7 +62,8 @@ typedef struct Model {
   //! \param[in] t : time
   //! \param[in] w :  state
   //! \param[out] source : the source
-  void (*Source)(const real *x, const real t, const real *w, real *source);
+  void (*Source)(const real *x, const real t, const real *w, real *source,
+		 int m);
 
   //! \brief A pointer to the init data function
   // !\param[in] x : space position
@@ -212,6 +213,6 @@ void cemcracs2014_imposed_data(const real *x, const real t, real *w);
 void cemracs2014a_TransInitData(real *x, real *w);
 void cemcracs2014a_imposed_data(const real *x, const real t, real *w); 
 
-void OneSource(const real *x, const real t, const real *w, real *source);
+void OneSource(const real *x, const real t, const real *w, real *source, int m);
 
 #endif
