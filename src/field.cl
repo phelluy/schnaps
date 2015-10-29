@@ -918,7 +918,7 @@ void DGVolume(__constant int *param,     // interp param
 #endif
 }
 
-real mass_pg(__constant int *param,      // interp param
+real mass_pg(int *deg,
 	     __constant real *physnode,  // macrocell nodes
 	     int *nraf, int ix, int iy, int iz, int ncx, int ncy, int ncz)
 {
@@ -927,9 +927,9 @@ real mass_pg(__constant int *param,      // interp param
   real hy = 1.0 / (real) nraf[1];
   real hz = 1.0 / (real) nraf[2];
 
-  int offset[3] = {gauss_lob_offset[param[1]] + ix,
-		   gauss_lob_offset[param[2]] + iy,
-		   gauss_lob_offset[param[3]] + iz};
+  int offset[3] = {gauss_lob_offset[deg[0]] + ix,
+		   gauss_lob_offset[deg[1]] + iy,
+		   gauss_lob_offset[deg[2]] + iz};
 
   real x = hx * (ncx + gauss_lob_point[offset[0]]);
   real y = hy * (ncy + gauss_lob_point[offset[1]]);
@@ -951,7 +951,7 @@ real mass_pg(__constant int *param,      // interp param
     + dtau[2][0] * dtau[0][1] * dtau[1][2]
     - dtau[2][0] * dtau[0][2] * dtau[1][1];
 
-  return (wpg * det);
+  return wpg * det;
 }
 
 // Apply division by the mass matrix on one macrocell
@@ -962,7 +962,8 @@ void DGMass(__constant int *param,      // interp param
 { 
   int ipg = get_global_id(0);
   int m = param[0];
-  int npg[3] = {param[1] + 1, param[2] + 1, param[3] + 1};
+  int deg[3] = {param[1], param[2], param[3]};
+  int npg[3] = {deg[0] + 1, deg[1] + 1, deg[2] + 1};
   int nraf[3] = {param[4], param[5], param[6]};
 
   //  int npgie = npg[0] * npg[1] * npg[2] * nraf[0] * nraf[1] * nraf[2];
@@ -981,7 +982,7 @@ void DGMass(__constant int *param,      // interp param
   ipg /= nraf[1];
   int ncz = ipg;
 
-  real overmass = 1.0 /  mass_pg(param, physnode, nraf,
+  real overmass = 1.0 /  mass_pg(deg, physnode, nraf,
 				 ix, iy, iz, ncx, ncy, ncz);
 
   int imem0 = m * get_global_id(0);
