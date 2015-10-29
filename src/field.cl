@@ -941,7 +941,7 @@ real mass_pg(int *deg,
     * gauss_lob_weight[offset[2]];
 
   real dtau[3][3];
-  get_dtau(x, y, z, physnode, dtau); // 1296 mults
+  get_dtau(x, y, z, physnode, dtau);
 
   real det
     = dtau[0][0] * dtau[1][1] * dtau[2][2]
@@ -982,13 +982,12 @@ void DGMass(__constant int *param,      // interp param
   ipg /= nraf[1];
   int ncz = ipg;
 
-  real overmass = 1.0 /  mass_pg(deg, physnode, nraf,
-				 ix, iy, iz, ncx, ncy, ncz);
+  real mass =   mass_pg(deg, physnode, nraf, ix, iy, iz, ncx, ncy, ncz);
+  real overmass = 1.0 / mass;
 
   int imem0 = m * get_global_id(0);
   __global real *dtwn0 = dtwn + imem0;
   for(int iv = 0; iv < m; iv++) {
-    //int imem = iv + imem0;
     dtwn0[iv] *= overmass;
   }
 }
@@ -1367,7 +1366,7 @@ void DGSource(__constant int *param,     // interp param
   barrier(CLK_LOCAL_MEM_FENCE);
 
   // Compute Gauss point id where we compute the jacobian
-  const int ipgL = get_local_id(0);
+  const int ipg = get_local_id(0);
     
   // subcell id
   /* int icL[3]; */
@@ -1378,7 +1377,7 @@ void DGSource(__constant int *param,     // interp param
   // Compute xref
   real xref[3];
   real wpg;
-  ref_pg_vol(deg, nraf, ipgL, xref, &wpg);
+  ref_pg_vol(deg, nraf, ipg, xref, &wpg);
   
   // Compute xphy
   real xphy[3];
@@ -1387,7 +1386,7 @@ void DGSource(__constant int *param,     // interp param
   // copy w
   real w[_M];
   {
-    __local real *wnloc0 = wnloc + ipgL * m;
+    __local real *wnloc0 = wnloc + ipg * m;
     for(int iv = 0; iv < m; iv++) {
       w[iv] = wnloc0[iv];
     }
@@ -1398,7 +1397,7 @@ void DGSource(__constant int *param,     // interp param
   _SOURCE_FUNC(xphy, tnow, w, source, _M);
   
   // Add the source buffer to dtw
-  int imemR0loc = ipgL * m;
+  int imemR0loc = ipg * m;
   __local real *dtwnloc0 =  dtwnloc + imemR0loc;
   for(int iv = 0; iv < m; iv++) {
     dtwnloc0[iv] = source[iv];
@@ -1411,8 +1410,8 @@ void DGSource(__constant int *param,     // interp param
     int iread = get_local_id(0) + i * get_local_size(0);
     int iv = iread % m;
     int ipgloc = iread / m ;
-    int ipgL = ipgloc + icell * get_local_size(0);
-    int imem = VARINDEX(param, ipgL, iv);
+    int ipg = ipgloc + icell * get_local_size(0);
+    int imem = VARINDEX(param, ipg, iv);
     int imemloc = ipgloc * m + iv;
     dtwn[imem] += dtwnloc[imemloc];
   }
