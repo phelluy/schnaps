@@ -38,49 +38,12 @@ int TestKernelFlux()
   Detect2DMacroMesh(&f.macromesh);
   assert(f.macromesh.is2d);
   BuildConnectivity(&f.macromesh);
-
-  //PrintMacroMesh(&f.macromesh);
-
-  //AffineMapMacroMesh(&f.macromesh);
  
   Initfield(&f);
   CopyfieldtoGPU(&f);
   
-  /* // set dtwn to 1 for testing */
-  
-  /* void* chkptr; */
-  /* cl_int status; */
-  /* chkptr=clEnqueueMapBuffer(f.cli.commandqueue, */
-  /*       		    f.dtwn_cl,  // buffer to copy from */
-  /*       		    CL_TRUE,  // block until the buffer is available */
-  /*       		     CL_MAP_WRITE,  */
-  /*       		    0, // offset */
-  /*       		    sizeof(real)*(f.wsize),  // buffersize */
-  /*       		    0,NULL,NULL, // events management */
-  /*       		    &status); */
-  /*   assert(status == CL_SUCCESS); */
-  /*   assert(chkptr == f.dtwn); */
-
-  /* for(int i=0;i<f.wsize;i++){ */
-  /*   f.dtwn[i]=1; */
-  /* } */
-
-  /* status=clEnqueueUnmapMemObject (f.cli.commandqueue, */
-  /*       			  f.dtwn_cl, */
-  /*       			  f.dtwn, */
-  /*   			     0,NULL,NULL); */
-
-  /* assert(status == CL_SUCCESS); */
-  /* status=clFinish(f.cli.commandqueue); */
-  /* assert(status == CL_SUCCESS); */
-
   clFinish(f.cli.commandqueue);
   for(int ie = 0; ie < f.macromesh.nbelems; ++ie) {
-    // printf("\nie: %d\n", ie);
-
-    /* update_physnode_cl(&f, ie, f.physnode_cl, f.physnode, NULL, */
-    /* 		       0, NULL, NULL); */
-    /* clFinish(f.cli.commandqueue); */
     
     DGFlux_CL(&f, 0, ie, f.wn_cl + ie, 0, NULL, NULL);
     clFinish(f.cli.commandqueue);

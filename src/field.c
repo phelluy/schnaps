@@ -1266,7 +1266,7 @@ void DGSource(MacroCell *mcell, field *f, real tnow, real *wmc, real *dtwmc)
   if (f->model.Source == NULL) {
     return;
   }
-
+  
   const int m = f->model.m;
 
   for(int ipg = 0; ipg < mcell->npg; ipg++) {

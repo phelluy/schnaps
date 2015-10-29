@@ -973,12 +973,12 @@ void DGMass(__constant int *param,      // interp param
     + dtau[2][0] * dtau[0][1] * dtau[1][2]
     - dtau[2][0] * dtau[0][2] * dtau[1][1];
 
-  real overwpgget = 1.0 / (wpg * det);
+  real overmass = 1.0 / (wpg * det);
   int imem0 = m * get_global_id(0);
   __global real *dtwn0 = dtwn + imem0;
   for(int iv = 0; iv < m; iv++) {
     //int imem = iv + imem0;
-    dtwn0[iv] *= overwpgget; // m mults, m reads
+    dtwn0[iv] *= overmass;
   }
 }
 
@@ -1311,6 +1311,11 @@ void OneSource(const real *x, const real t, const real *w, real *source) {
     source[i] = 1.0;
 }
 
+void Sourcex(const real *x, const real t, const real *w, real *source) {
+  for(int i = 0; i < _M; ++i) 
+    source[i] = x[0];
+}
+
 // Compute the source terms inside  one macrocell
 __kernel
 void DGSource(__constant int *param,     // interp param
@@ -1356,13 +1361,14 @@ void DGSource(__constant int *param,     // interp param
 
   // Compute xref
   real xref[3];
-  real wpg; // FIXME: unused, so remove?
+  real wpg;
   ref_pg_vol(deg, nraf, ipgL, xref, &wpg);
   
   // Compute xphy
   real xphy[3];
   Ref2Phy_only(physnode, xref, xphy); 
   
+  // copy w
   real w[_M];
   {
     __local real *wnloc0 = wnloc + ipgL * m;
@@ -1371,16 +1377,16 @@ void DGSource(__constant int *param,     // interp param
     }
   }
 
-  // Compute source using w and xref, putting the result in source
+  // Compute source using w and xref
   real source[_M];
-
   _SOURCE_FUNC(xphy, tnow, w, source);
   
   // Add the source buffer to dtw
   int imemR0loc = ipgL * m;
   __local real *dtwnloc0 =  dtwnloc + imemR0loc;
-  for(int iv = 0; iv < m; iv++)
+  for(int iv = 0; iv < m; iv++) {
     dtwnloc0[iv] = source[iv];
+  }
 
   barrier(CLK_LOCAL_MEM_FENCE);
 
