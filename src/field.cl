@@ -1316,6 +1316,7 @@ void Sourcex(const real *x, const real t, const real *w, real *source, int m)
 __kernel
 void DGSource(__constant int *param,     // interp param
 	      __constant real *physnode, // macrocell nodes
+	      __constant real *mass,     // collocation point weights
 	      const real tnow,           // the current time
               __global real *wn,         // field values
 	      __global real *dtwn,       // time derivative
@@ -1349,12 +1350,6 @@ void DGSource(__constant int *param,     // interp param
   // Compute Gauss point id where we compute the jacobian
   int ipg = get_local_id(0);
     
-  // subcell id
-  /* int icL[3]; */
-  /* icL[0] = icell % nraf[0]; */
-  /* icL[1] = (icell / nraf[0]) % nraf[1]; */
-  /* icL[2]= icell / nraf[0] / nraf[1]; */
-
   // Compute xref
   real xref[3];
   real wpg;
@@ -1364,7 +1359,7 @@ void DGSource(__constant int *param,     // interp param
   real xphy[3];
   Ref2Phy_only(physnode, xref, xphy); 
   
-  // copy w
+  // Copy w
   real w[_M];
   {
     __local real *wnloc0 = wnloc + ipg * m;
@@ -1377,32 +1372,20 @@ void DGSource(__constant int *param,     // interp param
   real source[_M];
   _SOURCE_FUNC(xphy, tnow, w, source, _M);
   
-  int ix = ipg % npg[0];
-  ipg /= npg[0];
-  int iy = ipg % npg[1];
-  ipg /= npg[1];
-  int iz = ipg % npg[2];
-  ipg /= npg[2];
-
-  int ncx = ipg % nraf[0];
-  ipg /= nraf[0];
-  int ncy = ipg % nraf[1];
-  ipg /= nraf[1];
-  int ncz = ipg;
-
-  real mass = mass_pg(deg, physnode, nraf, ix, iy, iz, ncx, ncy, ncz);
+  ipg = get_local_id(0);
+  //real massipg = mass[ipg];
 
   // Add the source buffer to dtw
-  ipg = get_local_id(0);
+
   int imemR0loc = ipg * m;
   __local real *dtwnloc0 =  dtwnloc + imemR0loc;
   for(int iv = 0; iv < m; iv++) {
-    dtwnloc0[iv] = source[iv];// * mass;
+    dtwnloc0[iv] = source[iv];
   }
 
   barrier(CLK_LOCAL_MEM_FENCE);
 
-  // Postfetch: m writes
+  // Postfetch
   for(int i = 0; i < m; ++i){
     int iread = get_local_id(0) + i * get_local_size(0);
     int iv = iread % m;
@@ -1410,7 +1393,7 @@ void DGSource(__constant int *param,     // interp param
     int ipg = ipgloc + icell * get_local_size(0);
     int imem = VARINDEX(param, ipg, iv);
     int imemloc = ipgloc * m + iv;
-    dtwn[imem] += dtwnloc[imemloc];
+    dtwn[imem] += dtwnloc[imemloc] * mass[ipg];
   }
 }
 

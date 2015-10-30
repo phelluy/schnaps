@@ -65,17 +65,18 @@ int TestKernel()
     MacroCell *mcell = f.mcell + ie;
     DGSource_CL(mcell, &f, tnow, f.wn_cl + ie, 0, NULL, NULL);
     clFinish(f.cli.commandqueue);
-    //DGMass_CL(mcell, &f, 0, NULL, NULL);
-    //clFinish(f.cli.commandqueue);
+    DGMass_CL(mcell, &f, 0, NULL, NULL);
+    clFinish(f.cli.commandqueue);
   }
 
   CopyfieldtoCPU(&f);
 
   real maxerr = 0;
-  for(int i = 0; i < f.wsize; i++){
-    maxerr=fmax(fabs(f.dtwn[i] - 1.0), maxerr);
+  for(int i = 0; i < f.wsize; i++) {
+    real err = fabs(f.dtwn[i] - 1.0);
+    maxerr = fmax(err, maxerr);
   }
-  printf("\nOpenCL max error:\t%f\n",maxerr);
+  printf("\nOpenCL max error:\t%f\n", maxerr);
 
   if(maxerr > 1e-8)
     retval += 1;
@@ -98,12 +99,11 @@ int TestKernel()
     DGSource(mcell, &f, tnow, wmc, dtwnmc);
     DGMass(mcell, &f, dtwnmc);
   }
-
-
   
   maxerr = 0;
-  for(int i = 0; i < f.wsize; i++){
-    maxerr=fmax(fabs(f.dtwn[i] - 1.0), maxerr);
+  for(int i = 0; i < f.wsize; i++) {
+    real err = fabs(f.dtwn[i] - 1.0);
+    maxerr = fmax(err, maxerr);
   }
   printf("\nC max error:      \t%f\n",maxerr);
 
@@ -113,7 +113,8 @@ int TestKernel()
   assert(f.dtwn != saveptr);
   maxerr = 0;
   for(int i = 0; i < f.wsize; i++){
-    maxerr=fmax(fabs(f.dtwn[i] - saveptr[i]), maxerr);
+    real err = fabs(f.dtwn[i] - saveptr[i]);
+    maxerr = fmax(err, maxerr);
   }
   printf("\nmax difference:      \t%f\n",maxerr);
 

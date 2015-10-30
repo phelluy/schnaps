@@ -671,6 +671,13 @@ void init_DGSource_CL(MacroCell *mcell, field *f,
   assert(status >= CL_SUCCESS);
 
   status = clSetKernelArg(kernel,
+                          argnum++,
+                          sizeof(cl_mem),
+			  &mcell->mass_cl);
+  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status >= CL_SUCCESS);
+  
+  status = clSetKernelArg(kernel,
   			  argnum++,
   			  sizeof(real),
   			  &tnow);
@@ -827,7 +834,7 @@ void dtfield_CL(field *f, real tnow, cl_mem *wn_cl,
     fluxdone = f->clv_flux0;
   }
   
-  cl_event *dtfielddone = f->use_source_cl ? f->clv_source : f->clv_mass;
+  cl_event *dtfielddone = f->clv_mass;
   
   // The kernels for the intra-macrocell computations can be launched
   // in parallel between macrocells.
@@ -856,17 +863,17 @@ void dtfield_CL(field *f, real tnow, cl_mem *wn_cl,
   		fluxdone + ie,
   		f->clv_volume + ie);
 
-    DGMass_CL(mcell, f,
-  	      1,
-  	      f->clv_volume + ie,
-  	      f->clv_mass + ie);
-
     if(f->use_source_cl) {
       DGSource_CL(mcell, f, tnow, wn_cl + ie, 
 		  1,
-		  f->clv_mass + ie,
+		  f->clv_volume + ie,
 		  f->clv_source + ie);
     }
+    
+    DGMass_CL(mcell, f,
+  	      1,
+	      f->use_source_cl ? f->clv_source + ie : f->clv_volume + ie,
+  	      f->clv_mass + ie);
   }
 
   clWaitForEvents(nmacro, dtfielddone);
