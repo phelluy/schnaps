@@ -384,6 +384,13 @@ void init_DGMass_CL(MacroCell *mcell, field *f)
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 
+  status = clSetKernelArg(f->dgmass,
+                          argnum++,
+                          sizeof(cl_mem),
+			  &mcell->mass_cl);
+  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status >= CL_SUCCESS);
+
   status = clSetKernelArg(kernel,
                           argnum++,
                           sizeof(cl_mem),

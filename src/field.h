@@ -51,6 +51,9 @@ typedef struct MacroCell {
   // OpenCL copy of geometry data
   cl_mem physnode_cl;
 
+  // OpenCL copy of the the mass for each collocation point in the macrocell
+  cl_mem mass_cl;
+  
   // The macrocell's field.
   cl_mem wn_cl;
 

@@ -335,6 +335,31 @@ void init_field_macrocells_cl(field *f)
     assert(status >= CL_SUCCESS);
 
     f->dtwn_cl[ie] = mcell->dtwn_cl;
+
+    const size_t buf_size = sizeof(real) * mcell->npg;
+    mcell->mass_cl = clCreateBuffer(f->cli.context,
+				    CL_MEM_READ_ONLY,
+				    buf_size,
+				    NULL,
+				    &status);
+    if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+    assert(status >= CL_SUCCESS);
+
+    status = clEnqueueWriteBuffer(f->cli.commandqueue,
+				  mcell->mass_cl,
+				  CL_TRUE,
+				  0,
+				  mcell->npg * sizeof(real),
+				  mcell->mass,
+				  0, NULL, NULL);
+
+    if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+    assert(status >= CL_SUCCESS);
+
+    status = clFinish(f->cli.commandqueue);
+    if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+    assert(status >= CL_SUCCESS);
+
   }
 }
 
@@ -1493,178 +1518,6 @@ void dtfield(field *f, real tnow, real *w, real *dtw) {
 
   if(f->post_dtfield != NULL) // FIXME: rename to after dtfield
     f->post_dtfield(f, w);
-}
-
-// Apply the Discontinuous Galerkin approximation for computing the
-// time derivative of the field
-void dtfieldSlow(field* f) 
-{
-  // Interpolation params
-  // Warning: this is ugly, but the last parameter is used for
-  // computing the volume GLOP index from the face GLOP index...
-  // Ugly too: the first parameter is not used by all
-  // utilities. we have sometimes to jump over : pass param + 1
-  // instead of param...
-
-  //int param[8] = {f->model.m, _DEGX, _DEGY, _DEGZ, _RAFX, _RAFY, _RAFZ, 0};
-
-  // init to zero the time derivative
-  int sizew = 0;
-  //#pragma omp parallel for
-  for(int ie = 0; ie < f->macromesh.nbelems; ie++) {
-    MacroCell *mcell = f->mcell + ie;
-    for(int ipg = 0; ipg < NPG(f->interp_param + 1); ipg++) {
-      for(int iv = 0; iv < f->model.m; iv++) {
-	int imem = f->varindex(f->interp_param, ipg, iv) + mcell->woffset;
-	f->dtwn[imem] = 0;
-        sizew++;
-      }
-    }
-  }
-  assert(sizew == f->macromesh.nbelems * f->model.m * NPG(f->interp_param + 1));
-
-  // assembly of the subrface terms loop on the elements
-  for (int ie = 0; ie < f->macromesh.nbelems; ie++) {
-    MacroCell *mcell = f->mcell + ie;
-
-    // loop on the 6 faces
-    // or four faces for 2d computations
-    int nbfa = 6;
-    if (f->macromesh.is2d) nbfa = 4;
-    for(int ifa = 0; ifa < nbfa; ifa++) {
-      // get the right elem or the boundary id
-      int ieR = f->macromesh.elem2elem[6*ie+ifa];
-
-      // Loop on the glops (numerical integration) of the face ifa
-      for(int ipgf = 0; ipgf < NPGF(f->interp_param + 1, ifa); ipgf++) {
-  	real xpgref[3], xpgref_in[3], wpg;
-  	//real xpgref2[3], wpg2;
-  	// get the coordinates of the Gauss point
-	// and coordinates of a point slightly inside the
-	// opposite element in xref_in
-  	ref_pg_face(f->interp_param + 1, ifa, ipgf, xpgref, &wpg, xpgref_in);
-
-  	// recover the volume gauss point from
-  	// the face index
-  	int ipg = f->interp_param[7];
-  	// get the left value of w at the gauss point
-  	real wL[f->model.m], wR[f->model.m];
-  	for(int iv = 0; iv < f->model.m; iv++) {
-  	  int imem = f->varindex(f->interp_param, ipg, iv) + mcell->woffset;
-  	  wL[iv] = f->wn[imem];
-  	}
-  	// the basis functions is also the gauss point index
-  	int ib = ipg;
-        int ipgL = ipg;
-  	// normal vector at gauss point ipg
-  	real dtau[3][3], codtau[3][3], xpg[3];
-  	real vnds[3];
-  	Ref2Phy(mcell->physnode,
-  		xpgref,
-  		NULL, ifa, // dpsiref, ifa
-  		xpg, dtau,
-  		codtau, NULL, vnds); // codtau, dpsi, vnds
-  	real flux[f->model.m];
-
-	if (ieR >=0) {  // the right element exists
-	  MacroCell *mcellR = f->mcell + ieR;
-	  
-	  // find the corresponding point in the right elem
-	  real xpg_in[3];
-	  Ref2Phy(mcell->physnode,
-		  xpgref_in,
-		  NULL, ifa, // dpsiref, ifa
-		  xpg_in, dtau,
-		  codtau, NULL, vnds); // codtau, dpsi, vnds
-  	  real xref[3];
-	  Phy2Ref(mcellR->physnode, xpg_in, xref);
-  	  int ipgR = ref_ipg(f->interp_param + 1, xref);
-	  real xpgR[3], xrefR[3], wpgR;
-	  ref_pg_vol(f->interp_param + 1, ipgR, xrefR, &wpgR, NULL);
-	  Ref2Phy(mcellR->physnode,
-		  xrefR,
-		  NULL, -1, // dphiref, ifa
-		  xpgR, NULL,
-		  NULL, NULL, NULL); // codtau, dphi, vnds
-	  assert(Dist(xpgR, xpg) < 1e-10);
-  	  for(int iv = 0; iv < f->model.m; iv++) {
-  	    int imem = f->varindex(f->interp_param, ipgR, iv)
-	      + mcellR->woffset;
-  	    wR[iv] = f->wn[imem];
-  	  }
-  	  // int_dL F(wL, wR, grad phi_ib )
-  	  f->model.NumFlux(wL, wR, vnds, flux);
-
-  	}
-  	else { //the right element does not exist
-  	  f->model.BoundaryFlux(xpg, f->tnow, wL, vnds, flux);
-  	}
-  	for(int iv = 0; iv < f->model.m; iv++) {
-  	  int imem = f->varindex(f->interp_param, ib, iv)
-	    + mcell->woffset;
-  	  f->dtwn[imem] -= flux[iv]*wpg;
-  	}
-
-      }
-
-    }
-  }
-
-  // Assembly of the volume terms loop on the elements
-  for (int ie = 0; ie < f->macromesh.nbelems; ie++) {
-    MacroCell *mcell = f->mcell + ie;
-    
-    // Mass matrix
-    real masspg[NPG(f->interp_param + 1)];
-    // Loop on the glops (for numerical integration)
-    for(int ipg = 0; ipg < NPG(f->interp_param + 1); ipg++) {
-      real xpgref[3], wpg;
-      // Get the coordinates of the Gauss point
-      ref_pg_vol(f->interp_param + 1, ipg, xpgref, &wpg, NULL);
-
-      // Get the value of w at the gauss point
-      real w[f->model.m];
-      for(int iv = 0; iv < f->model.m; iv++) {
-	int imem = f->varindex(f->interp_param, ipg, iv) + mcell->woffset;
-	w[iv] = f->wn[imem];
-      }
-
-      // Loop on the basis functions
-      for(int ib = 0; ib < NPG(f->interp_param + 1); ib++) {
-	// gradient of psi_ib at gauss point ipg
-	real dpsiref[3], dpsi[3];
-	real dtau[3][3], codtau[3][3];//, xpg[3];
-	grad_psi_pg(f->interp_param + 1, ib, ipg, dpsiref);
-	Ref2Phy(mcell->physnode, // phys. nodes
-		xpgref, // xref
-		dpsiref, -1, // dpsiref, ifa
-		NULL, dtau, // xphy, dtau
-		codtau, dpsi, NULL); // codtau, dpsi, vnds
-	// remember the diagonal mass term
-	if (ib == ipg) {
-	  real det = dot_product(dtau[0], codtau[0]);
-	  masspg[ipg] = wpg * det;
-	}
-	// int_L F(w, w, grad phi_ib )
-	real flux[f->model.m];
-	f->model.NumFlux(w, w, dpsi, flux);
-
-	for(int iv = 0; iv < f->model.m; iv++) {
-	  int imem = f->varindex(f->interp_param, ib, iv) + mcell->woffset;
-	  f->dtwn[imem] += flux[iv] * wpg;
-	}
-      }
-    }
-
-    for(int ipg = 0; ipg < NPG(f->interp_param + 1); ipg++) {
-      // apply the inverse of the diagonal mass matrix
-      for(int iv = 0; iv < f->model.m; iv++) {
-	int imem = f->varindex(f->interp_param, ipg, iv) + mcell->woffset;
-	f->dtwn[imem] /= masspg[ipg];
-      }
-    }
-
-  }
 }
 
 // An out-of-place RK step

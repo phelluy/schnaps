@@ -958,32 +958,13 @@ real mass_pg(const int *deg,
 __kernel
 void DGMass(__constant int *param,      // interp param
             __constant real *physnode,  // macrocell nodes
+	    __constant real *mass,  // macrocell masses
             __global real *dtwn)        // time derivative
 { 
   int ipg = get_global_id(0);
   int m = param[0];
-  int deg[3] = {param[1], param[2], param[3]};
-  int npg[3] = {deg[0] + 1, deg[1] + 1, deg[2] + 1};
-  int nraf[3] = {param[4], param[5], param[6]};
 
-  //  int npgie = npg[0] * npg[1] * npg[2] * nraf[0] * nraf[1] * nraf[2];
-
-  //ref_pg_vol(param+1, ipg,xpgref,&wpg,NULL);
-  int ix = ipg % npg[0];
-  ipg /= npg[0];
-  int iy = ipg % npg[1];
-  ipg /= npg[1];
-  int iz = ipg % npg[2];
-  ipg /= npg[2];
-
-  int ncx = ipg % nraf[0];
-  ipg /= nraf[0];
-  int ncy = ipg % nraf[1];
-  ipg /= nraf[1];
-  int ncz = ipg;
-
-  real mass = mass_pg(deg, physnode, nraf, ix, iy, iz, ncx, ncy, ncz);
-  real overmass = 1.0 / mass;
+  real overmass = 1.0 / mass[ipg];
 
   int imem0 = m * get_global_id(0);
   __global real *dtwn0 = dtwn + imem0;
