@@ -1378,7 +1378,7 @@ void DGSource(__constant int *param,     // interp param
   real xref[3];
   real wpg;
   ref_pg_vol(deg, nraf, ipg, xref, &wpg);
-  
+
   // Compute xphy
   real xphy[3];
   Ref2Phy_only(physnode, xref, xphy); 
@@ -1395,7 +1395,7 @@ void DGSource(__constant int *param,     // interp param
   // Compute source using w and xref
   real source[_M];
   _SOURCE_FUNC(xphy, tnow, w, source, _M);
-
+  
   int ix = ipg % npg[0];
   ipg /= npg[0];
   int iy = ipg % npg[1];
@@ -1416,7 +1416,7 @@ void DGSource(__constant int *param,     // interp param
   int imemR0loc = ipg * m;
   __local real *dtwnloc0 =  dtwnloc + imemR0loc;
   for(int iv = 0; iv < m; iv++) {
-    dtwnloc0[iv] = source[iv] * mass;
+    dtwnloc0[iv] = source[iv];// * mass;
   }
 
   barrier(CLK_LOCAL_MEM_FENCE);
