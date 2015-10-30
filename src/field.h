@@ -24,19 +24,37 @@ typedef struct MacroFace {
 //! and a cells range.  To be passed to a thread
 //! as a void* pointer.
 typedef struct MacroCell {
+  // Index of the macrocell
   int ie;
+
+  // Local copy of physnode for the macrocell
   real physnode[20][3];
 
+  // Resolution parameters
   int deg[3];
   int raf[3];
 
+  // Number of real values in the macrocell
   int nreal;
+
+  // Number of colocation points in the macrocell
   int npg;
+
+  // Offset to the macrocell's buffer relative to the start of the
+  // field's buffer (in numbers of reals).
   int woffset;
+
+  // Buffer of mass values for each collocation point in the macrocell.
+  real *mass;
   
 #ifdef _WITH_OPENCL
+  // OpenCL copy of geometry data
   cl_mem physnode_cl;
+
+  // The macrocell's field.
   cl_mem wn_cl;
+
+  // The macrocell's dtwn.
   cl_mem dtwn_cl;
 #endif
 } MacroCell;

@@ -410,6 +410,21 @@ void init_field_macrofaces(field *f)
   }
 }
 
+void setMacroMellmass(MacroCell *mcell, field *f)
+{
+  for(int ipg = 0; ipg < mcell->npg; ipg++) {
+    real dtau[3][3], codtau[3][3], xpgref[3], xphy[3], wpg;
+    ref_pg_vol(f->interp_param + 1, ipg, xpgref, &wpg, NULL);
+    Ref2Phy(mcell->physnode, // phys. nodes
+	    xpgref, // xref
+	    NULL, -1, // dpsiref, ifa
+	    xphy, dtau, // xphy, dtau
+	    codtau, NULL, NULL); // codtau, dpsi, vnds
+    real det = dot_product(dtau[0], codtau[0]);
+    mcell->mass[ipg] = wpg * det;
+  }
+}
+
 void init_field_macrocells(field *f)
 {
   // Allocate and set MacroCells
@@ -446,7 +461,10 @@ void init_field_macrocells(field *f)
     mcell->nreal = f->model.m * mcell->npg;
 
     mcell->woffset = wcount;
-    
+
+    mcell->mass = calloc(mcell->npg, sizeof(real));    
+    setMacroMellmass(mcell, f);
+      
     wcount += mcell->nreal;
   }
 
@@ -1240,19 +1258,9 @@ void DGMacroCellInterface(MacroFace *mface, field *f,
 // Apply division by the mass matrix
 void DGMass(MacroCell *mcell, field *f, real *dtwmc) 
 {
-  int m = f->model.m;
-
+  const int m = f->model.m;
   for(int ipg = 0; ipg < mcell->npg; ipg++) {
-    real dtau[3][3], codtau[3][3], xpgref[3], xphy[3], wpg;
-    ref_pg_vol(f->interp_param + 1, ipg, xpgref, &wpg, NULL);
-    Ref2Phy(mcell->physnode, // phys. nodes
-	    xpgref, // xref
-	    NULL, -1, // dpsiref, ifa
-	    xphy, dtau, // xphy, dtau
-	    codtau, NULL, NULL); // codtau, dpsi, vnds
-    real det = dot_product(dtau[0], codtau[0]);
-
-    real overmass = 1.0 / (wpg * det);
+    const real overmass = 1.0 / mcell->mass[ipg];
     for(int iv = 0; iv < m; iv++) {
       int imem = f->varindex(f->interp_param, ipg, iv);
       dtwmc[imem] *= overmass;
@@ -1270,17 +1278,17 @@ void DGSource(MacroCell *mcell, field *f, real tnow, real *wmc, real *dtwmc)
   const int m = f->model.m;
 
   for(int ipg = 0; ipg < mcell->npg; ipg++) {
-    real dtau[3][3], codtau[3][3], xpgref[3], xphy[3], wpg;
+    const real mass = mcell->mass[ipg];
+
+    real wpg;
+    real xpgref[3], xphy[3];
     ref_pg_vol(f->interp_param + 1, ipg, xpgref, &wpg, NULL);
     Ref2Phy(mcell->physnode, // phys. nodes
 	    xpgref, // xref
 	    NULL, -1, // dpsiref, ifa
-	    xphy, dtau, // xphy, dtau
-	    codtau, NULL, NULL); // codtau, dpsi, vnds
-    real det = dot_product(dtau[0], codtau[0]);
-    real mass = wpg * det;
+	    xphy, NULL, // xphy, dtau
+	    NULL, NULL, NULL); // codtau, dpsi, vnds
 
-    // TODO: this copy is not necessary, as we are already contiguous.
     real wL[m];
     for(int iv = 0; iv < m; ++iv){
       int imem = f->varindex(f->interp_param, ipg, iv);
