@@ -648,9 +648,9 @@ void Plotfield(int typplot, int compare, field* f, char *fieldname,
   for(int i = 0; i < 3 * 64; ++i)
     hexa64ref[i] /= 3.0;
 
-  int *elem2nodes = f->macromesh.elem2node;
-  real *node = f->macromesh.node;
-
+  //int *elem2nodes = f->macromesh.elem2node;
+  //real *node = f->macromesh.node;
+  
   FILE * gmshfile;
   gmshfile = fopen(filename, "w" );
 
@@ -854,7 +854,7 @@ void Plotfield(int typplot, int compare, field* f, char *fieldname,
 // Compute inter-subcell fluxes
 void DGSubCellInterface(MacroCell *mcell, field *f, real *wmc, real *dtwmc) 
 {
-  int ie = mcell->ie;
+  //int ie = mcell->ie;
  
   const int nraf[3] = {mcell->raf[0], mcell->raf[1], mcell->raf[2]};
   const int deg[3] = {mcell->deg[0], mcell->deg[1], mcell->deg[2]};
@@ -1037,7 +1037,7 @@ void DGMacroCellInterfaceSlow(MacroCell *mcell, field *f, real *w, real *dtw)
 
       // the basis functions is also the gauss point index
       int ib = ipg;
-      int ipgL = ipg;
+      //int ipgL = ipg;
       // normal vector at gauss point ipg
       real dtau[3][3], codtau[3][3], xpg[3];
       real vnds[3];
@@ -1103,9 +1103,9 @@ void DGMacroCellBoundary(MacroFace *mface, field *f, real *wmc, real *dtwmc)
   MacroMesh *msh = &f->macromesh;
   const unsigned int m = f->model.m;
 
-  int iparam[8];
-  for(int ip = 0; ip < 8; ip++)
-    iparam[ip] = f->interp_param[ip];
+  /* int iparam[8]; */
+  /* for(int ip = 0; ip < 8; ip++) */
+  /*   iparam[ip] = f->interp_param[ip]; */
 
   // Assembly of the surface terms loop on the macrocells faces
 
@@ -1114,7 +1114,7 @@ void DGMacroCellBoundary(MacroFace *mface, field *f, real *wmc, real *dtwmc)
   MacroCell *mcellL = f->mcell + ieL;
   int locfaL = msh->face2elem[4 * ifa + 1];
 
-  int ieR = msh->face2elem[4 * ifa + 2];
+  //int ieR = msh->face2elem[4 * ifa + 2];
 
   // Loop over the points on a single macro cell interface.
 #ifdef _OPENMP
@@ -1167,16 +1167,16 @@ void DGMacroCellBoundary(MacroFace *mface, field *f, real *wmc, real *dtwmc)
 void DGMacroCellInterface(MacroFace *mface, field *f,
 			  real *wmcL, real *wmcR, real *dtwmcL, real *dtwmcR) 
 {
-  MacroMesh *msh = &f->macromesh;
+  //MacroMesh *msh = &f->macromesh;
   const unsigned int m = f->model.m;
 
-  int iparam[8];
-  for(int ip = 0; ip < 8; ip++)
-    iparam[ip] = f->interp_param[ip];
+  /* int iparam[8]; */
+  /* for(int ip = 0; ip < 8; ip++) */
+  /*   iparam[ip] = f->interp_param[ip]; */
 
   // Assembly of the surface terms loop on the macrocells faces
 
-  int ifa = mface->ifa;
+  //int ifa = mface->ifa;
   int ieL = mface->ieL;
   MacroCell *mcellL = f->mcell + ieL;
   int locfaL = mface->locfaL;
@@ -1423,7 +1423,7 @@ void DGVolume(MacroCell *mcell, field *f, real *wmc, real *dtwmc)
 
 		  int ipgR = offsetL+q[0]+npg[0]*(q[1]+npg[1]*q[2]);
 		  for(int iv = 0; iv < m; iv++) {
-		    int imemR = f->varindex(f_interp_param, ipgR, iv);
+		    //int imemR = f->varindex(f_interp_param, ipgR, iv);
 		    int temp = m * (ipgR - offsetL) + iv;  
 		    //assert(imemR == imems[temp]);
 		    dtwmc[imems[temp]] += flux[iv] * wpgL;
@@ -1721,7 +1721,7 @@ void InterpField(field *f, int ie, real *xref, real *w){
   MacroCell *mcell = f->mcell + ie;
 
   const int nraf[3] = {mcell->raf[0], mcell->raf[1], mcell->raf[2]};
-  const int deg[3] = {mcell->deg[0], mcell->deg[1], mcell->deg[2]};
+  //const int deg[3] = {mcell->deg[0], mcell->deg[1], mcell->deg[2]};
 
   for(int iv = 0; iv < f->model.m; iv++)
     w[iv] = 0;

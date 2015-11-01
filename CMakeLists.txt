@@ -1,6 +1,8 @@
 set(CMAKE_LEGACY_CYGWIN_WIN32 0) # Remove when CMake >= 2.8.4 is required
 cmake_minimum_required(VERSION 2.8)
 
+#set(CMAKE_VERBOSE_MAKEFILE ON)
+
 project(schnaps)
 
 #set(CMAKE_C_COMPILER "tau_cc.sh")
@@ -10,7 +12,9 @@ SET(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 
 #set(CMAKE_C_FLAGS "-std=c99 -D_REENTRANT -O3 -g -D_POSIX_C_SOURCE=200112L")
 #set(CMAKE_C_FLAGS "-std=gnu99 -D_REENTRANT -O3 -g")
-set(CMAKE_C_FLAGS " -std=c99 -D_REENTRANT -O3 -g")
+set(CMAKE_C_FLAGS " -std=c99 -D_REENTRANT -O3")
+
+
 #set(CMAKE_C_FLAGS " -std=c99 -D_REENTRANT -O3")
 
 IF(DEFINED _CL_PLATFORM)

@@ -187,6 +187,7 @@ void TestTransImposedData(const real* x, const real t, real* w);
 void TestTransImposedData2d(const real* x, const real t, real* w);
 
 //! Parameters used for computing the velocity for the Vlasov equation.
+// FIXME: pass all of this instead of making it global.
 static int m;
 static int vlasov_mx;
 static int vlasov_my;
