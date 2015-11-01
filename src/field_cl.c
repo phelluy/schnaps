@@ -511,10 +511,6 @@ void DGFlux_CL(field *f, int dim0, int ie, cl_mem *wn_cl,
     size_t groupsize = npgf;
     init_DGFlux_CL(f, ie, dim0, wn_cl, 4 * m * groupsize);
 
-    unsigned int nreadsdgflux = 4 * m;
-    unsigned int nmultsdgflux = 2601 + 92 + 28 * m;
-    nmultsdgflux += 3 * m; // Using NUMFLUX = NumFlux
-    
     // Launch the kernel
     cl_int status;
     status = clEnqueueNDRangeKernel(f->cli.commandqueue,
