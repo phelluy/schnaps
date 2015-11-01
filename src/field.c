@@ -476,6 +476,8 @@ void init_field_macrocells(field *f)
 
     mcell->nreal = f->model.m * mcell->npg;
 
+    mcell->nrealsubcell = f->model.m * mcell->npgsubcell;
+
     mcell->woffset = wcount;
 
     mcell->mass = calloc(mcell->npg, sizeof(real));    

@@ -783,8 +783,8 @@ void DGVolume(__constant int *param,     // interp param
 	      __constant real *physnode, // macrocell nodes
               __global real *wn,         // field values
 	      __global real *dtwn,       // time derivative
-	      __local real *wnloc        // cache for wn and dtwn
-	      //__local real *dtwnloc        // cache for wn and dtwn
+	      __local real *wnloc,        // cache for wn and dtwn
+	      __local real *dtwnloc        // cache for wn and dtwn
 	      )
 {
   // Use __local memory in DGVolume kernel?
@@ -795,7 +795,7 @@ void DGVolume(__constant int *param,     // interp param
   const int npg[3] = {deg[0] + 1, deg[1] + 1, deg[2] + 1};
   const int nraf[3] = {param[4], param[5], param[6]};
 
-   __local real *dtwnloc = wnloc  + m * npg[0] * npg[1] * npg[2];
+  //__local real *dtwnloc = wnloc  + m * npg[0] * npg[1] * npg[2];
 #if DGVolume_LOCAL
 
   prefetch_macrocell(wn, wnloc, param);

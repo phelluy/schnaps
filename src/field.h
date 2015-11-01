@@ -44,7 +44,10 @@ typedef struct MacroCell {
 
   // Number of colocation points per subcell
   int npgsubcell;
-  
+
+  // Number of real values per sucell
+  int nrealsubcell;
+
   // Number of colocation points in the macrocell
   int npg;
 
