@@ -602,29 +602,17 @@ void DGVolume_CL(MacroCell *mcell, field *f, cl_mem *wn_cl,
 		 cl_uint nwait, cl_event *wait, cl_event *done) 
 {
   cl_kernel kernel = f->dgvolume;
-  int *param = f->interp_param;
 
-  cl_int status;
+  int *param = f->interp_param;
   int m = param[0];
 
-  // FIXME: base on mcell
-  const int npgc[3] = {param[1] + 1, param[2] + 1, param[3] + 1};
-  const int npg = npgc[0] * npgc[1] * npgc[2];
-  size_t groupsize = npg;
-  // The total work items number is the number of glops in a subcell
-  // * number of subcells
-  const int nraf[3] = {param[4], param[5], param[6]};
-  size_t numworkitems = nraf[0] * nraf[1] * nraf[2] * groupsize;
+  size_t groupsize = mcell->npgsubcell;
+  size_t numworkitems = mcell->npg;
   
   init_DGVolume_CL(mcell, f, wn_cl, 2 * groupsize * m);
   int ie = mcell->ie;
-  
-  // The groupsize is the number of glops in a subcell
-  /* size_t groupsize = (param[1] + 1)* (param[2] + 1)*(param[3] + 1); */
-  /* // The total work items number is the number of glops in a subcell */
-  /* // * number of subcells */
-  /* size_t numworkitems = param[4] * param[5] * param[6] * groupsize; */
-  /* //printf("groupsize=%zd numworkitems=%zd\n", groupsize, numworkitems); */
+
+  cl_int status;
   status = clEnqueueNDRangeKernel(f->cli.commandqueue,
 				  kernel,
 				  1,
