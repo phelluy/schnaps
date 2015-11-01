@@ -528,7 +528,6 @@ void DGFlux_CL(field *f, int dim0, int ie, cl_mem *wn_cl,
     if(done != NULL)
       clSetUserEventStatus(*done, CL_COMPLETE);
   }
-
 }
 
 // Set kernel argument for DGVolume_CL

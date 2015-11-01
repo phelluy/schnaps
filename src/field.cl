@@ -956,7 +956,8 @@ void DGMass(__constant int *param,      // interp param
             __constant real *physnode,  // macrocell nodes
 	    __constant real *mass,  // macrocell masses
             __global real *dtwn)        // time derivative
-{ 
+{
+  
   int ipg = get_global_id(0);
   int m = param[0];
 
@@ -1308,26 +1309,17 @@ void Sourcex(const real *x, const real t, const real *w, real *source, int m)
     source[i] = x[0];
 }
 
-// Compute the source terms inside  one macrocell
-__kernel
-void DGSource(__constant int *param,     // interp param
-	      __constant real *physnode, // macrocell nodes
-	      __constant real *mass,     // collocation point weights
-	      const real tnow,           // the current time
-              __global real *wn,         // field values
-	      __global real *dtwn,       // time derivative
-	      __local real *wnloc,       // cache for wn
-	      __local real *dtwnloc      // cache for dtwn
-	      )
+void compute_kernel(__constant int *param,     // interp param
+		    __constant real *physnode, // macrocell nodes
+		    __constant real *mass,     // collocation point weights
+		    const real tnow,           // the current time
+		    __local real *wnloc,       // cache for wn
+		    __local real *dtwnloc      // cache for dtwn
+		    )
 {
   const int m = param[0];
   const int deg[3] = {param[1], param[2], param[3]};
   const int nraf[3] = {param[4], param[5], param[6]};
-
-  prefetch_macrocell(wn, wnloc, param);
-  prefetch_macrocell(dtwn, dtwnloc, param);
-  
-  barrier(CLK_LOCAL_MEM_FENCE);
 
   // Compute Gauss point id where we compute the jacobian
   int ipg = get_local_id(0);
@@ -1364,6 +1356,28 @@ void DGSource(__constant int *param,     // interp param
     dtwnloc0[iv] = source[iv] * massipg;
   }
 
+}
+
+// Compute the source terms inside  one macrocell
+__kernel
+void DGSource(__constant int *param,     // interp param
+	      __constant real *physnode, // macrocell nodes
+	      __constant real *mass,     // collocation point weights
+	      const real tnow,           // the current time
+              __global real *wn,         // field values
+	      __global real *dtwn,       // time derivative
+	      __local real *wnloc,       // cache for wn
+	      __local real *dtwnloc      // cache for dtwn
+	      )
+{
+
+  prefetch_macrocell(wn, wnloc, param);
+  prefetch_macrocell(dtwn, dtwnloc, param);
+  
+  barrier(CLK_LOCAL_MEM_FENCE);
+
+  compute_kernel(param, physnode, mass, tnow, wnloc, dtwnloc);
+  
   barrier(CLK_LOCAL_MEM_FENCE);
 
   postfetch_macrocell(dtwnloc, dtwn, param);
