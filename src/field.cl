@@ -799,17 +799,29 @@ void DGVolume(__constant int *param,     // interp param
 #if DGVolume_LOCAL
 
   prefetch_macrocell(wn, wnloc, param);
-
-  int icell = get_group_id(0);  
-  for(int i = 0; i < m ; ++i) {
-    dtwnloc[get_local_id(0) * m + i ] = 0;
-  }
   
+  /* for(int i = 0; i < m ; ++i) { */
+  /*   dtwnloc[get_local_id(0) * m + i ] = 0; */
+  /* } */
+
+  {
+    int icell = get_group_id(0);
+    for(int i = 0; i < m ; ++i){
+      int iread = get_local_id(0) + i * get_local_size(0);
+      int iv = iread % m;
+      int ipgloc = iread / m;
+      int ipg = ipgloc + icell * get_local_size(0);
+      int imemloc = iv + ipgloc * m;
+      dtwnloc[imemloc] = 0;
+    }
+  }
+
   //barrier(CLK_LOCAL_MEM_FENCE | CLK_GLOBAL_MEM_FENCE);
   barrier(CLK_LOCAL_MEM_FENCE);
 #endif
 
   // subcell id
+  int icell = get_group_id(0);
   int icL[3];
   icL[0] = icell % nraf[0];
   icL[1] = (icell / nraf[0]) % nraf[1];
