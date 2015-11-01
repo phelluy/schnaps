@@ -494,7 +494,6 @@ void DGFlux_CL(field *f, int dim0, int ie, cl_mem *wn_cl,
   int deg[3] = {param[1], param[2], param[3]};
   int nraf[3] = {param[4], param[5], param[6]};
 
-  // TODO: make memory access more contiguous?
   int dim[3];
   dim[0] = dim0;
   dim[1] = (dim[0] + 1) % 3;

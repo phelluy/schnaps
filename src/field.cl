@@ -674,7 +674,7 @@ void DGFlux(__constant int *param,     // interp param
   // TODO: wL and wR could be passed without a copy to __private.
   // (ie we can just pass *wnL and *wnR).
   real flux[_M];
-  NUMFLUX(wL, wR, vnds, flux); // 
+  NUMFLUX(wL, wR, vnds, flux);
 
   real wpgs = wglop(deg[dim1], pL[dim1]) * wglop(deg[dim2], pL[dim2]);
 
