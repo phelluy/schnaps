@@ -606,6 +606,8 @@ void DGVolume_CL(MacroCell *mcell, field *f, cl_mem *wn_cl,
 
   cl_int status;
   int m = param[0];
+
+  // FIXME: base on mcell
   const int npgc[3] = {param[1] + 1, param[2] + 1, param[3] + 1};
   const int npg = npgc[0] * npgc[1] * npgc[2];
   size_t groupsize = npg;
@@ -614,20 +616,9 @@ void DGVolume_CL(MacroCell *mcell, field *f, cl_mem *wn_cl,
   const int nraf[3] = {param[4], param[5], param[6]};
   size_t numworkitems = nraf[0] * nraf[1] * nraf[2] * groupsize;
   
-  unsigned int nreadsdgvol = 2 * m; // read m from wn, write m to dtwn
-  unsigned int nmultsdgvol = 2601 + (npgc[0] + npgc[1] + npgc[2]) * 6 * m;
-  nmultsdgvol += (npgc[0] + npgc[1] + npgc[2]) * 54; 
-  // Using NUMFLUX = NumFlux (3 * m multiplies):
-  nmultsdgvol += (npgc[0] + npgc[1] + npgc[2]) * 6 * m; 
-  
-  //printf("DGVolume_CL loop: %d\n", end - start); // This is always 1!!!
-
   init_DGVolume_CL(mcell, f, wn_cl, 2 * groupsize * m);
   int ie = mcell->ie;
   
-  f->flops_vol += numworkitems * nmultsdgvol;
-  f->reads_vol += numworkitems * nreadsdgvol;
-
   // The groupsize is the number of glops in a subcell
   /* size_t groupsize = (param[1] + 1)* (param[2] + 1)*(param[3] + 1); */
   /* // The total work items number is the number of glops in a subcell */
@@ -716,13 +707,8 @@ void DGSource_CL(MacroCell *mcell, field *f, real tnow, cl_mem *wn_cl,
   cl_int status;
   int m = param[0];
 
-  // TODO: base on mcell
-  size_t groupsize = (param[1] + 1) * (param[2] + 1) * (param[3] + 1);
-
-  // The total work items number is the number of glops in a subcell
-  // times the number of subcells
-  // TODO: base on mcell
-  size_t numworkitems = param[4] * param[5] * param[6] * groupsize;
+  size_t groupsize = mcell->npgsubcell;
+  size_t numworkitems = mcell->npg;
      
   init_DGSource_CL(mcell, f, tnow, wn_cl, 2 * groupsize * m);
   
@@ -1406,53 +1392,7 @@ void RK2_CL(field *f, real tmax, real dt,
 void show_cl_timing(field *f)
 {
   printf("\n");
-  printf("Device characteristics:\n");
-  printf("\tname:\t%s\n", f->cli.devicename);
-  double dev_gflops = cl_dev_gflops(f->cli.devicename);
-  double dev_bwidth = cl_dev_bwidth(f->cli.devicename);
-  printf("\tgflops:   \t%f\n", dev_gflops);
-  printf("\tbandwidth:\t%f\n", dev_bwidth);
-
-  printf("\n");
-  printf("Roofline counts:\n");
-  unsigned long int flops_total = f->flops_vol + f->flops_flux + f->flops_mass;
-  unsigned long int reads_total = f->reads_vol + f->reads_flux + f->reads_mass;
-  printf("Number of real multiplies in kernels:               %lu\n", 
-	 flops_total);
-  printf("Number of reads/writes of reals from global memory: %lu\n", 
-	 reads_total);
-  //printf("NB: real multiplies assumes the flux involved 3m multiplies.\n");
-  printf("Terms included in roofline: volume, flux, and mass.\n");
-
-  cl_ulong roofline_time_ns = f->vol_time + f->flux_time + f->mass_time;
-  double roofline_time_s = 1e-9 * roofline_time_ns;
-  double roofline_flops = flops_total / roofline_time_s;
-  double roofline_bw = sizeof(real) * reads_total / roofline_time_s;
-  
-  // Volume terms
-  double vol_time_s = 1e-9 * f->vol_time;
-  double vol_flops = f->flops_vol / vol_time_s;
-  double vol_bw = sizeof(real) * f->reads_vol / vol_time_s;
-  printf("DGVol:  GFLOP/s: %f\tbandwidth (GB/s): %f\n", 
-	 1e-9 * vol_flops, 1e-9 * vol_bw);
-
-  // Flux terms
-  double flux_time_s = 1e-9 * f->flux_time;
-  double flux_flops = f->flops_flux / flux_time_s;
-  double flux_bw = sizeof(real) * f->reads_flux / flux_time_s;
-  printf("DGFlux: GFLOP/s: %f\tbandwidth (GB/s): %f\n", 
-	 1e-9 * flux_flops, 1e-9 * flux_bw);
-  
-  // Mass terms
-  double mass_time_s = 1e-9 * f->mass_time;
-  double mass_flops = f->flops_mass / mass_time_s;
-  double mass_bw = sizeof(real) * f->reads_mass / mass_time_s;
-  printf("DGMass: GFLOP/s: %f\tbandwidth (GB/s): %f\n", 
-	 1e-9 * mass_flops, 1e-9 * mass_bw);
-
-  printf("Total:  GFLOP/s: %f\tbandwidth (GB/s): %f\n", 
-	 1e-9 * roofline_flops, 1e-9 * roofline_bw);
-  
+ 
   printf("\n");
 
   printf("Kernel execution times:\n"); 
@@ -1509,9 +1449,6 @@ void show_cl_timing(field *f)
   printf("total time:                   %f%% \t%luns \t%fs\n", 
 	 ns*N, (unsigned long) ns, total_time);
 
-  printf("\n");
-  print_kernel_perf(dev_gflops, dev_bwidth,
-		    flops_total, reads_total, total);
   printf("\n");
 }
 
