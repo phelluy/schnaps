@@ -759,6 +759,25 @@ void prefetch_macrocell(const __global real *in,
   }
 }
 
+void zero_macrocell_buffer(__local real *out,
+			   __constant int *param
+			   )
+{
+  const int m = param[0];
+  int icell = get_group_id(0);
+  for(int i = 0; i < m ; ++i){
+    int iread = get_local_id(0) + i * get_local_size(0);
+    int iv = iread % m;
+    int ipgloc = iread / m;
+    int ipgL = ipgloc + icell * get_local_size(0);
+    int imem = VARINDEX(param, ipgL, iv);
+    int imemloc = iv + ipgloc * m;
+    
+    out[imemloc] = 0.0;
+  }
+}
+
+
 void postfetch_macrocell(const __local real *in,
 			 __global real *out,
 			 __constant int *param
@@ -804,18 +823,8 @@ void DGVolume(__constant int *param,     // interp param
   /*   dtwnloc[get_local_id(0) * m + i ] = 0; */
   /* } */
 
-  {
-    int icell = get_group_id(0);
-    for(int i = 0; i < m ; ++i){
-      int iread = get_local_id(0) + i * get_local_size(0);
-      int iv = iread % m;
-      int ipgloc = iread / m;
-      int ipg = ipgloc + icell * get_local_size(0);
-      int imemloc = iv + ipgloc * m;
-      dtwnloc[imemloc] = 0;
-    }
-  }
-
+  zero_macrocell_buffer(dtwnloc, param);
+  
   //barrier(CLK_LOCAL_MEM_FENCE | CLK_GLOBAL_MEM_FENCE);
   barrier(CLK_LOCAL_MEM_FENCE);
 #endif
