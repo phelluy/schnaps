@@ -200,9 +200,6 @@ typedef struct field {
   cl_ulong source_time;
   cl_ulong rk_time;
 
-  // OpenCL roofline measurements
-  unsigned long int flops_vol, flops_flux, flops_mass; 
-  unsigned long int reads_vol, reads_flux, reads_mass; 
 #endif
 } field;
 

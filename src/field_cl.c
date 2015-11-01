@@ -416,12 +416,6 @@ void DGMass_CL(MacroCell *mcell, field *f,
   // subcell) * (number of subcells)
   size_t numworkitems = mcell->npg;
   
-  unsigned int m = f->interp_param[0];
-  unsigned int nreadsdgmass = m;
-  unsigned int nmultsdgmass = 53 + 2 * m + 2601;
-  f->flops_mass += numworkitems * nmultsdgmass;
-  f->reads_mass += numworkitems * nreadsdgmass;
-    
   status = clEnqueueNDRangeKernel(f->cli.commandqueue,
 				  f->dgmass,
 				  1, // cl_uint work_dim,
@@ -521,8 +515,6 @@ void DGFlux_CL(field *f, int dim0, int ie, cl_mem *wn_cl,
     unsigned int nreadsdgflux = 4 * m;
     unsigned int nmultsdgflux = 2601 + 92 + 28 * m;
     nmultsdgflux += 3 * m; // Using NUMFLUX = NumFlux
-    f->flops_flux += numworkitems * nmultsdgflux;
-    f->reads_flux += numworkitems * nreadsdgflux;
     
     // Launch the kernel
     cl_int status;
