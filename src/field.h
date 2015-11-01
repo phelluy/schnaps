@@ -30,13 +30,21 @@ typedef struct MacroCell {
   // Local copy of physnode for the macrocell
   real physnode[20][3];
 
-  // Resolution parameters
+  // Order of polynomial interpretation in one subcell
   int deg[3];
+
+  // Number of subcells in each direction in the macrocell
   int raf[3];
 
   // Number of real values in the macrocell
   int nreal;
 
+  // Number of subcells per macrocell
+  int nsubcell;
+
+  // Number of colocation points per subcell
+  int npgsubcell;
+  
   // Number of colocation points in the macrocell
   int npg;
 

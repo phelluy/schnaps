@@ -475,13 +475,12 @@ void init_field_macrocells(field *f)
     mcell->raf[1] = f->interp_param[5];
     mcell->raf[2] = f->interp_param[6];
 
-    mcell->npg
-      = (mcell->deg[0] + 1)
-      * (mcell->deg[1] + 1)
-      * (mcell->deg[2] + 1)
-      * mcell->raf[0]
-      * mcell->raf[1]
-      * mcell->raf[2];
+    mcell->nsubcell = mcell->raf[0] * mcell->raf[1]  * mcell->raf[2];
+
+    mcell->npgsubcell
+      = (mcell->deg[0] + 1) * (mcell->deg[1] + 1) * (mcell->deg[2] + 1);
+
+    mcell->npg = mcell->nsubcell * mcell->npgsubcell;
 
     mcell->nreal = f->model.m * mcell->npg;
 

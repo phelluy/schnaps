@@ -410,12 +410,12 @@ void DGMass_CL(MacroCell *mcell, field *f,
   init_DGMass_CL(mcell, f);
   
   // The groupsize is the number of glops in a subcell
-  size_t groupsize = (param[1] + 1) * (param[2] + 1) * (param[3] + 1);
-
+  size_t groupsize = mcell->npgsubcell;
+  
   // The total work items number is (the number of glops in a
   // subcell) * (number of subcells)
-  size_t numworkitems = param[4] * param[5] * param[6] * groupsize;
-
+  size_t numworkitems = mcell->npg;
+  
   unsigned int m = f->interp_param[0];
   unsigned int nreadsdgmass = m;
   unsigned int nmultsdgmass = 53 + 2 * m + 2601;
