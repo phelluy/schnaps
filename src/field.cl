@@ -1043,10 +1043,11 @@ void DGVolume(__constant int *param,     // interp param
 __kernel
 void DGMass(__constant int *param,      // interp param
             __constant real *physnode,  // macrocell nodes
-	    __constant real *mass,  // macrocell masses
+	    const  __global real *mass,  // macrocell masses
             __global real *dtwn)        // time derivative
 {
-  
+  // TODO: if there's enough space, make mass __constant  
+
   int ipg = get_global_id(0);
   int m = param[0];
 
@@ -1400,12 +1401,14 @@ void Sourcex(const real *x, const real t, const real *w, real *source, int m)
 
 void compute_kernel(__constant int *param,     // interp param
 		    __constant real *physnode, // macrocell nodes
-		    __constant real *mass,     // collocation point weights
+		    const  __global real *mass,   // collocation point weights
 		    const real tnow,           // the current time
 		    __local real *wnloc,       // cache for wn
 		    __local real *dtwnloc      // cache for dtwn
 		    )
 {
+  // TODO: if there's enough space, make mass __constant
+
   const int m = param[0];
   const int deg[3] = {param[1], param[2], param[3]};
   const int nraf[3] = {param[4], param[5], param[6]};
@@ -1451,7 +1454,7 @@ void compute_kernel(__constant int *param,     // interp param
 __kernel
 void DGSource(__constant int *param,     // interp param
 	      __constant real *physnode, // macrocell nodes
-	      __constant real *mass,     // collocation point weights
+	      const __global real *mass,     // collocation point weights
 	      const real tnow,           // the current time
               __global real *wn,         // field values
 	      __global real *dtwn,       // time derivative
@@ -1459,6 +1462,7 @@ void DGSource(__constant int *param,     // interp param
 	      __local real *dtwnloc      // cache for dtwn
 	      )
 {
+  // TODO: if there's enough space, make mass __constant
 
   prefetch_macrocell(wn, wnloc, param);
   prefetch_macrocell(dtwn, dtwnloc, param);
