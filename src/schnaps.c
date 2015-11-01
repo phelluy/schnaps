@@ -273,6 +273,8 @@ int main(int argc, char *argv[])
 
   if(usegpu) {
 #ifdef _WITH_OPENCL
+    CopyfieldtoGPU(&f);
+
     RK2_CL(&f, tmax, dt, 0, NULL, NULL);
 
     cl_int status = clFinish(f.cli.commandqueue);
