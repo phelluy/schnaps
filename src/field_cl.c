@@ -411,9 +411,6 @@ void DGMass_CL(MacroCell *mcell, field *f,
   
   // The groupsize is the number of glops in a subcell
   size_t groupsize = mcell->npgsubcell;
-  
-  // The total work items number is (the number of glops in a
-  // subcell) * (number of subcells)
   size_t numworkitems = mcell->npg;
   
   status = clEnqueueNDRangeKernel(f->cli.commandqueue,

@@ -1031,6 +1031,7 @@ void DGVolume(__constant int *param,     // interp param
   barrier(CLK_LOCAL_MEM_FENCE);
 
   postfetch_macrocell(dtwnloc, dtwn, param);
+
 #else
 
   compute_volume_global(param, physnode, wn, dtwn);
