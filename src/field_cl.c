@@ -545,8 +545,7 @@ void DGFlux_CL(field *f, int dim0, int ie, cl_mem *wn_cl,
 }
 
 // Set kernel argument for DGVolume_CL
-void init_DGVolume_CL(MacroCell *mcell, field *f, cl_mem *wn_cl,
-		      size_t cachesize)
+void init_DGVolume_CL(MacroCell *mcell, field *f, cl_mem *wn_cl)
 {
   //printf("DGVolume cachesize:%zu\n", cachesize);
 
@@ -584,17 +583,10 @@ void init_DGVolume_CL(MacroCell *mcell, field *f, cl_mem *wn_cl,
 
   status = clSetKernelArg(kernel,
                           argnum++,
-                          sizeof(real) * cachesize,
+                          sizeof(real) * 2 * mcell->npgsubcell,
                           NULL);
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
-
-  /* status = clSetKernelArg(kernel, */
-  /*                         argnum++, */
-  /*                         sizeof(cl_real) * cachesize, */
-  /*                         NULL); */
-  /* if(status < CL_SUCCESS) printf("%s\n", clErrorString(status)); */
-  /* assert(status >= CL_SUCCESS); */
 }
 
 // Apply division by the mass matrix OpenCL version
@@ -609,7 +601,7 @@ void DGVolume_CL(MacroCell *mcell, field *f, cl_mem *wn_cl,
   size_t groupsize = mcell->npgsubcell;
   size_t numworkitems = mcell->npg;
   
-  init_DGVolume_CL(mcell, f, wn_cl, 2 * groupsize * m);
+  init_DGVolume_CL(mcell, f, wn_cl);
   int ie = mcell->ie;
 
   cl_int status;
@@ -627,7 +619,7 @@ void DGVolume_CL(MacroCell *mcell, field *f, cl_mem *wn_cl,
 }
 
 void init_DGSource_CL(MacroCell *mcell, field *f,
-		      real tnow, cl_mem *wn_cl, size_t cachesize)
+		      real tnow, cl_mem *wn_cl)
 {
   cl_int status;
   int argnum = 0;
@@ -679,7 +671,14 @@ void init_DGSource_CL(MacroCell *mcell, field *f,
 
   status = clSetKernelArg(kernel,
                           argnum++,
-                          sizeof(real) * cachesize,
+                          sizeof(real) * mcell->nreal,
+                          NULL);
+  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status >= CL_SUCCESS);
+  
+  status = clSetKernelArg(kernel,
+                          argnum++,
+                          sizeof(real) * mcell->nreal,
                           NULL);
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
@@ -698,7 +697,7 @@ void DGSource_CL(MacroCell *mcell, field *f, real tnow, cl_mem *wn_cl,
   size_t groupsize = mcell->npgsubcell;
   size_t numworkitems = mcell->npg;
      
-  init_DGSource_CL(mcell, f, tnow, wn_cl, 2 * groupsize * m);
+  init_DGSource_CL(mcell, f, tnow, wn_cl);
   
   status = clEnqueueNDRangeKernel(f->cli.commandqueue,
 				  kernel,

@@ -740,6 +740,43 @@ void set_buffer_to_zero(__global real *w)
 #define BOUNDARYFLUX BoundaryFlux
 #endif
 
+void prefetch_macrocell(const __global real *in,
+			__local real *out,
+			__constant int *param
+			)
+{
+  const int m = param[0];
+  int icell = get_group_id(0);
+  for(int i = 0; i < m ; ++i){
+    int iread = get_local_id(0) + i * get_local_size(0);
+    int iv = iread % m;
+    int ipgloc = iread / m;
+    int ipgL = ipgloc + icell * get_local_size(0);
+    int imem = VARINDEX(param, ipgL, iv);
+    int imemloc = iv + ipgloc * m;
+    
+    out[imemloc] = in[imem];
+  }
+}
+
+void postfetch_macrocell(const __local real *in,
+			 __global real *out,
+			 __constant int *param
+			 )
+{
+  const int m = param[0];
+  int icell = get_group_id(0);
+  for(int i = 0; i < m; ++i){
+    int iread = get_local_id(0) + i * get_local_size(0);
+    int iv = iread % m;
+    int ipgloc = iread / m ;
+    int ipg = ipgloc + icell * get_local_size(0);
+    int imem = VARINDEX(param, ipg, iv);
+    int imemloc = ipgloc * m + iv;
+    out[imem] += in[imemloc];
+  }
+}
+
 // Compute the volume  terms inside  one macrocell
 __kernel
 void DGVolume(__constant int *param,     // interp param
@@ -747,6 +784,7 @@ void DGVolume(__constant int *param,     // interp param
               __global real *wn,         // field values
 	      __global real *dtwn,       // time derivative
 	      __local real *wnloc        // cache for wn and dtwn
+	      //__local real *dtwnloc        // cache for wn and dtwn
 	      )
 {
   // Use __local memory in DGVolume kernel?
@@ -757,26 +795,16 @@ void DGVolume(__constant int *param,     // interp param
   const int npg[3] = {deg[0] + 1, deg[1] + 1, deg[2] + 1};
   const int nraf[3] = {param[4], param[5], param[6]};
 
-  int icell = get_group_id(0);
-
-  __local real *dtwnloc = wnloc  + m * npg[0] * npg[1] * npg[2];
+   __local real *dtwnloc = wnloc  + m * npg[0] * npg[1] * npg[2];
 #if DGVolume_LOCAL
-  // Prefetch: m reads of wn
-  for(int i = 0; i < m ; ++i){
-    int iread = get_local_id(0) + i * get_local_size(0);
-    int iv = iread % m;
-    int ipgloc = iread / m;
-    int ipg = ipgloc + icell * get_local_size(0);
-    int imem = VARINDEX(param, ipg, iv);
-    int imemloc = iv + ipgloc * m;
-    
-    wnloc[imemloc] = wn[imem];
-    dtwnloc[imemloc] = 0;
-    
-    /* printf("_M=%d icell=%d imem:%d loc_id=%d iv=%d ipg=%d w2=%f\n",_M, */
-    /* 	   icell, imem,get_local_id(0) ,iv,ipgloc,wnloc[imemloc]); */
-  }
 
+  prefetch_macrocell(wn, wnloc, param);
+
+  int icell = get_group_id(0);  
+  for(int i = 0; i < m ; ++i) {
+    dtwnloc[get_local_id(0) * m + i ] = 0;
+  }
+  
   //barrier(CLK_LOCAL_MEM_FENCE | CLK_GLOBAL_MEM_FENCE);
   barrier(CLK_LOCAL_MEM_FENCE);
 #endif
@@ -905,53 +933,9 @@ void DGVolume(__constant int *param,     // interp param
   //barrier(CLK_LOCAL_MEM_FENCE | CLK_GLOBAL_MEM_FENCE);
   barrier(CLK_LOCAL_MEM_FENCE);
 
-  // Postfetch: m writes
-  for(int i = 0; i < m; ++i){
-    int iread = get_local_id(0) + i * get_local_size(0);
-    int iv = iread % m;
-    int ipgloc = iread / m ;
-    int ipg = ipgloc + icell * get_local_size(0);
-    int imem = VARINDEX(param, ipg, iv);
-    int imemloc = ipgloc * m + iv;
-    dtwn[imem] += dtwnloc[imemloc];
-  }
+  postfetch_macrocell(dtwnloc, dtwn, param);
+
 #endif
-}
-
-real mass_pg(const int *deg,
-	     __constant real *physnode,  // macrocell nodes
-	     const int *nraf, int ix, int iy, int iz, int ncx, int ncy, int ncz)
-{
-
-  real hx = 1.0 / (real) nraf[0];
-  real hy = 1.0 / (real) nraf[1];
-  real hz = 1.0 / (real) nraf[2];
-
-  int offset[3] = {gauss_lob_offset[deg[0]] + ix,
-		   gauss_lob_offset[deg[1]] + iy,
-		   gauss_lob_offset[deg[2]] + iz};
-
-  real x = hx * (ncx + gauss_lob_point[offset[0]]);
-  real y = hy * (ncy + gauss_lob_point[offset[1]]);
-  real z = hz * (ncz + gauss_lob_point[offset[2]]);
-
-  real wpg = hx * hy * hz
-    * gauss_lob_weight[offset[0]]
-    * gauss_lob_weight[offset[1]]
-    * gauss_lob_weight[offset[2]];
-
-  real dtau[3][3];
-  get_dtau(x, y, z, physnode, dtau);
-
-  real det
-    = dtau[0][0] * dtau[1][1] * dtau[2][2]
-    - dtau[0][0] * dtau[1][2] * dtau[2][1]
-    - dtau[1][0] * dtau[0][1] * dtau[2][2]
-    + dtau[1][0] * dtau[0][2] * dtau[2][1]
-    + dtau[2][0] * dtau[0][1] * dtau[1][2]
-    - dtau[2][0] * dtau[0][2] * dtau[1][1];
-
-  return wpg * det;
 }
 
 // Apply division by the mass matrix on one macrocell
@@ -1320,36 +1304,22 @@ void DGSource(__constant int *param,     // interp param
 	      const real tnow,           // the current time
               __global real *wn,         // field values
 	      __global real *dtwn,       // time derivative
-	      __local real *wnloc        // cache for wn and dtwn
+	      __local real *wnloc,       // cache for wn
+	      __local real *dtwnloc      // cache for dtwn
 	      )
 {
   const int m = param[0];
-  const int deg[3] = {param[1],param[2], param[3]};
-  const int npg[3] = {deg[0] + 1, deg[1] + 1, deg[2] + 1};
+  const int deg[3] = {param[1], param[2], param[3]};
   const int nraf[3] = {param[4], param[5], param[6]};
 
-  __local real *dtwnloc = wnloc  + m * npg[0] * npg[1] * npg[2];
-
-  // Prefetch: m reads of wn, m reads of dtwn
-  // TODO: put prefetch in function
-  int icell = get_group_id(0);
-  for(int i = 0; i < m ; ++i){
-    int iread = get_local_id(0) + i * get_local_size(0);
-    int iv = iread % m;
-    int ipgloc = iread / m;
-    int ipgL = ipgloc + icell * get_local_size(0);
-    int imem = VARINDEX(param, ipgL, iv);
-    int imemloc = iv + ipgloc * m;
-    
-    wnloc[imemloc] = wn[imem];
-    dtwnloc[imemloc] = dtwn[imem];
-  }
-
+  prefetch_macrocell(wn, wnloc, param);
+  prefetch_macrocell(dtwn, dtwnloc, param);
+  
   barrier(CLK_LOCAL_MEM_FENCE);
 
   // Compute Gauss point id where we compute the jacobian
   int ipg = get_local_id(0);
-    
+  
   // Compute xref
   real xref[3];
   real wpg;
@@ -1361,40 +1331,30 @@ void DGSource(__constant int *param,     // interp param
   
   // Copy w
   real w[_M];
-  {
-    __local real *wnloc0 = wnloc + ipg * m;
-    for(int iv = 0; iv < m; iv++) {
-      w[iv] = wnloc0[iv];
-    }
+  __local real *wnloc0 = wnloc + ipg * m;
+  for(int iv = 0; iv < m; iv++) {
+    w[iv] = wnloc0[iv];
   }
 
   // Compute source using w and xref
   real source[_M];
   _SOURCE_FUNC(xphy, tnow, w, source, _M);
-  
-  ipg = get_local_id(0);
-  //real massipg = mass[ipg];
+
+  // NB: I'm not sure why this is the global id, and ipg is the local.
+  // Somethign to do with workgroup and local work size?
+  real massipg = mass[get_global_id(0)];
 
   // Add the source buffer to dtw
 
   int imemR0loc = ipg * m;
   __local real *dtwnloc0 =  dtwnloc + imemR0loc;
   for(int iv = 0; iv < m; iv++) {
-    dtwnloc0[iv] = source[iv];
+    dtwnloc0[iv] = source[iv] * massipg;
   }
 
   barrier(CLK_LOCAL_MEM_FENCE);
 
-  // Postfetch
-  for(int i = 0; i < m; ++i){
-    int iread = get_local_id(0) + i * get_local_size(0);
-    int iv = iread % m;
-    int ipgloc = iread / m ;
-    int ipg = ipgloc + icell * get_local_size(0);
-    int imem = VARINDEX(param, ipg, iv);
-    int imemloc = ipgloc * m + iv;
-    dtwn[imem] += dtwnloc[imemloc] * mass[ipg];
-  }
+  postfetch_macrocell(dtwnloc, dtwn, param);
 }
 
 // Out-of-place RK stage
