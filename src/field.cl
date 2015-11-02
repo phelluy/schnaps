@@ -793,6 +793,24 @@ void postfetch_macrocell(const __local real *in,
   }
 }
 
+void postfetch_macrocell_overwrite(const __local real *in,
+			 __global real *out,
+			 __constant int *param
+			 )
+{
+  const int m = param[0];
+  int icell = get_group_id(0);
+  for(int i = 0; i < m; ++i){
+    int iread = get_local_id(0) + i * get_local_size(0);
+    int iv = iread % m;
+    int ipgloc = iread / m ;
+    int ipg = ipgloc + icell * get_local_size(0);
+    int imem = VARINDEX(param, ipg, iv);
+    int imemloc = ipgloc * m + iv;
+    out[imem] = in[imemloc];
+  }
+}
+
 void compute_volume(__constant int *param,     // interp param
 		    __constant real *physnode, // macrocell nodes
 		    __local real *wnloc,       // cache for wn
@@ -1043,14 +1061,12 @@ void mass_division(__constant int *param,
   const int m = param[0];
 
   // The mass is __global
-  //int ipg = get_group_id(0) * get_local_size(0) + get_local_id(0);
   int ipg = get_global_id(0);
   real overmassipg = 1.0 / mass[ipg];
 
   // dtwnloc is __local
   int ipgloc = get_local_id(0);
-  int imemloc = ipgloc * m;
-  __local real *dtwnloc0 =  dtwnloc + imemloc;
+  __local real *dtwnloc0 =  dtwnloc + ipgloc * m;
   for(int iv = 0; iv < m; iv++) {
     dtwnloc0[iv] *= overmassipg;
   }
@@ -1067,6 +1083,7 @@ void DGMass(__constant int *param,      // interp param
 {
   // TODO: if there's enough space, make mass __constant  
 
+#if 0
   const int ipg = get_global_id(0);
   const int m = param[0];
 
@@ -1076,7 +1093,8 @@ void DGMass(__constant int *param,      // interp param
     dtwn0[iv] *= overmass;
   }
 
-  /*
+#else
+
     prefetch_macrocell(dtwn, dtwnloc, param);
 
     barrier(CLK_LOCAL_MEM_FENCE);
@@ -1085,8 +1103,8 @@ void DGMass(__constant int *param,      // interp param
   
     barrier(CLK_LOCAL_MEM_FENCE);
 
-    postfetch_macrocell(dtwnloc, dtwn, param);
-  */
+    postfetch_macrocell_overwrite(dtwnloc, dtwn, param);
+#endif
 }
   
 // Compute the Discontinuous Galerkin inter-macrocells boundary terms.
