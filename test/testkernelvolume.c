@@ -77,13 +77,14 @@ int TestKernelVolume(void){
   clFinish(f.cli.commandqueue);
   for(int ie = 0; ie < f.macromesh.nbelems; ++ie) {
     DGVolume_CL(f.mcell + ie, &f, f.wn_cl + ie, 0, NULL, NULL);
+    clFinish(f.cli.commandqueue);
   }
   
   clFinish(f.cli.commandqueue);
   
   CopyfieldtoCPU(&f);
 
-  Displayfield(&f);
+  //Displayfield(&f);
 
   // save the dtwn pointer
   real *dtwn_cl = f.dtwn;
@@ -98,14 +99,15 @@ int TestKernelVolume(void){
     DGVolume(f.mcell + ie, &f, wmc, dtwmc);
   }
 
-  Displayfield(&f);
+  //Displayfield(&f);
 
   //check that the results are the same
   real maxerr = 0.0;
-  printf("\nDifference\tC\t\tOpenCL\n");
+  //printf("\nDifference\tC\t\tOpenCL\n");
   for(int i = 0; i < f.wsize; ++i) {
-    printf("%f\t%f\t%f\n", f.dtwn[i] - dtwn_cl[i], f.dtwn[i], dtwn_cl[i]);
-    maxerr = fmax(fabs(f.dtwn[i] - dtwn_cl[i]), maxerr);
+    real err = fabs(f.dtwn[i] - dtwn_cl[i]);
+    //printf("%f\t%f\t%f\n", err, f.dtwn[i], dtwn_cl[i]);
+    maxerr = fmax(err, maxerr);
   }
   printf("max error: %f\n",maxerr);
 
@@ -116,7 +118,8 @@ int TestKernelVolume(void){
   return test;
 }
 
-int main(void) {
+int main()
+{
   // Unit tests
   int resu = TestKernelVolume();
   if (resu) printf("Volume Kernel test OK !\n");

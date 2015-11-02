@@ -397,11 +397,18 @@ void init_DGMass_CL(MacroCell *mcell, field *f)
                           f->dtwn_cl + mcell->ie);
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
+
+  status = clSetKernelArg(kernel,
+                          argnum++,
+			  sizeof(real) * mcell->nrealsubcell,
+                          NULL);
+  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status >= CL_SUCCESS);
 }
 
 // Apply division by the mass matrix OpenCL version
 void DGMass_CL(MacroCell *mcell, field *f,
-	       cl_uint nwait, cl_event *wait, cl_event *done) 
+	       cl_uint nwait, cl_event *wait, cl_event *done)
 {
   //printf("DGMass_CL\n");
   int *param = f->interp_param;
@@ -409,19 +416,16 @@ void DGMass_CL(MacroCell *mcell, field *f,
 
   init_DGMass_CL(mcell, f);
   
-  // The groupsize is the number of glops in a subcell
-  size_t groupsize = mcell->npgsubcell;
-  size_t numworkitems = mcell->npg;
-  
+  size_t global_work_size = mcell->npg;
+  size_t local_work_size = mcell->npgsubcell;
+
   status = clEnqueueNDRangeKernel(f->cli.commandqueue,
 				  f->dgmass,
-				  1, // cl_uint work_dim,
-				  NULL, // size_t *global_work_offset, 
-				  &numworkitems, // size_t *global_work_size,
-				  &groupsize, // size_t *local_work_size, 
-				  nwait, // cl_uint num_events_in_wait_list, 
-				  wait, //*event_wait_list, 
-				  done); // cl_event *event
+				  1,
+				  NULL,
+				  &global_work_size,
+				  &local_work_size,
+				  nwait, wait, done);
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 }

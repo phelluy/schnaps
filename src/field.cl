@@ -543,7 +543,6 @@ void DGFlux(__constant int *param,     // interp param
 
   
 #if DGFLUX_LOCAL
-  // Prefetch: 2m reads from global memory.
   for(int i = 0; i < m; i++) {
     int iread = get_local_id(0) + i * get_local_size(0);
     int iv = iread % m;
@@ -742,8 +741,7 @@ void set_buffer_to_zero(__global real *w)
 
 void prefetch_macrocell(const __global real *in,
 			__local real *out,
-			__constant int *param
-			)
+			__constant int *param)
 {
   const int m = param[0];
   int icell = get_group_id(0);
@@ -776,7 +774,6 @@ void zero_macrocell_buffer(__local real *out,
     out[imemloc] = 0.0;
   }
 }
-
 
 void postfetch_macrocell(const __local real *in,
 			 __global real *out,
@@ -1039,27 +1036,59 @@ void DGVolume(__constant int *param,     // interp param
 #endif
 }
 
+void mass_division(__constant int *param,
+		   const  __global real *mass,
+		   __local real *dtwnloc)
+{
+  const int m = param[0];
+
+  // The mass is __global
+  //int ipg = get_group_id(0) * get_local_size(0) + get_local_id(0);
+  int ipg = get_global_id(0);
+  real overmassipg = 1.0 / mass[ipg];
+
+  // dtwnloc is __local
+  int ipgloc = get_local_id(0);
+  int imemloc = ipgloc * m;
+  __local real *dtwnloc0 =  dtwnloc + imemloc;
+  for(int iv = 0; iv < m; iv++) {
+    dtwnloc0[iv] *= overmassipg;
+  }
+}
+
 // Apply division by the mass matrix on one macrocell
 __kernel
 void DGMass(__constant int *param,      // interp param
             __constant real *physnode,  // macrocell nodes
-	    const  __global real *mass,  // macrocell masses
-            __global real *dtwn)        // time derivative
+	    const __global real *mass,  // macrocell masses
+            __global real *dtwn,        // time derivative
+	    __local real *dtwnloc       // cache for dtwn
+	    )
 {
   // TODO: if there's enough space, make mass __constant  
 
-  int ipg = get_global_id(0);
-  int m = param[0];
+  const int ipg = get_global_id(0);
+  const int m = param[0];
 
   real overmass = 1.0 / mass[ipg];
-
-  int imem0 = m * get_global_id(0);
-  __global real *dtwn0 = dtwn + imem0;
+  __global real *dtwn0 = dtwn + m * ipg;
   for(int iv = 0; iv < m; iv++) {
     dtwn0[iv] *= overmass;
   }
-}
 
+  /*
+    prefetch_macrocell(dtwn, dtwnloc, param);
+
+    barrier(CLK_LOCAL_MEM_FENCE);
+  
+    mass_division(param, mass, dtwnloc);
+  
+    barrier(CLK_LOCAL_MEM_FENCE);
+
+    postfetch_macrocell(dtwnloc, dtwn, param);
+  */
+}
+  
 // Compute the Discontinuous Galerkin inter-macrocells boundary terms.
 // Second implementation with a loop on the faces.
 __kernel
@@ -1399,7 +1428,7 @@ void Sourcex(const real *x, const real t, const real *w, real *source, int m)
     source[i] = x[0];
 }
 
-void compute_kernel(__constant int *param,     // interp param
+void compute_source(__constant int *param,     // interp param
 		    __constant real *physnode, // macrocell nodes
 		    const  __global real *mass,   // collocation point weights
 		    const real tnow,           // the current time
@@ -1413,8 +1442,8 @@ void compute_kernel(__constant int *param,     // interp param
   const int deg[3] = {param[1], param[2], param[3]};
   const int nraf[3] = {param[4], param[5], param[6]};
 
-  // Compute Gauss point id where we compute the jacobian
-  int ipg = get_local_id(0);
+  int ipg = get_global_id(0);
+  int ipgloc = get_local_id(0);
   
   // Compute xref
   real xref[3];
@@ -1427,7 +1456,7 @@ void compute_kernel(__constant int *param,     // interp param
   
   // Copy w
   real w[_M];
-  __local real *wnloc0 = wnloc + ipg * m;
+  __local real *wnloc0 = wnloc + ipgloc * m;
   for(int iv = 0; iv < m; iv++) {
     w[iv] = wnloc0[iv];
   }
@@ -1436,25 +1465,21 @@ void compute_kernel(__constant int *param,     // interp param
   real source[_M];
   _SOURCE_FUNC(xphy, tnow, w, source, _M);
 
-  // NB: I'm not sure why this is the global id, and ipg is the local.
-  // Somethign to do with workgroup and local work size?
-  real massipg = mass[get_global_id(0)];
+  // The mass point is in __global memory, so get the global id.
+  real massipg = mass[ipg];
 
   // Add the source buffer to dtw
-
-  int imemR0loc = ipg * m;
-  __local real *dtwnloc0 =  dtwnloc + imemR0loc;
+  __local real *dtwnloc0 =  dtwnloc + ipgloc * m;;
   for(int iv = 0; iv < m; iv++) {
     dtwnloc0[iv] = source[iv] * massipg;
   }
-
 }
 
 // Compute the source terms inside  one macrocell
 __kernel
 void DGSource(__constant int *param,     // interp param
 	      __constant real *physnode, // macrocell nodes
-	      const __global real *mass,     // collocation point weights
+	      const __global real *mass, // collocation point weights
 	      const real tnow,           // the current time
               __global real *wn,         // field values
 	      __global real *dtwn,       // time derivative
@@ -1462,14 +1487,12 @@ void DGSource(__constant int *param,     // interp param
 	      __local real *dtwnloc      // cache for dtwn
 	      )
 {
-  // TODO: if there's enough space, make mass __constant
-
   prefetch_macrocell(wn, wnloc, param);
   prefetch_macrocell(dtwn, dtwnloc, param);
   
   barrier(CLK_LOCAL_MEM_FENCE);
 
-  compute_kernel(param, physnode, mass, tnow, wnloc, dtwnloc);
+  compute_source(param, physnode, mass, tnow, wnloc, dtwnloc);
   
   barrier(CLK_LOCAL_MEM_FENCE);
 

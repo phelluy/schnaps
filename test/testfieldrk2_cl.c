@@ -6,7 +6,7 @@
 
 int TestfieldRK2_CL()
 {
-  int test = true;
+  int retval = 0;
 
   if(!cldevice_is_acceptable(nplatform_cl, ndevice_cl)) {
     printf("OpenCL device not acceptable.\n");
@@ -24,9 +24,9 @@ int TestfieldRK2_CL()
 
   char *mshname =  "../test/disque2d.msh";
   
-  ReadMacroMesh(&(f.macromesh), mshname);
-  Detect2DMacroMesh(&(f.macromesh));
-  BuildConnectivity(&(f.macromesh));
+  ReadMacroMesh(&f.macromesh, mshname);
+  Detect2DMacroMesh(&f.macromesh);
+  BuildConnectivity(&f.macromesh);
 
   /* f.model.cfl = 0.05; */
   /* f.model.m = 1; */
@@ -84,17 +84,17 @@ int TestfieldRK2_CL()
   f.interp.interp_param[6] = 4; // z direction refinement
 #endif
 
-  //AffineMapMacroMesh(&(f.macromesh));
+  //AffineMapMacroMesh(&f.macromesh);
   Initfield(&f);
-  CopyfieldtoGPU(&f);
   
-  CheckMacroMesh(&(f.macromesh), f.interp.interp_param + 1);
+  
+  CheckMacroMesh(&f.macromesh, f.interp.interp_param + 1);
  
   real tmax = 0.1;
   f.vmax = 1;
   real dt = 0;
+  CopyfieldtoGPU(&f);
   RK2_CL(&f, tmax, dt,  0, NULL, NULL);
-  
   CopyfieldtoCPU(&f);
  
   //Plotfield(0, false, &f, NULL, "dgvisu.msh");
@@ -108,18 +108,20 @@ int TestfieldRK2_CL()
 
   real tolerance = 0.002;
 
-  test = dd < tolerance;
+  if(dd > tolerance)
+    retval += 1;
   
-  return test;
+  return retval;
 }
 
-int main(void) {
-  int resu = TestfieldRK2_CL();
+int main() 
+{
+  int retval = TestfieldRK2_CL();
 
-  if(resu) 
+  if(retval == 0) 
     printf("field RK2_CL test OK !\n");
   else 
     printf("field RK2_CL test failed !\n");
 
-  return !resu;
+  return retval;
 } 

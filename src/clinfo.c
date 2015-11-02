@@ -433,19 +433,20 @@ void BuildKernels(CLInfo *cli, char *strprog, char *buildoptions)
     printf("Failed to create program.\n");
 
   int deflen = 20;
-  char *buildoptions0 
-    = (buildoptions == NULL) ? 
-    malloc(deflen + 1) :  
-    malloc(deflen + strlen(buildoptions) + 1);
-
+  char *buildoptions0
+    = (buildoptions == NULL)
+    ?  malloc(deflen + 1)
+    : malloc(deflen + strlen(buildoptions) + 1);
+  
 #if _SCHNAPS_DOUBLE_PRECISION
   sprintf(buildoptions0, "-D real=double ");
 #else
   sprintf(buildoptions0, "-D real=float ");
 #endif
-  if(buildoptions != NULL)
+  if(buildoptions != NULL) {
     strcat(buildoptions0, buildoptions);
-
+  }
+    
   printf("OpenCL compilation arguments: %s\n", buildoptions0);
   status = clBuildProgram(cli->program,
 			  0,               // one device
@@ -468,7 +469,7 @@ void BuildKernels(CLInfo *cli, char *strprog, char *buildoptions)
   assert(status >= CL_SUCCESS);
 }
 
-void ReadFile(char filename[], char **s){
+void ReadFile(char filename[], char **s) {
   FILE *f = fopen(filename , "r");
   assert(f);
 

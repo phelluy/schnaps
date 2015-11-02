@@ -367,24 +367,22 @@ void init_field_cl(field *f)
 {
   InitCLInfo(&f->cli, nplatform_cl, ndevice_cl);
 
-  init_field_buffers_cl(f);
-  
+  init_field_buffers_cl(f);  
   // Program compilation
   char *strprog;
   GetOpenCLCode();
   ReadFile("schnaps.cl", &strprog);
 
   printf("\t%s\n", numflux_cl_name);
-  //printf("\t%s\n", strprog);
 
   // If the source term is set (via set_source_CL) then add it to the
   // buildoptions and compile using the new buildoptions.
   if(f->use_source_cl) {
     char *temp;
-    int len0 = strlen(cl_buildoptions);
+    int len0 = strlen(cl_buildoptions) + 2;
     char *D_SOURCE_FUNC = " -D_SOURCE_FUNC=";
-    int len1 = strlen(D_SOURCE_FUNC);
-    int len2 = strlen(f->sourcename_cl);
+    int len1 = strlen(D_SOURCE_FUNC) + 2;
+    int len2 = strlen(f->sourcename_cl) + 2;
     temp = calloc(sizeof(char), len0 + len1 + len2 + 2);
     strcat(temp, cl_buildoptions);
     strcat(temp, D_SOURCE_FUNC);
