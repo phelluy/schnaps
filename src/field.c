@@ -522,7 +522,7 @@ void Initfield(field *f)
   f->iter_time = 0;
   f->nb_diags = 0;
 
-  printf("hmin=%f\n", f->hmin);
+  //  printf("hmin=%f\n", f->hmin);
 
   init_field_macrofaces(f);
   
