@@ -3,13 +3,11 @@
 #include <assert.h>
 #include "test.h"
 #include "getopt.h"
-#include <stdlib.h>     /* atoi */
 #include "model.h"
 #include <math.h>
 #include <string.h>
 #include <unistd.h>
 #include <time.h>
-#define _XOPEN_SOURCE 700
 
 real maxerr(real *a, real *b, int n) 
 {
@@ -20,8 +18,10 @@ real maxerr(real *a, real *b, int n)
   return err;
 }
 
-int TestmEq2(void) {
-  bool test = true;
+int TestmEq2()
+{
+  int retval = 0;
+
   field f;
   init_empty_field(&f);
   
@@ -51,13 +51,11 @@ int TestmEq2(void) {
   sprintf(buf, " -D BOUNDARYFLUX=%s", "VecTransBoundaryFlux2d");
   strcat(cl_buildoptions, buf);
 
-  // Read the gmsh file
   ReadMacroMesh(&f.macromesh, "../test/testcube.msh");
 
   // Try to detect a 2d mesh
   Detect2DMacroMesh(&f.macromesh);
   assert(f.macromesh.is2d);
-
   BuildConnectivity(&f.macromesh);
 
   //AffineMapMacroMesh(&f.macromesh);
@@ -87,14 +85,10 @@ int TestmEq2(void) {
     MacroCell *mcell = f.mcell + ie;
     set_buf_to_zero_cl(f.dtwn_cl + ie, mcell, &f,
 		       0, NULL, NULL);
+    clFinish(f.cli.commandqueue);
   }
-  clFinish(f.cli.commandqueue);
 
   for(int ie = 0; ie < f.macromesh.nbelems; ++ie) {
-    /* update_physnode_cl(&f, ie, f.physnode_cl, f.physnode, NULL, */
-    /* 		       0, NULL, NULL); */
-    /* clFinish(f.cli.commandqueue); */
-
     DGVolume_CL(f.mcell + ie, &f, f.wn_cl, 0, NULL, NULL);
     clFinish(f.cli.commandqueue);
   }
@@ -107,38 +101,12 @@ int TestmEq2(void) {
     DGVolume(f.mcell + ie, &f, f.wn, f.dtwn);
   }
 
-
-  const int nraf[3] = {f.interp_param[4],
-		       f.interp_param[5],
-		       f.interp_param[6]};
-  const int deg[3] = {f.interp_param[1],
-		      f.interp_param[2],
-		      f.interp_param[3]};
- 
-  const int npg[3] = {deg[0] + 1,
-		      deg[1] + 1,
-		      deg[2] + 1};
-  
-  for(int ie = 0; ie < f.macromesh.nbelems; ++ie){
-    MacroCell *mcell = f.mcell + ie;
-
-    for(int ic=0;ic<nraf[0]*nraf[1]*nraf[2];++ic){
-      for(int ipg=0;ipg<npg[0]*npg[1]*npg[2];++ipg){
-	printf("ie=%d ic=%d ipg=%d ",ie,ic,ipg);
-	for(int iv=0;iv<2;++iv){
-	  int imem=f.varindex(f.interp_param,ipg+ic*NPG(f.interp_param+1), iv)
-	    + mcell->woffset;
-	  //printf("NPG=%d\n",NPG(f.interp_param+1));
-	  printf("iv=%d \ndtwcl=%f dtwcpu=%f\n\n",iv,dtwn_cl[imem],dtwn[imem]);
-	}
-      }
-    }
-  }
-
-
   err = maxerr(dtwn, dtwn_cl, f.wsize);
   printf("\tmax error: %f\n", err);
-  test = (err < tolerance);
+  if(err > tolerance) {
+    retval += 1;
+    printf("Error!\n");
+  }
 
   printf("Test flux terms\n");
   
@@ -181,7 +149,11 @@ int TestmEq2(void) {
 
   err = maxerr(dtwn, dtwn_cl, f.wsize);
   printf("\tmax error: %f\n", err);
-  test = (err < tolerance);
+  if(err > tolerance) {
+    retval += 1;
+    printf("Error!\n");
+  }
+  
 
   printf("Test macrocell interfaces\n");
 
@@ -209,15 +181,19 @@ int TestmEq2(void) {
     			    0, NULL, NULL);
     clFinish(f.cli.commandqueue);
   }
+
+  const int nboundaryfaces = f.macromesh.nboundaryfaces;
+  for(int i = 0; i < nboundaryfaces; ++i) {
+    int ifa = f.macromesh.boundaryface[i];
+    DGBoundary_CL(f.mface + ifa, &f, f.wn_cl, 0, NULL, NULL);
+    clFinish(f.cli.commandqueue);
+  }
+
   CopyfieldtoCPU(&f);
   clFinish(f.cli.commandqueue);
   
   f.dtwn = dtwn;
 
-  /* for(int ifa = 0; ifa < f.macromesh.nbfaces; ifa++) { */
-  /*   DGMacroCellInterface(mface + ifa, &f, f.wn, f.dtwn); */
-  /* } */
-  
   {
     // Macrocell interfaces
     const int ninterfaces = f.macromesh.nmacrointerfaces;
@@ -253,7 +229,10 @@ int TestmEq2(void) {
   
   err = maxerr(dtwn, dtwn_cl, f.wsize);
   printf("\tmax error: %f\n", err);
-  test = (err < tolerance);
+  if(err > tolerance) {
+    retval += 1;
+    printf("Error!\n");
+  }
 
   printf("Test all terms\n");
   for(int i = 0; i < f.wsize; ++i) {
@@ -275,31 +254,20 @@ int TestmEq2(void) {
 
   err = maxerr(dtwn, dtwn_cl, f.wsize);
   printf("\tmax error: %f\n", err);
-  test = (err < tolerance);
+  if(err > tolerance) {
+    retval += 1;
+    printf("Error!\n");
+  }
 
-  //Displayfield(&f);
- 
-  /* real tmax = 0.1; */
-  /* //RK2_CL(&f, tmax, 0, NULL, NULL); */
-  /* CopyfieldtoCPU(&f); */
- 
-  /* // Save the results and the error */
-  /* Plotfield(0, false, &f, NULL, "dgvisu.msh"); */
-  /* Plotfield(0, true, &f, "error", "dgerror.msh"); */
+  return retval;
+}
 
-  /* real dd = L2error(&f); */
-  /* real tolerance = 1e-4; */
-  /* test = test && (dd < tolerance); */
-  /* printf("L2 error: %f\n", dd); */
-
-  return test;
-};
-
-int main(void) {
-  int resu = TestmEq2();
-  if (resu) 
+int main()
+{
+  int retval = TestmEq2();
+  if (retval == 0) 
     printf("OpenCL m greater than 1 test OK!\n");
   else 
     printf("OpenCL m greater than 1 test failed !\n");
-  return !resu;
+  return retval;
 }
