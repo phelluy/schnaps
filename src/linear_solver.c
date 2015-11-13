@@ -7,11 +7,10 @@
 #include "paralution_c.h"
 #include "dpackfgmres.h"
 
-
 void InitLinearSolver(LinearSolver* lsol,int n,
 		      MatrixStorage* matstor,
-		      Solver* solvtyp){
-
+		      Solver* solvtyp)
+{
   lsol->neq=n;
   lsol->storage_type = SKYLINE;
   lsol->solver_type = LU;
@@ -28,7 +27,7 @@ void InitLinearSolver(LinearSolver* lsol,int n,
 
   switch(lsol->storage_type) {
 
-  Skyline* sky;
+    Skyline* sky;
 
   case SKYLINE :
     sky = malloc(sizeof(Skyline));
@@ -37,237 +36,181 @@ void InitLinearSolver(LinearSolver* lsol,int n,
     InitSkyline(sky,n);
     lsol->is_init = true;
     break;
-
   case CSR :
     assert(1==2);
     break;
-
   default : 
     assert(1==2);
-
   }
-
-
 }
 
-void FreeLinearSolver(LinearSolver* lsol){
-
+void FreeLinearSolver(LinearSolver* lsol)
+{
   assert(lsol->is_alloc);
 
   switch(lsol->storage_type) {
-
   case SKYLINE :
     FreeSkyline((Skyline*)lsol->matrix);
     free(lsol->matrix);
     break;
-
   default : 
     assert(1==2);
-   
   }
 
   lsol->is_alloc= false;
-    
-
 }
 
-
-void IsNonZero(LinearSolver* lsol,int i,int j){
-
+void IsNonZero(LinearSolver* lsol,int i,int j)
+{
   assert(lsol->is_init);
   assert(!lsol->is_alloc);
 
   switch(lsol->storage_type) {
-
   case SKYLINE :
     SwitchOn((Skyline*)lsol->matrix,i,j);
     break;
-
   default : 
     assert(1==2);
-   
   }
-  
-
 } 
 
-void AllocateLinearSolver(LinearSolver* lsol){
-
+void AllocateLinearSolver(LinearSolver* lsol)
+{
   assert(lsol->is_init);
   assert(!lsol->is_alloc);
 
   switch(lsol->storage_type) {
-
   case SKYLINE :
     AllocateSkyline((Skyline*)lsol->matrix);
     break;
-
   default : 
     assert(1==2);
-   
   }
+
   lsol->is_alloc=true;
 }
 
-void AddLinearSolver(LinearSolver* lsol,int i,int j,real val){
-
+void AddLinearSolver(LinearSolver* lsol,int i,int j,real val)
+{
   assert(lsol->is_init);
   assert(lsol->is_alloc);
 
   switch(lsol->storage_type) {
-
   case SKYLINE :
     SetSkyline((Skyline*)lsol->matrix,i,j,val);
     break;
-
   default : 
     assert(1==2);
-   
   }
-
 } 
 
-real GetLinearSolver(LinearSolver* lsol,int i,int j){
-
+real GetLinearSolver(LinearSolver* lsol,int i,int j)
+{
   assert(lsol->is_init);
   assert(lsol->is_alloc);
   
   real val;
-
   switch(lsol->storage_type) {
-
   case SKYLINE :
     val=GetSkyline((Skyline*)lsol->matrix,i,j);
     break;
-
   default : 
     assert(1==2);
-   
   }
- 
   return val;
-
 } 
 
-
-void DisplayLinearSolver(LinearSolver* lsol){
-
+void DisplayLinearSolver(LinearSolver* lsol)
+{
   assert(lsol->is_init);
   assert(lsol->is_alloc);
   
   switch(lsol->storage_type) {
-
   case SKYLINE :
     DisplaySkyline((Skyline*)lsol->matrix);
     break;
-
   default : 
     assert(1==2);
   }
-
 } 
 
-void MatVecLinearSolver(LinearSolver* lsol,real x[],real prod[]){
+void MatVecLinearSolver(LinearSolver* lsol,real x[],real prod[])
+{
   int i,j;
   real aij;
   
   switch(lsol->storage_type) {
-
   case SKYLINE :
-  
-    for(i=0;i<lsol->neq;i++)
-      {
-	prod[i]=0;
-	for(j=0;j<lsol->neq;j++) {
-	  aij=GetLinearSolver(lsol,i,j);
-	  prod[i] += aij*x[j];
-	}
+    for(i = 0; i < lsol->neq; i++) {
+      prod[i]=0;
+      for(j=0;j<lsol->neq;j++) {
+	aij=GetLinearSolver(lsol,i,j);
+	prod[i] += aij*x[j];
       }
-    
+    }
     break;
-
   default : 
     assert(1==2);
   }
-
-  
 }
 
-void Vector_copy(double x[],double prod[],int N){
-  int i;
- 
-    for(i=0;i<N;i++)
-      {
-	prod[i] = x[i];
-      }      
+void Vector_copy(double x[], double prod[],int N)
+{
+  for(int i = 0; i < N; i++) {
+    prod[i] = x[i];
+  }      
 }
 
-
-double Vector_norm2(double x[],int  N){
-  int i;
+double Vector_norm2(double x[],int  N)
+{
   double norm=0;
- 
-  for(i=0;i<N;i++)
-    {
-      norm += x[i]*x[i];
-    }
-  norm=sqrt(norm);
-  return norm;
+  for(int i = 0; i < N; i++) {
+    norm += x[i] * x[i];
+  }
+  return sqrt(norm);
 }
 
-
-
-
-double Vector_prodot(double x[],double y[],int N){
-  int i;
-  double prod;
-
-  prod=0;
-    for(i=0;i<N;i++)
-      {
-	prod += x[i]*y[i];
-      }     
-    return prod;
+double Vector_prodot(double x[],double y[],int N)
+{
+  double prod = 0;
+  for(int i = 0; i <N; i++) {
+    prod += x[i]*y[i];
+  }     
+  return prod;
 }
 
-
-void LUDecompLinearSolver(LinearSolver* lsol){
-
+void LUDecompLinearSolver(LinearSolver* lsol)
+{
   assert(lsol->is_init);
   assert(lsol->is_alloc);
   
   switch(lsol->storage_type) {
-
   case SKYLINE :
     FactoLU((Skyline*)lsol->matrix);
     break;
-
   default : 
     assert(1==2);
   }
-
 }
 
-void SolveLinearSolver(LinearSolver* lsol){
-  
+void SolveLinearSolver(LinearSolver* lsol)
+{
   assert(lsol->is_init);
   assert(lsol->is_alloc);
   assert(lsol->rhs);
   assert(lsol->sol);
 
-
   if(lsol->solver_type == LU) {
-       Skyline* sky;
-       switch(lsol->storage_type) {
-       case SKYLINE :
-         sky=(Skyline*)lsol->matrix;
-	 if (!sky->is_lu) FactoLU(sky);
-	 SolveSkyline(sky,lsol->rhs,lsol->sol);
-	 break;
-      
-       default : 
-	 assert(1==2);      
-       }
+    Skyline* sky;
+    switch(lsol->storage_type) {
+    case SKYLINE :
+      sky=(Skyline*)lsol->matrix;
+      if (!sky->is_lu) FactoLU(sky);
+      SolveSkyline(sky,lsol->rhs,lsol->sol);
+      break;
+    default : 
+      assert(1==2);      
+    }
   }
   else if(lsol->solver_type == GMRES) {
     GMRESSolver(lsol);
@@ -280,11 +223,10 @@ void SolveLinearSolver(LinearSolver* lsol){
     assert(1==2);
 #endif
   }  
-   
 }
 
-
-void Solver_Paralution(LinearSolver* lsol){
+void Solver_Paralution(LinearSolver* lsol)
+{
   int * rows=NULL;
   int * cols=NULL;
   real * coefs=NULL;
@@ -318,26 +260,25 @@ void Solver_Paralution(LinearSolver* lsol){
     solver="GMRES";
     break;
   case PAR_FGMRES :
-   solver="FGMRES";
+    solver="FGMRES";
     break;
   case PAR_BICGSTAB :
     solver="BiCGStab";
-     break;
+    break;
   case PAR_AMG :
     solver="AMG";
-     break;
+    break;
   case PAR_LU :
     solver="LU";
     storage="DENSE";
-     break;
+    break;
   case PAR_QR :
     solver="QR";
     storage="DENSE";
-     break;
+    break;
   default : 
     assert(1==2);   
   }
-
 
   switch(lsol->pc_type){
   case NONE :
@@ -350,26 +291,24 @@ void Solver_Paralution(LinearSolver* lsol){
     pc="ILU";
     break;
   case PAR_MULTICOLOREDGS :
-   pc="MultiColoredGS";
+    pc="MultiColoredGS";
     break;
   case PAR_MULTICOLOREDSGS :
     pc="MultiColoredSGS";
-     break;
+    break;
   case PAR_MULTICOLOREDILU :
     pc="MultiColoredILU";
-     break;
+    break;
   case PAR_AMG_PC :
     pc="AMG";
-     break;
+    break;
   case PAR_ELIMI :
-     pc="ELIMI";
-     break;  
+    pc="ELIMI";
+    break;  
   default : 
     assert(1==2);   
   }
 
-
-  
   n=lsol->neq;
   RHS = calloc(n,sizeof(double));
   Sol = calloc(n,sizeof(double));
@@ -378,11 +317,8 @@ void Solver_Paralution(LinearSolver* lsol){
     RHS[i] = (double) lsol->rhs[i];
     Sol[i] = (double )lsol->sol[i];   
   }
-
-
-
   
- switch(lsol->storage_type) {
+  switch(lsol->storage_type) {
   case SKYLINE :
 
     mat = lsol->matrix;
@@ -391,7 +327,7 @@ void Solver_Paralution(LinearSolver* lsol){
   
     rows = (int*) malloc(nnz*sizeof(int)); 
     cols = (int*) malloc(nnz*sizeof(int));
-    coefs = (real*) malloc(nnz*sizeof(real));
+    coefs = (real*) malloc(nnz*sizeof(double));
     assert(rows);
   
     for (int i=0;i< mat->neq; i++) {
@@ -428,28 +364,27 @@ void Solver_Paralution(LinearSolver* lsol){
     
 #ifdef PARALUTION
     paralution_fortran_solve_coo(n,n,nnz,solver,storage,pc,storage,
-    				 rows,cols,mat_coefs,RHS,a_tol,r_tol,div_tol,maxit,
+    				 rows,cols,mat_coefs,RHS,a_tol,r_tol,div_tol,
+				 maxit,
     				 basis_size_gmres,ILU_p,ILU_q,Sol); 
 #endif /* PARALUTION */
     break;
-
   case CSR :
     assert(1==2);
     break;
-
   default : 
     assert(1==2);
   }
   
-  for(int i=0;i<n;i++){
-    lsol->sol[i] = (real) Sol[i];
+  for(int i = 0; i < n; i++) {
+    lsol->sol[i] = (double) Sol[i];
   }
-  
 }
 
-
-
-void GMRESSolver(LinearSolver* lsol){
+void GMRESSolver(LinearSolver* lsol)
+{
+  // FIXME: why are we using GOTOs here?  This should be cleaned up.
+  
   int revcom, colx, coly, colz, nbscal;
   int li_maxiter;
   int m,lwork,N;
@@ -471,7 +406,6 @@ void GMRESSolver(LinearSolver* lsol){
   int res=0;
   int matvec=1, precondLeft=2, precondRight=3, dotProd=4;
 
-
   res=init_dgmres(icntl,cntl);
   
   icntl[3]  = 6 ;           // output unit
@@ -480,7 +414,6 @@ void GMRESSolver(LinearSolver* lsol){
   icntl[5]  = 1; ////3            // orthogonalization scheme
   icntl[6]  = 1; //1            // initial guess  (1) = user supplied guess
   icntl[8]  = 1; //1            
-   
      
   cntl[1]  = 0.000000001; //       ! stopping tolerance
   cntl[2]  = 1.0;
@@ -511,12 +444,11 @@ void GMRESSolver(LinearSolver* lsol){
     work[ivec+1]     = lsol->sol[ivec];                    
     work[N+ivec+1]    = lsol->rhs[ivec];
   }
-
   
   //*****************************************
   //** Reverse communication implementation
   //*****************************************
-  L10:    res=drive_dgmres(pt_Size,pt_Size,pt_m,pt_lwork,&work[1],&irc[1],&icntl[1],&cntl[1],&info[1],&rinfo[1]);
+ L10:    res=drive_dgmres(pt_Size,pt_Size,pt_m,pt_lwork,&work[1],&irc[1],&icntl[1],&cntl[1],&info[1],&rinfo[1]);
 
   revcom = irc[1];
   colx   = irc[2];
@@ -539,7 +471,7 @@ void GMRESSolver(LinearSolver* lsol){
       work[colz+ivec]= loc_z[ivec];                    
       work[colx+ivec]= loc_x[ivec]; 
     }
-     goto L10;
+    goto L10;
   }
   else if(revcom == precondLeft)  {                 // perform the matrix vector product
     // work(colz) <-- M-1 * work(colx)  
@@ -548,7 +480,7 @@ void GMRESSolver(LinearSolver* lsol){
       work[colz+ivec]= loc_z[ivec];                    
       work[colx+ivec]= loc_x[ivec]; 
     }
-     goto L10;
+    goto L10;
   }
 
   else if(revcom == precondRight)  {                 // perform the matrix vector product
@@ -558,7 +490,7 @@ void GMRESSolver(LinearSolver* lsol){
       work[colz+ivec]= loc_z[ivec];                    
       work[colx+ivec]= loc_x[ivec]; 
     }
-      goto L10;
+    goto L10;
   }
 
   else if(revcom == dotProd)  {// perform the matrix vector product
@@ -569,7 +501,7 @@ void GMRESSolver(LinearSolver* lsol){
       work[coly+ivec]= loc_y[ivec]; 
     }
     work[colz]= prodot;  
-    	 goto L10;
+    goto L10;
   }
 
   //******************************** end of GMRES reverse communication
@@ -577,6 +509,4 @@ void GMRESSolver(LinearSolver* lsol){
   for(int ivec = 0; ivec < N; ivec++) {
     lsol->sol[ivec] = work[ivec+1];                    
   }
-  
-
 }

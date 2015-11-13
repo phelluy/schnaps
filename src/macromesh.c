@@ -1187,11 +1187,11 @@ int NearestNode(MacroMesh *m, real *xphy) {
     p.algorithm = FLANN_INDEX_AUTOTUNED;
     p.target_precision = 0.9; /* want 90% target precision */
 
-#if real == double
+    if(sizeof(real) == sizeof(double))
       findex = flann_build_index_double(m->node, m->nbnodes, 3, &speedup, &p);
-#else
+    else
       findex = flann_build_index_float(m->node, m->nbnodes, 3, &speedup, &p);
-#endif
+
     is_ready = true;
   }
   

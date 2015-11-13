@@ -156,13 +156,13 @@ bool cldevice_is_acceptable(cl_uint nplatform, cl_uint ndevice)
     return false;
   }
 
-#if real == double
-  cl_device_id device = get_device_id(platform, ndevice);
-  if(!cldevice_supports_double(&device)) {
-    printf("cldevice does not support double\n");
-    return false;
-  }
-#endif
+  if(sizeof(real) == sizeof(double)) {
+      cl_device_id device = get_device_id(platform, ndevice);
+      if(!cldevice_supports_double(&device)) {
+	printf("cldevice does not support double\n");
+	return false;
+      }
+    }
 
   return true;
 }
@@ -438,11 +438,11 @@ void BuildKernels(CLInfo *cli, char *strprog, char *buildoptions)
     ?  malloc(deflen + 1)
     : malloc(deflen + strlen(buildoptions) + 1);
   
-#if _SCHNAPS_DOUBLE_PRECISION
-  sprintf(buildoptions0, "-D real=double ");
-#else
-  sprintf(buildoptions0, "-D real=float ");
-#endif
+  if(sizeof(real) == sizeof(double))
+    sprintf(buildoptions0, "-D real=double ");
+  else
+    sprintf(buildoptions0, "-D real=float ");
+
   if(buildoptions != NULL) {
     strcat(buildoptions0, buildoptions);
   }
