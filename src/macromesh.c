@@ -994,9 +994,14 @@ void CheckMacroMesh(MacroMesh *m, int *param) {
 		  /* 	 vnds[0],vnds[1],vnds[2], */
 		  /* 	 vndsR[0],vndsR[1],vndsR[2]); */
 		  /* printf("xpgR:%f %f %f\n", xpgR[0], xpgR[1], xpgR[2]); */
-		  assert(fabs(vnds[0] + vndsR[0]) < 1e-8);
-		  assert(fabs(vnds[1] + vndsR[1]) < 1e-8);
-		  assert(fabs(vnds[2] + vndsR[2]) < 1e-8);
+		  real tolerance;
+		  if(sizeof(real) == sizeof(double))
+		    tolerance = 1e-8;
+		  else
+		    tolerance = 1e-6;
+		  assert(fabs(vnds[0] + vndsR[0]) < tolerance);
+		  assert(fabs(vnds[1] + vndsR[1]) < tolerance);
+		  assert(fabs(vnds[2] + vndsR[2]) < tolerance);
 		  neighb_count++;
 		}
 

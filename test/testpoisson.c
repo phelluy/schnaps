@@ -119,7 +119,13 @@ int TestPoisson(void) {
       int imem=f.varindex(f.interp_param, ipg, _MV + 1) + mcell->woffset;
       // printf("gradphi exact=%f gradphinum=%f rap=%f\n",
       //1-2*xref[0],f.wn[imem],(1-2*xref[0])/f.wn[imem]);
-      test=test && (fabs(f.wn[imem]-(-1+2*xref[0]))<1e-6);
+      real tolerance;
+      if(sizeof(real) == sizeof(double))
+	tolerance = 1e-8;
+      else
+	tolerance = 1e-4;
+
+      test=test && (fabs(f.wn[imem]-(-1+2*xref[0])) < tolerance);
     }
   }
   return test;

@@ -18,6 +18,12 @@ int TestKernel()
 {
   int retval = 0;
 
+  real tolerance;
+  if(sizeof(real) == sizeof(double))
+    tolerance = 1e-8;
+  else
+    tolerance = 1e-4;
+  
   if(!cldevice_is_acceptable(nplatform_cl, ndevice_cl)) {
     printf("OpenCL device not acceptable.\n");
     return true;
@@ -78,7 +84,7 @@ int TestKernel()
   }
   printf("\nOpenCL max error:\t%f\n", maxerr);
 
-  if(maxerr > 1e-8)
+  if(maxerr > tolerance)
     retval += 1;
   
   //Displayfield(&f);
@@ -107,7 +113,7 @@ int TestKernel()
   }
   printf("\nC max error:      \t%f\n",maxerr);
 
-  if(maxerr > 1e-8)
+  if(maxerr > tolerance)
     retval += 1;
 
   assert(f.dtwn != saveptr);
@@ -118,7 +124,7 @@ int TestKernel()
   }
   printf("\nmax difference:      \t%f\n",maxerr);
 
-  if(maxerr > 1e-8)
+  if(maxerr > tolerance)
     retval += 1;
   
   return retval;

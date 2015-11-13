@@ -7,7 +7,7 @@
 
 int TestKernelInterface()
 {
-  bool test = true;
+  int retval = 0;
 
   if(!cldevice_is_acceptable(nplatform_cl, ndevice_cl)) {
     printf("OpenCL device not acceptable.\n");
@@ -129,17 +129,24 @@ int TestKernelInterface()
  
   printf("error: %f\n", maxerr);
 
-  test = (maxerr < 1e-8);
+  real tolerance;
+  if(sizeof(real) == sizeof(double))
+    tolerance = 1e-8;
+  else
+    tolerance = 1e-6;
+  if(maxerr > tolerance) {
+    retval += 1;
+  }
 
-  return test;
+  return retval;
 }
 
 int main()
 {
-  int resu = TestKernelInterface();
-  if(resu) 
+  int retval = TestKernelInterface();
+  if(retval == 0) 
     printf("Interface Kernel test OK !\n");
   else 
     printf("Interface Kernel test failed !\n");
-  return !resu;
+  return retval;
 }

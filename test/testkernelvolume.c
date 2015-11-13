@@ -111,7 +111,11 @@ int TestKernelVolume(void){
   }
   printf("max error: %f\n",maxerr);
 
-  real tolerance = 1e-8;
+    real tolerance;
+  if(sizeof(real) == sizeof(double))
+    tolerance = 1e-8;
+  else
+    tolerance = 1e-4;
 
   test = (maxerr < tolerance);
 

@@ -285,7 +285,7 @@ void vlaTransNumFlux2d(real *wL, real *wR, real *vnorm, real *flux)
     }
   }
   // Verify that 2d computations are actually activated
-  assert(fabs(vnorm[2]) < 1e-8);
+  assert(fabs(vnorm[2]) < 1e-4);
 }
 
 void vlaTransBoundaryFlux2d(real *x, real t, 

@@ -112,7 +112,10 @@ void init_data(field *f)
       { // Check the reverse transform at all the GLOPS
  	real xref2[3];
 	Phy2Ref(mcell->physnode, xpg, xref2);
-	assert(Dist(xref, xref2) < 1e-8);
+	if(sizeof(real) == sizeof(double))
+	  assert(Dist(xref, xref2) < 1e-8);
+	else
+	  assert(Dist(xref, xref2) < 1e-5);
       }
 
       real w[f->model.m];
@@ -667,6 +670,12 @@ void Plotfield(int typplot, int compare, field* f, char *fieldname,
   assert(value);
   int nodecount = 0;
 
+  real tolerance;
+  if(sizeof(real) == sizeof(double))
+    tolerance = 1e-10;
+  else
+    tolerance = 1e-6;
+  
   // Nodes
   int npgv = NPG(f->interp_param + 1);
   for(int i = 0; i < f->macromesh.nbelems; i++) {
@@ -705,7 +714,7 @@ void Plotfield(int typplot, int compare, field* f, char *fieldname,
 		+ mcell->woffset;
 	      value[nodecount] += psi * f->wn[vi];
 	    }
-	    assert(fabs(testpsi-1) < 1e-10);
+	    assert(fabs(testpsi-1) < tolerance);
 
 	    // Compare with an exact solution
 	    if (compare) {

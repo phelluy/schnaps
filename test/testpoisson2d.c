@@ -102,7 +102,12 @@ int TestPoisson2d(void)
 
   printf("Erreur L2=%f\n",errl2);
 
-  test = test && (errl2 < 4e-4);
+    real tolerance;
+  if(sizeof(real) == sizeof(double))
+    tolerance = 1e-3;
+  else
+    tolerance = 1e-2;
+  test = test && (errl2 < tolerance);
 
   printf("Plot...\n");
 

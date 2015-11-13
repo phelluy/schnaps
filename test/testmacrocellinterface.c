@@ -171,7 +171,11 @@ int TestMacroFace(void){
 
   // Check that the results are the same
   test = true;
-  real tolerance = 1e-8;
+  real tolerance;
+  if(sizeof(real) == sizeof(double))
+    tolerance = 1e-8;
+  else
+    tolerance = 1e-4;
 
   real maxerr = 0.0;
   for(int i = 0; i < f.wsize; i++) {

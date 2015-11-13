@@ -5,8 +5,9 @@
 #include <assert.h>
 #include <math.h>
 
-int TestDtfield_CL(void){
-  bool test = true;
+int TestDtfield_CL()
+{
+  int retval = 0;
 
   if(!cldevice_is_acceptable(nplatform_cl, ndevice_cl)) {
     printf("OpenCL device not acceptable.\n");
@@ -97,19 +98,26 @@ int TestDtfield_CL(void){
   }
   printf("max error: %f\n", maxerr);
 
-  test = (maxerr < 1e-8);
+  real tolerance;
+  if(sizeof(real) == sizeof(double))
+    tolerance = 1e-8;
+  else
+    tolerance = 1e-4;
+  if(maxerr > tolerance) {
+    retval += 1;
+  }
 
-  return test;
+  return retval;
 }
 
 int main()
 {
-  int resu = TestDtfield_CL();
+  int retval = TestDtfield_CL();
 
-  if (resu) 
+  if(retval == 0) 
     printf("Dtfield_CL test OK !\n");
   else 
     printf("Dtfield_CL test failed !\n");
 
-  return !resu;
+  return retval;
 } 

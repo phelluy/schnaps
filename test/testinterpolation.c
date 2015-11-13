@@ -18,7 +18,10 @@ int main(void) {
   return !resu;
 } 
 
-int TestInterpolation(void){
+int TestInterpolation()
+{
+  bool verbose = false;
+
   int test = true;
   // reference element
   real physnode[20][3];
@@ -103,7 +106,8 @@ int TestInterpolation(void){
   // test that the ref_ipg function
   // is compatible with ref_pg_vol
   for(int d = 1; d < 5; d++){
-    printf("Degree=%d\n", d);
+    if(verbose)
+      printf("Degree=%d\n", d);
     
     deg[0] = d;
     deg[1] = d;
@@ -177,7 +181,8 @@ int TestInterpolation(void){
   // test that the ref_pg_face function
   // is compatible with ref_pg_vol
   for(int d=1;d<_MAXDEGTEST;d++){
-    printf("Degree=%d\n",d);
+    if(verbose)
+      printf("Degree=%d\n",d);
     
     deg[0]=d;
     deg[1]=d;
@@ -220,7 +225,8 @@ int TestInterpolation(void){
   for(int d0=1;d0<_MAXDEGTEST;d0++){
     for(int d1=1;d1<_MAXDEGTEST;d1++){
       for(int d2=1;d2<_MAXDEGTEST;d2++){
-	printf("Degree=%d %d %d\n",d0,d1,d2);
+	if(verbose)
+	  printf("Degree=%d %d %d\n",d0,d1,d2);
 
 	deg[0]=d0;
 	deg[1]=d1;
@@ -332,9 +338,11 @@ int TestInterpolation(void){
 	  sum_wpg += omega;
 	}
 
-	printf("  derivative of f against g = %f\n", int_dfg);
-	printf("  f against derivative of g = %f\n", int_fdg);
- 
+	if(verbose) {
+	  printf("  derivative of f against g = %f\n", int_dfg);
+	  printf("  f against derivative of g = %f\n", int_fdg);
+	}
+	  
 	real int_fgn = 0;
 	// add the boundary term: integral on the faces
 	// of f * g * normal  ds
@@ -351,9 +359,16 @@ int TestInterpolation(void){
 	  }
 	}
 
-	test = (test && fabs(int_dfg+int_fdg-int_fgn)<1e-8);
-	printf("  int_fgn = %.2e sum of ints = %.2e sum_wpg=%f \n", 
-	       int_fgn, int_dfg + int_fdg - int_fgn, sum_wpg);
+	real tolerance;
+	if(sizeof(real) == sizeof(double))
+	  tolerance = 1e-8;
+	else
+	  tolerance = 1e-4;
+
+	test = (test && fabs(int_dfg+int_fdg-int_fgn) < tolerance);
+	if(verbose)
+	  printf("  int_fgn = %.2e sum of ints = %.2e sum_wpg=%f \n", 
+		 int_fgn, int_dfg + int_fdg - int_fgn, sum_wpg);
       }
     }
   }

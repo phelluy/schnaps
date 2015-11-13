@@ -8,7 +8,7 @@
 
 int TestDtfield3D_CL()
 {
-  bool test = true;
+  int retval = 0;
 
   if(!cldevice_is_acceptable(nplatform_cl, ndevice_cl)) {
     printf("OpenCL device not acceptable.\n");
@@ -88,18 +88,27 @@ int TestDtfield3D_CL()
   }
   printf("max error: %f\n", maxerr);
 
-  test = (maxerr < 0.000005);
+  real tolerance;
+  if(sizeof(real) == sizeof(double))
+    tolerance = 0.000005;
+  else
+    tolerance = 0.00005;
+  if(maxerr > tolerance) {
+    printf("Error!\n");
+    retval += 1;
+  }
 
-  return test;
+  return retval;
 }
 
-int main(void) {
-  int resu = TestDtfield3D_CL();
+int main()
+{
+  int retval = TestDtfield3D_CL();
 
-  if (resu) 
+  if(retval == 0) 
     printf("3D Dtfield_CL test OK !\n");
   else 
     printf("3D Dtfield_CL test failed !\n");
 
-  return !resu;
+  return retval;
 } 

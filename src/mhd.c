@@ -260,6 +260,13 @@ void MHDNumFluxP2(real *wL, real *wR, real *vn, real *flux)
 #pragma end_opencl
 
 #pragma start_opencl
+real rmax(real a, real b)
+{
+  return a > b ? a : b;
+}  
+#pragma end_opencl
+
+#pragma start_opencl
 void MHDNumFlux1D(real *WL, real *WR, real *vn, real *flux)
 {
   real gam = 1.6666666666;
@@ -331,10 +338,10 @@ void MHDNumFlux1D(real *WL, real *WR, real *vn, real *flux)
   // calcul des vitesses relaxees a gauche et a droite
   alpha = (gam-1)/2.;
 
-  Xl = (fmax(YL[1]-YR[1], 0.0)
-	+ (fmax(piR-piL, 0.0))/(YL[0]*cfL+YR[0]*cfR))/cfL;
-  Xr = (fmax(YL[1]-YR[1], 0.0)
-	+ (fmax(piL-piR, 0.0))/(YL[0]*cfL+YR[0]*cfR))/cfR;
+  Xl = (rmax(YL[1]-YR[1], 0.0)
+	+ (rmax(piR-piL, 0.0))/(YL[0]*cfL+YR[0]*cfR))/cfL;
+  Xr = (rmax(YL[1]-YR[1], 0.0)
+	+ (rmax(piL-piR, 0.0))/(YL[0]*cfL+YR[0]*cfR))/cfR;
 
   pxl = 1 - Xl/(1+alpha*Xl);
   pxr = 1 - Xr/(1+alpha*Xr);
@@ -357,10 +364,10 @@ void MHDNumFlux1D(real *WL, real *WR, real *vn, real *flux)
 		    )
 	     );
 
-  cL = al0*YL[0] + alpha*YL[0]*(fmax(YL[1]-YR[1],0.0)
-				+ (fmax(piR-piL,0.0))/(YL[0]*cfL+YR[0]*cfR));
-  cR = ar0*YR[0] + alpha*YR[0]*(fmax(YL[1]-YR[1],0.0)
-				+ (fmax(piL-piR,0.0))/(YL[0]*cfL+YR[0]*cfR));
+  cL = al0*YL[0] + alpha*YL[0]*(rmax(YL[1]-YR[1],0.0)
+				+ (rmax(piR-piL,0.0))/(YL[0]*cfL+YR[0]*cfR));
+  cR = ar0*YR[0] + alpha*YR[0]*(rmax(YL[1]-YR[1],0.0)
+				+ (rmax(piL-piR,0.0))/(YL[0]*cfL+YR[0]*cfR));
 
   // pour le 3-ondes ondes on prend des vitesses simples
   //real cA = cf;

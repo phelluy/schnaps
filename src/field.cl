@@ -1011,7 +1011,7 @@ void compute_volume_global(__constant int *param,     // interp param
 
       int ipgR = ipg(npg, q, icell);
       int imemR0 = VARINDEX(param, ipgR, 0);
-      __global double *dtwn0 = dtwn + imemR0; 
+      __global real *dtwn0 = dtwn + imemR0; 
       for(int iv = 0; iv < m; iv++) {
      	dtwn0[iv] += flux[iv] * wpg;
       }

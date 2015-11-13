@@ -118,7 +118,7 @@ int TestSkyline(void){
   FreeSkyline(&sky);
   
 
-  test= (verr<1e-10);
+  test= (verr<1e-6);
   //assert(1==2);
 
   InitSkyline(&sky,_NN);
@@ -203,7 +203,7 @@ int TestSkyline(void){
   // deallocate memory
   FreeSkyline(&sky);
 
-  test= test && (verr<1e-10);
+  test= test && (verr<1e-5);
 
 
   return test;
