@@ -180,7 +180,7 @@ typedef struct field {
   cl_event *clv_mass; 
 
   // Subcell flux events
-  cl_event *clv_flux0, *clv_flux1, *clv_flux2;
+  cl_event **clv_flux;
 
   // Subcell volume events
   cl_event *clv_volume; 

@@ -128,17 +128,20 @@ int TestmEq2()
   clFinish(f.cli.commandqueue);
 
   for(int ie = 0; ie < f.macromesh.nbelems; ++ie) {
-    /* update_physnode_cl(&f, ie, f.physnode_cl, f.physnode, NULL, */
-    /* 		       0, NULL, NULL); */
-    /* clFinish(f.cli.commandqueue); */
-    
-    DGFlux_CL(&f, 0, ie, f.wn_cl, 0, NULL, NULL);
-    clFinish(f.cli.commandqueue);
+    int *param = f.interp_param;
+    int nraf[3] = {param[4], param[5], param[6]};
 
-    DGFlux_CL(&f, 1, ie, f.wn_cl, 0, NULL, NULL);
-    clFinish(f.cli.commandqueue);
-
-    if(!f.macromesh.is2d) {
+    if(nraf[0] > 1) {
+      DGFlux_CL(&f, 0, ie, f.wn_cl, 0, NULL, NULL);
+      clFinish(f.cli.commandqueue);
+    }
+      
+    if(!f.macromesh.is1d && nraf[1] > 1) {
+      DGFlux_CL(&f, 1, ie, f.wn_cl, 0, NULL, NULL);
+      clFinish(f.cli.commandqueue);
+    }
+      
+    if(!f.macromesh.is2d && nraf[2] > 1) {
       DGFlux_CL(&f, 2, ie, f.wn_cl, 0, NULL, NULL);
       clFinish(f.cli.commandqueue);
     }

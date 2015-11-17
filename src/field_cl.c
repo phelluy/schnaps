@@ -484,9 +484,6 @@ void init_DGFlux_CL(field *f, int ie, int dim0, cl_mem *wn_cl,
   assert(status >= CL_SUCCESS);
 }
 
-// FIXME: launch the empty kernel
-//void 
-
 // wn_cl is a pointer to a macrocell's wn_cl
 void DGFlux_CL(field *f, int dim0, int ie, cl_mem *wn_cl,
 	       cl_uint nwait, cl_event *wait, cl_event *done) 
@@ -507,30 +504,25 @@ void DGFlux_CL(field *f, int dim0, int ie, cl_mem *wn_cl,
 
   // Number of faces
   int nf = (nraf[dim[0]] - 1) * nraf[dim[1]] * nraf[dim[2]];
+  assert(nf > 0);
 
-  if(nf > 0) { // If there are faces to work on, launch the kernel
-    // Set kernel args
-    size_t numworkitems = nf * npgf;
-    size_t groupsize = npgf;
-    init_DGFlux_CL(f, ie, dim0, wn_cl, 4 * m * groupsize);
+  size_t numworkitems = nf * npgf;
+  size_t groupsize = npgf;
+  init_DGFlux_CL(f, ie, dim0, wn_cl, 4 * m * groupsize);
 
-    // Launch the kernel
-    cl_int status;
-    status = clEnqueueNDRangeKernel(f->cli.commandqueue,
-				    f->dgflux,
-				    1,
-				    NULL,
-				    &numworkitems,
-				    &groupsize,
-				    nwait,
-				    wait,
-				    done);
-    if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
-    assert(status >= CL_SUCCESS);
-  } else {
-    if(done != NULL)
-      clSetUserEventStatus(*done, CL_COMPLETE);
-  }
+  // Launch the kernel
+  cl_int status;
+  status = clEnqueueNDRangeKernel(f->cli.commandqueue,
+				  f->dgflux,
+				  1,
+				  NULL,
+				  &numworkitems,
+				  &groupsize,
+				  nwait,
+				  wait,
+				  done);
+  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status >= CL_SUCCESS);
 }
 
 // Set kernel argument for DGVolume_CL
@@ -795,16 +787,11 @@ void dtfield_CL(field *f, real tnow, cl_mem *wn_cl,
     nwaitstartmacroloop = 1;
   }
 
-  cl_event *fluxdone = f->clv_flux2;
   unsigned int ndim = 3;
-  if(f->macromesh.is2d) {
+  if(f->macromesh.is2d)
     ndim = 2;
-    fluxdone = f->clv_flux1;
-  }
-  if(f->macromesh.is1d) {
+  if(f->macromesh.is1d)
     ndim = 1;
-    fluxdone = f->clv_flux0;
-  }
   
   cl_event *dtfielddone = f->clv_mass;
   
@@ -813,26 +800,28 @@ void dtfield_CL(field *f, real tnow, cl_mem *wn_cl,
   //const int nmacro = f->macromesh.nbelems;
   for(int ie = 0; ie < nmacro; ++ie) {
     MacroCell *mcell = f->mcell + ie;
-    
-    DGFlux_CL(f, 0, ie, wn_cl + ie, 
-	      nwaitstartmacroloop, startmacroloop,
-	      f->clv_flux0 + ie);
 
-    if(ndim > 1) {
-      DGFlux_CL(f, 1, ie, wn_cl + ie, 
-		1, f->clv_flux0 + ie,
-		f->clv_flux1 + ie);
+    int *param = f->interp_param;
+    int nraf[3] = {param[4], param[5], param[6]};
+
+    int nflux = 0;
+    int fluxlist[3];
+    for(int d = 0; d < ndim; ++d) {
+      if(nraf[d] > 1) {
+	fluxlist[nflux++] = d;
+      }
     }
-    
-    if(ndim > 2) {
-      DGFlux_CL(f, 2, ie, wn_cl + ie, 
-		1, f->clv_flux1 + ie, 
-		f->clv_flux2 + ie);
+
+    for(int d = 0; d < nflux; ++d) {
+      DGFlux_CL(f, fluxlist[d], ie, wn_cl + ie, 
+		d == 0 ? nwaitstartmacroloop : 1,
+		d == 0 ? startmacroloop : f->clv_flux[fluxlist[d - 1]] + ie,
+		f->clv_flux[fluxlist[d]] + ie);
     }
     
     DGVolume_CL(mcell, f, wn_cl + ie,
-  		1,
-  		fluxdone + ie,
+  		nflux > 0 ? 1 : nwaitstartmacroloop,
+  		nflux > 0 ? f->clv_flux[nflux - 1] + ie : startmacroloop,
   		f->clv_volume + ie);
 
     if(f->use_source_cl) {
@@ -860,11 +849,11 @@ void dtfield_CL(field *f, real tnow, cl_mem *wn_cl,
     f->zbuf_time += clv_duration(f->clv_zbuf[ie]);
     if(f->use_source_cl)
       f->source_time += clv_duration(f->clv_source[ie]);
-    f->flux_time += clv_duration(f->clv_flux0[ie]);
+    f->flux_time += clv_duration(f->clv_flux[0][ie]);
     if(ndim > 1) 
-      f->flux_time += clv_duration(f->clv_flux1[ie]);
+      f->flux_time += clv_duration(f->clv_flux[1][ie]);
     if(ndim > 2)
-      f->flux_time += clv_duration(f->clv_flux2[ie]);
+      f->flux_time += clv_duration(f->clv_flux[2][ie]);
     f->vol_time += clv_duration(f->clv_volume[ie]);
     f->mass_time += clv_duration(f->clv_mass[ie]);
   }

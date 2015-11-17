@@ -291,13 +291,9 @@ void init_field_events_cl(field *f)
   for(int ie = 0; ie < nmacro; ++ie)
     f->clv_mass[ie] = clCreateUserEvent(f->cli.context, &status);
 
-  f->clv_flux0 = calloc(nmacro, sizeof(cl_event));
-  f->clv_flux1 = calloc(nmacro, sizeof(cl_event));
-  f->clv_flux2 = calloc(nmacro, sizeof(cl_event));
-  for(int ie = 0; ie < nmacro; ++ie) {
-    f->clv_flux0[ie] = clCreateUserEvent(f->cli.context, &status);
-    f->clv_flux1[ie] = clCreateUserEvent(f->cli.context, &status);
-    f->clv_flux2[ie] = clCreateUserEvent(f->cli.context, &status);
+  f->clv_flux = calloc(3, sizeof(cl_event*));
+  for(int dim = 0; dim < 3; ++dim) {
+    f->clv_flux[dim] = calloc(nmacro, sizeof(cl_event));
   }
   
   f->clv_volume = calloc(nmacro, sizeof(cl_event));
