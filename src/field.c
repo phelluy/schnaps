@@ -261,6 +261,12 @@ void init_field_kernels_cl(field *f)
 			       &status);
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
+
+  f->empty_kernel = clCreateKernel(f->cli.program,
+				   "empty_kernel",
+				   &status);
+  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status >= CL_SUCCESS);
 }
 
 void init_field_events_cl(field *f)
@@ -270,26 +276,14 @@ void init_field_events_cl(field *f)
   const int nmacro = f->macromesh.nbelems;
   
   f->clv_zbuf = calloc(nmacro, sizeof(cl_event));
-  for(int ie = 0; ie < nmacro; ++ie)
-    f->clv_zbuf[ie] = clCreateUserEvent(f->cli.context, &status);
   
   const int ninterfaces = f->macromesh.nmacrointerfaces;
-  if(ninterfaces > 0) {
+  if(ninterfaces > 0)
     f->clv_mci = calloc(ninterfaces, sizeof(cl_event));
-    for(int ifa = 0; ifa < ninterfaces; ++ifa)
-      f->clv_mci[ifa] = clCreateUserEvent(f->cli.context, &status);
-  }
     
   const int nbound = f->macromesh.nboundaryfaces;
-  if(nbound > 0) {
+  if(nbound > 0)
     f->clv_boundary = calloc(nbound, sizeof(cl_event));
-    for(int ifa = 0; ifa < nbound; ++ifa)
-      f->clv_boundary[ifa] = clCreateUserEvent(f->cli.context, &status);
-  }
-  
-  f->clv_mass = calloc(nmacro, sizeof(cl_event));
-  for(int ie = 0; ie < nmacro; ++ie)
-    f->clv_mass[ie] = clCreateUserEvent(f->cli.context, &status);
 
   f->clv_flux = calloc(3, sizeof(cl_event*));
   for(int dim = 0; dim < 3; ++dim) {
@@ -297,15 +291,8 @@ void init_field_events_cl(field *f)
   }
   
   f->clv_volume = calloc(nmacro, sizeof(cl_event));
-  for(int ie = 0; ie < nmacro; ++ie) {
-    f->clv_volume[ie] = clCreateUserEvent(f->cli.context, &status);
-  }
-
   f->clv_source = calloc(nmacro, sizeof(cl_event));
-  for(int ie = 0; ie < nmacro; ++ie) {
-    f->clv_source[ie] = clCreateUserEvent(f->cli.context, &status);
-  }
-
+  f->clv_mass = calloc(nmacro, sizeof(cl_event));
 }
 
 void init_field_macrocells_cl(field *f)

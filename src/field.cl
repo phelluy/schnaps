@@ -11,6 +11,12 @@
 #endif
 
 
+// A kernel used solely for managing events (cf: SOCL)
+__kernel
+void empty_kernel()
+{
+}
+
 real dlag(int deg, int ib, int ipg) {
   return gauss_lob_dpsi[gauss_lob_dpsi_offset[deg] + ib * (deg + 1) + ipg];
 }

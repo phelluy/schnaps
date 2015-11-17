@@ -6,6 +6,17 @@
 #include <string.h>
 #include <sys/time.h>
 
+void empty_kernel(field *f,
+		  cl_uint nwait, cl_event *wait, cl_event *done) 
+{
+  cl_int status;
+  status = clEnqueueTask(f->cli.commandqueue,
+			 f->empty_kernel,
+			 nwait, wait, done);
+  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status >= CL_SUCCESS);
+}
+  
 #ifdef _WITH_OPENCL
 void CopyfieldtoCPU(field *f)
 {
@@ -837,8 +848,8 @@ void dtfield_CL(field *f, real tnow, cl_mem *wn_cl,
   	      f->clv_mass + ie);
   }
 
-  clWaitForEvents(nmacro, dtfielddone);
-
+  // Manage events with empty kernel
+  empty_kernel(f, nmacro, dtfielddone, done);
 
   // Add times for sources after everything is finished
   for(int i = 0; i < ninterfaces; ++i)
@@ -858,8 +869,6 @@ void dtfield_CL(field *f, real tnow, cl_mem *wn_cl,
     f->mass_time += clv_duration(f->clv_mass[ie]);
   }
 
-  if(done != NULL)
-    clSetUserEventStatus(*done, CL_COMPLETE);
 }
 
 // Set kernel arguments for first stage of RK2
@@ -1141,24 +1150,17 @@ void RK4_CL(field *f, real tmax, real dt,
   cl_mem *w = f->wn_cl;
   cl_mem *dtw = f->dtwn_cl;
 
-  cl_event source0 = clCreateUserEvent(f->cli.context, &status);
-  cl_event source1 = clCreateUserEvent(f->cli.context, &status);
-  cl_event source2 = clCreateUserEvent(f->cli.context, &status);
-  cl_event source3 = clCreateUserEvent(f->cli.context, &status);
+  cl_event source0;
+  cl_event source1;
+  cl_event source2;
+  cl_event source3;
   
   cl_event *stage0 = calloc(nmacro, sizeof(cl_event));
   cl_event *stage1 = calloc(nmacro, sizeof(cl_event));
   cl_event *stage2 = calloc(nmacro, sizeof(cl_event));
   cl_event *stage3 = calloc(nmacro, sizeof(cl_event));
-  for(int ie = 0; ie < nmacro; ++ie) {
-    stage0[ie] = clCreateUserEvent(f->cli.context, &status);
-    stage1[ie] = clCreateUserEvent(f->cli.context, &status);
-    stage2[ie] = clCreateUserEvent(f->cli.context, &status);
-    stage3[ie] = clCreateUserEvent(f->cli.context, &status);
-    status = clSetUserEventStatus(stage3[ie], CL_COMPLETE);
-  }
-  
-  clWaitForEvents(nwait, wait);
+  for(int ie = 0; ie < nmacro; ++ie)
+    empty_kernel(f, nwait, wait, stage3 + ie);
   
   printf("Starting RK4_CL\n");
 
@@ -1292,14 +1294,11 @@ void RK2_CL(field *f, real tmax, real dt,
   for(int ie = 0; ie < nmacro; ++ie) {
     stage1[ie] = clCreateUserEvent(f->cli.context, &status);
     stage2[ie] = clCreateUserEvent(f->cli.context, &status);
-    status = clSetUserEventStatus(stage2[ie], CL_COMPLETE);
+    empty_kernel(f, nwait, wait, stage2 + ie);
   }
   
   cl_event source1 = clCreateUserEvent(f->cli.context, &status);
   cl_event source2 = clCreateUserEvent(f->cli.context, &status);
-
-  if(nwait > 0)
-    clWaitForEvents(nwait, wait);
 
   printf("Starting RK2_CL\n");
   

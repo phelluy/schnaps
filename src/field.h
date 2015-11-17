@@ -168,6 +168,7 @@ typedef struct field {
   cl_kernel RK4_first_stages;
   cl_kernel RK4_final_stage;
   cl_kernel zero_buf;
+  cl_kernel empty_kernel;
 
   // OpenCL events
 
