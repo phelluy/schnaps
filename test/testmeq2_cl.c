@@ -84,7 +84,7 @@ int TestmEq2()
   f.dtwn = dtwn_cl;
 
   const int nmacro = f.macromesh.nbelems;
-  
+
   for(int ie = 0; ie < nmacro; ++ie) {
     MacroCell *mcell = f.mcell + ie;
     set_buf_to_zero_cl(f.dtwn_cl + ie, mcell, &f,
@@ -180,7 +180,9 @@ int TestmEq2()
   }
   clFinish(f.cli.commandqueue);
 
-  for(int ifa = 0; ifa < f.macromesh.nbfaces; ++ifa) {
+  const int ninterfaces = f.macromesh.nmacrointerfaces;
+  for(int i = 0; i < ninterfaces; ++i) {
+    int ifa = f.macromesh.macrointerface[i];
     DGMacroCellInterface_CL(mface + ifa, &f, f.wn_cl,
     			    0, NULL, NULL);
     clFinish(f.cli.commandqueue);

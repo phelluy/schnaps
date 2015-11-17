@@ -209,7 +209,10 @@ void DGBoundary_CL(MacroFace *mface, field *f, cl_mem *wn_cl,
   int ifa = mface->ifa;
   int ieL =    f->macromesh.face2elem[4 * ifa];
   int locfaL = f->macromesh.face2elem[4 * ifa + 1];
-    
+  int ieR =    f->macromesh.face2elem[4 * ifa + 2];
+
+  assert(ieR == -1);
+  
   size_t numworkitems = NPGF(f->interp_param + 1, locfaL);
   size_t cachesize = 1; // TODO make use of cache
   init_DGBoundary_CL(f, ieL, locfaL, wn_cl, cachesize);
@@ -337,30 +340,26 @@ void DGMacroCellInterface_CL(MacroFace *mface, field *f, cl_mem *wn_cl,
   int locfaR = f->macromesh.face2elem[4 * ifa + 3];
 
   size_t numworkitems = NPGF(f->interp_param + 1, locfaL);
-  if(ieR >= 0) {
-    // Set the remaining loop-dependant kernel arguments
-    size_t kernel_cachesize = 1;
-    init_DGMacroCellInterface_CL(f, 
-				 ieL, ieR, locfaL, locfaR, 
-				 wn_cl, 
-				 kernel_cachesize);
+  assert(ieR >= 0);
 
-    status = clEnqueueNDRangeKernel(f->cli.commandqueue,
-				    kernel,
-				    1, // cl_uint work_dim,
-				    NULL, // global_work_offset,
-				    &numworkitems, // global_work_size, 
-				    NULL, // size_t *local_work_size, 
-				    nwait,  // nwait, 
-				    wait, // *wait_list,
-				    done); // *event
-    if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
-    assert(status >= CL_SUCCESS);
-  } else {
-    // Set the event to completed status.
-    if(done != NULL)
-      clSetUserEventStatus(*done, CL_COMPLETE);
-  }
+  // Set the remaining loop-dependant kernel arguments
+  size_t kernel_cachesize = 1;
+  init_DGMacroCellInterface_CL(f, 
+			       ieL, ieR, locfaL, locfaR, 
+			       wn_cl, 
+			       kernel_cachesize);
+
+  status = clEnqueueNDRangeKernel(f->cli.commandqueue,
+				  kernel,
+				  1, // cl_uint work_dim,
+				  NULL, // global_work_offset,
+				  &numworkitems, // global_work_size, 
+				  NULL, // size_t *local_work_size, 
+				  nwait,  // nwait, 
+				  wait, // *wait_list,
+				  done); // *event
+  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status >= CL_SUCCESS);
 }
 
 // Set up kernel arguments, etc, for DGMass_CL.
@@ -484,6 +483,9 @@ void init_DGFlux_CL(field *f, int ie, int dim0, cl_mem *wn_cl,
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 }
+
+// FIXME: launch the empty kernel
+//void 
 
 // wn_cl is a pointer to a macrocell's wn_cl
 void DGFlux_CL(field *f, int dim0, int ie, cl_mem *wn_cl,
@@ -755,7 +757,6 @@ void dtfield_CL(field *f, real tnow, cl_mem *wn_cl,
     
   // Macrocell interfaces must be launched serially
   const int ninterfaces = f->macromesh.nmacrointerfaces;
-  
   for(int i = 0; i < ninterfaces; ++i) {
     int ifa = f->macromesh.macrointerface[i];
     DGMacroCellInterface_CL(f->mface + ifa, f, wn_cl,
