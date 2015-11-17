@@ -9,7 +9,7 @@
 cl_ulong clv_starttime(cl_event clv) 
 {
   cl_ulong time;
-  clWaitForEvents(1, &clv);
+  clWaitForEvents(1, &clv); // necessary for profiling
   clGetEventProfilingInfo(clv,
 			  CL_PROFILING_COMMAND_START,
 			  sizeof(time),
@@ -20,7 +20,7 @@ cl_ulong clv_starttime(cl_event clv)
 cl_ulong clv_endtime(cl_event clv) 
 {
   cl_ulong time;
-  clWaitForEvents(1, &clv);
+  clWaitForEvents(1, &clv); // necessary for profiling
   clGetEventProfilingInfo(clv,
 			  CL_PROFILING_COMMAND_END,
 			  sizeof(time),

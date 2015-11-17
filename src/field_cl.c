@@ -1226,16 +1226,14 @@ void RK4_CL(field *f, real tmax, real dt,
     iter++;
   }
 
+  empty_kernel(f, nmacro, stage3, done);
+  
   struct timeval t_end;
   gettimeofday(&t_end, NULL); 
 
-  if(done != NULL) {
-    status = clSetUserEventStatus(*done, CL_COMPLETE);
-  }
-
   // TODO: free cl_mems
   
- double rkseconds = (t_end.tv_sec - t_start.tv_sec) * 1.0 // seconds
+  double rkseconds = (t_end.tv_sec - t_start.tv_sec) * 1.0 // seconds
     + (t_end.tv_usec - t_start.tv_usec) * 1e-6; // microseconds
   printf("\nTotal RK time (s):\n%f\n", rkseconds);
   printf("\nTotal RK time per time-step (s):\n%f\n", rkseconds / iter );
@@ -1292,13 +1290,11 @@ void RK2_CL(field *f, real tmax, real dt,
   cl_event *stage1 =  calloc(nmacro, sizeof(cl_event));
   cl_event *stage2 =  calloc(nmacro, sizeof(cl_event));
   for(int ie = 0; ie < nmacro; ++ie) {
-    stage1[ie] = clCreateUserEvent(f->cli.context, &status);
-    stage2[ie] = clCreateUserEvent(f->cli.context, &status);
     empty_kernel(f, nwait, wait, stage2 + ie);
   }
   
-  cl_event source1 = clCreateUserEvent(f->cli.context, &status);
-  cl_event source2 = clCreateUserEvent(f->cli.context, &status);
+  cl_event source1;
+  cl_event source2;
 
   printf("Starting RK2_CL\n");
   
@@ -1339,14 +1335,11 @@ void RK2_CL(field *f, real tmax, real dt,
 
     iter++;
   }
+
+  empty_kernel(f, nmacro, stage2, done);
   
   struct timeval t_end;
   gettimeofday(&t_end, NULL);
-
-  if(done != NULL) {
-    // FIXME: replace with null kernel
-    status = clSetUserEventStatus(*done, CL_COMPLETE);
-  }
     
   for(int ie = 0; ie < nmacro; ++ie) {
     clReleaseEvent(stage1[ie]);
