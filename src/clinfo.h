@@ -13,6 +13,7 @@
 //! \brief Data structure for managing the OpenCL
 //! system informations
 typedef struct CLInfo{
+  cl_platform_id platform; //!< OpenCL platform
   cl_device_id device; //!< devices list
   cl_ulong devicememsize;  //!< GPU global memory size
   cl_ulong maxmembuffer;  //!< maximal size of a GPU buffer
