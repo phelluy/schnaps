@@ -353,7 +353,7 @@ void init_field_cl(field *f)
 {
   InitCLInfo(&f->cli, nplatform_cl, ndevice_cl);
 
-  init_field_buffers_cl(f);  
+  init_field_buffers_cl(f);
   // Program compilation
   char *strprog;
   GetOpenCLCode();

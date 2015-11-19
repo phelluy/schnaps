@@ -6,6 +6,7 @@
 #include "clutils.h"
 #include <stdbool.h>
 
+
 bool cldevice_exists(cl_platform_id *platform, cl_uint ndevice)
 {
   cl_int status;
@@ -117,22 +118,36 @@ cl_device_id get_device_id(cl_platform_id platform, cl_uint ndevice)
 #endif
 }
 
-void get_cldevice_extensions(cl_device_id device, char * buf, size_t bufsize)
+char* get_cldevice_extensions(cl_device_id device)
 {
   cl_int status;
+  size_t bufsize;
+
   status = clGetDeviceInfo(device,
 			   CL_DEVICE_EXTENSIONS,
-			   bufsize,
-			   buf,
-			   NULL);
+ 			   0,
+			   NULL,
+			   &bufsize);
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
+
+  if(bufsize > 0) {
+    char *buf = malloc(bufsize);
+    status = clGetDeviceInfo(device,
+			     CL_DEVICE_EXTENSIONS,
+			     bufsize,
+			     buf,
+			     NULL);
+    if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+    assert(status >= CL_SUCCESS);
+    return buf;
+  }
+  return NULL;
 }
 
-bool cldevice_supports_double(cl_device_id *device)
+bool cldevice_supports_double(cl_device_id device)
 {
-  char clextensions[1000];
-  get_cldevice_extensions(*device, clextensions, sizeof(clextensions));
+  char *clextensions = get_cldevice_extensions(device);
   printf("\tOpenCL extensions: %s\n", clextensions);
   if(strstr(clextensions, "cl_khr_fp64") != NULL) {
     printf("\t\tDouble-precision enabled (cl_khr_fp64).\n");
@@ -158,7 +173,7 @@ bool cldevice_is_acceptable(cl_uint nplatform, cl_uint ndevice)
 
   if(sizeof(real) == sizeof(double)) {
       cl_device_id device = get_device_id(platform, ndevice);
-      if(!cldevice_supports_double(&device)) {
+      if(!cldevice_supports_double(device)) {
 	printf("cldevice does not support double\n");
 	return false;
       }
@@ -166,7 +181,7 @@ bool cldevice_is_acceptable(cl_uint nplatform, cl_uint ndevice)
 
   return true;
 }
-
+		       
 void print_platforms(CLInfo *cli)
 {
   cl_int status;
@@ -381,7 +396,6 @@ void set_max_workgroup_size(CLInfo *cli)
 
 void set_clinfo_data(CLInfo *cli)
 {
-  set_clinfo_data(cli);
   set_device_name(cli);
   set_device_memory(cli);
   set_max_buffer_size(cli);
@@ -389,12 +403,12 @@ void set_clinfo_data(CLInfo *cli)
   set_max_constant_memory_size(cli);
   set_max_compute_units(cli);
   set_max_workgroup_size(cli);
+  cli->clextensions = get_cldevice_extensions(cli->device);
 }
 
 void PrintCLInfo(CLInfo *cli)
 {
-  cl_int status;  // for checking OpenCL errors
-
+  printf("OpenCL information:\n");
   printf("%sPlatform: \n",cli->platformname);
   printf("\tDevice: %s\n",cli->devicename);
 
@@ -408,8 +422,6 @@ void PrintCLInfo(CLInfo *cli)
   print_max_constant_arguments(cli);
   print_device_type(cli);
   print_opencl_version(cli);
-  get_cldevice_extensions(cli->device, cli->clextensions,
-			  sizeof(cli->clextensions));
   printf("\tOpenCL extensions:\n%s\n", cli->clextensions);
 }
 
@@ -440,6 +452,7 @@ void InitCLInfo(CLInfo *cli, int platform_num, int device_num)
 
   cli->device = get_device_id(cli->platform, device_num);
 
+  set_clinfo_data(cli);
   PrintCLInfo(cli);
   
   // First opencl context
