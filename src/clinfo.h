@@ -22,8 +22,8 @@ typedef struct CLInfo{
 
   cl_uint nbcomputeunits;  //!< number of compute units
   size_t maxworkgroupsize;  //!< maximal allowed size of a work group
-  char platformname[1000]; //!< platform name
-  char devicename[1000]; //!< accelerator name
+  char *platformname; //!< platform name
+  char *devicename; //!< accelerator name
   char *clextensions; //!< list of OpenCL extensions
   cl_uint nbplatforms;  //!< number of platforms
   cl_uint platformnum; //!< platform number

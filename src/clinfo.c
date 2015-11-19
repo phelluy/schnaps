@@ -145,6 +145,114 @@ char* get_cldevice_extensions(cl_device_id device)
   return NULL;
 }
 
+char* get_platform_vendor(cl_platform_id platform)
+{
+  cl_int status;
+  size_t bufsize;
+
+  status = clGetPlatformInfo(platform,
+			     CL_PLATFORM_VENDOR,
+			     0,
+			     NULL,
+			     &bufsize);
+  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status >= CL_SUCCESS);
+
+  if(bufsize > 0) {
+    char *buf = malloc(bufsize);
+    status = clGetPlatformInfo(platform,
+			       CL_PLATFORM_VENDOR,
+			       bufsize,
+			       buf,
+			       NULL);
+    if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+    assert(status >= CL_SUCCESS);
+    return buf;
+  }
+  
+  return NULL;
+}
+
+char* get_platform_version(cl_platform_id platform)
+{
+  cl_int status;
+  size_t bufsize;
+
+  status = clGetPlatformInfo(platform,
+			       CL_PLATFORM_VERSION,
+			     0,
+			     NULL,
+			     &bufsize);
+  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status >= CL_SUCCESS);
+
+  if(bufsize > 0) {
+    char *buf = malloc(bufsize);
+    status = clGetPlatformInfo(platform,
+			       CL_PLATFORM_VERSION,
+			       bufsize,
+			       buf,
+			       NULL);
+    if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+    assert(status >= CL_SUCCESS);
+    return buf;
+  }
+  return NULL;
+}
+char* get_platform_name(cl_platform_id platform)
+{
+  cl_int status;
+  size_t bufsize;
+
+  status = clGetPlatformInfo(platform,
+			     CL_PLATFORM_NAME,
+			     0,
+			     NULL,
+			     &bufsize);
+  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status >= CL_SUCCESS);
+
+  if(bufsize > 0) {
+    char *buf = malloc(bufsize);
+    status = clGetPlatformInfo(platform,
+			       CL_PLATFORM_NAME,
+			       bufsize,
+			       buf,
+			       NULL);
+    if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+    assert(status >= CL_SUCCESS);
+    return buf;
+  }
+  return NULL;
+}
+
+char* get_device_name(cl_device_id device)
+{
+  cl_int status;
+  size_t bufsize;
+
+  status = clGetDeviceInfo(device,
+			   CL_DEVICE_NAME,
+ 			   0,
+			   NULL,
+			   &bufsize);
+  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status >= CL_SUCCESS);
+
+  if(bufsize > 0) {
+    char *buf = malloc(bufsize);
+    status = clGetDeviceInfo(device,
+			     CL_DEVICE_NAME,
+			     bufsize,
+			     buf,
+			     NULL);
+    if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+    assert(status >= CL_SUCCESS);
+    return buf;
+  }
+  return NULL;
+}
+
 bool cldevice_supports_double(cl_device_id device)
 {
   char *clextensions = get_cldevice_extensions(device);
@@ -196,48 +304,21 @@ void print_platforms(CLInfo *cli)
   char pbuf[2000];
   for(int i = 0; i < nplatforms; ++i) {
     printf("\nPlatform %d:\n", i);
-    status = clGetPlatformInfo(platforms[i],
-			       CL_PLATFORM_NAME,
-			       sizeof(pbuf),
-			       pbuf,
-			       NULL);
-    if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
-    assert(status >= CL_SUCCESS);
-    printf("\t%s\n", pbuf);
 
-    status = clGetPlatformInfo(platforms[i],
-			       CL_PLATFORM_VENDOR,
-			       sizeof(pbuf),
-			       pbuf,
-			       NULL);
-    if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
-    assert(status >= CL_SUCCESS);
-    printf("\t%s\n",pbuf);
-
-    //  opencl version
-    status = clGetPlatformInfo(platforms[i],
-			       CL_PLATFORM_VERSION,
-			       sizeof(cli->platformname),
-			       cli->platformname,
-			       NULL);
-    if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
-    assert(status >= CL_SUCCESS);
-    printf("\t%s\n",cli->platformname);
+    char* platname = get_platform_name(platforms[i]);
+    printf("\t%s\n", platname);
+    free(platname);
+    
+    char* platvendor = get_platform_vendor(platforms[i]);
+    printf("\t%s\n", platvendor);
+    free(platvendor);
+    
+    char* platversion = get_platform_version(platforms[i]);
+    printf("\t%s\n", platversion);
+    free(platversion);
   }
 
   free(platforms);
-}
-
-void set_device_name(CLInfo *cli)
-{
-  cl_int status;
-  status = clGetDeviceInfo(cli->device,
-			   CL_DEVICE_NAME,
-			   sizeof(cli->devicename),
-			   cli->devicename,
-			   NULL);
-  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status >= CL_SUCCESS);
 }
 
 void print_device_type(CLInfo *cli)
@@ -396,7 +477,8 @@ void set_max_workgroup_size(CLInfo *cli)
 
 void set_clinfo_data(CLInfo *cli)
 {
-  set_device_name(cli);
+  cli->platformname = get_platform_name(cli->platform);
+  cli->devicename = get_device_name(cli->device);
   set_device_memory(cli);
   set_max_buffer_size(cli);
   set_local_memory_size(cli);
@@ -409,7 +491,7 @@ void set_clinfo_data(CLInfo *cli)
 void PrintCLInfo(CLInfo *cli)
 {
   printf("OpenCL information:\n");
-  printf("%sPlatform: \n",cli->platformname);
+  printf("\tPlatform: %s\n",cli->platformname);
   printf("\tDevice: %s\n",cli->devicename);
 
   // device memory
