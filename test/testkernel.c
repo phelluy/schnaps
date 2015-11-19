@@ -8,7 +8,7 @@
 
 int TestKernel()
 {
-  bool test = true;
+  int retval = 0;
 
   if(!cldevice_is_acceptable(nplatform_cl, ndevice_cl)) {
     printf("OpenCL device not acceptable.\n");
@@ -84,20 +84,23 @@ int TestKernel()
     //printf("error=%f %f %f\n", f.dtwn[i]-saveptr[i], f.dtwn[i],saveptr[i]);
     maxerr=fmax(fabs(f.dtwn[i] - saveptr[i]), maxerr);
   }
-  printf("\nmax error=%f\n",maxerr);
+  printf("\nmax error=%f\n", maxerr);
 
-  test = (maxerr < 1e-8);
+  real tolerance = (sizeof(real)  == sizeof(double)) ? 1e-8 : 1e-6;
+  if(maxerr > tolerance) {
+    retval += 1;
+  }
 
-  return test;
+  return retval;
 }
 
 int main()
 {
   // Unit tests
-  int resu = TestKernel();
-  if (resu) 
+  int retval = TestKernel();
+  if (retval == 0) 
     printf("Kernel test OK !\n");
   else 
     printf("Kernel test failed !\n");
-  return !resu;
+  return retval;
 } 
