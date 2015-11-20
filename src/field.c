@@ -338,7 +338,6 @@ void init_field_macrocells_cl(field *f)
 				  mcell->npg * sizeof(real),
 				  mcell->mass,
 				  0, NULL, NULL);
-
     if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
     assert(status >= CL_SUCCESS);
 
@@ -346,9 +345,44 @@ void init_field_macrocells_cl(field *f)
     if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
     assert(status >= CL_SUCCESS);
 
+    mcell->interface_cl = malloc(6 * sizeof(cl_mem));
   }
 }
+  
+void init_field_MacroFaces_cl(field *f)
+{
+  cl_int status;
 
+  // Set up interfaces
+  const int ninterfaces = f->macromesh.nmacrointerfaces;
+  for(int i = 0; i < ninterfaces; ++i) {
+    int ifa = f->macromesh.macrointerface[i];
+    MacroFace *mface = f->mface + ifa;
+    int ieL = mface->ieL;
+    int locfaL = mface->locfaL;
+    int ieR = mface->ieR;
+    int locfaR = mface->locfaL;
+
+    MacroCell *mcellL = f->mcell + ieL;
+    mcellL->interface_cl[locfaL] = clCreateBuffer(f->cli.context,
+    						  CL_MEM_READ_WRITE,
+    						  sizeof(real) * mface->npgf,
+    						  NULL,
+    						  &status);
+    if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+    assert(status >= CL_SUCCESS);
+
+    MacroCell *mcellR = f->mcell + ieR;
+    mcellR->interface_cl[locfaR] = clCreateBuffer(f->cli.context,
+    						  CL_MEM_READ_WRITE,
+    						  sizeof(real) * mface->npgf,
+    						  NULL,
+    						  &status);
+    if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+    assert(status >= CL_SUCCESS);
+  }
+}
+  
 void init_field_cl(field *f)
 {
   InitCLInfo(&f->cli, nplatform_cl, ndevice_cl);
@@ -385,6 +419,8 @@ void init_field_cl(field *f)
   init_field_events_cl(f);
 
   init_field_macrocells_cl(f);
+
+  init_field_MacroFaces_cl(f);
   
   // Set timers to zero
   f->zbuf_time = 0;
@@ -404,10 +440,14 @@ void init_field_macrofaces(field *f)
   for(int ifa = 0; ifa < f->macromesh.nbfaces; ifa++) {
     MacroFace *mface = f->mface + ifa;
     mface->ifa = ifa;
-    mface->ieL = f->macromesh.face2elem[4 * ifa + 0];
-    mface->locfaL = f->macromesh.face2elem[4 * ifa + 1];
-    mface->ieR = f->macromesh.face2elem[4 * ifa + 2];
-    mface->locfaR = f->macromesh.face2elem[4 * ifa + 3];
+    
+    int *f2eifa = f->macromesh.face2elem + 4 * ifa;
+    mface->ieL =    f2eifa[0];
+    mface->locfaL = f2eifa[1];
+    mface->ieR =    f2eifa[2];
+    mface->locfaR = f2eifa[3];
+
+    mface->npgf = NPGF(f->interp_param + 1, mface->locfaL);
   }
 }
 
@@ -1107,10 +1147,11 @@ void DGMacroCellBoundary(MacroFace *mface, field *f, real *wmc, real *dtwmc)
   //int ieR = msh->face2elem[4 * ifa + 2];
 
   // Loop over the points on a single macro cell interface.
+  const int npgf = mface->npgf;
 #ifdef _OPENMP
 #pragma omp parallel for
 #endif
-  for(int ipgfL = 0; ipgfL < NPGF(f->interp_param + 1, locfaL); ipgfL++) {
+  for(int ipgfL = 0; ipgfL < npgf; ipgfL++) {
 
     int iparam[8];
     for(int ip = 0; ip < 8; ip++)
@@ -1172,11 +1213,12 @@ void DGMacroCellInterface(MacroFace *mface, field *f,
   int locfaL = mface->locfaL;
   int ieR = mface->ieR;
 
-  // Loop over the points on a single macro cell interface.
+    // Loop over the points on a single macro cell interface.
+  const int npgf = mface->npgf;
 #ifdef _OPENMP
 #pragma omp parallel for
 #endif
-  for(int ipgfL = 0; ipgfL < NPGF(f->interp_param + 1, locfaL); ipgfL++) {
+  for(int ipgfL = 0; ipgfL < npgf; ipgfL++) {
 
     int iparam[8];
     for(int ip = 0; ip < 8; ip++)

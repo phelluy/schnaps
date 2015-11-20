@@ -224,7 +224,7 @@ void DGBoundary_CL(MacroFace *mface, field *f, cl_mem *wn_cl,
 
   assert(ieR == -1);
   
-  size_t numworkitems = NPGF(f->interp_param + 1, locfaL);
+  size_t numworkitems = mface->npgf;
   size_t cachesize = 1; // TODO make use of cache
   init_DGBoundary_CL(f, ieL, locfaL, wn_cl, cachesize);
   
@@ -342,7 +342,6 @@ void DGMacroCellInterface_CL(MacroFace *mface, field *f, cl_mem *wn_cl,
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 
-
   int ifa = mface->ifa;
 
   int ieL = mface->ieL;
@@ -350,7 +349,7 @@ void DGMacroCellInterface_CL(MacroFace *mface, field *f, cl_mem *wn_cl,
   int ieR = mface->ieR;
   int locfaR = mface->locfaR;
 
-  size_t numworkitems = NPGF(f->interp_param + 1, locfaL);
+  size_t numworkitems = mface->npgf;
   assert(ieR >= 0);
 
   // Set the remaining loop-dependant kernel arguments
@@ -572,10 +571,6 @@ void init_DGVolume_CL(MacroCell *mcell, field *f, cl_mem *wn_cl)
                           f->dtwn_cl + mcell->ie);
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
-
-
-  int *param = f->interp_param;
-  int m = param[0];
 
   status = clSetKernelArg(kernel,
                           argnum++,

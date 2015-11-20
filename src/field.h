@@ -18,6 +18,9 @@ typedef struct MacroFace {
   int locfaL;
   int ieR;
   int locfaR;
+
+  // Number of points on the macrocell interface.
+  int npgf;
 } MacroFace;
 
 //! \brief A simple struct for packing a field
@@ -70,6 +73,9 @@ typedef struct MacroCell {
 
   // The macrocell's dtwn.
   cl_mem dtwn_cl;
+
+  // Array of OCL buffers for interface extraction.
+  cl_mem *interface_cl;
 #endif
 } MacroCell;
 
