@@ -28,6 +28,7 @@
 #pragma start_opencl
 int GenericVarindex(__constant int *param, int ipg, int iv)
 {
+  // param[0] = m
   return iv + param[0] * ipg;
 }
 #pragma end_opencl
@@ -226,6 +227,12 @@ void init_field_kernels_cl(field *f)
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 
+  f->extractinterface = clCreateKernel(f->cli.program,
+				       "ExtractInterface",
+				       &status);
+  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status >= CL_SUCCESS);
+
   f->dgboundary = clCreateKernel(f->cli.program,
 				 "DGBoundary",
 				 &status);
@@ -353,33 +360,31 @@ void init_field_MacroFaces_cl(field *f)
 {
   cl_int status;
 
+  int *param = f->interp_param;
+  int m = param[0];
+  
   // Set up interfaces
   const int ninterfaces = f->macromesh.nmacrointerfaces;
   for(int i = 0; i < ninterfaces; ++i) {
     int ifa = f->macromesh.macrointerface[i];
     MacroFace *mface = f->mface + ifa;
-    int ieL = mface->ieL;
-    int locfaL = mface->locfaL;
-    int ieR = mface->ieR;
-    int locfaR = mface->locfaL;
 
-    MacroCell *mcellL = f->mcell + ieL;
-    mcellL->interface_cl[locfaL] = clCreateBuffer(f->cli.context,
-    						  CL_MEM_READ_WRITE,
-    						  sizeof(real) * mface->npgf,
-    						  NULL,
-    						  &status);
-    if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
-    assert(status >= CL_SUCCESS);
+    int ieLR[2] = {mface->ieL, mface->ieR};
+    int locfaLR[2] = {mface->locfaL, mface->locfaR};
 
-    MacroCell *mcellR = f->mcell + ieR;
-    mcellR->interface_cl[locfaR] = clCreateBuffer(f->cli.context,
-    						  CL_MEM_READ_WRITE,
-    						  sizeof(real) * mface->npgf,
-    						  NULL,
-    						  &status);
-    if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
-    assert(status >= CL_SUCCESS);
+    for(int side = 0; side < 2; ++side) {
+      int ie = ieLR[side];
+      int locfa = locfaLR[side];
+      MacroCell *mcell = f->mcell + ie;
+      
+      mcell->interface_cl[locfa] = clCreateBuffer(f->cli.context,
+						  CL_MEM_READ_WRITE,
+						  sizeof(real) * m*mface->npgf,
+						  NULL,
+						  &status);
+      if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+      assert(status >= CL_SUCCESS);
+    }
   }
 }
   
@@ -964,7 +969,7 @@ void DGSubCellInterface(MacroCell *mcell, field *f, real *wmc, real *dtwmc)
 		  // we compute ourself the normal vector because we
 		  // have to take into account the subcell surface
 
-		  real h1h2 = 1. / nraf[dim1] / nraf[dim2];
+		  real h1h2 = 1.0 / nraf[dim1] / nraf[dim2];
 		  vnds[0] = codtau[0][dim0] * h1h2;
 		  vnds[1] = codtau[1][dim0] * h1h2;
 		  vnds[2] = codtau[2][dim0] * h1h2;

@@ -256,7 +256,6 @@ void Ref2Phy_only(__constant real *physnode, const real xref[3], real xphy[3])
   }
 }
 
-
 void Phy2Ref(__constant real *physnode,
              real xphy[3], real xref[3]);
 
@@ -1112,7 +1111,36 @@ void DGMass(__constant int *param,      // interp param
     postfetch_macrocell_overwrite(dtwnloc, dtwn, param);
 #endif
 }
+
+__kernel
+void ExtractInterface(const int m,
+		      const int d2,
+		      const int stride0,   // stride for d0
+		      const int stride1,   // stride for d1
+		      const int stride2,   // stride for d2
+		      const int n0,        // number of points in d0
+		      const __global real *wn,   // volumic input
+		      __global real *wface // output
+		      )
+{
+  int d0 = get_global_id(0); // first dimension
+  int d1 = get_global_id(1); // second dimension
+  int iv = get_global_id(2); // m index
+
+  // We assume that the MacroCell's volumic points are given in the
+  // standard C-ordering.
+
+  // We must pre-compute the input strides because we don't know the
+  // ordering for the face.
+  int pin = d0 * stride0 + d1 * stride1 + d2 * stride2 + iv;
   
+  // The output is in wface, with corrdinates (d0, d1, iv) in
+  // [0, n0 -1] x [0, n1 -1] x [0, m - 1] x
+  int pout = d1 * n0 * m  + d0 * m + iv; 
+
+  wface[pout] = wn[pin];
+}
+
 // Compute the Discontinuous Galerkin inter-macrocells boundary terms.
 // Second implementation with a loop on the faces.
 __kernel
@@ -1165,7 +1193,7 @@ void DGMacroCellInterface(__constant int *param,        // interp param
 	    NULL, -1, // dpsiref, ifa
 	    xpg_in, NULL,
 	    NULL, NULL, NULL); // codtau, dpsi,vnds
-    PeriodicCorrection(xpg_in,period);
+    PeriodicCorrection(xpg_in, period);
     Phy2Ref(physnodeR, xpg_in, xrefL);
   }
 

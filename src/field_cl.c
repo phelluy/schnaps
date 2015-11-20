@@ -241,6 +241,156 @@ void DGBoundary_CL(MacroFace *mface, field *f, cl_mem *wn_cl,
   assert(status >= CL_SUCCESS);
 }
 
+void init_ExtractInterface_CL(field *f,
+			      int m,
+			      int d2,
+			      int *stride,
+			      int n0,
+			      cl_mem wn, cl_mem wface)
+{
+  cl_int status;
+  cl_kernel kernel = f->extractinterface;
+
+  unsigned int argnum = 0;
+
+  status = clSetKernelArg(kernel,
+			  argnum++,
+                          sizeof(int),
+                          &m);
+  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status >= CL_SUCCESS);
+  
+  status = clSetKernelArg(kernel,
+			  argnum++,
+                          sizeof(int),
+                          &d2);
+  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status >= CL_SUCCESS);
+
+  status = clSetKernelArg(kernel,
+			  argnum++,
+                          sizeof(int),
+                          &stride[0]);
+  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status >= CL_SUCCESS);
+
+  status = clSetKernelArg(kernel,
+			  argnum++,
+                          sizeof(int),
+                          &stride[1]);
+  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status >= CL_SUCCESS);
+
+  status = clSetKernelArg(kernel,
+			  argnum++,
+                          sizeof(int),
+                          &stride[2]);
+  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status >= CL_SUCCESS);
+
+  status = clSetKernelArg(kernel,
+			  argnum++,
+                          sizeof(int),
+                          &n0);
+  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status >= CL_SUCCESS);
+  
+
+  status = clSetKernelArg(kernel,
+			  argnum++,
+                          sizeof(cl_mem),
+                          &wn);
+  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status >= CL_SUCCESS);
+  
+  status = clSetKernelArg(kernel,
+			  argnum++,
+                          sizeof(cl_mem),
+                          &wface);
+  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status >= CL_SUCCESS);
+}
+
+// wn is an array of cl_mems, one per MacroCell.
+void ExtractInterface_CL(MacroFace *mface, field *f, cl_mem *wn,
+			 cl_uint nwait, cl_event *wait, cl_event *done) 
+{
+  int *param = f->interp_param;
+  int m = param[0];
+  int deg[3] = {param[1], param[2], param[3]};
+  int nraf[3] = {param[4], param[5], param[6]};
+
+  int ieLR[2] = {mface->ieL, mface->ieR};
+  int locfaLR[2] = {mface->locfaL, mface->locfaR};
+
+  const int axis_permut[6][4] = { {0, 2, 1, 0},
+				  {1, 2, 0, 1},
+				  {2, 0, 1, 1},
+				  {2, 1, 0, 0},
+				  {0, 1, 2, 1},
+				  {1, 0, 2, 0} };
+
+  for(int side = 0; side < 2; ++side) {
+    int ie = ieLR[side];
+    int locfa = locfaLR[side];
+    MacroCell *mcell = f->mcell + ie;
+
+    // Number of points in a macrocell in each direction
+    int npgmc[3] = {nraf[0] * (deg[0] + 1 ),
+		    nraf[0] * (deg[0] + 1 ),
+		    nraf[0] * (deg[0] + 1 ) };
+    
+    // indices of the used dimemsions
+    int i0;
+    int i1;
+    // i2 is the index of the unused dimension.
+    int i2 = axis_permut[locfa][2];
+    switch(i2) {
+      case 0: // yz loop
+	i0 = 1;
+	i1 = 2;
+	break;
+      case 1: // xz loop
+	i0 = 0;
+	i1 = 2;
+	break;
+      case 2: // xy loop
+	i0 = 0;
+	i1 = 1;
+	break;
+      default:
+	assert(false);
+    }
+
+    int d2;
+    int sign = 1 - 2 * axis_permut[locfa][3];
+    switch(sign) {
+      case -1:
+	d2 = 0;
+	break;
+      case 1:
+	d2 = npgmc[i2];
+	break;
+      default:
+	assert(false);
+    }
+
+    int stride[3] = {m * npgmc[1] * npgmc[2],
+		     m * npgmc[2],
+		     m };
+    int n0 = npgmc[0];
+    
+    cl_mem wface = mcell->interface_cl[locfa];
+  
+    init_ExtractInterface_CL(f,
+			     m, d2, stride,
+    			     n0, wn[ie], wface);
+
+    // FIXME: launch kernel
+  }
+  
+}
+
 // Set the loop-dependant kernel arguments for DGMacroCellInterface_CL
 // wn_cl is an array of cl_mems, one per macrocell.
 void init_DGMacroCellInterface_CL(field *f, 
@@ -248,14 +398,12 @@ void init_DGMacroCellInterface_CL(field *f,
 				  cl_mem *wn_cl,
 				  size_t cachesize)
 {
-  //printf("loop_init_DGMacroCellInterface_CL\n");
   cl_int status;
   cl_kernel kernel = f->dginterface;
 
   MacroCell *mcellL = f->mcell + ieL;
   MacroCell *mcellR = f->mcell + ieR;
   
-  // Set kernel arguments
   unsigned int argnum = 0;
 
   status = clSetKernelArg(kernel,
@@ -496,7 +644,7 @@ void init_DGFlux_CL(field *f, int ie, int dim0, cl_mem *wn_cl,
 
 // wn_cl is a pointer to a macrocell's wn_cl
 void DGFlux_CL(field *f, int dim0, int ie, cl_mem *wn_cl,
-	       cl_uint nwait, cl_event *wait, cl_event *done) 
+	       cl_uint nwait, cl_event *wait, cl_event *done)
 {
   // Unpack the parameters
   int *param = f->interp_param;

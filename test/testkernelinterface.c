@@ -46,15 +46,30 @@ int TestKernelInterface()
  
   Initfield(&f);
 
+  
+  const int ninterfaces = f.macromesh.nmacrointerfaces;
+
+  // Test interface extraction
+  printf("OpenCL extraction:\n");
+  for(int i = 0; i < f.wsize; i++)
+    f.dtwn[i] = 0.0;
+
+  CopyfieldtoGPU(&f);
+
+  for(int i = 0; i < ninterfaces; ++i) {
+    int ifa = f.macromesh.macrointerface[i];
+    ExtractInterface_CL(f.mface + ifa, &f, f.wn_cl, 0, NULL, NULL);
+    clFinish(f.cli.commandqueue);
+  }
+    
+  // OpenCL version
+  printf("OpenCL version:\n");
+
   for(int i = 0; i < f.wsize; i++)
     f.dtwn[i] = 0.0;
 
   CopyfieldtoGPU(&f);
   
-  // OpenCL version
-  printf("OpenCL version:\n");
-  
-  const int ninterfaces = f.macromesh.nmacrointerfaces;
   for(int i = 0; i < ninterfaces; ++i) {
     int ifa = f.macromesh.macrointerface[i];
     DGMacroCellInterface_CL(f.mface + ifa, &f, f.wn_cl, 

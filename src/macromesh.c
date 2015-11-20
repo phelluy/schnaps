@@ -282,7 +282,6 @@ void macromesh_bounds(MacroMesh *m, real *bounds)
   m->xmax[1] = ymax;
   m->xmin[2] = zmin;
   m->xmax[2] = zmax;
-
 }
 
 int* build_boundarylist(MacroMesh *m)
@@ -437,7 +436,6 @@ void build_elem2elem(MacroMesh *m, Face4Sort *face)
   assert(facecount == m->nbfaces);
 
   m->boundaryface = build_boundarylist(m);
-
   m->macrointerface = build_interfacelist(m);
 }
 
@@ -732,23 +730,10 @@ void BuildConnectivity(MacroMesh* m)
 
   suppress_double_faces(m);
 
-  
-
-  //assert(1==5);
   free(bounds);
 
   m->connec_ok = true;
-
-/* #ifdef _PERIOD */
-/*   assert(m->is1d); // TODO : generalize to 2D */
-/*   assert(m->nbelems==1);  */
-/*   // faces 1 and 3 point to the same unique macrocell */
-/*   m->elem2elem[1+6*0]=0; */
-/*   m->elem2elem[3+6*0]=0; */
-/* #endif */
-  
 }
-
 
 // Compare two integers
 int CompareInt(const void* a, const void* b) {
@@ -923,11 +908,11 @@ void CheckMacroMesh(MacroMesh *m, int *param) {
 	  //ref_pg_face(param, ifa, ipgf, xpgref, NULL, NULL);
 	  int ipg=param[6];
 
-/* #ifdef _PERIOD */
-/* 	  assert(m->is1d); // TODO: generalize to 2d */
-/* 	  if (xpgref_in[0] > _PERIOD) xpgref_in[0] -= _PERIOD; */
-/* 	  if (xpgref_in[0] < 0) xpgref_in[0] += _PERIOD; */
-/* #endif */
+	  /* #ifdef _PERIOD */
+	  /* 	  assert(m->is1d); // TODO: generalize to 2d */
+	  /* 	  if (xpgref_in[0] > _PERIOD) xpgref_in[0] -= _PERIOD; */
+	  /* 	  if (xpgref_in[0] < 0) xpgref_in[0] += _PERIOD; */
+	  /* #endif */
 
 
 	  // Compute the position of the point and the face normal.
@@ -1330,8 +1315,8 @@ void Detect1DMacroMesh(MacroMesh* m){
 	    codtau, NULL, vnds); // codtau,dphi,vnds
 
     real d = sqrt((vnds[0] - 1) * (vnds[0] - 1) 
-		+ vnds[1] * vnds[1]
-		+ vnds[2] * vnds[2]);
+		  + vnds[1] * vnds[1]
+		  + vnds[2] * vnds[2]);
 
     // if the mesh is not 1D exit
     assert(d<1e-6);
