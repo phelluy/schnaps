@@ -95,11 +95,6 @@ int TestMacroFace(void){
   
   Initfield(&f);
 
-  MacroFace mface[f.macromesh.nbfaces];
-  for(int ifa = 0; ifa < f.macromesh.nbfaces; ifa++) {
-    mface[ifa].ifa = ifa;
-  }
- 
   //f.is2d = true;
 
   for(int iw = 0; iw < f.wsize; iw++)
@@ -112,7 +107,7 @@ int TestMacroFace(void){
   const int ninterfaces = f.macromesh.nmacrointerfaces;
   for(int i = 0; i < ninterfaces; ++i) {
     int ifa = f.macromesh.macrointerface[i];
-    DGMacroCellInterface_CL(mface + ifa, &f, f.wn_cl,
+    DGMacroCellInterface_CL(f.mface + ifa, &f, f.wn_cl,
 			    0, NULL, NULL);
     clFinish(f.cli.commandqueue);
   }
@@ -120,7 +115,7 @@ int TestMacroFace(void){
   const int nboundaryfaces = f.macromesh.nboundaryfaces;
   for(int i = 0; i < nboundaryfaces; ++i) {
     int ifa = f.macromesh.boundaryface[i];
-    DGBoundary_CL(mface + ifa, &f, f.wn_cl,
+    DGBoundary_CL(f.mface + ifa, &f, f.wn_cl,
 			    0, NULL, NULL);
     clFinish(f.cli.commandqueue);
   }

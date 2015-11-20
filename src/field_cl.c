@@ -218,9 +218,9 @@ void DGBoundary_CL(MacroFace *mface, field *f, cl_mem *wn_cl,
   cl_int status;
 
   int ifa = mface->ifa;
-  int ieL =    f->macromesh.face2elem[4 * ifa];
-  int locfaL = f->macromesh.face2elem[4 * ifa + 1];
-  int ieR =    f->macromesh.face2elem[4 * ifa + 2];
+  int ieL = mface->ieL;
+  int locfaL = mface->locfaL;
+  int ieR = mface->ieR;
 
   assert(ieR == -1);
   
@@ -345,10 +345,10 @@ void DGMacroCellInterface_CL(MacroFace *mface, field *f, cl_mem *wn_cl,
 
   int ifa = mface->ifa;
 
-  int ieL =    f->macromesh.face2elem[4 * ifa];
-  int locfaL = f->macromesh.face2elem[4 * ifa + 1];
-  int ieR =    f->macromesh.face2elem[4 * ifa + 2];
-  int locfaR = f->macromesh.face2elem[4 * ifa + 3];
+  int ieL = mface->ieL;
+  int locfaL = mface->locfaL;
+  int ieR = mface->ieR;
+  int locfaR = mface->locfaR;
 
   size_t numworkitems = NPGF(f->interp_param + 1, locfaL);
   assert(ieR >= 0);
