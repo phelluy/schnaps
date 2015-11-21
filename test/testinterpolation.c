@@ -165,7 +165,7 @@ int TestInterpolation()
 		//printf("avant %d %d %d npg=%d \n",d0,d1,d2,NPG(deg));
 		ipg_to_xyz(raf,deg,ic,ix,&ipgcopy);
 		//printf("apres %d %d %d \n",d0,d1,d2);
-		xyz_to_ipg(raf,deg,ic,ix,&ipgcopy);
+		ipgcopy = xyz_to_ipg(raf,deg,ic,ix);
 		assert(ipg==ipgcopy);
 	      }
 	    }
@@ -174,9 +174,6 @@ int TestInterpolation()
       }
     }
   }
-
-    
-    
 
   // test that the ref_pg_face function
   // is compatible with ref_pg_vol

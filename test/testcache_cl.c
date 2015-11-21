@@ -61,7 +61,7 @@ int TestCache(void){
     ix0[ii]=ix[ii];
   }
 
-  xyz_to_ipg(raf,deg,ic,ix,&ipg);
+  ipg = xyz_to_ipg(raf,deg,ic,ix);
   ipg_to_xyz(raf,deg,ic,ix,&ipg);
 
   for(int ii=0;ii<3;ii++){
@@ -77,7 +77,7 @@ int TestCache(void){
 
   int worksize;  // number of gauss points in the macrocell
 
-  xyz_to_ipg(raf,deg,ic,ix,&worksize);
+  worksize = xyz_to_ipg(raf,deg,ic,ix);
   worksize++;
 
   printf("worksize=%d\n",worksize);
@@ -89,7 +89,7 @@ int TestCache(void){
     ix[ii]=deg[ii];
   }
 
-  xyz_to_ipg(raf,deg,ic,ix,&groupsize);
+  groupsize = xyz_to_ipg(raf,deg,ic,ix);
   groupsize++;
   printf("groupsize=%d\n",groupsize);
 

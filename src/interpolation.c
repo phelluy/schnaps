@@ -179,13 +179,12 @@ int NPGF(int param[], int ifa) {
 }
 
 #pragma start_opencl
-void xyz_to_ipg(const int *raf, const int *deg, const int *ic, const int *ix, 
-		int *ipg) 
+int xyz_to_ipg(const int *raf, const int *deg, const int *ic, const int *ix) 
 {
   const int nc = ic[0] + raf[0] * (ic[1] + raf[1] * ic[2]);
-  const int offset = (deg[0] + 1) * (deg[1] + 1) * (deg[2] + 1)*nc;
+  const int offset = (deg[0] + 1) * (deg[1] + 1) * (deg[2] + 1) * nc;
 
-  *ipg= ix[0] + (deg[0] + 1) * (ix[1] + (deg[1] + 1) * ix[2]) + offset;
+  return ix[0] + (deg[0] + 1) * (ix[1] + (deg[1] + 1) * ix[2]) + offset;
 }
 #pragma end_opencl
 
@@ -257,8 +256,7 @@ int ref_ipg(int *param, real *xref) {
   //printf("xref %f %f %f ix[0]=%d ix[1]=%d ix[2]=%d\n",
   //	 xref[0],xref[1],xref[2],ix[0],ix[1],ix[2]);
 
-  int ipg;
-  xyz_to_ipg(nraf,deg,ic,ix,&ipg);
+  int ipg = xyz_to_ipg(nraf,deg,ic,ix);
 
   //return ix[0] + (deg[0] + 1) * (ix[1] + (deg[1] + 1) * ix[2]) + offset;
   return ipg;
@@ -268,55 +266,46 @@ int ref_ipg(int *param, real *xref) {
 // Return the reference coordinates xpg[3] and weight wpg of the GLOP
 // ipg
 void ref_pg_vol(int *param, int ipg, real *xpg, real *wpg, real *xpg_in) {
-  int deg[3], offset[3], nraf[3];
-
   // approximation degree in each direction
-  deg[0] = param[0];
-  deg[1] = param[1];
-  deg[2] = param[2];
+  int deg[3] = {param[0], param[1], param[2]};
+  
   // number of subcells in each direction
-  nraf[0] = param[3];
-  nraf[1] = param[4];
-  nraf[2] = param[5];
+  int nraf[3] = {param[3], param[4], param[5]};
 
   int ix[3], ic[3];
 
   ipg_to_xyz(nraf,deg,ic,ix,&ipg);
 
-  real hx = 1 / (real) nraf[0];
-  real hy =1 / (real) nraf[1];
-  real hz = 1 / (real) nraf[2];
+  real h[3] = {1.0 / (real) nraf[0],
+	       1.0 / (real) nraf[1],
+	       1.0 / (real) nraf[2] };
 
-  //printf("h=%f %f %f\n",hx,hy,hz);
-
-  offset[0] = gauss_lob_offset[deg[0]] + ix[0];
-  offset[1] = gauss_lob_offset[deg[1]] + ix[1];
-  offset[2] = gauss_lob_offset[deg[2]] + ix[2];
+  int offset[3] = {gauss_lob_offset[deg[0]] + ix[0],
+		   gauss_lob_offset[deg[1]] + ix[1],
+		   gauss_lob_offset[deg[2]] + ix[2] };
 
   if (xpg != NULL){
-    xpg[0] = hx * (ic[0] + gauss_lob_point[offset[0]]);
-    xpg[1] = hy * (ic[1] + gauss_lob_point[offset[1]]);
-    xpg[2] = hz * (ic[2] + gauss_lob_point[offset[2]]);
+    xpg[0] = h[0] * (ic[0] + gauss_lob_point[offset[0]]);
+    xpg[1] = h[1] * (ic[1] + gauss_lob_point[offset[1]]);
+    xpg[2] = h[2] * (ic[2] + gauss_lob_point[offset[2]]);
   }
   
-  if (wpg != NULL) *wpg = hx * hy * hz *
+  if (wpg != NULL) *wpg = h[0] * h[1] * h[2] *
 		     gauss_lob_weight[offset[0]]*
 		     gauss_lob_weight[offset[1]]*
 		     gauss_lob_weight[offset[2]];
 
   if (xpg_in !=0) {
     real small = 1e-5; //1e-3;
-    xpg_in[0] = xpg[0];
-    xpg_in[1] = xpg[1];
-    xpg_in[2] = xpg[2];
 
-    if (ix[0] == 0) xpg_in[0] += hx * small;
-    if (ix[0] == deg[0]) xpg_in[0] -= hx * small;
-    if (ix[1] == 0) xpg_in[1] += hy * small;
-    if (ix[1] == deg[1]) xpg_in[1] -= hy * small;
-    if (ix[2] == 0) xpg_in[2] += hz * small;
-    if (ix[2] == deg[2]) xpg_in[2] -= hz * small;
-
+    for(int i = 0; i < 3; ++i) {
+      xpg_in[i] = xpg[i];
+      if (ix[i] == 0)
+	xpg_in[i] += h[i] * small;
+      if (ix[i] == deg[i])
+	xpg_in[i] -= h[i] * small;
+    }
+    
     /* printf("xpg %f %f %f\n",xpg[0],xpg[1],xpg[2]); */
     /*  printf("xpg_in %f %f %f %d %d %d\n",xpg_in[0],xpg_in[1],xpg_in[2], */
     /* 	   ix,iy,iz); */
