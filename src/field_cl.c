@@ -242,24 +242,18 @@ void DGBoundary_CL(MacroFace *mface, field *f, cl_mem *wn_cl,
 }
 
 void init_ExtractInterface_CL(field *f,
-			      int m,
 			      int d2,
-			      int *stride,
-			      int n0,
-			      cl_mem wn, cl_mem wface)
+			      int stride0,
+			      int stride1,
+			      int stride2,
+			      cl_mem wn,
+			      cl_mem wface)
 {
   cl_int status;
   cl_kernel kernel = f->extractinterface;
 
   unsigned int argnum = 0;
 
-  status = clSetKernelArg(kernel,
-			  argnum++,
-                          sizeof(int),
-                          &m);
-  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status >= CL_SUCCESS);
-  
   status = clSetKernelArg(kernel,
 			  argnum++,
                           sizeof(int),
@@ -270,31 +264,23 @@ void init_ExtractInterface_CL(field *f,
   status = clSetKernelArg(kernel,
 			  argnum++,
                           sizeof(int),
-                          &stride[0]);
+                          &stride0);
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 
   status = clSetKernelArg(kernel,
 			  argnum++,
                           sizeof(int),
-                          &stride[1]);
+                          &stride1);
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 
   status = clSetKernelArg(kernel,
 			  argnum++,
                           sizeof(int),
-                          &stride[2]);
+                          &stride2);
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
-
-  status = clSetKernelArg(kernel,
-			  argnum++,
-                          sizeof(int),
-                          &n0);
-  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status >= CL_SUCCESS);
-  
 
   status = clSetKernelArg(kernel,
 			  argnum++,
@@ -337,8 +323,8 @@ void ExtractInterface_CL(MacroFace *mface, field *f, cl_mem *wn,
 
     // Number of points in a macrocell in each direction
     int npgmc[3] = {nraf[0] * (deg[0] + 1 ),
-		    nraf[0] * (deg[0] + 1 ),
-		    nraf[0] * (deg[0] + 1 ) };
+		    nraf[1] * (deg[1] + 1 ),
+		    nraf[2] * (deg[2] + 1 ) };
     
     // indices of the used dimemsions
     int i0;
@@ -362,6 +348,10 @@ void ExtractInterface_CL(MacroFace *mface, field *f, cl_mem *wn,
 	assert(false);
     }
 
+    // Check that we got the dimensions right.
+    assert(mface->npgf == npgmc[i0] * npgmc[i1]);
+    
+    // d2 is the permuted index for that is constant over the face.
     int d2;
     int sign = 1 - 2 * axis_permut[locfa][3];
     switch(sign) {
@@ -375,20 +365,31 @@ void ExtractInterface_CL(MacroFace *mface, field *f, cl_mem *wn,
 	assert(false);
     }
 
+    // The strides for finding the data point.  These will be permuted
+    // in the kernel.
     int stride[3] = {m * npgmc[1] * npgmc[2],
 		     m * npgmc[2],
 		     m };
-    int n0 = npgmc[0];
     
     cl_mem wface = mcell->interface_cl[locfa];
-  
-    init_ExtractInterface_CL(f,
-			     m, d2, stride,
-    			     n0, wn[ie], wface);
+    init_ExtractInterface_CL(f, d2, stride[i0], stride[i1], stride[i2],
+    			     wn[ie], wface);
 
-    // FIXME: launch kernel
+    size_t numworkitems[3] = {npgmc[i0], npgmc[i1], m};
+
+    cl_int status;
+    status = clEnqueueNDRangeKernel(f->cli.commandqueue,
+				    f->extractinterface,
+				    3, // cl_uint work_dim,
+				    NULL, // global_work_offset,
+				    numworkitems, // global_work_size, 
+				    NULL, // size_t *local_work_size, 
+				    nwait,  // nwait, 
+				    wait, // *wait_list,
+				    done); // *event
+    if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+    assert(status >= CL_SUCCESS);
   }
-  
 }
 
 // Set the loop-dependant kernel arguments for DGMacroCellInterface_CL

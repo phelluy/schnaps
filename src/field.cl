@@ -1113,31 +1113,31 @@ void DGMass(__constant int *param,      // interp param
 }
 
 __kernel
-void ExtractInterface(const int m,
-		      const int d2,
+void ExtractInterface(const int d2,
 		      const int stride0,   // stride for d0
 		      const int stride1,   // stride for d1
 		      const int stride2,   // stride for d2
-		      const int n0,        // number of points in d0
 		      const __global real *wn,   // volumic input
 		      __global real *wface // output
 		      )
 {
-  int d0 = get_global_id(0); // first dimension
-  int d1 = get_global_id(1); // second dimension
-  int iv = get_global_id(2); // m index
-
+  const int d0 = get_global_id(0); // first dimension
+  const int d1 = get_global_id(1); // second dimension
+  const int iv = get_global_id(2); // m index
+  
   // We assume that the MacroCell's volumic points are given in the
   // standard C-ordering.
 
   // We must pre-compute the input strides because we don't know the
   // ordering for the face.
   int pin = d0 * stride0 + d1 * stride1 + d2 * stride2 + iv;
-  
-  // The output is in wface, with corrdinates (d0, d1, iv) in
-  // [0, n0 -1] x [0, n1 -1] x [0, m - 1] x
-  int pout = d1 * n0 * m  + d0 * m + iv; 
 
+  const int m = get_global_size(2);
+  const int n0 = get_global_size(0);
+  // The output is in wface, with corrdinates (d0, d1, iv) in
+  // [0, n0 -1] x [0, n1 -1] x [0, m - 1]
+  int pout = d1 * n0 * m  + d0 * m + iv;
+  
   wface[pout] = wn[pin];
 }
 
