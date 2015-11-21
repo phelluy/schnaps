@@ -514,7 +514,6 @@ void init_field_macrocells(field *f)
       
     wcount += mcell->nreal;
   }
-
 }
 
 void Initfield(field *f)
@@ -525,19 +524,17 @@ void Initfield(field *f)
   for(int ip = 0; ip < 8; ip++)
     f->interp_param[ip] = f->interp.interp_param[ip];
 
-  // TODO: generalize to use MacroCells
-  int nmem = f->model.m * f->macromesh.nbelems * NPG(f->interp_param + 1);
-  f->wsize = nmem;
+  f->wsize = f->model.m * f->macromesh.nbelems * NPG(f->interp_param + 1);;
 
-  double g_memsize = nmem * sizeof(real) * 1e-9;
+  double g_memsize =   f->wsize * sizeof(real) * 1e-9;
   if(sizeof(real) == sizeof(double))
-    printf("Allocating %d doubles per array (%f GB).\n", nmem, g_memsize);
+    printf("Allocating %d doubles per array (%f GB).\n", f->wsize, g_memsize);
   else
-    printf("Allocating %d floats per array (%f GB)\n", nmem, g_memsize);
+    printf("Allocating %d floats per array (%f GB)\n", f->wsize, g_memsize);
 
-  f->wn = calloc(nmem, sizeof(real));
+  f->wn = calloc(f->wsize, sizeof(real));
   assert(f->wn);
-  f->dtwn = calloc(nmem, sizeof(real));
+  f->dtwn = calloc(f->wsize, sizeof(real));
   assert(f->dtwn);
 
   f->Diagnostics = NULL;

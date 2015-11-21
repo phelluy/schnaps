@@ -225,7 +225,7 @@ void ComputeNormal(real codtau[3][3],
 
 void Ref2Phy(__constant real *physnode,
              const real xref[3],
-             real dphiref[3],
+             real dphiref[3], // can be NULL
              const int ifa, // only needed for vnds calculation
              real xphy[3], // can be NULL
              real dtau[3][3], // can be NULL
@@ -254,24 +254,6 @@ void Ref2Phy(__constant real *physnode,
 
   if (vnds != NULL)
     ComputeNormal(codtau, ifa, vnds);
-}
-
-// Given physnode and xref, compute xphy
-void Ref2Phy_only(__constant real *physnode, const real xref[3], real xphy[3])
-{
-  // compute the mapping and its jacobian
-
-  // gradient of the shape functions and value (4th component)
-  // of the shape functions
-  real gradphi[20][4];
-  compute_gradphi(xref, gradphi);
-
-  for(int ii = 0; ii < 3; ++ii) {
-    xphy[ii] = 0;
-    for(int i = 0; i < 20; ++i) {
-      xphy[ii] += physnode[3 * i + ii] * gradphi[i][3];
-    }
-  }
 }
 
 void Phy2Ref(__constant real *physnode,
@@ -1196,36 +1178,38 @@ void DGMacroCellInterface(__constant int *param,        // interp param
   // point slightly inside the opposite element in xref_in
   int ipgL = ref_pg_face(ndeg, nraf, locfaL, ipgfL, xpgref, &wpg, xpgref_in);
   
-  // Normal vector at gauss point ipg
-  real vnds[3], xpg[3];
+  // Normal vector at gauss point based on xpgref
+  real vnds[3];
   {
-    real dtau[3][3], codtau[3][3];
-    Ref2Phy(physnodeL,
-            xpgref,
-            NULL, locfaL, // dpsiref, ifa
-            xpg, dtau,
-            codtau, NULL, vnds); // codtau, dpsi,vnds
+    real gradphi[20][4];
+    compute_gradphi(xpgref, gradphi);
+
+    real dtau[3][3];  
+    compute_dtau(physnodeL, gradphi, dtau);
+
+    real codtau[3][3];
+    compute_codtau(dtau, codtau);
+
+    ComputeNormal(codtau, locfaL, vnds);
   }
-  
-  real wL[_M];
-  real wR[_M];
-  real flux[_M];
-  
-  real xrefL[3];
+
+  // Find the volumic index for the opposite side:
+  int ipgR;
   {
-    real period[3] = {_PERIODX,_PERIODY,_PERIODZ};
+    real gradphi[20][4];
+    compute_gradphi(xpgref_in, gradphi);
+
     real xpg_in[3];
-    Ref2Phy(physnodeL,
-	    xpgref_in,
-	    NULL, -1, // dpsiref, ifa
-	    xpg_in, NULL,
-	    NULL, NULL, NULL); // codtau, dpsi,vnds
+    compute_xphy(physnodeL, gradphi, xpg_in);
+
+    real period[3] = {_PERIODX,_PERIODY,_PERIODZ};
     PeriodicCorrection(xpg_in, period);
+
+    real xrefL[3];
     Phy2Ref(physnodeR, xpg_in, xrefL);
+    ipgR = ref_ipg(param + 1, xrefL);
   }
-
-  int ipgR = ref_ipg(param + 1, xrefL);
-
+  
   // Test code
   /* { */
   /*   real xpgR[3], xrefR[3], wpgR; */
@@ -1237,9 +1221,13 @@ void DGMacroCellInterface(__constant int *param,        // interp param
   /* 	  NULL, NULL, NULL); // codtau, dphi,vnds */
   /*   assert(Dist(xpgR, xpg) < 1e-10); */
   /* }	 */
+  
+  real wL[_M];
+  real wR[_M];
 
   int imemL0 = VARINDEX(param, ipgL, 0);
   int imemR0 = VARINDEX(param, ipgR, 0);
+
   __global real *wnL0 = wnL + imemL0;
   __global real *wnR0 = wnR + imemR0;
   for(int iv = 0; iv < m; iv++) {
@@ -1247,6 +1235,7 @@ void DGMacroCellInterface(__constant int *param,        // interp param
     wR[iv] = wnR0[iv];
   }
 
+  real flux[_M];
   NUMFLUX(wL, wR, vnds, flux);
 
   __global real *dtwnL0 = dtwnL + imemL0;
@@ -1531,7 +1520,9 @@ void compute_source(__constant int *param,     // interp param
 
   // Compute xphy
   real xphy[3];
-  Ref2Phy_only(physnode, xref, xphy); 
+  real gradphi[20][4];
+  compute_gradphi(xref, gradphi);
+  compute_xphy(physnode, gradphi, xphy);
   
   // Copy w
   real w[_M];
