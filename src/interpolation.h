@@ -121,8 +121,8 @@ int ref_ipg(__constant int* param,real* xref);
 //! \param[out] wpg Gauss point weight.
 //! \param[out] xpgin same as xpg but slightly moved such
 //! that the resulting point is in the interior of the ref. element
-void ref_pg_face(int* param,int ifa,int ipgf,real* xpg,real* wpg,
-		 real* xpgin);
+void ref_pg_face(int* param,int ifa,int ipgf,real* xpg,real* wpg, real* xpgin);
+
 //! \brief return the value and the gradient of the basis
 //! functions.
 //! Warning: the value of the gradient is

@@ -61,7 +61,12 @@ int TestKernelInterface()
     ExtractInterface_CL(f.mface + ifa, &f, f.wn_cl, 0, NULL, NULL);
     clFinish(f.cli.commandqueue);
   }
-    
+
+  // FIXME: add actual computation, addition to dtwn_cl, and comparisons
+  
+  CopyfieldtoCPU(&f);
+  
+  
   // OpenCL version
   printf("OpenCL version:\n");
 
@@ -84,7 +89,7 @@ int TestKernelInterface()
 		  0, NULL, NULL);
     clFinish(f.cli.commandqueue);
   }
-  clFinish(f.cli.commandqueue);
+
   CopyfieldtoCPU(&f);
   //Displayfield(&f);
   real *fdtwn_opencl = f.dtwn;

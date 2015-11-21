@@ -144,7 +144,7 @@ void dlagrange_polynomial(real* dp, const real* subdiv,
     if (k != (i)) {
       real xk = (subdiv)[k];
       real dploc = ((real)1) / ((subdiv)[i] -  xk);
-      for(int j=0;j<(deg)+1;j++) {
+      for(int j = 0; j < (deg) + 1; j++) {
 	if (j != (i) && j != k) {
 	  xj = (subdiv)[j];
 	  dploc *= ((x) - xj) / ((subdiv)[i] - xj);
@@ -175,7 +175,7 @@ int NPGF(int param[], int ifa) {
   };
   int i0 = permut[ifa][0];
   int i1 = permut[ifa][1];
-  return (param[i0] + 1) * (param[i1] + 1) * param[i0+3] * param[i1+3];
+  return (param[i0] + 1) * (param[i1] + 1) * param[i0 + 3] * param[i1 + 3];
 }
 
 #pragma start_opencl

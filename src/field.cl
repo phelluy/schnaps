@@ -27,9 +27,13 @@ real dlag(int deg, int ib, int ipg) {
 
 int ref_ipg(__constant int *param, real *xref);
 
-void compute_gradphi(const real x, const real y, const real z, 
+void compute_gradphi(const real xref[3],  
 		     real gradphi[20][4]) 
 {
+  real x = xref[0];
+  real y = xref[1];
+  real z = xref[2];
+
   real t1 = -1 + z;
   real t2 = -1 + y;
   real t3 = t1 * t2;
@@ -150,6 +154,34 @@ void compute_gradphi(const real x, const real y, const real z,
   gradphi[19][3] = -4 * t38 * t57;
 }
 
+void compute_xphy(__constant real *physnode,
+		  real gradphi[20][4],
+		  real xphy[3])
+{
+  for(int ii = 0; ii < 3; ++ii) {
+    xphy[ii] = 0;
+    for(int i = 0; i < 20; ++i) {
+      xphy[ii] += physnode[3 * i + ii] * gradphi[i][3];
+    }
+  }
+}
+
+void compute_dtau(__constant real *physnode,
+		  real gradphi[20][4],
+		  real dtau[3][3])
+{
+  for(int ii = 0; ii < 3; ii++) {
+    for(int jj = 0; jj < 3; jj++) {
+      dtau[ii][jj] = 0;
+    }
+    for(int i = 0; i < 20; i++) {
+      for(int jj = 0; jj < 3; jj++) {
+	dtau[ii][jj] += physnode[3 * i + ii] * gradphi[i][jj];;
+      }
+    }
+  }
+}
+
 void compute_codtau(real dtau[3][3], real codtau[3][3])
 {
   codtau[0][0] =  dtau[1][1] * dtau[2][2] - dtau[1][2] * dtau[2][1];
@@ -163,6 +195,34 @@ void compute_codtau(real dtau[3][3], real codtau[3][3])
   codtau[2][2] =  dtau[0][0] * dtau[1][1] - dtau[0][1] * dtau[1][0];
 }
 
+void compute_dphi(real dphiref[3], real codtau[3][3], real dphi[3])
+{
+  for(int ii = 0; ii < 3; ii++) {
+    dphi[ii]=0;
+    for(int jj = 0; jj < 3; jj++) {
+      dphi[ii] += codtau[ii][jj] * dphiref[jj];
+    }
+  }
+}
+
+void ComputeNormal(real codtau[3][3],
+		   int ifa,
+		   real vnds[3])
+{
+  int h20_refnormal[6][3]={ {0, -1,  0},
+			    {1,  0,  0},
+			    {0,  1,  0},
+			    {-1, 0,  0},
+			    {0,  0,  1},
+			    {0,  0, -1}};
+  for(int ii = 0; ii < 3; ii++) {
+    vnds[ii]=0;
+    for(int jj = 0; jj < 3; jj++) {
+      vnds[ii] += codtau[ii][jj] * h20_refnormal[ifa][jj];
+    }
+  }
+}
+
 void Ref2Phy(__constant real *physnode,
              const real xref[3],
              real dphiref[3],
@@ -174,79 +234,37 @@ void Ref2Phy(__constant real *physnode,
              real vnds[3])  // can be NULL
 {
   // compute the mapping and its jacobian
-  real x = xref[0];
-  real y = xref[1];
-  real z = xref[2];
 
   // gradient of the shape functions and value (4th component)
   // of the shape functions
   real gradphi[20][4];
-  compute_gradphi(x, y, z, gradphi);
+  compute_gradphi(xref, gradphi);
 
-  if (xphy != NULL) {
-    for(int ii = 0; ii < 3; ++ii) {
-      xphy[ii] = 0;
-      for(int i = 0; i < 20; ++i) {
-	xphy[ii] += physnode[3 * i + ii] * gradphi[i][3];
-      }
-    }
-  }
+  if (xphy != NULL)
+    compute_xphy(physnode, gradphi, xphy);
 
-  if (dtau != NULL) {
-    for(int ii = 0; ii < 3; ii++) {
-      for(int jj = 0; jj < 3; jj++) {
-	dtau[ii][jj] = 0;
-      }
-      for(int i = 0; i < 20; i++) {
-	for(int jj = 0; jj < 3; jj++) {
-	  dtau[ii][jj] += physnode[3 * i + ii] * gradphi[i][jj];;
-	}
-      }
-    }
-  }
+  if (dtau != NULL)
+    compute_dtau(physnode, gradphi, dtau);
 
   if (codtau != NULL)
     compute_codtau(dtau, codtau);
   
-  if (dphi != NULL) {
-    for(int ii = 0; ii < 3; ii++) {
-      dphi[ii]=0;
-      for(int jj = 0; jj < 3; jj++) {
-        dphi[ii] += codtau[ii][jj] * dphiref[jj];
-      }
-    }
-  }
+  if (dphi != NULL)
+    compute_dphi(dphiref, codtau, dphi);
 
-  if (vnds != NULL) {
-    int h20_refnormal[6][3]={ {0, -1,  0},
-			      {1,  0,  0},
-			      {0,  1,  0},
-			      {-1, 0,  0},
-			      {0,  0,  1},
-			      {0,  0, -1}};
-    //assert(codtau != NULL);
-    //assert(ifa >=0);
-    for(int ii = 0; ii < 3; ii++) {
-      vnds[ii]=0;
-      for(int jj = 0; jj < 3; jj++) {
-        vnds[ii] += codtau[ii][jj] * h20_refnormal[ifa][jj];
-      }
-    }
-  }
+  if (vnds != NULL)
+    ComputeNormal(codtau, ifa, vnds);
 }
 
 // Given physnode and xref, compute xphy
 void Ref2Phy_only(__constant real *physnode, const real xref[3], real xphy[3])
 {
   // compute the mapping and its jacobian
-  real x = xref[0];
-  real y = xref[1];
-  real z = xref[2];
 
   // gradient of the shape functions and value (4th component)
   // of the shape functions
   real gradphi[20][4];
-  compute_gradphi(x, y, z, gradphi);
+  compute_gradphi(xref, gradphi);
 
   for(int ii = 0; ii < 3; ++ii) {
     xphy[ii] = 0;
@@ -1139,6 +1157,15 @@ void ExtractInterface(const int d2,
   int pout = d1 * n0 * m  + d0 * m + iv;
   
   wface[pout] = wn[pin];
+}
+
+__kernel
+void DGInterfaceFlux(
+		     __global real *wfaceL,
+		     __global real *wfaceR
+		     )
+{
+  
 }
 
 // Compute the Discontinuous Galerkin inter-macrocells boundary terms.
