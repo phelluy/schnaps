@@ -288,7 +288,7 @@ void ref_pg_vol(const int *deg, const int *nraf,
     gauss_lob_weight[offset[2]];
 }
 
-int ref_pg_face(const int *ndeg, const int *nraf0,
+int ref_pg_face(const int *deg, const int *raf,
 		int ifa, int ipg,
                 real *xpg, real *wpg, real *xpgin)
 {
@@ -305,30 +305,30 @@ int ref_pg_face(const int *ndeg, const int *nraf0,
 		  axis_permut[ifa][2],
 		  axis_permut[ifa][3]};
   
-  // approximation degree in each direction
-  int deg[3] = {ndeg[paxis[0]],	ndeg[paxis[1]],	ndeg[paxis[2]]};
+  // approximation degree in each permuted direction
+  int pdeg[3] = {deg[paxis[0]],	deg[paxis[1]],	deg[paxis[2]]};
 
-  // number of subcells in each direction
-  int nraf[3] = {nraf0[paxis[0]], nraf0[paxis[1]], nraf0[paxis[2]]};
+  // number of subcells in each permuted direction
+  int praf[3] = {raf[paxis[0]], raf[paxis[1]], raf[paxis[2]]};
 
   // permuted point index in subcell
   int pix[3];
-  pix[0] = ipg % (deg[0] + 1);
-  ipg /= (deg[0] + 1);
-  pix[1] = ipg % (deg[1] + 1);
-  ipg /= (deg[1] + 1);
-  pix[2] = paxis[3] * deg[2]; // Equals 0 or d depending on the face
+  pix[0] = ipg % (pdeg[0] + 1);
+  ipg /= (pdeg[0] + 1);
+  pix[1] = ipg % (pdeg[1] + 1);
+  ipg /= (pdeg[1] + 1);
+  pix[2] = paxis[3] * pdeg[2]; // Equals 0 or d depending on the face
 
   // Compute permuted subcell  indices of the subface
   int pic[3];
-  pic[0] = ipg % nraf[0];
-  ipg /= nraf[0];
+  pic[0] = ipg % praf[0];
+  ipg /= praf[0];
   pic[1] = ipg;
-  pic[2] = paxis[3] * (nraf[2] - 1); // Equals 0 or nraf-1
+  pic[2] = paxis[3] * (praf[2] - 1); // Equals 0 or raf-1
 
-  real h[3] = {1.0 / (real) nraf[0],
-	       1.0 / (real) nraf[1],
-	       1.0 / (real) nraf[2] };
+  real h[3] = {1.0 / (real) praf[0],
+	       1.0 / (real) praf[1],
+	       1.0 / (real) praf[2] };
   
   // non-permuted subcell index
   int ic[3];
@@ -343,27 +343,12 @@ int ref_pg_face(const int *ndeg, const int *nraf0,
   ix[paxis[2]] = pix[2];
   
   // Compute the global index of the Gauss-Lobatto point in the volume
-
-  // FIXME: this gives the wrong result!
-  //int ipgv = xyz_to_ipg(nraf, deg, ic, ix); 
-
-  int ipgv
-    = ix[0]
-    + (ndeg[0] + 1)
-    * (ix[1] + (ndeg[1] + 1)
-       * (ix[2] + (ndeg[2] + 1)
-  	  * (ic[0] + nraf0[0]
-  	     * (ic[1] + nraf0[1]
-  		* ic[2])
-  	     )
-  	  )
-       );
+  int ipgv = xyz_to_ipg(raf, deg, ic, ix); 
 
   // Compute the reference coordinates of the Gauss-Lobatto point in
   // the volume
-  int offset[2] = {gauss_lob_offset[deg[0]] + pix[0],
-		   gauss_lob_offset[deg[1]] + pix[1]};
-  //printf("offset=%d\n",offset);
+  int offset[2] = {gauss_lob_offset[pdeg[0]] + pix[0],
+		   gauss_lob_offset[pdeg[1]] + pix[1]};
 
   xpg[paxis[0]] = h[0] * (pic[0] + gauss_lob_point[offset[0]]);
   xpg[paxis[1]] = h[1] * (pic[1] + gauss_lob_point[offset[1]]);
@@ -385,14 +370,14 @@ int ref_pg_face(const int *ndeg, const int *nraf0,
   if(pix[0] == 0)
     xpgin[paxis[0]]
       = h[0] * (pic[0] + gauss_lob_point[offset[0]] + small);
-  if(pix[0] == deg[0])
+  if(pix[0] == pdeg[0])
     xpgin[paxis[0]]
       = h[0] * (pic[0] + gauss_lob_point[offset[0]] - small);
 
   if(pix[1] == 0)
     xpgin[paxis[1]]
       = h[1] * (pic[1] + gauss_lob_point[offset[1]] + small);
-  if(pix[1] == deg[1])
+  if(pix[1] == pdeg[1])
     xpgin[paxis[1]]
       = h[1] * (pic[1] + gauss_lob_point[offset[1]] - small);
 
