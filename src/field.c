@@ -488,13 +488,13 @@ void init_field_macrocells(field *f)
       mcell->physnode[inoloc][2] = f->macromesh.node[3 * ino + 2];
     }
 
-    mcell->deg[0] = f->interp_param[1];
-    mcell->deg[1] = f->interp_param[2];
-    mcell->deg[2] = f->interp_param[3];
-
     mcell->raf[0] = f->interp_param[4];
     mcell->raf[1] = f->interp_param[5];
     mcell->raf[2] = f->interp_param[6];
+    
+    mcell->deg[0] = f->interp_param[1];
+    mcell->deg[1] = f->interp_param[2];
+    mcell->deg[2] = f->interp_param[3];
 
     mcell->nsubcell = mcell->raf[0] * mcell->raf[1]  * mcell->raf[2];
 
@@ -1021,6 +1021,9 @@ void DGMacroCellInterfaceSlow(MacroCell *mcell, field *f, real *w, real *dtw)
   for(int ip = 0; ip < 8; ip++)
     iparam[ip] = f->interp_param[ip];
 
+  int *raf = mcell->raf;
+  int *deg = mcell->deg;
+  
   int ie = mcell->ie;
 
   // loop on the 6 faces
@@ -1093,7 +1096,7 @@ void DGMacroCellInterfaceSlow(MacroCell *mcell, field *f, real *w, real *dtw)
 	real xref[3];
 	PeriodicCorrection(xpg_in,f->macromesh.period);
 	Phy2Ref(mcellR->physnode, xpg_in, xref);
-	int ipgR = ref_ipg(iparam + 1, xref);
+	int ipgR = ref_ipg(raf, deg, xref);
 	real xpgR[3], xrefR[3], wpgR;
 	ref_pg_vol(iparam + 1, ipgR, xrefR, &wpgR, NULL);
 	Ref2Phy(mcellR->physnode,
@@ -1260,7 +1263,9 @@ void DGMacroCellInterface(MacroFace *mface, field *f,
       
     }
     
-    int ipgR = ref_ipg(iparam + 1, xrefL);
+    int *raf = mcellR->raf;
+    int *deg = mcellR->deg;
+    int ipgR = ref_ipg(raf, deg, xrefL);
     
     //printf("ipgL=%d ipgR=%d\n",ipgL,ipgR);
     

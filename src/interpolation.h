@@ -91,27 +91,28 @@ void ipg_to_xyz(const int *raf, const int *deg, int *ic, int *ix, const
 int xyz_to_ipg(const int *raf, const int *deg, const int *ic, const int *ix);
 #pragma end_opencl
 
-//! \brief return the reference coordinates xpg[3] and weight wpg of the GLOP ipg
+//! \brief return the reference coordinates xpg[3] and weight wpg of
+//! the GLOP ipg
 //! \param[in] param interp. params list
 //! \param[in] ipg Gauss point index
 //! \param[out] xpg  reference Gauss point coordinates
 //! \param[out] wpg reference Gauss weight
 //! \param[in] xpg_in same as xpg but slightly moved such
 //! that the resulting point is in the interior of the ref. element
-void ref_pg_vol(int* param,int ipg,
-		real* xpg,real* wpg,real* xpg_in);
+void ref_pg_vol(int *param, int ipg, real *xpg, real *wpg, real *xpg_in);
 
 //! \brief from a reference point find the nearest
 //! gauss point
 //! \param[in] param interp. params list
 //! \param[in] xref  reference Gauss point coordinates
 //! \return Gauss point index
-int ref_ipg(__constant int* param,real* xref);
+int ref_ipg(int* nraf, int* deg, real* xref);
 
 //! \brief compute the position xpg of glop ipg in the local
 //! numbering on face ifa. If xpgin is not NULL also compute
 //! the position of point slightly inside the opposite subcell.
-//! \param[inout] param interp. params list. param[6] also contains the volume Gauss point index
+//! \param[inout] param interp. params list. param[6] also contains
+//! the volume Gauss point index
 //! \param[in] ifa local face index (0..5)
 //! \param[in] ipgf local 2d Gauss point index on the face ifa
 //! \param[out] xpg Gauss point coordinates

@@ -137,13 +137,11 @@ int TestInterpolation()
 	      0);
    
       Phy2Ref(physnode, xphy, xref2);
-      test = test && (ipg == ref_ipg(deg, xref2));
+      test = test && (ipg == ref_ipg(nraf, deg, xref2));
       //printf("ipg=%d ipg2=%d\n",ipg,ref_ipg(deg,xref2));
       assert(test);
     }
   }
-
-
 
 #define _MAXDEGTEST 5
 
@@ -181,19 +179,19 @@ int TestInterpolation()
     if(verbose)
       printf("Degree=%d\n",d);
     
-    deg[0]=d;
-    deg[1]=d;
-    deg[2]=d;
-    deg[3]=1;
-    deg[4]=1;
-    deg[5]=1;
+    deg[0] = d;
+    deg[1] = d;
+    deg[2] = d;
+    deg[3] = 1;
+    deg[4] = 1;
+    deg[5] = 1;
     
-    nraf[0]=deg[3];
-    nraf[1]=deg[4];
-    nraf[2]=deg[5];
+    nraf[0] = deg[3];
+    nraf[1] = deg[4];
+    nraf[2] = deg[5];
 
-    real xref1[3],xref2[3],xphy[3],xref_in[3];
-    for(int ifa=0;ifa<6;ifa++){
+    real xref1[3], xref2[3], xphy[3], xref_in[3];
+    for(int ifa = 0; ifa < 6; ifa++) {
       for(int ipgf=0;ipgf<NPGF(deg,ifa);ipgf++){
 	real wpg;
 	ref_pg_face(deg,ifa,ipgf,xref1,&wpg,NULL);
@@ -209,7 +207,7 @@ int TestInterpolation()
 		0,
 		0);
 	Phy2Ref(physnode,xphy,xref2);
-	test=test &&(ipg==ref_ipg(deg,xref2));
+	test=test &&(ipg==ref_ipg(nraf, deg, xref2));
 	assert(test);
       }
     }

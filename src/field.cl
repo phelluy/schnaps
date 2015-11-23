@@ -26,7 +26,7 @@ real dlag(int deg, int ib, int ipg)
 #define VARINDEX GenericVarindex
 #endif
 
-int ref_ipg(__constant int *param, real *xref);
+int ref_ipg(int *raf, int *deg, real *xref);
 
 void compute_gradphi(const real xref[3], real gradphi[20][4]) 
 {
@@ -1169,7 +1169,7 @@ void DGMacroCellInterface(__constant int *param,        // interp param
 
     real xrefL[3];
     Phy2Ref(physnodeR, xpg_in, xrefL);
-    ipgR = ref_ipg(param + 1, xrefL);
+    ipgR = ref_ipg(raf, deg, xrefL);
   }
   
   // Test code
@@ -1409,30 +1409,24 @@ inline void Phy2Ref(__constant real *physnode, real *xphy, real *xref)
 
 // From a reference point find the nearest gauss point
 // Warning: works only  degree 1, 2, or 3 (FIXME: why?)
-int ref_ipg(__constant int *param, real *xref) 
+int ref_ipg(int *raf, int *deg, real *xref) 
 {
-  // approximation degree in each direction
-  int deg[3] = {param[0], param[1], param[2]};
-
-  // number of subcells in each direction
-  int nraf[3] = {param[3], param[4], param[5]};
-
-  real hh[3] = {1.0 / nraf[0], 1.0 / nraf[1], 1.0 / nraf[2]};
+  real hh[3] = {1.0 / raf[0], 1.0 / raf[1], 1.0 / raf[2]};
 
   // get the subcell id
-  int ncx = floor(xref[0] * nraf[0]);
-  int ncy = floor(xref[1] * nraf[1]);
-  int ncz = floor(xref[2] * nraf[2]);
+  int ncx = floor(xref[0] * raf[0]);
+  int ncy = floor(xref[1] * raf[1]);
+  int ncz = floor(xref[2] * raf[2]);
 
-  //printf("x=%f ncx=%d nrafx=%d\n",xref[0], ncx,nraf[0]);
-  //printf("y=%f ncy=%d nrafy=%d\n",xref[1], ncy,nraf[1]);
-  //printf("z=%f ncz=%d nrafz=%d\n",xref[2], ncz,nraf[2]);
-  //assert(ncx >=0 && ncx<nraf[0]);
-  //assert(ncy >=0 && ncy<nraf[1]);
-  //assert(ncz >=0 && ncz<nraf[2]);
+  //printf("x=%f ncx=%d rafx=%d\n",xref[0], ncx,raf[0]);
+  //printf("y=%f ncy=%d rafy=%d\n",xref[1], ncy,raf[1]);
+  //printf("z=%f ncz=%d rafz=%d\n",xref[2], ncz,raf[2]);
+  //assert(ncx >=0 && ncx<raf[0]);
+  //assert(ncy >=0 && ncy<raf[1]);
+  //assert(ncz >=0 && ncz<raf[2]);
 
   // subcell index in the macrocell
-  int nc = ncx + nraf[0] * (ncy + nraf[1] * ncz);
+  int nc = ncx + raf[0] * (ncy + raf[1] * ncz);
   int offset = (deg[0] + 1) * (deg[1] + 1) * (deg[2] + 1) * nc;
 
   // round to the nearest integer

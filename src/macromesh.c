@@ -741,12 +741,14 @@ int CompareInt(const void* a, const void* b) {
 }
 
 // Sort the nodes list of the face
-void OrderFace4Sort(Face4Sort* f) {
+void OrderFace4Sort(Face4Sort* f)
+{
   qsort(f->node, 4, sizeof(int), CompareInt);
 }
 
 // Compare two ordered four-corner faces lexicographical order
-int CompareFace4Sort(const void* a,const void* b) {
+int CompareFace4Sort(const void* a,const void* b)
+{
   Face4Sort *f1 = (Face4Sort*)a;
   Face4Sort *f2 = (Face4Sort*)b;
 
@@ -758,9 +760,10 @@ int CompareFace4Sort(const void* a,const void* b) {
   if(r == 0) 
     r = f1->node[3] - f2->node[3];
   return r;
-};
+}
 
-void CheckMacroMesh(MacroMesh *m, int *param) {
+void CheckMacroMesh(MacroMesh *m, int *param)
+{
   Geom g;
   real face_centers[6][3]={ {0.5,0.0,0.5},
 			    {1.0,0.5,0.5},
@@ -769,6 +772,9 @@ void CheckMacroMesh(MacroMesh *m, int *param) {
 			    {0.5,0.5,1.0},
 			    {0.5,0.5,0.0} };
 
+  int *raf = param + 3;
+  int *deg = param + 0;
+  
   //real *bounds = malloc(6 * sizeof(real));
   //macromesh_bounds(m, bounds);
 
@@ -789,6 +795,7 @@ void CheckMacroMesh(MacroMesh *m, int *param) {
 
     // Test that the ref_ipg function is compatible with ref_pg_vol
     //int param[7]={_DEGX,_DEGY,_DEGZ,_RAFX,_RAFY,_RAFZ,0};
+
     for(int ipg = 0; ipg < NPG(param); ipg++) {
       real xref1[3], xref_in[3];
       real wpg;
@@ -804,7 +811,7 @@ void CheckMacroMesh(MacroMesh *m, int *param) {
       //	     ref_ipg(param,xref_in),xref_in[0],xref_in[1],xref_in[2]);
 
       // Ensure that the physical coordinates give the same point:
-      assert(ipg == ref_ipg(param, xref_in));
+      assert(ipg == ref_ipg(raf, deg, xref_in));
 
       //}
     }
@@ -949,14 +956,16 @@ void CheckMacroMesh(MacroMesh *m, int *param) {
   	  real xpgrefR_in[3];//,xpgrefR[3];
 	  Phy2Ref(physnodeR, xpg_in, xpgrefR_in);
 	  //Phy2Ref(physnodeR, xpg, xpgrefR);
-	  int ipgR = ref_ipg(param, xpgrefR_in);
+	  int *raf = param + 3;
+	  int *deg = param + 0;
+	  int ipgR = ref_ipg(raf, deg, xpgrefR_in);
 	  
 	  // search the id of the face in the right elem
 	  // special treatment if the mesh is periodic
 	  // and contains only one elem (then ie==ieR)
 	  int neighb_count=0;
-	  for(int ifaR=0;ifaR<6;ifaR++){
-	    if (m->elem2elem[6*ieR+ifaR] == ie) {
+	  for(int ifaR = 0; ifaR < 6; ifaR++) {
+	    if (m->elem2elem[6 * ieR + ifaR] == ie) {
 	      for(int ipgfR = 0; ipgfR < NPGF(param, ifaR); ipgfR++) {
 		real xpgrefR[3];
 		ref_pg_face(param, ifaR, ipgfR, xpgrefR, NULL, NULL);
@@ -974,7 +983,7 @@ void CheckMacroMesh(MacroMesh *m, int *param) {
 		  }
 		  // Ensure that the normals are opposite
 		  // if xpg and xpgR are close
-		  /* printf("xpg:%f %f %f\n", xpg_in[0], xpg_in[1], xpg_in[2]); */
+		  /*printf("xpg:%f %f %f\n",xpg_in[0], xpg_in[1], xpg_in[2]); */
 		  /* printf("vnds: %f %f %f vndsR: %f %f %f \n", */
 		  /* 	 vnds[0],vnds[1],vnds[2], */
 		  /* 	 vndsR[0],vndsR[1],vndsR[2]); */
