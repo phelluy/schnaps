@@ -1610,7 +1610,8 @@ void RK_out_CL(__global real *wnp1,
 	       const real dt)
 {
   int ipg = get_global_id(0);
-  wnp1[ipg] = fma(dt, dtwn[ipg], wn[ipg]);
+  wnp1[ipg] = wn[ipg] + dt * dtwn[ipg];
+  //wnp1[ipg] = fma(dt, dtwn[ipg], wn[ipg]);
 }
 
 // In-place RK stage
@@ -1620,8 +1621,8 @@ void RK_in_CL(__global real *wnp1,
 	      const real dt)
 {
   int ipg = get_global_id(0);
-  //wnp1[ipg] += dt * dtwn[ipg];
-  wnp1[ipg] = fma(dt, dtwn[ipg], wnp1[ipg]);
+  wnp1[ipg] += dt * dtwn[ipg];
+  //wnp1[ipg] = fma(dt, dtwn[ipg], wnp1[ipg]);
 }
 
 // Out-of-place RK stage
@@ -1632,8 +1633,8 @@ void RK4_first_stages(__global real *wnp1,
 		      const real dt)
 {
   int ipg = get_global_id(0);
-  //wnp1[ipg] = wn[ipg] + dt * dtwn[ipg];
-  wnp1[ipg] = fma(dt, dtwn[ipg], wn[ipg]);
+  wnp1[ipg] = wn[ipg] + dt * dtwn[ipg];
+  //wnp1[ipg] = fma(dt, dtwn[ipg], wn[ipg]);
 }
 
 // RK4 final stage
