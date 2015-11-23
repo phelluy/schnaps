@@ -161,23 +161,29 @@ inline void compute_xphy(__constant real *physnode,
   for(int ii = 0; ii < 3; ++ii) {
     xphy[ii] = 0;
     for(int i = 0; i < 20; ++i) {
-      xphy[ii] += physnode[3 * i + ii] * gradphi[i][3];
+      //xphy[ii] += physnode[3 * i + ii] * gradphi[i][3];
+      xphy[ii] = fma(physnode[3 * i + ii], gradphi[i][3], xphy[ii]);
     }
   }
 }
 
 inline void compute_dtau(__constant real *physnode,
-		  real gradphi[20][4],
-		  real dtau[3][3])
+			 real gradphi[20][4],
+			 real dtau[3][3])
 {
   for(int ii = 0; ii < 3; ii++) {
-    for(int jj = 0; jj < 3; jj++) {
-      dtau[ii][jj] = 0;
-    }
-    for(int i = 0; i < 20; i++) {
-      for(int jj = 0; jj < 3; jj++) {
-	dtau[ii][jj] += physnode[3 * i + ii] * gradphi[i][jj];;
-      }
+    dtau[ii][0] = 0;
+    dtau[ii][1] = 0;
+    dtau[ii][2] = 0;
+
+    for(int i = 0; i < 20; ++i) {
+      //for(int jj = 0; jj < 3; jj++) {
+      //dtau[ii][jj] += physnode[3 * i + ii] * gradphi[i][jj];
+      //}
+      real pn = physnode[3 * i + ii];
+      dtau[ii][0] = fma(pn, gradphi[i][0], dtau[ii][0]);
+      dtau[ii][1] = fma(pn, gradphi[i][1], dtau[ii][1]);
+      dtau[ii][2] = fma(pn, gradphi[i][2], dtau[ii][2]);
     }
   }
 }
@@ -197,12 +203,26 @@ inline void compute_codtau(real dtau[3][3], real codtau[3][3])
 
 inline void compute_dphi(real dphiref[3], real codtau[3][3], real dphi[3])
 {
+  /*
   for(int ii = 0; ii < 3; ii++) {
     dphi[ii]=0;
     for(int jj = 0; jj < 3; jj++) {
-      dphi[ii] += codtau[ii][jj] * dphiref[jj];
+    dphi[ii] += codtau[ii][jj] * dphiref[jj];
     }
-  }
+    }
+  */
+
+  dphi[0] = fma(codtau[0][0], dphiref[0], 
+		fma(codtau[0][1], dphiref[1],
+		    codtau[0][2] * dphiref[2]) );
+    
+  dphi[1] = fma(codtau[1][0], dphiref[0], 
+		fma(codtau[1][1], dphiref[1],
+		    codtau[1][2] * dphiref[2]) );
+    
+  dphi[2] = fma(codtau[2][0], dphiref[0], 
+		fma(codtau[2][1], dphiref[1],
+		    codtau[2][2] * dphiref[2]) );
 }
 
 inline void ComputeNormal(real codtau[3][3], int ifa, real vnds[3])
@@ -213,12 +233,26 @@ inline void ComputeNormal(real codtau[3][3], int ifa, real vnds[3])
 			    {-1, 0,  0},
 			    {0,  0,  1},
 			    {0,  0, -1}};
-  for(int ii = 0; ii < 3; ii++) {
-    vnds[ii]=0;
+  /*
+    for(int ii = 0; ii < 3; ii++) {
+    vnds[ii] = 0;
     for(int jj = 0; jj < 3; jj++) {
-      vnds[ii] += codtau[ii][jj] * h20_refnormal[ifa][jj];
+    vnds[ii] += codtau[ii][jj] * h20_refnormal[ifa][jj];
     }
-  }
+    }
+  */
+
+  vnds[0] = fma(codtau[0][0], h20_refnormal[ifa][0],
+		fma(codtau[0][1], h20_refnormal[ifa][1],
+		    codtau[0][2] * h20_refnormal[ifa][2]) );
+    
+  vnds[1] = fma(codtau[1][0], h20_refnormal[ifa][0],
+		fma(codtau[1][1], h20_refnormal[ifa][1],
+		    codtau[1][2] * h20_refnormal[ifa][2]) );
+
+  vnds[2] = fma(codtau[2][0], h20_refnormal[ifa][0],
+		fma(codtau[2][1], h20_refnormal[ifa][1],
+		    codtau[2][2] * h20_refnormal[ifa][2]) );
 }
 
 void Ref2Phy(__constant real *physnode,
