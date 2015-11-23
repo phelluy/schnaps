@@ -171,6 +171,7 @@ inline void compute_xphy(__constant real *physnode,
   for(int i = 0; i < 20; ++i) {
     real gp = gradphi[i][3];
     int i3 = 3 * i;
+    // TODO: is it worth fma when it's += ?
     xphy[0] = fma(physnode[i3], gp, xphy[0]);
     xphy[1] = fma(physnode[i3 + 1], gp, xphy[1]);
     xphy[2] = fma(physnode[i3 + 2], gp, xphy[2]);
@@ -190,6 +191,7 @@ inline void compute_dtau(__constant real *physnode,
       //for(int jj = 0; jj < 3; jj++) {
       //dtau[ii][jj] += physnode[3 * i + ii] * gradphi[i][jj];
       //}
+      // TODO: is it worth fma when it's += ?
       real pn = physnode[3 * i + ii];
       dtau[ii][0] = fma(pn, gradphi[i][0], dtau[ii][0]);
       dtau[ii][1] = fma(pn, gradphi[i][1], dtau[ii][1]);
@@ -918,6 +920,7 @@ inline void compute_volume(__constant int *param,     // interp param
       __local real *dtwnloc0 =  dtwnloc + imemR0loc;
       for(int iv = 0; iv < m; iv++) {
 	//dtwnloc0[iv] += flux[iv] * wpg;
+	// TODO: is it worth fma when it's += ?
 	dtwnloc0[iv] = fma(flux[iv], wpg, dtwnloc0[iv]);
       }
     }
@@ -1005,6 +1008,7 @@ inline void compute_volume_global(__constant int *param,     // interp param
       __global real *dtwn0 = dtwn + imemR0; 
       for(int iv = 0; iv < m; iv++) {
      	//dtwn0[iv] += flux[iv] * wpg;
+	// TODO: is it worth fma when it's += ?
 	dtwn0[iv] = fma(flux[iv], wpg, dtwn0[iv]);
       }
     }
@@ -1308,6 +1312,7 @@ void DGBoundary(__constant int *param,      // interp param
   __global real *dtwn0 = dtwn + imemL0; 
   for(int iv = 0; iv < m; ++iv) {
     //dtwn0[iv] -= flux[iv] * wpg;
+    // TODO: is it worth fma when it's += ?
     dtwn0[iv] = fma(-flux[iv], wpg, dtwn0[iv]);
   }
 }
@@ -1610,8 +1615,8 @@ void RK_out_CL(__global real *wnp1,
 	       const real dt)
 {
   int ipg = get_global_id(0);
-  wnp1[ipg] = wn[ipg] + dt * dtwn[ipg];
-  //wnp1[ipg] = fma(dt, dtwn[ipg], wn[ipg]);
+  //wnp1[ipg] = wn[ipg] + dt * dtwn[ipg];
+  wnp1[ipg] = fma(dt, dtwn[ipg], wn[ipg]);
 }
 
 // In-place RK stage
@@ -1622,7 +1627,6 @@ void RK_in_CL(__global real *wnp1,
 {
   int ipg = get_global_id(0);
   wnp1[ipg] += dt * dtwn[ipg];
-  //wnp1[ipg] = fma(dt, dtwn[ipg], wnp1[ipg]);
 }
 
 // Out-of-place RK stage
