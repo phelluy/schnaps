@@ -106,9 +106,7 @@ void ref_pg_vol(int* param,int ipg,
 //! \param[in] param interp. params list
 //! \param[in] xref  reference Gauss point coordinates
 //! \return Gauss point index
-#pragma start_opencl
 int ref_ipg(__constant int* param,real* xref);
-#pragma end_opencl
 
 //! \brief compute the position xpg of glop ipg in the local
 //! numbering on face ifa. If xpgin is not NULL also compute

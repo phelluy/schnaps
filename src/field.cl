@@ -154,7 +154,7 @@ void compute_gradphi(const real xref[3], real gradphi[20][4])
   gradphi[19][3] = -4 * t38 * t57;
 }
 
-void compute_xphy(__constant real *physnode,
+inline void compute_xphy(__constant real *physnode,
 		  real gradphi[20][4],
 		  real xphy[3])
 {
@@ -166,7 +166,7 @@ void compute_xphy(__constant real *physnode,
   }
 }
 
-void compute_dtau(__constant real *physnode,
+inline void compute_dtau(__constant real *physnode,
 		  real gradphi[20][4],
 		  real dtau[3][3])
 {
@@ -182,7 +182,7 @@ void compute_dtau(__constant real *physnode,
   }
 }
 
-void compute_codtau(real dtau[3][3], real codtau[3][3])
+inline void compute_codtau(real dtau[3][3], real codtau[3][3])
 {
   codtau[0][0] =  dtau[1][1] * dtau[2][2] - dtau[1][2] * dtau[2][1];
   codtau[0][1] = -dtau[1][0] * dtau[2][2] + dtau[1][2] * dtau[2][0];
@@ -195,7 +195,7 @@ void compute_codtau(real dtau[3][3], real codtau[3][3])
   codtau[2][2] =  dtau[0][0] * dtau[1][1] - dtau[0][1] * dtau[1][0];
 }
 
-void compute_dphi(real dphiref[3], real codtau[3][3], real dphi[3])
+inline void compute_dphi(real dphiref[3], real codtau[3][3], real dphi[3])
 {
   for(int ii = 0; ii < 3; ii++) {
     dphi[ii]=0;
@@ -205,7 +205,7 @@ void compute_dphi(real dphiref[3], real codtau[3][3], real dphi[3])
   }
 }
 
-void ComputeNormal(real codtau[3][3], int ifa, real vnds[3])
+inline void ComputeNormal(real codtau[3][3], int ifa, real vnds[3])
 {
   int h20_refnormal[6][3]={ {0, -1,  0},
 			    {1,  0,  0},
@@ -363,6 +363,7 @@ int ref_pg_face(const int *deg, const int *raf,
   xpgin[paxis[1]] = h[1] * (pic[1] + gauss_lob_point[offset[1]]);
 
   // TODO: can this be better handled with ifa?
+  
   if(pix[0] == 0)
     xpgin[paxis[0]] = h[0] * (pic[0] + gauss_lob_point[offset[0]] + small);
   if(pix[0] == pdeg[0])
@@ -408,7 +409,7 @@ void NumFlux(real wL[], real wR[], real *vnorm, real *flux) {
 #endif
 
 // Return the component of the vlasov velocity with index id.
-real vlasov_vel(const int id, const int md)
+inline real vlasov_vel(const int id, const int md)
 {
   int mid = md / 2;
   real dv = vlasov_vmax / mid;
@@ -416,7 +417,7 @@ real vlasov_vel(const int id, const int md)
 }
 
 // Sample flux for 2D Vlasov equation
-void vlaTransNumFlux2d(real wL[], real wR[], real *vnorm, real *flux)
+inline void vlaTransNumFlux2d(real wL[], real wR[], real *vnorm, real *flux)
 {
   for(int ix = 0; ix < vlasov_mx; ++ix) {
     real vx = vlasov_vel(ix, vlasov_mx);
@@ -452,7 +453,7 @@ void cemracs2014_TransBoundaryFlux(real x[3], real t,
 }
 
 // Sample boundary flux
-void BoundaryFlux(real x[3], real t, real *wL, real *vnorm,
+inline void BoundaryFlux(real x[3], real t, real *wL, real *vnorm,
                   real *flux) 
 {
   real wR[_M];
@@ -466,7 +467,7 @@ void BoundaryFlux(real x[3], real t, real *wL, real *vnorm,
 //! \param[in] deg degree
 //! \param[in] i glop index
 //! \returns the glop weight
-real wglop(int deg, int i) 
+inline real wglop(int deg, int i) 
 {
   return gauss_lob_weight[gauss_lob_offset[deg] + i];
 }
@@ -476,7 +477,7 @@ void get_dtau(real x, real y, real z,
 
 // Get the logical index of the gaussian point given the coordinate
 // p[] of the point in the subcell and the index of the subcell icell.
-int ipg(const int npg[], const int p[], const int icell) 
+inline int ipg(const int npg[], const int p[], const int icell) 
 {
   return npg[0] * npg[1] * npg[2] * icell
     + p[0] + npg[0] * (p[1] + npg[1] * p[2]);
@@ -707,7 +708,7 @@ void set_buffer_to_zero(__global real *w)
 #define BOUNDARYFLUX BoundaryFlux
 #endif
 
-void prefetch_macrocell(const __global real *in,
+inline void prefetch_macrocell(const __global real *in,
 			__local real *out,
 			__constant int *param)
 {
@@ -725,7 +726,7 @@ void prefetch_macrocell(const __global real *in,
   }
 }
 
-void zero_macrocell_buffer(__local real *out,
+inline void zero_macrocell_buffer(__local real *out,
 			   __constant int *param
 			   )
 {
@@ -743,7 +744,7 @@ void zero_macrocell_buffer(__local real *out,
   }
 }
 
-void postfetch_macrocell(const __local real *in,
+inline void postfetch_macrocell(const __local real *in,
 			 __global real *out,
 			 __constant int *param
 			 )
@@ -761,7 +762,7 @@ void postfetch_macrocell(const __local real *in,
   }
 }
 
-void postfetch_macrocell_overwrite(const __local real *in,
+inline void postfetch_macrocell_overwrite(const __local real *in,
 			 __global real *out,
 			 __constant int *param
 			 )
@@ -779,7 +780,7 @@ void postfetch_macrocell_overwrite(const __local real *in,
   }
 }
 
-void compute_volume(__constant int *param,     // interp param
+inline void compute_volume(__constant int *param,     // interp param
 		    __constant real *physnode, // macrocell nodes
 		    __local real *wnloc,       // cache for wn
 		    __local real *dtwnloc      // cache for dtwn
@@ -877,11 +878,11 @@ void compute_volume(__constant int *param,     // interp param
 
 }
 
-void compute_volume_global(__constant int *param,     // interp param
-			   __constant real *physnode, // macrocell nodes
-			   __global real *wn,         // field values
-			   __global real *dtwn       // time derivative
-			   )
+inline void compute_volume_global(__constant int *param,     // interp param
+				  __constant real *physnode, // macrocell nodes
+				  __global real *wn,         // field values
+				  __global real *dtwn       // time derivative
+				  )
 {
   
   const int m = param[0];
@@ -1004,9 +1005,9 @@ void DGVolume(__constant int *param,     // interp param
 #endif
 }
 
-void mass_division(__constant int *param,
-		   const  __global real *mass,
-		   __local real *dtwnloc)
+inline void mass_division(__constant int *param,
+			  const  __global real *mass,
+			  __local real *dtwnloc)
 {
   const int m = param[0];
 
@@ -1044,16 +1045,15 @@ void DGMass(__constant int *param,      // interp param
   }
 
 #else
+  prefetch_macrocell(dtwn, dtwnloc, param);
 
-    prefetch_macrocell(dtwn, dtwnloc, param);
-
-    barrier(CLK_LOCAL_MEM_FENCE);
+  barrier(CLK_LOCAL_MEM_FENCE);
   
-    mass_division(param, mass, dtwnloc);
+  mass_division(param, mass, dtwnloc);
   
-    barrier(CLK_LOCAL_MEM_FENCE);
+  barrier(CLK_LOCAL_MEM_FENCE);
 
-    postfetch_macrocell_overwrite(dtwnloc, dtwn, param);
+  postfetch_macrocell_overwrite(dtwnloc, dtwn, param);
 #endif
 }
 
@@ -1132,13 +1132,13 @@ void DGMacroCellInterface(__constant int *param,        // interp param
   int ipgfL = get_global_id(0);
 
   const int m = param[0];
-  const int ndeg[3] = {param[1], param[2], param[3]};
-  const int nraf[3] = {param[4], param[5], param[6]};
+  const int deg[3] = {param[1], param[2], param[3]};
+  const int raf[3] = {param[4], param[5], param[6]};
 
   real xpgref[3]; // reference point for L
   real xpgref_in[3]; // reference point slightly in R
   real wpg;
-  int ipgL = ref_pg_face(ndeg, nraf, locfaL, ipgfL, xpgref, &wpg, xpgref_in);
+  int ipgL = ref_pg_face(deg, raf, locfaL, ipgfL, xpgref, &wpg, xpgref_in);
   
   // Normal vector at gauss point based on xpgref
   real vnds[3];
@@ -1371,7 +1371,7 @@ void get_dtau(real x, real y, real z,
 
 }
 
-void Phy2Ref(__constant real *physnode, real *xphy, real *xref) 
+inline void Phy2Ref(__constant real *physnode, real *xphy, real *xref) 
 {
 #define ITERNEWTON 10
   real dxref[3], dxphy[3];
