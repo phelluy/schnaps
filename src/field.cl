@@ -708,15 +708,15 @@ void DGFlux(__constant int *param,     // interp param
   __local real *dtwnL = dtwnlocL + get_local_id(0) * m;
   __local real *dtwnR = dtwnlocR + get_local_id(0) * m;
   for(int iv = 0; iv < m; ++iv) {
+    real fluxivwpgs = flux[iv] * wpgs; 
     // write flux to local memory
-    dtwnL[iv] = -flux[iv] * wpgs;
-    dtwnR[iv] =  flux[iv] * wpgs;
+    dtwnL[iv] = -fluxivwpgs;
+    dtwnR[iv] =  fluxivwpgs;
   }
 
   //barrier(CLK_LOCAL_MEM_FENCE | CLK_GLOBAL_MEM_FENCE);
   barrier(CLK_LOCAL_MEM_FENCE);
 
-  // Postfetch: 2m writes to global memory
   for(int i = 0; i < m; i++) {
     int p[3];
     int iread = get_local_id(0) + i * get_local_size(0);
@@ -744,12 +744,13 @@ void DGFlux(__constant int *param,     // interp param
   for(int iv = 0; iv < m; ++iv) {
     //int ipgL = ipg(npg, p, icell);
     //int imemL = VARINDEX(param, ie, ipgL, iv);
-
+    real fluxivwpgs = flux[iv] * wpgs; 
+    
     int imemL = VARINDEX(param, ipgL, iv);
-    dtwn[imemL] -= flux[iv] * wpgs;
+    dtwn[imemL] -= fluxivwpgs;
 
     int imemR = VARINDEX(param, ipgR, iv);
-    dtwn[imemR] += flux[iv] * wpgs;
+    dtwn[imemR] += fluxivwpgs;
   }
 #endif
 }
@@ -916,7 +917,8 @@ inline void compute_volume(__constant int *param,     // interp param
       int imemR0loc = ipgR * m;
       __local real *dtwnloc0 =  dtwnloc + imemR0loc;
       for(int iv = 0; iv < m; iv++) {
-	dtwnloc0[iv] += flux[iv] * wpg;
+	//dtwnloc0[iv] += flux[iv] * wpg;
+	dtwnloc0[iv] = fma(flux[iv], wpg, dtwnloc0[iv]);
       }
     }
 
@@ -1002,7 +1004,8 @@ inline void compute_volume_global(__constant int *param,     // interp param
       int imemR0 = VARINDEX(param, ipgR, 0);
       __global real *dtwn0 = dtwn + imemR0; 
       for(int iv = 0; iv < m; iv++) {
-     	dtwn0[iv] += flux[iv] * wpg;
+     	//dtwn0[iv] += flux[iv] * wpg;
+	dtwn0[iv] = fma(flux[iv], wpg, dtwn0[iv]);
       }
     }
 
@@ -1184,7 +1187,7 @@ void DGMacroCellInterface(__constant int *param,        // interp param
     real gradphi[20][4];
     compute_gradphi(xpgref, gradphi);
 
-    real dtau[3][3];  
+    real dtau[3][3];
     compute_dtau(physnodeL, gradphi, dtau);
 
     real codtau[3][3];
@@ -1607,7 +1610,7 @@ void RK_out_CL(__global real *wnp1,
 	       const real dt)
 {
   int ipg = get_global_id(0);
-  wnp1[ipg] = wn[ipg] + dt * dtwn[ipg];
+  wnp1[ipg] = fma(dt, dtwn[ipg], wn[ipg]);
 }
 
 // In-place RK stage
@@ -1617,9 +1620,9 @@ void RK_in_CL(__global real *wnp1,
 	      const real dt)
 {
   int ipg = get_global_id(0);
-  wnp1[ipg] += dt * dtwn[ipg];
+  //wnp1[ipg] += dt * dtwn[ipg];
+  wnp1[ipg] = fma(dt, dtwn[ipg], wnp1[ipg]);
 }
-
 
 // Out-of-place RK stage
 __kernel
@@ -1629,7 +1632,8 @@ void RK4_first_stages(__global real *wnp1,
 		      const real dt)
 {
   int ipg = get_global_id(0);
-  wnp1[ipg] = wn[ipg] + dt * dtwn[ipg];
+  //wnp1[ipg] = wn[ipg] + dt * dtwn[ipg];
+  wnp1[ipg] = fma(dt, dtwn[ipg], wn[ipg]);
 }
 
 // RK4 final stage
@@ -1644,10 +1648,21 @@ void RK4_final_stage(__global real *w,
   const real b = -1.0 / 3.0;
   const real a[] = {1.0 / 3.0, 2.0 / 3.0, 1.0 / 3.0, dt / 6.0};
   int i = get_global_id(0);
+  /*
   w[i] = 
     b * w[i] +
     a[0] * l1[i] +
     a[1] * l2[i] +
     a[2] * l3[i] +
     a[3] * dtw[i];
+  */
+
+  w[i] = fma(b, w[i],
+	     fma(a[0], l1[i],
+		 fma(a[1], l2[i],
+		     fma(a[2], l3[i],
+			 a[3] * dtw[i])
+		     )
+		 )
+	     );
 }
