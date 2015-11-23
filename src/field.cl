@@ -705,11 +705,11 @@ void DGFlux(__constant int *param,     // interp param
   real wpgs = wglop(deg[dim1], pL[dim1]) * wglop(deg[dim2], pL[dim2]);
 
 #if DGFLUX_LOCAL
+    // write flux to local memory
   __local real *dtwnL = dtwnlocL + get_local_id(0) * m;
   __local real *dtwnR = dtwnlocR + get_local_id(0) * m;
   for(int iv = 0; iv < m; ++iv) {
     real fluxivwpgs = flux[iv] * wpgs; 
-    // write flux to local memory
     dtwnL[iv] = -fluxivwpgs;
     dtwnR[iv] =  fluxivwpgs;
   }
