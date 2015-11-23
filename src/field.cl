@@ -158,12 +158,22 @@ inline void compute_xphy(__constant real *physnode,
 		  real gradphi[20][4],
 		  real xphy[3])
 {
-  for(int ii = 0; ii < 3; ++ii) {
-    xphy[ii] = 0;
-    for(int i = 0; i < 20; ++i) {
-      //xphy[ii] += physnode[3 * i + ii] * gradphi[i][3];
-      xphy[ii] = fma(physnode[3 * i + ii], gradphi[i][3], xphy[ii]);
-    }
+  /* for(int ii = 0; ii < 3; ++ii) { */
+  /*   xphy[ii] = 0; */
+  /*   for(int i = 0; i < 20; ++i) { */
+  /*     xphy[ii] += physnode[3 * i + ii] * gradphi[i][3]; */
+  /*   } */
+  /* } */
+  
+  xphy[0] = 0;
+  xphy[1] = 0;
+  xphy[2] = 0;
+  for(int i = 0; i < 20; ++i) {
+    real gp = gradphi[i][3];
+    int i3 = 3 * i;
+    xphy[0] = fma(physnode[i3], gp, xphy[0]);
+    xphy[1] = fma(physnode[i3 + 1], gp, xphy[1]);
+    xphy[2] = fma(physnode[i3 + 2], gp, xphy[2]);
   }
 }
 
@@ -190,6 +200,7 @@ inline void compute_dtau(__constant real *physnode,
 
 inline void compute_codtau(real dtau[3][3], real codtau[3][3])
 {
+#if 0
   codtau[0][0] =  dtau[1][1] * dtau[2][2] - dtau[1][2] * dtau[2][1];
   codtau[0][1] = -dtau[1][0] * dtau[2][2] + dtau[1][2] * dtau[2][0];
   codtau[0][2] =  dtau[1][0] * dtau[2][1] - dtau[1][1] * dtau[2][0];
@@ -199,6 +210,17 @@ inline void compute_codtau(real dtau[3][3], real codtau[3][3])
   codtau[2][0] =  dtau[0][1] * dtau[1][2] - dtau[0][2] * dtau[1][1];
   codtau[2][1] = -dtau[0][0] * dtau[1][2] + dtau[0][2] * dtau[1][0];
   codtau[2][2] =  dtau[0][0] * dtau[1][1] - dtau[0][1] * dtau[1][0];
+#else
+  codtau[0][0] = fma(dtau[1][1], dtau[2][2], - dtau[1][2] * dtau[2][1]);
+  codtau[0][1] = fma(-dtau[1][0], dtau[2][2], dtau[1][2] * dtau[2][0]);
+  codtau[0][2] = fma(dtau[1][0], dtau[2][1], - dtau[1][1] * dtau[2][0]);
+  codtau[1][0] = fma(-dtau[0][1], dtau[2][2], dtau[0][2] * dtau[2][1]);
+  codtau[1][1] = fma(dtau[0][0], dtau[2][2], - dtau[0][2] * dtau[2][0]);
+  codtau[1][2] = fma(-dtau[0][0], dtau[2][1], dtau[0][1] * dtau[2][0]);
+  codtau[2][0] = fma(dtau[0][1], dtau[1][2], - dtau[0][2] * dtau[1][1]);
+  codtau[2][1] = fma(-dtau[0][0], dtau[1][2], dtau[0][2] * dtau[1][0]);
+  codtau[2][2] = fma(dtau[0][0], dtau[1][1], - dtau[0][1] * dtau[1][0]);
+#endif
 }
 
 inline void compute_dphi(real dphiref[3], real codtau[3][3], real dphi[3])
@@ -885,18 +907,8 @@ inline void compute_volume(__constant int *param,     // interp param
       real dphiref[3] = {0, 0, 0};
       dphiref[dim0] = dlag(deg[dim0], q[dim0], p[dim0]) * nraf[dim0];
       real dphi[3];
-      for(int ii = 0; ii < 3; ii++) {
-	/* dphi[ii] = 0; */
-	/* for(int jj = 0; jj < 3; jj++) { */
-	/*   dphi[ii] += codtau[ii][jj] * dphiref[jj]; */
-	/* } */
-	real *codtauii = codtau[ii];
-	dphi[ii] 
-	  = codtauii[0] * dphiref[0]
-	  + codtauii[1] * dphiref[1]
-	  + codtauii[2] * dphiref[2];
-      }
-
+      compute_dphi(dphiref, codtau, dphi);
+      
       NUMFLUX(wL, wL, dphi, flux);
 
       int ipgR = ipg(npg, q, 0);
@@ -909,7 +921,6 @@ inline void compute_volume(__constant int *param,     // interp param
     }
 
   } // dim0 loop
-
 }
 
 inline void compute_volume_global(__constant int *param,     // interp param
@@ -984,14 +995,7 @@ inline void compute_volume_global(__constant int *param,     // interp param
       real dphiref[3] = {0, 0, 0};
       dphiref[dim0] = dlag(deg[dim0], q[dim0], p[dim0]) * nraf[dim0];
       real dphi[3];
-      for(int ii = 0; ii < 3; ii++) {
-	real *codtauii = codtau[ii];
-	dphi[ii] 
-	  = codtauii[0] * dphiref[0]
-	  + codtauii[1] * dphiref[1]
-	  + codtauii[2] * dphiref[2];
-      }
-
+      compute_dphi(dphiref, codtau, dphi);
       NUMFLUX(wL, wL, dphi, flux);
 
       int ipgR = ipg(npg, q, icell);
@@ -1133,7 +1137,7 @@ void DGInterfaceFlux(__constant int *param,        // interp param
   const int n1 = get_global_size(1);
 
   int ipgf = d0 * n1 + d0;
-  // FIXME: complete tis function.
+  // FIXME: complete this function.
 
   // find vnds
 
@@ -1300,7 +1304,8 @@ void DGBoundary(__constant int *param,      // interp param
 
   __global real *dtwn0 = dtwn + imemL0; 
   for(int iv = 0; iv < m; ++iv) {
-    dtwn0[iv] -= flux[iv] * wpg;
+    //dtwn0[iv] -= flux[iv] * wpg;
+    dtwn0[iv] = fma(-flux[iv], wpg, dtwn0[iv]);
   }
 }
 
@@ -1415,29 +1420,55 @@ inline void Phy2Ref(__constant real *physnode, real *xphy, real *xref)
   for(int iter = 0; iter < ITERNEWTON; ++iter ) {
     real dtau[3][3];
     real codtau[3][3];
-#if 0
+    
+    /*
     int ifa =- 1;
     Ref2Phy(physnode, xref, 0, ifa, dxphy, dtau, codtau, 0, 0);
-#else
+    */
+
     real gradphi[20][4];
     compute_gradphi(xref, gradphi);
     compute_xphy(physnode, gradphi, dxphy);
     compute_dtau(physnode, gradphi, dtau);
     compute_codtau(dtau, codtau);
-#endif
+    
     dxphy[0] -= xphy[0];
     dxphy[1] -= xphy[1];
     dxphy[2] -= xphy[2];
+
+    /*
     real overdet = 1.0 / (  dtau[0][0] * codtau[0][0]
 			    + dtau[0][1] * codtau[0][1]
 			    + dtau[0][2] * codtau[0][2] );
+ 
     for(int ii = 0; ii < 3; ++ii) {
-      dxref[ii] 
+      dxref[ii]
 	= codtau[0][ii] * dxphy[0] 
 	+ codtau[1][ii] * dxphy[1] 
 	+ codtau[2][ii] * dxphy[2];
       xref[ii] -= dxref[ii] * overdet;
     }
+    */
+
+    real det = fma(dtau[0][0], codtau[0][0],
+		   fma(dtau[0][1], codtau[0][1],
+		       dtau[0][2] * codtau[0][2]) );
+    real overdet = 1.0 / det;
+    
+    dxref[0] = fma(codtau[0][0], dxphy[0],
+		   fma(codtau[1][0], dxphy[1],
+		       codtau[2][0] * dxphy[2]) );
+    xref[0] = fma(-dxref[0], overdet, xref[0]);
+    
+    dxref[1] = fma(codtau[0][1], dxphy[0],
+		   fma(codtau[1][1], dxphy[1],
+		       codtau[2][1] * dxphy[2]) );
+    xref[1] = fma(-dxref[1], overdet, xref[1]);
+    
+    dxref[2] = fma(codtau[0][2], dxphy[0],
+		   fma(codtau[1][2], dxphy[1],
+		       codtau[2][2] * dxphy[2]) );
+    xref[2] = fma(-dxref[2], overdet, xref[2]);
   }
 }
 
