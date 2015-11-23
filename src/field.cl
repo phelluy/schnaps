@@ -1,16 +1,3 @@
-// Return the 1d derivative of lagrange polynomial ib at glop ipg
-
-#ifndef _PERIODX
-#define _PERIODX -1
-#endif
-#ifndef _PERIODY
-#define _PERIODY -1
-#endif
-#ifndef _PERIODZ
-#define _PERIODZ -1
-#endif
-
-
 // A kernel used solely for managing events (cf: SOCL)
 __kernel
 void empty_kernel()
@@ -167,7 +154,6 @@ inline void compute_xphy(__constant real *physnode,
   for(int i = 0; i < 20; ++i) {
     real gp = gradphi[i][3];
     int i3 = 3 * i;
-    // TODO: is it worth fma when it's += ?
     xphy[0] = fma(physnode[i3], gp, xphy[0]);
     xphy[1] = fma(physnode[i3 + 1], gp, xphy[1]);
     xphy[2] = fma(physnode[i3 + 2], gp, xphy[2]);
@@ -348,12 +334,23 @@ void ref_pg_vol(const int *deg, const int *nraf,
     gauss_lob_weight[offset[2]];
 }
 
-int ref_pg_face(const int *deg, const int *raf,
-		const int ifa, // face index
-		int ipgf,      // index of point in the face
-                real *xpg, real *wpg, real *xpgin)
+// ifa:   face index
+// ipgf:  index of point in the face
+// xpg:   reference-space coordinates
+// wpg:   weight for the point
+// xpgin: reference-space coordinates of a point slightly inside the
+//        facing cell.
+int ref_pg_face(const int *deg,
+		const int *raf,
+		const int ifa,
+		int ipgf,
+                real *xpg,
+		real *wpg,
+		real *xpgin)
 {
-  // For each face, give the dimension index i
+  // First and second columns: 2D loop dimensions
+  // Third column: face dimension
+  // Fourth column: 0 -> negative orientation, 1 -> positive orientation
   int axis_permut[6][4] = { {0, 2, 1, 0},
 			    {1, 2, 0, 1},
 			    {2, 0, 1, 1},
@@ -378,7 +375,8 @@ int ref_pg_face(const int *deg, const int *raf,
   ipgf /= (pdeg[0] + 1);
   pix[1] = ipgf % (pdeg[1] + 1);
   ipgf /= (pdeg[1] + 1);
-  pix[2] = paxis[3] * pdeg[2]; // Equals 0 or d depending on the face
+  // pix[2] equals 0 or d depending on the face
+  pix[2] = paxis[3] * pdeg[2]; 
 
   // Compute permuted subcell  indices of the subface
   int pic[3];
@@ -407,44 +405,34 @@ int ref_pg_face(const int *deg, const int *raf,
 
   // Compute the reference coordinates of the Gauss-Lobatto point in
   // the volume
-  int offset[2] = {gauss_lob_offset[pdeg[0]] + pix[0],
-		   gauss_lob_offset[pdeg[1]] + pix[1]};
+  int poffset[2] = {gauss_lob_offset[pdeg[0]] + pix[0],
+		    gauss_lob_offset[pdeg[1]] + pix[1]};
 
-  xpg[paxis[0]] = h[0] * (pic[0] + gauss_lob_point[offset[0]]);
-  xpg[paxis[1]] = h[1] * (pic[1] + gauss_lob_point[offset[1]]);
+  xpg[paxis[0]] = h[0] * (pic[0] + gauss_lob_point[poffset[0]]);
+  xpg[paxis[1]] = h[1] * (pic[1] + gauss_lob_point[poffset[1]]);
   xpg[paxis[2]] = paxis[3];
 
   *wpg = h[0] * h[1] *
-    gauss_lob_weight[offset[0]] * gauss_lob_weight[offset[1]];
+    gauss_lob_weight[poffset[0]] * gauss_lob_weight[poffset[1]];
 
-  // If xpgin exists, compute a point slightly INSIDE the opposite
-  // subcell along the face.
-  // NB: in OpenCL, we _always_ compute xpgin, so the test can be removed.
-  //if(xpgin != NULL) {
-  real small = 1e-3;  //0.001
-  real vsmall = 1e-6; //0.000001;
+  real small = 1e-3;
+  real vsmall = 1e-6;
 
-  xpgin[paxis[0]] = h[0] * (pic[0] + gauss_lob_point[offset[0]]);
-  xpgin[paxis[1]] = h[1] * (pic[1] + gauss_lob_point[offset[1]]);
-
-  // TODO: can this be better handled with ifa?
-  
+  xpgin[paxis[0]] = h[0] * (pic[0] + gauss_lob_point[poffset[0]]);
   if(pix[0] == 0)
-    xpgin[paxis[0]] = h[0] * (pic[0] + gauss_lob_point[offset[0]] + small);
+    xpgin[paxis[0]] = h[0] * (pic[0] + gauss_lob_point[poffset[0]] + small);
   if(pix[0] == pdeg[0])
-    xpgin[paxis[0]] = h[0] * (pic[0] + gauss_lob_point[offset[0]] - small);
-
+    xpgin[paxis[0]] = h[0] * (pic[0] + gauss_lob_point[poffset[0]] - small);
+  
+  xpgin[paxis[1]] = h[1] * (pic[1] + gauss_lob_point[poffset[1]]);
   if(pix[1] == 0)
-    xpgin[paxis[1]] = h[1] * (pic[1] + gauss_lob_point[offset[1]] + small);
+    xpgin[paxis[1]] = h[1] * (pic[1] + gauss_lob_point[poffset[1]] + small);
   if(pix[1] == pdeg[1])
-    xpgin[paxis[1]] = h[1] * (pic[1] + gauss_lob_point[offset[1]] - small);
-
-  if(paxis[3] == 0)
-    xpgin[paxis[2]] = -vsmall;
-  if(paxis[3] == 1)
-    xpgin[paxis[2]] = 1.0 + vsmall;
-  //}
-
+    xpgin[paxis[1]] = h[1] * (pic[1] + gauss_lob_point[poffset[1]] - small);
+  
+  int sign = -1 + 2 * paxis[3];
+  xpgin[paxis[2]] = sign == -1 ? -vsmall: 1.0 + vsmall;
+  
   return ipgv;
 }
 
@@ -1220,9 +1208,20 @@ void DGMacroCellInterface(__constant int *param,        // interp param
 
     real xpg_in[3];
     compute_xphy(physnodeL, gradphi, xpg_in);
-
-    real period[3] = {_PERIODX,_PERIODY,_PERIODZ};
+    
+#if defined(_PERIODX) || defined(_PERIODY) || defined(_PERIODZ)
+#ifndef _PERIODX
+#define _PERIODX -1
+#endif
+#ifndef _PERIODY
+#define _PERIODY -1
+#endif
+#ifndef _PERIODZ
+#define _PERIODZ -1
+#endif
+    real period[3] = {_PERIODX, _PERIODY, _PERIODZ};
     PeriodicCorrection(xpg_in, period);
+#endif
 
     real xrefL[3];
     Phy2Ref(physnodeR, xpg_in, xrefL);
