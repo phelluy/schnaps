@@ -158,13 +158,9 @@ inline void compute_xphy(__constant real *physnode,
 		  real gradphi[20][4],
 		  real xphy[3])
 {
-  /* for(int ii = 0; ii < 3; ++ii) { */
-  /*   xphy[ii] = 0; */
-  /*   for(int i = 0; i < 20; ++i) { */
-  /*     xphy[ii] += physnode[3 * i + ii] * gradphi[i][3]; */
-  /*   } */
-  /* } */
-  
+  // FIXME: FP_FAST_FMA checks for double, we should also look at
+  // FP_FAST_FMAF for single-precision comparison.
+#ifdef FP_FAST_FMA
   xphy[0] = 0;
   xphy[1] = 0;
   xphy[2] = 0;
@@ -176,6 +172,14 @@ inline void compute_xphy(__constant real *physnode,
     xphy[1] = fma(physnode[i3 + 1], gp, xphy[1]);
     xphy[2] = fma(physnode[i3 + 2], gp, xphy[2]);
   }
+#else
+  for(int ii = 0; ii < 3; ++ii) {
+    xphy[ii] = 0;
+    for(int i = 0; i < 20; ++i) {
+      xphy[ii] += physnode[3 * i + ii] * gradphi[i][3];
+    }
+  }
+#endif
 }
 
 inline void compute_dtau(__constant real *physnode,
@@ -188,21 +192,33 @@ inline void compute_dtau(__constant real *physnode,
     dtau[ii][2] = 0;
 
     for(int i = 0; i < 20; ++i) {
-      //for(int jj = 0; jj < 3; jj++) {
-      //dtau[ii][jj] += physnode[3 * i + ii] * gradphi[i][jj];
-      //}
-      // TODO: is it worth fma when it's += ?
       real pn = physnode[3 * i + ii];
+#ifdef FP_FAST_FMA
       dtau[ii][0] = fma(pn, gradphi[i][0], dtau[ii][0]);
       dtau[ii][1] = fma(pn, gradphi[i][1], dtau[ii][1]);
       dtau[ii][2] = fma(pn, gradphi[i][2], dtau[ii][2]);
+#else
+      for(int jj = 0; jj < 3; jj++) {
+	dtau[ii][jj] += physnode[3 * i + ii] * gradphi[i][jj];
+      }
+#endif
     }
   }
 }
 
 inline void compute_codtau(real dtau[3][3], real codtau[3][3])
 {
-#if 0
+#ifdef FP_FAST_FMA
+  codtau[0][0] = fma( dtau[1][1], dtau[2][2], -dtau[1][2] * dtau[2][1]);
+  codtau[0][1] = fma(-dtau[1][0], dtau[2][2],  dtau[1][2] * dtau[2][0]);
+  codtau[0][2] = fma( dtau[1][0], dtau[2][1], -dtau[1][1] * dtau[2][0]);
+  codtau[1][0] = fma(-dtau[0][1], dtau[2][2],  dtau[0][2] * dtau[2][1]);
+  codtau[1][1] = fma( dtau[0][0], dtau[2][2], -dtau[0][2] * dtau[2][0]);
+  codtau[1][2] = fma(-dtau[0][0], dtau[2][1],  dtau[0][1] * dtau[2][0]);
+  codtau[2][0] = fma( dtau[0][1], dtau[1][2], -dtau[0][2] * dtau[1][1]);
+  codtau[2][1] = fma(-dtau[0][0], dtau[1][2],  dtau[0][2] * dtau[1][0]);
+  codtau[2][2] = fma( dtau[0][0], dtau[1][1], -dtau[0][1] * dtau[1][0]);
+#else
   codtau[0][0] =  dtau[1][1] * dtau[2][2] - dtau[1][2] * dtau[2][1];
   codtau[0][1] = -dtau[1][0] * dtau[2][2] + dtau[1][2] * dtau[2][0];
   codtau[0][2] =  dtau[1][0] * dtau[2][1] - dtau[1][1] * dtau[2][0];
@@ -212,30 +228,13 @@ inline void compute_codtau(real dtau[3][3], real codtau[3][3])
   codtau[2][0] =  dtau[0][1] * dtau[1][2] - dtau[0][2] * dtau[1][1];
   codtau[2][1] = -dtau[0][0] * dtau[1][2] + dtau[0][2] * dtau[1][0];
   codtau[2][2] =  dtau[0][0] * dtau[1][1] - dtau[0][1] * dtau[1][0];
-#else
-  codtau[0][0] = fma(dtau[1][1], dtau[2][2], - dtau[1][2] * dtau[2][1]);
-  codtau[0][1] = fma(-dtau[1][0], dtau[2][2], dtau[1][2] * dtau[2][0]);
-  codtau[0][2] = fma(dtau[1][0], dtau[2][1], - dtau[1][1] * dtau[2][0]);
-  codtau[1][0] = fma(-dtau[0][1], dtau[2][2], dtau[0][2] * dtau[2][1]);
-  codtau[1][1] = fma(dtau[0][0], dtau[2][2], - dtau[0][2] * dtau[2][0]);
-  codtau[1][2] = fma(-dtau[0][0], dtau[2][1], dtau[0][1] * dtau[2][0]);
-  codtau[2][0] = fma(dtau[0][1], dtau[1][2], - dtau[0][2] * dtau[1][1]);
-  codtau[2][1] = fma(-dtau[0][0], dtau[1][2], dtau[0][2] * dtau[1][0]);
-  codtau[2][2] = fma(dtau[0][0], dtau[1][1], - dtau[0][1] * dtau[1][0]);
 #endif
 }
 
 inline void compute_dphi(real dphiref[3], real codtau[3][3], real dphi[3])
 {
-  /*
-  for(int ii = 0; ii < 3; ii++) {
-    dphi[ii]=0;
-    for(int jj = 0; jj < 3; jj++) {
-    dphi[ii] += codtau[ii][jj] * dphiref[jj];
-    }
-    }
-  */
 
+#ifdef FP_FAST_FMA
   dphi[0] = fma(codtau[0][0], dphiref[0], 
 		fma(codtau[0][1], dphiref[1],
 		    codtau[0][2] * dphiref[2]) );
@@ -247,6 +246,14 @@ inline void compute_dphi(real dphiref[3], real codtau[3][3], real dphi[3])
   dphi[2] = fma(codtau[2][0], dphiref[0], 
 		fma(codtau[2][1], dphiref[1],
 		    codtau[2][2] * dphiref[2]) );
+#else
+  for(int ii = 0; ii < 3; ii++) {
+    dphi[ii]=0;
+    for(int jj = 0; jj < 3; jj++) {
+    dphi[ii] += codtau[ii][jj] * dphiref[jj];
+    }
+    }
+#endif
 }
 
 inline void ComputeNormal(real codtau[3][3], int ifa, real vnds[3])
@@ -257,15 +264,7 @@ inline void ComputeNormal(real codtau[3][3], int ifa, real vnds[3])
 			    {-1, 0,  0},
 			    {0,  0,  1},
 			    {0,  0, -1}};
-  /*
-    for(int ii = 0; ii < 3; ii++) {
-    vnds[ii] = 0;
-    for(int jj = 0; jj < 3; jj++) {
-    vnds[ii] += codtau[ii][jj] * h20_refnormal[ifa][jj];
-    }
-    }
-  */
-
+#ifdef FP_FAST_FMA
   vnds[0] = fma(codtau[0][0], h20_refnormal[ifa][0],
 		fma(codtau[0][1], h20_refnormal[ifa][1],
 		    codtau[0][2] * h20_refnormal[ifa][2]) );
@@ -277,6 +276,14 @@ inline void ComputeNormal(real codtau[3][3], int ifa, real vnds[3])
   vnds[2] = fma(codtau[2][0], h20_refnormal[ifa][0],
 		fma(codtau[2][1], h20_refnormal[ifa][1],
 		    codtau[2][2] * h20_refnormal[ifa][2]) );
+#else
+  for(int ii = 0; ii < 3; ii++) {
+    vnds[ii] = 0;
+    for(int jj = 0; jj < 3; jj++) {
+      vnds[ii] += codtau[ii][jj] * h20_refnormal[ifa][jj];
+    }
+  }
+#endif
 }
 
 void Ref2Phy(__constant real *physnode,
@@ -919,9 +926,12 @@ inline void compute_volume(__constant int *param,     // interp param
       int imemR0loc = ipgR * m;
       __local real *dtwnloc0 =  dtwnloc + imemR0loc;
       for(int iv = 0; iv < m; iv++) {
-	//dtwnloc0[iv] += flux[iv] * wpg;
 	// TODO: is it worth fma when it's += ?
+#ifdef FP_FAST_FMA
 	dtwnloc0[iv] = fma(flux[iv], wpg, dtwnloc0[iv]);
+#else
+	dtwnloc0[iv] += flux[iv] * wpg;
+#endif
       }
     }
 
@@ -1007,9 +1017,11 @@ inline void compute_volume_global(__constant int *param,     // interp param
       int imemR0 = VARINDEX(param, ipgR, 0);
       __global real *dtwn0 = dtwn + imemR0; 
       for(int iv = 0; iv < m; iv++) {
-     	//dtwn0[iv] += flux[iv] * wpg;
-	// TODO: is it worth fma when it's += ?
+#ifdef FP_FAST_FMA
 	dtwn0[iv] = fma(flux[iv], wpg, dtwn0[iv]);
+#else
+	dtwn0[iv] += flux[iv] * wpg;
+#endif
       }
     }
 
@@ -1311,9 +1323,11 @@ void DGBoundary(__constant int *param,      // interp param
 
   __global real *dtwn0 = dtwn + imemL0; 
   for(int iv = 0; iv < m; ++iv) {
-    //dtwn0[iv] -= flux[iv] * wpg;
-    // TODO: is it worth fma when it's += ?
+#ifdef FP_FAST_FMA
     dtwn0[iv] = fma(-flux[iv], wpg, dtwn0[iv]);
+#else
+    dtwn0[iv] -= flux[iv] * wpg;
+#endif
   }
 }
 
@@ -1444,20 +1458,7 @@ inline void Phy2Ref(__constant real *physnode, real *xphy, real *xref)
     dxphy[1] -= xphy[1];
     dxphy[2] -= xphy[2];
 
-    /*
-    real overdet = 1.0 / (  dtau[0][0] * codtau[0][0]
-			    + dtau[0][1] * codtau[0][1]
-			    + dtau[0][2] * codtau[0][2] );
- 
-    for(int ii = 0; ii < 3; ++ii) {
-      dxref[ii]
-	= codtau[0][ii] * dxphy[0] 
-	+ codtau[1][ii] * dxphy[1] 
-	+ codtau[2][ii] * dxphy[2];
-      xref[ii] -= dxref[ii] * overdet;
-    }
-    */
-
+#ifdef FP_FAST_FMA
     real det = fma(dtau[0][0], codtau[0][0],
 		   fma(dtau[0][1], codtau[0][1],
 		       dtau[0][2] * codtau[0][2]) );
@@ -1477,6 +1478,19 @@ inline void Phy2Ref(__constant real *physnode, real *xphy, real *xref)
 		   fma(codtau[1][2], dxphy[1],
 		       codtau[2][2] * dxphy[2]) );
     xref[2] = fma(-dxref[2], overdet, xref[2]);
+#else
+    real overdet = 1.0 / (  dtau[0][0] * codtau[0][0]
+			    + dtau[0][1] * codtau[0][1]
+			    + dtau[0][2] * codtau[0][2] );
+ 
+    for(int ii = 0; ii < 3; ++ii) {
+      dxref[ii]
+	= codtau[0][ii] * dxphy[0] 
+	+ codtau[1][ii] * dxphy[1] 
+	+ codtau[2][ii] * dxphy[2];
+      xref[ii] -= dxref[ii] * overdet;
+    }
+#endif
   }
 }
 
@@ -1615,8 +1629,12 @@ void RK_out_CL(__global real *wnp1,
 	       const real dt)
 {
   int ipg = get_global_id(0);
-  //wnp1[ipg] = wn[ipg] + dt * dtwn[ipg];
+
+#ifdef FP_FAST_FMA
   wnp1[ipg] = fma(dt, dtwn[ipg], wn[ipg]);
+#else
+  wnp1[ipg] = wn[ipg] + dt * dtwn[ipg];
+#endif
 }
 
 // In-place RK stage
@@ -1637,8 +1655,12 @@ void RK4_first_stages(__global real *wnp1,
 		      const real dt)
 {
   int ipg = get_global_id(0);
+
+#ifdef FP_FAST_FMA
+  wnp1[ipg] = fma(dt, dtwn[ipg], wn[ipg]);
+#else
   wnp1[ipg] = wn[ipg] + dt * dtwn[ipg];
-  //wnp1[ipg] = fma(dt, dtwn[ipg], wn[ipg]);
+#endif
 }
 
 // RK4 final stage
@@ -1653,15 +1675,8 @@ void RK4_final_stage(__global real *w,
   const real b = -1.0 / 3.0;
   const real a[] = {1.0 / 3.0, 2.0 / 3.0, 1.0 / 3.0, dt / 6.0};
   int i = get_global_id(0);
-  /*
-  w[i] = 
-    b * w[i] +
-    a[0] * l1[i] +
-    a[1] * l2[i] +
-    a[2] * l3[i] +
-    a[3] * dtw[i];
-  */
 
+#ifdef FP_FAST_FMA
   w[i] = fma(b, w[i],
 	     fma(a[0], l1[i],
 		 fma(a[1], l2[i],
@@ -1670,4 +1685,12 @@ void RK4_final_stage(__global real *w,
 		     )
 		 )
 	     );
+#else
+  w[i] 
+    = b * w[i]
+    + a[0] * l1[i]
+    + a[1] * l2[i]
+    + a[2] * l3[i]
+    + a[3] * dtw[i];
+#endif
 }
