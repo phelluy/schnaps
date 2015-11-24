@@ -1167,11 +1167,9 @@ void DGMacroCellInterface(__constant int *param,        // interp param
                           __global real *wnL,           // field 
                           __global real *dtwnL,         // time derivative
                           __global real *wnR,           // field 
-                          __global real *dtwnR,         // time derivative
-			  __local real *cache           // local mem
+                          __global real *dtwnR          // time derivative
 			  )
 {
-  // TODO: use __local real *cache.
 
   // Index of the point on the face.
   int ipgfL = get_global_id(0);

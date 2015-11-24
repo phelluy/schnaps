@@ -111,15 +111,15 @@ int ref_ipg(int* nraf, int* deg, real* xref);
 //! \brief compute the position xpg of glop ipg in the local
 //! numbering on face ifa. If xpgin is not NULL also compute
 //! the position of point slightly inside the opposite subcell.
-//! \param[inout] param interp. params list. param[6] also contains
-//! the volume Gauss point index
 //! \param[in] ifa local face index (0..5)
 //! \param[in] ipgf local 2d Gauss point index on the face ifa
 //! \param[out] xpg Gauss point coordinates
 //! \param[out] wpg Gauss point weight.
 //! \param[out] xpgin same as xpg but slightly moved such
 //! that the resulting point is in the interior of the ref. element
-void ref_pg_face(int* param,int ifa,int ipgf,real* xpg,real* wpg, real* xpgin);
+// returns the volumic index of the point.
+int ref_pg_face(int* raf, int* deg,int ifa,int ipgf,real* xpg,real* wpg,
+		real* xpgin);
 
 //! \brief return the value and the gradient of the basis
 //! functions.

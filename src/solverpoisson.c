@@ -150,9 +150,9 @@ void InitPoissonSolver(PoissonSolver* ps, field* fd,int charge_index){
       int ieR = ps->fd->macromesh.elem2elem[6*ie+ifa];
       if (ieR < 0) {
 	for(int ipgf = 0; ipgf < NPGF(ps->fd->interp_param + 1, ifa); ipgf++) {
-	  ref_pg_face(ps->fd->interp_param + 1, ifa, ipgf,
-		      NULL, NULL, NULL);
-	  int ipg = ps->fd->interp_param[7];
+	  int* deg = ps->fd->interp_param + 1;
+	  int* raf = ps->fd->interp_param + 4;
+	  int ipg = ref_pg_face(raf, deg, ifa, ipgf, NULL, NULL, NULL);
 	  int ino_dg = ipg + ie * npgmacrocell;
 	  int ino_fe = ps->dg_to_fe_index[ino_dg];
 	  /* printf("ie=%d ino_dg=%d ino_fe=%d boundary=%d\n", */
@@ -218,7 +218,7 @@ void SolvePoisson1D(field *f,real * w,int type_bc, real bc_l, real bc_r,Solver s
   sky.pc_type=precon;
 
   if(!sky.is_alloc){
-  // compute the profile of the matrix
+    // compute the profile of the matrix
     for(int ie = 0; ie < nelx; ie++){
       for(int iloc = 0; iloc < degx + 1; iloc++){
 	for(int jloc = 0; jloc < degx + 1; jloc++){
@@ -232,7 +232,7 @@ void SolvePoisson1D(field *f,real * w,int type_bc, real bc_l, real bc_r,Solver s
   }
 
   if(!sky.is_assembly){
-  // local matrix (assuming identical finite elements)
+    // local matrix (assuming identical finite elements)
     real aloc[degx+1][degx+1];
     for(int iloc=0;iloc<degx+1;iloc++){
       for(int jloc=0;jloc<degx+1;jloc++){
@@ -514,15 +514,15 @@ void SolvePoisson2D(PoissonSolver* ps, int type_bc)
   for(int ie = 0; ie < ps->fd->macromesh.nbelems; ie++){  
     MacroCell *mcell = f->mcell + ie;
     for(int ipg = 0;ipg < npgmacrocell; ipg++){
-	int ino_dg = ipg + ie * npgmacrocell;
-	int ino_fe = ps->dg_to_fe_index[ino_dg];
-	int ipot = ps->fd->varindex(ps->fd->interp_param,
-			   ipg,_INDEX_PHI) + mcell->woffset;
-	if (ps->is_boundary_node[ino_fe]){
-	  real bigval = 1e20;
-	  ps->lsol.rhs[ino_fe] = ps->fd->wn[ipot] * bigval;
-	  //printf("ino_dg=%d ino_fe=%d ipot=%d\n",ino_dg,ino_fe,ipot);
-	}
+      int ino_dg = ipg + ie * npgmacrocell;
+      int ino_fe = ps->dg_to_fe_index[ino_dg];
+      int ipot = ps->fd->varindex(ps->fd->interp_param,
+				  ipg,_INDEX_PHI) + mcell->woffset;
+      if (ps->is_boundary_node[ino_fe]){
+	real bigval = 1e20;
+	ps->lsol.rhs[ino_fe] = ps->fd->wn[ipot] * bigval;
+	//printf("ino_dg=%d ino_fe=%d ipot=%d\n",ino_dg,ino_fe,ipot);
+      }
     }
   }
   printf("Solution...\n");
@@ -535,11 +535,11 @@ void SolvePoisson2D(PoissonSolver* ps, int type_bc)
   for(int ie = 0; ie < ps->fd->macromesh.nbelems; ie++){  
     MacroCell *mcell = f->mcell + ie;
     for(int ipg = 0;ipg < npgmacrocell; ipg++){
-	int ino_dg = ipg + ie * npgmacrocell;
-	int ino_fe = ps->dg_to_fe_index[ino_dg];
-	int ipot = ps->fd->varindex(ps->fd->interp_param,
-			   ipg,_INDEX_PHI) + mcell->woffset;
-	ps->fd->wn[ipot]=ps->lsol.sol[ino_fe];
+      int ino_dg = ipg + ie * npgmacrocell;
+      int ino_fe = ps->dg_to_fe_index[ino_dg];
+      int ipot = ps->fd->varindex(ps->fd->interp_param,
+				  ipg,_INDEX_PHI) + mcell->woffset;
+      ps->fd->wn[ipot]=ps->lsol.sol[ino_fe];
     }
   }
 

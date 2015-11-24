@@ -303,7 +303,7 @@ void ref_pg_vol(int *param, int ipg, real *xpg, real *wpg, real *xpg_in) {
 
 // Return the reference coordinates xpg[3] and weight wpg of the GLOP
 // ipg on the face ifa.
-void ref_pg_face(int *param, int ifa, int ipg, 
+int ref_pg_face(int *raf, int *deg, int ifa, int ipg, 
 		 real *xpg, real *wpg, real *xpgin) {
   // For each face, give the dimension index i
   const int axis_permut[6][4] = { {0, 2, 1, 0},
@@ -313,42 +313,44 @@ void ref_pg_face(int *param, int ifa, int ipg,
 				  {0, 1, 2, 1},
 				  {1, 0, 2, 0} };
 
-  int deg[3], offset[2],nraf[3];
+  int offset[2];
   real h[3];
-  int ipgxyz[3], ncpgxyz[3];
-  //int ipgf=ipg;
+  int ipgxyz[3];
+  int ncpgxyz[3];
 
-  // approximation degree in each direction
-  deg[0] = param[axis_permut[ifa][0]];
-  deg[1] = param[axis_permut[ifa][1]];
-  deg[2] = param[axis_permut[ifa][2]];
+  // approximation degree in each permuted direction
+  int pdeg[3];
+  pdeg[0] = deg[axis_permut[ifa][0]];
+  pdeg[1] = deg[axis_permut[ifa][1]];
+  pdeg[2] = deg[axis_permut[ifa][2]];
 
-  // number of subcells in each direction
-  nraf[0] = param[3 + axis_permut[ifa][0]];
-  nraf[1] = param[3 + axis_permut[ifa][1]];
-  nraf[2] = param[3 + axis_permut[ifa][2]];
+  // number of subcells in each permuted direction
+  int praf[3];
+  praf[0] = raf[axis_permut[ifa][0]];
+  praf[1] = raf[axis_permut[ifa][1]];
+  praf[2] = raf[axis_permut[ifa][2]];
 
   // Compute permuted indices
-  int ix = ipg % (deg[0] + 1);
-  ipg /= (deg[0] + 1);
+  int ix = ipg % (pdeg[0] + 1);
+  ipg /= (pdeg[0] + 1);
 
-  int iy = ipg % (deg[1] + 1);
-  ipg /= (deg[1] + 1);
+  int iy = ipg % (pdeg[1] + 1);
+  ipg /= (pdeg[1] + 1);
 
   // Equals 0 or d depending on the face
-  int iz = axis_permut[ifa][3] * deg[2];
+  int iz = axis_permut[ifa][3] * pdeg[2];
 
   // Compute permuted indices of the subface
-  int ncx = ipg % nraf[0];
-  h[0] = 1.0 / (real) nraf[0];
-  ipg /= nraf[0];
+  int ncx = ipg % praf[0];
+  h[0] = 1.0 / (real) praf[0];
+  ipg /= praf[0];
 
   int ncy = ipg;
-  h[1] = 1.0 / (real) nraf[1];
+  h[1] = 1.0 / (real) praf[1];
 
-  // Equals 0 or nraf-1 depending on the face
-  int ncz = axis_permut[ifa][3] * (nraf[2] - 1);
-  h[2] = 1.0 / (real) nraf[2];
+  // Equals 0 or praf-1 depending on the face
+  int ncz = axis_permut[ifa][3] * (praf[2] - 1);
+  h[2] = 1.0 / (real) praf[2];
 
   // Compute non permuted indices for points and subfaces
   ipgxyz[axis_permut[ifa][0]] = ix;
@@ -361,17 +363,17 @@ void ref_pg_face(int *param, int ifa, int ipg,
 
   // Compute the global index of the
   // Gauss-Lobatto point in the volume
-  param[6] = ipgxyz[0] + (param[0] + 1) *
-    (ipgxyz[1] + (param[1] + 1) *
-     (ipgxyz[2] + (param[2] + 1) *
-      (ncpgxyz[0] + param[3] *
-       (ncpgxyz[1] + param[4] *
+  int ipgv = ipgxyz[0] + (deg[0] + 1) *
+    (ipgxyz[1] + (deg[1] + 1) *
+     (ipgxyz[2] + (deg[2] + 1) *
+      (ncpgxyz[0] + raf[0] *
+       (ncpgxyz[1] + raf[1] *
 	ncpgxyz[2]))));
 
   // Compute the reference coordinates of the Gauss-Lobatto point in
   // the volume
-  offset[0] = gauss_lob_offset[deg[0]] + ix;
-  offset[1] = gauss_lob_offset[deg[1]] + iy;
+  offset[0] = gauss_lob_offset[pdeg[0]] + ix;
+  offset[1] = gauss_lob_offset[pdeg[1]] + iy;
 
   if (xpg != NULL) {
     xpg[axis_permut[ifa][0]] = h[0] * (ncx + gauss_lob_point[offset[0]]);
@@ -386,8 +388,8 @@ void ref_pg_face(int *param, int ifa, int ipg,
   // If xpgin exists, compute a point slightly INSIDE the opposite
   // subcell along the face.
   if(xpgin != NULL) {
-    real small = 1e-3;//0.001
-    real vsmall = 1e-5;//0.000001;
+    real small = 1e-3;  //0.001
+    real vsmall = 1e-5; //0.000001;
 
     xpgin[axis_permut[ifa][0]] = h[0] * (ncx + gauss_lob_point[offset[0]]);
     xpgin[axis_permut[ifa][1]] = h[1] * (ncy + gauss_lob_point[offset[1]]);
@@ -400,17 +402,18 @@ void ref_pg_face(int *param, int ifa, int ipg,
     if(ix == 0)
       xpgin[axis_permut[ifa][0]]
 	= h[0] * (ncx + gauss_lob_point[offset[0]] + small);
-    if(ix == deg[0])
+    if(ix == pdeg[0])
       xpgin[axis_permut[ifa][0]]
 	= h[0] * (ncx + gauss_lob_point[offset[0]] - small);
 
     if(iy == 0)
       xpgin[axis_permut[ifa][1]]
 	= h[1] * (ncy + gauss_lob_point[offset[1]] + small);
-    if(iy == deg[1])
+    if(iy == pdeg[1])
       xpgin[axis_permut[ifa][1]]
 	= h[1] * (ncy + gauss_lob_point[offset[1]] - small);
   }
+  return ipgv;
 }
 
 // return the 1d derivative of lagrange polynomial ib at glop ipg

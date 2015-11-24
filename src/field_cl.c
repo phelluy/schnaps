@@ -396,8 +396,7 @@ void ExtractInterface_CL(MacroFace *mface, field *f, cl_mem *wn,
 // wn_cl is an array of cl_mems, one per macrocell.
 void init_DGMacroCellInterface_CL(field *f, 
 				  int ieL, int ieR, int locfaL, int locfaR,
-				  cl_mem *wn_cl,
-				  size_t cachesize)
+				  cl_mem *wn_cl)
 {
   cl_int status;
   cl_kernel kernel = f->dginterface;
@@ -469,13 +468,6 @@ void init_DGMacroCellInterface_CL(field *f,
                           f->dtwn_cl + ieR);
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
-
-  status = clSetKernelArg(kernel,
-                          argnum++,
-                          sizeof(real) * cachesize,
-                          NULL);
-  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status >= CL_SUCCESS);
 }
 
 void DGMacroCellInterface_CL(MacroFace *mface, field *f, cl_mem *wn_cl,
@@ -502,21 +494,17 @@ void DGMacroCellInterface_CL(MacroFace *mface, field *f, cl_mem *wn_cl,
   assert(ieR >= 0);
 
   // Set the remaining loop-dependant kernel arguments
-  size_t kernel_cachesize = 1;
   init_DGMacroCellInterface_CL(f, 
 			       ieL, ieR, locfaL, locfaR, 
-			       wn_cl, 
-			       kernel_cachesize);
+			       wn_cl);
 
   status = clEnqueueNDRangeKernel(f->cli.commandqueue,
 				  kernel,
-				  1, // cl_uint work_dim,
+				  1,    // cl_uint work_dim,
 				  NULL, // global_work_offset,
 				  &numworkitems, // global_work_size, 
 				  NULL, // size_t *local_work_size, 
-				  nwait,  // nwait, 
-				  wait, // *wait_list,
-				  done); // *event
+				  nwait, wait, done);
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 }

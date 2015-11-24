@@ -62,7 +62,9 @@ real min_grid_spacing(field *f)
       for(int ipgf = 0; ipgf < NPGF(f->interp_param + 1, ifa); ipgf++) {
 	real xpgref[3], wpg;
 	// get the coordinates of the Gauss point
-	ref_pg_face(f->interp_param + 1, ifa, ipgf, xpgref, &wpg, NULL);
+	int *deg = f->interp_param + 1;
+	int *raf = f->interp_param + 4;
+	ref_pg_face(raf, deg, ifa, ipgf, xpgref, &wpg, NULL);
 	real vnds[3];
 	{
 	  real codtau[3][3], dtau[3][3];
@@ -1044,7 +1046,10 @@ void DGMacroCellInterfaceSlow(MacroCell *mcell, field *f, real *w, real *dtw)
       // get the coordinates of the Gauss point
       // and coordinates of a point slightly inside the
       // opposite element in xref_in
-      ref_pg_face(iparam + 1, ifa, ipgf, xpgref, &wpg, xpgref_in);
+
+      int* deg = iparam + 1;
+      int* raf = iparam + 4;
+      int ipg = ref_pg_face(raf, deg, ifa, ipgf, xpgref, &wpg, xpgref_in);
 
       /* #ifdef _PERIOD */
       /* 	assert(f->macromesh.is1d); // TODO: generalize to 2d */
@@ -1060,9 +1065,6 @@ void DGMacroCellInterfaceSlow(MacroCell *mcell, field *f, real *w, real *dtw)
       /* 	} */
       /* #endif */
 
-      // recover the volume gauss point from
-      // the face index
-      int ipg = iparam[7];
       // get the left value of w at the gauss point
       real wL[f->model.m], wR[f->model.m];
       for(int iv = 0; iv < f->model.m; iv++) {
@@ -1165,10 +1167,9 @@ void DGMacroCellBoundary(MacroFace *mface, field *f, real *wmc, real *dtwmc)
     real xpgref[3], xpgref_in[3], wpg;
     // Get the coordinates of the Gauss point and coordinates of a
     // point slightly inside the opposite element in xref_in
-    ref_pg_face(iparam + 1, locfaL, ipgfL, xpgref, &wpg, xpgref_in);
-
-    // Recover the volume gauss point from the face index
-    int ipgL = iparam[7];
+    int* deg = iparam + 1;
+    int* raf = iparam + 4;
+    int ipgL = ref_pg_face(raf, deg, locfaL, ipgfL, xpgref, &wpg, xpgref_in);
 
     real flux[m];
     real wL[m];
@@ -1203,16 +1204,10 @@ void DGMacroCellBoundary(MacroFace *mface, field *f, real *wmc, real *dtwmc)
 void DGMacroCellInterface(MacroFace *mface, field *f,
 			  real *wmcL, real *wmcR, real *dtwmcL, real *dtwmcR) 
 {
-  //MacroMesh *msh = &f->macromesh;
   const unsigned int m = f->model.m;
-
-  /* int iparam[8]; */
-  /* for(int ip = 0; ip < 8; ip++) */
-  /*   iparam[ip] = f->interp_param[ip]; */
 
   // Assembly of the surface terms loop on the macrocells faces
 
-  //int ifa = mface->ifa;
   int ieL = mface->ieL;
   MacroCell *mcellL = f->mcell + ieL;
   int locfaL = mface->locfaL;
@@ -1232,24 +1227,23 @@ void DGMacroCellInterface(MacroFace *mface, field *f,
     real xpgref[3], xpgref_in[3], wpg;
     // Get the coordinates of the Gauss point and coordinates of a
     // point slightly inside the opposite element in xref_in
-    ref_pg_face(iparam + 1, locfaL, ipgfL, xpgref, &wpg, xpgref_in);
 
-    // Recover the volume gauss point from the face index
-    int ipgL = iparam[7];
+    int* deg = iparam + 1;
+    int* raf = iparam + 4;
+    int ipgL = ref_pg_face(raf, deg, locfaL, ipgfL, xpgref, &wpg, xpgref_in);
 
     // Normal vector at gauss point ipgL
-    real vnds[3], xpg[3];
+    real vnds[3];
     {
       real dtau[3][3], codtau[3][3];
       Ref2Phy(mcellL->physnode,
 	      xpgref,
 	      NULL, locfaL, // dpsiref, ifa
-	      xpg, dtau,
+	      NULL, dtau,
 	      codtau, NULL, vnds); // codtau, dpsi, vnds
     }
-
-    MacroCell *mcellR = f->mcell + ieR;
     
+    MacroCell *mcellR = f->mcell + ieR;
     real xrefL[3];
     {
       real xpg_in[3];
@@ -1260,32 +1254,10 @@ void DGMacroCellInterface(MacroFace *mface, field *f,
 	      NULL, NULL, NULL); // codtau, dpsi, vnds
       PeriodicCorrection(xpg_in,f->macromesh.period);
       Phy2Ref(mcellR->physnode, xpg_in, xrefL);
-      
     }
     
-    int *raf = mcellR->raf;
-    int *deg = mcellR->deg;
     int ipgR = ref_ipg(raf, deg, xrefL);
     
-    //printf("ipgL=%d ipgR=%d\n",ipgL,ipgR);
-    
-    // Uncomment to check that the neighbour-finding algorithm worked.
-    /* { */
-    /*   real xpgR[3], xrefR[3], wpgR; */
-    /*   ref_pg_vol(iparam + 1, ipgR, xrefR, &wpgR, NULL); */
-    /*   Ref2Phy(physnodeR, */
-    /* 	  xrefR, */
-    /* 	  NULL, -1, // dphiref, ifa */
-    /* 	  xpgR, NULL, */
-    /* 	  NULL, NULL, NULL); // codtau, dphi, vnds */
-    /*  #ifdef _PERIOD */
-    /*   assert(fabs(Dist(xpg,xpgR)-_PERIOD)<1e-11); */
-    /*   #else */
-    /* assert(Dist(xpg,xpgR)<1e-11); */
-    /* #endif */
-    /* }	 */
-
-    // TODO: the memory is already contiguous, so no need to copy.
     real wL[m];
     real wR[m];
     for(int iv = 0; iv < m; iv++) {
@@ -1296,13 +1268,10 @@ void DGMacroCellInterface(MacroFace *mface, field *f,
     }
 
     // int_dL F(wL, wR, grad phi_ib)
-
     real flux[m];
     f->model.NumFlux(wL, wR, vnds, flux);
     
-    // Add flux to both sides
     for(int iv = 0; iv < m; iv++) {
-      // The basis functions 1is also the gauss point index
       int imemL = f->varindex(iparam, ipgL, iv);
       int imemR = f->varindex(iparam, ipgR, iv);
       dtwmcL[imemL] -= flux[iv] * wpg;

@@ -664,8 +664,9 @@ void BuildConnectivity(MacroMesh* m)
       if (m->elem2elem[6 * ie + ifa] < 0){
 	real xpgref[3], xpgref_in[3];
 	int ipgf=0;
-	int param2[7]={0,0,0,1,1,1,0};
-	ref_pg_face(param2, ifa, ipgf, xpgref, NULL, xpgref_in);
+	int deg2[3] = {0,0,0};
+	int raf2[3] = {1,1,1};
+	ref_pg_face(raf2, deg2, ifa, ipgf, xpgref, NULL, xpgref_in);
 	real dtau[3][3], xpg_in[3];
 	real codtau[3][3], vnds[3]={0,0,0};
 	Ref2Phy(physnode,
@@ -845,13 +846,15 @@ void CheckMacroMesh(MacroMesh *m, int *param)
 
         // Get the coordinates of the Gauss point
         real xpgref[3];
+	// Recover the volume gauss point from the face index
+	int ipgv;
 	{
 	  real wpg;
-	  ref_pg_face(param, ifa, ipgf, xpgref, &wpg, NULL);
+	  int* deg = param;
+	  int* raf = param + 3;
+	  ipgv = ref_pg_face(raf, deg, ifa, ipgf, xpgref, &wpg, NULL);
 	}
         
-	// Recover the volume gauss point from the face index
-	int ipgv = param[6];
 	real xpgref2[3];
 	{
 	  real wpg2;
@@ -911,9 +914,10 @@ void CheckMacroMesh(MacroMesh *m, int *param)
 	  // face-local point index and the point slightly inside the
 	  // macrocell.
 	  real xpgref[3], xpgref_in[3];
-	  ref_pg_face(param, ifa, ipgf, xpgref, NULL, xpgref_in);
+	  int* deg = param;
+	  int* raf = param + 3; 
+	  ref_pg_face(raf, deg, ifa, ipgf, xpgref, NULL, xpgref_in);
 	  //ref_pg_face(param, ifa, ipgf, xpgref, NULL, NULL);
-	  int ipg=param[6];
 
 	  /* #ifdef _PERIOD */
 	  /* 	  assert(m->is1d); // TODO: generalize to 2d */
@@ -956,8 +960,6 @@ void CheckMacroMesh(MacroMesh *m, int *param)
   	  real xpgrefR_in[3];//,xpgrefR[3];
 	  Phy2Ref(physnodeR, xpg_in, xpgrefR_in);
 	  //Phy2Ref(physnodeR, xpg, xpgrefR);
-	  int *raf = param + 3;
-	  int *deg = param + 0;
 	  int ipgR = ref_ipg(raf, deg, xpgrefR_in);
 	  
 	  // search the id of the face in the right elem
@@ -968,8 +970,11 @@ void CheckMacroMesh(MacroMesh *m, int *param)
 	    if (m->elem2elem[6 * ieR + ifaR] == ie) {
 	      for(int ipgfR = 0; ipgfR < NPGF(param, ifaR); ipgfR++) {
 		real xpgrefR[3];
-		ref_pg_face(param, ifaR, ipgfR, xpgrefR, NULL, NULL);
-		if (param[6] == ipgR){
+		int* deg = param;
+		int* raf = param + 3;
+		int ipgg = ref_pg_face(raf, deg, ifaR, ipgfR, xpgrefR,
+				       NULL, NULL);
+		if (ipgg == ipgR){
 		  real xpgR[3];
 		  real vndsR[3];
 		  {
