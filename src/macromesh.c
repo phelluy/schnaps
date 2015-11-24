@@ -800,7 +800,7 @@ void CheckMacroMesh(MacroMesh *m, int *param)
     for(int ipg = 0; ipg < NPG(param); ipg++) {
       real xref1[3], xref_in[3];
       real wpg;
-      ref_pg_vol(param, ipg, xref1, &wpg, xref_in);
+      ref_pg_vol(param+3, param, ipg, xref1, &wpg, xref_in);
       memcpy(g.xref, xref1, sizeof(g.xref));
 
       g.ifa = 0;
@@ -858,7 +858,7 @@ void CheckMacroMesh(MacroMesh *m, int *param)
 	real xpgref2[3];
 	{
 	  real wpg2;
-	  ref_pg_vol(param, ipgv, xpgref2, &wpg2, NULL);
+	  ref_pg_vol(param+3, param, ipgv, xpgref2, &wpg2, NULL);
 	}
 
         if(m->is2d) { // in 2D do not check upper and lower face
@@ -978,7 +978,7 @@ void CheckMacroMesh(MacroMesh *m, int *param)
 		  real xpgR[3];
 		  real vndsR[3];
 		  {
-		    ref_pg_vol(param, ipgR, xpgrefR, NULL, NULL);
+		    ref_pg_vol(param+3, param, ipgR, xpgrefR, NULL, NULL);
 		    real dtauR[3][3], codtauR[3][3];
 		    Ref2Phy(physnodeR,
 			    xpgrefR,

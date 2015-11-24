@@ -46,7 +46,8 @@ real min_grid_spacing(field *f)
     for(int ipg = 0; ipg < NPG(f->interp_param + 1); ipg++) {
       real xpgref[3], wpg;
       // Get the coordinates of the Gauss point
-      ref_pg_vol(f->interp_param + 1, ipg, xpgref, &wpg, NULL);
+      ref_pg_vol(f->interp_param + 4, f->interp_param + 1,
+		 ipg, xpgref, &wpg, NULL);
       real codtau[3][3], dtau[3][3];
       Ref2Phy(mcell->physnode, // phys. nodes
 	      xpgref, // xref
@@ -105,7 +106,8 @@ void init_data(field *f)
     for(int ipg = 0; ipg < mcell->npg; ipg++) {
       real xpg[3];
       real xref[3], omega;
-      ref_pg_vol(f->interp_param + 1, ipg, xref, &omega, NULL);
+      ref_pg_vol(f->interp_param + 4, f->interp_param + 1,
+		 ipg, xref, &omega, NULL);
       real dtau[3][3];
       Ref2Phy(mcell->physnode,
 	      xref,
@@ -455,14 +457,25 @@ void init_field_macrofaces(field *f)
     mface->locfaR = f2eifa[3];
 
     mface->npgf = NPGF(f->interp_param + 1, mface->locfaL);
+
+    // Determine the relative orientation of the faces.
+    /* MacroCell *mcellL = f->mcell[mface->ieL]; */
+    /* int ipgfL = 0; */
+    /* int ipgvL = ref_pg_face(mcellL.raf, mcellL.deg, mface->locfaL, ipgf, */
+    /* 			    NULL, NULL, NULL); */
+
+    // FIXME
+    
   }
 }
 
-void setMacroMellmass(MacroCell *mcell, field *f)
+void setMacroCellmass(MacroCell *mcell, field *f)
 {
   for(int ipg = 0; ipg < mcell->npg; ipg++) {
     real dtau[3][3], codtau[3][3], xpgref[3], xphy[3], wpg;
-    ref_pg_vol(f->interp_param + 1, ipg, xpgref, &wpg, NULL);
+    int *raf = f->interp_param + 4;
+    int *deg = f->interp_param + 1;
+    ref_pg_vol(raf, deg, ipg, xpgref, &wpg, NULL);
     Ref2Phy(mcell->physnode, // phys. nodes
 	    xpgref, // xref
 	    NULL, -1, // dpsiref, ifa
@@ -512,7 +525,7 @@ void init_field_macrocells(field *f)
     mcell->woffset = wcount;
 
     mcell->mass = calloc(mcell->npg, sizeof(real));    
-    setMacroMellmass(mcell, f);
+    setMacroCellmass(mcell, f);
       
     wcount += mcell->nreal;
   }
@@ -554,9 +567,9 @@ void Initfield(field *f)
 
   //  printf("hmin=%f\n", f->hmin);
 
-  init_field_macrofaces(f);
-  
   init_field_macrocells(f);
+  
+  init_field_macrofaces(f);
   
   // Compute cfl parameter min_i vol_i/surf_i
   f->hmin = min_grid_spacing(f);
@@ -600,7 +613,9 @@ void Displayfield(field *f)
     
     for(int ipg = 0; ipg < mcell->npg; ipg++) {
       real xref[3], wpg;
-      ref_pg_vol(f->interp_param + 1, ipg, xref, &wpg, NULL);
+      int *raf = f->interp_param + 4;
+      int *deg = f->interp_param + 1;
+      ref_pg_vol(raf, deg, ipg, xref, &wpg, NULL);
 
       printf("Gauss point %d %f %f %f \n", ipg, xref[0], xref[1], xref[2]);
       printf("dtw= ");
@@ -634,7 +649,9 @@ void Gnuplot(field *f, int dir, real fixval, char *filename)
 
       real xref[3], xphy[3], wpg;
       real dtau[3][3];
-      ref_pg_vol(f->interp_param + 1, ipg, xref, &wpg, NULL);
+      int *raf = f->interp_param + 4;
+      int *deg = f->interp_param + 1;
+      ref_pg_vol(raf, deg, ipg, xref, &wpg, NULL);
 
       Ref2Phy(mcell->physnode,
 	      xref,
@@ -888,8 +905,6 @@ void Plotfield(int typplot, int compare, field* f, char *fieldname,
 // Compute inter-subcell fluxes
 void DGSubCellInterface(MacroCell *mcell, field *f, real *wmc, real *dtwmc) 
 {
-  //int ie = mcell->ie;
- 
   const int nraf[3] = {mcell->raf[0], mcell->raf[1], mcell->raf[2]};
   const int deg[3] = {mcell->deg[0], mcell->deg[1], mcell->deg[2]};
   const int npg[3] = {deg[0] + 1, deg[1] + 1, deg[2] + 1};
@@ -953,7 +968,9 @@ void DGSubCellInterface(MacroCell *mcell, field *f, real *wmc, real *dtwmc)
 		real vnds[3];
 		{
 		  real xref[3], wpg3;
-		  ref_pg_vol(f->interp_param + 1, ipgL, xref, &wpg3, NULL);
+		  int *raf = f->interp_param + 4;
+		  int *deg = f->interp_param + 1;
+		  ref_pg_vol(raf, deg, ipgL, xref, &wpg3, NULL);
 		  // mapping from the ref glop to the physical glop
 		  real dtau[3][3], codtau[3][3];
 		  Ref2Phy(mcell->physnode,
@@ -1100,7 +1117,9 @@ void DGMacroCellInterfaceSlow(MacroCell *mcell, field *f, real *w, real *dtw)
 	Phy2Ref(mcellR->physnode, xpg_in, xref);
 	int ipgR = ref_ipg(raf, deg, xref);
 	real xpgR[3], xrefR[3], wpgR;
-	ref_pg_vol(iparam + 1, ipgR, xrefR, &wpgR, NULL);
+	int *raf = iparam + 4;
+	int *deg = iparam + 1;
+	ref_pg_vol(raf, deg, ipgR, xrefR, &wpgR, NULL);
 	Ref2Phy(mcellR->physnode,
 		xrefR,
 		NULL, -1, // dphiref, ifa
@@ -1308,7 +1327,9 @@ void DGSource(MacroCell *mcell, field *f, real tnow, real *wmc, real *dtwmc)
 
     real wpg;
     real xpgref[3], xphy[3];
-    ref_pg_vol(f->interp_param + 1, ipg, xpgref, &wpg, NULL);
+    int *raf = f->interp_param + 4;
+    int *deg = f->interp_param + 1;
+    ref_pg_vol(raf, deg, ipg, xpgref, &wpg, NULL);
     Ref2Phy(mcell->physnode, // phys. nodes
 	    xpgref, // xref
 	    NULL, -1, // dpsiref, ifa
@@ -1373,7 +1394,9 @@ void DGVolume(MacroCell *mcell, field *f, real *wmc, real *dtwmc)
 	  real xref[3];
 	  real tomega;
 
-	  ref_pg_vol(f->interp_param + 1, offsetL + p, xref, &tomega, NULL);
+	  int *raf = f->interp_param + 4;
+	  int *deg = f->interp_param + 1;
+	  ref_pg_vol(raf, deg, offsetL + p, xref, &tomega, NULL);
 	  xref0[p] = xref[0];
 	  xref1[p] = xref[1];
 	  xref2[p] = xref[2];
@@ -1700,7 +1723,9 @@ real L2error(field *f) {
 	real xphy[3], xpgref[3];
 	real dtau[3][3], codtau[3][3];
 	// Get the coordinates of the Gauss point
-	ref_pg_vol(f->interp_param + 1, ipg, xpgref, &wpg, NULL);
+	int *raf = f->interp_param + 4;
+	int *deg = f->interp_param + 1;
+	ref_pg_vol(raf, deg, ipg, xpgref, &wpg, NULL);
 	Ref2Phy(mcell->physnode, // phys. nodes
 		xpgref, // xref
 		NULL, -1, // dpsiref, ifa

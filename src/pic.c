@@ -235,7 +235,9 @@ void AccumulateParticles(void *fv, real *w){
 
     for(int ib=0;ib < npg;ib++){
       real wpg;
-      ref_pg_vol(f->interp_param + 1, ib, NULL, &wpg, NULL);
+      int *raf = f->interp_param + 4;
+      int *deg = f->interp_param + 1;
+      ref_pg_vol(raf, deg, ib, NULL, &wpg, NULL);
       //printf("det=%f wpg=%f \n", det, wpg);
       wpg *= det;
       real psi;

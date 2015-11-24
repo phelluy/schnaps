@@ -254,20 +254,15 @@ int ref_ipg(int *raf, int *deg, real *xref) {
 // ncx ncy ncz ix iy iz
 // Return the reference coordinates xpg[3] and weight wpg of the GLOP
 // ipg
-void ref_pg_vol(int *param, int ipg, real *xpg, real *wpg, real *xpg_in) {
-  // approximation degree in each direction
-  int deg[3] = {param[0], param[1], param[2]};
-  
-  // number of subcells in each direction
-  int nraf[3] = {param[3], param[4], param[5]};
-
+void ref_pg_vol(int* raf, int* deg,
+		int ipg, real *xpg, real *wpg, real *xpg_in) {
   int ix[3], ic[3];
 
-  ipg_to_xyz(nraf,deg,ic,ix,&ipg);
+  ipg_to_xyz(raf,deg,ic,ix,&ipg);
 
-  real h[3] = {1.0 / (real) nraf[0],
-	       1.0 / (real) nraf[1],
-	       1.0 / (real) nraf[2] };
+  real h[3] = {1.0 / (real) raf[0],
+	       1.0 / (real) raf[1],
+	       1.0 / (real) raf[2] };
 
   int offset[3] = {gauss_lob_offset[deg[0]] + ix[0],
 		   gauss_lob_offset[deg[1]] + ix[1],
@@ -375,13 +370,13 @@ int ref_pg_face(int *raf, int *deg, int ifa, int ipg,
   offset[0] = gauss_lob_offset[pdeg[0]] + ix;
   offset[1] = gauss_lob_offset[pdeg[1]] + iy;
 
-  if (xpg != NULL) {
+  if(xpg != NULL) {
     xpg[axis_permut[ifa][0]] = h[0] * (ncx + gauss_lob_point[offset[0]]);
     xpg[axis_permut[ifa][1]] = h[1] * (ncy + gauss_lob_point[offset[1]]);
     xpg[axis_permut[ifa][2]] = axis_permut[ifa][3];
   }
 
-  if (wpg != NULL) *wpg = h[0] * h[1] *
+  if(wpg != NULL) *wpg = h[0] * h[1] *
 		     gauss_lob_weight[offset[0]] * 
 		     gauss_lob_weight[offset[1]];
 

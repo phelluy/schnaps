@@ -55,7 +55,8 @@ real L2_Kinetic_error(field* f){
       real xpgref[3], xphy[3], wpg;
       real dtau[3][3], codtau[3][3];//,xpg[3];
       // get the coordinates of the Gauss point
-      ref_pg_vol(f->interp_param + 1, ipg, xpgref, &wpg, NULL);
+      ref_pg_vol(f->interp_param + 4, f->interp_param + 1,
+		 ipg, xpgref, &wpg, NULL);
       Ref2Phy(physnode, // phys. nodes
 	      xpgref,  // xref
 	      NULL, -1, // dpsiref,ifa
@@ -122,7 +123,8 @@ void Energies(field *f, real *w, real k_energy, real e_energy, real t_energy,int
       real xpgref[3], xphy[3], wpg;
       real dtau[3][3], codtau[3][3];//,xpg[3];
       // get the coordinates of the Gauss point
-      ref_pg_vol(f->interp_param + 1, ipg, xpgref, &wpg, NULL);
+      ref_pg_vol(f->interp_param + 4, f->interp_param + 1,
+		 ipg, xpgref, &wpg, NULL);
       Ref2Phy(physnode, // phys. nodes
 	      xpgref,  // xref
 	      NULL,-1, // dpsiref,ifa
@@ -172,7 +174,8 @@ void Charge_total(field *f, real *w, real t_charge,int first_diag) {
       real xpgref[3], xphy[3], wpg;
       real dtau[3][3], codtau[3][3];//,xpg[3];
       // get the coordinates of the Gauss point
-      ref_pg_vol(f->interp_param + 1, ipg, xpgref, &wpg, NULL);
+      ref_pg_vol(f->interp_param + 4, f->interp_param + 1,
+		 ipg, xpgref, &wpg, NULL);
       Ref2Phy(physnode, // phys. nodes
 	      xpgref,  // xref
 	      NULL,-1, // dpsiref,ifa

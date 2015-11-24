@@ -44,9 +44,6 @@ typedef struct Geom{
   void (*Phy2Ref)(real physnode[_NB_REF_NODES][3],real xphy[3],real xref[3]);
 } Geom;
 
-
-
-
 //! \brief mapping tau from the reference point to the physical point.
 //! If an optional variable is not used it HAS to be set to NULL
 //! \param[in] physnode: coordinates of the physical nodes
@@ -72,7 +69,6 @@ void Ref2Phy(real physnode[20][3],
 //! Data encapsulation for more simplicity
 //! \param[inout] g a Geom data structure
 void GeomRef2Phy(Geom* g);
-
 
 //! \brief inverse mapping tau from the physical point to the reference point.
 //! solution by the Newton's method.
@@ -113,7 +109,7 @@ void Normalize(real a[3]);
 //! if period[dim]<0 -> non periodic in direction dim
 //! the box is of the form [0,period[0]]x[0,period[1]]x[0,period[2]]
 #pragma start_opencl
-void PeriodicCorrection(real xyz[3],real period[3]);
+void PeriodicCorrection(real xyz[3], real period[3]);
 #pragma end_opencl
 
 //! \brief periodic correction
@@ -127,7 +123,6 @@ void PeriodicCorrectionB(real xyz[3],real period[3],real xmin[3], real xmax[3]);
 //! \param[in] a, b : the two points
 //! \return the distance
 real Dist(real a[3], real b[3]);
-
 
 //! \brief point coordinates on standard output
 //! \param[in] x : the point

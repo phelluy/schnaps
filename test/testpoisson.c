@@ -114,7 +114,9 @@ int TestPoisson(void) {
     
     for(int ipg=0;ipg<NPG(f.interp_param+1);ipg++){
       real xref[3],wpg;
-      ref_pg_vol(f.interp_param+1,ipg,xref,&wpg,NULL);
+      int *raf = f.interp_param+4;
+      int *deg = f.interp_param+1;
+      ref_pg_vol(raf, deg, ipg, xref, &wpg, NULL);
       //printf("Gauss point %d %f %f %f \n",ipg,xref[0],xref[1],xref[2]);
       int imem=f.varindex(f.interp_param, ipg, _MV + 1) + mcell->woffset;
       // printf("gradphi exact=%f gradphinum=%f rap=%f\n",

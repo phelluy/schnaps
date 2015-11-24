@@ -124,7 +124,7 @@ int TestInterpolation()
 
     for(int ipg = 0; ipg < NPG(deg); ipg++){
       real wpg;
-      ref_pg_vol(deg, ipg, xref1, &wpg, xref_in);
+      ref_pg_vol(deg + 3, deg, ipg, xref1, &wpg, xref_in);
       //printf("xref_in %f %f %f \n",xref_in[0],xref_in[1],xref_in[2]);
       Ref2Phy(physnode,
 	      xref_in,
@@ -195,7 +195,7 @@ int TestInterpolation()
       for(int ipgf=0;ipgf<NPGF(deg,ifa);ipgf++){
 	real wpg;
 	int ipg = ref_pg_face(nraf, deg,ifa,ipgf,xref1,&wpg,NULL);
-	ref_pg_vol(deg,ipg,xref1,&wpg,xref_in);
+	ref_pg_vol(deg + 3, deg,ipg,xref1,&wpg,xref_in);
 	Ref2Phy(physnode,
 		xref_in,
 		0,
@@ -246,7 +246,7 @@ int TestInterpolation()
 
 	// Define test functions f and g
 	for(int ipg = 0; ipg < npg; ipg++){
-	  ref_pg_vol(deg, ipg, xref, &omega,NULL);
+	  ref_pg_vol(deg + 3, deg, ipg, xref, &omega,NULL);
 	  real xphy[3];
 	  real dtau[3][3], codtau[3][3];
 	  Ref2Phy(physnode, xref, NULL, -1,
@@ -272,7 +272,7 @@ int TestInterpolation()
 	  //printf(" ipg= %d \n", ipg);
 	  for(int l = 0; l < npg; l++){
 	    grad_psi_pg(deg, l, ipg, dphiref);
-	    ref_pg_vol(deg, ipg, xref, &omega, NULL);
+	    ref_pg_vol(deg + 3, deg, ipg, xref, &omega, NULL);
 	    real xphy[3];
 	    real dtau[3][3], codtau[3][3];
 	    Ref2Phy(physnode, xref, dphiref, -1,
@@ -285,7 +285,7 @@ int TestInterpolation()
 	    dkf += f[l] * dphi[k] / det;
 		
 	  }
-	  ref_pg_vol(deg, ipg, xref, &omega,NULL);
+	  ref_pg_vol(deg + 3, deg, ipg, xref, &omega,NULL);
 	  real xphy[3];
 	  real dtau[3][3], codtau[3][3];
 	  Ref2Phy(physnode, xref, NULL, -1,
@@ -306,7 +306,7 @@ int TestInterpolation()
 	  real dphi[3], dphiref[3];
 	  for(int l = 0; l < npg; l++){
 	    grad_psi_pg(deg, l, ipg, dphiref);
-	    ref_pg_vol(deg, ipg, xref, &omega,NULL);
+	    ref_pg_vol(deg + 3, deg, ipg, xref, &omega,NULL);
 	    real xphy[3];
 	    real dtau[3][3], codtau[3][3];
 	    Ref2Phy(physnode, xref, dphiref, -1,
@@ -318,7 +318,7 @@ int TestInterpolation()
 	      + dtau[0][2] * codtau[0][2];
 	    dkg += dphi[k] * g[l] / det;
 	  }
-	  ref_pg_vol(deg, ipg, xref, &omega,NULL);
+	  ref_pg_vol(deg + 3, deg, ipg, xref, &omega,NULL);
 	  real xphy[3];
 	  real dtau[3][3], codtau[3][3];
 	  Ref2Phy(physnode, xref, NULL, -1,

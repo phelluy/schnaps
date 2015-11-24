@@ -133,7 +133,9 @@ real GyroL2_Kinetic_error(field* f)
       real xpgref[3],xphy[3],wpg;
       real dtau[3][3],codtau[3][3];//,xpg[3];
       // get the coordinates of the Gauss point
-      ref_pg_vol(f->interp_param+1,ipg,xpgref,&wpg,NULL);
+      int *raf = f->interp_param + 4;
+      int *deg = f->interp_param + 1;
+      ref_pg_vol(raf, deg, ipg, xpgref, &wpg, NULL);
       Ref2Phy(physnode, // phys. nodes
 	      xpgref,  // xref
 	      NULL,-1, // dpsiref,ifa

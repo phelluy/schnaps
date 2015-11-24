@@ -41,7 +41,9 @@ int BuildFatNodeList(field* f, FatNode* fn_list)
     for(int ipg = 0; ipg < NPG(f->interp_param + 1); ipg++) {
       real xpg[3];
       real xref[3];
-      ref_pg_vol(f->interp_param + 1, ipg, xref, NULL, NULL);
+      int *raf = f->interp_param + 4;
+      int *deg = f->interp_param + 1;
+      ref_pg_vol(raf, deg, ipg, xref, NULL, NULL);
       Ref2Phy(physnode,
 	      xref,
 	      0, -1, // dphiref, ifa
@@ -416,7 +418,10 @@ void SolvePoisson2D(PoissonSolver* ps, int type_bc)
 	real xref[3];
 	int ipgmacro= ipg + isubcell * nnodes;
 
-	ref_pg_vol(ps->fd->interp_param+1,ipgmacro,xref,&wpg,NULL);
+	int *raf = ps->fd->interp_param+4;
+	int *deg = ps->fd->interp_param+1;
+	
+	ref_pg_vol(raf, deg, ipgmacro, xref, &wpg, NULL);
 
 	for(int iloc = 0; iloc < nnodes; iloc++){
 	  real dtau[3][3],codtau[3][3];
@@ -490,7 +495,9 @@ void SolvePoisson2D(PoissonSolver* ps, int type_bc)
       real xref[3];
       //int ipgmacro = ipg + isubcell * nnodes;
       int ilocmacro = iloc + isubcell * nnodes;
-      ref_pg_vol(ps->fd->interp_param+1,ilocmacro,xref,&wpg,NULL);
+      int *raf = ps->fd->interp_param+4;
+      int *deg = ps->fd->interp_param+1;
+      ref_pg_vol(raf, deg, ilocmacro,xref,&wpg,NULL);
       real dtau[3][3],codtau[3][3];
       Ref2Phy(physnode,xref,NULL,0,NULL,
 	      dtau,codtau,NULL,NULL);

@@ -93,13 +93,14 @@ int xyz_to_ipg(const int *raf, const int *deg, const int *ic, const int *ix);
 
 //! \brief return the reference coordinates xpg[3] and weight wpg of
 //! the GLOP ipg
-//! \param[in] param interp. params list
+//! \param[in] raf, deg interp params
 //! \param[in] ipg Gauss point index
 //! \param[out] xpg  reference Gauss point coordinates
 //! \param[out] wpg reference Gauss weight
 //! \param[in] xpg_in same as xpg but slightly moved such
 //! that the resulting point is in the interior of the ref. element
-void ref_pg_vol(int *param, int ipg, real *xpg, real *wpg, real *xpg_in);
+void ref_pg_vol(int *raf, int* deg, int ipg, real *xpg, real *wpg,
+		real *xpg_in);
 
 //! \brief from a reference point find the nearest
 //! gauss point

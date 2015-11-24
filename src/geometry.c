@@ -109,8 +109,8 @@ void GeomRef2Phy(Geom* g)
     + g->codtau[0][2] * g->dtau[0][2];
 }
 
-void Ref2Phy(real physnode[20][3],
-             real xref[3],
+void Ref2Phy(real physnode[20][3],  // h20 geometry parameters
+             real xref[3],          // 
              real dphiref[3],
              int ifa,
              real xphy[3],

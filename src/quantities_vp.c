@@ -64,7 +64,9 @@ real Computation_charge_average(field *f,real * w) {
 	real xphy[3], xpgref[3];
 	real dtau[3][3], codtau[3][3];
 	// Get the coordinates of the Gauss point
-	ref_pg_vol(f->interp_param + 1, ipg, xpgref, &wpg, NULL);
+	int* raf = f->interp_param + 4;
+	int* deg = f->interp_param + 1;
+	ref_pg_vol(raf, deg, ipg, xpgref, &wpg, NULL);
 	Ref2Phy(physnode, // phys. nodes
 		xpgref, // xref
 		NULL, -1, // dpsiref, ifa
@@ -123,7 +125,9 @@ void ComputeElectricField(field* f){
       real xref[3];
       int ipgmacro= ipg + isubcell * nnodes;
 
-      ref_pg_vol(f->interp_param+1,ipgmacro,xref,NULL,NULL);
+      int *raf = f->interp_param+4;
+      int *deg = f->interp_param+1;
+      ref_pg_vol(raf, deg, ipgmacro, xref, NULL, NULL);
       int iex = f->varindex(f->interp_param, ipgmacro, _INDEX_EX)
 	+ mcell->woffset;
       f->wn[iex] = 0;
@@ -177,7 +181,9 @@ void Compute_electric_field(field* f, real * w){
       //real wpg;
       real xref[3];
 
-      ref_pg_vol(f->interp_param+1,ipg,xref,NULL,NULL);
+      int *raf = f->interp_param+4;
+      int *deg = f->interp_param+1;
+      ref_pg_vol(raf, deg, ipg,xref,NULL,NULL);
       int iex = f->varindex(f->interp_param, ipg, _INDEX_EX)
 	+ mcell->woffset;
       w[iex] = 0;
