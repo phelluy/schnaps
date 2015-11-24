@@ -119,14 +119,12 @@ void Ref2Phy(real physnode[20][3],  // h20 geometry parameters
              real dphi[3],
              real vnds[3]) 
 {
-  // Compute the mapping and its Jacobian
-  real x = xref[0];
-  real y = xref[1];
-  real z = xref[2];
-
   // Gradient of the shape functions and value (4th component) of the
   // shape functions
   real gradphi[20][4];
+  real x = xref[0];
+  real y = xref[1];
+  real z = xref[2];
 #include "h20phi.h"  // this file fills the values of phi and gradphi
 
   if (xphy != NULL) {

@@ -443,6 +443,14 @@ void init_field_cl(field *f)
 }
 #endif
 
+void ipgf_to_xphy(MacroCell *mcell, int locfa, int ipgf, real *xphy)
+{
+  real xref[3];
+  int ipgvL = ref_pg_face(mcell->raf, mcell->deg, locfa, ipgf, 
+			  xref,  NULL, NULL);
+  Ref2Phy(mcell->physnode, xref, NULL, -1, xphy, NULL, NULL, NULL, NULL);
+}
+
 void init_field_macrofaces(field *f)
 {
   f->mface = calloc(f->macromesh.nbfaces, sizeof(MacroFace));
@@ -459,13 +467,21 @@ void init_field_macrofaces(field *f)
     mface->npgf = NPGF(f->interp_param + 1, mface->locfaL);
 
     // Determine the relative orientation of the faces.
-    /* MacroCell *mcellL = f->mcell[mface->ieL]; */
-    /* int ipgfL = 0; */
-    /* int ipgvL = ref_pg_face(mcellL.raf, mcellL.deg, mface->locfaL, ipgf, */
-    /* 			    NULL, NULL, NULL); */
 
-    // FIXME
+    MacroCell *mcellL = f->mcell + mface->ieL;
+    MacroCell *mcellR = f->mcell + mface->ieR;
+
+    // facial index of point
+    int ipgfL = 0;
+    int ipgfR = 0;
+
+    real xphyL[3];
+    real xphyR[3];
+    /* ipgf_to_xphy(mcellL, mface->locfaL, ipgfL, xphyL); */
+    /* ipgf_to_xphy(mcellR, mface->locfaR, ipgfR, xphyR); */
     
+    /* real d = Dist(xphyL, xphyR); */
+    /* printf("dist: %f\n", d); */
   }
 }
 
