@@ -451,10 +451,49 @@ void ipgf_to_xphy(MacroCell *mcell, int locfa, int ipgf, real *xphy)
   Ref2Phy(mcell->physnode, xref, NULL, -1, xphy, NULL, NULL, NULL, NULL);
 }
 
+void init_field_macrointerfaces(field *f)
+{
+  const int ninterfaces = f->macromesh.nmacrointerfaces;
+  for(int i = 0; i < ninterfaces; ++i) {
+    int ifa = f->macromesh.macrointerface[i];
+    MacroFace *mface = f->mface + ifa;
+
+    assert(mface->ieR != -1);
+    
+    // Determine the relative orientation of the faces.
+
+    MacroCell *mcellL = f->mcell + mface->ieL;
+    MacroCell *mcellR = f->mcell + mface->ieR;
+
+    // facial index of point
+    int ipgfL0 = 0;
+    int ipgfR0 = 0;
+    int ipgfL1 = mface->npgf - 1;
+    int ipgfR1 = mface->npgf - 1;
+
+    real xphyL0[3];
+    real xphyR0[3];
+    real xphyL1[3];
+    real xphyR1[3];
+    ipgf_to_xphy(mcellL, mface->locfaL, ipgfL0, xphyL0);
+    ipgf_to_xphy(mcellR, mface->locfaR, ipgfR0, xphyR0);
+    ipgf_to_xphy(mcellL, mface->locfaL, ipgfL0, xphyL1);
+    ipgf_to_xphy(mcellR, mface->locfaR, ipgfR0, xphyR1);
+
+    // FIXME: now identify the orientation and document it.
+    
+    real d00 = Dist(xphyL0, xphyR0);
+    real d11 = Dist(xphyL1, xphyR1);
+    real d01 = Dist(xphyL0, xphyR1);
+    real d10 = Dist(xphyL1, xphyR0);
+    //printf("d00: %f, \td11: %f, \td01: %f, \td10: %f\n", d00, d11, d01, d10);
+  }
+}
+
 void init_field_macrofaces(field *f)
 {
   f->mface = calloc(f->macromesh.nbfaces, sizeof(MacroFace));
-  for(int ifa = 0; ifa < f->macromesh.nbfaces; ifa++) {
+  for(int ifa = 0; ifa < f->macromesh.nbfaces; ++ifa) {
     MacroFace *mface = f->mface + ifa;
     mface->ifa = ifa;
     
@@ -465,24 +504,9 @@ void init_field_macrofaces(field *f)
     mface->locfaR = f2eifa[3];
 
     mface->npgf = NPGF(f->interp_param + 1, mface->locfaL);
-
-    // Determine the relative orientation of the faces.
-
-    MacroCell *mcellL = f->mcell + mface->ieL;
-    MacroCell *mcellR = f->mcell + mface->ieR;
-
-    // facial index of point
-    int ipgfL = 0;
-    int ipgfR = 0;
-
-    real xphyL[3];
-    real xphyR[3];
-    /* ipgf_to_xphy(mcellL, mface->locfaL, ipgfL, xphyL); */
-    /* ipgf_to_xphy(mcellR, mface->locfaR, ipgfR, xphyR); */
-    
-    /* real d = Dist(xphyL, xphyR); */
-    /* printf("dist: %f\n", d); */
   }
+  
+  init_field_macrointerfaces(f);
 }
 
 void setMacroCellmass(MacroCell *mcell, field *f)
