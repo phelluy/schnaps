@@ -480,12 +480,21 @@ void init_field_macrointerfaces(field *f)
     ipgf_to_xphy(mcellL, mface->locfaL, ipgfL0, xphyL0);
 
     int d0R = axis_permut[mface->locfaR][0];
-    int d1R = axis_permut[mface->locfaR][0];
+    int d1R = axis_permut[mface->locfaR][1];
+    
+    // Number of points in a macrocell in each direction
+    int npgmc[3] = {mcellR->raf[0] * (mcellR->deg[0] + 1 ),
+		    mcellR->raf[1] * (mcellR->deg[1] + 1 ),
+		    mcellR->raf[2] * (mcellR->deg[2] + 1 ) };
 
-    int tpgR[2] = {mcellR->raf[d0R] * (mcellR->deg[d0R] + 1),
-		   mcellR->raf[d1R] * (mcellR->deg[d1R] + 1) };
+    int tpgR[2] = {npgmc[d0R], npgmc[d1R]}; 
+    
+    // Sanity check that both MacroCells think they share the same
+    // number of points
+    int npgfR = NPGF(mcellR->raf, mcellR->deg, mface->locfaR);
+    assert(mface->npgf == npgfR);
 
-    //    assert(mface->npgf == tpgR[0] * tpgR[1]);
+    assert(mface->npgf == npgmc[d0R] * npgmc[d1R]);
     
     int ipgfR0 = 0;
     int ipgfR1 = tpgR[0] - 1;
@@ -496,11 +505,11 @@ void init_field_macrointerfaces(field *f)
     real xphyR2[3];
     real xphyR3[3];
     ipgf_to_xphy(mcellR, mface->locfaR, ipgfR0, xphyR0);
-    ipgf_to_xphy(mcellR, mface->locfaR, ipgfR0, xphyR0);
-    ipgf_to_xphy(mcellR, mface->locfaR, ipgfR0, xphyR0);
-    ipgf_to_xphy(mcellR, mface->locfaR, ipgfR0, xphyR0);
+    ipgf_to_xphy(mcellR, mface->locfaR, ipgfR1, xphyR1);
+    ipgf_to_xphy(mcellR, mface->locfaR, ipgfR2, xphyR2);
+    ipgf_to_xphy(mcellR, mface->locfaR, ipgfR3, xphyR3);
 
-    // FIXME: now identify the orientation and document it.
+    // FIXME: now identify the orientation and store the information.
     
     real d0 = Dist(xphyL0, xphyR0);
     real d1 = Dist(xphyL0, xphyR1);

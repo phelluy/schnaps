@@ -156,12 +156,14 @@ void dlagrange_polynomial(real* dp, const real* subdiv,
 }
 
 // Number of Gauss Lobatto Points (GLOPS) in a macrocell
-int NPG(int *raf, int *deg) {
-  return (deg[0] + 1) * (deg[1] + 1) * (deg[2] + 1) * raf[0] * raf[1] * raf[2];
+int NPG(int *raf, int *deg)
+{
+  return raf[0] * raf[1] * raf[2] * (deg[0] + 1) * (deg[1] + 1) * (deg[2] + 1);
 }
 
 // Number of interpolation points for each face of a subcell
-int NPGF(int *raf, int *deg, int ifa) {
+int NPGF(int *raf, int *deg, int ifa)
+{
   // For each face, give the dimension index i
   int permut[6][4] = { {0, 2, 1, 0},
 		       {1, 2, 0, 1},
@@ -171,7 +173,7 @@ int NPGF(int *raf, int *deg, int ifa) {
 		       {1, 0, 2, 0} };
   int i0 = permut[ifa][0];
   int i1 = permut[ifa][1];
-  return (deg[i0] + 1) * (deg[i1] + 1) * raf[i0] * raf[i1];
+  return raf[i0] * raf[i1] * (deg[i0] + 1) * (deg[i1] + 1);
 }
 
 #pragma start_opencl
