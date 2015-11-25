@@ -60,8 +60,10 @@ int TestfieldSubCellDGVol()
   /* Plotfield(0, true, &f, "error", "error.msh"); */
 
   // test the time derivative with the exact solution
+  int *raf = f.interp.interp_param + 4;
+  int *deg = f.interp.interp_param + 1;
   for(int i=0;
-      i < f.model.m * f.macromesh.nbelems * NPG(f.interp.interp_param+1);
+      i < f.model.m * f.macromesh.nbelems * NPG(raf, deg);
       i++) {
     test = test && fabs(4 * f.wn[i] - pow(f.dtwn[i] , 2)) < 1e-2;
     assert(test);

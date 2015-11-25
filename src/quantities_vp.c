@@ -13,7 +13,7 @@ void Computation_charge_density(field *f, real * w)
   for(int ie=0; ie < f->macromesh.nbelems; ie++) {
     MacroCell *mcell = f->mcell + ie;
     
-    for(int ipg=0;ipg<NPG(f->interp_param+1);ipg++){
+    for(int ipg = 0; ipg < NPG(mcell->raf, mcell->deg); ipg++) {
       int imemc=f->varindex(f->interp_param,ipg,_INDEX_RHO) + mcell->woffset;
       w[imemc]=0;
   
@@ -52,7 +52,7 @@ real Computation_charge_average(field *f,real * w) {
     }
 
     // Loop on the glops (for numerical integration)
-    const int npg = NPG(f->interp_param + 1);
+    const int npg = NPG(mcell->raf, mcell->deg);
     for(int ipg = 0; ipg < npg; ipg++) {
 	int imem = f->varindex(f->interp_param, ipg, _INDEX_RHO)
 	  + mcell->woffset;

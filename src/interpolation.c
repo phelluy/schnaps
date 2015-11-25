@@ -156,26 +156,22 @@ void dlagrange_polynomial(real* dp, const real* subdiv,
 }
 
 // Number of Gauss Lobatto Points (GLOPS) in a macrocell
-int NPG(int param[]) {
-  return 
-    (param[0] + 1) * (param[1] + 1) * (param[2] + 1) 
-    * param[3] * param[4] * param[5];
+int NPG(int *raf, int *deg) {
+  return (deg[0] + 1) * (deg[1] + 1) * (deg[2] + 1) * raf[0] * raf[1] * raf[2];
 }
 
 // Number of interpolation points for each face of a subcell
-int NPGF(int param[], int ifa) {
+int NPGF(int *raf, int *deg, int ifa) {
   // For each face, give the dimension index i
-  int permut[6][4] = {
-    {0, 2, 1, 0},
-    {1, 2, 0, 1},
-    {2, 0, 1, 1},
-    {2, 1, 0, 0},
-    {0, 1, 2, 1},
-    {1, 0, 2, 0}
-  };
+  int permut[6][4] = { {0, 2, 1, 0},
+		       {1, 2, 0, 1},
+		       {2, 0, 1, 1},
+		       {2, 1, 0, 0},
+		       {0, 1, 2, 1},
+		       {1, 0, 2, 0} };
   int i0 = permut[ifa][0];
   int i1 = permut[ifa][1];
-  return (param[i0] + 1) * (param[i1] + 1) * param[i0 + 3] * param[i1 + 3];
+  return (deg[i0] + 1) * (deg[i1] + 1) * raf[i0] * raf[i1];
 }
 
 #pragma start_opencl
@@ -213,10 +209,10 @@ void ipg_to_xyz(const int *raf, const int *deg, int *ic, int *ix,
 #pragma end_opencl
 
 // From a reference point find the nearest gauss point
-// Warning: works only  degree 1,2 or 3
+// Warning: works only  degree 1, 2, or 3
 int ref_ipg(int *raf, int *deg, real *xref) {
 
-  real hh[3] = {1.0 / raf[0], 1.0 / raf[1], 1.0 / raf[2]};
+  real h[3] = {1.0 / raf[0], 1.0 / raf[1], 1.0 / raf[2]};
 
   int ic[3],ix[3];
 
@@ -237,9 +233,9 @@ int ref_ipg(int *raf, int *deg, real *xref) {
   //int offset = (deg[0] + 1) * (deg[1] + 1) * (deg[2] + 1)*nc;
 
   // round to the nearest integer
-  ix[0] = floor((xref[0] - ic[0] * hh[0]) / hh[0] * deg[0] + 0.5);
-  ix[1] = floor((xref[1] - ic[1] * hh[1]) / hh[1] * deg[1] + 0.5);
-  ix[2] = floor((xref[2] - ic[2] * hh[2]) / hh[2] * deg[2] + 0.5);
+  ix[0] = floor((xref[0] - ic[0] * h[0]) / h[0] * deg[0] + 0.5);
+  ix[1] = floor((xref[1] - ic[1] * h[1]) / h[1] * deg[1] + 0.5);
+  ix[2] = floor((xref[2] - ic[2] * h[2]) / h[2] * deg[2] + 0.5);
   //int ix[2]=floor(xref[2]*deg[2]+0.5);
 
   //printf("xref %f %f %f ix[0]=%d ix[1]=%d ix[2]=%d\n",

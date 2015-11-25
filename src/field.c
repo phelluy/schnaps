@@ -43,7 +43,9 @@ real min_grid_spacing(field *f)
     real vol = 0, surf = 0;
 
     // Loop on the glops (for numerical integration)
-    for(int ipg = 0; ipg < NPG(f->interp_param + 1); ipg++) {
+    int *raf = f->interp_param + 4;
+    int *deg = f->interp_param + 1;
+      for(int ipg = 0; ipg < NPG(raf, deg); ipg++) {
       real xpgref[3], wpg;
       // Get the coordinates of the Gauss point
       ref_pg_vol(f->interp_param + 4, f->interp_param + 1,
@@ -60,7 +62,7 @@ real min_grid_spacing(field *f)
     
     for(int ifa = 0; ifa < 6; ifa++) {
       // loop on the faces
-      for(int ipgf = 0; ipgf < NPGF(f->interp_param + 1, ifa); ipgf++) {
+      for(int ipgf = 0; ipgf < NPGF(raf, deg, ifa); ipgf++) {
 	real xpgref[3], wpg;
 	// get the coordinates of the Gauss point
 	int *deg = f->interp_param + 1;
@@ -453,6 +455,13 @@ void ipgf_to_xphy(MacroCell *mcell, int locfa, int ipgf, real *xphy)
 
 void init_field_macrointerfaces(field *f)
 {
+  const int axis_permut[6][4] = { {0, 2, 1, 0},
+				  {1, 2, 0, 1},
+				  {2, 0, 1, 1},
+				  {2, 1, 0, 0},
+				  {0, 1, 2, 1},
+				  {1, 0, 2, 0} };
+
   const int ninterfaces = f->macromesh.nmacrointerfaces;
   for(int i = 0; i < ninterfaces; ++i) {
     int ifa = f->macromesh.macrointerface[i];
@@ -467,26 +476,37 @@ void init_field_macrointerfaces(field *f)
 
     // facial index of point
     int ipgfL0 = 0;
-    int ipgfR0 = 0;
-    int ipgfL1 = mface->npgf - 1;
-    int ipgfR1 = mface->npgf - 1;
-
     real xphyL0[3];
-    real xphyR0[3];
-    real xphyL1[3];
-    real xphyR1[3];
     ipgf_to_xphy(mcellL, mface->locfaL, ipgfL0, xphyL0);
+
+    int d0R = axis_permut[mface->locfaR][0];
+    int d1R = axis_permut[mface->locfaR][0];
+
+    int tpgR[2] = {mcellR->raf[d0R] * (mcellR->deg[d0R] + 1),
+		   mcellR->raf[d1R] * (mcellR->deg[d1R] + 1) };
+
+    //    assert(mface->npgf == tpgR[0] * tpgR[1]);
+    
+    int ipgfR0 = 0;
+    int ipgfR1 = tpgR[0] - 1;
+    int ipgfR2 = tpgR[0] * (tpgR[1] - 1);
+    int ipgfR3 = mface->npgf - 1;
+    real xphyR0[3];
+    real xphyR1[3];
+    real xphyR2[3];
+    real xphyR3[3];
     ipgf_to_xphy(mcellR, mface->locfaR, ipgfR0, xphyR0);
-    ipgf_to_xphy(mcellL, mface->locfaL, ipgfL0, xphyL1);
-    ipgf_to_xphy(mcellR, mface->locfaR, ipgfR0, xphyR1);
+    ipgf_to_xphy(mcellR, mface->locfaR, ipgfR0, xphyR0);
+    ipgf_to_xphy(mcellR, mface->locfaR, ipgfR0, xphyR0);
+    ipgf_to_xphy(mcellR, mface->locfaR, ipgfR0, xphyR0);
 
     // FIXME: now identify the orientation and document it.
     
-    real d00 = Dist(xphyL0, xphyR0);
-    real d11 = Dist(xphyL1, xphyR1);
-    real d01 = Dist(xphyL0, xphyR1);
-    real d10 = Dist(xphyL1, xphyR0);
-    //printf("d00: %f, \td11: %f, \td01: %f, \td10: %f\n", d00, d11, d01, d10);
+    real d0 = Dist(xphyL0, xphyR0);
+    real d1 = Dist(xphyL0, xphyR1);
+    real d2 = Dist(xphyL0, xphyR2);
+    real d3 = Dist(xphyL0, xphyR3);
+    printf("d0: %f, \td1: %f, \td2: %f, \td3: %f\n", d0, d1, d2, d3);
   }
 }
 
@@ -503,7 +523,9 @@ void init_field_macrofaces(field *f)
     mface->ieR =    f2eifa[2];
     mface->locfaR = f2eifa[3];
 
-    mface->npgf = NPGF(f->interp_param + 1, mface->locfaL);
+    MacroCell *mcellL = f->mcell + mface->ieL;
+    
+    mface->npgf = NPGF(mcellL->raf, mcellL->deg, mface->locfaL);
   }
   
   init_field_macrointerfaces(f);
@@ -579,9 +601,11 @@ void Initfield(field *f)
   for(int ip = 0; ip < 8; ip++)
     f->interp_param[ip] = f->interp.interp_param[ip];
 
-  f->wsize = f->model.m * f->macromesh.nbelems * NPG(f->interp_param + 1);;
+  int raf[3] = {f->interp_param[4], f->interp_param[5], f->interp_param[6]};
+  int deg[3] = {f->interp_param[1], f->interp_param[2], f->interp_param[3]};
+  f->wsize = f->model.m * f->macromesh.nbelems * NPG(raf, deg);
 
-  double g_memsize =   f->wsize * sizeof(real) * 1e-9;
+  double g_memsize = f->wsize * sizeof(real) * 1e-9;
   if(sizeof(real) == sizeof(double))
     printf("Allocating %d doubles per array (%f GB).\n", f->wsize, g_memsize);
   else
@@ -761,7 +785,9 @@ void Plotfield(int typplot, int compare, field* f, char *fieldname,
     tolerance = 1e-6;
   
   // Nodes
-  int npgv = NPG(f->interp_param + 1);
+  int *raf = f->interp_param + 4;
+  int *deg = f->interp_param + 1;
+  int npgv = NPG(raf, deg);
   for(int i = 0; i < f->macromesh.nbelems; i++) {
     MacroCell *mcell = f->mcell + i;
 
@@ -1097,7 +1123,9 @@ void DGMacroCellInterfaceSlow(MacroCell *mcell, field *f, real *w, real *dtw)
 
     // loop on the glops (numerical integration)
     // of the face ifa
-    for(int ipgf = 0; ipgf < NPGF(f->interp_param + 1, ifa); ipgf++) {
+    int *raf = f->interp_param + 4;
+    int *deg = f->interp_param + 1;
+    for(int ipgf = 0; ipgf < NPGF(raf, deg, ifa); ipgf++) {
       real xpgref[3], xpgref_in[3], wpg;
       //real xpgref2[3], wpg2;
       // get the coordinates of the Gauss point
@@ -1621,7 +1649,9 @@ void RK2(field *f, real tmax, real dt)
   f->itermax = tmax / dt;
   int size_diags;
   int freq = (1 >= f->itermax / 10)? 1 : f->itermax / 10;
-  int sizew = f->macromesh.nbelems * f->model.m * NPG(f->interp_param + 1);
+  int *raf = f->interp_param + 4;
+  int *deg = f->interp_param + 1;
+  int sizew = f->macromesh.nbelems * f->model.m * NPG(raf, deg);
   int iter = 0;
 
   real *wnp1 = calloc(f->wsize, sizeof(real));
@@ -1685,7 +1715,9 @@ void RK4(field *f, real tmax, real dt)
   f->itermax = tmax / dt;
   int size_diags;
   int freq = (1 >= f->itermax / 10)? 1 : f->itermax / 10;
-  int sizew = f->macromesh.nbelems * f->model.m * NPG(f->interp_param + 1);
+  int *raf = f->interp_param + 4;
+  int *deg = f->interp_param + 1;
+  int sizew = f->macromesh.nbelems * f->model.m * NPG(raf, deg);
   int iter = 0;
 
   // Allocate memory for RK time-stepping
@@ -1746,9 +1778,9 @@ real L2error(field *f) {
 
   for (int ie = 0; ie < f->macromesh.nbelems; ie++) {
     MacroCell *mcell = f->mcell + ie;
-    
-    // Loop on the glops (for numerical integration)
-    const int npg = NPG(f->interp_param + 1);
+
+        // Loop on the glops (for numerical integration)
+    const int npg = NPG(mcell->raf, mcell->deg);
     for(int ipg = 0; ipg < npg; ipg++) {
       real w[f->model.m];
       for(int iv = 0; iv < f->model.m; iv++) {
@@ -1806,7 +1838,7 @@ void InterpField(field *f, int ie, real *xref, real *w){
     assert(is[ii] < nraf[ii] && is[ii]>= 0);
   }
   
-  int npgv = NPG(f->interp_param + 1);
+  int npgv = NPG(mcell->raf, mcell->deg);
   // TODO: loop only on non zero basis function
   for(int ib = 0; ib < npgv; ib++) { 
     real psi;

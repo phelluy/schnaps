@@ -51,7 +51,7 @@ real L2_Kinetic_error(field* f){
     }
 
     // loop on the glops (for numerical integration)
-    for(int ipg = 0; ipg < NPG(f->interp_param + 1); ipg++){
+    for(int ipg = 0; ipg < NPG(mcell->raf, mcell->deg); ipg++){
       real xpgref[3], xphy[3], wpg;
       real dtau[3][3], codtau[3][3];//,xpg[3];
       // get the coordinates of the Gauss point
@@ -119,7 +119,7 @@ void Energies(field *f, real *w, real k_energy, real e_energy, real t_energy,int
     }
 
     // loop on the glops (for numerical integration)
-    for(int ipg = 0; ipg < NPG(f->interp_param + 1); ipg++){
+    for(int ipg = 0; ipg < NPG(mcell->raf, mcell->deg); ipg++){
       real xpgref[3], xphy[3], wpg;
       real dtau[3][3], codtau[3][3];//,xpg[3];
       // get the coordinates of the Gauss point
@@ -170,7 +170,7 @@ void Charge_total(field *f, real *w, real t_charge,int first_diag) {
     }
 
     // loop on the glops (for numerical integration)
-    for(int ipg = 0; ipg < NPG(f->interp_param + 1); ipg++){
+    for(int ipg = 0; ipg < NPG(mcell->raf, mcell->deg); ipg++){
       real xpgref[3], xphy[3], wpg;
       real dtau[3][3], codtau[3][3];//,xpg[3];
       // get the coordinates of the Gauss point

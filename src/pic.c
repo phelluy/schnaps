@@ -178,19 +178,19 @@ void CreateParticles(PIC* pic,MacroMesh *m){
     }
 
     n++;
-
-    
   }
-  
-
 }
 
-void AccumulateParticles(void *fv, real *w){
+void AccumulateParticles(void *fv, real *w)
+{
   field *f = fv;
   PIC *pic = f->pic;
+
+  int *raf = f->interp_param + 4;
+  int *deg = f->interp_param + 1;
   
-  int npg=NPG(f->interp_param + 1);
-  
+  int npg = NPG(raf, deg);
+    
   for(int ie = 0; ie < f->macromesh.nbelems; ie++){
     MacroCell *mcell = f->mcell + ie;
     
@@ -217,7 +217,7 @@ void AccumulateParticles(void *fv, real *w){
 
     MacroCell *mcell = f->mcell + ie;
     
-    int npg=NPG(f->interp_param + 1);
+    int npg=NPG(raf, deg);
     real physnode[20][3];
     for(int inoloc = 0; inoloc < 20; inoloc++) {
       int ino = f->macromesh.elem2node[20*ie+inoloc];

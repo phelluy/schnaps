@@ -1112,7 +1112,7 @@ void RK2_CL_stage2(MacroCell *mcell, field *f,
 
 void RK4_CL_stageA(MacroCell *mcell, field *f, 
 		   cl_mem *wnp1, cl_mem *wn, cl_mem *dtw, 
-		   const real dt, const int sizew, size_t numworkitems, 
+		   const real dt, size_t numworkitems, 
 		   cl_uint nwait, cl_event *wait, cl_event *done)
 {
   cl_kernel kernel = f->RK4_first_stages;
@@ -1239,7 +1239,6 @@ void RK4_CL(field *f, real tmax, real dt,
 
   f->itermax = tmax / dt;
   int freq = (1 >= f->itermax / 10)? 1 : f->itermax / 10;
-  int sizew = f->macromesh.nbelems * f->model.m * NPG(f->interp_param + 1);
   int iter = 0;
 
   cl_int status;  
@@ -1309,7 +1308,7 @@ void RK4_CL(field *f, real tmax, real dt,
     for(int ie = 0; ie < nmacro; ++ie) { 
       MacroCell *mcell = f->mcell + ie;
       RK4_CL_stageA(mcell, f, l1 + ie, w + ie, dtw,
-		    0.5 * dt, sizew, numworkitems,
+		    0.5 * dt, numworkitems,
 		    1, &source0, stage0 + ie);
     }
     
@@ -1321,7 +1320,7 @@ void RK4_CL(field *f, real tmax, real dt,
     for(int ie = 0; ie < nmacro; ++ie) { 
       MacroCell *mcell = f->mcell + ie;
       RK4_CL_stageA(mcell, f, l2 + ie, w + ie, dtw,
-		    0.5 * dt, sizew, numworkitems,
+		    0.5 * dt, numworkitems,
 		    1, &source1, stage1 + ie);
     }
     
@@ -1331,7 +1330,7 @@ void RK4_CL(field *f, real tmax, real dt,
     for(int ie = 0; ie < nmacro; ++ie) { 
       MacroCell *mcell = f->mcell + ie;
       RK4_CL_stageA(mcell, f, l3 + ie, w + ie, dtw,
-		    dt, sizew, numworkitems,
+		    dt, numworkitems,
 		    1, &source2, stage2 + ie);
     }
     

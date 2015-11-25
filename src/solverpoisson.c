@@ -23,7 +23,10 @@ int BuildFatNodeList(field* f, FatNode* fn_list)
 {
   int big_int = 1 << 28; // 2**28 = 268 435 456
 
-  int nb_dg_nodes =  NPG(f->interp_param+1) * f->macromesh.nbelems;
+  int *raf = f->interp_param + 4;
+  int *deg = f->interp_param + 1;
+  
+  int nb_dg_nodes = NPG(raf, deg) * f->macromesh.nbelems;
 
   int ino=0;
   real* xmin=f->macromesh.xmin;
@@ -38,7 +41,7 @@ int BuildFatNodeList(field* f, FatNode* fn_list)
       physnode[inoloc][2] = f->macromesh.node[3 * ino + 2];
     }
     
-    for(int ipg = 0; ipg < NPG(f->interp_param + 1); ipg++) {
+    for(int ipg = 0; ipg < NPG(raf, deg); ipg++) {
       real xpg[3];
       real xref[3];
       int *raf = f->interp_param + 4;
@@ -97,7 +100,10 @@ void InitPoissonSolver(PoissonSolver* ps, field* fd,int charge_index){
   ps->fd = fd;
   ps->charge_index = charge_index;
 
-  ps->nb_dg_nodes =  NPG(fd->interp_param+1) * fd->macromesh.nbelems;
+  int *raf = fd->interp_param + 4;
+  int *deg = fd->interp_param + 1;
+  
+  ps->nb_dg_nodes = NPG(raf, deg) * fd->macromesh.nbelems;
 
   
   ps->fn_list = malloc(ps->nb_dg_nodes * sizeof(FatNode));
@@ -126,7 +132,7 @@ void InitPoissonSolver(PoissonSolver* ps, field* fd,int charge_index){
   // now construct the list of boundary nodes
   ps->is_boundary_node = malloc(ps->nb_fe_nodes * sizeof(int));
   assert(ps->is_boundary_node);
-  for(int ino = 0; ino < ps->nb_fe_nodes; ino++){
+  for(int ino = 0; ino < ps->nb_fe_nodes; ino++) {
     ps->is_boundary_node[ino] = 0;
   }
 
@@ -151,7 +157,9 @@ void InitPoissonSolver(PoissonSolver* ps, field* fd,int charge_index){
     for(int ifa = 0; ifa < nbfa; ifa++) {
       int ieR = ps->fd->macromesh.elem2elem[6*ie+ifa];
       if (ieR < 0) {
-	for(int ipgf = 0; ipgf < NPGF(ps->fd->interp_param + 1, ifa); ipgf++) {
+	int *raf = ps->fd->interp_param + 4;
+	int *deg = ps->fd->interp_param + 1;
+	for(int ipgf = 0; ipgf < NPGF(raf, deg, ifa); ipgf++) {
 	  int* deg = ps->fd->interp_param + 1;
 	  int* raf = ps->fd->interp_param + 4;
 	  int ipg = ref_pg_face(raf, deg, ifa, ipgf, NULL, NULL, NULL);

@@ -128,8 +128,11 @@ real GyroL2_Kinetic_error(field* f)
       physnode[inoloc][2]=f->macromesh.node[3*ino+2];
     }
 
+    int *raf = f->interp_param + 4;
+    int *deg = f->interp_param + 1;
+    
     // loop on the glops (for numerical integration)
-    for(int ipg=0;ipg<NPG(f->interp_param+1);ipg++){
+    for(int ipg = 0; ipg < NPG(raf, deg); ipg++) {
       real xpgref[3],xphy[3],wpg;
       real dtau[3][3],codtau[3][3];//,xpg[3];
       // get the coordinates of the Gauss point

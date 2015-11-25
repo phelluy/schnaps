@@ -797,7 +797,8 @@ void CheckMacroMesh(MacroMesh *m, int *param)
     // Test that the ref_ipg function is compatible with ref_pg_vol
     //int param[7]={_DEGX,_DEGY,_DEGZ,_RAFX,_RAFY,_RAFZ,0};
 
-    for(int ipg = 0; ipg < NPG(param); ipg++) {
+    
+    for(int ipg = 0; ipg < NPG(raf, deg); ipg++) {
       real xref1[3], xref_in[3];
       real wpg;
       ref_pg_vol(param+3, param, ipg, xref1, &wpg, xref_in);
@@ -842,7 +843,7 @@ void CheckMacroMesh(MacroMesh *m, int *param)
       assert(0 < dot_product(g.vnds, vec));
 
       // Check compatibility between face and volume numbering
-      for(int ipgf = 0; ipgf < NPGF(param, ifa); ipgf++) {
+      for(int ipgf = 0; ipgf < NPGF(raf, deg, ifa); ipgf++) {
 
         // Get the coordinates of the Gauss point
         real xpgref[3];
@@ -903,7 +904,7 @@ void CheckMacroMesh(MacroMesh *m, int *param)
     // Loop on the 6 faces
     for(int ifa = 0; ifa < 6; ifa++) {
       // Loop on the glops (numerical integration) of the face ifa
-      for(int ipgf = 0; ipgf < NPGF(param, ifa); ipgf++) {
+      for(int ipgf = 0; ipgf < NPGF(raf, deg, ifa); ipgf++) {
 
 	// Get the right elem or the boundary id
 	int ieR = m->elem2elem[6 * ie + ifa];
@@ -968,7 +969,7 @@ void CheckMacroMesh(MacroMesh *m, int *param)
 	  int neighb_count=0;
 	  for(int ifaR = 0; ifaR < 6; ifaR++) {
 	    if (m->elem2elem[6 * ieR + ifaR] == ie) {
-	      for(int ipgfR = 0; ipgfR < NPGF(param, ifaR); ipgfR++) {
+	      for(int ipgfR = 0; ipgfR < NPGF(raf, deg, ifaR); ipgfR++) {
 		real xpgrefR[3];
 		int* deg = param;
 		int* raf = param + 3;

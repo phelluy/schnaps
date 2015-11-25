@@ -121,8 +121,8 @@ int TestInterpolation()
     nraf[2] = deg[5];
 
     real xref1[3], xref2[3], xphy[3], xref_in[3];
-
-    for(int ipg = 0; ipg < NPG(deg); ipg++){
+    
+    for(int ipg = 0; ipg < NPG(deg + 3, deg); ipg++){
       real wpg;
       ref_pg_vol(deg + 3, deg, ipg, xref1, &wpg, xref_in);
       //printf("xref_in %f %f %f \n",xref_in[0],xref_in[1],xref_in[2]);
@@ -157,7 +157,7 @@ int TestInterpolation()
 	    for(int r2=0;r2<_DMAX;r2++){
 	      int deg[6]={d0,d1,d2,r0,r1,r2};
 	      int* raf=deg+3;
-	      for (int ipg=0;ipg<NPG(deg);ipg++){
+	      for (int ipg=0;ipg<NPG(deg + 3, deg);ipg++){
 		int ix[3],ic[3];
 		int ipgcopy=ipg;
 		//printf("avant %d %d %d npg=%d \n",d0,d1,d2,NPG(deg));
@@ -192,7 +192,7 @@ int TestInterpolation()
 
     real xref1[3], xref2[3], xphy[3], xref_in[3];
     for(int ifa = 0; ifa < 6; ifa++) {
-      for(int ipgf=0;ipgf<NPGF(deg,ifa);ipgf++){
+      for(int ipgf=0;ipgf<NPGF(deg + 3, deg, ifa);ipgf++){
 	real wpg;
 	int ipg = ref_pg_face(nraf, deg,ifa,ipgf,xref1,&wpg,NULL);
 	ref_pg_vol(deg + 3, deg,ipg,xref1,&wpg,xref_in);
@@ -233,12 +233,10 @@ int TestInterpolation()
 	nraf[1]=deg[4];
 	nraf[2]=deg[5];
 
-	int npg;      
+	// check that integration by parts works with two arbitrary
+	// polynomials
 
-	// check that integration by parts works with
-	// two arbitrary polynomials
-
-	npg = NPG(deg);
+	int npg = NPG(deg + 3, deg);
 	real f[npg];
 	real g[npg];
 	real xref[3],omega;
@@ -343,7 +341,7 @@ int TestInterpolation()
 	for(int ifa=0;ifa<6;ifa++){
 	  real xphy[3], vnds[3];
 	  real dtau[3][3], codtau[3][3];
-	  int npg_f = NPGF(deg, ifa);
+	  int npg_f = NPGF(deg + 3, deg, ifa);
 	  for(int ipgf = 0; ipgf < npg_f; ipgf++){
 	    int ipgv = ref_pg_face(deg + 3, deg, ifa, ipgf, xref, &omega, NULL);
  	

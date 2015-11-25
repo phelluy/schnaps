@@ -111,8 +111,8 @@ int TestPoisson(void) {
   // check the gradient given by the poisson solver
   for(int ie=0;ie<f.macromesh.nbelems;ie++){
     MacroCell *mcell = f.mcell + ie;
-    
-    for(int ipg=0;ipg<NPG(f.interp_param+1);ipg++){
+
+    for(int ipg=0;ipg<NPG(mcell->raf, mcell->deg);ipg++){
       real xref[3],wpg;
       int *raf = f.interp_param+4;
       int *deg = f.interp_param+1;

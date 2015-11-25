@@ -61,12 +61,12 @@ typedef struct Interpolation{
 
 //! \brief number of Gauss-LObatto Points (GLOPs) on the macro cell
 //! \param[in] param the param list
-int NPG(int param[]);
+int NPG(int *raf, int* deg);
 
 //! \brief number of GLOPs on the face ifa of the macrocell
 //! \param[in] param the param list
 //! \param[in] ifa face index
-int NPGF(int param[],int ifa);
+int NPGF(int *raf, int *deg, int ifa);
 
 //! \brief compute 3d glop and subcell indices from the index
 //! of the glop in the macrocell
