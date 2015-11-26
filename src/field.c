@@ -43,9 +43,7 @@ real min_grid_spacing(field *f)
     real vol = 0, surf = 0;
 
     // Loop on the glops (for numerical integration)
-    int *raf = f->interp_param + 4;
-    int *deg = f->interp_param + 1;
-      for(int ipg = 0; ipg < NPG(raf, deg); ipg++) {
+    for(int ipg = 0; ipg < NPG(mcell->raf, mcell->deg); ipg++) {
       real xpgref[3], wpg;
       // Get the coordinates of the Gauss point
       ref_pg_vol(f->interp_param + 4, f->interp_param + 1,
@@ -62,7 +60,7 @@ real min_grid_spacing(field *f)
     
     for(int ifa = 0; ifa < 6; ifa++) {
       // loop on the faces
-      for(int ipgf = 0; ipgf < NPGF(raf, deg, ifa); ipgf++) {
+      for(int ipgf = 0; ipgf < NPGF(mcell->raf, mcell->deg, ifa); ipgf++) {
 	real xpgref[3], wpg;
 	// get the coordinates of the Gauss point
 	int *deg = f->interp_param + 1;
@@ -509,12 +507,18 @@ void init_field_macrointerfaces(field *f)
     ipgf_to_xphy(mcellR, mface->locfaR, ipgfR2, xphyR2);
     ipgf_to_xphy(mcellR, mface->locfaR, ipgfR3, xphyR3);
 
+    // FIXME: add period correction.
+    
     // FIXME: now identify the orientation and store the information.
     
     real d0 = Dist(xphyL0, xphyR0);
     real d1 = Dist(xphyL0, xphyR1);
     real d2 = Dist(xphyL0, xphyR2);
     real d3 = Dist(xphyL0, xphyR3);
+
+    // NB: in the 3D case, exactly one distance is zero.  In the 2D
+    // case, exactly two distances are zero.
+    
     printf("d0: %f, \td1: %f, \td2: %f, \td3: %f\n", d0, d1, d2, d3);
   }
 }
