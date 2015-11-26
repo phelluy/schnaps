@@ -34,7 +34,7 @@ void ReadMacroMesh(MacroMesh *m, char *filename)
 
   printf("Read mesh file %s\n", filename);
 
-  f = fopen(filename,"r");
+  f = fopen(filename, "r");
   assert(f != NULL);
 
   do {
@@ -50,21 +50,24 @@ void ReadMacroMesh(MacroMesh *m, char *filename)
   assert(m->node);
 
   for(int i = 0; i < m->nbnodes; i++) {
-    ret = getdelim(&line, &linesize, (int) ' ',f); // node number
-    ret = getdelim(&line, &linesize, (int) ' ',f); // x
+    // node number:
+    ret = getdelim(&line, &linesize, (int) ' ',f); 
+
+    // x:
+    ret = getdelim(&line, &linesize, (int) ' ',f); 
     m->node[3 * i + 0] = atof(line);
-    ret = getdelim(&line, &linesize, (int) ' ',f); // y
+
+    // y:
+    ret = getdelim(&line, &linesize, (int) ' ',f); 
     m->node[3 * i + 1] = atof(line);
-    ret = getline(&line, &linesize,f); // z (end of the line)
+
+    // z (end of the line):
+    ret = getline(&line, &linesize,f); 
     m->node[3 * i + 2] = atof(line);
-    /* printf("Node %d x=%f y=%f z=%f\n",i, */
-    /* 	   m->node[3*i+0], */
-    /* 	   m->node[3*i+1], */
-    /* 	   m->node[3*i+2]); */
   }
+  
+  // check that we have reached the end of nodes:
   ret = getline(&line, &linesize, f);
-  //printf("%s",line);
-  // check that we have reached the end of nodes
   assert(strcmp(line, "$EndNodes\n") == 0);
 
   // Now read all the elements of the mesh
@@ -79,38 +82,50 @@ void ReadMacroMesh(MacroMesh *m, char *filename)
   m->elem2node = malloc(20 * sizeof(int) * nball);
   assert(m->elem2node);
 
+  assert(nball > 0);
+  
   // Now count only the H20 elems (code=17)
   m->nbelems = 0;
   int countnode = 0;
   for(int i = 0; i < nball; i++) {
-    ret = getdelim(&line, &linesize, (int) ' ', f); // elem number
-    ret = getdelim(&line, &linesize, (int) ' ', f); // elem type
+    // The format for the elements is:
+    // element_number element_type ... 
+    
+    // elem number
+    ret = getdelim(&line, &linesize, (int) ' ', f);
+
+    // elem type
+    ret = getdelim(&line, &linesize, (int) ' ', f); 
     int elemtype = atoi(line);
-    if(elemtype != 17) {
-      ret = getline(&line, &linesize, f);
-    } else {
+
+    if(elemtype == 17) {
       m->nbelems++;
-      ret = getdelim(&line, &linesize, (int) ' ', f); //useless code
-      ret = getdelim(&line, &linesize, (int) ' ', f); //useless code
-      ret = getdelim(&line, &linesize, (int) ' ', f); //useless code
+      
+      //useless code
+      ret = getdelim(&line, &linesize, (int) ' ', f); 
+      ret = getdelim(&line, &linesize, (int) ' ', f);
+      ret = getdelim(&line, &linesize, (int) ' ', f);
+
       for(int j = 0; j < 19; j++) {
 	ret = getdelim(&line, &linesize,(int) ' ', f);
-	//printf("%d ",atoi(line));
 	m->elem2node[countnode] = atoi(line) - 1;
 	countnode++;
       }
       ret = getline(&line, &linesize, f);
-      //printf("%d\n",atoi(line));
       m->elem2node[countnode] = atoi(line) - 1;
       countnode++;
+    } else {
+      ret = getline(&line, &linesize, f);
     }
   }
   ret = getline(&line, &linesize, f);
-  //printf("%s",line);
-
+  
   // Check that we have reached the end of nodes
   assert(strcmp(line,"$EndElements\n") == 0);
+  
   printf("nbelems=%d\n", m->nbelems);
+  assert(m->nbelems > 0);
+  
   m->elem2node = realloc(m->elem2node, 20 * sizeof(int) * m->nbelems);
   assert(m->elem2node);
 

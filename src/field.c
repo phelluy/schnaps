@@ -493,18 +493,25 @@ void init_field_macrointerfaces(field *f)
     assert(mface->npgf == npgfR);
 
     assert(mface->npgf == npgmc[d0R] * npgmc[d1R]);
-    
-    int ipgfR0 = 0;
-    int ipgfR1 = tpgR[0] - 1;
-    int ipgfR2 = tpgR[0] * (tpgR[1] - 1);
-    int ipgfR3 = mface->npgf - 1;
+
+    // bottom-left
+    int ipgfR0 = 0; 
     real xphyR0[3];
-    real xphyR1[3];
-    real xphyR2[3];
-    real xphyR3[3];
     ipgf_to_xphy(mcellR, mface->locfaR, ipgfR0, xphyR0);
+
+    // bottom-right
+    int ipgfR1 = tpgR[0] - 1; 
+    real xphyR1[3];
     ipgf_to_xphy(mcellR, mface->locfaR, ipgfR1, xphyR1);
+
+    // top-left 
+    real xphyR2[3];
+    int ipgfR2 = tpgR[0] * (tpgR[1] - 1); 
     ipgf_to_xphy(mcellR, mface->locfaR, ipgfR2, xphyR2);
+
+    // top-right
+    int ipgfR3 = mface->npgf - 1; 
+    real xphyR3[3];
     ipgf_to_xphy(mcellR, mface->locfaR, ipgfR3, xphyR3);
 
     // FIXME: add period correction.

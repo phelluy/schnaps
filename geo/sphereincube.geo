@@ -211,3 +211,5 @@ Surface Loop(113) = {4, 91, 97, 101, 93, 68};
 Volume(113) = {113};
 Transfinite Volume {113};
 Physical Volume(1000) = {103, 105, 107, 109, 111, 113};
+Mesh.ElementOrder=2 ;
+Mesh.SecondOrderIncomplete = 1 ;
