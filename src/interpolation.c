@@ -496,8 +496,7 @@ void psi_ref_subcell(int *param, int *is, int ib,
   }
 }
 
-// Return the gradient dpsi[0..2] of the basis function ib at GLOP
-// ipg.
+// Return the gradient dpsi[0..2] of the basis function ib at GLOP ipg.
 void grad_psi_pg(int *param, int ib, int ipg, real *dpsi)
 {
   // number of subcells in each direction

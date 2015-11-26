@@ -451,6 +451,14 @@ void ipgf_to_xphy(MacroCell *mcell, int locfa, int ipgf, real *xphy)
   Ref2Phy(mcell->physnode, xref, NULL, -1, xphy, NULL, NULL, NULL, NULL);
 }
 
+void icix_to_xphy(MacroCell *mcell, int *ic, int *ix, real *xphy)
+{
+  int ipg = xyz_to_ipg(mcell->raf, mcell->deg, ic, ix);
+  real xref[3];
+  ref_pg_vol(mcell->raf, mcell->deg, ipg, xref, NULL, NULL);
+  Ref2Phy(mcell->physnode, xref, NULL, -1, xphy, NULL, NULL, NULL, NULL);
+}
+
 void init_field_macrointerfaces(field *f)
 {
   const int axis_permut[6][4] = { {0, 2, 1, 0},
@@ -472,13 +480,20 @@ void init_field_macrointerfaces(field *f)
     MacroCell *mcellL = f->mcell + mface->ieL;
     MacroCell *mcellR = f->mcell + mface->ieR;
 
+    int paxisR[4] = {axis_permut[mface->locfaR][0],
+		     axis_permut[mface->locfaR][1],
+		     axis_permut[mface->locfaR][2],
+		     axis_permut[mface->locfaR][3] } ;
+    
     // facial index of point
     int ipgfL0 = 0;
     real xphyL0[3];
     ipgf_to_xphy(mcellL, mface->locfaL, ipgfL0, xphyL0);
 
-    int d0R = axis_permut[mface->locfaR][0];
-    int d1R = axis_permut[mface->locfaR][1];
+    int d0R = paxisR[0];
+    int d1R = paxisR[1];
+    int d2R = paxisR[2];
+    int signR = paxisR[3] == 0 ? -1 : 1;
     
     // Number of points in a macrocell in each permuted direction
     int dR[2] = {mcellR->npgdir[d0R], mcellR->npgdir[d1R]};
@@ -490,50 +505,63 @@ void init_field_macrointerfaces(field *f)
 
     assert(mface->npgf == dR[0] * dR[1]);
 
+    int icR[3] = {0, 0, 0};
+    icR[d2R] = signR == -1 ?  0 : mcellR->raf[d2R] - 1;
+    int ixR[3] = {0, 0, 0};
+    ixR[d2R] = signR == -1 ?  0 : mcellR->deg[d2R];
+    
+    real xphyR[3];
+    
     // bottom-left
-    int ipgfR0 = 0; 
-    real xphyR0[3];
-    ipgf_to_xphy(mcellR, mface->locfaR, ipgfR0, xphyR0);
+    icix_to_xphy(mcellR, icR, ixR,  xphyR);
+    real d0 = Dist(xphyL0, xphyR);
 
     // bottom-right
-    int ipgfR1 = dR[0] - 1;
-    real xphyR1[3];
-    ipgf_to_xphy(mcellR, mface->locfaR, ipgfR1, xphyR1);
+    icR[d0R] = mcellR->raf[d0R] - 1;
+    ixR[d0R] = mcellR->deg[d0R];
+    icR[d1R] = 0;
+    ixR[d1R] = 0;
+    icix_to_xphy(mcellR, icR, ixR,  xphyR);
+    real d1 = Dist(xphyL0, xphyR);
 
     // top-left 
-    real xphyR2[3];
-    int ipgfR2 = dR[0] * (dR[1] - 1); 
-    ipgf_to_xphy(mcellR, mface->locfaR, ipgfR2, xphyR2);
+    icR[d0R] = 0;
+    ixR[d0R] = 0;
+    icR[d1R] = mcellR->raf[d1R] - 1;
+    ixR[d1R] = mcellR->deg[d1R];
+    icix_to_xphy(mcellR, icR, ixR,  xphyR);
+    real d2 = Dist(xphyL0, xphyR);
 
     // top-right
-    int ipgfR3 = dR[0] * dR[1] - 1; 
-    real xphyR3[3];
-    ipgf_to_xphy(mcellR, mface->locfaR, ipgfR3, xphyR3);
-
+    icR[d0R] = mcellR->raf[d0R] - 1;
+    ixR[d0R] = mcellR->deg[d0R];
+    icR[d1R] = mcellR->raf[d1R] - 1;
+    ixR[d1R] = mcellR->deg[d1R];
+    icix_to_xphy(mcellR, icR, ixR,  xphyR);
+    real d3 = Dist(xphyL0, xphyR);
+    
+    printf("d0: %f, \td1: %f, \td2: %f, \td3: %f\n", d0, d1, d2, d3);
+    
     // FIXME: add period correction.
-    
-    // FIXME: now identify the orientation and store the information.
-    
-    real d0 = Dist(xphyL0, xphyR0);
-    real d1 = Dist(xphyL0, xphyR1);
-    real d2 = Dist(xphyL0, xphyR2);
-    real d3 = Dist(xphyL0, xphyR3);
-
+        
     // NB: in the 3D case, exactly one distance is zero.  In the 2D
     // case, exactly two distances are zero.
     
-    printf("d0: %f, \td1: %f, \td2: %f, \td3: %f\n", d0, d1, d2, d3);
+    
+    // FIXME: now identify the orientation and store the information.
 
-    real mindist = FLT_MAX;
     // FIXME: test code
-    for(int ipgfR = 0; ipgfR < npgfR; ++ipgfR) {
-      real xphyR[3];
-      ipgf_to_xphy(mcellR, mface->locfaR, ipgfR, xphyR);
-      real d = Dist(xphyL0, xphyR);
-      if(mindist > d)
-	mindist = d;
+    {
+      real mindist = FLT_MAX;
+      for(int ipgfR = 0; ipgfR < npgfR; ++ipgfR) {
+	real xphyR[3];
+	ipgf_to_xphy(mcellR, mface->locfaR, ipgfR, xphyR);
+	real d = Dist(xphyL0, xphyR);
+	if(mindist > d)
+	  mindist = d;
+      }
+      printf("\tmin dist: %f\n", mindist);
     }
-    printf("\tmin dist: %f\n", mindist);
     
   }
 }
@@ -562,15 +590,19 @@ void init_field_macrofaces(field *f)
 void setMacroCellmass(MacroCell *mcell, field *f)
 {
   for(int ipg = 0; ipg < mcell->npg; ipg++) {
-    real dtau[3][3], codtau[3][3], xpgref[3], xphy[3], wpg;
-    int *raf = f->interp_param + 4;
-    int *deg = f->interp_param + 1;
-    ref_pg_vol(raf, deg, ipg, xpgref, &wpg, NULL);
+    real xpgref[3];
+    real wpg;
+    ref_pg_vol(mcell->raf, mcell->deg, ipg, xpgref, &wpg, NULL);
+
+    real xphy[3];
+    real dtau[3][3];
+    real codtau[3][3];
     Ref2Phy(mcell->physnode, // phys. nodes
 	    xpgref, // xref
 	    NULL, -1, // dpsiref, ifa
 	    xphy, dtau, // xphy, dtau
 	    codtau, NULL, NULL); // codtau, dpsi, vnds
+    
     real det = dot_product(dtau[0], codtau[0]);
     mcell->mass[ipg] = wpg * det;
   }
