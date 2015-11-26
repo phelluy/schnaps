@@ -420,84 +420,49 @@ real dlag(int deg, int ib, int ipg)
 // the boundary of a subcell (because the gradient is discontinuous)
 void psi_ref(int *param, int ib, real *xref, real *psi, real *dpsi)
 {
-  real dpsibx;
-  real dpsiby;
-  real dpsibz;
-
-  int deg[3], offset[3], nraf[3];
+  // number of subcells in each direction
+  int raf[3] = {param[3], param[4], param[5]};
 
   // approximation degree in each direction
-  deg[0] = param[0];
-  deg[1] = param[1];
-  deg[2] = param[2];
-  // number of subcells in each direction
-  nraf[0] = param[3];
-  nraf[1] = param[4];
-  nraf[2] = param[5];
+  int deg[3] = {param[0], param[1], param[2]};
+
+  int ic[3];
+  int ix[3];
+  ipg_to_xyz(raf, deg, ic, ix, &ib); 
+
+  real h[3] = {1.0 / (real) raf[0], 1.0 / (real) raf[1], 1.0 / (real) raf[2]};
+
   // Starting Gauss-Lobatto point in each direction
-  offset[0] = gauss_lob_offset[deg[0]];
-  offset[1] = gauss_lob_offset[deg[1]];
-  offset[2] = gauss_lob_offset[deg[2]];
+  int offset[3] = {gauss_lob_offset[deg[0]],
+		   gauss_lob_offset[deg[1]],
+		   gauss_lob_offset[deg[2]] };
 
-  int ix[3],ic[3];
-
-  ipg_to_xyz(nraf,deg,ic,ix,&ib); 
-
-  /* int ibx = ib % (deg[0] + 1); */
-  /* ib /= (deg[0] + 1); */
-
-  /* int iby = ib % (deg[1] + 1); */
-  /* ib /= (deg[1] + 1); */
-
-  /* int ibz = ib % (deg[2] + 1); */
-  /* ib /= (deg[2] + 1); */
-
-  /* int ncbx= ib % nraf[0]; */
-  real hx=1 / (real) nraf[0];
-  //ib /= nraf[0];
-
-  //int ncby= ib % nraf[1];
-  real hy=1 / (real) nraf[1];
-  //ib /= nraf[1];
-
-  //int ncbz= ib;
-  real hz=1 / (real) nraf[2];
-
-  real psibx = 0;
-  real psiby = 0;
-  real psibz = 0;
-
-  lagrange_polynomial(&psibx, gauss_lob_point + offset[0],
-                      deg[0], ix[0], xref[0]/hx-ic[0]);
-  lagrange_polynomial(&psiby, gauss_lob_point + offset[1],
-                      deg[1], ix[1], xref[1]/hy-ic[1]);
-  lagrange_polynomial(&psibz, gauss_lob_point + offset[2],
-                      deg[2], ix[2], xref[2]/hz-ic[2]);
-
-  int is[3];
-  for(int ii=0;ii<3;ii++){
-    is[ii]=xref[ii]*nraf[ii];
-    assert(is[ii] < nraf[ii] && is[ii]>= 0);
+  real psib[3] = {0.0, 0.0, 0.0};
+  for(int i = 0; i < 3; ++i) {
+    lagrange_polynomial(&psib[i], gauss_lob_point + offset[i],
+			deg[i], ix[i], xref[i] / h[i] - ic[i]);
   }
   
-  int is_in_subcell= (ic[0] == is[0]) && (ic[1] == is[1]) 
-    && (ic[2] == is[2]);
+  int is[3];
+  for(int ii = 0; ii < 3; ii++) {
+    is[ii] = xref[ii] * raf[ii];
+    assert(is[ii] < raf[ii] && is[ii]>= 0);
+  }
+  
+  int is_in_subcell= (ic[0] == is[0]) && (ic[1] == is[1]) && (ic[2] == is[2]);
 
-
-  *psi = psibx * psiby * psibz * is_in_subcell;
+  *psi = psib[0] * psib[1] * psib[2] * is_in_subcell;
 
   if (dpsi != NULL) {
-
-    dlagrange_polynomial(&dpsibx, gauss_lob_point + offset[0],
-                         deg[0], ix[0], xref[0]);
-    dlagrange_polynomial(&dpsiby, gauss_lob_point + offset[1],
-                         deg[1], ix[1], xref[1]);
-    dlagrange_polynomial(&dpsibz, gauss_lob_point + offset[2],
-                         deg[2], ix[2], xref[2]);
-
-    dpsi[0] = dpsibx * psiby * psibz * is_in_subcell;
-    dpsi[1] = psibx * dpsiby * psibz * is_in_subcell ;
-    dpsi[2] = psibx * psiby * dpsibz * is_in_subcell;
+    real dpsib[3];
+    for(int i = 0; i < 3; ++i) {
+      dlagrange_polynomial(&dpsib[i], gauss_lob_point + offset[i],
+                         deg[i], ix[i], xref[i]);
+    }
+    
+    dpsi[0] = dpsib[0] *  psib[1] *  psib[2] * is_in_subcell;
+    dpsi[1] =  psib[0] * dpsib[1] *  psib[2] * is_in_subcell;
+    dpsi[2] =  psib[0] *  psib[1] * dpsib[2] * is_in_subcell;
   }
 }
 
@@ -510,7 +475,7 @@ void psi_ref_subcell(int *param, int *is, int ib,
 		     real *xref, real *psi, real *dpsi)
 {
   // Number of subcells in each direction
-  int nraf[3] = {param[3], param[4], param[5]};
+  int raf[3] = {param[3], param[4], param[5]};
 
   // Approximation degree in each direction
   int deg[3] = {param[0], param[1], param[2]};
@@ -522,48 +487,35 @@ void psi_ref_subcell(int *param, int *is, int ib,
 
   int ic[3];
   int ix[3];
-  ipg_to_xyz(nraf, deg, ic, ix, &ib);
+  ipg_to_xyz(raf, deg, ic, ix, &ib);
 
-  real hx=1 / (real) nraf[0];
-  real hy=1 / (real) nraf[1];
-  real hz=1 / (real) nraf[2];
+  real h[3] = {1.0 / (real) raf[0], 1.0 / (real) raf[1], 1.0 / (real) raf[2]};
 
-  int is_in_subcell= (ic[0] == is[0]) && (ic[1] == is[1])
-    && (ic[2] == is[2]);
+  int is_in_subcell = (ic[0] == is[0]) && (ic[1] == is[1]) && (ic[2] == is[2]);
 
-  real psibx = 0;
-  real psiby = 0;
-  real psibz = 0;
-
-  lagrange_polynomial(&psibx, gauss_lob_point + offset[0],
-                      deg[0], ix[0], xref[0]/hx-ic[0]);
-  lagrange_polynomial(&psiby, gauss_lob_point + offset[1],
-                      deg[1], ix[1], xref[1]/hy-ic[1]);
-  lagrange_polynomial(&psibz, gauss_lob_point + offset[2],
-                      deg[2], ix[2], xref[2]/hz-ic[2]);
-
+  real psib[3] = {0.0, 0.0, 0.0};
+  for(int i = 0; i < 3; ++i) {
+    lagrange_polynomial(&psib[i], gauss_lob_point + offset[i],
+			deg[i], ix[i], xref[i] / h[i] - ic[i]);
+  }
+  
   // might be useful for the future subcell case
   /* psibx *= (xref[0] <= (ncbx + 1) * hx)&&(xref[0] > ncbx * hx); */
   /* psiby *= (xref[1] <= (ncby + 1) * hy)&&(xref[1] > ncby * hy); */
   /* psibz *= (xref[2] <= (ncbz + 1) * hz)&&(xref[2] > ncbz * hz); */
 
-  *psi = psibx * psiby * psibz * is_in_subcell ;
+  *psi = psib[0] * psib[1] * psib[2] * is_in_subcell ;
 
   if (dpsi != NULL) {
-    real dpsibx;
-    real dpsiby;
-    real dpsibz;
-
-    dlagrange_polynomial(&dpsibx, gauss_lob_point + offset[0],
-                         deg[0], ix[0], xref[0]);
-    dlagrange_polynomial(&dpsiby, gauss_lob_point + offset[1],
-                         deg[1], ix[1], xref[1]);
-    dlagrange_polynomial(&dpsibz, gauss_lob_point + offset[2],
-                         deg[2], ix[2], xref[2]);
-
-    dpsi[0] = dpsibx *  psiby *  psibz * is_in_subcell;
-    dpsi[1] =  psibx * dpsiby *  psibz * is_in_subcell;
-    dpsi[2] =  psibx *  psiby * dpsibz * is_in_subcell;
+    real dpsib[3];
+    for(int i = 0; i < 3; ++i) {
+      dlagrange_polynomial(&dpsib[i], gauss_lob_point + offset[i],
+                         deg[i], ix[i], xref[i]);
+    }
+    
+    dpsi[0] = dpsib[0] *  psib[1] *  psib[2] * is_in_subcell;
+    dpsi[1] =  psib[0] * dpsib[1] *  psib[2] * is_in_subcell;
+    dpsi[2] =  psib[0] *  psib[1] * dpsib[2] * is_in_subcell;
   }
 }
 
@@ -597,19 +549,16 @@ void grad_psi_pg(int *param, int ib, int ipg, real *dpsi)
 		   gauss_lob_dpsi_offset[deg[2]] };
 
   // Computation of the value of the interpolation polynomial gradient
-  real psibx = (ix[0] == ibx[0]) * (ic[0] == ibc[0]);
-  real dpsibx = (ic[0] == ibc[0])
-    * gauss_lob_dpsi[offset[0]+ibx[0]*(deg[0]+1)+ix[0]] / h[0];
-
-  real psiby = (ix[1] == ibx[1]) * (ic[1] == ibc[1]);
-  real dpsiby = (ic[1] == ibc[1])
-    * gauss_lob_dpsi[offset[1]+ibx[1]*(deg[1]+1)+ix[1]] / h[1];
-
-  real psibz = (ix[2] == ibx[2]) * (ic[2] == ibc[2]);
-  real dpsibz = (ic[2] == ibc[2])
-    * gauss_lob_dpsi[offset[2]+ibx[2]*(deg[2]+1)+ix[2]] / h[2];
-
-  dpsi[0] = dpsibx * psiby  * psibz;
-  dpsi[1] = psibx  * dpsiby * psibz;
-  dpsi[2] = psibx  * psiby  * dpsibz;
+  real psib[3] = {(ix[0] == ibx[0]) * (ic[0] == ibc[0]),
+		  (ix[1] == ibx[1]) * (ic[1] == ibc[1]),
+		  (ix[2] == ibx[2]) * (ic[2] == ibc[2]) };
+  real dpsib[3];
+  for(int i = 0; i < 3; ++i) {
+    dpsib[i] = (ic[i] == ibc[i])
+      * gauss_lob_dpsi[offset[i] + ibx[i] * (deg[i] + 1) + ix[i]] / h[i];
+  }
+  
+  dpsi[0] = dpsib[0] *  psib[1] *  psib[2];
+  dpsi[1] =  psib[0] * dpsib[1] *  psib[2];
+  dpsi[2] =  psib[0] *  psib[1] * dpsib[2];
 }
