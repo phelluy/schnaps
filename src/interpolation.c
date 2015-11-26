@@ -481,11 +481,6 @@ void psi_ref_subcell(int *param, int *is, int ib,
 			deg[i], ix[i], xref[i] / h[i] - ic[i]);
   }
   
-  // might be useful for the future subcell case
-  /* psibx *= (xref[0] <= (ncbx + 1) * hx)&&(xref[0] > ncbx * hx); */
-  /* psiby *= (xref[1] <= (ncby + 1) * hy)&&(xref[1] > ncby * hy); */
-  /* psibz *= (xref[2] <= (ncbz + 1) * hz)&&(xref[2] > ncbz * hz); */
-
   *psi = psib[0] * psib[1] * psib[2] * is_in_subcell ;
 
   if (dpsi != NULL) {
