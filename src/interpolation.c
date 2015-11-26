@@ -9,25 +9,25 @@
 //! Gauss LObatto Points (GLOP) up to order 4
 __constant real gauss_lob_point[] = {
   0.5,
-  0,
-  1,
-  0,
+  0.0,
+  1.0,
+  0.0,
   0.5,
-  1,
-  0,
+  1.0,
+  0.0,
   0.276393202250021030359082633127,
   0.723606797749978969640917366873,
-  1,
-  0,
+  1.0,
+  0.0,
   0.172673164646011428100853771877,
   0.5,
   0.827326835353988571899146228123,
-  1
+  1.0
 };
 
 //! GLOP weights up to order 4
 __constant real gauss_lob_weight[] = {
-  1,
+  1.0,
   0.5,
   0.5,
   0.166666666666666666666666666667,
@@ -50,19 +50,19 @@ __constant int gauss_lob_offset[] = {0, 1, 3, 6, 10};
 
 __constant real gauss_lob_dpsi[] = {
   0.0,
-  -1.,
-  -1.,
-  1.,
-  1.,
-  -3.,
-  -1.,
-  1.,
-  4.,
-  0.,
-  -4.,
-  -1.,
-  1.,
-  3.,
+  -1.0,
+  -1.0,
+  1.0,
+  1.0,
+  -3.0,
+  -1.0,
+  1.0,
+  4.0,
+  0.0,
+  -4.0,
+  -1.0,
+  1.0,
+  3.0,
   -6,
   -1.61803398874989484820458683436,
   .618033988749894848204586834362,
@@ -116,16 +116,19 @@ __constant int gauss_lob_dpsi_offset[] = {0, 1, 5, 14, 30};
 //! \param[in] deg degree
 //! \param[in] i glop index
 //! \returns the glop weight
-real wglop(int deg, int i) {
+real wglop(int deg, int i)
+{
   return gauss_lob_weight[gauss_lob_offset[deg] + i];
 }
 
-real glop(int deg, int i){
+real glop(int deg, int i)
+{
   return gauss_lob_point[gauss_lob_offset[deg] + i];
 }
 
 void lagrange_polynomial(real* p, const real* subdiv,
-			 int deg, int ii, real x) {
+			 int deg, int ii, real x)
+{
   *p = 1;
   const int npg = deg + 1;
   for(int j = 0; j < npg; j++) {
@@ -143,7 +146,7 @@ void dlagrange_polynomial(real* dp, const real* subdiv,
   for(int k = 0; k < npg; k++) {
     if (k != i) {
       real xk = subdiv[k];
-      real dploc = (real)1.0 / (subdiv[i] -  xk);
+      real dploc = 1.0 / (subdiv[i] -  xk);
       for(int j = 0; j < (deg) + 1; j++) {
 	if (j != i && j != k) {
 	  real xj = subdiv[j];
@@ -188,7 +191,8 @@ int xyz_to_ipg(const int *raf, const int *deg, const int *ic, const int *ix)
 
 #pragma start_opencl
 void ipg_to_xyz(const int *raf, const int *deg, int *ic, int *ix, 
-		const int *pipg) {
+		const int *pipg)
+{
   int ipg = *pipg;
 
   ix[0] = ipg % (deg[0] + 1);
@@ -215,50 +219,32 @@ void ipg_to_xyz(const int *raf, const int *deg, int *ic, int *ix,
 int ref_ipg(int *raf, int *deg, real *xref)
 {
   real h[3] = {1.0 / raf[0], 1.0 / raf[1], 1.0 / raf[2]};
-
-  int ic[3];
-  int ix[3];
   
   // get the subcell id
-  ic[0] = floor(xref[0] * raf[0]);
-  ic[1] = floor(xref[1] * raf[1]);
-  ic[2] = floor(xref[2] * raf[2]);
+  int ic[3] = {floor(xref[0] * raf[0]),
+	       floor(xref[1] * raf[1]),
+	       floor(xref[2] * raf[2]) };
 
-  //printf("x=%f ic[0]=%d rafx=%d\n",xref[0], ic[0],raf[0]);
-  //printf("y=%f ic[1]=%d rafy=%d\n",xref[1], ic[1],raf[1]);
-  //printf("z=%f ic[2]=%d rafz=%d\n",xref[2], ic[2],raf[2]);
   assert(ic[0] >=0 && ic[0] < raf[0]);
   assert(ic[1] >=0 && ic[1] < raf[1]);
   assert(ic[2] >=0 && ic[2] < raf[2]);
 
-  // subcell index in the macrocell
-  //int nc = ic[0] + raf[0] * (ic[1] + raf[1] * ic[2]);
-  //int offset = (deg[0] + 1) * (deg[1] + 1) * (deg[2] + 1)*nc;
-
   // round to the nearest integer
-  ix[0] = floor((xref[0] - ic[0] * h[0]) / h[0] * deg[0] + 0.5);
-  ix[1] = floor((xref[1] - ic[1] * h[1]) / h[1] * deg[1] + 0.5);
-  ix[2] = floor((xref[2] - ic[2] * h[2]) / h[2] * deg[2] + 0.5);
-  //int ix[2]=floor(xref[2]*deg[2]+0.5);
-
-  //printf("xref %f %f %f ix[0]=%d ix[1]=%d ix[2]=%d\n",
-  //	 xref[0],xref[1],xref[2],ix[0],ix[1],ix[2]);
-
+  int ix[3];
+  for(int i = 0; i < 3; ++i) {
+    ix[i] = floor((xref[i] - ic[i] * h[i]) / h[i] * deg[i] + 0.5);
+  }
+  
   int ipg = xyz_to_ipg(raf, deg, ic, ix);
-
-  //return ix[0] + (deg[0] + 1) * (ix[1] + (deg[1] + 1) * ix[2]) + offset;
   return ipg;
 }
 
-// ncx ncy ncz ix iy iz
-// Return the reference coordinates xpg[3] and weight wpg of the GLOP
-// ipg
+// Return the reference coordinates xpg[3] and weight wpg of the GLOP ipg
 void ref_pg_vol(int* raf, int* deg,
 		int ipg, real *xpg, real *wpg, real *xpg_in)
 {
   int ic[3];
   int ix[3];
-  
   ipg_to_xyz(raf, deg, ic, ix, &ipg);
 
   real h[3] = {1.0 / (real) raf[0],
@@ -269,18 +255,20 @@ void ref_pg_vol(int* raf, int* deg,
 		   gauss_lob_offset[deg[1]] + ix[1],
 		   gauss_lob_offset[deg[2]] + ix[2] };
 
-  if (xpg != NULL){
+  if (xpg != NULL) {
     xpg[0] = h[0] * (ic[0] + gauss_lob_point[offset[0]]);
     xpg[1] = h[1] * (ic[1] + gauss_lob_point[offset[1]]);
     xpg[2] = h[2] * (ic[2] + gauss_lob_point[offset[2]]);
   }
   
-  if (wpg != NULL) *wpg = h[0] * h[1] * h[2] *
-		     gauss_lob_weight[offset[0]]*
-		     gauss_lob_weight[offset[1]]*
-		     gauss_lob_weight[offset[2]];
-
-  if (xpg_in !=0) {
+  if (wpg != NULL) {
+    *wpg = h[0] * h[1] * h[2] *
+      gauss_lob_weight[offset[0]]*
+      gauss_lob_weight[offset[1]]*
+      gauss_lob_weight[offset[2]];
+  }
+    
+  if (xpg_in != NULL) {
     real small = 1e-5; //1e-3;
 
     for(int i = 0; i < 3; ++i) {
@@ -290,17 +278,14 @@ void ref_pg_vol(int* raf, int* deg,
       if (ix[i] == deg[i])
 	xpg_in[i] -= h[i] * small;
     }
-    
-    /* printf("xpg %f %f %f\n",xpg[0],xpg[1],xpg[2]); */
-    /*  printf("xpg_in %f %f %f %d %d %d\n",xpg_in[0],xpg_in[1],xpg_in[2], */
-    /* 	   ix,iy,iz); */
   }
 }
 
 // Return the reference coordinates xpg[3] and weight wpg of the GLOP
 // ipg on the face ifa.
 int ref_pg_face(int *raf, int *deg, int ifa, int ipgf, 
-		 real *xpg, real *wpg, real *xpgin) {
+		 real *xpg, real *wpg, real *xpgin)
+{
   // For each face, give the dimension index i
   const int axis_permut[6][4] = { {0, 2, 1, 0},
 				  {1, 2, 0, 1},
@@ -309,17 +294,15 @@ int ref_pg_face(int *raf, int *deg, int ifa, int ipgf,
 				  {0, 1, 2, 1},
 				  {1, 0, 2, 0} };
 
-  // approximation degree in each permuted direction
-  int pdeg[3];
-  pdeg[0] = deg[axis_permut[ifa][0]];
-  pdeg[1] = deg[axis_permut[ifa][1]];
-  pdeg[2] = deg[axis_permut[ifa][2]];
-
   // number of subcells in each permuted direction
-  int praf[3];
-  praf[0] = raf[axis_permut[ifa][0]];
-  praf[1] = raf[axis_permut[ifa][1]];
-  praf[2] = raf[axis_permut[ifa][2]];
+  int praf[3] = {raf[axis_permut[ifa][0]],
+		 raf[axis_permut[ifa][1]],
+		 raf[axis_permut[ifa][2]] };
+  
+  // approximation degree in each permuted direction
+  int pdeg[3] = {deg[axis_permut[ifa][0]],
+		 deg[axis_permut[ifa][1]],
+		 deg[axis_permut[ifa][2]] };
 
   // Compute permuted indices
   int pix[3];
@@ -372,10 +355,12 @@ int ref_pg_face(int *raf, int *deg, int ifa, int ipgf,
     xpg[axis_permut[ifa][2]] = axis_permut[ifa][3];
   }
 
-  if(wpg != NULL) *wpg = h[0] * h[1] *
-		     gauss_lob_weight[offset[0]] * 
-		     gauss_lob_weight[offset[1]];
-
+  if(wpg != NULL) {
+    *wpg
+      = h[0] * gauss_lob_weight[offset[0]]
+      * h[1] * gauss_lob_weight[offset[1]];
+  }
+    
   // If xpgin exists, compute a point slightly INSIDE the opposite
   // subcell along the face.
   if(xpgin != NULL) {
@@ -443,9 +428,8 @@ void psi_ref(int *param, int ib, real *xref, real *psi, real *dpsi)
 			deg[i], ix[i], xref[i] / h[i] - ic[i]);
   }
   
-  int is[3];
+  int is[3] = {xref[0] * raf[0], xref[1] * raf[1], xref[2] * raf[2]};
   for(int ii = 0; ii < 3; ii++) {
-    is[ii] = xref[ii] * raf[ii];
     assert(is[ii] < raf[ii] && is[ii]>= 0);
   }
   
@@ -465,8 +449,6 @@ void psi_ref(int *param, int ib, real *xref, real *psi, real *dpsi)
     dpsi[2] =  psib[0] *  psib[1] * dpsib[2] * is_in_subcell;
   }
 }
-
-// ibx iby ibz ncbx ncby ncbz
 
 // Return the value psi and the gradient dpsi[3] of the basis function
 // ib at point xref[3] given the subcell indices is[3].
