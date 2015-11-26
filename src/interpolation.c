@@ -63,47 +63,47 @@ __constant real gauss_lob_dpsi[] = {
   -1.0,
   1.0,
   3.0,
-  -6,
+  -6.0,
   -1.61803398874989484820458683436,
   .618033988749894848204586834362,
-  -1,
+  -1.0,
   8.09016994374947424102293417177,
-  0,
+  0.0,
   -2.23606797749978969640917366872,
   3.09016994374947424102293417184,
   -3.09016994374947424102293417182,
   2.23606797749978969640917366872,
-  0,
+  0.0,
   -8.09016994374947424102293417177,
-  1,
+  1.0,
   -.618033988749894848204586834362,
   1.61803398874989484820458683436,
-  6,
+  6.0,
   -10,
   -2.48198050606196571569743868436,
   .75,
   -.518019493938034284302561315632,
-  1,
+  1.0,
   13.5130049774484800076860550594,
-  0,
+  0.0,
   -2.67316915539090667050969419631,
   1.52752523165194666886268239794,
   -2.82032835588485332564727827404,
   -5.33333333333333333333333333336,
   3.49148624377587810025755976667,
-  0,
+  0.0,
   -3.49148624377587810025755976662,
   5.33333333333333333333333333336,
   2.82032835588485332564727827399,
   -1.52752523165194666886268239791,
   2.67316915539090667050969419635,
-  0,
+  0.0,
   -13.5130049774484800076860550594,
-  -1,
+  -1.0,
   .518019493938034284302561315631,
   -.75,
   2.48198050606196571569743868437,
-  10
+  10.0
 };
 
 //! indirection for finding the GLOP
@@ -284,7 +284,7 @@ void ref_pg_vol(int* raf, int* deg,
 // Return the reference coordinates xpg[3] and weight wpg of the GLOP
 // ipg on the face ifa.
 int ref_pg_face(int *raf, int *deg, int ifa, int ipgf, 
-		 real *xpg, real *wpg, real *xpgin)
+		real *xpg, real *wpg, real *xpgin)
 {
   // For each face, give the dimension index i
   const int axis_permut[6][4] = { {0, 2, 1, 0},
@@ -441,7 +441,7 @@ void psi_ref(int *param, int ib, real *xref, real *psi, real *dpsi)
     real dpsib[3];
     for(int i = 0; i < 3; ++i) {
       dlagrange_polynomial(&dpsib[i], gauss_lob_point + offset[i],
-                         deg[i], ix[i], xref[i]);
+			   deg[i], ix[i], xref[i]);
     }
     
     dpsi[0] = dpsib[0] *  psib[1] *  psib[2] * is_in_subcell;
@@ -487,7 +487,7 @@ void psi_ref_subcell(int *param, int *is, int ib,
     real dpsib[3];
     for(int i = 0; i < 3; ++i) {
       dlagrange_polynomial(&dpsib[i], gauss_lob_point + offset[i],
-                         deg[i], ix[i], xref[i]);
+			   deg[i], ix[i], xref[i]);
     }
     
     dpsi[0] = dpsib[0] *  psib[1] *  psib[2] * is_in_subcell;
@@ -501,7 +501,7 @@ void psi_ref_subcell(int *param, int *is, int ib,
 void grad_psi_pg(int *param, int ib, int ipg, real *dpsi)
 {
   // number of subcells in each direction
-  int nraf[3] = {param[3], param[4], param[5]};
+  int raf[3] = {param[3], param[4], param[5]};
   
   // approximation degree in each direction
   int deg[3] = {param[0], param[1], param[2]};
@@ -509,16 +509,16 @@ void grad_psi_pg(int *param, int ib, int ipg, real *dpsi)
   // glop 3d indices
   int ic[3];
   int ix[3];
-  ipg_to_xyz(nraf, deg, ic, ix, &ipg);
+  ipg_to_xyz(raf, deg, ic, ix, &ipg);
 
   // basis function 3d indices
   int ibc[3];
   int ibx[3];
-  ipg_to_xyz(nraf, deg, ibc, ibx, &ib);
+  ipg_to_xyz(raf, deg, ibc, ibx, &ib);
 
-  real h[3] = {1.0 / (real) nraf[0],
-	       1.0 / (real) nraf[1],
-	       1.0 / (real) nraf[2] };
+  real h[3] = {1.0 / (real) raf[0],
+	       1.0 / (real) raf[1],
+	       1.0 / (real) raf[2] };
 
   // Number of Gauss-Lobatto points in each direction
   int offset[3] = {gauss_lob_dpsi_offset[deg[0]],
