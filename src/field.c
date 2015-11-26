@@ -480,19 +480,15 @@ void init_field_macrointerfaces(field *f)
     int d0R = axis_permut[mface->locfaR][0];
     int d1R = axis_permut[mface->locfaR][1];
     
-    // Number of points in a macrocell in each direction
-    int npgmc[3] = {mcellR->raf[0] * (mcellR->deg[0] + 1 ),
-		    mcellR->raf[1] * (mcellR->deg[1] + 1 ),
-		    mcellR->raf[2] * (mcellR->deg[2] + 1 ) };
-
-    int tpgR[2] = {npgmc[d0R], npgmc[d1R]}; 
+    // Number of points in a macrocell in each permuted direction
+    int dR[2] = {mcellR->npgdir[d0R], mcellR->npgdir[d1R]};
     
     // Sanity check that both MacroCells think they share the same
     // number of points
     int npgfR = NPGF(mcellR->raf, mcellR->deg, mface->locfaR);
     assert(mface->npgf == npgfR);
 
-    assert(mface->npgf == npgmc[d0R] * npgmc[d1R]);
+    assert(mface->npgf == dR[0] * dR[1]);
 
     // bottom-left
     int ipgfR0 = 0; 
@@ -500,17 +496,17 @@ void init_field_macrointerfaces(field *f)
     ipgf_to_xphy(mcellR, mface->locfaR, ipgfR0, xphyR0);
 
     // bottom-right
-    int ipgfR1 = tpgR[0] - 1; 
+    int ipgfR1 = dR[0] - 1;
     real xphyR1[3];
     ipgf_to_xphy(mcellR, mface->locfaR, ipgfR1, xphyR1);
 
     // top-left 
     real xphyR2[3];
-    int ipgfR2 = tpgR[0] * (tpgR[1] - 1); 
+    int ipgfR2 = dR[0] * (dR[1] - 1); 
     ipgf_to_xphy(mcellR, mface->locfaR, ipgfR2, xphyR2);
 
     // top-right
-    int ipgfR3 = mface->npgf - 1; 
+    int ipgfR3 = dR[0] * dR[1] - 1; 
     real xphyR3[3];
     ipgf_to_xphy(mcellR, mface->locfaR, ipgfR3, xphyR3);
 
@@ -527,6 +523,18 @@ void init_field_macrointerfaces(field *f)
     // case, exactly two distances are zero.
     
     printf("d0: %f, \td1: %f, \td2: %f, \td3: %f\n", d0, d1, d2, d3);
+
+    real mindist = FLT_MAX;
+    // FIXME: test code
+    for(int ipgfR = 0; ipgfR < npgfR; ++ipgfR) {
+      real xphyR[3];
+      ipgf_to_xphy(mcellR, mface->locfaR, ipgfR, xphyR);
+      real d = Dist(xphyL0, xphyR);
+      if(mindist > d)
+	mindist = d;
+    }
+    printf("\tmin dist: %f\n", mindist);
+    
   }
 }
 
@@ -598,7 +606,13 @@ void init_field_macrocells(field *f)
     mcell->npgsubcell
       = (mcell->deg[0] + 1) * (mcell->deg[1] + 1) * (mcell->deg[2] + 1);
 
+    mcell->npgdir[0] = mcell->raf[0] * (mcell->deg[0] + 1);
+    mcell->npgdir[1] = mcell->raf[1] * (mcell->deg[1] + 1);
+    mcell->npgdir[2] = mcell->raf[2] * (mcell->deg[2] + 1);
+    
     mcell->npg = mcell->nsubcell * mcell->npgsubcell;
+
+    assert(mcell->npgdir[0] * mcell->npgdir[1] *mcell->npgdir[2] == mcell->npg);
 
     mcell->nreal = f->model.m * mcell->npg;
 
@@ -733,9 +747,7 @@ void Gnuplot(field *f, int dir, real fixval, char *filename)
 
       real xref[3], xphy[3], wpg;
       real dtau[3][3];
-      int *raf = f->interp_param + 4;
-      int *deg = f->interp_param + 1;
-      ref_pg_vol(raf, deg, ipg, xref, &wpg, NULL);
+      ref_pg_vol(mcell->raf, mcell->deg, ipg, xref, &wpg, NULL);
 
       Ref2Phy(mcell->physnode,
 	      xref,
@@ -784,14 +796,16 @@ void Plotfield(int typplot, int compare, field* f, char *fieldname,
   gmshfile = fopen(filename, "w" );
 
   //int param[8] = {f->model.m, _DEGX, _DEGY, _DEGZ, _RAFX, _RAFY, _RAFZ, 0};
-  int nraf[3] = {f->interp_param[4], f->interp_param[5], f->interp_param[6]};
+  int *raf = f->interp_param + 4;
+  int *deg = f->interp_param + 1;
+
   // Refinement size in each direction
-  real hh[3] = {1.0 / nraf[0], 1.0 / nraf[1], 1.0 / nraf[2]};
+  real hh[3] = {1.0 / raf[0], 1.0 / raf[1], 1.0 / raf[2]};
 
   // Header
   fprintf(gmshfile, "$MeshFormat\n2.2 0 %d\n", (int) sizeof(real));
 
-  int nb_plotnodes = f->macromesh.nbelems * nraf[0] * nraf[1] * nraf[2] * 64;
+  int nb_plotnodes = f->macromesh.nbelems * raf[0] * raf[1] * raf[2] * 64;
   fprintf(gmshfile, "$EndMeshFormat\n$Nodes\n%d\n", nb_plotnodes);
 
   real *value = malloc(nb_plotnodes * sizeof(real));
@@ -805,8 +819,6 @@ void Plotfield(int typplot, int compare, field* f, char *fieldname,
     tolerance = 1e-6;
   
   // Nodes
-  int *raf = f->interp_param + 4;
-  int *deg = f->interp_param + 1;
   int npgv = NPG(raf, deg);
   for(int i = 0; i < f->macromesh.nbelems; i++) {
     MacroCell *mcell = f->mcell + i;
@@ -814,9 +826,9 @@ void Plotfield(int typplot, int compare, field* f, char *fieldname,
     // Loop on the macro elem subcells
     int icL[3];
     // Loop on the subcells
-    for(icL[0] = 0; icL[0] < nraf[0]; icL[0]++) {
-      for(icL[1] = 0; icL[1] < nraf[1]; icL[1]++) {
-	for(icL[2] = 0; icL[2] < nraf[2]; icL[2]++) {
+    for(icL[0] = 0; icL[0] < raf[0]; icL[0]++) {
+      for(icL[1] = 0; icL[1] < raf[1]; icL[1]++) {
+	for(icL[2] = 0; icL[2] < raf[2]; icL[2]++) {
 
 	  for(int ino = 0; ino < 64; ino++) {
 	    real Xr[3] = { hh[0] * (icL[0] + hexa64ref[3 * ino + 0]),
@@ -867,7 +879,7 @@ void Plotfield(int typplot, int compare, field* f, char *fieldname,
   // Elements
   fprintf(gmshfile, "$Elements\n");
   fprintf(gmshfile, "%d\n", 
-	  f->macromesh.nbelems * nraf[0] * nraf[1] * nraf[2]);
+	  f->macromesh.nbelems * raf[0] * raf[1] * raf[2]);
 
   int elm_type = 92;
   int num_tags = 0;
@@ -879,14 +891,14 @@ void Plotfield(int typplot, int compare, field* f, char *fieldname,
   for(int i = 0; i < f->macromesh.nbelems; i++) {
     // Loop on the subcells
     int icL[3];
-    for(icL[0] = 0; icL[0] < nraf[0]; icL[0]++) {
-      for(icL[1] = 0; icL[1] < nraf[1]; icL[1]++) {
-	for(icL[2] = 0; icL[2] < nraf[2]; icL[2]++) {
+    for(icL[0] = 0; icL[0] < raf[0]; icL[0]++) {
+      for(icL[1] = 0; icL[1] < raf[1]; icL[1]++) {
+	for(icL[2] = 0; icL[2] < raf[2]; icL[2]++) {
 	  // Get the subcell id
-	  int ncL = icL[0] + nraf[0] * (icL[1] + nraf[1] * icL[2]);
+	  int ncL = icL[0] + raf[0] * (icL[1] + raf[1] * icL[2]);
 
 	  // Global subcell id
-	  int numelem = ncL + i * nraf[0] * nraf[1] * nraf[2] + 1;
+	  int numelem = ncL + i * raf[0] * raf[1] * raf[2] + 1;
 
 	  //fwrite((char*) &numelem, sizeof(int), 1, gmshfile);
 	  fprintf(gmshfile, "%d ", numelem);
@@ -894,7 +906,7 @@ void Plotfield(int typplot, int compare, field* f, char *fieldname,
 	  fprintf(gmshfile, "%d ", num_tags);
 
 	  for(int ii = 0; ii < 64; ii++) {
-	    int numnoe = 64 * (i * nraf[0] * nraf[1] * nraf[2] + ncL) + ii  + 1;
+	    int numnoe = 64 * (i * raf[0] * raf[1] * raf[2] + ncL) + ii  + 1;
 	    //fwrite((char*) &numnoe, sizeof(int), 1, gmshfile);
 	    fprintf(gmshfile, "%d ", numnoe);
 	  }

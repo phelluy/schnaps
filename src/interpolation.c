@@ -136,18 +136,18 @@ void lagrange_polynomial(real* p, const real* subdiv,
 }
 
 void dlagrange_polynomial(real* dp, const real* subdiv,
-			  int deg, int i, real x) {
-  real xj;
+			  int deg, int i, real x)
+{
   *dp = 0;
   const int npg = deg + 1;
   for(int k = 0; k < npg; k++) {
-    if (k != (i)) {
-      real xk = (subdiv)[k];
-      real dploc = ((real)1) / ((subdiv)[i] -  xk);
+    if (k != i) {
+      real xk = subdiv[k];
+      real dploc = (real)1.0 / (subdiv[i] -  xk);
       for(int j = 0; j < (deg) + 1; j++) {
-	if (j != (i) && j != k) {
-	  xj = (subdiv)[j];
-	  dploc *= ((x) - xj) / ((subdiv)[i] - xj);
+	if (j != i && j != k) {
+	  real xj = subdiv[j];
+	  dploc *= (x - xj) / (subdiv[i] - xj);
 	}
       }
       *dp += dploc;
@@ -212,12 +212,13 @@ void ipg_to_xyz(const int *raf, const int *deg, int *ic, int *ix,
 
 // From a reference point find the nearest gauss point
 // Warning: works only  degree 1, 2, or 3
-int ref_ipg(int *raf, int *deg, real *xref) {
-
+int ref_ipg(int *raf, int *deg, real *xref)
+{
   real h[3] = {1.0 / raf[0], 1.0 / raf[1], 1.0 / raf[2]};
 
-  int ic[3],ix[3];
-
+  int ic[3];
+  int ix[3];
+  
   // get the subcell id
   ic[0] = floor(xref[0] * raf[0]);
   ic[1] = floor(xref[1] * raf[1]);
@@ -253,10 +254,12 @@ int ref_ipg(int *raf, int *deg, real *xref) {
 // Return the reference coordinates xpg[3] and weight wpg of the GLOP
 // ipg
 void ref_pg_vol(int* raf, int* deg,
-		int ipg, real *xpg, real *wpg, real *xpg_in) {
-  int ix[3], ic[3];
-
-  ipg_to_xyz(raf,deg,ic,ix,&ipg);
+		int ipg, real *xpg, real *wpg, real *xpg_in)
+{
+  int ic[3];
+  int ix[3];
+  
+  ipg_to_xyz(raf, deg, ic, ix, &ipg);
 
   real h[3] = {1.0 / (real) raf[0],
 	       1.0 / (real) raf[1],
@@ -306,7 +309,6 @@ int ref_pg_face(int *raf, int *deg, int ifa, int ipgf,
 				  {0, 1, 2, 1},
 				  {1, 0, 2, 0} };
 
-
   // approximation degree in each permuted direction
   int pdeg[3];
   pdeg[0] = deg[axis_permut[ifa][0]];
@@ -341,15 +343,15 @@ int ref_pg_face(int *raf, int *deg, int ifa, int ipgf,
 	       1.0 / (real) praf[2] };
   
   // Compute non permuted indices for points and subfaces
-  int ix[3];
-  ix[axis_permut[ifa][0]] = pix[0];
-  ix[axis_permut[ifa][1]] = pix[1];
-  ix[axis_permut[ifa][2]] = pix[2];
-
   int ic[3];
   ic[axis_permut[ifa][0]] = pic[0];
   ic[axis_permut[ifa][1]] = pic[1];
   ic[axis_permut[ifa][2]] = pic[2];
+
+  int ix[3];
+  ix[axis_permut[ifa][0]] = pix[0];
+  ix[axis_permut[ifa][1]] = pix[1];
+  ix[axis_permut[ifa][2]] = pix[2];
 
   // Compute the global index of the Gauss-Lobatto point in the volume
   int ipgv = ix[0] + (deg[0] + 1) *
@@ -505,30 +507,22 @@ void psi_ref(int *param, int ib, real *xref, real *psi, real *dpsi)
 // ib at point xref[3] given the subcell indices is[3].
 // The computation is reliable.
 void psi_ref_subcell(int *param, int *is, int ib,
-		     real *xref, real *psi, real *dpsi) {
-  real dpsibx;
-  real dpsiby;
-  real dpsibz;
-
-  int deg[3],offset[3],nraf[3];
+		     real *xref, real *psi, real *dpsi)
+{
+  // Number of subcells in each direction
+  int nraf[3] = {param[3], param[4], param[5]};
 
   // Approximation degree in each direction
-  deg[0] = param[0];
-  deg[1] = param[1];
-  deg[2] = param[2];
-  // Number of subcells in each direction
-  nraf[0] = param[3];
-  nraf[1] = param[4];
-  nraf[2] = param[5];
+  int deg[3] = {param[0], param[1], param[2]};
+
   // Starting Gauss-Lobatto point in each direction
-  offset[0] = gauss_lob_offset[deg[0]];
-  offset[1] = gauss_lob_offset[deg[1]];
-  offset[2] = gauss_lob_offset[deg[2]];
+  int offset[3] = {gauss_lob_offset[deg[0]],
+		   gauss_lob_offset[deg[1]],
+		   gauss_lob_offset[deg[2]] };
 
-
-  int ix[3],ic[3];
-
-  ipg_to_xyz(nraf,deg,ic,ix,&ib);
+  int ic[3];
+  int ix[3];
+  ipg_to_xyz(nraf, deg, ic, ix, &ib);
 
   real hx=1 / (real) nraf[0];
   real hy=1 / (real) nraf[1];
@@ -556,6 +550,9 @@ void psi_ref_subcell(int *param, int *is, int ib,
   *psi = psibx * psiby * psibz * is_in_subcell ;
 
   if (dpsi != NULL) {
+    real dpsibx;
+    real dpsiby;
+    real dpsibz;
 
     dlagrange_polynomial(&dpsibx, gauss_lob_point + offset[0],
                          deg[0], ix[0], xref[0]);
@@ -572,85 +569,47 @@ void psi_ref_subcell(int *param, int *is, int ib,
 
 // Return the gradient dpsi[0..2] of the basis function ib at GLOP
 // ipg.
-void grad_psi_pg(int *param, int ib, int ipg, real *dpsi) {
-  int deg[3], offset[3], nraf[3];
-
-  // approximation degree in each direction
-  deg[0] = param[0];
-  deg[1] = param[1];
-  deg[2] = param[2];
+void grad_psi_pg(int *param, int ib, int ipg, real *dpsi)
+{
   // number of subcells in each direction
-  nraf[0] = param[3];
-  nraf[1] = param[4];
-  nraf[2] = param[5];
+  int nraf[3] = {param[3], param[4], param[5]};
+  
+  // approximation degree in each direction
+  int deg[3] = {param[0], param[1], param[2]};
 
   // glop 3d indices
-  int ix[3],ic[3];
-  ipg_to_xyz(nraf,deg,ic,ix,&ipg);
+  int ic[3];
+  int ix[3];
+  ipg_to_xyz(nraf, deg, ic, ix, &ipg);
 
   // basis function 3d indices
-  int ibx[3],ibc[3];
-  ipg_to_xyz(nraf,deg,ibc,ibx,&ib);
+  int ibc[3];
+  int ibx[3];
+  ipg_to_xyz(nraf, deg, ibc, ibx, &ib);
 
-  // // indices of Gauss-Lobatto points in each subcell
-  // int ipgx = ipg % (deg[0] + 1);
-  // ipg /= (deg[0] + 1);
-
-  // int ipgy = ipg % (deg[1] + 1);
-  // ipg /= (deg[1] + 1);
-
-  // int ipgz = ipg % (deg[2] + 1);
-  // ipg /= (deg[2] + 1);
-
-  // // indices of each subcell and space step in each direction
-  // int ncpgx= ipg % nraf[0];
-  real hx=1 / (real) nraf[0];
-  // ipg /= nraf[0];
-
-  // int ncpgy= ipg % nraf[1];
-  real hy=1 / (real) nraf[1];
-  // ipg /= nraf[1];
-
-  // int ncpgz= ipg;
-  real hz=1 / (real) nraf[2];
-
-  // basis functions indices
-  // int ibx = ib % (deg[0] + 1);
-  // ib /= (deg[0] + 1);
-
-  // int iby = ib % (deg[1] + 1);
-  // ib /= (deg[1] + 1);
-
-  // int ibz = ib % (deg[2] + 1);
-  // ib /= (deg[2] + 1);
-
-  // int ncbx= ib % nraf[0];
-  // ib /= nraf[0];
-
-  // int ncby= ib % nraf[1];
-  // ib /= nraf[1];
-
-  // int ncbz= ib;
+  real h[3] = {1.0 / (real) nraf[0],
+	       1.0 / (real) nraf[1],
+	       1.0 / (real) nraf[2] };
 
   // Number of Gauss-Lobatto points in each direction
-  offset[0] = gauss_lob_dpsi_offset[deg[0]];
-  offset[1] = gauss_lob_dpsi_offset[deg[1]];
-  offset[2] = gauss_lob_dpsi_offset[deg[2]];
+  int offset[3] = {gauss_lob_dpsi_offset[deg[0]],
+		   gauss_lob_dpsi_offset[deg[1]],
+		   gauss_lob_dpsi_offset[deg[2]] };
 
   // Computation of the value of the interpolation polynomial gradient
-  
-  real psibx,psiby,psibz,dpsibx,dpsiby,dpsibz;
+  real psibx = (ix[0] == ibx[0]) * (ic[0] == ibc[0]);
+  real dpsibx = (ic[0] == ibc[0])
+    * gauss_lob_dpsi[offset[0]+ibx[0]*(deg[0]+1)+ix[0]] / h[0];
 
-  psibx = (ix[0] == ibx[0]) * (ic[0] == ibc[0]);
-  dpsibx = (ic[0] == ibc[0]) * gauss_lob_dpsi[offset[0]+ibx[0]*(deg[0]+1)+ix[0]] / hx;
+  real psiby = (ix[1] == ibx[1]) * (ic[1] == ibc[1]);
+  real dpsiby = (ic[1] == ibc[1])
+    * gauss_lob_dpsi[offset[1]+ibx[1]*(deg[1]+1)+ix[1]] / h[1];
 
-  psiby = (ix[1] == ibx[1]) * (ic[1] == ibc[1]);
-  dpsiby = (ic[1] == ibc[1]) * gauss_lob_dpsi[offset[1]+ibx[1]*(deg[1]+1)+ix[1]] / hy;
+  real psibz = (ix[2] == ibx[2]) * (ic[2] == ibc[2]);
+  real dpsibz = (ic[2] == ibc[2])
+    * gauss_lob_dpsi[offset[2]+ibx[2]*(deg[2]+1)+ix[2]] / h[2];
 
-  psibz = (ix[2] == ibx[2]) * (ic[2] == ibc[2]);
-  dpsibz = (ic[2] == ibc[2]) * gauss_lob_dpsi[offset[2]+ibx[2]*(deg[2]+1)+ix[2]] / hz;
-
-  dpsi[0] = dpsibx*psiby*psibz;
-  dpsi[1] = psibx*dpsiby*psibz;
-  dpsi[2] = psibx*psiby*dpsibz;
+  dpsi[0] = dpsibx * psiby  * psibz;
+  dpsi[1] = psibx  * dpsiby * psibz;
+  dpsi[2] = psibx  * psiby  * dpsibz;
 }

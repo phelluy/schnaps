@@ -54,6 +54,9 @@ typedef struct MacroCell {
   // Number of colocation points in the macrocell
   int npg;
 
+  // Number of colocation points in each direction in the macrocell
+  int npgdir[3];
+
   // Offset to the macrocell's buffer relative to the start of the
   // field's buffer (in numbers of reals).
   int woffset;
