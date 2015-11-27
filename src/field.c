@@ -511,26 +511,29 @@ void init_field_macrointerfaces(field *f)
     ixR[d2R] = signR == -1 ?  0 : mcellR->deg[d2R];
     
     real xphyR[3];
+
+
+    real dist[4];
     
     // bottom-left
     icix_to_xphy(mcellR, icR, ixR,  xphyR);
-    real d0 = Dist(xphyL0, xphyR);
-
+    dist[0] = Dist(xphyL0, xphyR);
+    
     // bottom-right
     icR[d0R] = mcellR->raf[d0R] - 1;
     ixR[d0R] = mcellR->deg[d0R];
     icR[d1R] = 0;
     ixR[d1R] = 0;
     icix_to_xphy(mcellR, icR, ixR,  xphyR);
-    real d1 = Dist(xphyL0, xphyR);
-
+    dist[1] = Dist(xphyL0, xphyR);
+    
     // top-left 
     icR[d0R] = 0;
     ixR[d0R] = 0;
     icR[d1R] = mcellR->raf[d1R] - 1;
     ixR[d1R] = mcellR->deg[d1R];
     icix_to_xphy(mcellR, icR, ixR,  xphyR);
-    real d2 = Dist(xphyL0, xphyR);
+    dist[2] = Dist(xphyL0, xphyR);
 
     // top-right
     icR[d0R] = mcellR->raf[d0R] - 1;
@@ -538,9 +541,27 @@ void init_field_macrointerfaces(field *f)
     icR[d1R] = mcellR->raf[d1R] - 1;
     ixR[d1R] = mcellR->deg[d1R];
     icix_to_xphy(mcellR, icR, ixR,  xphyR);
-    real d3 = Dist(xphyL0, xphyR);
+    dist[3] = Dist(xphyL0, xphyR);
     
-    printf("d0: %f, \td1: %f, \td2: %f, \td3: %f\n", d0, d1, d2, d3);
+    printf("d0: %f, \td1: %f, \td2: %f, \td3: %f\n",
+	   dist[0], dist[1], dist[2], dist[3]);
+
+    real mindist = MIN(dist[0], dist[1]);
+    mindist = MIN(mindist, dist[2]);
+    mindist = MIN(mindist, dist[3]);
+      
+    // verify that the corner points actually find the closest point.
+    { 
+      real mindist_all = FLT_MAX;
+      for(int ipgfR = 0; ipgfR < npgfR; ++ipgfR) {
+	real xphyR[3];
+	ipgf_to_xphy(mcellR, mface->locfaR, ipgfR, xphyR);
+	real d = Dist(xphyL0, xphyR);
+	mindist_all = MIN(d, mindist_all);
+      }
+      assert(mindist == mindist_all);
+    }
+
     
     // FIXME: add period correction.
         
@@ -549,19 +570,6 @@ void init_field_macrointerfaces(field *f)
     
     
     // FIXME: now identify the orientation and store the information.
-
-    // FIXME: test code
-    {
-      real mindist = FLT_MAX;
-      for(int ipgfR = 0; ipgfR < npgfR; ++ipgfR) {
-	real xphyR[3];
-	ipgf_to_xphy(mcellR, mface->locfaR, ipgfR, xphyR);
-	real d = Dist(xphyL0, xphyR);
-	if(mindist > d)
-	  mindist = d;
-      }
-      printf("\tmin dist: %f\n", mindist);
-    }
     
   }
 }

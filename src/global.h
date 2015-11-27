@@ -54,5 +54,8 @@ char cl_buildoptions[1024];
 #define __local
 #define __private
 
+// No templates in C, so use a #define
+#define MIN(X, Y) (((X) < (Y)) ? (X) : (Y))
+#define MAX(X, Y) (((X) > (Y)) ? (X) : (Y))
 
 #endif // #ifndef _GLOBAL_H
