@@ -57,5 +57,6 @@ char cl_buildoptions[1024];
 // No templates in C, so use a #define
 #define MIN(X, Y) (((X) < (Y)) ? (X) : (Y))
 #define MAX(X, Y) (((X) > (Y)) ? (X) : (Y))
+#define ABS(X) (((X) < 0) ? (-X) : (X))
 
 #endif // #ifndef _GLOBAL_H

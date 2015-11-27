@@ -480,10 +480,18 @@ void init_field_macrointerfaces(field *f)
     MacroCell *mcellL = f->mcell + mface->ieL;
     MacroCell *mcellR = f->mcell + mface->ieR;
 
+    int paxisL[4] = {axis_permut[mface->locfaL][0],
+		     axis_permut[mface->locfaL][1],
+		     axis_permut[mface->locfaL][2],
+		     axis_permut[mface->locfaL][3] } ;
+    
     int paxisR[4] = {axis_permut[mface->locfaR][0],
 		     axis_permut[mface->locfaR][1],
 		     axis_permut[mface->locfaR][2],
 		     axis_permut[mface->locfaR][3] } ;
+
+    int d0L = paxisL[0];
+    int d1L = paxisL[1];
     
     // facial index of point
     int ipgfL0 = 0;
@@ -510,11 +518,11 @@ void init_field_macrointerfaces(field *f)
     int ixR[3] = {0, 0, 0};
     ixR[d2R] = signR == -1 ?  0 : mcellR->deg[d2R];
     
-    real xphyR[3];
-
-
+    // Distances from the four corners of the R face to the origin of
+    // the L face.
     real dist[4];
-    
+
+    real xphyR[3];
     // bottom-left
     icix_to_xphy(mcellR, icR, ixR,  xphyR);
     dist[0] = Dist(xphyL0, xphyR);
@@ -528,49 +536,109 @@ void init_field_macrointerfaces(field *f)
     dist[1] = Dist(xphyL0, xphyR);
     
     // top-left 
-    icR[d0R] = 0;
-    ixR[d0R] = 0;
+    icR[d0R] = mcellR->raf[d0R] - 1;
+    ixR[d0R] = mcellR->deg[d0R];
     icR[d1R] = mcellR->raf[d1R] - 1;
     ixR[d1R] = mcellR->deg[d1R];
     icix_to_xphy(mcellR, icR, ixR,  xphyR);
     dist[2] = Dist(xphyL0, xphyR);
 
     // top-right
-    icR[d0R] = mcellR->raf[d0R] - 1;
-    ixR[d0R] = mcellR->deg[d0R];
+    icR[d0R] = 0;
+    ixR[d0R] = 0;
     icR[d1R] = mcellR->raf[d1R] - 1;
     ixR[d1R] = mcellR->deg[d1R];
     icix_to_xphy(mcellR, icR, ixR,  xphyR);
     dist[3] = Dist(xphyL0, xphyR);
-    
+
+    /*
     printf("d0: %f, \td1: %f, \td2: %f, \td3: %f\n",
 	   dist[0], dist[1], dist[2], dist[3]);
+    */
 
     real mindist = MIN(dist[0], dist[1]);
     mindist = MIN(mindist, dist[2]);
     mindist = MIN(mindist, dist[3]);
       
     // verify that the corner points actually find the closest point.
-    { 
-      real mindist_all = FLT_MAX;
-      for(int ipgfR = 0; ipgfR < npgfR; ++ipgfR) {
-	real xphyR[3];
-	ipgf_to_xphy(mcellR, mface->locfaR, ipgfR, xphyR);
-	real d = Dist(xphyL0, xphyR);
-	mindist_all = MIN(d, mindist_all);
-      }
-      assert(mindist == mindist_all);
+    real fmindist = FLT_MAX;
+    for(int ipgfR = 0; ipgfR < npgfR; ++ipgfR) {
+      real xphyR[3];
+      ipgf_to_xphy(mcellR, mface->locfaR, ipgfR, xphyR);
+      real d = Dist(xphyL0, xphyR);
+      fmindist = MIN(d, fmindist);
+    }
+    assert(mindist == fmindist);
+
+    // FIXME: add period correction.
+
+    int dimension = 3;
+    int nzero = 0;
+    real tol = 1e-8;
+    for(int i = 0; i < 4; ++i) {
+      if(ABS(dist[i] - fmindist) < tol)
+	nzero++;
     }
 
-    
-    // FIXME: add period correction.
+    int ndimensions;
+    switch(nzero) {
+      case 1:
+	{
+	  ndimensions = 3;
+	  assert(!f->macromesh.is2d);
+	  assert(!f->macromesh.is1d);
+	  
+	  // Find the unique corner which is close.  This is enough
+	  // information to determine the loop variables.
+	  for(int i = 0; i < 4; ++i) {
+	    if(ABS(dist[i] - fmindist) < tol) {
+	      mface->Rcorner = i;
+	    }
+	  }
+	}
+	break;
+      case 2:
+	{
+	  mface->Rcorner = -1;
+	  //printf("%d, %d\n", mcellL->npgdir[d0L], mcellL->npgdir[d1L]);
+	  if(mcellL->npgdir[d1L] == 1) {
+	    if(ABS(dist[0] - fmindist) < tol && ABS(dist[1] - fmindist) < tol)
+	      mface->Rcorner = 0;
+	    if(ABS(dist[0] - fmindist) < tol && ABS(dist[3] - fmindist) < tol)
+	      mface->Rcorner = 1;
+	    if(ABS(dist[2] - fmindist) < tol && ABS(dist[3] - fmindist) < tol)
+	      mface->Rcorner = 2;
+	    if(ABS(dist[1] - fmindist) < tol && ABS(dist[2] - fmindist) < tol)
+	      mface->Rcorner = 3;
+	  } else {
+	    if(ABS(dist[0] - fmindist) < tol && ABS(dist[3] - fmindist) < tol)
+	      mface->Rcorner = 0;
+	    if(ABS(dist[2] - fmindist) < tol && ABS(dist[3] - fmindist) < tol)
+	      mface->Rcorner = 1;
+	    if(ABS(dist[1] - fmindist) < tol && ABS(dist[2] - fmindist) < tol)
+	      mface->Rcorner = 2;
+	    if(ABS(dist[0] - fmindist) < tol && ABS(dist[1] - fmindist) < tol)
+	      mface->Rcorner = 3;
+	  }
+	  assert(mface->Rcorner != -1);
+	  ndimensions = 2;
+	  assert(f->macromesh.is2d);
+	}
+	break;
+      case 4:
+	ndimensions = 1;
+	assert(f->macromesh.is1d);
+	// Not much to do here: there is no loop over the interace at
+	// all, so it doesn't matter which corner we choose.
+	mface->Rcorner = 0;
+	break;
+      default:
+	assert(false);
+    }
+
+    // FIXME: check that we can use Rcorner to generate a loop
+    // structure where the xrefs agree.
         
-    // NB: in the 3D case, exactly one distance is zero.  In the 2D
-    // case, exactly two distances are zero.
-    
-    
-    // FIXME: now identify the orientation and store the information.
-    
   }
 }
 
