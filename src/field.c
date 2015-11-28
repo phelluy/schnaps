@@ -492,6 +492,8 @@ void init_field_macrointerfaces(field *f)
 
     int d0L = paxisL[0];
     int d1L = paxisL[1];
+    int d2L = paxisR[2];
+    int signL = paxisL[3] == 0 ? -1 : 1;
     
     // facial index of point
     int ipgfL0 = 0;
@@ -514,47 +516,55 @@ void init_field_macrointerfaces(field *f)
     assert(mface->npgf == dR[0] * dR[1]);
 
     int icR[3] = {0, 0, 0};
-    icR[d2R] = signR == -1 ?  0 : mcellR->raf[d2R] - 1;
+    icR[d2R] = signR == -1 ? 0 : mcellR->raf[d2R] - 1;
     int ixR[3] = {0, 0, 0};
-    ixR[d2R] = signR == -1 ?  0 : mcellR->deg[d2R];
+    ixR[d2R] = signR == -1 ? 0 : mcellR->deg[d2R];
     
     // Distances from the four corners of the R face to the origin of
     // the L face.
     real dist[4];
 
     real xphyR[3];
-    // bottom-left
-    icix_to_xphy(mcellR, icR, ixR,  xphyR);
+
+    // corner 0
+    icix_to_xphy(mcellR, icR, ixR, xphyR);
     dist[0] = Dist(xphyL0, xphyR);
     
-    // bottom-right
+    // corner 1
     icR[d0R] = mcellR->raf[d0R] - 1;
     ixR[d0R] = mcellR->deg[d0R];
     icR[d1R] = 0;
     ixR[d1R] = 0;
-    icix_to_xphy(mcellR, icR, ixR,  xphyR);
+    icix_to_xphy(mcellR, icR, ixR, xphyR);
     dist[1] = Dist(xphyL0, xphyR);
     
-    // top-left 
+    // corner 2 
     icR[d0R] = mcellR->raf[d0R] - 1;
     ixR[d0R] = mcellR->deg[d0R];
     icR[d1R] = mcellR->raf[d1R] - 1;
     ixR[d1R] = mcellR->deg[d1R];
-    icix_to_xphy(mcellR, icR, ixR,  xphyR);
+    icix_to_xphy(mcellR, icR, ixR, xphyR);
     dist[2] = Dist(xphyL0, xphyR);
 
-    // top-right
+    // corner 3
     icR[d0R] = 0;
     ixR[d0R] = 0;
     icR[d1R] = mcellR->raf[d1R] - 1;
     ixR[d1R] = mcellR->deg[d1R];
-    icix_to_xphy(mcellR, icR, ixR,  xphyR);
+    icix_to_xphy(mcellR, icR, ixR, xphyR);
     dist[3] = Dist(xphyL0, xphyR);
 
-    /*
+
     printf("d0: %f, \td1: %f, \td2: %f, \td3: %f\n",
 	   dist[0], dist[1], dist[2], dist[3]);
-    */
+    printf("locfa L/R: %d %d\n", mface->locfaL, mface->locfaR);
+    printf("mcell L/R: %d %d\n", mface->ieL, mface->ieR);
+    printf("paxisL: %d %d %d %d\n", paxisL[0], paxisL[1], paxisL[2], paxisL[3]);
+    printf("paxisR: %d %d %d %d\n", paxisR[0], paxisR[1], paxisR[2], paxisR[3]);
+    printf("rafL: %d %d %d \n", mcellL->raf[0], mcellL->raf[1], mcellL->raf[2]);
+    printf("degL: %d %d %d \n", mcellL->deg[0], mcellL->deg[1], mcellL->deg[2]);
+    printf("rafR: %d %d %d \n", mcellR->raf[0], mcellR->raf[1], mcellR->raf[2]);
+    printf("degR: %d %d %d \n", mcellR->deg[0], mcellR->deg[1], mcellR->deg[2]);
 
     real mindist = MIN(dist[0], dist[1]);
     mindist = MIN(mindist, dist[2]);
@@ -599,9 +609,12 @@ void init_field_macrointerfaces(field *f)
 	break;
       case 2:
 	{
+	  printf("npgdirL: %d, %d\n", mcellL->npgdir[d0L], mcellL->npgdir[d1L]);
+	  printf("npgdirR: %d, %d\n", mcellR->npgdir[d0R], mcellR->npgdir[d1R]);
+
 	  mface->Rcorner = -1;
-	  //printf("%d, %d\n", mcellL->npgdir[d0L], mcellL->npgdir[d1L]);
-	  if(mcellL->npgdir[d1L] == 1) {
+
+	  if(mcellL->npgdir[d0L] != 1) {
 	    if(ABS(dist[0] - fmindist) < tol && ABS(dist[1] - fmindist) < tol)
 	      mface->Rcorner = 0;
 	    if(ABS(dist[0] - fmindist) < tol && ABS(dist[3] - fmindist) < tol)
@@ -612,13 +625,13 @@ void init_field_macrointerfaces(field *f)
 	      mface->Rcorner = 3;
 	  } else {
 	    if(ABS(dist[0] - fmindist) < tol && ABS(dist[3] - fmindist) < tol)
-	      mface->Rcorner = 0;
+	      mface->Rcorner = 3;
 	    if(ABS(dist[2] - fmindist) < tol && ABS(dist[3] - fmindist) < tol)
-	      mface->Rcorner = 1;
+	      mface->Rcorner = 0;
 	    if(ABS(dist[1] - fmindist) < tol && ABS(dist[2] - fmindist) < tol)
 	      mface->Rcorner = 2;
 	    if(ABS(dist[0] - fmindist) < tol && ABS(dist[1] - fmindist) < tol)
-	      mface->Rcorner = 3;
+	      mface->Rcorner = 1;
 	  }
 	  assert(mface->Rcorner != -1);
 	  ndimensions = 2;
@@ -636,6 +649,89 @@ void init_field_macrointerfaces(field *f)
 	assert(false);
     }
 
+    printf("mface->Rcorner: %d\n", mface->Rcorner);
+    
+    // Test that each left-surface point actually matches the expected
+    // right-surface point.
+    for(unsigned int picL0 = 0; picL0 < mcellL->raf[d0L]; ++picL0) {
+      for(unsigned int picL1 = 0; picL1 < mcellL->raf[d1L]; ++picL1) {
+	for(unsigned int pixL0 = 0; pixL0 <= mcellL->deg[d0L]; ++pixL0) {
+	  for(unsigned int pixL1 = 0; pixL1 <= mcellL->deg[d1L]; ++pixL1) {
+
+	    int icL[3];
+  	    icL[d0L] = picL0;
+	    icL[d1L] = picL1;
+	    icL[d2L] = signL == -1 ?  0 : mcellL->raf[d2L] - 1;
+
+	    int ixL[3];
+	    ixL[d0L] = pixL0;
+	    ixL[d1L] = pixL1;
+	    ixL[d2L] = signL == -1 ?  0 : mcellL->dnpg[d2L] - 1;
+
+	    printf("icL: %d %d %d\n", icL[0], icL[1], icL[2]);
+	    printf("ixL: %d %d %d\n", ixL[0], ixL[1], ixL[2]);
+	    
+	    int icR[3];
+	    icR[d2R] = signR == -1 ?  0 : mcellR->raf[d2R] - 1;
+
+	    int ixR[3];
+	    ixR[d2R] = signR == -1 ?  0 : mcellR->dnpg[d2R] - 1;
+
+	    switch(mface->Rcorner) {
+	    case 0:
+	      // Rcorner = 0: L0 = R1, L1 = L0
+	      icR[d0R] = icL[d1L];
+	      icR[d1R] = icL[d0L];
+
+	      ixR[d0R] = ixL[d1L];
+	      ixR[d1R] = ixL[d0L];
+	      break;
+	    case 1:
+	      // Rcorner = 1: L0 = R0, L1 = -R1
+	      icR[d0R] = icL[d0L];
+	      icR[d1R] = mcellL->raf[d1L] - icL[d1L] - 1;
+	      
+	      ixR[d0R] = ixL[d0L];
+	      ixR[d1R] = mcellL->dnpg[d1L] - ixL[d1L] - 1;
+	      break;
+	    case 2:
+	      // Rcorner = 2: L0 = -R1, L1 = -R0
+	      icR[d0R] = mcellR->raf[d0L] - icL[d1L] - 1;
+	      icR[d1R] = mcellR->raf[d1L] - icL[d0L] - 1;
+	      
+	      ixR[d0R] = mcellR->dnpg[d0L] - ixL[d1L] - 1;
+	      ixR[d1R] = mcellR->dnpg[d1L] - ixL[d0L] - 1;
+	      break;
+	    case 3:
+	      // Rcorner = 3: L0 = -R0, L1 = R1
+	      icR[d0R] = mcellR->raf[d0L] - icL[d0L] - 1;
+	      icR[d1R] = icL[d1L];
+	      
+	      ixR[d0R] = mcellR->dnpg[d0L] - ixL[d0L] - 1;
+	      ixR[d1R] = ixL[d1L];
+	      break;
+	    default:
+	      assert(0);
+	    }
+
+	    printf("icR: %d %d %d\n", icR[0], icR[1], icR[2]);
+	    printf("ixR: %d %d %d\n", ixR[0], ixR[1], ixR[2]);
+	    
+	    real xphyR[3];
+	    icix_to_xphy(mcellR, icR, ixR, xphyR);
+
+	    real xphyL[3];
+	    icix_to_xphy(mcellL, icL, ixL, xphyL);
+
+	    printf("\tdist: %f\n", Dist(xphyR, xphyL));
+	    
+	    assert(Dist(xphyR, xphyL) < tol);
+	  }
+	}
+      }
+    }
+
+    
     // FIXME: check that we can use Rcorner to generate a loop
     // structure where the xrefs agree.
         
@@ -714,6 +810,10 @@ void init_field_macrocells(field *f)
     mcell->npgsubcell
       = (mcell->deg[0] + 1) * (mcell->deg[1] + 1) * (mcell->deg[2] + 1);
 
+    mcell->dnpg[0] = mcell->deg[0] + 1;
+    mcell->dnpg[1] = mcell->deg[1] + 1;
+    mcell->dnpg[2] = mcell->deg[2] + 1;
+        
     mcell->npgdir[0] = mcell->raf[0] * (mcell->deg[0] + 1);
     mcell->npgdir[1] = mcell->raf[1] * (mcell->deg[1] + 1);
     mcell->npgdir[2] = mcell->raf[2] * (mcell->deg[2] + 1);

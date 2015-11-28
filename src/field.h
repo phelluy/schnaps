@@ -23,9 +23,9 @@ typedef struct MacroFace {
   // Rcorner = 0: L0 = R1, L1 = L0
   // Rcorner = 1: L0 = R0, L1 = -R1
   // Rcorner = 2: L0 = -R1, L1 = -R0
-  // Rcorner = 2: L0 = -R0, L1 = R1
+  // Rcorner = 3: L0 = -R0, L1 = R1
   int Rcorner;
-
+  
   // Number of points on the macrocell interface.
   int npgf;
 } MacroFace;
@@ -43,6 +43,9 @@ typedef struct MacroCell {
   // Order of polynomial interpretation in one subcell
   int deg[3];
 
+  // Number of points in each direction
+  int dnpg[3];
+  
   // Number of subcells in each direction in the macrocell
   int raf[3];
 
