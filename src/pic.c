@@ -212,6 +212,7 @@ void AccumulateParticles(void *fv, real *w)
     
     int ie=pic->old_cell_id[i];
 
+    // https://xkcd.com/292/
     // FIXME: remove goto
     if (ie < 0) goto nexti;
 

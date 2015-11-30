@@ -469,6 +469,8 @@ void GMRESSolver(LinearSolver* lsol)
       work[colz+ivec]= loc_z[ivec];                    
       work[colx+ivec]= loc_x[ivec]; 
     }
+
+    // https://xkcd.com/292/
     goto L10;
   }
   else if(revcom == precondLeft)  {                 // perform the matrix vector product
@@ -478,6 +480,8 @@ void GMRESSolver(LinearSolver* lsol)
       work[colz+ivec]= loc_z[ivec];                    
       work[colx+ivec]= loc_x[ivec]; 
     }
+
+    // https://xkcd.com/292/
     goto L10;
   }
 
@@ -488,6 +492,8 @@ void GMRESSolver(LinearSolver* lsol)
       work[colz+ivec]= loc_z[ivec];                    
       work[colx+ivec]= loc_x[ivec]; 
     }
+
+    // https://xkcd.com/292/
     goto L10;
   }
 
@@ -499,6 +505,8 @@ void GMRESSolver(LinearSolver* lsol)
       work[coly+ivec]= loc_y[ivec]; 
     }
     work[colz]= prodot;  
+
+    // https://xkcd.com/292/
     goto L10;
   }
 
