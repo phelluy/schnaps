@@ -390,6 +390,68 @@ void ExtractInterface_CL(MacroFace *mface, field *f, cl_mem *wn,
     if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
     assert(status >= CL_SUCCESS);
   }
+
+  // FIXME: add empty kernel event to synchronize! (Maybe?)
+}
+
+void init_extracted_DGInterface_CL(MacroFace *mface, field *f)
+{
+  cl_int status;
+  cl_kernel kernel = f->ExtractedDGInterfaceFlux;
+
+  unsigned int argnum = 0;
+
+  status = clSetKernelArg(kernel,
+			 argnum++,
+                          sizeof(cl_mem),
+                          &f->param_cl);
+  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status >= CL_SUCCESS);
+
+
+  // FIXME: set kernel arguments
+
+}
+
+void compute_extracted_DGInterface_CL(MacroFace *mface, field *f,
+				      cl_uint nwait,
+				      cl_event *wait,
+				      cl_event *done)
+{
+  init_extracted_DGInterface_CL(mface, f);
+
+  init_extracted_DGInterface_CL(mface, f);
+
+  MacroCell *mcellL = f->mcell + mface->ieL;
+  
+  const int axis_permut[6][4] = { {0, 2, 1, 0},
+				  {1, 2, 0, 1},
+				  {2, 0, 1, 1},
+				  {2, 1, 0, 0},
+				  {0, 1, 2, 1},
+				  {1, 0, 2, 0} };
+
+  
+  // indices of the used dimemsions
+  int i0 = axis_permut[mface->locfaL][0];
+  int i1 = axis_permut[mface->locfaL][1];
+  int i2 = axis_permut[mface->locfaL][2];
+  
+  size_t numworkitems[3] = {mcellL->dnpg[i0], mcellL->dnpg[i1]};
+
+  cl_int status;
+  status = clEnqueueNDRangeKernel(f->cli.commandqueue,
+				  f->ExtractedDGInterfaceFlux,
+				  2, // cl_uint work_dim,
+				  NULL, // global_work_offset,
+				  numworkitems, // global_work_size, 
+				  NULL, // size_t *local_work_size, 
+				  nwait,  // nwait, 
+				  wait, // *wait_list,
+				  done); // *event
+  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status >= CL_SUCCESS);
+
 }
 
 // Set the loop-dependant kernel arguments for DGMacroCellInterface_CL

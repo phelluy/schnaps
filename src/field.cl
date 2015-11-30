@@ -185,7 +185,7 @@ inline void compute_dtau(__constant real *physnode,
       dtau[ii][2] = fma(pn, gradphi[i][2], dtau[ii][2]);
 #else
       for(int jj = 0; jj < 3; jj++) {
-	dtau[ii][jj] += physnode[3 * i + ii] * gradphi[i][jj];
+	dtau[ii][jj] += pn * gradphi[i][jj];
       }
 #endif
     }
@@ -768,7 +768,7 @@ inline void prefetch_macrocell(const __global real *in,
 {
   const int m = param[0];
   int icell = get_group_id(0);
-  for(int i = 0; i < m ; ++i){
+  for(int i = 0; i < m ; ++i) {
     int iread = get_local_id(0) + i * get_local_size(0);
     int iv = iread % m;
     int ipgloc = iread / m;
@@ -786,7 +786,7 @@ inline void zero_macrocell_buffer(__local real *out,
 {
   const int m = param[0];
   int icell = get_group_id(0);
-  for(int i = 0; i < m ; ++i){
+  for(int i = 0; i < m ; ++i) {
     int iread = get_local_id(0) + i * get_local_size(0);
     int iv = iread % m;
     int ipgloc = iread / m;
@@ -1132,28 +1132,49 @@ void ExtractInterface(const int d2,
 }
 
 __kernel
-void DGInterfaceFlux(__constant int *param,        // interp param
-		     __global real *wfaceL,
-		     __global real *wfaceR
-		     )
+void ExtractedDGInterfaceFlux(__constant int *param,
+			      int Rcorner,
+			      __global real *faceL,
+			      __global real *faceR,
+			      __local real *fL,
+			      __local real *fR)
 {
+  // The kernel is launched with ND range given by {the number of
+  // points in the first L facial direction, the number of points in
+  // the second L facial direciton}
+
+  const int m = param[0];
+  
+  // Copy Intrafces into __local memory
+  
+  for(int i = 0; i < m; ++i) {
+    int pos = get_local_id(1)
+      + get_local_id(0)* get_local_size(1)
+      + i * get_local_size(1) * get_local_size(1);
+    fL[pos] = faceL[pos];
+    fR[pos] = faceR[pos];
+  }
+   
+  barrier(CLK_LOCAL_MEM_FENCE);
+
+  // Compute flux
+
+  // The point with 2D face indices (d0, d1) is at memory location
+  // d1 * n0 * m  + d0 * m
   const int d0 = get_global_id(0); // first dimension
   const int d1 = get_global_id(1); // second dimension
-  const int iv = get_global_id(2); // m index
+  const int n0 = get_global_size(0);
 
-  const int n1 = get_global_size(1);
-
-  int ipgf = d0 * n1 + d0;
-  // FIXME: complete this function.
-
-  // find vnds
-
-  // find wL and wR points
-
-  // compute flux
-
-  // put the computed flux into the correct __global_real buffer (or
-  // just copy it back to the inputs????
+  barrier(CLK_LOCAL_MEM_FENCE);
+  
+  // Copy flux back into input buffers
+  for(int i = 0; i < m; ++i) {
+    int pos = get_local_id(1)
+      + get_local_id(0) * get_local_size(1)
+      + i * get_local_size(1) * get_local_size(1);
+    faceL[pos] = fL[pos];
+    faceR[pos] = fR[pos];
+  }
 }
 
 // Compute the Discontinuous Galerkin inter-macrocells boundary terms.

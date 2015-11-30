@@ -58,10 +58,20 @@ int TestKernelInterface()
 
   for(int i = 0; i < ninterfaces; ++i) {
     int ifa = f.macromesh.macrointerface[i];
-    ExtractInterface_CL(f.mface + ifa, &f, f.wn_cl, 0, NULL, NULL);
+    MacroFace *mface = f.mface + ifa;
+    ExtractInterface_CL(mface, &f, f.wn_cl, 0, NULL, NULL);
     clFinish(f.cli.commandqueue);
   }
 
+  for(int i = 0; i < ninterfaces; ++i) {
+    int ifa = f.macromesh.macrointerface[i];
+    MacroFace *mface = f.mface + ifa;
+    compute_extracted_DGInterface_CL(mface, &f,
+				     0, NULL, NULL);
+    clFinish(f.cli.commandqueue);
+  }
+  
+  
   // FIXME: add actual computation, addition to dtwn_cl, and comparisons
   
   CopyfieldtoCPU(&f);

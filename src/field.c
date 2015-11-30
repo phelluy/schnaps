@@ -237,6 +237,12 @@ void init_field_kernels_cl(field *f)
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 
+  f->ExtractedDGInterfaceFlux = clCreateKernel(f->cli.program,
+					       "ExtractedDGInterfaceFlux",
+					       &status);
+  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status >= CL_SUCCESS);
+  
   f->dgboundary = clCreateKernel(f->cli.program,
 				 "DGBoundary",
 				 &status);
@@ -571,7 +577,7 @@ void test_MacroFace_orientation(field *f, MacroFace *mface)
 	  real xphyL[3];
 	  icix_to_xphy(mcellL, icL, ixL, xphyL);
 
-	  if( DistPeriodic(xphyR, xphyL, f->macromesh.period, 2 * tol) > tol) {
+	  if(DistPeriodic(xphyR, xphyL, f->macromesh.period, 2 * tol) > tol) {
 	    printf("icL: %d %d %d\t", icL[0], icL[1], icL[2]);
 	    printf("ixL: %d %d %d\n", ixL[0], ixL[1], ixL[2]);
 	    printf("icR: %d %d %d\t", icR[0], icR[1], icR[2]);

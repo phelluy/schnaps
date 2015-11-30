@@ -6,8 +6,9 @@
 #include <math.h>
 #include "clutils.h"
 
-int TestMacroFace(void){
-  bool test = true;
+int TestMacroFace()
+{
+  int retval = 0;
 
   if(!cldevice_is_acceptable(nplatform_cl, ndevice_cl)) {
     printf("OpenCL device not acceptable.\n");
@@ -165,7 +166,6 @@ int TestMacroFace(void){
   real *fdtwn_openmp = f.dtwn;
 
   // Check that the results are the same
-  test = true;
   real tolerance;
   if(sizeof(real) == sizeof(double))
     tolerance = 1e-8;
@@ -179,7 +179,8 @@ int TestMacroFace(void){
     maxerr = fmax(error, maxerr);
   }
   printf("Max difference between OpenCL and OpenMP: %f\n", maxerr);
-  test = test && (maxerr < tolerance);
+  if(maxerr > tolerance)
+    retval += 1;
 
   // OpenMP, slow method
   /* MacroCell mcell[f.macromesh.nbelems]; */
@@ -211,14 +212,15 @@ int TestMacroFace(void){
   /* printf("Max difference between OpenCL and OpenMP-slow: %f\n", maxerr); */
   /* test = test && (maxerr < tolerance); */
 
-  return test;
+  return retval;
 }
 
-int main(void) {
-  int resu = TestMacroFace();
-  if(resu) 
+int main()
+{
+  int retval = TestMacroFace();
+  if(retval == 0) 
     printf("MacroFace test OK\n");
   else 
     printf("MacroFace test FAILED\n");
-  return !resu;
+  return retval;
 } 
