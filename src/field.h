@@ -20,10 +20,10 @@ typedef struct MacroFace {
   int locfaR;
 
   // Determine the relative orientation of the faces.
-  // Rcorner = 0: FIXME
-  // Rcorner = 1: FIXME
-  // Rcorner = 2: FIXME
-  // Rcorner = 3: FIXME
+  // Rcorner = 0: R0 = L1, R1 = L0
+  // Rcorner = 1: R0 = L0, R1 = -L1
+  // Rcorner = 2: R0 = -L1, R1 = -L0
+  // Rcorner = 3: R0 = -L0, R1 = L1
   int Rcorner;
   
   // Number of points on the macrocell interface.
