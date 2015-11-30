@@ -55,6 +55,21 @@ void Normalize(real a[3])
   a[2] *= r;
 }
 
+real DistPeriodic(real *a, real *b, real *period, real tol) 
+{
+  real d[3] = {a[0] - b[0], a[1] - b[1], a[2] - b[2]};
+  for(int i = 0; i < 3; ++i) {
+    if(period[i] >= 0.0) {
+      while(d[i] > period[i] - tol)
+	d[i] -= period[i];
+      while(d[i] < -tol)
+	d[i] += period[i];
+    }
+  }
+  return norm(d);
+}
+
+		  
 #pragma start_opencl
 void PeriodicCorrection(real xyz[3], real period[3])
 {

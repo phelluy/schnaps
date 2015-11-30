@@ -115,7 +115,12 @@ int TestOrszagTang(int argc, char *argv[]) {
   // Try to detect a 2d mesh
   Detect2DMacroMesh(&f.macromesh); 
   bool is2d=f.macromesh.is2d; 
-  assert(is2d);  
+  assert(is2d);
+
+  // FIXME: this code doesn't detect that 1D mesh?
+  //Detect1DMacroMesh(&f.macromesh); 
+  //bool is1d=f.macromesh.is1d; 
+  //assert(is1d);  
 
   f.macromesh.period[0]=periodsize;
   f.macromesh.period[1]=periodsize;

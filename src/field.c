@@ -466,7 +466,7 @@ void test_MacroFace_orientation(field *f, MacroFace *mface)
   MacroCell *mcellL = f->mcell + mface->ieL;
   MacroCell *mcellR = f->mcell + mface->ieR;
 
-  printf("mface->Rcorner: %d\n", mface->Rcorner);
+  //printf("mface->Rcorner: %d\n", mface->Rcorner);
   
   const int axis_permut[6][4] = { {0, 2, 1, 0},
 				  {1, 2, 0, 1},
@@ -571,16 +571,18 @@ void test_MacroFace_orientation(field *f, MacroFace *mface)
 	  real xphyL[3];
 	  icix_to_xphy(mcellL, icL, ixL, xphyL);
 
-	  if( Dist(xphyR, xphyL) > tol) {
+	  if( DistPeriodic(xphyR, xphyL, f->macromesh.period, 2 * tol) > tol) {
 	    printf("icL: %d %d %d\t", icL[0], icL[1], icL[2]);
 	    printf("ixL: %d %d %d\n", ixL[0], ixL[1], ixL[2]);
 	    printf("icR: %d %d %d\t", icR[0], icR[1], icR[2]);
 	    printf("ixR: %d %d %d\n", ixR[0], ixR[1], ixR[2]);
     
-	    printf("\tdist: %f\n", Dist(xphyR, xphyL));
+	    printf("\tdist: %f\n",
+		   DistPeriodic(xphyR, xphyL, f->macromesh.period, 2 * tol));
 	  }
 	      
-	  assert(Dist(xphyR, xphyL) < tol);
+	  assert(DistPeriodic(xphyR, xphyL, f->macromesh.period, 2 * tol)
+		 < tol);
 	}
       }
     }
@@ -628,9 +630,18 @@ void init_field_macrointerfaces(field *f)
     int ixL[3] = {0, 0, 0};
     ixL[d2L] = signL == -1 ? 0 : mcellL->deg[d2L];
 
-    printf("icL: %d %d %d\t", icL[0], icL[1], icL[2]);
-    printf("ixL: %d %d %d\n", ixL[0], ixL[1], ixL[2]);
+    real tol = 1e-8;
     
+    /*
+    printf("period: %f %f %f\t",
+	   f->macromesh.period[0],
+	   f->macromesh.period[1],
+	   f->macromesh.period[2]);
+    */
+
+    // printf("icL: %d %d %d\t", icL[0], icL[1], icL[2]);
+    // printf("ixL: %d %d %d\n", ixL[0], ixL[1], ixL[2]);
+
     real xphyL0[3];
     icix_to_xphy(mcellL, icL, ixL, xphyL0);
     
@@ -662,42 +673,43 @@ void init_field_macrointerfaces(field *f)
     ixR[d0R] = 0;
     icR[d1R] = 0;
     ixR[d1R] = 0;
-    printf("icR: %d %d %d\t", icR[0], icR[1], icR[2]);
-    printf("ixR: %d %d %d\n", ixR[0], ixR[1], ixR[2]);
+    // printf("icR: %d %d %d\t", icR[0], icR[1], icR[2]);
+    // printf("ixR: %d %d %d\n", ixR[0], ixR[1], ixR[2]);
     
     icix_to_xphy(mcellR, icR, ixR, xphyR);
-    dist[0] = Dist(xphyL0, xphyR);
+    dist[0] = DistPeriodic(xphyL0, xphyR, f->macromesh.period, 2 * tol);
     
     // corner 1
     icR[d0R] = 0;
     ixR[d0R] = 0;
     icR[d1R] = mcellR->raf[d1R] - 1;
     ixR[d1R] = mcellR->deg[d1R];
-    printf("icR: %d %d %d\t", icR[0], icR[1], icR[2]);
-    printf("ixR: %d %d %d\n", ixR[0], ixR[1], ixR[2]);
+    // printf("icR: %d %d %d\t", icR[0], icR[1], icR[2]);
+    // printf("ixR: %d %d %d\n", ixR[0], ixR[1], ixR[2]);
     icix_to_xphy(mcellR, icR, ixR, xphyR);
-    dist[1] = Dist(xphyL0, xphyR);
+    dist[1] = DistPeriodic(xphyL0, xphyR, f->macromesh.period, 2 * tol);
     
     // corner 2 
     icR[d0R] = mcellR->raf[d0R] - 1;
     ixR[d0R] = mcellR->deg[d0R];
     icR[d1R] = mcellR->raf[d1R] - 1;
     ixR[d1R] = mcellR->deg[d1R];
-    printf("icR: %d %d %d\t", icR[0], icR[1], icR[2]);
-    printf("ixR: %d %d %d\n", ixR[0], ixR[1], ixR[2]);
+    // printf("icR: %d %d %d\t", icR[0], icR[1], icR[2]);
+    // printf("ixR: %d %d %d\n", ixR[0], ixR[1], ixR[2]);
     icix_to_xphy(mcellR, icR, ixR, xphyR);
-    dist[2] = Dist(xphyL0, xphyR);
+    dist[2] = DistPeriodic(xphyL0, xphyR, f->macromesh.period, 2 * tol);
 
     // corner 3
     icR[d0R] = mcellR->raf[d0R] - 1;
     ixR[d0R] = mcellR->deg[d0R];
     icR[d1R] = 0;
     ixR[d1R] = 0;
-    printf("icR: %d %d %d\t", icR[0], icR[1], icR[2]);
-    printf("ixR: %d %d %d\n", ixR[0], ixR[1], ixR[2]);
+    //printf("icR: %d %d %d\t", icR[0], icR[1], icR[2]);
+    //printf("ixR: %d %d %d\n", ixR[0], ixR[1], ixR[2]);
     icix_to_xphy(mcellR, icR, ixR, xphyR);
-    dist[3] = Dist(xphyL0, xphyR);
+    dist[3] = DistPeriodic(xphyL0, xphyR, f->macromesh.period, 2 * tol);
 
+    /*
     printf("d0: %f, \td1: %f, \td2: %f, \td3: %f\n",
 	   dist[0], dist[1], dist[2], dist[3]);
     printf("locfa L/R: %d %d\n", mface->locfaL, mface->locfaR);
@@ -708,6 +720,7 @@ void init_field_macrointerfaces(field *f)
     printf("degL: %d %d %d \n", mcellL->deg[0], mcellL->deg[1], mcellL->deg[2]);
     printf("rafR: %d %d %d \n", mcellR->raf[0], mcellR->raf[1], mcellR->raf[2]);
     printf("degR: %d %d %d \n", mcellR->deg[0], mcellR->deg[1], mcellR->deg[2]);
+    */
 
     real mindist = MIN(dist[0], dist[1]);
     mindist = MIN(mindist, dist[2]);
@@ -718,16 +731,14 @@ void init_field_macrointerfaces(field *f)
     for(int ipgfR = 0; ipgfR < npgfR; ++ipgfR) {
       real xphyR[3];
       ipgf_to_xphy(mcellR, mface->locfaR, ipgfR, xphyR);
-      real d = Dist(xphyL0, xphyR);
+      real d = DistPeriodic(xphyL0, xphyR, f->macromesh.period, 2 * tol);
       fmindist = MIN(d, fmindist);
     }
     assert(ABS(mindist -fmindist) < 1e-8);
 
-    // FIXME: add period correction.
-
     int dimension = 3;
     int nzero = 0;
-    real tol = 1e-8;
+
     for(int i = 0; i < 4; ++i) {
       if(ABS(dist[i] - fmindist) < tol)
 	nzero++;
@@ -786,7 +797,7 @@ void init_field_macrointerfaces(field *f)
 	break;
       case 4:
 	ndimensions = 1;
-	assert(f->macromesh.is1d);
+	//assert(f->macromesh.is1d);
 	// Not much to do here: there is no loop over the interace at
 	// all, so it doesn't matter which corner we choose.
 	mface->Rcorner = 0;
@@ -795,15 +806,11 @@ void init_field_macrointerfaces(field *f)
 	assert(false);
     }
 
-    printf("mface->Rcorner: %d\n", mface->Rcorner);
+    //printf("mface->Rcorner: %d\n", mface->Rcorner);
 
     assert(mface->Rcorner != -1); 
     
-    test_MacroFace_orientation(f,mface);
-    
-    // FIXME: check that we can use Rcorner to generate a loop
-    // structure where the xrefs agree.
-        
+    test_MacroFace_orientation(f, mface);
   }
 }
 
@@ -1490,7 +1497,7 @@ void DGMacroCellInterfaceSlow(MacroCell *mcell, field *f, real *w, real *dtw)
 		xpg_in, dtau,
 		codtau, NULL, vnds); // codtau, dpsi, vnds
 	real xref[3];
-	PeriodicCorrection(xpg_in,f->macromesh.period);
+	PeriodicCorrection(xpg_in, f->macromesh.period);
 	Phy2Ref(mcellR->physnode, xpg_in, xref);
 	int ipgR = ref_ipg(raf, deg, xref);
 	real xpgR[3], xrefR[3], wpgR;

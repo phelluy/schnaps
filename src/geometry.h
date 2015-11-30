@@ -124,6 +124,13 @@ void PeriodicCorrectionB(real xyz[3],real period[3],real xmin[3], real xmax[3]);
 //! \return the distance
 real Dist(real a[3], real b[3]);
 
+//! \brief distance between two points
+//! \param[real] a, b : the two points
+//! \param[real] period : the period length
+//! \param[real] tol : tolerance (because == and floats don't mix)
+//! \return the distance
+real DistPeriodic(real *a, real *b, real *period, real tol);
+
 //! \brief point coordinates on standard output
 //! \param[in] x : the point
 void PrintPoint(real x[3]);
