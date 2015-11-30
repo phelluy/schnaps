@@ -733,6 +733,8 @@ void init_field_macrointerfaces(field *f)
 	nzero++;
     }
 
+    mface->Rcorner = -1;
+    
     int ndimensions;
     switch(nzero) {
       case 1:
@@ -752,28 +754,30 @@ void init_field_macrointerfaces(field *f)
 	break;
       case 2:
 	{
-	  //printf("npgdirL: %d, %d\n", mcellL->npgdir[d0L], mcellL->npgdir[d1L]);
-	  //printf("npgdirR: %d, %d\n", mcellR->npgdir[d0R], mcellR->npgdir[d1R]);
+	  /*
+	  printf("npgdirL: %d, %d\n", mcellL->npgdir[d0L], mcellL->npgdir[d1L]);
+	  printf("npgdirR: %d, %d\n", mcellR->npgdir[d0R], mcellR->npgdir[d1R]);
+	  */
 	  mface->Rcorner = -1;
 
 	  if(mcellL->npgdir[d0L] != 1) {
 	    if(ABS(dist[0] - fmindist) < tol && ABS(dist[1] - fmindist) < tol)
-	      mface->Rcorner = 0;
-	    if(ABS(dist[0] - fmindist) < tol && ABS(dist[3] - fmindist) < tol)
 	      mface->Rcorner = 1;
-	    if(ABS(dist[2] - fmindist) < tol && ABS(dist[3] - fmindist) < tol)
-	      mface->Rcorner = 2;
+	    if(ABS(dist[0] - fmindist) < tol && ABS(dist[3] - fmindist) < tol)
+	      mface->Rcorner = 0;
 	    if(ABS(dist[1] - fmindist) < tol && ABS(dist[2] - fmindist) < tol)
+	      mface->Rcorner = 2;
+	    if(ABS(dist[2] - fmindist) < tol && ABS(dist[3] - fmindist) < tol)
 	      mface->Rcorner = 3;
 	  } else {
+	    if(ABS(dist[0] - fmindist) < tol && ABS(dist[1] - fmindist) < tol)
+	      mface->Rcorner = 0;
 	    if(ABS(dist[0] - fmindist) < tol && ABS(dist[3] - fmindist) < tol)
 	      mface->Rcorner = 3;
-	    if(ABS(dist[2] - fmindist) < tol && ABS(dist[3] - fmindist) < tol)
-	      mface->Rcorner = 0;
 	    if(ABS(dist[1] - fmindist) < tol && ABS(dist[2] - fmindist) < tol)
-	      mface->Rcorner = 2;
-	    if(ABS(dist[0] - fmindist) < tol && ABS(dist[1] - fmindist) < tol)
 	      mface->Rcorner = 1;
+	    if(ABS(dist[2] - fmindist) < tol && ABS(dist[3] - fmindist) < tol)
+	      mface->Rcorner = 2;
 	  }
 	  assert(mface->Rcorner != -1);
 	  ndimensions = 2;
@@ -793,6 +797,8 @@ void init_field_macrointerfaces(field *f)
 
     printf("mface->Rcorner: %d\n", mface->Rcorner);
 
+    assert(mface->Rcorner != -1); 
+    
     test_MacroFace_orientation(f,mface);
     
     // FIXME: check that we can use Rcorner to generate a loop
