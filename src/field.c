@@ -378,23 +378,31 @@ void init_field_MacroFaces_cl(field *f)
   for(int i = 0; i < ninterfaces; ++i) {
     int ifa = f->macromesh.macrointerface[i];
     MacroFace *mface = f->mface + ifa;
+  
+    size_t bufsize = sizeof(real) * m * mface->npgf;
+    
+    MacroCell *mcellL = mface->mcellL;
+    mcellL->interface_cl[mface->locfaL] = clCreateBuffer(f->cli.context,
+							 CL_MEM_READ_WRITE,
+							 bufsize,
+							 NULL,
+							 &status);
+    if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+    assert(status >= CL_SUCCESS);
 
-    int ieLR[2] = {mface->ieL, mface->ieR};
-    int locfaLR[2] = {mface->locfaL, mface->locfaR};
+    mface->wL_cl = mcellL->interface_cl[mface->locfaL];
+    
+    MacroCell *mcellR = mface->mcellR;
+    mcellR->interface_cl[mface->locfaR] = clCreateBuffer(f->cli.context,
+							 CL_MEM_READ_WRITE,
+							 bufsize,
+							 NULL,
+							 &status);
+    if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+    assert(status >= CL_SUCCESS);
 
-    for(int side = 0; side < 2; ++side) {
-      int ie = ieLR[side];
-      int locfa = locfaLR[side];
-      MacroCell *mcell = f->mcell + ie;
-      
-      mcell->interface_cl[locfa] = clCreateBuffer(f->cli.context,
-						  CL_MEM_READ_WRITE,
-						  sizeof(real) * m*mface->npgf,
-						  NULL,
-						  &status);
-      if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
-      assert(status >= CL_SUCCESS);
-    }
+    mface->wR_cl = mcellR->interface_cl[mface->locfaR];
+
   }
 }
   
@@ -613,9 +621,12 @@ void init_field_macrointerfaces(field *f)
     
     // Determine the relative orientation of the faces.
 
-    MacroCell *mcellL = f->mcell + mface->ieL;
-    MacroCell *mcellR = f->mcell + mface->ieR;
+    mface->mcellL = f->mcell + mface->ieL;
+    mface->mcellR = f->mcell + mface->ieR;
 
+    MacroCell *mcellL = mface->mcellL;
+    MacroCell *mcellR = mface->mcellR;
+    
     int paxisL[4] = {axis_permut[mface->locfaL][0],
 		     axis_permut[mface->locfaL][1],
 		     axis_permut[mface->locfaL][2],

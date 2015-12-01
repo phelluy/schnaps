@@ -10,27 +10,6 @@
 #endif
 
 //! \brief A simple struct for packing a field
-//! and a faces range.  To be passed to a thread
-//! as a void* pointer.
-typedef struct MacroFace {
-  int ifa;
-  int ieL;
-  int locfaL;
-  int ieR;
-  int locfaR;
-
-  // Determine the relative orientation of the faces.
-  // Rcorner = 0: R0 = L1, R1 = L0
-  // Rcorner = 1: R0 = L0, R1 = -L1
-  // Rcorner = 2: R0 = -L1, R1 = -L0
-  // Rcorner = 3: R0 = -L0, R1 = L1
-  int Rcorner;
-  
-  // Number of points on the macrocell interface.
-  int npgf;
-} MacroFace;
-
-//! \brief A simple struct for packing a field
 //! and a cells range.  To be passed to a thread
 //! as a void* pointer.
 typedef struct MacroCell {
@@ -91,6 +70,35 @@ typedef struct MacroCell {
   cl_mem *interface_cl;
 #endif
 } MacroCell;
+
+//! \brief A simple struct for packing a field
+//! and a faces range.  To be passed to a thread
+//! as a void* pointer.
+typedef struct MacroFace {
+  int ifa;
+  int ieL;
+  int locfaL;
+  int ieR;
+  int locfaR;
+
+  MacroCell *mcellL;
+  MacroCell *mcellR;
+  
+  // Determine the relative orientation of the faces.
+  // Rcorner = 0: R0 = L1, R1 = L0
+  // Rcorner = 1: R0 = L0, R1 = -L1
+  // Rcorner = 2: R0 = -L1, R1 = -L0
+  // Rcorner = 3: R0 = -L0, R1 = L1
+  int Rcorner;
+  
+  // Number of points on the macrocell interface.
+  int npgf;
+
+#ifdef _WITH_OPENCL
+  cl_mem wL_cl;
+  cl_mem wR_cl;
+#endif
+} MacroFace;
 
 //! \brief Data structure for managing a  discrete vector field
 //! solution of a DG approximation

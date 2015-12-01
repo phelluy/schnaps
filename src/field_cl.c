@@ -18,6 +18,8 @@ void empty_kernel(field *f,
 }
   
 #ifdef _WITH_OPENCL
+
+
 void CopyfieldtoCPU(field *f)
 {
   cl_int status;
@@ -115,7 +117,8 @@ void CopyfieldtoGPU(field *f)
     assert(status >= CL_SUCCESS);
 
     status = clEnqueueWriteBuffer(f->cli.commandqueue,
-				  mcell->dtwn_cl,
+				  f->dtwn_cl[ie],
+				  //mcell->dtwn_cl,
 				  CL_TRUE,
 				  0,
 				  mcell->nreal * sizeof(real),
@@ -353,7 +356,7 @@ void ExtractInterface_CL(MacroFace *mface, field *f, cl_mem *wn,
     
     // d2 is the permuted index for that is constant over the face.
     int d2;
-    int sign = 1 - 2 * axis_permut[locfa][3];
+    int sign = axis_permut[locfa][3] == 0 ? -1 : 1;
     switch(sign) {
       case -1:
 	d2 = 0;
@@ -394,21 +397,60 @@ void ExtractInterface_CL(MacroFace *mface, field *f, cl_mem *wn,
   // FIXME: add empty kernel event to synchronize! (Maybe?)
 }
 
-void init_extracted_DGInterface_CL(MacroFace *mface, field *f)
+void init_extracted_DGInterface_CL(MacroFace *mface, field *f, int nwork)
 {
   cl_int status;
   cl_kernel kernel = f->ExtractedDGInterfaceFlux;
 
+  MacroCell *mcellL = mface->mcellL;
+  MacroCell *mcellR = mface->mcellR;
+    
   unsigned int argnum = 0;
 
   status = clSetKernelArg(kernel,
-			 argnum++,
+			  argnum++,
                           sizeof(cl_mem),
                           &f->param_cl);
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 
+  status = clSetKernelArg(kernel,
+			  argnum++,
+                          sizeof(int),
+                          &mface->Rcorner);
+  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status >= CL_SUCCESS);
 
+  
+  status = clSetKernelArg(kernel,
+  			  argnum++,
+                          sizeof(cl_mem),
+			  &mface->wL_cl);
+  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status >= CL_SUCCESS);
+
+  status = clSetKernelArg(kernel,
+  			  argnum++,
+                          sizeof(cl_mem),
+			  &mface->wR_cl);
+  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status >= CL_SUCCESS);
+
+  status = clSetKernelArg(kernel,
+  			  argnum++,
+			  sizeof(real) * nwork,
+                          NULL);
+  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status >= CL_SUCCESS);
+
+  status = clSetKernelArg(kernel,
+  			  argnum++,
+                          sizeof(real) * nwork,
+                          NULL);
+  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status >= CL_SUCCESS);
+  
+  
   // FIXME: set kernel arguments
 
 }
@@ -418,9 +460,6 @@ void compute_extracted_DGInterface_CL(MacroFace *mface, field *f,
 				      cl_event *wait,
 				      cl_event *done)
 {
-  init_extracted_DGInterface_CL(mface, f);
-
-  init_extracted_DGInterface_CL(mface, f);
 
   MacroCell *mcellL = f->mcell + mface->ieL;
   
@@ -430,28 +469,35 @@ void compute_extracted_DGInterface_CL(MacroFace *mface, field *f,
 				  {2, 1, 0, 0},
 				  {0, 1, 2, 1},
 				  {1, 0, 2, 0} };
-
   
   // indices of the used dimemsions
   int i0 = axis_permut[mface->locfaL][0];
   int i1 = axis_permut[mface->locfaL][1];
   int i2 = axis_permut[mface->locfaL][2];
+  int sign = axis_permut[mface->locfaL][3] == 0 ? -1 : 1;
   
-  size_t numworkitems[3] = {mcellL->dnpg[i0], mcellL->dnpg[i1]};
+  // number of points in each direction for the subcell face
+  size_t nix[2] = {mcellL->deg[i0] + 1, mcellL->deg[i1] + 1};
+ 
+  // number of subcell faces in each direction for the macrocell face
+  size_t nsc[2] = {mcellL->raf[i0], mcellL->raf[i1]};
+  
+  size_t numworkitems[2] = {nix[0] * nsc[0], nix[1] * nsc[1]};
 
+  int nwork = nix[0] * nix[1];
+
+  init_extracted_DGInterface_CL(mface, f, nwork);
+  
   cl_int status;
   status = clEnqueueNDRangeKernel(f->cli.commandqueue,
 				  f->ExtractedDGInterfaceFlux,
-				  2, // cl_uint work_dim,
-				  NULL, // global_work_offset,
+				  2,            // cl_uint work_dim,
+				  NULL,         // global_work_offset,
 				  numworkitems, // global_work_size, 
-				  NULL, // size_t *local_work_size, 
-				  nwait,  // nwait, 
-				  wait, // *wait_list,
-				  done); // *event
+				  nix,          // size_t *local_work_size, 
+				  nwait, wait, done);
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
-
 }
 
 // Set the loop-dependant kernel arguments for DGMacroCellInterface_CL
@@ -708,10 +754,10 @@ void DGFlux_CL(field *f, int dim0, int ie, cl_mem *wn_cl,
   dim[1] = (dim[0] + 1) % 3;
   dim[2] = (dim[1] + 1) % 3;
 
-  // Number of points per face
+  // Number of points per subcell face
   int npgf = (deg[dim[1]] + 1) * (deg[dim[2]] + 1);
 
-  // Number of faces
+  // Number of subcell faces
   int nf = (nraf[dim[0]] - 1) * nraf[dim[1]] * nraf[dim[2]];
   assert(nf > 0);
 

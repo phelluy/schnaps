@@ -1127,7 +1127,7 @@ void ExtractInterface(const int d2,
   // The output is in wface, with corrdinates (d0, d1, iv) in
   // [0, n0 -1] x [0, n1 -1] x [0, m - 1]
   int pout = d1 * n0 * m  + d0 * m + iv;
-  
+
   wface[pout] = wn[pin];
 }
 
@@ -1142,6 +1142,7 @@ void ExtractedDGInterfaceFlux(__constant int *param,
   // The kernel is launched with ND range given by {the number of
   // points in the first L facial direction, the number of points in
   // the second L facial direciton}
+
 
   const int m = param[0];
   
@@ -1175,6 +1176,7 @@ void ExtractedDGInterfaceFlux(__constant int *param,
     faceL[pos] = fL[pos];
     faceR[pos] = fR[pos];
   }
+
 }
 
 // Compute the Discontinuous Galerkin inter-macrocells boundary terms.

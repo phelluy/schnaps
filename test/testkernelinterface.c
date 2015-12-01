@@ -45,7 +45,13 @@ int TestKernelInterface()
   //AffineMapMacroMesh(&f.macromesh);
  
   Initfield(&f);
+  free(f.dtwn);
 
+  real* dtwn_extract = malloc(f.wsize * sizeof(real));
+  f.dtwn = dtwn_extract;
+  
+  for(int i = 0; i < f.wsize; i++)
+    f.dtwn[i] = 0.0;
   
   const int ninterfaces = f.macromesh.nmacrointerfaces;
 
@@ -66,8 +72,7 @@ int TestKernelInterface()
   for(int i = 0; i < ninterfaces; ++i) {
     int ifa = f.macromesh.macrointerface[i];
     MacroFace *mface = f.mface + ifa;
-    compute_extracted_DGInterface_CL(mface, &f,
-				     0, NULL, NULL);
+    compute_extracted_DGInterface_CL(mface, &f, 0, NULL, NULL);
     clFinish(f.cli.commandqueue);
   }
   
@@ -75,40 +80,46 @@ int TestKernelInterface()
   // FIXME: add actual computation, addition to dtwn_cl, and comparisons
   
   CopyfieldtoCPU(&f);
-  
-  
+
+   
   // OpenCL version
   printf("OpenCL version:\n");
 
+  real* dtwn_cl = malloc(f.wsize * sizeof(real));
+  f.dtwn = dtwn_cl;
+  
   for(int i = 0; i < f.wsize; i++)
     f.dtwn[i] = 0.0;
 
   CopyfieldtoGPU(&f);
-  
+
   for(int i = 0; i < ninterfaces; ++i) {
     int ifa = f.macromesh.macrointerface[i];
-    DGMacroCellInterface_CL(f.mface + ifa, &f, f.wn_cl, 
-			    0, NULL, NULL);
+    MacroFace *mface = f.mface + ifa;
+    DGMacroCellInterface_CL(mface, &f, f.wn_cl, 0, NULL, NULL);
     clFinish(f.cli.commandqueue);
   }
   
   const int nboundaryfaces = f.macromesh.nboundaryfaces;
   for(int i = 0; i < nboundaryfaces; ++i) {
     int ifa = f.macromesh.boundaryface[i];
-    DGBoundary_CL(f.mface + ifa, &f, f.wn_cl,
-		  0, NULL, NULL);
+    MacroFace *mface = f.mface + ifa;
+    DGBoundary_CL(mface, &f, f.wn_cl, 0, NULL, NULL);
     clFinish(f.cli.commandqueue);
   }
 
   CopyfieldtoCPU(&f);
   //Displayfield(&f);
-  real *fdtwn_opencl = f.dtwn;
+
 
   // OpenMP version
   printf("OpenMP version:\n");
-  f.dtwn = calloc(f.wsize, sizeof(real));
+
+  real* dtwn_omp = malloc(f.wsize * sizeof(real));
+  f.dtwn = dtwn_omp;
+  
   for(int iw = 0; iw < f.wsize; iw++)
-    f.dtwn[iw] = 0;
+    f.dtwn[iw] = 0.0;
 
   {
     // Macrocell interfaces
@@ -141,17 +152,16 @@ int TestKernelInterface()
       DGMacroCellBoundary(f.mface + ifa, &f, wmc, dtwmc);
     }
   }
-    
-  real *fdtwn_openmp = f.dtwn;
 
   real maxerr = 0.0;
   for(int i = 0; i < f.wsize; i++) {
-    real error = fabs(fdtwn_openmp[i] - fdtwn_opencl[i]);
-    printf("error: %f \t%f \t%f\n", error, fdtwn_openmp[i], fdtwn_opencl[i]);
-    maxerr = fmax(error, maxerr);
+    real error = fabs(dtwn_omp[i] - dtwn_cl[i]);
+    //printf("error: %f \t%f \t%f\n", error, dtwn_omp[i], dtwn_cl[i]);
+    if(error > maxerr) 
+      maxerr = error;
   }
  
-  printf("error: %f\n", maxerr);
+  printf("maxerr: %f\n", maxerr);
 
   real tolerance;
   if(sizeof(real) == sizeof(double))
