@@ -445,7 +445,39 @@ void compute_xpgin(const int *raf, const int *deg,
   xpgin[paxis[2]] = paxis[3] == 0 ? -vsmall: 1.0 + vsmall;
 }
 
+void ipgf_to_pxyz(const int *deg,
+		  const int *raf,
+		  const int ifa,
+		  int ipgf,
+		  int *pic,
+		  int *pix)
+{
+  const int paxis[4] = {axis_permut[ifa][0],
+			axis_permut[ifa][1],
+			axis_permut[ifa][2],
+			axis_permut[ifa][3]};
 
+  // number of subcells in each permuted direction
+  int praf[3];
+  permute_indices(raf, praf, ifa);
+  
+  // Polynomial degree in each permuted direction
+  int pdeg[3];
+  permute_indices(deg, pdeg, ifa);
+  
+  // permuted point index in subcell
+  pix[0] = ipgf % (pdeg[0] + 1);
+  ipgf /= (pdeg[0] + 1);
+  pix[1] = ipgf % (pdeg[1] + 1);
+  ipgf /= (pdeg[1] + 1);
+  // pix[2] equals 0 or d depending on the face
+  pix[2] = select(0, pdeg[2], paxis[3]); 
+
+  // Compute permuted subcell  indices of the subface
+  pic[0] = ipgf % praf[0];
+  pic[1] = ipgf / praf[0];
+  pic[2] = select(0, praf[2] - 1, paxis[3]); // Equals 0 or raf-1
+}
 
 int ref_pg_face(const int *deg,
 		const int *raf,
@@ -459,6 +491,10 @@ int ref_pg_face(const int *deg,
 			axis_permut[ifa][2],
 			axis_permut[ifa][3]};
   
+  int pic[3];
+  int pix[3];
+  ipgf_to_pxyz(deg, raf, ifa, ipgf, pic, pix);
+
   // number of subcells in each permuted direction
   int praf[3];
   permute_indices(raf, praf, ifa);
@@ -467,23 +503,6 @@ int ref_pg_face(const int *deg,
   int pdeg[3];
   permute_indices(deg, pdeg, ifa);
   
-  // permuted point index in subcell
-  int pix[3];
-  pix[0] = ipgf % (pdeg[0] + 1);
-  ipgf /= (pdeg[0] + 1);
-  pix[1] = ipgf % (pdeg[1] + 1);
-  ipgf /= (pdeg[1] + 1);
-  // pix[2] equals 0 or d depending on the face
-  pix[2] = select(0, pdeg[2], paxis[3]); 
-
-  // Compute permuted subcell  indices of the subface
-  int pic[3];
-  pic[0] = ipgf % praf[0];
-  pic[1] = ipgf / praf[0];
-  pic[2] = select(0, praf[2] - 1, paxis[3]); // Equals 0 or raf-1
-
-  const real h[3] = {1.0 / praf[0], 1.0 / praf[1], 1.0 / praf[2] };
-  
   // non-permuted subcell index
   int ic[3];
   unpermute_indices(ic, pic, ifa);
@@ -491,6 +510,8 @@ int ref_pg_face(const int *deg,
   // non-permuted point index
   int ix[3];
   unpermute_indices(ix, pix, ifa);
+
+  const real ph[3] = {1.0 / praf[0], 1.0 / praf[1], 1.0 / praf[2] };
   
   // Compute the global index of the Gauss-Lobatto point in the volume
   int ipgv = xyz_to_ipg(raf, deg, ic, ix); 
@@ -500,11 +521,11 @@ int ref_pg_face(const int *deg,
   const int poffset[2] = {gauss_lob_offset[pdeg[0]] + pix[0],
 			  gauss_lob_offset[pdeg[1]] + pix[1]};
 
-  xpg[paxis[0]] = h[0] * (pic[0] + gauss_lob_point[poffset[0]]);
-  xpg[paxis[1]] = h[1] * (pic[1] + gauss_lob_point[poffset[1]]);
+  xpg[paxis[0]] = ph[0] * (pic[0] + gauss_lob_point[poffset[0]]);
+  xpg[paxis[1]] = ph[1] * (pic[1] + gauss_lob_point[poffset[1]]);
   xpg[paxis[2]] = paxis[3];
 
-  *wpg = h[0] * h[1] *
+  *wpg = ph[0] * ph[1] *
     gauss_lob_weight[poffset[0]] * gauss_lob_weight[poffset[1]];
 
   return ipgv;
@@ -1528,32 +1549,32 @@ void DGMass(__constant int *param,      // interp param
 }
 
 __kernel
-void ExtractInterface(const int d2,
-		      const int stride0,   // stride for d0
-		      const int stride1,   // stride for d1
-		      const int stride2,   // stride for d2
+void ExtractInterface(__constant int *param,        // interp param
+		      const int ifaM, // index for the negative face.
+		      const int ifaP, // index for the negative face.
 		      const __global real *wn,   // volumic input
-		      __global real *wface // output
+		      __global real *wfaceM,     // output
+		      __global real *wfaceP      // output
 		      )
 {
-  const int d0 = get_global_id(0); // first dimension
-  const int d1 = get_global_id(1); // second dimension
-  const int iv = get_global_id(2); // m index
+  const int m = param[0];
+  const int deg[3] = {param[1], param[2], param[3]};
+  const int raf[3] = {param[4], param[5], param[6]};
   
-  // We assume that the MacroCell's volumic points are given in the
-  // standard C-ordering.
+  const int ipgf = get_global_id(0);
 
-  // We must pre-compute the input strides because we don't know the
-  // ordering for the face.
-  int pin = d0 * stride0 + d1 * stride1 + d2 * stride2 + iv;
+  int picM[3];
+  int pixM[3];
+  
+  ipgf_to_pxyz(deg, raf, ifaM, ipgf, picM, pixM);
 
-  const int m = get_global_size(2);
-  const int n0 = get_global_size(0);
-  // The output is in wface, with corrdinates (d0, d1, iv) in
-  // [0, n0 -1] x [0, n1 -1] x [0, m - 1]
-  int pout = d1 * n0 * m  + d0 * m + iv;
+  int icM[3];
+  int ixM[3];
+  unpermute_indices(icM, picM, ifaM);
+  unpermute_indices(ixM, pixM, ifaM);
+  
+  // FIXME: do something with this.
 
-  wface[pout] = wn[pin];
 }
 
 __kernel
@@ -1635,7 +1656,8 @@ void DGMacroCellInterface(__constant int *param,        // interp param
   // Compute volumic index in the left MacroCell.
   int ipgL = ref_pg_face(deg, raf, locfaL, ipgfL, xpgref, &wpg);
 
-  int ixL[3], icL[3];
+  int icL[3];
+  int ixL[3];
   ipg_to_xyz(raf, deg, icL, ixL, &ipgL);
 
   compute_xpgin(raf, deg, icL, ixL, locfaL, xpgref_in);

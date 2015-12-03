@@ -62,11 +62,10 @@ int TestKernelInterface()
 
   CopyfieldtoGPU(&f);
 
-  for(int i = 0; i < ninterfaces; ++i) {
-    int ifa = f.macromesh.macrointerface[i];
-    MacroFace *mface = f.mface + ifa;
-    //ExtractInterface_CL(mface, &f, f.wn_cl, 0, NULL, NULL);
-    // FIXME
+  for(int ie = 0; ie < f.macromesh.nbelems; ++ie) {
+    MacroCell *mcell = f.mcell + ie;
+
+    
     
     clFinish(f.cli.commandqueue);
   }
@@ -74,7 +73,9 @@ int TestKernelInterface()
   for(int i = 0; i < ninterfaces; ++i) {
     int ifa = f.macromesh.macrointerface[i];
     MacroFace *mface = f.mface + ifa;
-    compute_extracted_DGInterface_CL(mface, &f, 0, NULL, NULL);
+    //compute_extracted_DGInterface_CL(mface, &f, 0, NULL, NULL);
+    // FIXME
+
     clFinish(f.cli.commandqueue);
   }
   

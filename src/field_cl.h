@@ -28,7 +28,7 @@ void DGFlux_CL(MacroCell *mcell, field *f, int d, cl_mem *wn_cl,
 	       cl_uint nwait, cl_event *wait, cl_event *done);
 void DGVolume_CL(MacroCell *mcell, field *f, cl_mem *dtwn_cl,
 		 cl_uint nwait, cl_event *wait, cl_event *done);
-void ExtractInterface_CL(MacroCell *mcell, field *f, cl_mem *wn,
+void ExtractInterface_CL(MacroCell *mcell, field *f, int d, cl_mem wn_cl,
 			 cl_uint nwait, cl_event *wait, cl_event *done);
 void compute_extracted_DGInterface_CL(MacroFace *mface, field *f,
 				      cl_uint nwait,
