@@ -281,6 +281,32 @@ void ref_pg_vol(int* raf, int* deg,
   }
 }
 
+void permute_indices(const int *i, int *pi, const int ifa)
+{
+  const int axis_permut[6][4] = { {0, 2, 1, 0},
+				  {1, 2, 0, 1},
+				  {2, 0, 1, 1},
+				  {2, 1, 0, 0},
+				  {0, 1, 2, 1},
+				  {1, 0, 2, 0} };
+  pi[0] = i[axis_permut[ifa][0]];
+  pi[1] = i[axis_permut[ifa][1]];
+  pi[2] = i[axis_permut[ifa][2]];
+}
+
+void unpermute_indices(int *i, const int *pi, const int ifa)
+{
+  const int axis_permut[6][4] = { {0, 2, 1, 0},
+				  {1, 2, 0, 1},
+				  {2, 0, 1, 1},
+				  {2, 1, 0, 0},
+				  {0, 1, 2, 1},
+				  {1, 0, 2, 0} };
+  i[axis_permut[ifa][0]] = pi[0];
+  i[axis_permut[ifa][1]] = pi[1];
+  i[axis_permut[ifa][2]] = pi[2];
+}
+
 // Return the reference coordinates xpg[3] and weight wpg of the GLOP
 // ipg on the face ifa.
 int ref_pg_face(int *raf, int *deg, int ifa, int ipgf, 
@@ -294,17 +320,15 @@ int ref_pg_face(int *raf, int *deg, int ifa, int ipgf,
 				  {0, 1, 2, 1},
 				  {1, 0, 2, 0} };
 
-  // number of subcells in each permuted direction
-  int praf[3] = {raf[axis_permut[ifa][0]],
-		 raf[axis_permut[ifa][1]],
-		 raf[axis_permut[ifa][2]] };
+  // Number of subcells in each permuted direction
+  int praf[3];
+  permute_indices(raf, praf, ifa);
   
-  // approximation degree in each permuted direction
-  int pdeg[3] = {deg[axis_permut[ifa][0]],
-		 deg[axis_permut[ifa][1]],
-		 deg[axis_permut[ifa][2]] };
-
-  // Compute permuted indices
+  // Polynomial degree in each permuted direction
+  int pdeg[3];
+  permute_indices(deg, pdeg, ifa);
+  
+  // Compute permuted indices from facial index
   int pix[3];
   pix[0] = ipgf % (pdeg[0] + 1);
   ipgf /= (pdeg[0] + 1);
@@ -321,20 +345,14 @@ int ref_pg_face(int *raf, int *deg, int ifa, int ipgf,
   // pic[2] is 0 or praf-1 depending on the face
   pic[2] = axis_permut[ifa][3] * (praf[2] - 1);
 
-  real h[3] = {1.0 / (real) praf[0],
-	       1.0 / (real) praf[1],
-	       1.0 / (real) praf[2] };
+  real h[3] = {1.0 / praf[0], 1.0 / praf[1], 1.0 / praf[2] };
   
   // Compute non permuted indices for points and subfaces
   int ic[3];
-  ic[axis_permut[ifa][0]] = pic[0];
-  ic[axis_permut[ifa][1]] = pic[1];
-  ic[axis_permut[ifa][2]] = pic[2];
+  unpermute_indices(ic, pic, ifa);
 
   int ix[3];
-  ix[axis_permut[ifa][0]] = pix[0];
-  ix[axis_permut[ifa][1]] = pix[1];
-  ix[axis_permut[ifa][2]] = pix[2];
+  unpermute_indices(ix, pix, ifa);
 
   // Compute the global index of the Gauss-Lobatto point in the volume
   int ipgv = ix[0] + (deg[0] + 1) *

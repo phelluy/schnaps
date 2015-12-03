@@ -334,6 +334,33 @@ void ref_pg_vol(const int *deg, const int *nraf,
     gauss_lob_weight[offset[2]];
 }
 
+
+void permute_indices(const int *i, int *pi, const int ifa)
+{
+  const int axis_permut[6][4] = { {0, 2, 1, 0},
+				  {1, 2, 0, 1},
+				  {2, 0, 1, 1},
+				  {2, 1, 0, 0},
+				  {0, 1, 2, 1},
+				  {1, 0, 2, 0} };
+  pi[0] = i[axis_permut[ifa][0]];
+  pi[1] = i[axis_permut[ifa][1]];
+  pi[2] = i[axis_permut[ifa][2]];
+}
+
+void unpermute_indices(int *i, const int *pi, const int ifa)
+{
+  const int axis_permut[6][4] = { {0, 2, 1, 0},
+				  {1, 2, 0, 1},
+				  {2, 0, 1, 1},
+				  {2, 1, 0, 0},
+				  {0, 1, 2, 1},
+				  {1, 0, 2, 0} };
+  i[axis_permut[ifa][0]] = pi[0];
+  i[axis_permut[ifa][1]] = pi[1];
+  i[axis_permut[ifa][2]] = pi[2];
+}
+
 // ifa:   face index
 // ipgf:  index of point in the face
 // xpg:   reference-space coordinates
@@ -357,18 +384,22 @@ int ref_pg_face(const int *deg,
 			    {2, 1, 0, 0},
 			    {0, 1, 2, 1},
 			    {1, 0, 2, 0} };
-
+  
   int paxis[4] = {axis_permut[ifa][0],
 		  axis_permut[ifa][1],
 		  axis_permut[ifa][2],
 		  axis_permut[ifa][3]};
+
+  int sign = select(-1, 1, paxis[3]);
   
-  // approximation degree in each permuted direction
-  int pdeg[3] = {deg[paxis[0]],	deg[paxis[1]],	deg[paxis[2]]};
-
   // number of subcells in each permuted direction
-  int praf[3] = {raf[paxis[0]], raf[paxis[1]], raf[paxis[2]]};
-
+  int praf[3];
+  permute_indices(raf, praf, ifa);
+  
+  // Polynomial degree in each permuted direction
+  int pdeg[3];
+  permute_indices(deg, pdeg, ifa);
+  
   // permuted point index in subcell
   int pix[3];
   pix[0] = ipgf % (pdeg[0] + 1);
@@ -376,13 +407,13 @@ int ref_pg_face(const int *deg,
   pix[1] = ipgf % (pdeg[1] + 1);
   ipgf /= (pdeg[1] + 1);
   // pix[2] equals 0 or d depending on the face
-  pix[2] = paxis[3] * pdeg[2]; 
+  pix[2] = select(0, pdeg[2], paxis[3]); 
 
   // Compute permuted subcell  indices of the subface
   int pic[3];
   pic[0] = ipgf % praf[0];
   pic[1] = ipgf / praf[0];
-  pic[2] = paxis[3] * (praf[2] - 1); // Equals 0 or raf-1
+  pic[2] = select(0, praf[2] - 1, paxis[3]); // Equals 0 or raf-1
 
   real h[3] = {1.0 / (real) praf[0],
 	       1.0 / (real) praf[1],
@@ -430,8 +461,8 @@ int ref_pg_face(const int *deg,
   if(pix[1] == pdeg[1])
     xpgin[paxis[1]] = h[1] * (pic[1] + gauss_lob_point[poffset[1]] - small);
   
-  int sign = -1 + 2 * paxis[3];
   xpgin[paxis[2]] = sign == -1 ? -vsmall: 1.0 + vsmall;
+  //xpgin[paxis[2]] = select(-vsmall, 1.0 + vsmall, (long) (sign == -1));
   
   return ipgv;
 }
@@ -1248,18 +1279,6 @@ void DGMacroCellInterface(__constant int *param,        // interp param
     Phy2Ref(physnodeR, xpg_in, xrefL);
     ipgR = ref_ipg(raf, deg, xrefL);
   }
-  
-  // Test code
-  /* { */
-  /*   real xpgR[3], xrefR[3], wpgR; */
-  /*   ref_pg_vol(param + 1, ipgR, xrefR, &wpgR, NULL); */
-  /*   Ref2Phy(physnodeR, */
-  /* 	  xrefR, */
-  /* 	  NULL, -1, // dphiref, ifa */
-  /* 	  xpgR, NULL,   */
-  /* 	  NULL, NULL, NULL); // codtau, dphi,vnds */
-  /*   assert(Dist(xpgR, xpg) < 1e-10); */
-  /* }	 */
   
   real wL[_M];
   real wR[_M];
