@@ -22,47 +22,14 @@ void empty_kernel(field *f,
 
 void CopyfieldtoCPU(field *f)
 {
+  // TODO: use map instead of read / writes?
   cl_int status;
 
-  // Ensure that all the buffers are mapped
   status = clFinish(f->cli.commandqueue);
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
-
-  // TODO: restore map instead of read / writes.
-  /*
-  void *chkptr;
-  chkptr = clEnqueueMapBuffer(f->cli.commandqueue,
-			      f->dtwn_cl, // buffer to copy from
-			      CL_TRUE, // block until the buffer is available
-			      CL_MAP_READ, // we just want to see the results
-			      0, // offset
-			      f->wsize * sizeof(real), // buffersize
-			      0, NULL, NULL, // events management
-			      &status);
-  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status >= CL_SUCCESS);
-  assert(chkptr == f->dtwn);
-
-  chkptr = clEnqueueMapBuffer(f->cli.commandqueue,
-			      f->wn_cl, // buffer to copy from
-			      CL_TRUE, // block until the buffer is available
-			      CL_MAP_READ, // we just want to see the results
-			      0, // offset
-			      f->wsize * sizeof(real), // buffersize
-			      0, NULL, NULL, // events management
-			      &status);
-  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status >= CL_SUCCESS);
-  assert(chkptr == f->wn);
-
-  status = clFinish(f->cli.commandqueue);
-  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status >= CL_SUCCESS);
-  */
 
   const int nmacro = f->macromesh.nbelems;
-
   for(int ie = 0; ie < nmacro; ++ie) {
     MacroCell *mcell = f->mcell + ie;
 
@@ -96,7 +63,6 @@ void CopyfieldtoGPU(field *f)
 {
   cl_int status;
 
-  // Ensure that all the buffers are mapped
   status = clFinish(f->cli.commandqueue);
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
@@ -292,9 +258,10 @@ void init_ExtractInterface_CL(field *f,
 }
 
 // wn is an array of cl_mems, one per MacroCell.
-void ExtractInterface_CL(MacroFace *mface, field *f, cl_mem *wn,
+void ExtractInterface_CL(MacroCell *mcell, field *f, cl_mem *wn,
 			 cl_uint nwait, cl_event *wait, cl_event *done) 
 {
+  /*
   int *param = f->interp_param;
   int m = param[0];
   int deg[3] = {param[1], param[2], param[3]};
@@ -386,6 +353,7 @@ void ExtractInterface_CL(MacroFace *mface, field *f, cl_mem *wn,
   }
 
   // FIXME: add empty kernel event to synchronize! (Maybe?)
+  */
 }
 
 void init_extracted_DGInterface_CL(MacroFace *mface, field *f, int nwork)
@@ -676,7 +644,7 @@ void DGMass_CL(MacroCell *mcell, field *f,
 }
 
 // wn_cl is a pointer to a macrocell's wn_cl
-void init_DGFlux_CL(field *f, int ie, int dim0, cl_mem *wn_cl, 
+void init_DGFlux_CL(field *f, MacroCell *mcell, int dim0, cl_mem *wn_cl, 
 		    size_t cachesize)
 {
   //printf("DGFlux cachesize:%zu\n", cachesize);
@@ -685,8 +653,6 @@ void init_DGFlux_CL(field *f, int ie, int dim0, cl_mem *wn_cl,
   cl_int status;
   int argnum = 0; 
 
-  MacroCell *mcell = f->mcell + ie;
-  
   status = clSetKernelArg(kernel,
                           argnum++,
                           sizeof(cl_mem),
@@ -731,9 +697,11 @@ void init_DGFlux_CL(field *f, int ie, int dim0, cl_mem *wn_cl,
 }
 
 // wn_cl is a pointer to a macrocell's wn_cl
-void DGFlux_CL(field *f, int dim0, int ie, cl_mem *wn_cl,
+void DGFlux_CL(MacroCell *mcell, field *f, int dim0, cl_mem *wn_cl,
 	       cl_uint nwait, cl_event *wait, cl_event *done)
 {
+  // FIXME: instead of ie, pass a MacroCell.
+  
   // Unpack the parameters
   int *param = f->interp_param;
   int m = param[0];
@@ -754,7 +722,7 @@ void DGFlux_CL(field *f, int dim0, int ie, cl_mem *wn_cl,
 
   size_t numworkitems = nf * npgf;
   size_t groupsize = npgf;
-  init_DGFlux_CL(f, ie, dim0, wn_cl, 4 * m * groupsize);
+  init_DGFlux_CL(f, mcell, dim0, wn_cl, 4 * m * groupsize);
 
   // Launch the kernel
   cl_int status;
@@ -1055,7 +1023,7 @@ void dtfield_CL(field *f, real tnow, cl_mem *wn_cl,
     }
 
     for(int d = 0; d < nflux; ++d) {
-      DGFlux_CL(f, fluxlist[d], ie, wn_cl + ie, 
+      DGFlux_CL(mcell, f, fluxlist[d], wn_cl + ie, 
 		d == 0 ? nwaitstartmacroloop : 1,
 		d == 0 ? startmacroloop : f->clv_flux[fluxlist[d - 1]] + ie,
 		f->clv_flux[fluxlist[d]] + ie);

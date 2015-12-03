@@ -131,18 +131,20 @@ int TestmEq2()
     int *param = f.interp_param;
     int nraf[3] = {param[4], param[5], param[6]};
 
+    MacroCell *mcell = f.mcell + ie;
+    
     if(nraf[0] > 1) {
-      DGFlux_CL(&f, 0, ie, f.wn_cl, 0, NULL, NULL);
+      DGFlux_CL(mcell, &f, 0, f.wn_cl, 0, NULL, NULL);
       clFinish(f.cli.commandqueue);
     }
       
     if(!f.macromesh.is1d && nraf[1] > 1) {
-      DGFlux_CL(&f, 1, ie, f.wn_cl, 0, NULL, NULL);
+      DGFlux_CL(mcell, &f, 1, f.wn_cl, 0, NULL, NULL);
       clFinish(f.cli.commandqueue);
     }
       
     if(!f.macromesh.is2d && nraf[2] > 1) {
-      DGFlux_CL(&f, 2, ie, f.wn_cl, 0, NULL, NULL);
+      DGFlux_CL(mcell, &f, 2, f.wn_cl, 0, NULL, NULL);
       clFinish(f.cli.commandqueue);
     }
   }

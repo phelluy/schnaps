@@ -383,7 +383,6 @@ void init_field_macrocells_cl(field *f)
 						&status);
       if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
       assert(status >= CL_SUCCESS);
-
     }
     
   }

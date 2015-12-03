@@ -24,11 +24,11 @@ void set_buf_to_zero_cl(cl_mem *buf, MacroCell *mcell, field *f,
 			cl_uint nwait, cl_event *wait,  cl_event *done);
 void dtfield_CL(field *f, real tnow, cl_mem *dtwn_cl,
 		cl_uint nwait, cl_event *wait, cl_event *done);
-void DGFlux_CL(field *f, int d, int ie, cl_mem *wn_cl,
+void DGFlux_CL(MacroCell *mcell, field *f, int d, cl_mem *wn_cl,
 	       cl_uint nwait, cl_event *wait, cl_event *done);
 void DGVolume_CL(MacroCell *mcell, field *f, cl_mem *dtwn_cl,
 		 cl_uint nwait, cl_event *wait, cl_event *done);
-void ExtractInterface_CL(MacroFace *mface, field *f, cl_mem *wn,
+void ExtractInterface_CL(MacroCell *mcell, field *f, cl_mem *wn,
 			 cl_uint nwait, cl_event *wait, cl_event *done);
 void compute_extracted_DGInterface_CL(MacroFace *mface, field *f,
 				      cl_uint nwait,

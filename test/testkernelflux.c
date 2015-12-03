@@ -44,15 +44,17 @@ int TestKernelFlux()
   
   clFinish(f.cli.commandqueue);
   for(int ie = 0; ie < f.macromesh.nbelems; ++ie) {
+    MacroCell *mcell = f.mcell + ie;
+
     
-    DGFlux_CL(&f, 0, ie, f.wn_cl + ie, 0, NULL, NULL);
+    DGFlux_CL(mcell, &f, 0, f.wn_cl + ie, 0, NULL, NULL);
     clFinish(f.cli.commandqueue);
 
-    DGFlux_CL(&f, 1, ie, f.wn_cl + ie, 0, NULL, NULL);
+    DGFlux_CL(mcell, &f, 1, f.wn_cl + ie, 0, NULL, NULL);
     clFinish(f.cli.commandqueue);
 
     if(!f.macromesh.is2d) {
-      DGFlux_CL(&f, 2, ie, f.wn_cl + ie, 0, NULL, NULL);
+      DGFlux_CL(mcell, &f, 2, f.wn_cl + ie, 0, NULL, NULL);
       clFinish(f.cli.commandqueue);
     }
   }
