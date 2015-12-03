@@ -361,10 +361,38 @@ void unpermute_indices(int *i, const int *pi, const int ifa)
   i[axis_permut[ifa][2]] = pi[2];
 }
 
-void compute_xpgin(const int *pdeg, const int* pic, const int* pix,
-		   const int* paxis, const real *h, const int* poffset,
-		   real *xpgin)
+void compute_xpgin(const int *raf, const int *deg,
+		   const int* ic, const int* ix,
+		   const int ifa, real *xpgin)
 {
+  const int axis_permut[6][4] = { {0, 2, 1, 0},
+				  {1, 2, 0, 1},
+				  {2, 0, 1, 1},
+				  {2, 1, 0, 0},
+				  {0, 1, 2, 1},
+				  {1, 0, 2, 0} };
+
+  const int paxis[4] = {axis_permut[ifa][0],
+			axis_permut[ifa][1],
+			axis_permut[ifa][2],
+			axis_permut[ifa][3]};
+  int praf[3];
+  permute_indices(raf, praf, ifa);
+  
+  int pdeg[3];
+  permute_indices(deg, pdeg, ifa);
+
+  int pic[3];
+  permute_indices(ic, pic, ifa);
+  
+  int pix[3];
+  permute_indices(ix, pix, ifa);
+  
+  const int poffset[2] = {gauss_lob_offset[pdeg[0]] + pix[0],
+			  gauss_lob_offset[pdeg[1]] + pix[1]};
+  
+  const real h[3] = {1.0 / praf[0], 1.0 / praf[1], 1.0 / praf[2] };
+  
   const real  small = 1e-3;
   const real vsmall = 1e-6;
 
@@ -411,8 +439,6 @@ int ref_pg_face(const int *deg,
 			axis_permut[ifa][1],
 			axis_permut[ifa][2],
 			axis_permut[ifa][3]};
-
-
   
   // number of subcells in each permuted direction
   int praf[3];
@@ -466,7 +492,7 @@ int ref_pg_face(const int *deg,
   *wpg = h[0] * h[1] *
     gauss_lob_weight[poffset[0]] * gauss_lob_weight[poffset[1]];
 
-  compute_xpgin(pdeg, pic, pix, paxis, h, poffset, xpgin);
+  compute_xpgin(raf, deg, ic, ix, ifa, xpgin);
   
   return ipgv;
 }
@@ -1331,6 +1357,8 @@ void DGMacroCellInterface(__constant int *param,        // interp param
   real xpgref[3]; // reference point for L
   real xpgref_in[3]; // reference point slightly in R
   real wpg;
+
+  // Compute volumic index in the left MacroCell.
   int ipgL = ref_pg_face(deg, raf, locfaL, ipgfL, xpgref, &wpg, xpgref_in);
   
   // Normal vector at gauss point based on xpgref
