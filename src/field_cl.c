@@ -153,8 +153,7 @@ void set_source_CL(field *f, char *sourcename_cl)
 // wn_cl is an array of cl_mems, one per macrocell
 void init_DGBoundary_CL(field *f, 
 			int ieL, int locfaL,
-			cl_mem *wn_cl,
-			size_t cachesize)
+			cl_mem *wn_cl)
 {
   cl_int status;
   cl_kernel kernel = f->dgboundary;
@@ -204,13 +203,6 @@ void init_DGBoundary_CL(field *f,
                           f->dtwn_cl + ieL);
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
-
-  status = clSetKernelArg(kernel,
-                          argnum++,
-                          sizeof(real) * cachesize,
-                          NULL);
-  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status >= CL_SUCCESS);
 }
 
 // wn_cl is an array of cl_mems, one per macrocell
@@ -228,8 +220,7 @@ void DGBoundary_CL(MacroFace *mface, field *f, cl_mem *wn_cl,
   assert(ieR == -1);
   
   size_t numworkitems = mface->npgf;
-  size_t cachesize = 1; // TODO make use of cache
-  init_DGBoundary_CL(f, ieL, locfaL, wn_cl, cachesize);
+  init_DGBoundary_CL(f, ieL, locfaL, wn_cl);
   
   status = clEnqueueNDRangeKernel(f->cli.commandqueue,
 				  f->dgboundary,

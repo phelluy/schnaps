@@ -4,6 +4,22 @@ void empty_kernel()
 {
 }
 
+__kernel
+void set_buffer_to_zero(__global real *w)
+{
+  w[get_global_id(0)] = 0.0;
+}
+
+// First and second columns: 2D loop dimensions
+// Third column: face dimension
+// Fourth column: 0 -> negative orientation, 1 -> positive orientation
+__constant int axis_permut[6][4] = { {0, 2, 1, 0},
+				     {1, 2, 0, 1},
+				     {2, 0, 1, 1},
+				     {2, 1, 0, 0},
+				     {0, 1, 2, 1},
+				     {1, 0, 2, 0} };
+
 real dlag(int deg, int ib, int ipg)
 {
   return gauss_lob_dpsi[gauss_lob_dpsi_offset[deg] + ib * (deg + 1) + ipg];
@@ -13,7 +29,25 @@ real dlag(int deg, int ib, int ipg)
 #define VARINDEX GenericVarindex
 #endif
 
-int ref_ipg(int *raf, int *deg, real *xref);
+// From a reference point find the nearest gauss point
+// Warning: works only  degree 1, 2, or 3 (FIXME: why?)
+int ref_ipg(int *raf, int *deg, real *xref) 
+{
+  real h[3] = {1.0 / raf[0], 1.0 / raf[1], 1.0 / raf[2]};
+
+  // Get the subcell indices
+  int ic[3] = {floor(xref[0] * raf[0]),
+	       floor(xref[1] * raf[1]), 
+	       floor(xref[2] * raf[2]) };
+
+  // Point indices in the subcell
+  int ix[3] = {floor((xref[0] - ic[0] * h[0]) / h[0] * deg[0] + 0.5),
+	       floor((xref[1] - ic[1] * h[1]) / h[1] * deg[1] + 0.5),
+	       floor((xref[2] - ic[2] * h[2]) / h[2] * deg[2] + 0.5) };
+
+  return xyz_to_ipg(raf, deg, ic, ix); 
+}
+
 
 void compute_gradphi(const real xref[3], real gradphi[20][4]) 
 {
@@ -21,13 +55,13 @@ void compute_gradphi(const real xref[3], real gradphi[20][4])
   real y = xref[1];
   real z = xref[2];
 
-  real t1 = -1 + z;
-  real t2 = -1 + y;
+  real t1 = -1.0 + z;
+  real t2 = -1.0 + y;
   real t3 = t1 * t2;
   real t4 = 2 * y;
   real t5 = 2 * z;
   real t6 = 4 * x;
-  real t9 = -1 + x;
+  real t9 = -1.0 + x;
   real t10 = t1 * t9;
   real t11 = 2 * x;
   real t12 = 4 * y;
@@ -42,16 +76,16 @@ void compute_gradphi(const real xref[3], real gradphi[20][4])
   real t57 = z * t9;
   real t67 = x * z;
   real t75 = y * z;
-  real t94 = t11 - 1;
+  real t94 = t11 - 1.0;
   real t98 = 4 * t24 * t9;
   real t100 = 4 * t27 * t9;
   real t104 = 4 * t33 * t2;
-  real t105 = t4 - 1;
+  real t105 = t4 - 1.0;
   real t111 = 4 * y * t2 * t9;
   real t114 = z * t1;
   real t116 = 4 * t114 * t2;
   real t118 = 4 * t114 * t9;
-  real t119 = t5 - 1;
+  real t119 = t5 - 1.0;
   real t128 = 4 * t38 * t2;
   real t132 = 4 * t67 * t1;
   real t141 = 4 * t38 * t9;
@@ -272,90 +306,97 @@ inline void ComputeNormal(real codtau[3][3], int ifa, real vnds[3])
 #endif
 }
 
-void Ref2Phy(__constant real *physnode,
-             const real xref[3],
-             real dphiref[3],       // can be NULL
-             const int ifa,         // only needed for vnds calculation
-             real xphy[3],          // can be NULL
-             real dtau[3][3],       // can be NULL
-             real codtau[3][3],     // can be NULL
-             real dphi[3],          // can be NULL 
-             real vnds[3])          // can be NULL
+inline void Phy2Ref(__constant real *physnode, real *xphy, real *xref) 
 {
-  // compute the mapping and its jacobian
-
-  // gradient of the shape functions and value (4th component)
-  // of the shape functions
-  real gradphi[20][4];
-  compute_gradphi(xref, gradphi);
-
-  if (xphy != NULL)
-    compute_xphy(physnode, gradphi, xphy);
-
-  if (dtau != NULL)
+#define ITERNEWTON 10
+  real dxref[3], dxphy[3];
+  xref[0] = 0.5;
+  xref[1] = 0.5;
+  xref[2] = 0.5;
+  for(int iter = 0; iter < ITERNEWTON; ++iter ) {
+    real dtau[3][3];
+    real codtau[3][3];
+    
+    real gradphi[20][4];
+    compute_gradphi(xref, gradphi);
+    compute_xphy(physnode, gradphi, dxphy);
     compute_dtau(physnode, gradphi, dtau);
-
-  if (codtau != NULL)
     compute_codtau(dtau, codtau);
-  
-  if (dphi != NULL)
-    compute_dphi(dphiref, codtau, dphi);
+    
+    dxphy[0] -= xphy[0];
+    dxphy[1] -= xphy[1];
+    dxphy[2] -= xphy[2];
 
-  if (vnds != NULL)
-    ComputeNormal(codtau, ifa, vnds);
+#ifdef FP_FAST_FMA
+    real det = fma(dtau[0][0], codtau[0][0],
+		   fma(dtau[0][1], codtau[0][1],
+		       dtau[0][2] * codtau[0][2]) );
+    real overdet = 1.0 / det;
+    
+    dxref[0] = fma(codtau[0][0], dxphy[0],
+		   fma(codtau[1][0], dxphy[1],
+		       codtau[2][0] * dxphy[2]) );
+    xref[0] = fma(-dxref[0], overdet, xref[0]);
+    
+    dxref[1] = fma(codtau[0][1], dxphy[0],
+		   fma(codtau[1][1], dxphy[1],
+		       codtau[2][1] * dxphy[2]) );
+    xref[1] = fma(-dxref[1], overdet, xref[1]);
+    
+    dxref[2] = fma(codtau[0][2], dxphy[0],
+		   fma(codtau[1][2], dxphy[1],
+		       codtau[2][2] * dxphy[2]) );
+    xref[2] = fma(-dxref[2], overdet, xref[2]);
+#else
+    real overdet = 1.0 / (  dtau[0][0] * codtau[0][0]
+			    + dtau[0][1] * codtau[0][1]
+			    + dtau[0][2] * codtau[0][2] );
+ 
+    for(int ii = 0; ii < 3; ++ii) {
+      dxref[ii]
+	= codtau[0][ii] * dxphy[0] 
+	+ codtau[1][ii] * dxphy[1] 
+	+ codtau[2][ii] * dxphy[2];
+      xref[ii] -= dxref[ii] * overdet;
+    }
+#endif
+  }
 }
-
-void Phy2Ref(__constant real *physnode, real *xphy, real *xref);
 
 // Given parameters deg and nraf and input ipg, compute the reference
 // coordinages (xpg) and the weght of the Gauss piont (wpg).
-void ref_pg_vol(const int *deg, const int *nraf, 
-		const int ipg, real *xpg, real *wpg)
+inline void ref_pg_vol(const int *deg, const int *nraf, 
+		       const int ipg, real *xpg, real *wpg)
 {
   int ix[3], ic[3];
   ipg_to_xyz(nraf, deg, ic, ix, &ipg);
 
-  real hx = 1 / (real) nraf[0];
-  real hy = 1 / (real) nraf[1];
-  real hz = 1 / (real) nraf[2];
+  real h[3] = {1.0 / nraf[0], 1.0 / nraf[1], 1.0 / nraf[2]};
 
-  int offset[3];
-  offset[0] = gauss_lob_offset[deg[0]] + ix[0];
-  offset[1] = gauss_lob_offset[deg[1]] + ix[1];
-  offset[2] = gauss_lob_offset[deg[2]] + ix[2];
+  int offset[3] = {gauss_lob_offset[deg[0]] + ix[0],
+		   gauss_lob_offset[deg[1]] + ix[1],
+		   gauss_lob_offset[deg[2]] + ix[2] };
 
-  xpg[0] = hx * (ic[0] + gauss_lob_point[offset[0]]);
-  xpg[1] = hy * (ic[1] + gauss_lob_point[offset[1]]);
-  xpg[2] = hz * (ic[2] + gauss_lob_point[offset[2]]);
+  xpg[0] = h[0] * (ic[0] + gauss_lob_point[offset[0]]);
+  xpg[1] = h[1] * (ic[1] + gauss_lob_point[offset[1]]);
+  xpg[2] = h[2] * (ic[2] + gauss_lob_point[offset[2]]);
   
-  *wpg = hx * hy * hz *
+  *wpg = h[0] * h[1] * h[2] *
     gauss_lob_weight[offset[0]]*
     gauss_lob_weight[offset[1]]*
     gauss_lob_weight[offset[2]];
 }
 
 
-void permute_indices(const int *i, int *pi, const int ifa)
+inline void permute_indices(const int *i, int *pi, const int ifa)
 {
-  const int axis_permut[6][4] = { {0, 2, 1, 0},
-				  {1, 2, 0, 1},
-				  {2, 0, 1, 1},
-				  {2, 1, 0, 0},
-				  {0, 1, 2, 1},
-				  {1, 0, 2, 0} };
   pi[0] = i[axis_permut[ifa][0]];
   pi[1] = i[axis_permut[ifa][1]];
   pi[2] = i[axis_permut[ifa][2]];
 }
 
-void unpermute_indices(int *i, const int *pi, const int ifa)
+inline void unpermute_indices(int *i, const int *pi, const int ifa)
 {
-  const int axis_permut[6][4] = { {0, 2, 1, 0},
-				  {1, 2, 0, 1},
-				  {2, 0, 1, 1},
-				  {2, 1, 0, 0},
-				  {0, 1, 2, 1},
-				  {1, 0, 2, 0} };
   i[axis_permut[ifa][0]] = pi[0];
   i[axis_permut[ifa][1]] = pi[1];
   i[axis_permut[ifa][2]] = pi[2];
@@ -365,13 +406,6 @@ void compute_xpgin(const int *raf, const int *deg,
 		   const int* ic, const int* ix,
 		   const int ifa, real *xpgin)
 {
-  const int axis_permut[6][4] = { {0, 2, 1, 0},
-				  {1, 2, 0, 1},
-				  {2, 0, 1, 1},
-				  {2, 1, 0, 0},
-				  {0, 1, 2, 1},
-				  {1, 0, 2, 0} };
-
   const int paxis[4] = {axis_permut[ifa][0],
 			axis_permut[ifa][1],
 			axis_permut[ifa][2],
@@ -411,30 +445,13 @@ void compute_xpgin(const int *raf, const int *deg,
   xpgin[paxis[2]] = paxis[3] == 0 ? -vsmall: 1.0 + vsmall;
 }
 
-// ifa:   face index
-// ipgf:  index of point in the face
-// xpg:   reference-space coordinates
-// wpg:   weight for the point
-// xpgin: reference-space coordinates of a point slightly inside the
-//        facing cell.
 int ref_pg_face(const int *deg,
 		const int *raf,
-		const int ifa,
-		int ipgf,
-                real *xpg,
-		real *wpg,
-		real *xpgin)
+		const int ifa,  // face index
+		int ipgf,       // facial index of the point
+                real *xpg,      // reference-space coordinates
+		real *wpg)      // weight for the point
 {
-  // First and second columns: 2D loop dimensions
-  // Third column: face dimension
-  // Fourth column: 0 -> negative orientation, 1 -> positive orientation
-  const int axis_permut[6][4] = { {0, 2, 1, 0},
-				  {1, 2, 0, 1},
-				  {2, 0, 1, 1},
-				  {2, 1, 0, 0},
-				  {0, 1, 2, 1},
-				  {1, 0, 2, 0} };
-  
   const int paxis[4] = {axis_permut[ifa][0],
 			axis_permut[ifa][1],
 			axis_permut[ifa][2],
@@ -467,15 +484,11 @@ int ref_pg_face(const int *deg,
   
   // non-permuted subcell index
   int ic[3];
-  ic[paxis[0]] = pic[0];
-  ic[paxis[1]] = pic[1];
-  ic[paxis[2]] = pic[2];
+  unpermute_indices(ic, pic, ifa);
 
   // non-permuted point index
   int ix[3];
-  ix[paxis[0]] = pix[0];
-  ix[paxis[1]] = pix[1];
-  ix[paxis[2]] = pix[2];
+  unpermute_indices(ix, pix, ifa);
   
   // Compute the global index of the Gauss-Lobatto point in the volume
   int ipgv = xyz_to_ipg(raf, deg, ic, ix); 
@@ -492,8 +505,6 @@ int ref_pg_face(const int *deg,
   *wpg = h[0] * h[1] *
     gauss_lob_weight[poffset[0]] * gauss_lob_weight[poffset[1]];
 
-  compute_xpgin(raf, deg, ic, ix, ifa, xpgin);
-  
   return ipgv;
 }
 
@@ -510,21 +521,12 @@ void NumFlux(real wL[], real wR[], real *vnorm, real *flux) {
   flux[0] = vnp * wL[0] + vnm * wR[0];
 }
 
-#ifndef vlasov_mx
-#define vlasov_mx 1
-#endif
-
-#ifndef vlasov_my
-#define vlasov_my 1
-#endif
-
-#ifndef vlasov_vmax
-#define vlasov_vmax 0.5
-#endif
-
 // Return the component of the vlasov velocity with index id.
 inline real vlasov_vel(const int id, const int md)
 {
+#ifndef vlasov_vmax
+#define vlasov_vmax 0.5
+#endif
   int mid = md / 2;
   real dv = vlasov_vmax / mid;
   return (id - mid) * dv;
@@ -533,6 +535,13 @@ inline real vlasov_vel(const int id, const int md)
 // Sample flux for 2D Vlasov equation
 inline void vlaTransNumFlux2d(real wL[], real wR[], real *vnorm, real *flux)
 {
+#ifndef vlasov_mx
+#define vlasov_mx 1
+#endif
+
+#ifndef vlasov_my
+#define vlasov_my 1
+#endif
   for(int ix = 0; ix < vlasov_mx; ++ix) {
     real vx = vlasov_vel(ix, vlasov_mx);
 
@@ -667,24 +676,309 @@ void get_dtau(real x, real y, real z,
   /*   } */
   /* } */
 
-  dtau[0][0]=2*(-1+z)*(-1+y)*(-1+x)*p[0]+2*x*(-1+z)*(-1+y)*p[3]-2*x*y*(-1+z)*p[6]-2*y*(-1+z)*(-1+x)*p[9]-2*z*(-1+y)*(-1+x)*p[12]-2*x*z*(-1+y)*p[15]+2*x*y*z*p[18]+2*y*z*(-1+x)*p[21]+(-1+z)*(-1+y)*(2*x+2*y+2*z-1)*p[0]+(-1+z)*(-1+y)*(-2*y-2*z+2*x-1)*p[3]-y*(-1+z)*(2*y-2*z-3+2*x)*p[6]-y*(-1+z)*(2*x+2*z+1-2*y)*p[9]-z*(-1+y)*(2*x+2*y-2*z+1)*p[12]-z*(-1+y)*(-2*y+2*z-3+2*x)*p[15]+y*z*(2*y+2*z-5+2*x)*p[18]+y*z*(2*x-2*z+3-2*y)*p[21]-4*(-1+z)*(-1+y)*(-1+x)*p[24]-4*x*(-1+z)*(-1+y)*p[24]-4*y*(-1+z)*(-1+y)*p[27]-4*z*(-1+z)*(-1+y)*p[30]+4*y*(-1+z)*(-1+y)*p[33]+4*z*(-1+z)*(-1+y)*p[36]+4*y*(-1+z)*(-1+x)*p[39]+4*x*y*(-1+z)*p[39]-4*y*z*(-1+z)*p[42]+4*y*z*(-1+z)*p[45]+4*z*(-1+y)*(-1+x)*p[48]+4*x*z*(-1+y)*p[48]+4*y*z*(-1+y)*p[51]-4*y*z*(-1+y)*p[54]-4*y*z*(-1+x)*p[57]-4*x*y*z*p[57];
+  dtau[0][0]
+    = 2 * (-1 + z) * (-1 + y) * (-1 + x) * p[0]
+    + 2 * x * (-1 + z) * (-1+ y ) * p[3]
+    - 2 * x * y * (-1 + z) * p[6]
+    - 2 * y * (-1 + z) * (-1 + x) * p[9]
+    - 2 * z * (-1 + y) * (-1 + x) * p[12]
+    - 2 * x * z * (-1 + y) * p[15]
+    + 2  * x * y * z * p[18]
+    +2 * y * z * (-1+x) * p[21]
+    +(-1+z) * (-1+y) * (2 * x + 2 * y + 2 * z - 1) * p[0]
+    +(-1+z) * (-1+y) * (-2 * y-2 * z+2 * x-1) * p[3]
+    -y * (-1+z) * (2 * y-2 * z-3 + 2 * x) * p[6]
+    -y * (-1+z) * (2 * x+2 * z+1 - 2 * y) * p[9]
+    -z * (-1+y) * (2 * x+2 * y-2 * z+1) * p[12]
+    -z * (-1+y) * (-2 * y+2 * z-3 + 2 * x) * p[15]
+    +y * z * (2 * y+2 * z-5+2 * x) * p[18]
+    +y * z * (2 * x-2 * z+3-2 * y) * p[21]
+    -4 * (-1+z) * (-1+y) * (-1+x) * p[24]
+    -4 * x * (-1+z) * (-1+y) * p[24]
+    -4 * y * (-1+z) * (-1+y) * p[27]
+    -4 * z * (-1+z) * (-1+y) * p[30]
+    +4 * y * (-1+z) * (-1+y) * p[33]
+    +4 * z * (-1+z) * (-1+y) * p[36]
+    +4 * y * (-1+z) * (-1+x) * p[39]
+    +4 * x * y * (-1+z) * p[39]
+    -4 * y * z * (-1+z) * p[42]
+    +4 * y * z * (-1+z) * p[45]
+    +4 * z * (-1+y) * (-1+x) * p[48]
+    +4 * x * z * (-1+y) * p[48]
+    +4 * y * z * (-1+y) * p[51]
+    -4 * y * z * (-1+y) * p[54]
+    -4 * y * z * (-1+x) * p[57]
+    -4 * x * y * z * p[57];
 
-  dtau[0][1]=2*(-1+z)*(-1+y)*(-1+x)*p[0]-2*x*(-1+z)*(-1+y)*p[3]-2*x*y*(-1+z)*p[6]+2*y*(-1+z)*(-1+x)*p[9]-2*z*(-1+y)*(-1+x)*p[12]+2*x*z*(-1+y)*p[15]+2*x*y*z*p[18]-2*y*z*(-1+x)*p[21]+(-1+z)*(-1+x)*(2*x+2*y+2*z-1)*p[0]+x*(-1+z)*(-2*y-2*z+2*x-1)*p[3]-x*(-1+z)*(2*y-2*z-3+2*x)*p[6]-(-1+z)*(-1+x)*(2*x+2*z+1-2*y)*p[9]-z*(-1+x)*(2*x+2*y-2*z+1)*p[12]-x*z*(-2*y+2*z-3+2*x)*p[15]+x*z*(2*y+2*z-5+2*x)*p[18]+z*(-1+x)*(2*x-2*z+3-2*y)*p[21]-4*x*(-1+z)*(-1+x)*p[24]-4*(-1+z)*(-1+y)*(-1+x)*p[27]-4*y*(-1+z)*(-1+x)*p[27]-4*z*(-1+z)*(-1+x)*p[30]+4*x*(-1+z)*(-1+y)*p[33]+4*x*y*(-1+z)*p[33]+4*x*z*(-1+z)*p[36]+4*x*(-1+z)*(-1+x)*p[39]-4*x*z*(-1+z)*p[42]+4*z*(-1+z)*(-1+x)*p[45]+4*x*z*(-1+x)*p[48]+4*z*(-1+y)*(-1+x)*p[51]+4*y*z*(-1+x)*p[51]-4*x*z*(-1+y)*p[54]-4*x*y*z*p[54]-4*x*z*(-1+x)*p[57];
+  dtau[0][1]
+    =2 * (-1+z) * (-1+y) * (-1+x) * p[0]
+    -2 * x * (-1+z) * (-1+y) * p[3]
+    -2 * x * y * (-1+z) * p[6]
+    +2 * y * (-1+z) * (-1+x) * p[9]
+    -2 * z * (-1+y) * (-1+x) * p[12]
+    +2 * x * z * (-1+y) * p[15]
+    +2 * x * y * z * p[18]
+    -2 * y * z * (-1+x) * p[21]
+    +(-1+z) * (-1+x) * (2 * x+2 * y+2 * z-1) * p[0]
+    +x * (-1+z) * (-2 * y-2 * z+2 * x-1) * p[3]
+    -x * (-1+z) * (2 * y-2 * z-3+2 * x) * p[6]
+    -(-1+z) * (-1+x) * (2 * x+2 * z+1-2 * y) * p[9]
+    -z * (-1+x) * (2 * x+2 * y-2 * z+1) * p[12]
+    -x * z * (-2 * y+2 * z-3+2 * x) * p[15]
+    +x * z * (2 * y+2 * z-5+2 * x) * p[18]
+    +z * (-1+x) * (2 * x-2 * z+3-2 * y) * p[21]
+    -4 * x * (-1+z) * (-1+x) * p[24]
+    -4 * (-1+z) * (-1+y) * (-1+x) * p[27]
+    -4 * y * (-1+z) * (-1+x) * p[27]
+    -4 * z * (-1+z) * (-1+x) * p[30]
+    +4 * x * (-1+z) * (-1+y) * p[33]
+    +4 * x * y * (-1+z) * p[33]
+    +4 * x * z * (-1+z) * p[36]
+    +4 * x * (-1+z) * (-1+x) * p[39]
+    -4 * x * z * (-1+z) * p[42]
+    +4 * z * (-1+z) * (-1+x) * p[45]
+    +4 * x * z * (-1+x) * p[48]
+    +4 * z * (-1+y) * (-1+x) * p[51]
+    +4 * y * z * (-1+x) * p[51]
+    -4 * x * z * (-1+y) * p[54]
+    -4 * x * y * z * p[54]-4 * x * z * (-1+x) * p[57];
 
-  dtau[0][2]=2*(-1+z)*(-1+y)*(-1+x)*p[0]-2*x*(-1+z)*(-1+y)*p[3]+2*x*y*(-1+z)*p[6]-2*y*(-1+z)*(-1+x)*p[9]+2*z*(-1+y)*(-1+x)*p[12]-2*x*z*(-1+y)*p[15]+2*x*y*z*p[18]-2*y*z*(-1+x)*p[21]+(-1+y)*(-1+x)*(2*x+2*y+2*z-1)*p[0]+x*(-1+y)*(-2*y-2*z+2*x-1)*p[3]-x*y*(2*y-2*z-3+2*x)*p[6]-y*(-1+x)*(2*x+2*z+1-2*y)*p[9]-(-1+y)*(-1+x)*(2*x+2*y-2*z+1)*p[12]-x*(-1+y)*(-2*y+2*z-3+2*x)*p[15]+x*y*(2*y+2*z-5+2*x)*p[18]+y*(-1+x)*(2*x-2*z+3-2*y)*p[21]-4*x*(-1+y)*(-1+x)*p[24]-4*y*(-1+y)*(-1+x)*p[27]-4*(-1+z)*(-1+y)*(-1+x)*p[30]-4*z*(-1+y)*(-1+x)*p[30]+4*x*y*(-1+y)*p[33]+4*x*(-1+z)*(-1+y)*p[36]+4*x*z*(-1+y)*p[36]+4*x*y*(-1+x)*p[39]-4*x*y*(-1+z)*p[42]-4*x*y*z*p[42]+4*y*(-1+z)*(-1+x)*p[45]+4*y*z*(-1+x)*p[45]+4*x*(-1+y)*(-1+x)*p[48]+4*y*(-1+y)*(-1+x)*p[51]-4*x*y*(-1+y)*p[54]-4*x*y*(-1+x)*p[57];
+  dtau[0][2]
+    =2 * (-1+z) * (-1+y) * (-1+x) * p[0]
+    -2 * x * (-1+z) * (-1+y) * p[3]
+    +2 * x * y * (-1+z) * p[6]
+    -2 * y * (-1+z) * (-1+x) * p[9]
+    +2 * z * (-1+y) * (-1+x) * p[12]
+    -2 * x * z * (-1+y) * p[15]
+    +2 * x * y * z * p[18]
+    -2 * y * z * (-1+x) * p[21]
+    +(-1+y) * (-1+x) * (2 * x+2 * y+2 * z-1) * p[0]
+    +x * (-1+y) * (-2 * y-2 * z+2 * x-1) * p[3]
+    -x * y * (2 * y-2 * z-3+2 * x) * p[6]
+    -y * (-1+x) * (2 * x+2 * z+1-2 * y) * p[9]
+    -(-1+y) * (-1+x) * (2 * x+2 * y-2 * z+1) * p[12]
+    -x * (-1+y) * (-2 * y+2 * z-3+2 * x) * p[15]
+    +x * y * (2 * y+2 * z-5+2 * x) * p[18]
+    +y * (-1+x) * (2 * x-2 * z+3-2 * y) * p[21]
+    -4 * x * (-1+y) * (-1+x) * p[24]
+    -4 * y * (-1+y) * (-1+x) * p[27]
+    -4 * (-1+z) * (-1+y) * (-1+x) * p[30]
+    -4 * z * (-1+y) * (-1+x) * p[30]
+    +4 * x * y * (-1+y) * p[33]
+    +4 * x * (-1+z) * (-1+y) * p[36]
+    +4 * x * z * (-1+y) * p[36]
+    +4 * x * y * (-1+x) * p[39]
+    -4 * x * y * (-1+z) * p[42]
+    -4 * x * y * z * p[42]
+    +4 * y * (-1+z) * (-1+x) * p[45]
+    +4 * y * z * (-1+x) * p[45]
+    +4 * x * (-1+y) * (-1+x) * p[48]
+    +4 * y * (-1+y) * (-1+x) * p[51]
+    -4 * x * y * (-1+y) * p[54]
+    -4 * x * y * (-1+x) * p[57];
 
-  dtau[1][0]=2*(-1+z)*(-1+y)*(-1+x)*p[1]+2*x*(-1+z)*(-1+y)*p[4]-2*x*y*(-1+z)*p[7]-2*y*(-1+z)*(-1+x)*p[10]-2*z*(-1+y)*(-1+x)*p[13]-2*x*z*(-1+y)*p[16]+2*x*y*z*p[19]+2*y*z*(-1+x)*p[22]+(-1+z)*(-1+y)*(2*x+2*y+2*z-1)*p[1]+(-1+z)*(-1+y)*(-2*y-2*z+2*x-1)*p[4]-y*(-1+z)*(2*y-2*z-3+2*x)*p[7]-y*(-1+z)*(2*x+2*z+1-2*y)*p[10]-z*(-1+y)*(2*x+2*y-2*z+1)*p[13]-z*(-1+y)*(-2*y+2*z-3+2*x)*p[16]+y*z*(2*y+2*z-5+2*x)*p[19]+y*z*(2*x-2*z+3-2*y)*p[22]-4*(-1+z)*(-1+y)*(-1+x)*p[25]-4*x*(-1+z)*(-1+y)*p[25]-4*y*(-1+z)*(-1+y)*p[28]-4*z*(-1+z)*(-1+y)*p[31]+4*y*(-1+z)*(-1+y)*p[34]+4*z*(-1+z)*(-1+y)*p[37]+4*y*(-1+z)*(-1+x)*p[40]+4*x*y*(-1+z)*p[40]-4*y*z*(-1+z)*p[43]+4*y*z*(-1+z)*p[46]+4*z*(-1+y)*(-1+x)*p[49]+4*x*z*(-1+y)*p[49]+4*y*z*(-1+y)*p[52]-4*y*z*(-1+y)*p[55]-4*y*z*(-1+x)*p[58]-4*x*y*z*p[58];
+  dtau[1][0]
+    =2 * (-1+z) * (-1+y) * (-1+x) * p[1]
+    +2 * x * (-1+z) * (-1+y) * p[4]
+    -2 * x * y * (-1+z) * p[7]
+    -2 * y * (-1+z) * (-1+x) * p[10]
+    -2 * z * (-1+y) * (-1+x) * p[13]
+    -2 * x * z * (-1+y) * p[16]
+    +2 * x * y * z * p[19]
+    +2 * y * z * (-1+x) * p[22]
+    +(-1+z) * (-1+y) * (2 * x+2 * y+2 * z-1) * p[1]
+    +(-1+z) * (-1+y) * (-2 * y-2 * z+2 * x-1) * p[4]
+    -y * (-1+z) * (2 * y-2 * z-3+2 * x) * p[7]
+    -y * (-1+z) * (2 * x+2 * z+1-2 * y) * p[10]
+    -z * (-1+y) * (2 * x+2 * y-2 * z+1) * p[13]
+    -z * (-1+y) * (-2 * y+2 * z-3+2 * x) * p[16]
+    +y * z * (2 * y+2 * z-5+2 * x) * p[19]
+    +y * z * (2 * x-2 * z+3-2 * y) * p[22]
+    -4 * (-1+z) * (-1+y) * (-1+x) * p[25]
+    -4 * x * (-1+z) * (-1+y) * p[25]
+    -4 * y * (-1+z) * (-1+y) * p[28]
+    -4 * z * (-1+z) * (-1+y) * p[31]
+    +4 * y * (-1+z) * (-1+y) * p[34]
+    +4 * z * (-1+z) * (-1+y) * p[37]
+    +4 * y * (-1+z) * (-1+x) * p[40]
+    +4 * x * y * (-1+z) * p[40]
+    -4 * y * z * (-1+z) * p[43]
+    +4 * y * z * (-1+z) * p[46]
+    +4 * z * (-1+y) * (-1+x) * p[49]
+    +4 * x * z * (-1+y) * p[49]
+    +4 * y * z * (-1+y) * p[52]
+    -4 * y * z * (-1+y) * p[55]
+    -4 * y * z * (-1+x) * p[58]
+    -4 * x * y * z * p[58];
 
-  dtau[1][1]=2*(-1+z)*(-1+y)*(-1+x)*p[1]-2*x*(-1+z)*(-1+y)*p[4]-2*x*y*(-1+z)*p[7]+2*y*(-1+z)*(-1+x)*p[10]-2*z*(-1+y)*(-1+x)*p[13]+2*x*z*(-1+y)*p[16]+2*x*y*z*p[19]-2*y*z*(-1+x)*p[22]+(-1+z)*(-1+x)*(2*x+2*y+2*z-1)*p[1]+x*(-1+z)*(-2*y-2*z+2*x-1)*p[4]-x*(-1+z)*(2*y-2*z-3+2*x)*p[7]-(-1+z)*(-1+x)*(2*x+2*z+1-2*y)*p[10]-z*(-1+x)*(2*x+2*y-2*z+1)*p[13]-x*z*(-2*y+2*z-3+2*x)*p[16]+x*z*(2*y+2*z-5+2*x)*p[19]+z*(-1+x)*(2*x-2*z+3-2*y)*p[22]-4*x*(-1+z)*(-1+x)*p[25]-4*(-1+z)*(-1+y)*(-1+x)*p[28]-4*y*(-1+z)*(-1+x)*p[28]-4*z*(-1+z)*(-1+x)*p[31]+4*x*(-1+z)*(-1+y)*p[34]+4*x*y*(-1+z)*p[34]+4*x*z*(-1+z)*p[37]+4*x*(-1+z)*(-1+x)*p[40]-4*x*z*(-1+z)*p[43]+4*z*(-1+z)*(-1+x)*p[46]+4*x*z*(-1+x)*p[49]+4*z*(-1+y)*(-1+x)*p[52]+4*y*z*(-1+x)*p[52]-4*x*z*(-1+y)*p[55]-4*x*y*z*p[55]-4*x*z*(-1+x)*p[58];
+  dtau[1][1]
+    =2 * (-1+z) * (-1+y) * (-1+x) * p[1]
+    -2 * x * (-1+z) * (-1+y) * p[4]
+    -2 * x * y * (-1+z) * p[7]
+    +2 * y * (-1+z) * (-1+x) * p[10]
+    -2 * z * (-1+y) * (-1+x) * p[13]
+    +2 * x * z * (-1+y) * p[16]
+    +2 * x * y * z * p[19]
+    -2 * y * z * (-1+x) * p[22]
+    +(-1+z) * (-1+x) * (2 * x+2 * y+2 * z-1) * p[1]
+    +x * (-1+z) * (-2 * y-2 * z+2 * x-1) * p[4]
+    -x * (-1+z) * (2 * y-2 * z-3+2 * x) * p[7]
+    -(-1+z) * (-1+x) * (2 * x+2 * z+1-2 * y) * p[10]
+    -z * (-1+x) * (2 * x+2 * y-2 * z+1) * p[13]
+    -x * z * (-2 * y+2 * z-3+2 * x) * p[16]
+    +x * z * (2 * y+2 * z-5+2 * x) * p[19]
+    +z * (-1+x) * (2 * x-2 * z+3-2 * y) * p[22]
+    -4 * x * (-1+z) * (-1+x) * p[25]
+    -4 * (-1+z) * (-1+y) * (-1+x) * p[28]
+    -4 * y * (-1+z) * (-1+x) * p[28]
+    -4 * z * (-1+z) * (-1+x) * p[31]
+    +4 * x * (-1+z) * (-1+y) * p[34]
+    +4 * x * y * (-1+z) * p[34]
+    +4 * x * z * (-1+z) * p[37]
+    +4 * x * (-1+z) * (-1+x) * p[40]
+    -4 * x * z * (-1+z) * p[43]
+    +4 * z * (-1+z) * (-1+x) * p[46]
+    +4 * x * z * (-1+x) * p[49]
+    +4 * z * (-1+y) * (-1+x) * p[52]
+    +4 * y * z * (-1+x) * p[52]
+    -4 * x * z * (-1+y) * p[55]
+    -4 * x * y * z * p[55]
+    -4 * x * z * (-1+x) * p[58];
 
-  dtau[1][2]=2*(-1+z)*(-1+y)*(-1+x)*p[1]-2*x*(-1+z)*(-1+y)*p[4]+2*x*y*(-1+z)*p[7]-2*y*(-1+z)*(-1+x)*p[10]+2*z*(-1+y)*(-1+x)*p[13]-2*x*z*(-1+y)*p[16]+2*x*y*z*p[19]-2*y*z*(-1+x)*p[22]+(-1+y)*(-1+x)*(2*x+2*y+2*z-1)*p[1]+x*(-1+y)*(-2*y-2*z+2*x-1)*p[4]-x*y*(2*y-2*z-3+2*x)*p[7]-y*(-1+x)*(2*x+2*z+1-2*y)*p[10]-(-1+y)*(-1+x)*(2*x+2*y-2*z+1)*p[13]-x*(-1+y)*(-2*y+2*z-3+2*x)*p[16]+x*y*(2*y+2*z-5+2*x)*p[19]+y*(-1+x)*(2*x-2*z+3-2*y)*p[22]-4*x*(-1+y)*(-1+x)*p[25]-4*y*(-1+y)*(-1+x)*p[28]-4*(-1+z)*(-1+y)*(-1+x)*p[31]-4*z*(-1+y)*(-1+x)*p[31]+4*x*y*(-1+y)*p[34]+4*x*(-1+z)*(-1+y)*p[37]+4*x*z*(-1+y)*p[37]+4*x*y*(-1+x)*p[40]-4*x*y*(-1+z)*p[43]-4*x*y*z*p[43]+4*y*(-1+z)*(-1+x)*p[46]+4*y*z*(-1+x)*p[46]+4*x*(-1+y)*(-1+x)*p[49]+4*y*(-1+y)*(-1+x)*p[52]-4*x*y*(-1+y)*p[55]-4*x*y*(-1+x)*p[58];
+  dtau[1][2]
+    =2 * (-1+z) * (-1+y) * (-1+x) * p[1]
+    -2 * x * (-1+z) * (-1+y) * p[4]
+    +2 * x * y * (-1+z) * p[7]
+    -2 * y * (-1+z) * (-1+x) * p[10]
+    +2 * z * (-1+y) * (-1+x) * p[13]
+    -2 * x * z * (-1+y) * p[16]
+    +2 * x * y * z * p[19]
+    -2 * y * z * (-1+x) * p[22]
+    +(-1+y) * (-1+x) * (2 * x+2 * y+2 * z-1) * p[1]
+    +x * (-1+y) * (-2 * y-2 * z+2 * x-1) * p[4]
+    -x * y * (2 * y-2 * z-3+2 * x) * p[7]
+    -y * (-1+x) * (2 * x+2 * z+1-2 * y) * p[10]
+    -(-1+y) * (-1+x) * (2 * x+2 * y-2 * z+1) * p[13]
+    -x * (-1+y) * (-2 * y+2 * z-3+2 * x) * p[16]
+    +x * y * (2 * y+2 * z-5+2 * x) * p[19]
+    +y * (-1+x) * (2 * x-2 * z+3-2 * y) * p[22]
+    -4 * x * (-1+y) * (-1+x) * p[25]
+    -4 * y * (-1+y) * (-1+x) * p[28]
+    -4 * (-1+z) * (-1+y) * (-1+x) * p[31]
+    -4 * z * (-1+y) * (-1+x) * p[31]
+    +4 * x * y * (-1+y) * p[34]
+    +4 * x * (-1+z) * (-1+y) * p[37]
+    +4 * x * z * (-1+y) * p[37]
+    +4 * x * y * (-1+x) * p[40]
+    -4 * x * y * (-1+z) * p[43]
+    -4 * x * y * z * p[43]
+    +4 * y * (-1+z) * (-1+x) * p[46]
+    +4 * y * z * (-1+x) * p[46]
+    +4 * x * (-1+y) * (-1+x) * p[49]
+    +4 * y * (-1+y) * (-1+x) * p[52]
+    -4 * x * y * (-1+y) * p[55]-4 * x * y * (-1+x) * p[58];
 
-  dtau[2][0]=2*(-1+z)*(-1+y)*(-1+x)*p[2]+2*x*(-1+z)*(-1+y)*p[5]-2*x*y*(-1+z)*p[8]-2*y*(-1+z)*(-1+x)*p[11]-4*y*(-1+z)*(-1+y)*p[29]+(-1+z)*(-1+y)*(2*x+2*y+2*z-1)*p[2]+(-1+z)*(-1+y)*(-2*y-2*z+2*x-1)*p[5]-y*(-1+z)*(2*y-2*z-3+2*x)*p[8]-y*(-1+z)*(2*x+2*z+1-2*y)*p[11]-z*(-1+y)*(2*x+2*y-2*z+1)*p[14]-z*(-1+y)*(-2*y+2*z-3+2*x)*p[17]+y*z*(2*y+2*z-5+2*x)*p[20]+y*z*(2*x-2*z+3-2*y)*p[23]-4*(-1+z)*(-1+y)*(-1+x)*p[26]-4*x*(-1+z)*(-1+y)*p[26]-2*z*(-1+y)*(-1+x)*p[14]-2*x*z*(-1+y)*p[17]+2*x*y*z*p[20]+2*y*z*(-1+x)*p[23]-4*z*(-1+z)*(-1+y)*p[32]+4*y*(-1+z)*(-1+y)*p[35]+4*z*(-1+z)*(-1+y)*p[38]+4*y*(-1+z)*(-1+x)*p[41]+4*x*y*(-1+z)*p[41]-4*y*z*(-1+z)*p[44]+4*y*z*(-1+z)*p[47]+4*z*(-1+y)*(-1+x)*p[50]+4*x*z*(-1+y)*p[50]+4*y*z*(-1+y)*p[53]-4*y*z*(-1+y)*p[56]-4*y*z*(-1+x)*p[59]-4*x*y*z*p[59];
+  dtau[2][0]
+    =2 * (-1+z) * (-1+y) * (-1+x) * p[2]
+    +2 * x * (-1+z) * (-1+y) * p[5]
+    -2 * x * y * (-1+z) * p[8]
+    -2 * y * (-1+z) * (-1+x) * p[11]
+    -4 * y * (-1+z) * (-1+y) * p[29]
+    +(-1+z) * (-1+y) * (2 * x+2 * y+2 * z-1) * p[2]
+    +(-1+z) * (-1+y) * (-2 * y-2 * z+2 * x-1) * p[5]
+    -y * (-1+z) * (2 * y-2 * z-3+2 * x) * p[8]
+    -y * (-1+z) * (2 * x+2 * z+1-2 * y) * p[11]
+    -z * (-1+y) * (2 * x+2 * y-2 * z+1) * p[14]
+    -z * (-1+y) * (-2 * y+2 * z-3+2 * x) * p[17]
+    +y * z * (2 * y+2 * z-5+2 * x) * p[20]
+    +y * z * (2 * x-2 * z+3-2 * y) * p[23]
+    -4 * (-1+z) * (-1+y) * (-1+x) * p[26]
+    -4 * x * (-1+z) * (-1+y) * p[26]
+    -2 * z * (-1+y) * (-1+x) * p[14]
+    -2 * x * z * (-1+y) * p[17]
+    +2 * x * y * z * p[20]
+    +2 * y * z * (-1+x) * p[23]
+    -4 * z * (-1+z) * (-1+y) * p[32]
+    +4 * y * (-1+z) * (-1+y) * p[35]
+    +4 * z * (-1+z) * (-1+y) * p[38]
+    +4 * y * (-1+z) * (-1+x) * p[41]
+    +4 * x * y * (-1+z) * p[41]
+    -4 * y * z * (-1+z) * p[44]
+    +4 * y * z * (-1+z) * p[47]
+    +4 * z * (-1+y) * (-1+x) * p[50]
+    +4 * x * z * (-1+y) * p[50]
+    +4 * y * z * (-1+y) * p[53]
+    -4 * y * z * (-1+y) * p[56]
+    -4 * y * z * (-1+x) * p[59]
+    -4 * x * y * z * p[59];
 
-  dtau[2][1]=2*(-1+z)*(-1+y)*(-1+x)*p[2]-2*x*(-1+z)*(-1+y)*p[5]-2*x*y*(-1+z)*p[8]+2*y*(-1+z)*(-1+x)*p[11]-2*z*(-1+y)*(-1+x)*p[14]+2*x*z*(-1+y)*p[17]+2*x*y*z*p[20]-2*y*z*(-1+x)*p[23]+(-1+z)*(-1+x)*(2*x+2*y+2*z-1)*p[2]+x*(-1+z)*(-2*y-2*z+2*x-1)*p[5]-x*(-1+z)*(2*y-2*z-3+2*x)*p[8]-(-1+z)*(-1+x)*(2*x+2*z+1-2*y)*p[11]-z*(-1+x)*(2*x+2*y-2*z+1)*p[14]-x*z*(-2*y+2*z-3+2*x)*p[17]+x*z*(2*y+2*z-5+2*x)*p[20]+z*(-1+x)*(2*x-2*z+3-2*y)*p[23]-4*x*(-1+z)*(-1+x)*p[26]-4*(-1+z)*(-1+y)*(-1+x)*p[29]-4*y*(-1+z)*(-1+x)*p[29]-4*z*(-1+z)*(-1+x)*p[32]+4*x*(-1+z)*(-1+y)*p[35]+4*x*y*(-1+z)*p[35]+4*x*z*(-1+z)*p[38]+4*x*(-1+z)*(-1+x)*p[41]-4*x*z*(-1+z)*p[44]+4*z*(-1+z)*(-1+x)*p[47]+4*x*z*(-1+x)*p[50]+4*z*(-1+y)*(-1+x)*p[53]+4*y*z*(-1+x)*p[53]-4*x*z*(-1+y)*p[56]-4*x*y*z*p[56]-4*x*z*(-1+x)*p[59];
+  dtau[2][1]
+    =2 * (-1+z) * (-1+y) * (-1+x) * p[2]
+    -2 * x * (-1+z) * (-1+y) * p[5]
+    -2 * x * y * (-1+z) * p[8]
+    +2 * y * (-1+z) * (-1+x) * p[11]
+    -2 * z * (-1+y) * (-1+x) * p[14]
+    +2 * x * z * (-1+y) * p[17]
+    +2 * x * y * z * p[20]
+    -2 * y * z * (-1+x) * p[23]
+    +(-1+z) * (-1+x) * (2 * x+2 * y+2 * z-1) * p[2]
+    +x * (-1+z) * (-2 * y-2 * z+2 * x-1) * p[5]
+    -x * (-1+z) * (2 * y-2 * z-3+2 * x) * p[8]
+    -(-1+z) * (-1+x) * (2 * x+2 * z+1-2 * y) * p[11]
+    -z * (-1+x) * (2 * x+2 * y-2 * z+1) * p[14]
+    -x * z * (-2 * y+2 * z-3+2 * x) * p[17]
+    +x * z * (2 * y+2 * z-5+2 * x) * p[20]
+    +z * (-1+x) * (2 * x-2 * z+3-2 * y) * p[23]
+    -4 * x * (-1+z) * (-1+x) * p[26]
+    -4 * (-1+z) * (-1+y) * (-1+x) * p[29]
+    -4 * y * (-1+z) * (-1+x) * p[29]
+    -4 * z * (-1+z) * (-1+x) * p[32]
+    +4 * x * (-1+z) * (-1+y) * p[35]
+    +4 * x * y * (-1+z) * p[35]
+    +4 * x * z * (-1+z) * p[38]
+    +4 * x * (-1+z) * (-1+x) * p[41]
+    -4 * x * z * (-1+z) * p[44]
+    +4 * z * (-1+z) * (-1+x) * p[47]
+    +4 * x * z * (-1+x) * p[50]
+    +4 * z * (-1+y) * (-1+x) * p[53]
+    +4 * y * z * (-1+x) * p[53]
+    -4 * x * z * (-1+y) * p[56]
+    -4 * x * y * z * p[56]
+    -4 * x * z * (-1+x) * p[59];
 
-  dtau[2][2]=2*(-1+z)*(-1+y)*(-1+x)*p[2]-2*x*(-1+z)*(-1+y)*p[5]+2*x*y*(-1+z)*p[8]-2*y*(-1+z)*(-1+x)*p[11]+2*z*(-1+y)*(-1+x)*p[14]-2*x*z*(-1+y)*p[17]+2*x*y*z*p[20]-2*y*z*(-1+x)*p[23]+(-1+y)*(-1+x)*(2*x+2*y+2*z-1)*p[2]+x*(-1+y)*(-2*y-2*z+2*x-1)*p[5]-x*y*(2*y-2*z-3+2*x)*p[8]-y*(-1+x)*(2*x+2*z+1-2*y)*p[11]-(-1+y)*(-1+x)*(2*x+2*y-2*z+1)*p[14]-x*(-1+y)*(-2*y+2*z-3+2*x)*p[17]+x*y*(2*y+2*z-5+2*x)*p[20]+y*(-1+x)*(2*x-2*z+3-2*y)*p[23]-4*x*(-1+y)*(-1+x)*p[26]-4*y*(-1+y)*(-1+x)*p[29]-4*(-1+z)*(-1+y)*(-1+x)*p[32]-4*z*(-1+y)*(-1+x)*p[32]+4*x*y*(-1+y)*p[35]+4*x*(-1+z)*(-1+y)*p[38]+4*x*z*(-1+y)*p[38]+4*x*y*(-1+x)*p[41]-4*x*y*(-1+z)*p[44]-4*x*y*z*p[44]+4*y*(-1+z)*(-1+x)*p[47]+4*y*z*(-1+x)*p[47]+4*x*(-1+y)*(-1+x)*p[50]+4*y*(-1+y)*(-1+x)*p[53]-4*x*y*(-1+y)*p[56]-4*x*y*(-1+x)*p[59];
-
+  dtau[2][2]
+    =2 * (-1+z) * (-1+y) * (-1+x) * p[2]
+    -2 * x * (-1+z) * (-1+y) * p[5]
+    +2 * x * y * (-1+z) * p[8]
+    -2 * y * (-1+z) * (-1+x) * p[11]
+    +2 * z * (-1+y) * (-1+x) * p[14]
+    -2 * x * z * (-1+y) * p[17]
+    +2 * x * y * z * p[20]
+    -2 * y * z * (-1+x) * p[23]
+    +(-1+y) * (-1+x) * (2 * x+2 * y+2 * z-1) * p[2]
+    +x * (-1+y) * (-2 * y-2 * z+2 * x-1) * p[5]
+    -x * y * (2 * y-2 * z-3+2 * x) * p[8]
+    -y * (-1+x) * (2 * x+2 * z+1-2 * y) * p[11]
+    -(-1+y) * (-1+x) * (2 * x+2 * y-2 * z+1) * p[14]
+    -x * (-1+y) * (-2 * y+2 * z-3+2 * x) * p[17]
+    +x * y * (2 * y+2 * z-5+2 * x) * p[20]
+    +y * (-1+x) * (2 * x-2 * z+3-2 * y) * p[23]
+    -4 * x * (-1+y) * (-1+x) * p[26]
+    -4 * y * (-1+y) * (-1+x) * p[29]
+    -4 * (-1+z) * (-1+y) * (-1+x) * p[32]
+    -4 * z * (-1+y) * (-1+x) * p[32]
+    +4 * x * y * (-1+y) * p[35]
+    +4 * x * (-1+z) * (-1+y) * p[38]
+    +4 * x * z * (-1+y) * p[38]
+    +4 * x * y * (-1+x) * p[41]
+    -4 * x * y * (-1+z) * p[44]
+    -4 * x * y * z * p[44]
+    +4 * y * (-1+z) * (-1+x) * p[47]
+    +4 * y * z * (-1+x) * p[47]
+    +4 * x * (-1+y) * (-1+x) * p[50]
+    +4 * y * (-1+y) * (-1+x) * p[53]
+    -4 * x * y * (-1+y) * p[56]
+    -4 * x * y * (-1+x) * p[59];
 }
 
 // Get the logical index of the gaussian point given the coordinate
@@ -735,7 +1029,6 @@ void DGFlux(__constant int *param,     // interp param
   __local real *dtwnlocR = wnloc + 3 * get_local_size(0) * m;
 
   int pL[3];
-
   
 #if DGFLUX_LOCAL
   for(int i = 0; i < m; i++) {
@@ -842,7 +1135,7 @@ void DGFlux(__constant int *param,     // interp param
   }
 #endif
   
-  real h1h2 = 1.0 / nraf[dim1] / nraf[dim2];
+  const real h1h2 = 1.0 / nraf[dim1] / nraf[dim2];
   real vnds[3] = {codtau[0][dim0] * h1h2,
 		  codtau[1][dim0] * h1h2,
 		  codtau[2][dim0] * h1h2 };
@@ -904,16 +1197,6 @@ void DGFlux(__constant int *param,     // interp param
   }
 #endif
 }
-
-__kernel
-void set_buffer_to_zero(__global real *w)
-{
-  w[get_global_id(0)] = 0.0;
-}
-
-#ifndef BOUNDARYFLUX
-#define BOUNDARYFLUX BoundaryFlux
-#endif
 
 inline void prefetch_macrocell(const __global real *in,
 			__local real *out,
@@ -1332,6 +1615,8 @@ void ExtractedDGInterfaceFlux(__constant int *param,
 
 }
 
+
+
 // Compute the Discontinuous Galerkin inter-macrocells boundary terms.
 // Second implementation with a loop on the faces.
 __kernel
@@ -1359,7 +1644,12 @@ void DGMacroCellInterface(__constant int *param,        // interp param
   real wpg;
 
   // Compute volumic index in the left MacroCell.
-  int ipgL = ref_pg_face(deg, raf, locfaL, ipgfL, xpgref, &wpg, xpgref_in);
+  int ipgL = ref_pg_face(deg, raf, locfaL, ipgfL, xpgref, &wpg);
+
+  int ixL[3], icL[3];
+  ipg_to_xyz(raf, deg, icL, ixL, &ipgL);
+
+  compute_xpgin(raf, deg, icL, ixL, locfaL, xpgref_in);
   
   // Normal vector at gauss point based on xpgref
   real vnds[3];
@@ -1382,8 +1672,8 @@ void DGMacroCellInterface(__constant int *param,        // interp param
     real gradphi[20][4];
     compute_gradphi(xpgref_in, gradphi);
 
-    real xpg_in[3];
-    compute_xphy(physnodeL, gradphi, xpg_in);
+    real xphy[3];
+    compute_xphy(physnodeL, gradphi, xphy);
     
 #if defined(_PERIODX) || defined(_PERIODY) || defined(_PERIODZ)
 #ifndef _PERIODX
@@ -1396,12 +1686,12 @@ void DGMacroCellInterface(__constant int *param,        // interp param
 #define _PERIODZ -1
 #endif
     real period[3] = {_PERIODX, _PERIODY, _PERIODZ};
-    PeriodicCorrection(xpg_in, period);
+    PeriodicCorrection(xphy, period);
 #endif
 
-    real xrefL[3];
-    Phy2Ref(physnodeR, xpg_in, xrefL);
-    ipgR = ref_ipg(raf, deg, xrefL);
+    real xrefR[3];
+    Phy2Ref(physnodeR, xphy, xrefR);
+    ipgR = ref_ipg(raf, deg, xrefR);
   }
   
   real wL[_M];
@@ -1437,8 +1727,7 @@ void DGBoundary(__constant int *param,      // interp param
 		int locfa,                 // left face index
 		__constant real *physnode, // geometry for all mcells
 		__global real *wn,          // field 
-		__global real *dtwn,        // time derivative
-		__local real *cache         // local mem
+		__global real *dtwn        // time derivative
 		)
 {
   // TODO: use __local real *cache.
@@ -1450,19 +1739,17 @@ void DGBoundary(__constant int *param,      // interp param
   const int nraf[3] = {param[4], param[5], param[6]};
 
   real xref[3];    // reference coordinates
-  real xref_in[3]; // unused
   real wpg;        // weighting for the GL point
-  int ipgL = ref_pg_face(ndeg, nraf, locfa, ipgf, xref, &wpg, xref_in);
+  int ipgL = ref_pg_face(ndeg, nraf, locfa, ipgf, xref, &wpg);
 
   // normal vector
   real vnds[3]; 
-  // physical coordinates
-  real xpg[3];  
+  real xphy[3];    // physical coordinates
   {
     real gradphi[20][4];
     compute_gradphi(xref, gradphi);
     
-    compute_xphy(physnode, gradphi, xpg);
+    compute_xphy(physnode, gradphi, xphy);
 
     real dtau[3][3];  
     compute_dtau(physnode, gradphi, dtau);
@@ -1481,8 +1768,12 @@ void DGBoundary(__constant int *param,      // interp param
     wL[iv] = wn0[iv];
   }
 
+#ifndef BOUNDARYFLUX
+#define BOUNDARYFLUX BoundaryFlux
+#endif
+
   real flux[_M];
-  BOUNDARYFLUX(xpg, tnow, wL, vnds, flux);
+  BOUNDARYFLUX(xphy, tnow, wL, vnds, flux);
 
   __global real *dtwn0 = dtwn + imemL0; 
   for(int iv = 0; iv < m; ++iv) {
@@ -1493,107 +1784,6 @@ void DGBoundary(__constant int *param,      // interp param
 #endif
   }
 }
-
-
-inline void Phy2Ref(__constant real *physnode, real *xphy, real *xref) 
-{
-#define ITERNEWTON 10
-  real dxref[3], dxphy[3];
-  xref[0] = 0.5;
-  xref[1] = 0.5;
-  xref[2] = 0.5;
-  for(int iter = 0; iter < ITERNEWTON; ++iter ) {
-    real dtau[3][3];
-    real codtau[3][3];
-    
-    /*
-    int ifa =- 1;
-    Ref2Phy(physnode, xref, 0, ifa, dxphy, dtau, codtau, 0, 0);
-    */
-
-    real gradphi[20][4];
-    compute_gradphi(xref, gradphi);
-    compute_xphy(physnode, gradphi, dxphy);
-    compute_dtau(physnode, gradphi, dtau);
-    compute_codtau(dtau, codtau);
-    
-    dxphy[0] -= xphy[0];
-    dxphy[1] -= xphy[1];
-    dxphy[2] -= xphy[2];
-
-#ifdef FP_FAST_FMA
-    real det = fma(dtau[0][0], codtau[0][0],
-		   fma(dtau[0][1], codtau[0][1],
-		       dtau[0][2] * codtau[0][2]) );
-    real overdet = 1.0 / det;
-    
-    dxref[0] = fma(codtau[0][0], dxphy[0],
-		   fma(codtau[1][0], dxphy[1],
-		       codtau[2][0] * dxphy[2]) );
-    xref[0] = fma(-dxref[0], overdet, xref[0]);
-    
-    dxref[1] = fma(codtau[0][1], dxphy[0],
-		   fma(codtau[1][1], dxphy[1],
-		       codtau[2][1] * dxphy[2]) );
-    xref[1] = fma(-dxref[1], overdet, xref[1]);
-    
-    dxref[2] = fma(codtau[0][2], dxphy[0],
-		   fma(codtau[1][2], dxphy[1],
-		       codtau[2][2] * dxphy[2]) );
-    xref[2] = fma(-dxref[2], overdet, xref[2]);
-#else
-    real overdet = 1.0 / (  dtau[0][0] * codtau[0][0]
-			    + dtau[0][1] * codtau[0][1]
-			    + dtau[0][2] * codtau[0][2] );
- 
-    for(int ii = 0; ii < 3; ++ii) {
-      dxref[ii]
-	= codtau[0][ii] * dxphy[0] 
-	+ codtau[1][ii] * dxphy[1] 
-	+ codtau[2][ii] * dxphy[2];
-      xref[ii] -= dxref[ii] * overdet;
-    }
-#endif
-  }
-}
-
-// From a reference point find the nearest gauss point
-// Warning: works only  degree 1, 2, or 3 (FIXME: why?)
-int ref_ipg(int *raf, int *deg, real *xref) 
-{
-  real hh[3] = {1.0 / raf[0], 1.0 / raf[1], 1.0 / raf[2]};
-
-  // get the subcell id
-  int ncx = floor(xref[0] * raf[0]);
-  int ncy = floor(xref[1] * raf[1]);
-  int ncz = floor(xref[2] * raf[2]);
-
-  //printf("x=%f ncx=%d rafx=%d\n",xref[0], ncx,raf[0]);
-  //printf("y=%f ncy=%d rafy=%d\n",xref[1], ncy,raf[1]);
-  //printf("z=%f ncz=%d rafz=%d\n",xref[2], ncz,raf[2]);
-  //assert(ncx >=0 && ncx<raf[0]);
-  //assert(ncy >=0 && ncy<raf[1]);
-  //assert(ncz >=0 && ncz<raf[2]);
-
-  // subcell index in the macrocell
-  int nc = ncx + raf[0] * (ncy + raf[1] * ncz);
-  int offset = (deg[0] + 1) * (deg[1] + 1) * (deg[2] + 1) * nc;
-
-  // round to the nearest integer
-  int ix = floor((xref[0] - ncx * hh[0]) / hh[0] * deg[0] + 0.5);
-  int iy = floor((xref[1] - ncy * hh[1]) / hh[1] * deg[1] + 0.5);
-  int iz = floor((xref[2] - ncz * hh[2]) / hh[2] * deg[2] + 0.5);
-  //int iz=floor(xref[2]*deg[2]+0.5);
-
-  //printf("xref %f %f %f ix=%d iy=%d iz=%d\n",
-  //	 xref[0],xref[1],xref[2], ix, iy, iz);
-
-  return ix + (deg[0] + 1) * (iy + (deg[1] + 1) * iz) + offset;
-}
-
-#ifndef _SOURCE_FUNC
-#define _SOURCE_FUNC ZeroSource
-#endif
 
 // Sample source function
 void ZeroSource(const real *x, const real t, const real *w, real *source,
@@ -1646,6 +1836,10 @@ void compute_source(__constant int *param,     // interp param
     w[iv] = wnloc0[iv];
   }
 
+#ifndef _SOURCE_FUNC
+#define _SOURCE_FUNC ZeroSource
+#endif
+  
   // Compute source using w and xref
   real source[_M];
   _SOURCE_FUNC(xphy, tnow, w, source, _M);
