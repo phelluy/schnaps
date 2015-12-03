@@ -314,6 +314,14 @@ void init_field_events_cl(field *f)
 void init_field_macrocells_cl(field *f)
 {
   cl_int status;
+  const int m = f->model.m;
+  
+  const int axis_permut[6][4] = { {0, 2, 1, 0},
+				  {1, 2, 0, 1},
+				  {2, 0, 1, 1},
+				  {2, 1, 0, 0},
+				  {0, 1, 2, 1},
+				  {1, 0, 2, 0} };
   
   for(int ie = 0; ie < f->macromesh.nbelems; ie++) {
     MacroCell *mcell = f->mcell + ie; 
@@ -362,6 +370,22 @@ void init_field_macrocells_cl(field *f)
     assert(status >= CL_SUCCESS);
 
     mcell->interface_cl = malloc(6 * sizeof(cl_mem));
+    for(int ifa = 0; ifa < 6; ++ifa) {
+      int d0 = axis_permut[ifa][0];
+      int d1 = axis_permut[ifa][1];
+      int npgf = mcell->raf[d0] * (mcell->deg[d0] + 1)
+	* mcell->raf[d1] * (mcell->deg[d1] + 1); 
+      size_t bufsize = sizeof(real) * m * npgf;
+      mcell->interface_cl[ifa] = clCreateBuffer(f->cli.context,
+						CL_MEM_READ_WRITE,
+						bufsize,
+						NULL,
+						&status);
+      if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+      assert(status >= CL_SUCCESS);
+
+    }
+    
   }
 }
   
@@ -378,28 +402,10 @@ void init_field_MacroFaces_cl(field *f)
     int ifa = f->macromesh.macrointerface[i];
     MacroFace *mface = f->mface + ifa;
   
-    size_t bufsize = sizeof(real) * m * mface->npgf;
-    
     MacroCell *mcellL = mface->mcellL;
-    mcellL->interface_cl[mface->locfaL] = clCreateBuffer(f->cli.context,
-							 CL_MEM_READ_WRITE,
-							 bufsize,
-							 NULL,
-							 &status);
-    if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
-    assert(status >= CL_SUCCESS);
-
     mface->wL_cl = mcellL->interface_cl[mface->locfaL];
     
     MacroCell *mcellR = mface->mcellR;
-    mcellR->interface_cl[mface->locfaR] = clCreateBuffer(f->cli.context,
-							 CL_MEM_READ_WRITE,
-							 bufsize,
-							 NULL,
-							 &status);
-    if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
-    assert(status >= CL_SUCCESS);
-
     mface->wR_cl = mcellR->interface_cl[mface->locfaR];
   }
 }
