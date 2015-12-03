@@ -1731,9 +1731,10 @@ void DGBoundary(__constant int *param,      // interp param
   real wpg;        // weighting for the GL point
   int ipgL = ref_pg_face(ndeg, nraf, locfa, ipgf, xref, &wpg);
 
-  // normal vector
-  real vnds[3]; 
-  real xphy[3];    // physical coordinates
+  // Normal vector
+  real vnds[3];
+  // Physical coordinates
+  real xphy[3];
   {
     real gradphi[20][4];
     compute_gradphi(xref, gradphi);
@@ -1890,7 +1891,11 @@ void RK_in_CL(__global real *wnp1,
 	      const real dt)
 {
   int ipg = get_global_id(0);
+#ifdef FP_FAST_FMA
+  wnp1[ipg] = fma(dt, dtwn[ipg], wnp1[ipg]);
+#else
   wnp1[ipg] += dt * dtwn[ipg];
+  #endif
 }
 
 // Out-of-place RK stage
@@ -1919,24 +1924,27 @@ void RK4_final_stage(__global real *w,
 		     const real dt)
 {
   const real b = -1.0 / 3.0;
-  const real a[] = {1.0 / 3.0, 2.0 / 3.0, 1.0 / 3.0, dt / 6.0};
+  const real a0 = 1.0 / 3.0;
+  const real a1 = 2.0 / 3.0;
+  const real a2 = 1.0 / 3.0;
+  const real a3 = dt / 6.0;
   int i = get_global_id(0);
 
 #ifdef FP_FAST_FMA
   w[i] = fma(b, w[i],
-	     fma(a[0], l1[i],
-		 fma(a[1], l2[i],
-		     fma(a[2], l3[i],
-			 a[3] * dtw[i])
+	     fma(a0, l1[i],
+		 fma(a1, l2[i],
+		     fma(a2, l3[i],
+			 a3 * dtw[i])
 		     )
 		 )
 	     );
 #else
   w[i] 
     = b * w[i]
-    + a[0] * l1[i]
-    + a[1] * l2[i]
-    + a[2] * l3[i]
-    + a[3] * dtw[i];
+    + a0 * l1[i]
+    + a1 * l2[i]
+    + a2 * l3[i]
+    + a3 * dtw[i];
 #endif
 }
