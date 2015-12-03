@@ -361,6 +361,28 @@ void unpermute_indices(int *i, const int *pi, const int ifa)
   i[axis_permut[ifa][2]] = pi[2];
 }
 
+void compute_xpgin(const int *pdeg, const int* pic, const int* pix,
+		   const int* paxis, const real *h, const int* poffset,
+		   real *xpgin)
+{
+  const real  small = 1e-3;
+  const real vsmall = 1e-6;
+
+  xpgin[paxis[0]] = h[0] * (pic[0] + gauss_lob_point[poffset[0]]);
+  if(pix[0] == 0)
+    xpgin[paxis[0]] = h[0] * (pic[0] + gauss_lob_point[poffset[0]] + small);
+  if(pix[0] == pdeg[0])
+    xpgin[paxis[0]] = h[0] * (pic[0] + gauss_lob_point[poffset[0]] - small);
+  
+  xpgin[paxis[1]] = h[1] * (pic[1] + gauss_lob_point[poffset[1]]);
+  if(pix[1] == 0)
+    xpgin[paxis[1]] = h[1] * (pic[1] + gauss_lob_point[poffset[1]] + small);
+  if(pix[1] == pdeg[1])
+    xpgin[paxis[1]] = h[1] * (pic[1] + gauss_lob_point[poffset[1]] - small);
+
+  xpgin[paxis[2]] = paxis[3] == 0 ? -vsmall: 1.0 + vsmall;
+}
+
 // ifa:   face index
 // ipgf:  index of point in the face
 // xpg:   reference-space coordinates
@@ -378,19 +400,19 @@ int ref_pg_face(const int *deg,
   // First and second columns: 2D loop dimensions
   // Third column: face dimension
   // Fourth column: 0 -> negative orientation, 1 -> positive orientation
-  int axis_permut[6][4] = { {0, 2, 1, 0},
-			    {1, 2, 0, 1},
-			    {2, 0, 1, 1},
-			    {2, 1, 0, 0},
-			    {0, 1, 2, 1},
-			    {1, 0, 2, 0} };
+  const int axis_permut[6][4] = { {0, 2, 1, 0},
+				  {1, 2, 0, 1},
+				  {2, 0, 1, 1},
+				  {2, 1, 0, 0},
+				  {0, 1, 2, 1},
+				  {1, 0, 2, 0} };
   
-  int paxis[4] = {axis_permut[ifa][0],
-		  axis_permut[ifa][1],
-		  axis_permut[ifa][2],
-		  axis_permut[ifa][3]};
+  const int paxis[4] = {axis_permut[ifa][0],
+			axis_permut[ifa][1],
+			axis_permut[ifa][2],
+			axis_permut[ifa][3]};
 
-  int sign = select(-1, 1, paxis[3]);
+
   
   // number of subcells in each permuted direction
   int praf[3];
@@ -415,9 +437,7 @@ int ref_pg_face(const int *deg,
   pic[1] = ipgf / praf[0];
   pic[2] = select(0, praf[2] - 1, paxis[3]); // Equals 0 or raf-1
 
-  real h[3] = {1.0 / (real) praf[0],
-	       1.0 / (real) praf[1],
-	       1.0 / (real) praf[2] };
+  const real h[3] = {1.0 / praf[0], 1.0 / praf[1], 1.0 / praf[2] };
   
   // non-permuted subcell index
   int ic[3];
@@ -436,8 +456,8 @@ int ref_pg_face(const int *deg,
 
   // Compute the reference coordinates of the Gauss-Lobatto point in
   // the volume
-  int poffset[2] = {gauss_lob_offset[pdeg[0]] + pix[0],
-		    gauss_lob_offset[pdeg[1]] + pix[1]};
+  const int poffset[2] = {gauss_lob_offset[pdeg[0]] + pix[0],
+			  gauss_lob_offset[pdeg[1]] + pix[1]};
 
   xpg[paxis[0]] = h[0] * (pic[0] + gauss_lob_point[poffset[0]]);
   xpg[paxis[1]] = h[1] * (pic[1] + gauss_lob_point[poffset[1]]);
@@ -446,23 +466,7 @@ int ref_pg_face(const int *deg,
   *wpg = h[0] * h[1] *
     gauss_lob_weight[poffset[0]] * gauss_lob_weight[poffset[1]];
 
-  real small = 1e-3;
-  real vsmall = 1e-6;
-
-  xpgin[paxis[0]] = h[0] * (pic[0] + gauss_lob_point[poffset[0]]);
-  if(pix[0] == 0)
-    xpgin[paxis[0]] = h[0] * (pic[0] + gauss_lob_point[poffset[0]] + small);
-  if(pix[0] == pdeg[0])
-    xpgin[paxis[0]] = h[0] * (pic[0] + gauss_lob_point[poffset[0]] - small);
-  
-  xpgin[paxis[1]] = h[1] * (pic[1] + gauss_lob_point[poffset[1]]);
-  if(pix[1] == 0)
-    xpgin[paxis[1]] = h[1] * (pic[1] + gauss_lob_point[poffset[1]] + small);
-  if(pix[1] == pdeg[1])
-    xpgin[paxis[1]] = h[1] * (pic[1] + gauss_lob_point[poffset[1]] - small);
-  
-  xpgin[paxis[2]] = sign == -1 ? -vsmall: 1.0 + vsmall;
-  //xpgin[paxis[2]] = select(-vsmall, 1.0 + vsmall, (long) (sign == -1));
+  compute_xpgin(pdeg, pic, pix, paxis, h, poffset, xpgin);
   
   return ipgv;
 }
@@ -557,7 +561,105 @@ inline real wglop(int deg, int i)
 }
 
 void get_dtau(real x, real y, real z,
-	      __constant real *physnode, real dtau[][3]);
+	      __constant real *p, real dtau[][3]) 
+{
+  // Gradient of the shape functions and value (4th component) of the
+  // shape functions
+
+  /* real gradphi[20][3]; */
+  /* //real x,y,z; */
+  /* // this fills the values of gradphi */
+  /* gradphi[0][0] = (-1 + z) * (-1 + y) * (2 * y + 2 * z + 4 * x - 3); */
+  /* gradphi[0][1] = (-1 + z) * (-1 + x) * (2 * x + 2 * z - 3 + 4 * y); */
+  /* gradphi[0][2] = (-1 + y) * (-1 + x) * (2 * x + 2 * y - 3 + 4 * z); */
+  /* gradphi[1][0] = (-1 + z) * (-1 + y) * (-2 * y - 2 * z - 1 + 4 * x); */
+  /* gradphi[1][1] = x * (-1 + z) * (-2 * z + 1 - 4 * y + 2 * x); */
+  /* gradphi[1][2] = x * (-1 + y) * (-2 * y + 1 - 4 * z + 2 * x); */
+  /* gradphi[2][0] = -y * (-1 + z) * (2 * y - 2 * z - 3 + 4 * x); */
+  /* gradphi[2][1] = -x * (-1 + z) * (-2 * z - 3 + 4 * y + 2 * x); */
+  /* gradphi[2][2] = -x * y * (2 * y - 4 * z - 1 + 2 * x); */
+  /* gradphi[3][0] = -y * (-1 + z) * (-2 * y + 2 * z - 1 + 4 * x); */
+  /* gradphi[3][1] = -(-1 + z) * (-1 + x) * (2 * x + 2 * z + 1 - 4 * y); */
+  /* gradphi[3][2] = -y * (-1 + x) * (2 * x - 1 + 4 * z - 2 * y); */
+  /* gradphi[4][0] = -z * (-1 + y) * (2 * y - 2 * z - 1 + 4 * x); */
+  /* gradphi[4][1] = -z * (-1 + x) * (2 * x - 2 * z - 1 + 4 * y); */
+  /* gradphi[4][2] = -(-1 + y) * (-1 + x) * (2 * x - 4 * z + 2 * y + 1); */
+  /* gradphi[5][0] = -z * (-1 + y) * (-2 * y + 2 * z + 4 * x - 3); */
+  /* gradphi[5][1] = -x * z * (2 * z - 4 * y - 1 + 2 * x); */
+  /* gradphi[5][2] = -x * (-1 + y) * (-2 * y - 3 + 4 * z + 2 * x); */
+  /* gradphi[6][0] = y * z * (2 * y + 2 * z + 4 * x - 5); */
+  /* gradphi[6][1] = x * z * (2 * z + 4 * y - 5 + 2 * x); */
+  /* gradphi[6][2] = x * y * (2 * y + 4 * z - 5 + 2 * x); */
+  /* gradphi[7][0] = y * z * (-2 * y - 2 * z + 1 + 4 * x); */
+  /* gradphi[7][1] = z * (-1 + x) * (2 * x - 2 * z + 3 - 4 * y); */
+  /* gradphi[7][2] = y * (-1 + x) * (2 * x - 2 * y + 3 - 4 * z); */
+  /* gradphi[8][0] = -4 * (-1 + z) * (-1 + y) * (2 * x - 1); */
+  /* gradphi[8][1] = -4 * x * (-1 + z) * (-1 + x); */
+  /* gradphi[8][2] = -4 * x * (-1 + y) * (-1 + x); */
+  /* gradphi[9][0] = -4 * y * (-1 + z) * (-1 + y); */
+  /* gradphi[9][1] = -4 * (-1 + z) * (2 * y - 1) * (-1 + x); */
+  /* gradphi[9][2] = -4 * y * (-1 + y) * (-1 + x); */
+  /* gradphi[10][0] = -4 * z * (-1 + z) * (-1 + y); */
+  /* gradphi[10][1] = -4 * z * (-1 + z) * (-1 + x); */
+  /* gradphi[10][2] = -4 * (2 * z - 1) * (-1 + y) * (-1 + x); */
+  /* gradphi[11][0] = 4 * y * (-1 + z) * (-1 + y); */
+  /* gradphi[11][1] = 4 * x * (-1 + z) * (2 * y - 1); */
+  /* gradphi[11][2] = 4 * x * y * (-1 + y); */
+  /* gradphi[12][0] = 4 * z * (-1 + z) * (-1 + y); */
+  /* gradphi[12][1] = 4 * x * z * (-1 + z); */
+  /* gradphi[12][2] = 4 * x * (2 * z - 1) * (-1 + y); */
+  /* gradphi[13][0] = 4 * y * (-1 + z) * (2 * x - 1); */
+  /* gradphi[13][1] = 4 * x * (-1 + z) * (-1 + x); */
+  /* gradphi[13][2] = 4 * x * y * (-1 + x); */
+  /* gradphi[14][0] = -4 * y * z * (-1 + z); */
+  /* gradphi[14][1] = -4 * x * z * (-1 + z); */
+  /* gradphi[14][2] = -4 * x * y * (2 * z - 1); */
+  /* gradphi[15][0] = 4 * y * z * (-1 + z); */
+  /* gradphi[15][1] = 4 * z * (-1 + z) * (-1 + x); */
+  /* gradphi[15][2] = 4 * y * (2 * z - 1) * (-1 + x); */
+  /* gradphi[16][0] = 4 * z * (-1 + y) * (2 * x - 1); */
+  /* gradphi[16][1] = 4 * x * z * (-1 + x); */
+  /* gradphi[16][2] = 4 * x * (-1 + y) * (-1 + x); */
+  /* gradphi[17][0] = 4 * y * z * (-1 + y); */
+  /* gradphi[17][1] = 4 * z * (2 * y - 1) * (-1 + x); */
+  /* gradphi[17][2] = 4 * y * (-1 + y) * (-1 + x); */
+  /* gradphi[18][0] = -4 * y * z * (-1 + y); */
+  /* gradphi[18][1] = -4 * x * z * (2 * y - 1); */
+  /* gradphi[18][2] = -4 * x * y * (-1 + y); */
+  /* gradphi[19][0] = -4 * y * z * (2 * x - 1); */
+  /* gradphi[19][1] = -4 * x * z * (-1 + x); */
+  /* gradphi[19][2] = -4 * x * y * (-1 + x); */
+  /* for(int ii=0;ii<3;ii++){ */
+  /*   for(int jj=0;jj<3;jj++){ */
+  /*     dtau[ii][jj]=0; */
+  /*   } */
+  /*   for(int i=0;i<20;i++){ */
+  /*     //printf("xyzphy=%f %f %f \n",physnode[3*i+0],physnode[3*i+1],physnode[3*i+2]); */
+  /*     for(int jj=0;jj<3;jj++){ */
+  /*       dtau[ii][jj]+=physnode[3*i+ii]*gradphi[i][jj];; */
+  /*     } */
+  /*   } */
+  /* } */
+
+  dtau[0][0]=2*(-1+z)*(-1+y)*(-1+x)*p[0]+2*x*(-1+z)*(-1+y)*p[3]-2*x*y*(-1+z)*p[6]-2*y*(-1+z)*(-1+x)*p[9]-2*z*(-1+y)*(-1+x)*p[12]-2*x*z*(-1+y)*p[15]+2*x*y*z*p[18]+2*y*z*(-1+x)*p[21]+(-1+z)*(-1+y)*(2*x+2*y+2*z-1)*p[0]+(-1+z)*(-1+y)*(-2*y-2*z+2*x-1)*p[3]-y*(-1+z)*(2*y-2*z-3+2*x)*p[6]-y*(-1+z)*(2*x+2*z+1-2*y)*p[9]-z*(-1+y)*(2*x+2*y-2*z+1)*p[12]-z*(-1+y)*(-2*y+2*z-3+2*x)*p[15]+y*z*(2*y+2*z-5+2*x)*p[18]+y*z*(2*x-2*z+3-2*y)*p[21]-4*(-1+z)*(-1+y)*(-1+x)*p[24]-4*x*(-1+z)*(-1+y)*p[24]-4*y*(-1+z)*(-1+y)*p[27]-4*z*(-1+z)*(-1+y)*p[30]+4*y*(-1+z)*(-1+y)*p[33]+4*z*(-1+z)*(-1+y)*p[36]+4*y*(-1+z)*(-1+x)*p[39]+4*x*y*(-1+z)*p[39]-4*y*z*(-1+z)*p[42]+4*y*z*(-1+z)*p[45]+4*z*(-1+y)*(-1+x)*p[48]+4*x*z*(-1+y)*p[48]+4*y*z*(-1+y)*p[51]-4*y*z*(-1+y)*p[54]-4*y*z*(-1+x)*p[57]-4*x*y*z*p[57];
+
+  dtau[0][1]=2*(-1+z)*(-1+y)*(-1+x)*p[0]-2*x*(-1+z)*(-1+y)*p[3]-2*x*y*(-1+z)*p[6]+2*y*(-1+z)*(-1+x)*p[9]-2*z*(-1+y)*(-1+x)*p[12]+2*x*z*(-1+y)*p[15]+2*x*y*z*p[18]-2*y*z*(-1+x)*p[21]+(-1+z)*(-1+x)*(2*x+2*y+2*z-1)*p[0]+x*(-1+z)*(-2*y-2*z+2*x-1)*p[3]-x*(-1+z)*(2*y-2*z-3+2*x)*p[6]-(-1+z)*(-1+x)*(2*x+2*z+1-2*y)*p[9]-z*(-1+x)*(2*x+2*y-2*z+1)*p[12]-x*z*(-2*y+2*z-3+2*x)*p[15]+x*z*(2*y+2*z-5+2*x)*p[18]+z*(-1+x)*(2*x-2*z+3-2*y)*p[21]-4*x*(-1+z)*(-1+x)*p[24]-4*(-1+z)*(-1+y)*(-1+x)*p[27]-4*y*(-1+z)*(-1+x)*p[27]-4*z*(-1+z)*(-1+x)*p[30]+4*x*(-1+z)*(-1+y)*p[33]+4*x*y*(-1+z)*p[33]+4*x*z*(-1+z)*p[36]+4*x*(-1+z)*(-1+x)*p[39]-4*x*z*(-1+z)*p[42]+4*z*(-1+z)*(-1+x)*p[45]+4*x*z*(-1+x)*p[48]+4*z*(-1+y)*(-1+x)*p[51]+4*y*z*(-1+x)*p[51]-4*x*z*(-1+y)*p[54]-4*x*y*z*p[54]-4*x*z*(-1+x)*p[57];
+
+  dtau[0][2]=2*(-1+z)*(-1+y)*(-1+x)*p[0]-2*x*(-1+z)*(-1+y)*p[3]+2*x*y*(-1+z)*p[6]-2*y*(-1+z)*(-1+x)*p[9]+2*z*(-1+y)*(-1+x)*p[12]-2*x*z*(-1+y)*p[15]+2*x*y*z*p[18]-2*y*z*(-1+x)*p[21]+(-1+y)*(-1+x)*(2*x+2*y+2*z-1)*p[0]+x*(-1+y)*(-2*y-2*z+2*x-1)*p[3]-x*y*(2*y-2*z-3+2*x)*p[6]-y*(-1+x)*(2*x+2*z+1-2*y)*p[9]-(-1+y)*(-1+x)*(2*x+2*y-2*z+1)*p[12]-x*(-1+y)*(-2*y+2*z-3+2*x)*p[15]+x*y*(2*y+2*z-5+2*x)*p[18]+y*(-1+x)*(2*x-2*z+3-2*y)*p[21]-4*x*(-1+y)*(-1+x)*p[24]-4*y*(-1+y)*(-1+x)*p[27]-4*(-1+z)*(-1+y)*(-1+x)*p[30]-4*z*(-1+y)*(-1+x)*p[30]+4*x*y*(-1+y)*p[33]+4*x*(-1+z)*(-1+y)*p[36]+4*x*z*(-1+y)*p[36]+4*x*y*(-1+x)*p[39]-4*x*y*(-1+z)*p[42]-4*x*y*z*p[42]+4*y*(-1+z)*(-1+x)*p[45]+4*y*z*(-1+x)*p[45]+4*x*(-1+y)*(-1+x)*p[48]+4*y*(-1+y)*(-1+x)*p[51]-4*x*y*(-1+y)*p[54]-4*x*y*(-1+x)*p[57];
+
+  dtau[1][0]=2*(-1+z)*(-1+y)*(-1+x)*p[1]+2*x*(-1+z)*(-1+y)*p[4]-2*x*y*(-1+z)*p[7]-2*y*(-1+z)*(-1+x)*p[10]-2*z*(-1+y)*(-1+x)*p[13]-2*x*z*(-1+y)*p[16]+2*x*y*z*p[19]+2*y*z*(-1+x)*p[22]+(-1+z)*(-1+y)*(2*x+2*y+2*z-1)*p[1]+(-1+z)*(-1+y)*(-2*y-2*z+2*x-1)*p[4]-y*(-1+z)*(2*y-2*z-3+2*x)*p[7]-y*(-1+z)*(2*x+2*z+1-2*y)*p[10]-z*(-1+y)*(2*x+2*y-2*z+1)*p[13]-z*(-1+y)*(-2*y+2*z-3+2*x)*p[16]+y*z*(2*y+2*z-5+2*x)*p[19]+y*z*(2*x-2*z+3-2*y)*p[22]-4*(-1+z)*(-1+y)*(-1+x)*p[25]-4*x*(-1+z)*(-1+y)*p[25]-4*y*(-1+z)*(-1+y)*p[28]-4*z*(-1+z)*(-1+y)*p[31]+4*y*(-1+z)*(-1+y)*p[34]+4*z*(-1+z)*(-1+y)*p[37]+4*y*(-1+z)*(-1+x)*p[40]+4*x*y*(-1+z)*p[40]-4*y*z*(-1+z)*p[43]+4*y*z*(-1+z)*p[46]+4*z*(-1+y)*(-1+x)*p[49]+4*x*z*(-1+y)*p[49]+4*y*z*(-1+y)*p[52]-4*y*z*(-1+y)*p[55]-4*y*z*(-1+x)*p[58]-4*x*y*z*p[58];
+
+  dtau[1][1]=2*(-1+z)*(-1+y)*(-1+x)*p[1]-2*x*(-1+z)*(-1+y)*p[4]-2*x*y*(-1+z)*p[7]+2*y*(-1+z)*(-1+x)*p[10]-2*z*(-1+y)*(-1+x)*p[13]+2*x*z*(-1+y)*p[16]+2*x*y*z*p[19]-2*y*z*(-1+x)*p[22]+(-1+z)*(-1+x)*(2*x+2*y+2*z-1)*p[1]+x*(-1+z)*(-2*y-2*z+2*x-1)*p[4]-x*(-1+z)*(2*y-2*z-3+2*x)*p[7]-(-1+z)*(-1+x)*(2*x+2*z+1-2*y)*p[10]-z*(-1+x)*(2*x+2*y-2*z+1)*p[13]-x*z*(-2*y+2*z-3+2*x)*p[16]+x*z*(2*y+2*z-5+2*x)*p[19]+z*(-1+x)*(2*x-2*z+3-2*y)*p[22]-4*x*(-1+z)*(-1+x)*p[25]-4*(-1+z)*(-1+y)*(-1+x)*p[28]-4*y*(-1+z)*(-1+x)*p[28]-4*z*(-1+z)*(-1+x)*p[31]+4*x*(-1+z)*(-1+y)*p[34]+4*x*y*(-1+z)*p[34]+4*x*z*(-1+z)*p[37]+4*x*(-1+z)*(-1+x)*p[40]-4*x*z*(-1+z)*p[43]+4*z*(-1+z)*(-1+x)*p[46]+4*x*z*(-1+x)*p[49]+4*z*(-1+y)*(-1+x)*p[52]+4*y*z*(-1+x)*p[52]-4*x*z*(-1+y)*p[55]-4*x*y*z*p[55]-4*x*z*(-1+x)*p[58];
+
+  dtau[1][2]=2*(-1+z)*(-1+y)*(-1+x)*p[1]-2*x*(-1+z)*(-1+y)*p[4]+2*x*y*(-1+z)*p[7]-2*y*(-1+z)*(-1+x)*p[10]+2*z*(-1+y)*(-1+x)*p[13]-2*x*z*(-1+y)*p[16]+2*x*y*z*p[19]-2*y*z*(-1+x)*p[22]+(-1+y)*(-1+x)*(2*x+2*y+2*z-1)*p[1]+x*(-1+y)*(-2*y-2*z+2*x-1)*p[4]-x*y*(2*y-2*z-3+2*x)*p[7]-y*(-1+x)*(2*x+2*z+1-2*y)*p[10]-(-1+y)*(-1+x)*(2*x+2*y-2*z+1)*p[13]-x*(-1+y)*(-2*y+2*z-3+2*x)*p[16]+x*y*(2*y+2*z-5+2*x)*p[19]+y*(-1+x)*(2*x-2*z+3-2*y)*p[22]-4*x*(-1+y)*(-1+x)*p[25]-4*y*(-1+y)*(-1+x)*p[28]-4*(-1+z)*(-1+y)*(-1+x)*p[31]-4*z*(-1+y)*(-1+x)*p[31]+4*x*y*(-1+y)*p[34]+4*x*(-1+z)*(-1+y)*p[37]+4*x*z*(-1+y)*p[37]+4*x*y*(-1+x)*p[40]-4*x*y*(-1+z)*p[43]-4*x*y*z*p[43]+4*y*(-1+z)*(-1+x)*p[46]+4*y*z*(-1+x)*p[46]+4*x*(-1+y)*(-1+x)*p[49]+4*y*(-1+y)*(-1+x)*p[52]-4*x*y*(-1+y)*p[55]-4*x*y*(-1+x)*p[58];
+
+  dtau[2][0]=2*(-1+z)*(-1+y)*(-1+x)*p[2]+2*x*(-1+z)*(-1+y)*p[5]-2*x*y*(-1+z)*p[8]-2*y*(-1+z)*(-1+x)*p[11]-4*y*(-1+z)*(-1+y)*p[29]+(-1+z)*(-1+y)*(2*x+2*y+2*z-1)*p[2]+(-1+z)*(-1+y)*(-2*y-2*z+2*x-1)*p[5]-y*(-1+z)*(2*y-2*z-3+2*x)*p[8]-y*(-1+z)*(2*x+2*z+1-2*y)*p[11]-z*(-1+y)*(2*x+2*y-2*z+1)*p[14]-z*(-1+y)*(-2*y+2*z-3+2*x)*p[17]+y*z*(2*y+2*z-5+2*x)*p[20]+y*z*(2*x-2*z+3-2*y)*p[23]-4*(-1+z)*(-1+y)*(-1+x)*p[26]-4*x*(-1+z)*(-1+y)*p[26]-2*z*(-1+y)*(-1+x)*p[14]-2*x*z*(-1+y)*p[17]+2*x*y*z*p[20]+2*y*z*(-1+x)*p[23]-4*z*(-1+z)*(-1+y)*p[32]+4*y*(-1+z)*(-1+y)*p[35]+4*z*(-1+z)*(-1+y)*p[38]+4*y*(-1+z)*(-1+x)*p[41]+4*x*y*(-1+z)*p[41]-4*y*z*(-1+z)*p[44]+4*y*z*(-1+z)*p[47]+4*z*(-1+y)*(-1+x)*p[50]+4*x*z*(-1+y)*p[50]+4*y*z*(-1+y)*p[53]-4*y*z*(-1+y)*p[56]-4*y*z*(-1+x)*p[59]-4*x*y*z*p[59];
+
+  dtau[2][1]=2*(-1+z)*(-1+y)*(-1+x)*p[2]-2*x*(-1+z)*(-1+y)*p[5]-2*x*y*(-1+z)*p[8]+2*y*(-1+z)*(-1+x)*p[11]-2*z*(-1+y)*(-1+x)*p[14]+2*x*z*(-1+y)*p[17]+2*x*y*z*p[20]-2*y*z*(-1+x)*p[23]+(-1+z)*(-1+x)*(2*x+2*y+2*z-1)*p[2]+x*(-1+z)*(-2*y-2*z+2*x-1)*p[5]-x*(-1+z)*(2*y-2*z-3+2*x)*p[8]-(-1+z)*(-1+x)*(2*x+2*z+1-2*y)*p[11]-z*(-1+x)*(2*x+2*y-2*z+1)*p[14]-x*z*(-2*y+2*z-3+2*x)*p[17]+x*z*(2*y+2*z-5+2*x)*p[20]+z*(-1+x)*(2*x-2*z+3-2*y)*p[23]-4*x*(-1+z)*(-1+x)*p[26]-4*(-1+z)*(-1+y)*(-1+x)*p[29]-4*y*(-1+z)*(-1+x)*p[29]-4*z*(-1+z)*(-1+x)*p[32]+4*x*(-1+z)*(-1+y)*p[35]+4*x*y*(-1+z)*p[35]+4*x*z*(-1+z)*p[38]+4*x*(-1+z)*(-1+x)*p[41]-4*x*z*(-1+z)*p[44]+4*z*(-1+z)*(-1+x)*p[47]+4*x*z*(-1+x)*p[50]+4*z*(-1+y)*(-1+x)*p[53]+4*y*z*(-1+x)*p[53]-4*x*z*(-1+y)*p[56]-4*x*y*z*p[56]-4*x*z*(-1+x)*p[59];
+
+  dtau[2][2]=2*(-1+z)*(-1+y)*(-1+x)*p[2]-2*x*(-1+z)*(-1+y)*p[5]+2*x*y*(-1+z)*p[8]-2*y*(-1+z)*(-1+x)*p[11]+2*z*(-1+y)*(-1+x)*p[14]-2*x*z*(-1+y)*p[17]+2*x*y*z*p[20]-2*y*z*(-1+x)*p[23]+(-1+y)*(-1+x)*(2*x+2*y+2*z-1)*p[2]+x*(-1+y)*(-2*y-2*z+2*x-1)*p[5]-x*y*(2*y-2*z-3+2*x)*p[8]-y*(-1+x)*(2*x+2*z+1-2*y)*p[11]-(-1+y)*(-1+x)*(2*x+2*y-2*z+1)*p[14]-x*(-1+y)*(-2*y+2*z-3+2*x)*p[17]+x*y*(2*y+2*z-5+2*x)*p[20]+y*(-1+x)*(2*x-2*z+3-2*y)*p[23]-4*x*(-1+y)*(-1+x)*p[26]-4*y*(-1+y)*(-1+x)*p[29]-4*(-1+z)*(-1+y)*(-1+x)*p[32]-4*z*(-1+y)*(-1+x)*p[32]+4*x*y*(-1+y)*p[35]+4*x*(-1+z)*(-1+y)*p[38]+4*x*z*(-1+y)*p[38]+4*x*y*(-1+x)*p[41]-4*x*y*(-1+z)*p[44]-4*x*y*z*p[44]+4*y*(-1+z)*(-1+x)*p[47]+4*y*z*(-1+x)*p[47]+4*x*(-1+y)*(-1+x)*p[50]+4*y*(-1+y)*(-1+x)*p[53]-4*x*y*(-1+y)*p[56]-4*x*y*(-1+x)*p[59];
+
+}
 
 // Get the logical index of the gaussian point given the coordinate
 // p[] of the point in the subcell and the index of the subcell icell.
@@ -674,22 +776,17 @@ void DGFlux(__constant int *param,     // interp param
     pL[dim2] = ipg / npg[dim1];
   }
 
-  real hx = 1.0 / (real) nraf[0];
-  real hy = 1.0 / (real) nraf[1];
-  real hz = 1.0 / (real) nraf[2];
+  real h[3] = {1.0 / (real) nraf[0],
+	       1.0 / (real) nraf[1],
+	       1.0 / (real) nraf[2] };
 
   int offset[3] = {gauss_lob_offset[deg[0]] + pL[0],
   		   gauss_lob_offset[deg[1]] + pL[1],
   		   gauss_lob_offset[deg[2]] + pL[2]};
 
-  real x = hx * (icL[0] + gauss_lob_point[offset[0]]);
-  real y = hy * (icL[1] + gauss_lob_point[offset[1]]);
-  real z = hz * (icL[2] + gauss_lob_point[offset[2]]);
-
-  /* real wpg = hx * hy * hz */
-  /*   * gauss_lob_weight[offset[0]] */
-  /*   * gauss_lob_weight[offset[1]] */
-  /*   * gauss_lob_weight[offset[2]]; */
+  real x = h[0] * (icL[0] + gauss_lob_point[offset[0]]);
+  real y = h[1] * (icL[1] + gauss_lob_point[offset[1]]);
+  real z = h[2] * (icL[2] + gauss_lob_point[offset[2]]);
 
   real codtau[3][3];
   {
@@ -697,12 +794,6 @@ void DGFlux(__constant int *param,     // interp param
     get_dtau(x, y, z, physnode, dtau);
     compute_codtau(dtau, codtau);
   }
-
-  real h1h2 = 1.0 / nraf[dim1] / nraf[dim2];
-  real vnds[3];
-  vnds[0] = codtau[0][dim0] * h1h2;
-  vnds[1] = codtau[1][dim0] * h1h2;
-  vnds[2] = codtau[2][dim0] * h1h2;
 
 #if DGFLUX_LOCAL
   real wL[_M], wR[_M]; // TODO: remove?
@@ -724,9 +815,14 @@ void DGFlux(__constant int *param,     // interp param
     wR[iv] = wn[imemR];
   }
 #endif
+  
+  real h1h2 = 1.0 / nraf[dim1] / nraf[dim2];
+  real vnds[3] = {codtau[0][dim0] * h1h2,
+		  codtau[1][dim0] * h1h2,
+		  codtau[2][dim0] * h1h2 };
 
-  // TODO: wL and wR could be passed without a copy to __private.
-  // (ie we can just pass *wnL and *wnR).
+  // TODO: wL and wR could be passed without a copy to __private.  (ie
+  // we can just pass *wnL and *wnR).
   real flux[_M];
   NUMFLUX(wL, wR, vnds, flux);
 
@@ -1370,106 +1466,6 @@ void DGBoundary(__constant int *param,      // interp param
   }
 }
 
-void get_dtau(real x, real y, real z,
-	      __constant real *p, real dtau[][3]) 
-{
-  // Gradient of the shape functions and value (4th component) of the
-  // shape functions
-
-  /* real gradphi[20][3]; */
-  /* //real x,y,z; */
-  /* // this fills the values of gradphi */
-  /* gradphi[0][0] = (-1 + z) * (-1 + y) * (2 * y + 2 * z + 4 * x - 3); */
-  /* gradphi[0][1] = (-1 + z) * (-1 + x) * (2 * x + 2 * z - 3 + 4 * y); */
-  /* gradphi[0][2] = (-1 + y) * (-1 + x) * (2 * x + 2 * y - 3 + 4 * z); */
-  /* gradphi[1][0] = (-1 + z) * (-1 + y) * (-2 * y - 2 * z - 1 + 4 * x); */
-  /* gradphi[1][1] = x * (-1 + z) * (-2 * z + 1 - 4 * y + 2 * x); */
-  /* gradphi[1][2] = x * (-1 + y) * (-2 * y + 1 - 4 * z + 2 * x); */
-  /* gradphi[2][0] = -y * (-1 + z) * (2 * y - 2 * z - 3 + 4 * x); */
-  /* gradphi[2][1] = -x * (-1 + z) * (-2 * z - 3 + 4 * y + 2 * x); */
-  /* gradphi[2][2] = -x * y * (2 * y - 4 * z - 1 + 2 * x); */
-  /* gradphi[3][0] = -y * (-1 + z) * (-2 * y + 2 * z - 1 + 4 * x); */
-  /* gradphi[3][1] = -(-1 + z) * (-1 + x) * (2 * x + 2 * z + 1 - 4 * y); */
-  /* gradphi[3][2] = -y * (-1 + x) * (2 * x - 1 + 4 * z - 2 * y); */
-  /* gradphi[4][0] = -z * (-1 + y) * (2 * y - 2 * z - 1 + 4 * x); */
-  /* gradphi[4][1] = -z * (-1 + x) * (2 * x - 2 * z - 1 + 4 * y); */
-  /* gradphi[4][2] = -(-1 + y) * (-1 + x) * (2 * x - 4 * z + 2 * y + 1); */
-  /* gradphi[5][0] = -z * (-1 + y) * (-2 * y + 2 * z + 4 * x - 3); */
-  /* gradphi[5][1] = -x * z * (2 * z - 4 * y - 1 + 2 * x); */
-  /* gradphi[5][2] = -x * (-1 + y) * (-2 * y - 3 + 4 * z + 2 * x); */
-  /* gradphi[6][0] = y * z * (2 * y + 2 * z + 4 * x - 5); */
-  /* gradphi[6][1] = x * z * (2 * z + 4 * y - 5 + 2 * x); */
-  /* gradphi[6][2] = x * y * (2 * y + 4 * z - 5 + 2 * x); */
-  /* gradphi[7][0] = y * z * (-2 * y - 2 * z + 1 + 4 * x); */
-  /* gradphi[7][1] = z * (-1 + x) * (2 * x - 2 * z + 3 - 4 * y); */
-  /* gradphi[7][2] = y * (-1 + x) * (2 * x - 2 * y + 3 - 4 * z); */
-  /* gradphi[8][0] = -4 * (-1 + z) * (-1 + y) * (2 * x - 1); */
-  /* gradphi[8][1] = -4 * x * (-1 + z) * (-1 + x); */
-  /* gradphi[8][2] = -4 * x * (-1 + y) * (-1 + x); */
-  /* gradphi[9][0] = -4 * y * (-1 + z) * (-1 + y); */
-  /* gradphi[9][1] = -4 * (-1 + z) * (2 * y - 1) * (-1 + x); */
-  /* gradphi[9][2] = -4 * y * (-1 + y) * (-1 + x); */
-  /* gradphi[10][0] = -4 * z * (-1 + z) * (-1 + y); */
-  /* gradphi[10][1] = -4 * z * (-1 + z) * (-1 + x); */
-  /* gradphi[10][2] = -4 * (2 * z - 1) * (-1 + y) * (-1 + x); */
-  /* gradphi[11][0] = 4 * y * (-1 + z) * (-1 + y); */
-  /* gradphi[11][1] = 4 * x * (-1 + z) * (2 * y - 1); */
-  /* gradphi[11][2] = 4 * x * y * (-1 + y); */
-  /* gradphi[12][0] = 4 * z * (-1 + z) * (-1 + y); */
-  /* gradphi[12][1] = 4 * x * z * (-1 + z); */
-  /* gradphi[12][2] = 4 * x * (2 * z - 1) * (-1 + y); */
-  /* gradphi[13][0] = 4 * y * (-1 + z) * (2 * x - 1); */
-  /* gradphi[13][1] = 4 * x * (-1 + z) * (-1 + x); */
-  /* gradphi[13][2] = 4 * x * y * (-1 + x); */
-  /* gradphi[14][0] = -4 * y * z * (-1 + z); */
-  /* gradphi[14][1] = -4 * x * z * (-1 + z); */
-  /* gradphi[14][2] = -4 * x * y * (2 * z - 1); */
-  /* gradphi[15][0] = 4 * y * z * (-1 + z); */
-  /* gradphi[15][1] = 4 * z * (-1 + z) * (-1 + x); */
-  /* gradphi[15][2] = 4 * y * (2 * z - 1) * (-1 + x); */
-  /* gradphi[16][0] = 4 * z * (-1 + y) * (2 * x - 1); */
-  /* gradphi[16][1] = 4 * x * z * (-1 + x); */
-  /* gradphi[16][2] = 4 * x * (-1 + y) * (-1 + x); */
-  /* gradphi[17][0] = 4 * y * z * (-1 + y); */
-  /* gradphi[17][1] = 4 * z * (2 * y - 1) * (-1 + x); */
-  /* gradphi[17][2] = 4 * y * (-1 + y) * (-1 + x); */
-  /* gradphi[18][0] = -4 * y * z * (-1 + y); */
-  /* gradphi[18][1] = -4 * x * z * (2 * y - 1); */
-  /* gradphi[18][2] = -4 * x * y * (-1 + y); */
-  /* gradphi[19][0] = -4 * y * z * (2 * x - 1); */
-  /* gradphi[19][1] = -4 * x * z * (-1 + x); */
-  /* gradphi[19][2] = -4 * x * y * (-1 + x); */
-  /* for(int ii=0;ii<3;ii++){ */
-  /*   for(int jj=0;jj<3;jj++){ */
-  /*     dtau[ii][jj]=0; */
-  /*   } */
-  /*   for(int i=0;i<20;i++){ */
-  /*     //printf("xyzphy=%f %f %f \n",physnode[3*i+0],physnode[3*i+1],physnode[3*i+2]); */
-  /*     for(int jj=0;jj<3;jj++){ */
-  /*       dtau[ii][jj]+=physnode[3*i+ii]*gradphi[i][jj];; */
-  /*     } */
-  /*   } */
-  /* } */
-
-  dtau[0][0]=2*(-1+z)*(-1+y)*(-1+x)*p[0]+2*x*(-1+z)*(-1+y)*p[3]-2*x*y*(-1+z)*p[6]-2*y*(-1+z)*(-1+x)*p[9]-2*z*(-1+y)*(-1+x)*p[12]-2*x*z*(-1+y)*p[15]+2*x*y*z*p[18]+2*y*z*(-1+x)*p[21]+(-1+z)*(-1+y)*(2*x+2*y+2*z-1)*p[0]+(-1+z)*(-1+y)*(-2*y-2*z+2*x-1)*p[3]-y*(-1+z)*(2*y-2*z-3+2*x)*p[6]-y*(-1+z)*(2*x+2*z+1-2*y)*p[9]-z*(-1+y)*(2*x+2*y-2*z+1)*p[12]-z*(-1+y)*(-2*y+2*z-3+2*x)*p[15]+y*z*(2*y+2*z-5+2*x)*p[18]+y*z*(2*x-2*z+3-2*y)*p[21]-4*(-1+z)*(-1+y)*(-1+x)*p[24]-4*x*(-1+z)*(-1+y)*p[24]-4*y*(-1+z)*(-1+y)*p[27]-4*z*(-1+z)*(-1+y)*p[30]+4*y*(-1+z)*(-1+y)*p[33]+4*z*(-1+z)*(-1+y)*p[36]+4*y*(-1+z)*(-1+x)*p[39]+4*x*y*(-1+z)*p[39]-4*y*z*(-1+z)*p[42]+4*y*z*(-1+z)*p[45]+4*z*(-1+y)*(-1+x)*p[48]+4*x*z*(-1+y)*p[48]+4*y*z*(-1+y)*p[51]-4*y*z*(-1+y)*p[54]-4*y*z*(-1+x)*p[57]-4*x*y*z*p[57];
-
-  dtau[0][1]=2*(-1+z)*(-1+y)*(-1+x)*p[0]-2*x*(-1+z)*(-1+y)*p[3]-2*x*y*(-1+z)*p[6]+2*y*(-1+z)*(-1+x)*p[9]-2*z*(-1+y)*(-1+x)*p[12]+2*x*z*(-1+y)*p[15]+2*x*y*z*p[18]-2*y*z*(-1+x)*p[21]+(-1+z)*(-1+x)*(2*x+2*y+2*z-1)*p[0]+x*(-1+z)*(-2*y-2*z+2*x-1)*p[3]-x*(-1+z)*(2*y-2*z-3+2*x)*p[6]-(-1+z)*(-1+x)*(2*x+2*z+1-2*y)*p[9]-z*(-1+x)*(2*x+2*y-2*z+1)*p[12]-x*z*(-2*y+2*z-3+2*x)*p[15]+x*z*(2*y+2*z-5+2*x)*p[18]+z*(-1+x)*(2*x-2*z+3-2*y)*p[21]-4*x*(-1+z)*(-1+x)*p[24]-4*(-1+z)*(-1+y)*(-1+x)*p[27]-4*y*(-1+z)*(-1+x)*p[27]-4*z*(-1+z)*(-1+x)*p[30]+4*x*(-1+z)*(-1+y)*p[33]+4*x*y*(-1+z)*p[33]+4*x*z*(-1+z)*p[36]+4*x*(-1+z)*(-1+x)*p[39]-4*x*z*(-1+z)*p[42]+4*z*(-1+z)*(-1+x)*p[45]+4*x*z*(-1+x)*p[48]+4*z*(-1+y)*(-1+x)*p[51]+4*y*z*(-1+x)*p[51]-4*x*z*(-1+y)*p[54]-4*x*y*z*p[54]-4*x*z*(-1+x)*p[57];
-
-  dtau[0][2]=2*(-1+z)*(-1+y)*(-1+x)*p[0]-2*x*(-1+z)*(-1+y)*p[3]+2*x*y*(-1+z)*p[6]-2*y*(-1+z)*(-1+x)*p[9]+2*z*(-1+y)*(-1+x)*p[12]-2*x*z*(-1+y)*p[15]+2*x*y*z*p[18]-2*y*z*(-1+x)*p[21]+(-1+y)*(-1+x)*(2*x+2*y+2*z-1)*p[0]+x*(-1+y)*(-2*y-2*z+2*x-1)*p[3]-x*y*(2*y-2*z-3+2*x)*p[6]-y*(-1+x)*(2*x+2*z+1-2*y)*p[9]-(-1+y)*(-1+x)*(2*x+2*y-2*z+1)*p[12]-x*(-1+y)*(-2*y+2*z-3+2*x)*p[15]+x*y*(2*y+2*z-5+2*x)*p[18]+y*(-1+x)*(2*x-2*z+3-2*y)*p[21]-4*x*(-1+y)*(-1+x)*p[24]-4*y*(-1+y)*(-1+x)*p[27]-4*(-1+z)*(-1+y)*(-1+x)*p[30]-4*z*(-1+y)*(-1+x)*p[30]+4*x*y*(-1+y)*p[33]+4*x*(-1+z)*(-1+y)*p[36]+4*x*z*(-1+y)*p[36]+4*x*y*(-1+x)*p[39]-4*x*y*(-1+z)*p[42]-4*x*y*z*p[42]+4*y*(-1+z)*(-1+x)*p[45]+4*y*z*(-1+x)*p[45]+4*x*(-1+y)*(-1+x)*p[48]+4*y*(-1+y)*(-1+x)*p[51]-4*x*y*(-1+y)*p[54]-4*x*y*(-1+x)*p[57];
-
-  dtau[1][0]=2*(-1+z)*(-1+y)*(-1+x)*p[1]+2*x*(-1+z)*(-1+y)*p[4]-2*x*y*(-1+z)*p[7]-2*y*(-1+z)*(-1+x)*p[10]-2*z*(-1+y)*(-1+x)*p[13]-2*x*z*(-1+y)*p[16]+2*x*y*z*p[19]+2*y*z*(-1+x)*p[22]+(-1+z)*(-1+y)*(2*x+2*y+2*z-1)*p[1]+(-1+z)*(-1+y)*(-2*y-2*z+2*x-1)*p[4]-y*(-1+z)*(2*y-2*z-3+2*x)*p[7]-y*(-1+z)*(2*x+2*z+1-2*y)*p[10]-z*(-1+y)*(2*x+2*y-2*z+1)*p[13]-z*(-1+y)*(-2*y+2*z-3+2*x)*p[16]+y*z*(2*y+2*z-5+2*x)*p[19]+y*z*(2*x-2*z+3-2*y)*p[22]-4*(-1+z)*(-1+y)*(-1+x)*p[25]-4*x*(-1+z)*(-1+y)*p[25]-4*y*(-1+z)*(-1+y)*p[28]-4*z*(-1+z)*(-1+y)*p[31]+4*y*(-1+z)*(-1+y)*p[34]+4*z*(-1+z)*(-1+y)*p[37]+4*y*(-1+z)*(-1+x)*p[40]+4*x*y*(-1+z)*p[40]-4*y*z*(-1+z)*p[43]+4*y*z*(-1+z)*p[46]+4*z*(-1+y)*(-1+x)*p[49]+4*x*z*(-1+y)*p[49]+4*y*z*(-1+y)*p[52]-4*y*z*(-1+y)*p[55]-4*y*z*(-1+x)*p[58]-4*x*y*z*p[58];
-
-  dtau[1][1]=2*(-1+z)*(-1+y)*(-1+x)*p[1]-2*x*(-1+z)*(-1+y)*p[4]-2*x*y*(-1+z)*p[7]+2*y*(-1+z)*(-1+x)*p[10]-2*z*(-1+y)*(-1+x)*p[13]+2*x*z*(-1+y)*p[16]+2*x*y*z*p[19]-2*y*z*(-1+x)*p[22]+(-1+z)*(-1+x)*(2*x+2*y+2*z-1)*p[1]+x*(-1+z)*(-2*y-2*z+2*x-1)*p[4]-x*(-1+z)*(2*y-2*z-3+2*x)*p[7]-(-1+z)*(-1+x)*(2*x+2*z+1-2*y)*p[10]-z*(-1+x)*(2*x+2*y-2*z+1)*p[13]-x*z*(-2*y+2*z-3+2*x)*p[16]+x*z*(2*y+2*z-5+2*x)*p[19]+z*(-1+x)*(2*x-2*z+3-2*y)*p[22]-4*x*(-1+z)*(-1+x)*p[25]-4*(-1+z)*(-1+y)*(-1+x)*p[28]-4*y*(-1+z)*(-1+x)*p[28]-4*z*(-1+z)*(-1+x)*p[31]+4*x*(-1+z)*(-1+y)*p[34]+4*x*y*(-1+z)*p[34]+4*x*z*(-1+z)*p[37]+4*x*(-1+z)*(-1+x)*p[40]-4*x*z*(-1+z)*p[43]+4*z*(-1+z)*(-1+x)*p[46]+4*x*z*(-1+x)*p[49]+4*z*(-1+y)*(-1+x)*p[52]+4*y*z*(-1+x)*p[52]-4*x*z*(-1+y)*p[55]-4*x*y*z*p[55]-4*x*z*(-1+x)*p[58];
-
-  dtau[1][2]=2*(-1+z)*(-1+y)*(-1+x)*p[1]-2*x*(-1+z)*(-1+y)*p[4]+2*x*y*(-1+z)*p[7]-2*y*(-1+z)*(-1+x)*p[10]+2*z*(-1+y)*(-1+x)*p[13]-2*x*z*(-1+y)*p[16]+2*x*y*z*p[19]-2*y*z*(-1+x)*p[22]+(-1+y)*(-1+x)*(2*x+2*y+2*z-1)*p[1]+x*(-1+y)*(-2*y-2*z+2*x-1)*p[4]-x*y*(2*y-2*z-3+2*x)*p[7]-y*(-1+x)*(2*x+2*z+1-2*y)*p[10]-(-1+y)*(-1+x)*(2*x+2*y-2*z+1)*p[13]-x*(-1+y)*(-2*y+2*z-3+2*x)*p[16]+x*y*(2*y+2*z-5+2*x)*p[19]+y*(-1+x)*(2*x-2*z+3-2*y)*p[22]-4*x*(-1+y)*(-1+x)*p[25]-4*y*(-1+y)*(-1+x)*p[28]-4*(-1+z)*(-1+y)*(-1+x)*p[31]-4*z*(-1+y)*(-1+x)*p[31]+4*x*y*(-1+y)*p[34]+4*x*(-1+z)*(-1+y)*p[37]+4*x*z*(-1+y)*p[37]+4*x*y*(-1+x)*p[40]-4*x*y*(-1+z)*p[43]-4*x*y*z*p[43]+4*y*(-1+z)*(-1+x)*p[46]+4*y*z*(-1+x)*p[46]+4*x*(-1+y)*(-1+x)*p[49]+4*y*(-1+y)*(-1+x)*p[52]-4*x*y*(-1+y)*p[55]-4*x*y*(-1+x)*p[58];
-
-  dtau[2][0]=2*(-1+z)*(-1+y)*(-1+x)*p[2]+2*x*(-1+z)*(-1+y)*p[5]-2*x*y*(-1+z)*p[8]-2*y*(-1+z)*(-1+x)*p[11]-4*y*(-1+z)*(-1+y)*p[29]+(-1+z)*(-1+y)*(2*x+2*y+2*z-1)*p[2]+(-1+z)*(-1+y)*(-2*y-2*z+2*x-1)*p[5]-y*(-1+z)*(2*y-2*z-3+2*x)*p[8]-y*(-1+z)*(2*x+2*z+1-2*y)*p[11]-z*(-1+y)*(2*x+2*y-2*z+1)*p[14]-z*(-1+y)*(-2*y+2*z-3+2*x)*p[17]+y*z*(2*y+2*z-5+2*x)*p[20]+y*z*(2*x-2*z+3-2*y)*p[23]-4*(-1+z)*(-1+y)*(-1+x)*p[26]-4*x*(-1+z)*(-1+y)*p[26]-2*z*(-1+y)*(-1+x)*p[14]-2*x*z*(-1+y)*p[17]+2*x*y*z*p[20]+2*y*z*(-1+x)*p[23]-4*z*(-1+z)*(-1+y)*p[32]+4*y*(-1+z)*(-1+y)*p[35]+4*z*(-1+z)*(-1+y)*p[38]+4*y*(-1+z)*(-1+x)*p[41]+4*x*y*(-1+z)*p[41]-4*y*z*(-1+z)*p[44]+4*y*z*(-1+z)*p[47]+4*z*(-1+y)*(-1+x)*p[50]+4*x*z*(-1+y)*p[50]+4*y*z*(-1+y)*p[53]-4*y*z*(-1+y)*p[56]-4*y*z*(-1+x)*p[59]-4*x*y*z*p[59];
-
-  dtau[2][1]=2*(-1+z)*(-1+y)*(-1+x)*p[2]-2*x*(-1+z)*(-1+y)*p[5]-2*x*y*(-1+z)*p[8]+2*y*(-1+z)*(-1+x)*p[11]-2*z*(-1+y)*(-1+x)*p[14]+2*x*z*(-1+y)*p[17]+2*x*y*z*p[20]-2*y*z*(-1+x)*p[23]+(-1+z)*(-1+x)*(2*x+2*y+2*z-1)*p[2]+x*(-1+z)*(-2*y-2*z+2*x-1)*p[5]-x*(-1+z)*(2*y-2*z-3+2*x)*p[8]-(-1+z)*(-1+x)*(2*x+2*z+1-2*y)*p[11]-z*(-1+x)*(2*x+2*y-2*z+1)*p[14]-x*z*(-2*y+2*z-3+2*x)*p[17]+x*z*(2*y+2*z-5+2*x)*p[20]+z*(-1+x)*(2*x-2*z+3-2*y)*p[23]-4*x*(-1+z)*(-1+x)*p[26]-4*(-1+z)*(-1+y)*(-1+x)*p[29]-4*y*(-1+z)*(-1+x)*p[29]-4*z*(-1+z)*(-1+x)*p[32]+4*x*(-1+z)*(-1+y)*p[35]+4*x*y*(-1+z)*p[35]+4*x*z*(-1+z)*p[38]+4*x*(-1+z)*(-1+x)*p[41]-4*x*z*(-1+z)*p[44]+4*z*(-1+z)*(-1+x)*p[47]+4*x*z*(-1+x)*p[50]+4*z*(-1+y)*(-1+x)*p[53]+4*y*z*(-1+x)*p[53]-4*x*z*(-1+y)*p[56]-4*x*y*z*p[56]-4*x*z*(-1+x)*p[59];
-
-  dtau[2][2]=2*(-1+z)*(-1+y)*(-1+x)*p[2]-2*x*(-1+z)*(-1+y)*p[5]+2*x*y*(-1+z)*p[8]-2*y*(-1+z)*(-1+x)*p[11]+2*z*(-1+y)*(-1+x)*p[14]-2*x*z*(-1+y)*p[17]+2*x*y*z*p[20]-2*y*z*(-1+x)*p[23]+(-1+y)*(-1+x)*(2*x+2*y+2*z-1)*p[2]+x*(-1+y)*(-2*y-2*z+2*x-1)*p[5]-x*y*(2*y-2*z-3+2*x)*p[8]-y*(-1+x)*(2*x+2*z+1-2*y)*p[11]-(-1+y)*(-1+x)*(2*x+2*y-2*z+1)*p[14]-x*(-1+y)*(-2*y+2*z-3+2*x)*p[17]+x*y*(2*y+2*z-5+2*x)*p[20]+y*(-1+x)*(2*x-2*z+3-2*y)*p[23]-4*x*(-1+y)*(-1+x)*p[26]-4*y*(-1+y)*(-1+x)*p[29]-4*(-1+z)*(-1+y)*(-1+x)*p[32]-4*z*(-1+y)*(-1+x)*p[32]+4*x*y*(-1+y)*p[35]+4*x*(-1+z)*(-1+y)*p[38]+4*x*z*(-1+y)*p[38]+4*x*y*(-1+x)*p[41]-4*x*y*(-1+z)*p[44]-4*x*y*z*p[44]+4*y*(-1+z)*(-1+x)*p[47]+4*y*z*(-1+x)*p[47]+4*x*(-1+y)*(-1+x)*p[50]+4*y*(-1+y)*(-1+x)*p[53]-4*x*y*(-1+y)*p[56]-4*x*y*(-1+x)*p[59];
-
-}
 
 inline void Phy2Ref(__constant real *physnode, real *xphy, real *xref) 
 {
