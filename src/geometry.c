@@ -125,7 +125,7 @@ void GeomRef2Phy(Geom* g)
 }
 
 void Ref2Phy(real physnode[20][3],  // h20 geometry parameters
-             real xref[3],          // 
+             real xref[3],          
              real dphiref[3],
              int ifa,
              real xphy[3],
