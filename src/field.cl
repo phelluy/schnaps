@@ -48,7 +48,6 @@ int ref_ipg(int *raf, int *deg, real *xref)
   return xyz_to_ipg(raf, deg, ic, ix); 
 }
 
-
 void compute_gradphi(const real xref[3], real gradphi[20][4]) 
 {
   real x = xref[0];
@@ -270,9 +269,9 @@ inline void compute_dphi(real dphiref[3], real codtau[3][3], real dphi[3])
   for(int ii = 0; ii < 3; ii++) {
     dphi[ii]=0;
     for(int jj = 0; jj < 3; jj++) {
-    dphi[ii] += codtau[ii][jj] * dphiref[jj];
+      dphi[ii] += codtau[ii][jj] * dphiref[jj];
     }
-    }
+  }
 #endif
 }
 
@@ -284,6 +283,8 @@ inline void ComputeNormal(real codtau[3][3], int ifa, real vnds[3])
 			    {-1, 0,  0},
 			    {0,  0,  1},
 			    {0,  0, -1}};
+  // FIXME: replace some of this code with select to avoid unnecessary
+  // multiplies with zero.
 #ifdef FP_FAST_FMA
   vnds[0] = fma(codtau[0][0], h20_refnormal[ifa][0],
 		fma(codtau[0][1], h20_refnormal[ifa][1],
@@ -387,7 +388,6 @@ inline void ref_pg_vol(const int *deg, const int *nraf,
     gauss_lob_weight[offset[2]];
 }
 
-
 inline void permute_indices(const int *i, int *pi, const int ifa)
 {
   pi[0] = i[axis_permut[ifa][0]];
@@ -444,6 +444,8 @@ void compute_xpgin(const int *raf, const int *deg,
 
   xpgin[paxis[2]] = paxis[3] == 0 ? -vsmall: 1.0 + vsmall;
 }
+
+
 
 int ref_pg_face(const int *deg,
 		const int *raf,
@@ -1279,52 +1281,44 @@ inline void compute_volume(__constant int *param,     // interp param
   const int m = param[0];
   const int deg[3] = {param[1],param[2], param[3]};
   const int npg[3] = {deg[0] + 1, deg[1] + 1, deg[2] + 1};
-  const int nraf[3] = {param[4], param[5], param[6]};
+  const int raf[3] = {param[4], param[5], param[6]};
   
   // subcell id
   int icell = get_group_id(0);
-  int icL[3];
-  icL[0] = icell % nraf[0];
-  icL[1] = (icell / nraf[0]) % nraf[1];
-  icL[2] = icell / nraf[0] / nraf[1];
+  int ic[3] = {icell % raf[0],
+		(icell / raf[0]) % raf[1],
+		icell / raf[0] / raf[1] };
 
   // gauss point id where we compute the jacobian
-  int p[3];
-  //ipg_to_xyz(get_local_id(0), p, npg
-  {
-    int ipg = get_local_id(0);
-    p[0] = ipg % npg[0];
-    p[1] = (ipg / npg[0]) % npg[1];
-    p[2] = ipg / npg[0] / npg[1];
-  }
+  int localid = get_local_id(0);
+  int ix[3] = {localid % npg[0],
+	      (localid / npg[0]) % npg[1],
+	      localid / npg[0] / npg[1] };
 
-  // ref coordinates
-  real hx = 1.0 / (real) nraf[0];
-  real hy = 1.0 / (real) nraf[1];
-  real hz = 1.0 / (real) nraf[2];
+  real h[3] = {1.0 / raf[0], 1.0 / raf[1], 1.0 / raf[2]};
 
-  int offset[3] = {gauss_lob_offset[deg[0]] + p[0],
-		   gauss_lob_offset[deg[1]] + p[1],
-		   gauss_lob_offset[deg[2]] + p[2]};
+  int offset[3] = {gauss_lob_offset[deg[0]] + ix[0],
+		   gauss_lob_offset[deg[1]] + ix[1],
+		   gauss_lob_offset[deg[2]] + ix[2]};
 
-  real x = hx * (icL[0] + gauss_lob_point[offset[0]]);
-  real y = hy * (icL[1] + gauss_lob_point[offset[1]]);
-  real z = hz * (icL[2] + gauss_lob_point[offset[2]]);
+  real x[3] = {h[0] * (ic[0] + gauss_lob_point[offset[0]]),
+	       h[1] * (ic[1] + gauss_lob_point[offset[1]]),
+	       h[2] * (ic[2] + gauss_lob_point[offset[2]]) };
 
-  real wpg = hx * hy * hz
-    * gauss_lob_weight[offset[0]]
-    * gauss_lob_weight[offset[1]]
-    * gauss_lob_weight[offset[2]];
+  real wpg
+    = h[0] * gauss_lob_weight[offset[0]]
+    * h[1] * gauss_lob_weight[offset[1]]
+    * h[2] * gauss_lob_weight[offset[2]];
 
   real codtau[3][3];
   {
     real dtau[3][3];
-    get_dtau(x, y, z, physnode, dtau);
+    get_dtau(x[0], x[1], x[2], physnode, dtau);
     compute_codtau(dtau, codtau);
   }
 
   real wL[_M];
-  int ipgL = ipg(npg, p, 0);
+  int ipgL = ipg(npg, ix, 0);
   __local real *wnloc0 = wnloc + ipgL * m;
 
   for(int iv = 0; iv < m; iv++) {
@@ -1333,19 +1327,19 @@ inline void compute_volume(__constant int *param,     // interp param
 
   real flux[_M];
   for(int dim0 = 0; dim0 < 3; dim0++) {
-    int q[3] = {p[0], p[1], p[2]};
+    int iy[3] = {ix[0], ix[1], ix[2]};
 
     // Loop on the "cross" points
     for(int iq = 0; iq < npg[dim0]; iq++) {
-      q[dim0] = (p[dim0] + iq) % npg[dim0];
+      iy[dim0] = (ix[dim0] + iq) % npg[dim0];
       real dphiref[3] = {0, 0, 0};
-      dphiref[dim0] = dlag(deg[dim0], q[dim0], p[dim0]) * nraf[dim0];
+      dphiref[dim0] = dlag(deg[dim0], iy[dim0], ix[dim0]) * raf[dim0];
       real dphi[3];
       compute_dphi(dphiref, codtau, dphi);
       
       NUMFLUX(wL, wL, dphi, flux);
 
-      int ipgR = ipg(npg, q, 0);
+      int ipgR = ipg(npg, iy, 0);
 
       int imemR0loc = ipgR * m;
       __local real *dtwnloc0 =  dtwnloc + imemR0loc;
@@ -1376,14 +1370,12 @@ inline void compute_volume_global(__constant int *param,     // interp param
   
   // subcell id
   int icell = get_group_id(0);
-  int icL[3];
-  icL[0] = icell % nraf[0];
-  icL[1] = (icell / nraf[0]) % nraf[1];
-  icL[2] = icell / nraf[0] / nraf[1];
+  int ic[3] = {icell % nraf[0],
+		(icell / nraf[0]) % nraf[1],
+		icell / nraf[0] / nraf[1] };
 
   // gauss point id where we compute the jacobian
   int p[3];
-  //ipg_to_xyz(get_local_id(0), p, npg
   {
     int ipg = get_local_id(0);
     p[0] = ipg % npg[0];
@@ -1392,34 +1384,31 @@ inline void compute_volume_global(__constant int *param,     // interp param
   }
 
   // ref coordinates
-  real hx = 1.0 / (real) nraf[0];
-  real hy = 1.0 / (real) nraf[1];
-  real hz = 1.0 / (real) nraf[2];
+  real h[3] = {1.0 / nraf[0], 1.0 / nraf[1], 1.0 / nraf[2]};
 
   int offset[3] = {gauss_lob_offset[deg[0]] + p[0],
 		   gauss_lob_offset[deg[1]] + p[1],
 		   gauss_lob_offset[deg[2]] + p[2]};
 
-  real x = hx * (icL[0] + gauss_lob_point[offset[0]]);
-  real y = hy * (icL[1] + gauss_lob_point[offset[1]]);
-  real z = hz * (icL[2] + gauss_lob_point[offset[2]]);
+  real x[3] = {h[0] * (ic[0] + gauss_lob_point[offset[0]]),
+	       h[1] * (ic[1] + gauss_lob_point[offset[1]]),
+	       h[2] * (ic[2] + gauss_lob_point[offset[2]]) };
 
-  real wpg = hx * hy * hz
-    * gauss_lob_weight[offset[0]]
-    * gauss_lob_weight[offset[1]]
-    * gauss_lob_weight[offset[2]];
+  real wpg
+    = h[0] * gauss_lob_weight[offset[0]]
+    * h[1] * gauss_lob_weight[offset[1]]
+    * h[2] * gauss_lob_weight[offset[2]];
 
   real codtau[3][3];
   {
     real dtau[3][3];
-    get_dtau(x, y, z, physnode, dtau);
+    get_dtau(x[0], x[1], x[2], physnode, dtau);
     compute_codtau(dtau, codtau);
   }
 
   real wL[_M];
-  int ipgL = ipg(npg, p, 0);
+  int ipgL = ipg(npg, p, icell);
   for(int iv = 0; iv < m; iv++) {
-    int ipgL = ipg(npg, p, icell);
     int imemL = VARINDEX(param, ipgL, iv);
     wL[iv] = wn[imemL];
   }
