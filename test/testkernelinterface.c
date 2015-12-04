@@ -49,6 +49,7 @@ int TestKernelInterface()
 
   const int nboundaryfaces = f.macromesh.nboundaryfaces;
   const int ninterfaces = f.macromesh.nmacrointerfaces;
+  real tnow = 0.0;
   
   real* dtwn_extract = malloc(f.wsize * sizeof(real));
   f.dtwn = dtwn_extract;
@@ -88,7 +89,7 @@ int TestKernelInterface()
     int ieL = mface->ieL;
     MacroCell *mcellL = f.mcell + ieL;
     //ExtractInterface_CL(mcellL, &f, mface->locfaL, f.wn_cl[ieL], 0, 0, 0);
-    ExtractedDGBoundary_CL(mface, &f, 0, 0, 0);
+    ExtractedDGBoundary_CL(mface, &f, tnow, 0, 0, 0);
     clFinish(f.cli.commandqueue);
   }
 
@@ -125,11 +126,10 @@ int TestKernelInterface()
     clFinish(f.cli.commandqueue);
   }
   
-
   for(int i = 0; i < nboundaryfaces; ++i) {
     int ifa = f.macromesh.boundaryface[i];
     MacroFace *mface = f.mface + ifa;
-    DGBoundary_CL(mface, &f, f.wn_cl, 0, NULL, NULL);
+    DGBoundary_CL(mface, &f, f.wn_cl, tnow, 0, NULL, NULL);
     clFinish(f.cli.commandqueue);
   }
 

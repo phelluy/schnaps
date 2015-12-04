@@ -101,6 +101,8 @@ int TestMacroFace()
   for(int iw = 0; iw < f.wsize; iw++)
     f.dtwn[iw] = 0;
 
+  real tnow = 0.0;
+  
   CopyfieldtoGPU(&f);
   
   clFinish(f.cli.commandqueue);
@@ -116,8 +118,7 @@ int TestMacroFace()
   const int nboundaryfaces = f.macromesh.nboundaryfaces;
   for(int i = 0; i < nboundaryfaces; ++i) {
     int ifa = f.macromesh.boundaryface[i];
-    DGBoundary_CL(f.mface + ifa, &f, f.wn_cl,
-			    0, NULL, NULL);
+    DGBoundary_CL(f.mface + ifa, &f, f.wn_cl, tnow, 0, NULL, NULL);
     clFinish(f.cli.commandqueue);
   }
 

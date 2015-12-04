@@ -66,6 +66,8 @@ int TestmEq2()
 
   real *dtwn_cl = f.dtwn;
   real *dtwn = calloc(f.wsize, sizeof(real));
+
+  real tnow = 0.0;
   
   real err;
     real tolerance;
@@ -196,7 +198,7 @@ int TestmEq2()
   const int nboundaryfaces = f.macromesh.nboundaryfaces;
   for(int i = 0; i < nboundaryfaces; ++i) {
     int ifa = f.macromesh.boundaryface[i];
-    DGBoundary_CL(f.mface + ifa, &f, f.wn_cl, 0, NULL, NULL);
+    DGBoundary_CL(f.mface + ifa, &f, f.wn_cl, tnow, 0, NULL, NULL);
     clFinish(f.cli.commandqueue);
   }
 
@@ -251,8 +253,7 @@ int TestmEq2()
     dtwn[i] = 0.0;
   }
 
-  real tnow = 0.0;
-  
+ 
   f.dtwn = dtwn_cl;
   dtfield_CL(&f, tnow, f.wn_cl, 0, NULL, NULL);
   clFinish(f.cli.commandqueue);

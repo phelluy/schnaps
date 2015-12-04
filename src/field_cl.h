@@ -34,11 +34,11 @@ void InsertInterface_CL(MacroCell *mcell, field *f, int d, cl_mem dtwn_cl,
 			cl_uint nwait, cl_event *wait, cl_event *done);
 void ExtractedDGInterface_CL(MacroFace *mface, field *f,
 			     cl_uint nwait, cl_event *wait, cl_event *done);
-void ExtractedDGBoundary_CL(MacroFace *mface, field *f,
+void ExtractedDGBoundary_CL(MacroFace *mface, field *f, real tnow,
 			    cl_uint nwait, cl_event *wait, cl_event *done);
 void DGMacroCellInterface_CL(MacroFace *mface, field *f, cl_mem *wn_cl,
 			     cl_uint nwait, cl_event *wait, cl_event *done);
-void DGBoundary_CL(MacroFace *mface, field *f, cl_mem *wn_cl,
+void DGBoundary_CL(MacroFace *mface, field *f, cl_mem *wn_cl, real tnow,
 		   cl_uint nwait, cl_event *wait, cl_event *done);
 void DGSource_CL(MacroCell *mcell, field *f, real tnow, cl_mem *wn_cl,
 		 cl_uint nwait, cl_event *wait, cl_event *done);

@@ -1675,16 +1675,60 @@ void ExtractedDGInterfaceFlux(__constant int *param,
 
 __kernel
 void ExtractedDGBoundaryFlux(__constant int *param,
-			     __global real *faceL)
+			     __constant real *physnode,
+			     __global real *faceL,
+			     int locfa,
+			     real tnow)
 {
   // FIXME
+  const int raf[3] = {param[4], param[5], param[6]};
+  const int deg[3] = {param[1], param[2], param[3]};
   const int m = param[0];
-  const int ipgf = get_global_id(0);
+  
+  int ipgf = get_global_id(0);
 
   for(int iv = 0; iv < m; ++iv) {
     faceL[ipgf * m + iv] = 0.0;
   }
 
+  real xref[3];    // reference coordinates
+  real wpg;        // weighting for the GL point
+  int ipgL = ref_pg_face(deg, raf, locfa, ipgf, xref, &wpg);
+
+  // Normal vector
+  real vnds[3];
+  // Physical coordinates
+  real xphy[3];
+  {
+    real gradphi[20][4];
+    compute_gradphi(xref, gradphi);
+    
+    compute_xphy(physnode, gradphi, xphy);
+
+    real dtau[3][3];  
+    compute_dtau(physnode, gradphi, dtau);
+
+    real codtau[3][3];
+    compute_codtau(dtau, codtau);
+
+    ComputeNormal(codtau, locfa, vnds);
+  }
+  
+  real wL[_M];
+  
+  __global real *wn0 = faceL + ipgf * m;;
+  for(int iv = 0; iv < m; ++iv) {
+    wL[iv] = wn0[iv];
+  }
+
+#ifndef BOUNDARYFLUX
+#define BOUNDARYFLUX BoundaryFlux
+#endif
+
+  real flux[_M];
+  BOUNDARYFLUX(xphy, tnow, wL, vnds, flux);
+
+  
 }
 
 // Compute the Discontinuous Galerkin inter-macrocells boundary terms.
@@ -1805,12 +1849,12 @@ void DGBoundary(__constant int *param,      // interp param
   int ipgf = get_global_id(0);
 
   const int m = param[0];
-  const int ndeg[3] = {param[1], param[2], param[3]};
-  const int nraf[3] = {param[4], param[5], param[6]};
+  const int deg[3] = {param[1], param[2], param[3]};
+  const int raf[3] = {param[4], param[5], param[6]};
 
   real xref[3];    // reference coordinates
   real wpg;        // weighting for the GL point
-  int ipgL = ref_pg_face(ndeg, nraf, locfa, ipgf, xref, &wpg);
+  int ipgL = ref_pg_face(deg, raf, locfa, ipgf, xref, &wpg);
 
   // Normal vector
   real vnds[3];

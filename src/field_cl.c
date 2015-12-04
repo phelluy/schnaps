@@ -119,7 +119,8 @@ void set_source_CL(field *f, char *sourcename_cl)
 // wn_cl is an array of cl_mems, one per macrocell
 void init_DGBoundary_CL(field *f, 
 			int ieL, int locfaL,
-			cl_mem *wn_cl)
+			cl_mem *wn_cl,
+			real tnow)
 {
   cl_int status;
   cl_kernel kernel = f->dgboundary;
@@ -138,7 +139,7 @@ void init_DGBoundary_CL(field *f,
   status = clSetKernelArg(kernel,
   			  argnum++,
   			  sizeof(real),
-  			  &f->tnow);
+  			  &tnow);
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 
@@ -172,7 +173,7 @@ void init_DGBoundary_CL(field *f,
 }
 
 // wn_cl is an array of cl_mems, one per macrocell
-void DGBoundary_CL(MacroFace *mface, field *f, cl_mem *wn_cl,
+void DGBoundary_CL(MacroFace *mface, field *f, cl_mem *wn_cl, real tnow,
 		   cl_uint nwait, cl_event *wait, cl_event *done) 
 {
   int *param = f->interp_param;
@@ -186,7 +187,7 @@ void DGBoundary_CL(MacroFace *mface, field *f, cl_mem *wn_cl,
   assert(ieR == -1);
   
   size_t numworkitems = mface->npgf;
-  init_DGBoundary_CL(f, ieL, locfaL, wn_cl);
+  init_DGBoundary_CL(f, ieL, locfaL, wn_cl, tnow);
   
   status = clEnqueueNDRangeKernel(f->cli.commandqueue,
 				  f->dgboundary,
@@ -417,9 +418,7 @@ void init_extracted_DGInterface_CL(MacroFace *mface, field *f)
 }
 
 void ExtractedDGInterface_CL(MacroFace *mface, field *f,
-				      cl_uint nwait,
-				      cl_event *wait,
-				      cl_event *done)
+			     cl_uint nwait, cl_event *wait, cl_event *done)
 {
 
   MacroCell *mcellL = f->mcell + mface->ieL;
@@ -440,8 +439,7 @@ void ExtractedDGInterface_CL(MacroFace *mface, field *f,
   assert(status >= CL_SUCCESS);
 }
 
-
-void init_extracted_DGBoundary_CL(MacroFace *mface, field *f)
+void init_extracted_DGBoundary_CL(MacroFace *mface, field *f, real tnow)
 {
   cl_int status;
   cl_kernel kernel = f->ExtractedDGBoundaryFlux;
@@ -456,6 +454,13 @@ void init_extracted_DGBoundary_CL(MacroFace *mface, field *f)
                           &f->param_cl);
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
+
+  status = clSetKernelArg(kernel,
+                          argnum++,
+                          sizeof(cl_mem),
+			  &mcellL->physnode_cl);
+  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status >= CL_SUCCESS);
   
   status = clSetKernelArg(kernel,
   			  argnum++,
@@ -464,9 +469,22 @@ void init_extracted_DGBoundary_CL(MacroFace *mface, field *f)
 
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
+
+  status = clSetKernelArg(kernel,
+  			  argnum++,
+                          sizeof(int),
+			  &mface->locfaL);
+
+  status = clSetKernelArg(kernel,
+  			  argnum++,
+                          sizeof(real),
+			  &tnow);
+
+  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status >= CL_SUCCESS);
 }
 
-void ExtractedDGBoundary_CL(MacroFace *mface, field *f,
+void ExtractedDGBoundary_CL(MacroFace *mface, field *f, real tnow,
 			    cl_uint nwait,
 			    cl_event *wait,
 			    cl_event *done)
@@ -475,7 +493,7 @@ void ExtractedDGBoundary_CL(MacroFace *mface, field *f,
   
   size_t numworkitems = mface->npgf;
 
-  init_extracted_DGBoundary_CL(mface, f);
+  init_extracted_DGBoundary_CL(mface, f, tnow);
   
   cl_int status;
   status = clEnqueueNDRangeKernel(f->cli.commandqueue,
@@ -1005,7 +1023,7 @@ void dtfield_CL(field *f, real tnow, cl_mem *wn_cl,
   const int nboundaryfaces = f->macromesh.nboundaryfaces;
   for(int i = 0; i < nboundaryfaces; ++i) {
     int ifa = f->macromesh.boundaryface[i];
-    DGBoundary_CL(f->mface + ifa, f, wn_cl,
+    DGBoundary_CL(f->mface + ifa, f, wn_cl, tnow,
 		  nwaitstartboundary,
 		  i == 0 ?  startboundary : f->clv_boundary + i - 1,
 		  f->clv_boundary + i);
