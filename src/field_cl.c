@@ -203,12 +203,11 @@ void DGBoundary_CL(MacroFace *mface, field *f, cl_mem *wn_cl,
 
 void init_ExtractInterface_CL(MacroCell *mcell,
 			      field *f,
-			      int ifaM,
-			      int ifaP,
+			      int ifa,
 			      cl_mem wn_cl)
 {
   cl_int status;
-  cl_kernel kernel = f->extractinterface;
+  cl_kernel kernel = f->ExtractInterface;
 
   unsigned int argnum = 0;
 
@@ -222,14 +221,7 @@ void init_ExtractInterface_CL(MacroCell *mcell,
   status = clSetKernelArg(kernel,
 			  argnum++,
                           sizeof(int),
-                          &ifaM);
-  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status >= CL_SUCCESS);
-
-  status = clSetKernelArg(kernel,
-			  argnum++,
-                          sizeof(int),
-                          &ifaP);
+                          &ifa);
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 
@@ -243,19 +235,12 @@ void init_ExtractInterface_CL(MacroCell *mcell,
   status = clSetKernelArg(kernel,
 			  argnum++,
                           sizeof(cl_mem),
-                          mcell->interface_cl + ifaM);
-  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status >= CL_SUCCESS);
-  
-  status = clSetKernelArg(kernel,
-			  argnum++,
-                          sizeof(cl_mem),
-			  mcell->interface_cl + ifaP);
+			  mcell->interface_cl + ifa);
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 }
 
-void ExtractInterface_CL(MacroCell *mcell, field *f, int d2, cl_mem wn_cl,
+void ExtractInterface_CL(MacroCell *mcell, field *f, int ifa, cl_mem wn_cl,
 			 cl_uint nwait, cl_event *wait, cl_event *done)
 {
   // Extract the faces with normals in direction i2 on both side of
@@ -266,7 +251,7 @@ void ExtractInterface_CL(MacroCell *mcell, field *f, int d2, cl_mem wn_cl,
   int *raf = mcell->raf;
   int *deg = mcell->deg;
 
-  const int faces[3][2] = { {2, 0}, {1, 3}, {4,5} };
+  //const int faces[3][2] = { {2, 0}, {1, 3}, {4,5} };
   
   const int axis_permut[6][4] = { {0, 2, 1, 0},
 				  {1, 2, 0, 1},
@@ -275,53 +260,124 @@ void ExtractInterface_CL(MacroCell *mcell, field *f, int d2, cl_mem wn_cl,
 				  {0, 1, 2, 1},
 				  {1, 0, 2, 0} };
   
-  for(int i = 0; i < 3; ++i) {
-    int ifaM = faces[i][0];
-    int ifaP = faces[i][1];
-    // Do they share the normal direction?
-    assert(axis_permut[ifaM][2] == axis_permut[ifaP][2]);
-    // Does the normal of ifaM point in the negative direction?
-    assert(axis_permut[ifaM][3] == 0);
-    // Does the normal of ifaP point in the positive direction?
-    assert(axis_permut[ifaP][3] == 1);
-  }
-    
-  // Indices of the used dimemsions
-  int d0;
-  int d1;
-  switch(d2) {
-  case 0: // yz loop
-    d0 = 1;
-    d1 = 2;
-    break;
-  case 1: // xz loop
-    d0 = 0;
-    d1 = 2;
-    break;
-  case 2: // xy loop
-    d0 = 0;
-    d1 = 1;
-    break;
-  default:
-    assert(false);
-  }
+  const int paxis[4] = {axis_permut[ifa][0],
+			axis_permut[ifa][1],
+			axis_permut[ifa][2],
+			axis_permut[ifa][3] };
 
-  int ifaM = faces[d2][0];
-  int ifaP = faces[d2][1];
-  init_ExtractInterface_CL(mcell, f, ifaM, ifaP, wn_cl);
-
+  const int d0 = paxis[0];
+  const int d1 = paxis[1];
+  
+  init_ExtractInterface_CL(mcell, f, ifa, wn_cl);
   
   // Number of points on the face.
-  int npgf
+  int npgf 
     = mcell->raf[d0] * (mcell->deg[d0] + 1)
     * mcell->raf[d1] * (mcell->deg[d1] + 1);
 
+  size_t numworkitems[2] = {npgf, m};
   
-  
-  
+  cl_int status;
+  status = clEnqueueNDRangeKernel(f->cli.commandqueue,
+				  f->ExtractInterface,
+				  2,            // cl_uint work_dim,
+				  NULL,         // global_work_offset,
+				  numworkitems, // global_work_size, 
+				  NULL,          // size_t *local_work_size, 
+				  nwait, wait, done);
+  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status >= CL_SUCCESS);
 }
 
-void init_extracted_DGInterface_CL(MacroFace *mface, field *f, int nwork)
+void init_InsertInterface_CL(MacroCell *mcell,
+			     field *f,
+			     int ifa,
+			     cl_mem dtwn_cl)
+{
+  cl_int status;
+  cl_kernel kernel = f->InsertInterface;
+
+  unsigned int argnum = 0;
+
+  status = clSetKernelArg(kernel,
+			  argnum++,
+                          sizeof(cl_mem),
+                          &f->param_cl);
+  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status >= CL_SUCCESS);
+
+  status = clSetKernelArg(kernel,
+			  argnum++,
+                          sizeof(int),
+                          &ifa);
+  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status >= CL_SUCCESS);
+
+  status = clSetKernelArg(kernel,
+			  argnum++,
+                          sizeof(cl_mem),
+                          &dtwn_cl);
+  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status >= CL_SUCCESS);
+  
+  status = clSetKernelArg(kernel,
+			  argnum++,
+                          sizeof(cl_mem),
+			  mcell->interface_cl + ifa);
+  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status >= CL_SUCCESS);
+}
+
+void InsertInterface_CL(MacroCell *mcell, field *f, int ifa, cl_mem dtwn_cl,
+			cl_uint nwait, cl_event *wait, cl_event *done)
+{
+  // Extract the faces with normals in direction i2 on both side of
+  // the MacroCell.
+
+  int *param = f->interp_param;
+  int m = param[0];
+  int *raf = mcell->raf;
+  int *deg = mcell->deg;
+
+  //const int faces[3][2] = { {2, 0}, {1, 3}, {4,5} };
+  
+  const int axis_permut[6][4] = { {0, 2, 1, 0},
+				  {1, 2, 0, 1},
+				  {2, 0, 1, 1},
+				  {2, 1, 0, 0},
+				  {0, 1, 2, 1},
+				  {1, 0, 2, 0} };
+  
+  const int paxis[4] = {axis_permut[ifa][0],
+			axis_permut[ifa][1],
+			axis_permut[ifa][2],
+			axis_permut[ifa][3] };
+
+  const int d0 = paxis[0];
+  const int d1 = paxis[1];
+  
+  init_InsertInterface_CL(mcell, f, ifa, dtwn_cl);
+  
+  // Number of points on the face.
+  int npgf 
+    = mcell->raf[d0] * (mcell->deg[d0] + 1)
+    * mcell->raf[d1] * (mcell->deg[d1] + 1);
+
+  size_t numworkitems[2] = {npgf, m};
+  
+  cl_int status;
+  status = clEnqueueNDRangeKernel(f->cli.commandqueue,
+				  f->InsertInterface,
+				  2,            // cl_uint work_dim,
+				  NULL,         // global_work_offset,
+				  numworkitems, // global_work_size, 
+				  NULL,          // size_t *local_work_size, 
+				  nwait, wait, done);
+  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status >= CL_SUCCESS);
+}
+
+void init_extracted_DGInterface_CL(MacroFace *mface, field *f)
 {
   cl_int status;
   cl_kernel kernel = f->ExtractedDGInterfaceFlux;
@@ -344,7 +400,6 @@ void init_extracted_DGInterface_CL(MacroFace *mface, field *f, int nwork)
                           &mface->Rcorner);
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
-
   
   status = clSetKernelArg(kernel,
   			  argnum++,
@@ -359,27 +414,9 @@ void init_extracted_DGInterface_CL(MacroFace *mface, field *f, int nwork)
 			  &mface->wR_cl);
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
-
-  status = clSetKernelArg(kernel,
-  			  argnum++,
-			  sizeof(real) * nwork,
-                          NULL);
-  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status >= CL_SUCCESS);
-
-  status = clSetKernelArg(kernel,
-  			  argnum++,
-                          sizeof(real) * nwork,
-                          NULL);
-  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status >= CL_SUCCESS);
-  
-  
-  // FIXME: set kernel arguments
-
 }
 
-void compute_extracted_DGInterface_CL(MacroFace *mface, field *f,
+void ExtractedDGInterface_CL(MacroFace *mface, field *f,
 				      cl_uint nwait,
 				      cl_event *wait,
 				      cl_event *done)
@@ -387,38 +424,66 @@ void compute_extracted_DGInterface_CL(MacroFace *mface, field *f,
 
   MacroCell *mcellL = f->mcell + mface->ieL;
   
-  const int axis_permut[6][4] = { {0, 2, 1, 0},
-				  {1, 2, 0, 1},
-				  {2, 0, 1, 1},
-				  {2, 1, 0, 0},
-				  {0, 1, 2, 1},
-				  {1, 0, 2, 0} };
-  
-  // indices of the used dimemsions
-  int i0 = axis_permut[mface->locfaL][0];
-  int i1 = axis_permut[mface->locfaL][1];
-  int i2 = axis_permut[mface->locfaL][2];
-  int sign = axis_permut[mface->locfaL][3] == 0 ? -1 : 1;
-  
-  // number of points in each direction for the subcell face
-  size_t nix[2] = {mcellL->deg[i0] + 1, mcellL->deg[i1] + 1};
- 
-  // number of subcell faces in each direction for the macrocell face
-  size_t nsc[2] = {mcellL->raf[i0], mcellL->raf[i1]};
-  
-  size_t numworkitems[2] = {nix[0] * nsc[0], nix[1] * nsc[1]};
+  size_t numworkitems[1] = {mface->npgf};
 
-  int nwork = nix[0] * nix[1];
-
-  init_extracted_DGInterface_CL(mface, f, nwork);
+  init_extracted_DGInterface_CL(mface, f);
   
   cl_int status;
   status = clEnqueueNDRangeKernel(f->cli.commandqueue,
 				  f->ExtractedDGInterfaceFlux,
-				  2,            // cl_uint work_dim,
+				  1,            // cl_uint work_dim,
 				  NULL,         // global_work_offset,
 				  numworkitems, // global_work_size, 
-				  nix,          // size_t *local_work_size, 
+				  NULL,         // size_t *local_work_size, 
+				  nwait, wait, done);
+  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status >= CL_SUCCESS);
+}
+
+
+void init_extracted_DGBoundary_CL(MacroFace *mface, field *f)
+{
+  cl_int status;
+  cl_kernel kernel = f->ExtractedDGBoundaryFlux;
+
+  MacroCell *mcellL = mface->mcellL;
+    
+  unsigned int argnum = 0;
+
+  status = clSetKernelArg(kernel,
+			  argnum++,
+                          sizeof(cl_mem),
+                          &f->param_cl);
+  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status >= CL_SUCCESS);
+  
+  status = clSetKernelArg(kernel,
+  			  argnum++,
+                          sizeof(cl_mem),
+			  &mface->wL_cl);
+  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status >= CL_SUCCESS);
+}
+
+void ExtractedDGBoundary_CL(MacroFace *mface, field *f,
+			    cl_uint nwait,
+			    cl_event *wait,
+			    cl_event *done)
+{
+
+  MacroCell *mcellL = f->mcell + mface->ieL;
+  
+  size_t numworkitems[1] = {mface->npgf};
+
+  init_extracted_DGBoundary_CL(mface, f);
+  
+  cl_int status;
+  status = clEnqueueNDRangeKernel(f->cli.commandqueue,
+				  f->ExtractedDGBoundaryFlux,
+				  1,            // cl_uint work_dim,
+				  NULL,         // global_work_offset,
+				  numworkitems, // global_work_size, 
+				  NULL,         // size_t *local_work_size, 
 				  nwait, wait, done);
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);

@@ -230,15 +230,27 @@ void init_field_kernels_cl(field *f)
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 
-  f->extractinterface = clCreateKernel(f->cli.program,
+  f->ExtractInterface = clCreateKernel(f->cli.program,
 				       "ExtractInterface",
 				       &status);
+  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status >= CL_SUCCESS);
+
+  f->InsertInterface = clCreateKernel(f->cli.program,
+				      "InsertInterface",
+				      &status);
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 
   f->ExtractedDGInterfaceFlux = clCreateKernel(f->cli.program,
 					       "ExtractedDGInterfaceFlux",
 					       &status);
+  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status >= CL_SUCCESS);
+
+  f->ExtractedDGBoundaryFlux = clCreateKernel(f->cli.program,
+					      "ExtractedDGBoundaryFlux",
+					      &status);
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
   

@@ -47,14 +47,15 @@ int TestKernelInterface()
   Initfield(&f);
   free(f.dtwn);
 
+  const int nboundaryfaces = f.macromesh.nboundaryfaces;
+  const int ninterfaces = f.macromesh.nmacrointerfaces;
+  
   real* dtwn_extract = malloc(f.wsize * sizeof(real));
   f.dtwn = dtwn_extract;
   
   for(int i = 0; i < f.wsize; i++)
     f.dtwn[i] = 0.0;
   
-  const int ninterfaces = f.macromesh.nmacrointerfaces;
-
   // Test interface extraction
   printf("OpenCL extraction:\n");
   for(int i = 0; i < f.wsize; i++)
@@ -64,21 +65,35 @@ int TestKernelInterface()
 
   for(int ie = 0; ie < f.macromesh.nbelems; ++ie) {
     MacroCell *mcell = f.mcell + ie;
-
-    
-    
-    clFinish(f.cli.commandqueue);
+    assert(f.macromesh.is2d);
+    for(int ifa = 0; ifa < 4; ++ifa) {
+      ExtractInterface_CL(mcell, &f, ifa, f.wn_cl[ie], 0, 0, 0);
+      clFinish(f.cli.commandqueue);
+    }
   }
-
+  
   for(int i = 0; i < ninterfaces; ++i) {
     int ifa = f.macromesh.macrointerface[i];
     MacroFace *mface = f.mface + ifa;
-    //compute_extracted_DGInterface_CL(mface, &f, 0, NULL, NULL);
-    // FIXME
-
+    ExtractedDGInterface_CL(mface, &f, 0, 0, 0);
     clFinish(f.cli.commandqueue);
   }
   
+  for(int i = 0; i < nboundaryfaces; ++i) {
+    int ifa = f.macromesh.boundaryface[i];
+    MacroFace *mface = f.mface + ifa;
+    ExtractedDGBoundary_CL(mface, &f, 0, 0, 0);
+    clFinish(f.cli.commandqueue);
+  }
+  
+  for(int ie = 0; ie < f.macromesh.nbelems; ++ie) {
+    MacroCell *mcell = f.mcell + ie;
+    assert(f.macromesh.is2d);
+    for(int ifa = 0; ifa < 4; ++ifa) {
+      InsertInterface_CL(mcell, &f, ifa, f.dtwn_cl[ie], 0, 0, 0);
+      clFinish(f.cli.commandqueue);
+    }
+  }
   
   // FIXME: add actual computation, addition to dtwn_cl, and comparisons
   
@@ -103,7 +118,7 @@ int TestKernelInterface()
     clFinish(f.cli.commandqueue);
   }
   
-  const int nboundaryfaces = f.macromesh.nboundaryfaces;
+
   for(int i = 0; i < nboundaryfaces; ++i) {
     int ifa = f.macromesh.boundaryface[i];
     MacroFace *mface = f.mface + ifa;

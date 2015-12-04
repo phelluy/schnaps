@@ -445,6 +445,8 @@ void compute_xpgin(const int *raf, const int *deg,
   xpgin[paxis[2]] = paxis[3] == 0 ? -vsmall: 1.0 + vsmall;
 }
 
+// Compute the permuted volumic indices based corresponding to the
+// facial index.
 void ipgf_to_pxyz(const int *deg,
 		  const int *raf,
 		  const int ifa,
@@ -1549,12 +1551,10 @@ void DGMass(__constant int *param,      // interp param
 }
 
 __kernel
-void ExtractInterface(__constant int *param,        // interp param
-		      const int ifaM, // index for the negative face.
-		      const int ifaP, // index for the negative face.
-		      const __global real *wn,   // volumic input
-		      __global real *wfaceM,     // output
-		      __global real *wfaceP      // output
+void ExtractInterface(__constant int *param,   // interp param
+		      const int ifa,
+		      const __global real *wn, // volumic input
+		      __global real *wface     // output
 		      )
 {
   const int m = param[0];
@@ -1562,69 +1562,112 @@ void ExtractInterface(__constant int *param,        // interp param
   const int raf[3] = {param[4], param[5], param[6]};
   
   const int ipgf = get_global_id(0);
+  const int iv = get_global_id(1);
 
-  int picM[3];
-  int pixM[3];
+  int pic[3];
+  int pix[3];
   
-  ipgf_to_pxyz(deg, raf, ifaM, ipgf, picM, pixM);
+  ipgf_to_pxyz(deg, raf, ifa, ipgf, pic, pix);
 
-  int icM[3];
-  int ixM[3];
-  unpermute_indices(icM, picM, ifaM);
-  unpermute_indices(ixM, pixM, ifaM);
+  int ic[3];
+  int ix[3];
+  unpermute_indices(ic, pic, ifa);
+  unpermute_indices(ix, pix, ifa);
   
   // FIXME: do something with this.
 
+  int vpos = xyz_to_ipg(raf, deg, ic, ix) * m + iv;
+  int fpos = ipgf * m + iv;
+  
+  wface[fpos] = wn[vpos];
+}
+
+__kernel
+void InsertInterface(__constant int *param,   // interp param
+		     const int ifa,
+		     __global real *dtwn, // volumic input
+		     const __global real *wface     // output
+		     )
+{
+  const int m = param[0];
+  const int deg[3] = {param[1], param[2], param[3]};
+  const int raf[3] = {param[4], param[5], param[6]};
+  
+  const int ipgf = get_global_id(0);
+  const int iv = get_global_id(1);
+
+  int pic[3];
+  int pix[3];
+  
+  ipgf_to_pxyz(deg, raf, ifa, ipgf, pic, pix);
+
+  int ic[3];
+  int ix[3];
+  unpermute_indices(ic, pic, ifa);
+  unpermute_indices(ix, pix, ifa);
+  
+  // FIXME: do something with this.
+
+  int vpos = xyz_to_ipg(raf, deg, ic, ix) * m + iv;
+  int fpos = ipgf * m + iv;
+  
+  dtwn[vpos] = wface[fpos];
 }
 
 __kernel
 void ExtractedDGInterfaceFlux(__constant int *param,
 			      int Rcorner,
 			      __global real *faceL,
-			      __global real *faceR,
-			      __local real *fL,
-			      __local real *fR)
+			      __global real *faceR)
 {
   // The kernel is launched with ND range given by {the number of
   // points in the first L facial direction, the number of points in
   // the second L facial direciton}
 
+  // FIXME
 
-  const int m = param[0];
+  /* const int m = param[0]; */
   
-  // Copy Intrafces into __local memory
+  /* // Copy Intrafces into __local memory */
   
-  for(int i = 0; i < m; ++i) {
-    int pos = get_local_id(1)
-      + get_local_id(0)* get_local_size(1)
-      + i * get_local_size(1) * get_local_size(1);
-    fL[pos] = faceL[pos];
-    fR[pos] = faceR[pos];
-  }
+  /* for(int i = 0; i < m; ++i) { */
+  /*   int pos = get_local_id(1) */
+  /*     + get_local_id(0)* get_local_size(1) */
+  /*     + i * get_local_size(1) * get_local_size(1); */
+  /*   fL[pos] = faceL[pos]; */
+  /*   fR[pos] = faceR[pos]; */
+  /* } */
    
-  barrier(CLK_LOCAL_MEM_FENCE);
+  /* barrier(CLK_LOCAL_MEM_FENCE); */
 
-  // Compute flux
+  /* // Compute flux */
 
-  // The point with 2D face indices (d0, d1) is at memory location
-  // d1 * n0 * m  + d0 * m
-  const int d0 = get_global_id(0); // first dimension
-  const int d1 = get_global_id(1); // second dimension
-  const int n0 = get_global_size(0);
+  /* // The point with 2D face indices (d0, d1) is at memory location */
+  /* // d1 * n0 * m  + d0 * m */
+  /* const int d0 = get_global_id(0); // first dimension */
+  /* const int d1 = get_global_id(1); // second dimension */
+  /* const int n0 = get_global_size(0); */
 
-  barrier(CLK_LOCAL_MEM_FENCE);
+  /* barrier(CLK_LOCAL_MEM_FENCE); */
   
-  // Copy flux back into input buffers
-  for(int i = 0; i < m; ++i) {
-    int pos = get_local_id(1)
-      + get_local_id(0) * get_local_size(1)
-      + i * get_local_size(1) * get_local_size(1);
-    faceL[pos] = fL[pos];
-    faceR[pos] = fR[pos];
-  }
+  /* // Copy flux back into input buffers */
+  /* for(int i = 0; i < m; ++i) { */
+  /*   int pos = get_local_id(1) */
+  /*     + get_local_id(0) * get_local_size(1) */
+  /*     + i * get_local_size(1) * get_local_size(1); */
+  /*   faceL[pos] = fL[pos]; */
+  /*   faceR[pos] = fR[pos]; */
+  /* } */
 
 }
 
+
+__kernel
+void ExtractedDGBoundaryFlux(__constant int *param,
+			     __global real *faceL)
+{
+  // FIXME
+}
 
 
 // Compute the Discontinuous Galerkin inter-macrocells boundary terms.
@@ -1641,7 +1684,6 @@ void DGMacroCellInterface(__constant int *param,        // interp param
                           __global real *dtwnR          // time derivative
 			  )
 {
-
   // Index of the point on the face.
   int ipgfL = get_global_id(0);
 
