@@ -388,6 +388,8 @@ void init_field_macrocells_cl(field *f)
       int npgf = mcell->raf[d0] * (mcell->deg[d0] + 1)
 	* mcell->raf[d1] * (mcell->deg[d1] + 1); 
       size_t bufsize = sizeof(real) * m * npgf;
+      assert(bufsize > 0);
+      
       mcell->interface_cl[ifa] = clCreateBuffer(f->cli.context,
 						CL_MEM_READ_WRITE,
 						bufsize,
@@ -413,10 +415,10 @@ void init_field_MacroFaces_cl(field *f)
     int ifa = f->macromesh.macrointerface[i];
     MacroFace *mface = f->mface + ifa;
   
-    MacroCell *mcellL = mface->mcellL;
+    MacroCell *mcellL = f->mcell + mface->ieL;
     mface->wL_cl = mcellL->interface_cl[mface->locfaL];
     
-    MacroCell *mcellR = mface->mcellR;
+    MacroCell *mcellR = f->mcell + mface->ieR;
     mface->wR_cl = mcellR->interface_cl[mface->locfaR];
   }
 }
@@ -492,8 +494,8 @@ void test_MacroFace_orientation(field *f, MacroFace *mface)
 {
   real tol = 1e-8;
   
-  MacroCell *mcellL = mface->mcellL;
-  MacroCell *mcellR = mface->mcellR;
+  MacroCell *mcellL = f->mcell + mface->ieL;
+  MacroCell *mcellR = f->mcell + mface->ieR;
   
   //printf("mface->Rcorner: %d\n", mface->Rcorner);
   
@@ -636,11 +638,8 @@ void init_field_macrointerfaces(field *f)
     
     // Determine the relative orientation of the faces.
 
-    mface->mcellL = f->mcell + mface->ieL;
-    mface->mcellR = f->mcell + mface->ieR;
-
-    MacroCell *mcellL = mface->mcellL;
-    MacroCell *mcellR = mface->mcellR;
+    MacroCell *mcellL = f->mcell + mface->ieL;
+    MacroCell *mcellR = f->mcell + mface->ieR;
     
     int paxisL[4] = {axis_permut[mface->locfaL][0],
 		     axis_permut[mface->locfaL][1],

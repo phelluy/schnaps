@@ -80,9 +80,6 @@ typedef struct MacroFace {
   int locfaL;
   int ieR;
   int locfaR;
-
-  MacroCell *mcellL;
-  MacroCell *mcellR;
   
   // Determine the relative orientation of the faces.
   // Rcorner = 0: R0 = L1, R1 = L0

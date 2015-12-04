@@ -382,8 +382,8 @@ void init_extracted_DGInterface_CL(MacroFace *mface, field *f)
   cl_int status;
   cl_kernel kernel = f->ExtractedDGInterfaceFlux;
 
-  MacroCell *mcellL = mface->mcellL;
-  MacroCell *mcellR = mface->mcellR;
+  MacroCell *mcellL = f->mcell + mface->ieL;
+  MacroCell *mcellR = f->mcell + mface->ieR;
     
   unsigned int argnum = 0;
 
@@ -446,7 +446,7 @@ void init_extracted_DGBoundary_CL(MacroFace *mface, field *f)
   cl_int status;
   cl_kernel kernel = f->ExtractedDGBoundaryFlux;
 
-  MacroCell *mcellL = mface->mcellL;
+  MacroCell *mcellL = f->mcell + mface->ieL;
     
   unsigned int argnum = 0;
 
@@ -460,7 +460,8 @@ void init_extracted_DGBoundary_CL(MacroFace *mface, field *f)
   status = clSetKernelArg(kernel,
   			  argnum++,
                           sizeof(cl_mem),
-			  &mface->wL_cl);
+			  mcellL->interface_cl + mface->locfaL);
+
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 }
@@ -470,10 +471,9 @@ void ExtractedDGBoundary_CL(MacroFace *mface, field *f,
 			    cl_event *wait,
 			    cl_event *done)
 {
-
   MacroCell *mcellL = f->mcell + mface->ieL;
   
-  size_t numworkitems[1] = {mface->npgf};
+  size_t numworkitems = mface->npgf;
 
   init_extracted_DGBoundary_CL(mface, f);
   
@@ -482,7 +482,7 @@ void ExtractedDGBoundary_CL(MacroFace *mface, field *f,
 				  f->ExtractedDGBoundaryFlux,
 				  1,            // cl_uint work_dim,
 				  NULL,         // global_work_offset,
-				  numworkitems, // global_work_size, 
+				  &numworkitems, // global_work_size, 
 				  NULL,         // size_t *local_work_size, 
 				  nwait, wait, done);
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));

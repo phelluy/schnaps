@@ -1620,6 +1620,18 @@ void ExtractedDGInterfaceFlux(__constant int *param,
 			      __global real *faceL,
 			      __global real *faceR)
 {
+
+  const int m = param[0];
+  const int ipgf = get_global_id(0);
+  
+  for(int iv = 0; iv < m; ++iv) {
+    faceL[ipgf * m + iv] = 0.0;
+  }
+
+  for(int iv = 0; iv < m; ++iv) {
+    faceR[ipgf * m + iv] = 0.0;
+  }
+
   // The kernel is launched with ND range given by {the number of
   // points in the first L facial direction, the number of points in
   // the second L facial direciton}
@@ -1661,14 +1673,19 @@ void ExtractedDGInterfaceFlux(__constant int *param,
 
 }
 
-
 __kernel
 void ExtractedDGBoundaryFlux(__constant int *param,
 			     __global real *faceL)
 {
   // FIXME
-}
+  const int m = param[0];
+  const int ipgf = get_global_id(0);
 
+  for(int iv = 0; iv < m; ++iv) {
+    faceL[ipgf * m + iv] = 0.0;
+  }
+
+}
 
 // Compute the Discontinuous Galerkin inter-macrocells boundary terms.
 // Second implementation with a loop on the faces.

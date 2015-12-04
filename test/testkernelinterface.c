@@ -63,29 +63,36 @@ int TestKernelInterface()
 
   CopyfieldtoGPU(&f);
 
+  printf("Extracting faces:\n");
   for(int ie = 0; ie < f.macromesh.nbelems; ++ie) {
     MacroCell *mcell = f.mcell + ie;
     assert(f.macromesh.is2d);
     for(int ifa = 0; ifa < 4; ++ifa) {
-      ExtractInterface_CL(mcell, &f, ifa, f.wn_cl[ie], 0, 0, 0);
-      clFinish(f.cli.commandqueue);
+     ExtractInterface_CL(mcell, &f, ifa, f.wn_cl[ie], 0, 0, 0);
+     clFinish(f.cli.commandqueue);
     }
   }
-  
+
+  printf("Computing interfaces:\n");
   for(int i = 0; i < ninterfaces; ++i) {
     int ifa = f.macromesh.macrointerface[i];
     MacroFace *mface = f.mface + ifa;
     ExtractedDGInterface_CL(mface, &f, 0, 0, 0);
     clFinish(f.cli.commandqueue);
   }
-  
+
+  printf("Computing boundaries:\n");
   for(int i = 0; i < nboundaryfaces; ++i) {
     int ifa = f.macromesh.boundaryface[i];
     MacroFace *mface = f.mface + ifa;
+    int ieL = mface->ieL;
+    MacroCell *mcellL = f.mcell + ieL;
+    //ExtractInterface_CL(mcellL, &f, mface->locfaL, f.wn_cl[ieL], 0, 0, 0);
     ExtractedDGBoundary_CL(mface, &f, 0, 0, 0);
     clFinish(f.cli.commandqueue);
   }
-  
+
+  printf("Adding contribution:\n");
   for(int ie = 0; ie < f.macromesh.nbelems; ++ie) {
     MacroCell *mcell = f.mcell + ie;
     assert(f.macromesh.is2d);
