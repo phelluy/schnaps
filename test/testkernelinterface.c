@@ -47,6 +47,12 @@ int TestKernelInterface()
   Initfield(&f);
   free(f.dtwn);
 
+  real tolerance;
+  if(sizeof(real) == sizeof(double))
+    tolerance = 1e-8;
+  else
+    tolerance = 1e-6;
+  
   const int nboundaryfaces = f.macromesh.nboundaryfaces;
   const int ninterfaces = f.macromesh.nmacrointerfaces;
   real tnow = 0.0;
@@ -106,8 +112,7 @@ int TestKernelInterface()
   // FIXME: add actual computation, addition to dtwn_cl, and comparisons
   
   CopyfieldtoCPU(&f);
-
-   
+ 
   // OpenCL version
   printf("OpenCL version:\n");
 
@@ -136,7 +141,19 @@ int TestKernelInterface()
   CopyfieldtoCPU(&f);
   //Displayfield(&f);
 
-
+  {
+    real maxerr = 0.0;
+    for(int i = 0; i < f.wsize; i++) {
+      real error = fabs(dtwn_extract[i] - dtwn_cl[i]);
+      //printf("error: %f \t%f \t%f\n", error, dtwn_omp[i], dtwn_cl[i]);
+      if(error > maxerr) 
+	maxerr = error;
+    }
+    printf("maxerr between OpencL-extract and OpenCL: %f\n", maxerr);
+    if(maxerr > tolerance)
+      retval += 1;
+  }
+  
   // OpenMP version
   printf("OpenMP version:\n");
 
@@ -178,25 +195,19 @@ int TestKernelInterface()
     }
   }
 
-  real maxerr = 0.0;
-  for(int i = 0; i < f.wsize; i++) {
-    real error = fabs(dtwn_omp[i] - dtwn_cl[i]);
-    //printf("error: %f \t%f \t%f\n", error, dtwn_omp[i], dtwn_cl[i]);
-    if(error > maxerr) 
-      maxerr = error;
+  {
+    real maxerr = 0.0;
+    for(int i = 0; i < f.wsize; i++) {
+      real error = fabs(dtwn_omp[i] - dtwn_cl[i]);
+      //printf("error: %f \t%f \t%f\n", error, dtwn_omp[i], dtwn_cl[i]);
+      if(error > maxerr) 
+	maxerr = error;
+    }
+    printf("maxerr between OpenMP and OpencL: %f\n", maxerr);
+    if(maxerr > tolerance)
+      retval += 1;
   }
  
-  printf("maxerr: %f\n", maxerr);
-
-  real tolerance;
-  if(sizeof(real) == sizeof(double))
-    tolerance = 1e-8;
-  else
-    tolerance = 1e-6;
-  if(maxerr > tolerance) {
-    retval += 1;
-  }
-
   return retval;
 }
 

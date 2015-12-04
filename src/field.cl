@@ -1728,6 +1728,9 @@ void ExtractedDGBoundaryFlux(__constant int *param,
   real flux[_M];
   BOUNDARYFLUX(xphy, tnow, wL, vnds, flux);
 
+  for(int iv = 0; iv < m; ++iv) {
+    wn0[iv] = flux[iv];
+  }
   
 }
 
