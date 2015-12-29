@@ -24,8 +24,16 @@ IF(DEFINED _CL_DEVICE)
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -D_CL_DEVICE=${_CL_DEVICE}")
 ENDIF()
 
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Dreal=double")
-#set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Dreal=float")
+
+OPTION(SINGLE_PRECISION
+  "Compile using floats"
+  OFF)
+
+IF(SINGLE_PRECISION)
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Dreal=float")
+ELSE()
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Dreal=double")
+ENDIF()
 
 OPTION(USE_OPENCL
   "Compile with the OpenCL library"
