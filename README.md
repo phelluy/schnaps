@@ -69,6 +69,13 @@ cd doc/
 doxygen doxyschnaps
 
 
+Debugging:
+
+valgrind doesn't play terribly well with the AMD drivers.  This can be
+ameliorated by using the provided suppression file, libamdocl.supp, via
+
+valgrind --suppressions=libamdocl.supp <executable>
+
 
 SCHNAPS is under the CeCILL license:
 http://www.cecill.info/licences/Licence_CeCILL_V1.1-US.html

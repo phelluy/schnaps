@@ -1,0 +1,96 @@
+{
+   libamdocl64_cond
+   Memcheck:Cond
+   ...
+   obj:*/libamdocl64.so
+   ...
+   obj:*/libamdocl64.so
+}
+{
+   libamdocl64_param_ioctl
+   Memcheck:Param
+   ioctl(generic)
+   ...
+   obj:*/libamdocl64.so
+}
+{
+   libamdocl64_param_writebuf
+   Memcheck:Param
+   write(buf)
+   ...
+   obj:*/libamdocl64.so
+}
+{
+   libamdocl64_cond_rindex
+   Memcheck:Cond
+   fun:rindex
+   ...
+   obj:*/libamdocl64.so
+}
+{
+   libamdocl64_value8
+   Memcheck:Value8
+   obj:*/libamdocl64.so
+   ...
+   obj:*/libamdocl64.so
+}
+{
+   libamdocl64_value8_rindex
+   Memcheck:Value8
+   fun:rindex
+   ...
+   obj:*/libamdocl64.so
+}
+{
+   libamdocl64_value8_strlen
+   Memcheck:Value8
+   fun:strlen
+   ...
+   obj:*/libamdocl64.so
+}
+{
+   libamdocl64_leak_possible
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:malloc
+   obj:/usr/lib/fglrx/libamdocl64.so
+   ...
+   obj:/usr/lib/fglrx/libamdocl64.so
+}
+{
+   libamdocl64_leak_definite
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:malloc
+   obj:/usr/lib/fglrx/libamdocl64.so
+   ...
+   obj:/usr/lib/fglrx/libamdocl64.so
+}
+{
+   libamdocl64_leak_definite_ati
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:malloc
+   obj:/usr/lib/fglrx/libatiadlxx.so
+   ...
+   obj:/usr/lib/fglrx/libamdocl64.so
+}
+{
+   libamdocl64_leak_reachable
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc
+   obj:/usr/lib/fglrx/libamdocl64.so
+   ...
+   obj:/usr/lib/fglrx/libamdocl64.so
+}
+{
+   libamdocl64_leak_reachable
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc
+   ...
+   obj:/usr/lib/fglrx/libamdocl64.so
+   ...
+   obj:/usr/lib/fglrx/libamdocl64.so
+}
