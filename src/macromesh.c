@@ -621,8 +621,8 @@ void BuildConnectivity(MacroMesh* m)
   printf("bounds: %f, %f, %f, %f, %f, %f\n",
 	 m->xmin[0],m->xmax[0],
 	 m->xmin[1],m->xmax[1],
-	 m->xmin[2],m->xmax[2]
-	 );
+	 m->xmin[2],m->xmax[2] );
+
   // Build a list of faces each face is made of four corners of the
   // hexaedron mesh
   Face4Sort *face = malloc(6 * sizeof(Face4Sort) * m->nbelems);
@@ -639,20 +639,16 @@ void BuildConnectivity(MacroMesh* m)
   /* 	     ie,ifa,m->elem2elem[ifa+6*ie]); */
   /*   } */
   /* } */
-    
+  
   if(m->is2d)
     suppress_zfaces(m);
+
   if(m->is1d) {
     suppress_zfaces(m);
     suppress_yfaces(m);
   }
 
-  // update connectivity if the mesh is periodic
-  // in some directions
-
-  real diag[3][3]={1,0,0,
-		   0,1,0,
-		   0,0,1};
+  // Update connectivity if the mesh is periodic in some directions
 
   for (int ie = 0; ie < m->nbelems; ie++) {
     real physnode[20][3];
@@ -662,69 +658,66 @@ void BuildConnectivity(MacroMesh* m)
       physnode[inoloc][1] = m->node[3 * ino + 1];
       physnode[inoloc][2] = m->node[3 * ino + 2];
     }
+    
     for(int ifa = 0; ifa < 6; ifa++) {
-      if (m->elem2elem[6 * ie + ifa] < 0){
-	real xpgref[3], xpgref_in[3];
-	int ipgf=0;
-	int param2[7]={0,0,0,1,1,1,0};
+      if(m->elem2elem[6 * ie + ifa] < 0) {
+	real xpgref[3];
+	real xpgref_in[3];
+	int ipgf = 0;
+	int param2[7] = {0, 0, 0, 1, 1, 1, 0};
 	ref_pg_face(param2, ifa, ipgf, xpgref, NULL, xpgref_in);
-	real dtau[3][3], xpg_in[3];
-	real codtau[3][3], vnds[3]={0,0,0};
+	real dtau[3][3];
+	real xpg_in[3];
+	real codtau[3][3];
+	real vnds[3] = {0,0,0};
 	Ref2Phy(physnode,
 		xpgref_in,
 		NULL, ifa, // dpsiref,ifa
 		xpg_in, dtau,
 		codtau, NULL, vnds); // codtau,dpsi,vnds
+
 	Normalize(vnds);
 	vnds[0] = fabs(vnds[0]);
 	vnds[1] = fabs(vnds[1]);
 	vnds[2] = fabs(vnds[2]);
-	int dim=0;
-	while(Dist(vnds,diag[dim]) > 1e-2 && dim < 3) dim++;
-	//assert(dim < 3);
-	//printf("xpg_in_before=%f\n",xpg_in[dim]);
-	if (dim < 3 && m->period[dim]  > 0){
-	  //if (xpg_in[dim] > m->period[dim]){
-          if (xpg_in[dim] > m->xmax[dim]){
-	    xpg_in[dim] -= m->period[dim];
-	    //printf("xpg_in_after=%f\n",xpg_in[dim]);
+
+	int dim = 0;
+	real diag[3][3] = {1, 0, 0,
+			   0, 1, 0,
+			   0, 0, 1};
+	while(Dist(vnds, diag[dim]) > 1e-2 && dim < 3) dim++;
+
+	if (dim < 3) {
+	  if(m->period[dim]  > 0){
+	    if (xpg_in[dim] > m->xmax[dim])
+	      xpg_in[dim] -= m->period[dim];
+	    if (xpg_in[dim] < m->xmin[dim])
+	      xpg_in[dim] += m->period[dim];
+	    m->elem2elem[6 * ie + ifa] = NumElemFromPoint(m, xpg_in, NULL);
 	  }
-	  //else if (xpg_in[dim] < 0){
-          else if (xpg_in[dim] < m->xmin[dim]){
-	    xpg_in[dim] += m->period[dim];
-	    //printf("xpg_in_after=%f\n",xpg_in[dim]);
-	  }
-	  else {
-            //printf("xpg_in=%f\n",xpg_in[dim]);
-	    assert(1==2);
-	  }
-	  m->elem2elem[6 * ie + ifa] = NumElemFromPoint(m,xpg_in,NULL);
-	  /* printf("ie=%d ifa=%d numelem=%d vnds=%f %f %f xpg_in=%f %f %f \n", */
-	  /* 	 ie,ifa,NumElemFromPoint(m,xpg_in,NULL), */
-	  /* 	 vnds[0],vnds[1],vnds[2], */
-	  /* 	 xpg_in[0],xpg_in[1],xpg_in[2]); */
 	}
+	
       }
     }
   }
 
-  // now, update the face2elem connectivity (because elem2elem has changed)
+  // Update the face2elem connectivity (because elem2elem has changed)
   for(int ifa = 0; ifa < m->nbfaces; ifa++) {
     int ieL = m->face2elem[4 * ifa + 0];
     int locfaL = m->face2elem[4 * ifa + 1];
     int ieR = m->face2elem[4 * ifa + 2];
     int locfaR = m->face2elem[4 * ifa + 3];
 
-    int ieR2=m->elem2elem[6 * ieL + locfaL];
+    int ieR2 = m->elem2elem[6 * ieL + locfaL];
 
-    if (ieR != ieR2){
+    if(ieR != ieR2){
       assert(ieR == -1);
-      int opp[6]={2,3,0,1,5,4};
+      int opp[6] = {2, 3, 0, 1, 5, 4};
       if (locfaL == 0 || locfaL == 1 || locfaL == 4) {
 	m->face2elem[4 * ifa + 2] = ieR2;
 	m->face2elem[4 * ifa + 3] = opp[locfaL];
       } else {
-	// mark the face for suppression
+	// mark the face for deletion
 	m->face2elem[4 * ifa + 0] = -1;
       }
     }
@@ -732,36 +725,26 @@ void BuildConnectivity(MacroMesh* m)
 
   suppress_double_faces(m);
 
-  
-
-  //assert(1==5);
   free(bounds);
 
   m->connec_ok = true;
-
-/* #ifdef _PERIOD */
-/*   assert(m->is1d); // TODO : generalize to 2D */
-/*   assert(m->nbelems==1);  */
-/*   // faces 1 and 3 point to the same unique macrocell */
-/*   m->elem2elem[1+6*0]=0; */
-/*   m->elem2elem[3+6*0]=0; */
-/* #endif */
-  
 }
 
-
 // Compare two integers
-int CompareInt(const void* a, const void* b) {
+int CompareInt(const void* a, const void* b)
+{
   return(*(int*)a - *(int*)b);
 }
 
 // Sort the nodes list of the face
-void OrderFace4Sort(Face4Sort* f) {
+void OrderFace4Sort(Face4Sort* f)
+{
   qsort(f->node, 4, sizeof(int), CompareInt);
 }
 
 // Compare two ordered four-corner faces lexicographical order
-int CompareFace4Sort(const void* a,const void* b) {
+int CompareFace4Sort(const void* a,const void* b)
+{
   Face4Sort *f1 = (Face4Sort*)a;
   Face4Sort *f2 = (Face4Sort*)b;
 
@@ -773,9 +756,10 @@ int CompareFace4Sort(const void* a,const void* b) {
   if(r == 0) 
     r = f1->node[3] - f2->node[3];
   return r;
-};
+}
 
-void CheckMacroMesh(MacroMesh *m, int *param) {
+void CheckMacroMesh(MacroMesh *m, int *param)
+{
   Geom g;
   real face_centers[6][3]={ {0.5,0.0,0.5},
 			    {1.0,0.5,0.5},
@@ -784,17 +768,9 @@ void CheckMacroMesh(MacroMesh *m, int *param) {
 			    {0.5,0.5,1.0},
 			    {0.5,0.5,0.0} };
 
-  //real *bounds = malloc(6 * sizeof(real));
-  //macromesh_bounds(m, bounds);
-
-  /* real refnormal[6][3]={{0,-1,0},{1,0,0}, */
-  /* 			  {0,1,0},{-1,0,0}, */
-  /* 			  {0,0,1},{0,0,-1}}; */
-
   assert(m->connec_ok);
 
   for(int ie = 0; ie < m->nbelems; ie++) {
-    // Load geometry for macro element ie:
     for(int inoloc = 0; inoloc < 20; inoloc++) {
       int ino = m->elem2node[20 * ie + inoloc];
       g.physnode[inoloc][0] = m->node[3 * ino + 0];
@@ -895,8 +871,6 @@ void CheckMacroMesh(MacroMesh *m, int *param) {
   // Check that the faces are defined by the same mapping with
   // opposite normals
   for (int ie = 0; ie < m->nbelems; ie++) {
-    // int param[8]={1,_DEGX,_DEGY,_DEGZ,_RAFX,_RAFY,_RAFZ,0};
-    // Get the geometry for the macro element ie
     real physnode[20][3];
     for(int inoloc = 0; inoloc < 20; inoloc++) {
       int ino = m->elem2node[20 * ie + inoloc];
@@ -912,8 +886,8 @@ void CheckMacroMesh(MacroMesh *m, int *param) {
 
 	// Get the right elem or the boundary id
 	int ieR = m->elem2elem[6 * ie + ifa];
-	// If the right element exists and is not
-	// the left element (may arrive in periodic cases)
+	// If the right element exists and is not the left element
+	// (may arrive in periodic cases)
   	if(ieR >= 0 && ieR != ie) {
 	  // Get the coordinates of the Gauss point from the
 	  // face-local point index and the point slightly inside the
@@ -922,13 +896,6 @@ void CheckMacroMesh(MacroMesh *m, int *param) {
 	  ref_pg_face(param, ifa, ipgf, xpgref, NULL, xpgref_in);
 	  //ref_pg_face(param, ifa, ipgf, xpgref, NULL, NULL);
 	  int ipg=param[6];
-
-/* #ifdef _PERIOD */
-/* 	  assert(m->is1d); // TODO: generalize to 2d */
-/* 	  if (xpgref_in[0] > _PERIOD) xpgref_in[0] -= _PERIOD; */
-/* 	  if (xpgref_in[0] < 0) xpgref_in[0] += _PERIOD; */
-/* #endif */
-
 
 	  // Compute the position of the point and the face normal.
 	  real xpg[3], vnds[3];
@@ -949,7 +916,7 @@ void CheckMacroMesh(MacroMesh *m, int *param) {
 		  NULL, ifa, // dpsiref,ifa
 		  xpg_in, NULL,
 		  NULL, NULL, NULL); // codtau,dpsi,vnds
-	  PeriodicCorrection(xpg_in,m->period);
+	  PeriodicCorrection(xpg_in, m->period);
 
 	  // Load the geometry of the right macrocell
 	  real physnodeR[20][3];
@@ -961,14 +928,13 @@ void CheckMacroMesh(MacroMesh *m, int *param) {
 	  }
 
   	  // Find the corresponding point in the right elem
-  	  real xpgrefR_in[3];//,xpgrefR[3];
+  	  real xpgrefR_in[3];
 	  Phy2Ref(physnodeR, xpg_in, xpgrefR_in);
-	  //Phy2Ref(physnodeR, xpg, xpgrefR);
 	  int ipgR = ref_ipg(param, xpgrefR_in);
 	  
-	  // search the id of the face in the right elem
-	  // special treatment if the mesh is periodic
-	  // and contains only one elem (then ie==ieR)
+	  // Search the id of the face in the right elem special
+	  // treatment if the mesh is periodic and contains only one
+	  // elem (then ie==ieR)
 	  int neighb_count=0;
 	  for(int ifaR=0;ifaR<6;ifaR++){
 	    if (m->elem2elem[6*ieR+ifaR] == ie) {
@@ -987,18 +953,14 @@ void CheckMacroMesh(MacroMesh *m, int *param) {
 			    xpgR, dtauR,
 			    codtauR, NULL, vndsR); // codtau, dphi, vnds
 		  }
+		  
 		  // Ensure that the normals are opposite
-		  // if xpg and xpgR are close
-		  /* printf("xpg:%f %f %f\n", xpg_in[0], xpg_in[1], xpg_in[2]); */
-		  /* printf("vnds: %f %f %f vndsR: %f %f %f \n", */
-		  /* 	 vnds[0],vnds[1],vnds[2], */
-		  /* 	 vndsR[0],vndsR[1],vndsR[2]); */
-		  /* printf("xpgR:%f %f %f\n", xpgR[0], xpgR[1], xpgR[2]); */
 		  real tolerance;
 		  if(sizeof(real) == sizeof(double))
 		    tolerance = 1e-8;
 		  else
 		    tolerance = 1e-6;
+
 		  assert(fabs(vnds[0] + vndsR[0]) < tolerance);
 		  assert(fabs(vnds[1] + vndsR[1]) < tolerance);
 		  assert(fabs(vnds[2] + vndsR[2]) < tolerance);
@@ -1330,8 +1292,8 @@ void Detect1DMacroMesh(MacroMesh* m){
 	    codtau, NULL, vnds); // codtau,dphi,vnds
 
     real d = sqrt((vnds[0] - 1) * (vnds[0] - 1) 
-		+ vnds[1] * vnds[1]
-		+ vnds[2] * vnds[2]);
+		  + vnds[1] * vnds[1]
+		  + vnds[2] * vnds[2]);
 
     // if the mesh is not 1D exit
     assert(d<1e-6);
