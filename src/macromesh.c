@@ -685,7 +685,7 @@ void BuildConnectivity(MacroMesh* m)
 	real diag[3][3] = {1, 0, 0,
 			   0, 1, 0,
 			   0, 0, 1};
-	while(Dist(vnds, diag[dim]) > 1e-2 && dim < 3) dim++;
+	while(dim < 3 && Dist(vnds, diag[dim]) > 1e-2) dim++;
 
 	if (dim < 3) {
 	  if(m->period[dim]  > 0){
@@ -845,12 +845,12 @@ void CheckMacroMesh(MacroMesh *m, int *param)
         if(m->is2d) { // in 2D do not check upper and lower face
           if(ifa < 4)
             assert(Dist(xpgref, xpgref2) < 1e-11);
-        }
-	else if (m->is1d){
+        } else if (m->is1d){
 	  if (ifa==1 || ifa==3) {
 	    assert(Dist(xpgref,xpgref2)<1e-11);
 	  }
 	}
+
 	// in 3D check all faces
 	else { // in 3D check all faces
 	  if(Dist(xpgref, xpgref2) >= 1e-11) {
@@ -1135,7 +1135,8 @@ int NumElemFromPoint(MacroMesh *m, real *xphy, real *xref0)
   return num;
 }
 
-int NearestNode(MacroMesh *m, real *xphy) {
+int NearestNode(MacroMesh *m, real *xphy)
+{
   int nearest = -1;
 
 #ifdef _WITH_FLANN
@@ -1180,6 +1181,7 @@ int NearestNode(MacroMesh *m, real *xphy) {
   // 				      &p);         // flan struct
   
 
+  // FIXME: does this always evaluate to true?
 #if real == double
   flann_find_nearest_neighbors_index_double(findex,// index
 					    xphy,
@@ -1199,16 +1201,13 @@ int NearestNode(MacroMesh *m, real *xphy) {
 #endif
 
   nearest = result[0];
-  // printf("xphy=%f %f %f nearest=%d %f %f %f \n",
-  // 	 xphy[0],xphy[1],xphy[2],nearest+1,
-  // 	 m->node[0+nearest*3],m->node[1+nearest*3],m->node[2+nearest*3]);
 
 #else // Do not use FLANN library.
 
   // slow version: loops on all the points
   real d = 1e20;
 
-  for(int ino = 0; ino < m->nbnodes; ino++){
+  for(int ino = 0; ino < m->nbnodes; ino++) {
     real d2 = Dist(xphy, m->node + 3 * ino);
     if (d2 < d) {
       nearest = ino;
@@ -1222,17 +1221,16 @@ int NearestNode(MacroMesh *m, real *xphy) {
 
 // Detect if the mesh is 1D and then permut the nodes so that the y,z
 // direction coincides in the reference or physical frame
-void Detect1DMacroMesh(MacroMesh* m){
+void Detect1DMacroMesh(MacroMesh* m)
+{
   m->is1d = true;
 
-  // do not permut the node if the connectivity
-  // is already built
+  // Do not permut the node if the connectivity is already built
   if (m->elem2elem != NULL)
     printf("Cannot permut nodes before building connectivity\n");
   assert(m->elem2elem == 0);
 
   for(int ie = 0; ie < m->nbelems; ie++) {
-    // get the physical nodes of element ie
     real physnode[20][3];
     for(int inoloc = 0; inoloc < 20; inoloc++){
       int ino = m->elem2node[20 * ie + inoloc];
@@ -1241,9 +1239,8 @@ void Detect1DMacroMesh(MacroMesh* m){
       physnode[inoloc][2] = m->node[3 * ino + 2];
     }
 
-    // we decide that the mesh is 1D if the 
-    // middles of the elements have a constant y,z 
-    // coordinate equal to 0.5
+    // we decide that the mesh is 1D if the middles of the elements
+    // have a constant y,z coordinate equal to 0.5
     real zmil = 0;
     real ymil = 0;
     for(int inoloc = 0; inoloc < 20; inoloc++){
@@ -1274,16 +1271,14 @@ void Detect1DMacroMesh(MacroMesh* m){
     }
 
     // face centers coordinates in the ref frame
-    real face_centers[6][3]={
-      {0.5,0.0,0.5},
-      {1.0,0.5,0.5},
-      {0.5,1.0,0.5},
-      {0.0,0.5,0.5},
-      {0.5,0.5,1.0},
-      {0.5,0.5,0.0},
-    };
+    real face_centers[6][3]={ {0.5,0.0,0.5},
+			      {1.0,0.5,0.5},
+			      {0.5,1.0,0.5},
+			      {0.0,0.5,0.5},
+			      {0.5,0.5,1.0},
+			      {0.5,0.5,0.0} };
 
-    // compute the normal to face 1
+    // Compute the normal to face 1
     real vnds[3], dtau[3][3], codtau[3][3];
     Ref2Phy(physnode,
 	    face_centers[1],
@@ -1296,7 +1291,7 @@ void Detect1DMacroMesh(MacroMesh* m){
 		  + vnds[2] * vnds[2]);
 
     // if the mesh is not 1D exit
-    assert(d<1e-6);
+    assert(d < 1e-6);
   }
 }
 
