@@ -527,10 +527,10 @@ void InitCLInfo(CLInfo *cli, int platform_num, int device_num)
 
   int ndevices = get_nbdevices(&cli->platform);
   assert(ndevices > 0);
-
-  printf("\nWe choose device %d/%d ", device_num, ndevices);
   assert(device_num < ndevices);
-  printf("of platform %d/%d\n", platform_num, cli->nbplatforms - 1);
+  
+  printf("\nUsing OpenCL platform %d, device %d.\n", platform_num, device_num);
+
 
   cli->device = get_device_id(cli->platform, device_num);
 

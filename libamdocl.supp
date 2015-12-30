@@ -115,13 +115,13 @@
 }
 
 {
-   name
+   InvalidRead8
    Memcheck:Value8
    obj:*/libamdocl12cl64.so
 }
 
 {
-   name
+   InvalidRead4
    Memcheck:Value4
    obj:*/libamdocl12cl64.so
 }
@@ -136,4 +136,105 @@
    name
    Memcheck:Addr4
    obj:*/libamdocl12cl64.so
+}
+
+# From  --gen-suppressions=all 
+{
+   InvalidRead8AMDOCL
+   Memcheck:Value8
+   obj:*
+   obj:*/libamdocl64.so
+   ...
+   fun:start_thread
+   fun:clone
+}
+
+{
+   InvalidRead8AMDOCL
+   Memcheck:Addr8
+   obj:*/libamdocl64.so
+   obj:*
+}
+
+{
+   InvalidWrite8AMDOCL
+   Memcheck:Addr8
+   obj:*/libamdocl64.so
+   ...
+   fun:start_thread
+   fun:clone
+}
+	
+{
+   InvalidWrite8AMDOCL
+   Memcheck:Addr8
+   fun:memset
+   obj:*/libamdocl64.so
+   ...
+   fun:start_thread
+   fun:clone
+}
+
+{
+   InvalidWrite8AMDOCL
+   Memcheck:Addr8
+   fun:memcpy@GLIBC_2.2.5
+   obj:*/libamdocl64.so
+   ...
+   fun:start_thread
+   fun:clone
+}
+
+{
+   InvalidWrite2AMDOCL
+   Memcheck:Addr2
+   fun:memcpy@GLIBC_2.2.5
+   obj:*/libamdocl64.so
+   ...
+   fun:start_thread
+   fun:clone
+}
+
+{
+   InvalidWrite2AMDOCL
+   Memcheck:Addr1
+   fun:memcpy@GLIBC_2.2.5
+   obj:*/libamdocl64.so
+   ...
+   fun:start_thread
+   fun:clone
+}
+
+{
+   InvalidWrite4AMDOCL
+   Memcheck:Addr4
+   obj:*/libamdocl64.so
+   ...
+   fun:start_thread
+   fun:clone
+}
+
+{
+   JumpSO
+   Memcheck:Cond
+   obj:*
+   ...
+}
+
+{
+   UninintValue8SO
+   Memcheck:Value8
+   obj:*
+   ...
+}
+
+{
+   InvalidRead4SO
+   Memcheck:Addr4
+   fun:__pthread_mutex_lock_full
+   fun:_ZN4llvm3sys9MutexImpl7acquireEv
+   fun:_ZN4llvm13llvm_shutdownEv
+   fun:__run_exit_handlers
+   fun:exit
+   fun:(below main)
 }
