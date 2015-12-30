@@ -64,9 +64,9 @@ imposeddataptr imposeddata(const char *name)
   return 0; 
 }
 
-void TransNumFlux(real *wL, real *wR, real* vnorm, real* flux)
+void TransNumFlux(real* wL, real* wR, real* vnorm, real* flux)
 {
-  const real sqrt_third =  sqrt(1.0/3.0);
+  const real sqrt_third =  sqrt(1.0 / 3.0);
   const real transport_v[] = {sqrt_third, sqrt_third, sqrt_third};
   real vn 
     = transport_v[0] * vnorm[0] 
@@ -148,17 +148,20 @@ void VecTransBoundaryFlux2d(real *x, real t,
 }
 #pragma end_opencl
 
-void TransInitData(real *x, real *w) {
+void TransInitData(real *x, real *w)
+{
   real t = 0;
   TransImposedData(x, t, w);
 }
 
-void TransInitData2d(real *x, real *w) {
+void TransInitData2d(real *x, real *w)
+{
   real t = 0;
   TransImposedData2d(x, t, w);
 }
 
-void VecTransInitData2d(real *x, real *w) {
+void VecTransInitData2d(real *x, real *w)
+{
   real t = 0;
   VecTransImposedData2d(x, t, w);
 }
@@ -184,16 +187,15 @@ void TransImposedData2d(const real *x, const real t, real *w)
 }
 #pragma end_opencl
 
-void TestTransBoundaryFlux(real *x, real t, 
-			       real *wL, real* vnorm,
-			       real* flux) {
+void TestTransBoundaryFlux(real *x, real t, real *wL, real* vnorm, real* flux)
+{
   real wR[1];
   TestTransImposedData(x, t, wR);
   TransNumFlux(wL, wR, vnorm, flux);
 }
 
-void TestTransBoundaryFlux2d(real *x, real t, real *wL,
-				 real* vnorm, real* flux) {
+void TestTransBoundaryFlux2d(real *x, real t, real *wL, real* vnorm, real* flux)
+{
   real wR[1];
   TestTransImposedData2d(x, t, wR);
   TransNumFlux2d(wL, wR, vnorm, flux);
@@ -211,7 +213,8 @@ void TestTransInitData2d(real *x, real *w)
   TestTransImposedData2d(x, t, w);
 }
 
-void TestTransImposedData(const real *x, const real t, real *w) {
+void TestTransImposedData(const real *x, const real t, real *w)
+{
   const real sqrt_third =  sqrt(1.0/3.0);
   const real transport_v[] = {sqrt_third, sqrt_third, sqrt_third};
   real vx 
@@ -223,7 +226,8 @@ void TestTransImposedData(const real *x, const real t, real *w) {
   //w[0]=0;
 }
 
-void TestTransImposedData2d(const real *x, const real t, real *w) {
+void TestTransImposedData2d(const real *x, const real t, real *w)
+{
   const real transport_v2d[] = {sqrt(0.5), sqrt(0.5), 0};
   real vx 
     = transport_v2d[0] * x[0] 
