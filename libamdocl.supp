@@ -1,3 +1,4 @@
+# From http://streamcomputing.eu/blog/2014-06-05/valgrind-suppression-file-amd64-linux/
 {
    libamdocl64_cond
    Memcheck:Cond
@@ -6,6 +7,7 @@
    ...
    obj:*/libamdocl64.so
 }
+
 {
    libamdocl64_param_ioctl
    Memcheck:Param
@@ -13,6 +15,7 @@
    ...
    obj:*/libamdocl64.so
 }
+
 {
    libamdocl64_param_writebuf
    Memcheck:Param
@@ -20,6 +23,7 @@
    ...
    obj:*/libamdocl64.so
 }
+
 {
    libamdocl64_cond_rindex
    Memcheck:Cond
@@ -27,6 +31,7 @@
    ...
    obj:*/libamdocl64.so
 }
+
 {
    libamdocl64_value8
    Memcheck:Value8
@@ -34,6 +39,7 @@
    ...
    obj:*/libamdocl64.so
 }
+
 {
    libamdocl64_value8_rindex
    Memcheck:Value8
@@ -41,6 +47,7 @@
    ...
    obj:*/libamdocl64.so
 }
+
 {
    libamdocl64_value8_strlen
    Memcheck:Value8
@@ -48,6 +55,7 @@
    ...
    obj:*/libamdocl64.so
 }
+
 {
    libamdocl64_leak_possible
    Memcheck:Leak
@@ -57,6 +65,7 @@
    ...
    obj:/usr/lib/fglrx/libamdocl64.so
 }
+
 {
    libamdocl64_leak_definite
    Memcheck:Leak
@@ -66,6 +75,7 @@
    ...
    obj:/usr/lib/fglrx/libamdocl64.so
 }
+
 {
    libamdocl64_leak_definite_ati
    Memcheck:Leak
@@ -75,6 +85,7 @@
    ...
    obj:/usr/lib/fglrx/libamdocl64.so
 }
+
 {
    libamdocl64_leak_reachable
    Memcheck:Leak
@@ -84,6 +95,7 @@
    ...
    obj:/usr/lib/fglrx/libamdocl64.so
 }
+
 {
    libamdocl64_leak_reachable
    Memcheck:Leak
@@ -93,4 +105,35 @@
    obj:/usr/lib/fglrx/libamdocl64.so
    ...
    obj:/usr/lib/fglrx/libamdocl64.so
+}
+
+# Added by Malcolm:
+{
+   name
+   Memcheck:Cond
+   obj:*/libamdocl12cl64.so
+}
+
+{
+   name
+   Memcheck:Value8
+   obj:*/libamdocl12cl64.so
+}
+
+{
+   name
+   Memcheck:Value4
+   obj:*/libamdocl12cl64.so
+}
+
+{
+   name
+   Memcheck:Addr8
+   obj:*/libamdocl12cl64.so
+}
+
+{
+   name
+   Memcheck:Addr4
+   obj:*/libamdocl12cl64.so
 }
