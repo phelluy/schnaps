@@ -1097,6 +1097,111 @@ void RK4_final_inplace_CL(MacroCell *mcell, field *f,
   assert(status >= CL_SUCCESS);
 }
 
+// Time integration by a second-order Runge-Kutta algorithm, OpenCL
+// version.
+void RK2_CL(field *f, real tmax, real dt,
+	    cl_uint nwait, cl_event *wait, cl_event *done) 
+{
+  if(dt <= 0)
+    dt = set_dt(f);
+
+  f->itermax = tmax / dt;
+  int freq = (1 >= f->itermax / 10)? 1 : f->itermax / 10;
+  int iter = 0;
+
+  cl_int status;
+
+  const int nmacro = f->macromesh.nbelems;
+  
+  cl_mem *wnp1_cl = calloc(nmacro, sizeof(cl_mem));
+  for(int ie = 0; ie < nmacro; ++ie) {
+    MacroCell *mcell = f->mcell + ie;
+    wnp1_cl[ie] = clCreateBuffer(f->cli.context,
+				 0,
+				 sizeof(real) * mcell->nreal,
+				 NULL,
+				 &status);
+    if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+    assert(status >= CL_SUCCESS);
+  }
+
+  cl_event start;
+  cl_event *stage1 =  calloc(nmacro, sizeof(cl_event));
+  cl_event *stage2 =  calloc(nmacro, sizeof(cl_event));
+  cl_event source1;
+  cl_event source2;
+
+  printf("Starting RK2_CL\n");
+  
+  struct timeval t_start;
+  gettimeofday(&t_start, NULL);
+
+  empty_kernel(f, nwait, wait, &start);
+  while(f->tnow < tmax) {
+    if(f->tnow  + dt > tmax)
+      dt = tmax - f->tnow;
+    
+    if (iter % freq == 0)
+      printf("t=%f iter=%d/%d dt=%f\n", f->tnow, iter, f->itermax, dt);
+    
+    dtfield_CL(f, f->tnow, f->wn_cl,
+	       1, &start, &source1);
+    
+    for(int ie = 0; ie < nmacro; ++ie) { 
+      MacroCell *mcell = f->mcell + ie;
+      init_RK2_CL_stage1(mcell, f, dt, wnp1_cl);
+      RK2_CL_stage1(mcell, f, f->wsize, 1, &source1, stage1 + ie);
+    }
+    
+    f->tnow += 0.5 * dt;
+
+    dtfield_CL(f, f->tnow, wnp1_cl,
+	       nmacro, stage1, &source2);
+    for(int ie = 0; ie < nmacro; ++ie) { 
+      MacroCell *mcell = f->mcell + ie;
+      init_RK2_CL_stage2(mcell, f, dt);
+      RK2_CL_stage2(mcell, f, f->wsize, 1, &source2, stage2 + ie);
+    }
+    
+    f->tnow += 0.5 * dt;
+
+    clWaitForEvents(nmacro, stage2);
+    for(int ie = 0; ie < nmacro; ++ie) {
+      f->rk_time += clv_duration(stage1[ie]);
+      f->rk_time += clv_duration(stage2[ie]);
+    }
+
+    iter++;
+  }
+
+  empty_kernel(f, nmacro, stage2, done);
+  
+  struct timeval t_end;
+  gettimeofday(&t_end, NULL);
+
+  // Release events
+  clReleaseEvent(start);
+  for(int ie = 0; ie < nmacro; ++ie) {
+    clReleaseEvent(stage1[ie]);
+    clReleaseEvent(stage2[ie]);
+  }
+  free(stage2);
+  free(stage1);
+
+  // Release memory
+  for(int ie = 0; ie < nmacro; ++ie) {
+    clReleaseMemObject(wnp1_cl[ie]);
+  }
+  free(wnp1_cl);
+  
+  double rkseconds = (t_end.tv_sec - t_start.tv_sec) * 1.0 // seconds
+    + (t_end.tv_usec - t_start.tv_usec) * 1e-6; // microseconds
+  printf("\nTotal RK time (s):\n%f\n", rkseconds);
+  printf("\nTotal RK time per time-step (s):\n%f\n", rkseconds / iter );
+}
+
+
+
 // Time integration by a fourth-order Runge-Kutta algorithm, OpenCL
 // version.
 void RK4_CL(field *f, real tmax, real dt,
@@ -1163,8 +1268,7 @@ void RK4_CL(field *f, real tmax, real dt,
   cl_event *stage3 = calloc(nmacro, sizeof(cl_event));
 
   cl_event start;
-  for(int ie = 0; ie < nmacro; ++ie)
-    empty_kernel(f, nwait, wait, &start);
+  empty_kernel(f, nwait, wait, &start);
   
   printf("Starting RK4_CL\n");
 
@@ -1245,14 +1349,12 @@ void RK4_CL(field *f, real tmax, real dt,
   printf("\nTotal RK time (s):\n%f\n", rkseconds);
   printf("\nTotal RK time per time-step (s):\n%f\n", rkseconds / iter );
   
-  // Free events
+  // Release events
   clReleaseEvent(start);
-  
   clReleaseEvent(source0);
   clReleaseEvent(source1);
   clReleaseEvent(source2);
   clReleaseEvent(source3);
-
   for(int ie = 0; ie < nmacro; ++ie) {
     clReleaseEvent(stage0[ie]);
     clReleaseEvent(stage1[ie]);
@@ -1264,8 +1366,7 @@ void RK4_CL(field *f, real tmax, real dt,
   free(stage2);
   free(stage3);
 
-  // Free buffers
-
+  // Release buffers
   for(int ie = 0; ie < nmacro; ++ie) {
     clReleaseMemObject(l1[ie]);
     clReleaseMemObject(l2[ie]);
@@ -1275,102 +1376,6 @@ void RK4_CL(field *f, real tmax, real dt,
   free(l2);
   free(l3);
 }
-
-// Time integration by a second-order Runge-Kutta algorithm, OpenCL
-// version.
-void RK2_CL(field *f, real tmax, real dt,
-	    cl_uint nwait, cl_event *wait, cl_event *done) 
-{
-  if(dt <= 0)
-    dt = set_dt(f);
-
-  f->itermax = tmax / dt;
-  int freq = (1 >= f->itermax / 10)? 1 : f->itermax / 10;
-  int iter = 0;
-
-  cl_int status;
-
-  const int nmacro = f->macromesh.nbelems;
-  
-  cl_mem *wnp1_cl = calloc(nmacro, sizeof(cl_mem));
-  for(int ie = 0; ie < nmacro; ++ie) {
-    MacroCell *mcell = f->mcell + ie;
-    
-    wnp1_cl[ie] = clCreateBuffer(f->cli.context,
-				 0,
-				 sizeof(real) * mcell->nreal,
-				 NULL,
-				 &status);
-    if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
-    assert(status >= CL_SUCCESS);
-  }
-
-  cl_event *stage1 =  calloc(nmacro, sizeof(cl_event));
-  cl_event *stage2 =  calloc(nmacro, sizeof(cl_event));
-  for(int ie = 0; ie < nmacro; ++ie) {
-    empty_kernel(f, nwait, wait, stage2 + ie);
-  }
-  
-  cl_event source1;
-  cl_event source2;
-
-  printf("Starting RK2_CL\n");
-  
-  struct timeval t_start;
-  gettimeofday(&t_start, NULL);
-
-  while(f->tnow < tmax) {
-    //printf("iter: %d\n", iter);
-    if (iter % freq == 0)
-      printf("t=%f iter=%d/%d dt=%f\n", f->tnow, iter, f->itermax, dt);
-    
-    dtfield_CL(f, f->tnow, f->wn_cl,
-	       nmacro, stage2, &source1);
-    
-    for(int ie = 0; ie < nmacro; ++ie) { 
-      MacroCell *mcell = f->mcell + ie;
-      init_RK2_CL_stage1(mcell, f, dt, wnp1_cl);
-      RK2_CL_stage1(mcell, f, f->wsize, 1, &source1, stage1 + ie);
-    }
-    
-    f->tnow += 0.5 * dt;
-
-    dtfield_CL(f, f->tnow, wnp1_cl,
-	       nmacro, stage1, &source2);
-    for(int ie = 0; ie < nmacro; ++ie) { 
-      MacroCell *mcell = f->mcell + ie;
-      init_RK2_CL_stage2(mcell, f, dt);
-      RK2_CL_stage2(mcell, f, f->wsize, 1, &source2, stage2 + ie);
-    }
-    
-    f->tnow += 0.5 * dt;
-
-    // TODO: this includes a wait, so we might want to disable it.
-    for(int ie = 0; ie < nmacro; ++ie) {
-      f->rk_time += clv_duration(stage1[ie]);
-      f->rk_time += clv_duration(stage2[ie]);
-    }
-
-    iter++;
-  }
-
-  empty_kernel(f, nmacro, stage2, done);
-  
-  struct timeval t_end;
-  gettimeofday(&t_end, NULL);
-    
-  for(int ie = 0; ie < nmacro; ++ie) {
-    clReleaseEvent(stage1[ie]);
-    clReleaseEvent(stage2[ie]);
-  }
-  free(stage2);
-  free(stage1);
-  
-  double rkseconds = (t_end.tv_sec - t_start.tv_sec) * 1.0 // seconds
-    + (t_end.tv_usec - t_start.tv_usec) * 1e-6; // microseconds
-  printf("\nTotal RK time (s):\n%f\n", rkseconds);
-  printf("\nTotal RK time per time-step (s):\n%f\n", rkseconds / iter );
- }
 
 void show_cl_timing(field *f)
 {
