@@ -18,31 +18,16 @@ int TestfieldRK2_CL()
 
   // 2D meshes:
   // test/disque2d.msh
-  // test/testdisque2d.msh
   // test/testmacromesh.msh
   // test/unit-cube.msh
 
   char *mshname =  "../test/disque2d.msh";
+  //char *mshname =  "../test/testdisque2d.msh";
+  //char *mshname =  "../test/testmacromesh.msh";
   
   ReadMacroMesh(&f.macromesh, mshname);
   Detect2DMacroMesh(&f.macromesh);
   BuildConnectivity(&f.macromesh);
-
-  /* f.model.cfl = 0.05; */
-  /* f.model.m = 1; */
-  /* f.model.NumFlux = TransNumFlux; */
-  /* f.model.BoundaryFlux = TestTransBoundaryFlux; */
-  /* f.model.InitData = TestTransInitData; */
-  /* f.model.ImposedData = TestTransImposedData; */
-  /* f.varindex = GenericVarindex; */
-
-  /* f.interp.interp_param[0] = f.model.m; */
-  /* f.interp.interp_param[1] = 3; // x direction degree */
-  /* f.interp.interp_param[2] = 3; // y direction degree */
-  /* f.interp.interp_param[3] = 3; // z direction degree */
-  /* f.interp.interp_param[4] = 1; // x direction refinement */
-  /* f.interp.interp_param[5] = 1; // y direction refinement */
-  /* f.interp.interp_param[6] = 1; // z direction refinement */
 
 #if 1
   // 2D version
@@ -90,8 +75,9 @@ int TestfieldRK2_CL()
  
   real tmax = 0.1;
   f.vmax = 1;
-  real dt = 0;
-
+  real dt = 0.0;
+  
+#if 1
   CopyfieldtoGPU(&f);
   clFinish(f.cli.commandqueue);
 
@@ -100,18 +86,18 @@ int TestfieldRK2_CL()
 
   CopyfieldtoCPU(&f);
   clFinish(f.cli.commandqueue);
- 
-  Plotfield(0, false, &f, NULL, "dgvisu.msh");
-  Plotfield(0, true , &f, "error", "dgerror.msh");
+  show_cl_timing(&f);
+#else
+  RK2(&f, tmax, dt);
+#endif
+  
+  /* Plotfield(0, false, &f, NULL, "dgvisu.msh"); */
+  /* Plotfield(0, true , &f, "error", "dgerror.msh"); */
 
   real dd = L2error(&f);
-
   printf("L2 error: %f\n", dd);
 
-  show_cl_timing(&f);
-
   real tolerance = 0.002;
-
   if(dd > tolerance)
     retval += 1;
   

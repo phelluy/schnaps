@@ -1554,6 +1554,9 @@ void RK2(field *f, real tmax, real dt)
     f->Diagnostics = malloc(size_diags * sizeof(real));
 
   while(f->tnow < tmax) {
+    if(f->tnow  + dt > tmax)
+      dt = tmax - f->tnow;
+    
     if (iter % freq == 0)
       printf("t=%f iter=%d/%d dt=%f\n", f->tnow, iter, f->itermax, dt);
 
@@ -1571,9 +1574,10 @@ void RK2(field *f, real tmax, real dt)
       f->update_after_rk(f, f->wn);
 
     iter++;
-    f->iter_time=iter;
+    f->iter_time = iter;
   }
   printf("t=%f iter=%d/%d dt=%f\n", f->tnow, iter, f->itermax, dt);
+
   free(wnp1);
 }
 
@@ -1658,11 +1662,11 @@ void RK4(field *f, real tmax, real dt)
 }
 
 // Compute the normalized L2 distance with the imposed data
-real L2error(field *f) {
-  //int param[8] = {f->model.m, _DEGX, _DEGY, _DEGZ, _RAFX, _RAFY, _RAFZ, 0};
+real L2error(field *f)
+{
   real error = 0;
   real mean = 0;
-
+  
   for (int ie = 0; ie < f->macromesh.nbelems; ie++) {
     MacroCell *mcell = f->mcell + ie;
     
@@ -1675,8 +1679,9 @@ real L2error(field *f) {
 	w[iv] = f->wn[imem];
       }
 
-      real wex[f->model.m];
-      real wpg, det;
+      real wexact[f->model.m];
+      real wpg;
+      real det;
       // Compute wpg, det, and the exact solution
       { 
 	real xphy[3], xpgref[3];
@@ -1691,13 +1696,13 @@ real L2error(field *f) {
 	det = dot_product(dtau[0], codtau[0]);
 
 	// Get the exact value
-	f->model.ImposedData(xphy, f->tnow, wex);
+	f->model.ImposedData(xphy, f->tnow, wexact);
       }
 
       for(int iv = 0; iv < f->model.m; iv++) {
-	real diff = w[iv] - wex[iv];
+	real diff = w[iv] - wexact[iv];
         error += diff * diff * wpg * det;
-        mean += wex[iv] * wex[iv] * wpg * det;
+        mean += wexact[iv] * wexact[iv] * wpg * det;
       }
     }
   }

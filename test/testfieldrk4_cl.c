@@ -18,11 +18,12 @@ int TestfieldRK4_CL()
 
   // 2D meshes:
   // test/disque2d.msh
-  // test/testdisque2d.msh
   // test/testmacromesh.msh
   // test/unit-cube.msh
 
   char *mshname =  "../test/disque2d.msh";
+  //char *mshname =  "../test/testdisque2d.msh";
+  //char *mshname =  "../test/unit-cube.msh";
   
   ReadMacroMesh(&f.macromesh, mshname);
   Detect2DMacroMesh(&f.macromesh);
@@ -68,15 +69,13 @@ int TestfieldRK4_CL()
   f.interp.interp_param[6] = 3; // z direction refinement
 #endif
 
-  //AffineMapMacroMesh(&(f.macromesh));
   Initfield(&f);
 
   CheckMacroMesh(&(f.macromesh), f.interp.interp_param + 1);
  
   real tmax = 0.01;
-  //RK4(&f, tmax);
   f.vmax=1;
-  real dt = set_dt(&f);
+  real dt = 0.0;
 
 #if 1
   CopyfieldtoGPU(&f);
