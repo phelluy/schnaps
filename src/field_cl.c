@@ -1140,6 +1140,9 @@ void RK2_CL(field *f, real tmax, real dt,
   while(f->tnow < tmax) {
     if(f->tnow  + dt > tmax)
       dt = tmax - f->tnow;
+
+    if(dt <= 0.0)
+      break;
     
     if (iter % freq == 0)
       printf("t=%f iter=%d/%d dt=%f\n", f->tnow, iter, f->itermax, dt);
@@ -1174,6 +1177,7 @@ void RK2_CL(field *f, real tmax, real dt,
     iter++;
   }
 
+  printf("t=%f iter=%d/%d dt=%f\n", f->tnow, iter, f->itermax, dt);
   empty_kernel(f, nmacro, stage2, done);
   
   struct timeval t_end;

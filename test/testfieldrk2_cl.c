@@ -84,21 +84,25 @@ int TestfieldRK2_CL()
   f.interp.interp_param[6] = 4; // z direction refinement
 #endif
 
-  //AffineMapMacroMesh(&f.macromesh);
   Initfield(&f);
-  
-  
+    
   CheckMacroMesh(&f.macromesh, f.interp.interp_param + 1);
  
   real tmax = 0.1;
   f.vmax = 1;
   real dt = 0;
+
   CopyfieldtoGPU(&f);
+  clFinish(f.cli.commandqueue);
+
   RK2_CL(&f, tmax, dt,  0, NULL, NULL);
+  clFinish(f.cli.commandqueue);
+
   CopyfieldtoCPU(&f);
+  clFinish(f.cli.commandqueue);
  
-  //Plotfield(0, false, &f, NULL, "dgvisu.msh");
-  //Plotfield(0, true , &f, "error", "dgerror.msh");
+  Plotfield(0, false, &f, NULL, "dgvisu.msh");
+  Plotfield(0, true , &f, "error", "dgerror.msh");
 
   real dd = L2error(&f);
 

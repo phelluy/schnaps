@@ -551,7 +551,8 @@ void InitCLInfo(CLInfo *cli, int platform_num, int device_num)
     = clCreateCommandQueue(cli->context,
 			   cli->device,
 			   CL_QUEUE_PROFILING_ENABLE
-			   | CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE,
+			   | CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE
+			   ,
 			   &status);
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
