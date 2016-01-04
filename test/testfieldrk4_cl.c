@@ -1,11 +1,12 @@
 #include "test.h"
 #include "schnaps.h"
-#include<stdio.h>
+#include <stdio.h>
 #include <assert.h>
 #include <math.h>
 
-int TestfieldRK4_CL(void){
-  int test = true;
+int TestfieldRK4_CL()
+{
+  int retval = 0;
 
   if(!cldevice_is_acceptable(nplatform_cl, ndevice_cl)) {
     printf("OpenCL device not acceptable.\n");
@@ -26,22 +27,6 @@ int TestfieldRK4_CL(void){
   ReadMacroMesh(&f.macromesh, mshname);
   Detect2DMacroMesh(&f.macromesh);
   BuildConnectivity(&f.macromesh);
-
-  /* f.model.cfl = 0.05; */
-  /* f.model.m = 1; */
-  /* f.model.NumFlux = TransNumFlux; */
-  /* f.model.BoundaryFlux = TestTransBoundaryFlux; */
-  /* f.model.InitData = TestTransInitData; */
-  /* f.model.ImposedData = TestTransImposedData; */
-  /* f.varindex = GenericVarindex; */
-
-  /* f.interp.interp_param[0] = f.model.m; */
-  /* f.interp.interp_param[1] = 3; // x direction degree */
-  /* f.interp.interp_param[2] = 3; // y direction degree */
-  /* f.interp.interp_param[3] = 3; // z direction degree */
-  /* f.interp.interp_param[4] = 1; // x direction refinement */
-  /* f.interp.interp_param[5] = 1; // y direction refinement */
-  /* f.interp.interp_param[6] = 1; // z direction refinement */
 
 #if 1
   // 2D version
@@ -92,12 +77,19 @@ int TestfieldRK4_CL(void){
   //RK4(&f, tmax);
   f.vmax=1;
   real dt = set_dt(&f);
-  CopyfieldtoGPU(&f);
-  RK4_CL(&f, tmax, dt, 0, NULL, NULL);
-  clFinish(f.cli.commandqueue); 
 
+#if 1
+  CopyfieldtoGPU(&f);
+  clFinish(f.cli.commandqueue);
+  RK4_CL(&f, tmax, dt, 0, NULL, NULL);
+  clFinish(f.cli.commandqueue);
   CopyfieldtoCPU(&f);
-    
+  clFinish(f.cli.commandqueue);
+  show_cl_timing(&f);
+#else
+  RK4(&f, tmax, dt);
+#endif
+  
   /* Plotfield(0, false, &f, NULL, "dgvisu.msh"); */
   /* Plotfield(0, true , &f, "error", "dgerror.msh"); */
 
@@ -105,23 +97,20 @@ int TestfieldRK4_CL(void){
 
   printf("L2 error: %f\n", dd);
 
-  show_cl_timing(&f);
-
   real tolerance = 0.002;
-
-  test = dd < tolerance;
+  if(dd > tolerance)
+    retval += 1;
   
-  return test;
+  return retval;
 }
 
-int main()
-{
-  int resu = TestfieldRK4_CL();
+int main() {
+  int retval = TestfieldRK4_CL();
 
-  if(resu) 
+  if(retval == 0) 
     printf("field RK4_CL test OK !\n");
   else 
     printf("field RK4_CL test failed !\n");
 
-  return !resu;
+  return retval;
 } 

@@ -1319,7 +1319,7 @@ void RK4_CL(field *f, real tmax, real dt,
     }
     
     f->tnow += 0.5 * dt;
-    
+        
     // stage 3
     dtfield_CL(f, f->tnow, l3, 
 	       nmacro, stage2, &source3);
@@ -1331,7 +1331,7 @@ void RK4_CL(field *f, real tmax, real dt,
     }
 
     clWaitForEvents(nmacro, stage3);
-    
+
     for(int ie = 0; ie < nmacro; ++ie) {
       f->rk_time += clv_duration(stage0[ie]);
       f->rk_time += clv_duration(stage1[ie]);
