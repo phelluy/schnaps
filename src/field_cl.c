@@ -1172,6 +1172,9 @@ void RK4_CL(field *f, real tmax, real dt,
   gettimeofday(&t_start, NULL);
 
   while(f->tnow < tmax) {
+    if(f->tnow  + dt > tmax)
+      dt = tmax - f->tnow; 
+
     if (iter % freq == 0)
       printf("t=%f iter=%d/%d dt=%f\n", f->tnow, iter, f->itermax, dt);
 
@@ -1232,6 +1235,7 @@ void RK4_CL(field *f, real tmax, real dt,
   }
 
   empty_kernel(f, nmacro, stage3, done);
+  printf("t=%f iter=%d/%d dt=%f\n", f->tnow, iter, f->itermax, dt);
   
   struct timeval t_end;
   gettimeofday(&t_end, NULL); 
@@ -1366,9 +1370,7 @@ void RK2_CL(field *f, real tmax, real dt,
     + (t_end.tv_usec - t_start.tv_usec) * 1e-6; // microseconds
   printf("\nTotal RK time (s):\n%f\n", rkseconds);
   printf("\nTotal RK time per time-step (s):\n%f\n", rkseconds / iter );
- 
-  printf("\nt=%f iter=%d/%d dt=%f\n", f->tnow, iter, f->itermax, dt);
-}
+ }
 
 void show_cl_timing(field *f)
 {
