@@ -1114,6 +1114,7 @@ void RK4_CL(field *f, real tmax, real dt,
 
   const int nmacro = f->macromesh.nbelems;
 
+  // Allocate memory for RK stages
   cl_mem *l1 = calloc(nmacro, sizeof(cl_mem));
   cl_mem *l2 = calloc(nmacro, sizeof(cl_mem));
   cl_mem *l3 = calloc(nmacro, sizeof(cl_mem));
@@ -1150,6 +1151,7 @@ void RK4_CL(field *f, real tmax, real dt,
   cl_mem *w = f->wn_cl;
   cl_mem *dtw = f->dtwn_cl;
 
+  // Set up events for source and stage.
   cl_event source0;
   cl_event source1;
   cl_event source2;
@@ -1159,8 +1161,10 @@ void RK4_CL(field *f, real tmax, real dt,
   cl_event *stage1 = calloc(nmacro, sizeof(cl_event));
   cl_event *stage2 = calloc(nmacro, sizeof(cl_event));
   cl_event *stage3 = calloc(nmacro, sizeof(cl_event));
+
+  cl_event start;
   for(int ie = 0; ie < nmacro; ++ie)
-    empty_kernel(f, nwait, wait, stage3 + ie);
+    empty_kernel(f, nwait, wait, &start);
   
   printf("Starting RK4_CL\n");
 
@@ -1173,7 +1177,7 @@ void RK4_CL(field *f, real tmax, real dt,
 
     // stage 0
     dtfield_CL(f, f->tnow, w, 
-	       nmacro, stage3, &source0);
+	       1, &start, &source0);
     for(int ie = 0; ie < nmacro; ++ie) { 
       MacroCell *mcell = f->mcell + ie;
       RK4_CL_stageA(mcell, f, l1 + ie, w + ie, dtw,
@@ -1215,7 +1219,8 @@ void RK4_CL(field *f, real tmax, real dt,
 			   1, &source3, stage3 + ie);
     }
 
-    // TODO: this includes a wait, so we might want to disable it.
+    clWaitForEvents(nmacro, stage3);
+    
     for(int ie = 0; ie < nmacro; ++ie) {
       f->rk_time += clv_duration(stage0[ie]);
       f->rk_time += clv_duration(stage1[ie]);
@@ -1230,13 +1235,14 @@ void RK4_CL(field *f, real tmax, real dt,
   
   struct timeval t_end;
   gettimeofday(&t_end, NULL); 
-
-  // TODO: free cl_mems
   
   double rkseconds = (t_end.tv_sec - t_start.tv_sec) * 1.0 // seconds
     + (t_end.tv_usec - t_start.tv_usec) * 1e-6; // microseconds
   printf("\nTotal RK time (s):\n%f\n", rkseconds);
   printf("\nTotal RK time per time-step (s):\n%f\n", rkseconds / iter );
+  
+  // Free events
+  clReleaseEvent(start);
   
   clReleaseEvent(source0);
   clReleaseEvent(source1);
@@ -1253,10 +1259,18 @@ void RK4_CL(field *f, real tmax, real dt,
   free(stage1);
   free(stage2);
   free(stage3);
-  
-  printf("\nt=%f iter=%d/%d dt=%f\n", f->tnow, iter, f->itermax, dt);
-}
 
+  // Free buffers
+
+  for(int ie = 0; ie < nmacro; ++ie) {
+    clReleaseMemObject(l1[ie]);
+    clReleaseMemObject(l2[ie]);
+    clReleaseMemObject(l3[ie]);
+  }
+  free(l1);
+  free(l2);
+  free(l3);
+}
 
 // Time integration by a second-order Runge-Kutta algorithm, OpenCL
 // version.
