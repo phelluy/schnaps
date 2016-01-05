@@ -774,7 +774,8 @@ void dtfield_CL(field *f, real tnow, cl_mem *wn_cl,
       DGMacroCellInterface_CL(f->mface + ifa, f, wn_cl,
 			      1, f->clv_mci + i - 1, f->clv_mci + i);
     }
-    empty_kernel(f, ninterfaces, f->clv_mci, &macrofaces);
+    //empty_kernel(f, ninterfaces, f->clv_mci, &macrofaces);
+    empty_kernel(f, 1, f->clv_mci + ninterfaces - 1, &macrofaces);
   } else {
     empty_kernel(f, nmacro, f->clv_zbuf, &macrofaces);
   }
