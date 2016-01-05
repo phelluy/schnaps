@@ -526,7 +526,6 @@ void InitCLInfo(CLInfo *cli, int platform_num, int device_num)
   cli->nbplatforms = get_nbplatforms();
   cl_platform_id *platforms = malloc(cli->nbplatforms * sizeof(cl_platform_id));
  
-  // Store the platform_ids in platforms
   status = clGetPlatformIDs(cli->nbplatforms, platforms, NULL);
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
@@ -543,19 +542,31 @@ void InitCLInfo(CLInfo *cli, int platform_num, int device_num)
   
   printf("\nUsing OpenCL platform %d, device %d.\n", platform_num, device_num);
 
-
   cli->device = get_device_id(cli->platform, device_num);
 
   set_clinfo_data(cli);
   PrintCLInfo(cli);
   
-  // First opencl context
+#ifndef SOCL
   cli->context = clCreateContext(NULL, // no context properties
 				 1,         // only one device in the list
 				 &cli->device, // device list
 				 NULL, // callback function
 				 NULL, // function arguments
 				 &status);
+#else
+  cl_context_properties properties[]
+    = {CL_CONTEXT_PLATFORM,
+       (cl_context_properties)platforms[platform_num], 0};
+  device_id *devicelist = calloc(ndevices, sizeof(cl_device_id));
+  ndevices = 1;
+  for(int i = 0; i < ndevices; ++i) {
+    devicelist[i] = get_device_id(cli->platform, i);
+  }
+  cli->context = clCreateContext(properties, ndevices, devices,
+				 NULL, NULL, &status);
+#endif
+
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 
@@ -608,7 +619,6 @@ void BuildKernels(CLInfo *cli, char *strprog, char *buildoptions)
 			  NULL,
 			  buildoptions0,
 			  NULL, NULL);
-
   free(buildoptions0);
 
   if(status < CL_SUCCESS) {
