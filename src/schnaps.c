@@ -26,7 +26,7 @@ int main(int argc, char *argv[])
   char *imposeddatadefault = "TransImposedData2d";
   char *mshdefault = "../disque.msh";
   int m = 1;
-  bool writeout = true;
+  bool writeout = false;
 
   int len;
   

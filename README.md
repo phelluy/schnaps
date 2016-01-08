@@ -32,7 +32,6 @@ gmsh ../geo/disque.geo -3
 
 ctest
 
-
 By default, the OpenCL code runs on platform 0, device 0.  This
 can be changed in schnaps via command-line argument.  The unit tests
 run on the default platform/device, which can be changed via
@@ -52,6 +51,10 @@ gmsh <file>.geo -3
 
 The resulting .msh file can be passed to schnaps via command-line
 arguments (see ./schnaps -h for a list of options).
+
+The main executable schnaps will output to a gmsh file "dgvisu.msh" if
+the one calls it with ./schnaps -w 1.  By default no output is
+written.
 
 The default arguments for schnaps results in a simulation of 2D
 transport in a disc.  The results can be viewed via
