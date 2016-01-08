@@ -39,12 +39,9 @@ OPTION(SOCL
   "SOCL"
   OFF)
 
-IF(SINGLE_PRECISION)
+IF(SOCL)
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DSOCL")
 ENDIF()
-
-
-
 
 OPTION(USE_OPENCL
   "Compile with the OpenCL library"

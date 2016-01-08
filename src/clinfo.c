@@ -554,18 +554,7 @@ void InitCLInfo(CLInfo *cli, int platform_num, int device_num)
 				 NULL, // callback function
 				 NULL, // function arguments
 				 &status);
-#else
-  cl_context_properties properties[]
-    = {CL_CONTEXT_PLATFORM,
-       (cl_context_properties)platforms[platform_num], 0};
-  device_id *devicelist = calloc(ndevices, sizeof(cl_device_id));
-  ndevices = 1;
-  for(int i = 0; i < ndevices; ++i) {
-    devicelist[i] = get_device_id(cli->platform, i);
-  }
-  cli->context = clCreateContext(properties, ndevices, devices,
-				 NULL, NULL, &status);
-#endif
+
 
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
@@ -579,6 +568,31 @@ void InitCLInfo(CLInfo *cli, int platform_num, int device_num)
 			   &status);
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
+  
+#else
+  cl_context_properties properties[]
+    = {CL_CONTEXT_PLATFORM,
+       (cl_context_properties)platforms[platform_num], 0};
+  cl_device_id *devicelist = calloc(ndevices, sizeof(cl_device_id));
+  for(int i = 0; i < ndevices; ++i) {
+    devicelist[i] = get_device_id(cli->platform, i);
+  }
+  cli->context = clCreateContext(properties, ndevices, devicelist,
+				 NULL, NULL, &status);
+
+  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status >= CL_SUCCESS);
+
+  cli->commandqueue 
+    = clCreateCommandQueue(cli->context,
+			   NULL,
+			   CL_QUEUE_PROFILING_ENABLE
+			   | CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE
+			   ,
+			   &status);
+  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status >= CL_SUCCESS);
+#endif
 
   printf("\tOpenCL Init OK\n\n");
 }
