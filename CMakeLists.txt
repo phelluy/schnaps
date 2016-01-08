@@ -35,14 +35,6 @@ ELSE()
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Dreal=double")
 ENDIF()
 
-OPTION(SOCL
-  "SOCL"
-  OFF)
-
-IF(SOCL)
-  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DSOCL")
-ENDIF()
-
 OPTION(USE_OPENCL
   "Compile with the OpenCL library"
   ON)
