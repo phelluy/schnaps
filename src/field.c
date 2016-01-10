@@ -420,14 +420,14 @@ void init_field_macrofaces(field *f)
     face[i] = i;
   }
 
-  // FIXME: move these to field struct.
-  int nwaves = 0;
-  int **wave = calloc(nwaves + 1, sizeof(int*));
-  int *wavecount = calloc(nwaves + 1, sizeof(int));
-
+  f->nwaves = 0;
+  f->wave = calloc(f->nwaves + 1, sizeof(int*));
+  f->wavecount = calloc(f->nwaves + 1, sizeof(int));
+  
   bool go = true;
+  int *thiswave = calloc(nfaces, sizeof(int));
   while(go) {
-    int *thiswave = calloc(nfaces, sizeof(int));
+
     int nwave = 0;
     for(int i = 0; i < nfaces; ++i) {
       if(face[i] != -1) {
@@ -456,47 +456,46 @@ void init_field_macrofaces(field *f)
     }
     */
     
-    
     if(nwave == 0) {
       go = false;
     } else {
       // Add the wave to the waves.
-      int **newwave = calloc(nwaves + 1, sizeof(int*));
-      int *newwavecount = calloc(nwaves + 1, sizeof(int));
-      for(int i = 0; i < nwaves; ++i) {
-	newwave[i] = wave[i];
-	newwavecount[i] = wavecount[i];
+      int **newwave = calloc(f->nwaves + 1, sizeof(int*));
+      int *newwavecount = calloc(f->nwaves + 1, sizeof(int));
+      for(int i = 0; i < f->nwaves; ++i) {
+	newwave[i] = f->wave[i];
+	newwavecount[i] = f->wavecount[i];
       }
 
-      newwave[nwaves] = calloc(nwave, sizeof(int));
+      newwave[f->nwaves] = calloc(nwave, sizeof(int));
       for(int j = 0; j < nwave; ++j) {	
-	newwave[nwaves][j] = thiswave[j];
+	newwave[f->nwaves][j] = thiswave[j];
       }
 
-      newwavecount[nwaves] = nwave;
+      newwavecount[f->nwaves] = nwave;
 
       // swap wave and newwave
-      int **temp = wave;
-      wave = newwave;
+      int **temp = f->wave;
+      f->wave = newwave;
       free(temp);
 
-      int *tempcount = wavecount;
-      wavecount = newwavecount;
+      int *tempcount = f->wavecount;
+      f->wavecount = newwavecount;
       free(tempcount);
 
-      nwaves += 1;
+      f->nwaves += 1;
     }
 
-    free(thiswave);
   }
 
+  free(thiswave);
   free(face);
 
   // FIXME: comment this out when things are working.
-  for(int i = 0; i < nwaves; ++i) {
-    printf("wave %d:\t%d interfaces/boundaries:\n", i, wavecount[i]);
-    for(int j = 0; j < wavecount[i]; ++j) {
-      int ifa = wave[i][j];
+  for(int i = 0; i < f->nwaves; ++i) {
+    printf("wave %d:\t%d interfaces/boundaries:\n", i, f->wavecount[i]);
+    for(int j = 0; j < f->wavecount[i]; ++j) {
+      int ifa = f->wave[i][j];
       MacroFace *mface = f->mface + ifa;
       printf("\t%d\tmface %d:\tA->ieL%d\tA->ieL%d\t\n",
 	     j, ifa, mface->ieL, mface->ieR);
@@ -629,7 +628,6 @@ void free_field(field *f)
 
 #ifdef _WITH_OPENCL
   //  cl_int status;
-
 
 #endif
 

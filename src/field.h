@@ -140,6 +140,13 @@ typedef struct field {
   MacroCell *mcell;
 
 #ifdef _WITH_OPENCL
+
+  // For launching the macrocell interfaces / boundaries in parallel
+  int nwaves;
+  int *wavecount;
+  int **wave;
+
+  
   //! \brief opencl data
   CLInfo cli;
   //! \brief copy of the dtwn array
