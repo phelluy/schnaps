@@ -111,8 +111,6 @@ typedef struct field {
   //! vmax
   real vmax;
 
-  
-
   //! \brief Pointer to a generic function called before computing dtfield. 
   //! \param[inout] f a field (to be converted from void*)
   void (*pre_dtfield)(void *f, real *w);
@@ -267,6 +265,8 @@ void DGVolumeSlow(field *f);
 //! Fast version: multithreaded and with tensor products optimizations
 //! \param[inout] f a field
 void dtfield(field *f, real tnow, real *w, real *dtw);
+
+bool touching(const MacroFace *A, const MacroFace *B);
 
 //! \brief  compute the Discontinuous Galerkin inter-macrocells boundary terms
 //! The argument has to be void* (for compatibility with pthread)

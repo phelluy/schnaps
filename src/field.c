@@ -400,14 +400,107 @@ void init_field_cl(field *f)
 
 void init_field_macrofaces(field *f)
 {
-  f->mface = calloc(f->macromesh.nbfaces, sizeof(MacroFace));
-  for(int ifa = 0; ifa < f->macromesh.nbfaces; ifa++) {
+  const int nfaces = f->macromesh.nbfaces;
+
+  assert(nfaces > 0);
+  
+  f->mface = calloc(nfaces, sizeof(MacroFace));
+  for(int ifa = 0; ifa < nfaces; ifa++) {
     MacroFace *mface = f->mface + ifa;
     mface->ifa = ifa;
     mface->ieL = f->macromesh.face2elem[4 * ifa + 0];
     mface->locfaL = f->macromesh.face2elem[4 * ifa + 1];
     mface->ieR = f->macromesh.face2elem[4 * ifa + 2];
     mface->locfaR = f->macromesh.face2elem[4 * ifa + 3];
+  }
+
+  int *face = calloc(nfaces, sizeof(int));
+
+  for(int i = 0; i < nfaces; ++i) {
+    face[i] = i;
+  }
+
+  // FIXME: move these to field struct.
+  int nwaves = 0;
+  int **wave = calloc(nwaves + 1, sizeof(int*));
+  int *wavecount = calloc(nwaves + 1, sizeof(int));
+
+  bool go = true;
+  while(go) {
+    int *thiswave = calloc(nfaces, sizeof(int));
+    int nwave = 0;
+    for(int i = 0; i < nfaces; ++i) {
+      if(face[i] != -1) {
+	bool addme = true;
+	MacroFace *mfaceA = f->mface + i;
+      
+	for(int j = 0; j < nwave; ++j) {
+	  if(touching(mfaceA, f->mface + thiswave[j])) {
+	    addme = false;
+	    break;
+	  }
+	}
+      
+	if(addme) {
+	  thiswave[nwave++] = i;
+	  face[i] = -1;
+	}
+      
+      }
+    }
+
+    /*
+    printf("nwave: %d\n", nwave);
+    for(int j = 0; j < nwave; ++j) {
+      printf("\t%d\n", thiswave[j]);
+    }
+    */
+    
+    
+    if(nwave == 0) {
+      go = false;
+    } else {
+      // Add the wave to the waves.
+      int **newwave = calloc(nwaves + 1, sizeof(int*));
+      int *newwavecount = calloc(nwaves + 1, sizeof(int));
+      for(int i = 0; i < nwaves; ++i) {
+	newwave[i] = wave[i];
+	newwavecount[i] = wavecount[i];
+      }
+
+      newwave[nwaves] = calloc(nwave, sizeof(int));
+      for(int j = 0; j < nwave; ++j) {	
+	newwave[nwaves][j] = thiswave[j];
+      }
+
+      newwavecount[nwaves] = nwave;
+
+      // swap wave and newwave
+      int **temp = wave;
+      wave = newwave;
+      free(temp);
+
+      int *tempcount = wavecount;
+      wavecount = newwavecount;
+      free(tempcount);
+
+      nwaves += 1;
+    }
+
+    free(thiswave);
+  }
+
+  free(face);
+
+  // FIXME: comment this out when things are working.
+  for(int i = 0; i < nwaves; ++i) {
+    printf("wave %d:\t%d interfaces/boundaries:\n", i, wavecount[i]);
+    for(int j = 0; j < wavecount[i]; ++j) {
+      int ifa = wave[i][j];
+      MacroFace *mface = f->mface + ifa;
+      printf("\t%d\tmface %d:\tA->ieL%d\tA->ieL%d\t\n",
+	     j, ifa, mface->ieL, mface->ieR);
+    }
   }
 }
 
@@ -969,6 +1062,62 @@ void DGSubCellInterface(MacroCell *mcell, field *f, real *wmc, real *dtwmc)
       } // subcell icl2 loop
     } // subcell icl1 loop
   } // subcell icl0 loop
+}
+
+bool touching(const MacroFace *A, const MacroFace *B)
+{
+  if(A->ieR != -1) {
+    if(B->ieR  != -1) {
+      // Both A and B are interfaces
+
+      if(A->ieL != A->ieR &&
+	 B->ieL != B->ieR &&
+	 A->ieL != B->ieL &&
+	 A->ieR != B->ieR &&
+	 A->ieL != B->ieR &&
+	 A->ieR != B->ieL) {
+	// If none of the macrocells are the same, they are not touching. 
+	return false;
+      }
+
+      // TODO:
+      // If the faces are on opposite sides, they are not touching.
+    } else {
+      //A is an interface, B is a boundary
+
+      if(A->ieL != A->ieR &&
+	 A->ieL != B->ieL &&
+	 A->ieR != B->ieL) {
+	// If none of the macrocells are the same, they are not touching. 
+	return false;
+      }
+
+      // TODO:
+      // If the faces are on opposite sides, they are not touching.
+    }
+  } else {
+    if(B->ieR  != -1) {
+      // A is a boundary, B is an interface
+
+      if(B->ieL != B->ieR &&
+	 B->ieL != A->ieL &&
+	 B->ieR != A->ieL) {
+	// If none of the macrocells are the same, they are not touching. 
+	return false;
+      }
+
+      // TODO:
+      // If the faces are on opposite sides, they are not touching.
+    } else {
+      // A is a boundary, B is a boundary
+      if(A->ieL != B->ieL) {
+	// Boundaries do not touch if they are not on the same macrocell.
+	return false;
+      }
+    }
+  }
+    
+  return true;
 }
 
 // Compute the Discontinuous Galerkin inter-macrocells boundary terms
