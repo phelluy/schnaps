@@ -1011,11 +1011,11 @@ void RK2_CL(field *f, real tmax, real dt,
 
   empty_kernel(f, nwait, wait, &start);
   while(f->tnow < tmax) {
-    if(f->tnow  + dt > tmax)
-      dt = tmax - f->tnow;
+    /* if(f->tnow  + dt > tmax) */
+    /*   dt = tmax - f->tnow; */
 
-    if(dt <= 0.0)
-      break;
+    /* if(dt <= 0.0) */
+    /*   break; */
     
     if (iter % freq == 0)
       printf("t=%f iter=%d/%d dt=%f\n", f->tnow, iter, f->itermax, dt);
@@ -1273,11 +1273,11 @@ void RK4_CL(field *f, real tmax, real dt,
   gettimeofday(&t_start, NULL);
 
   while(f->tnow < tmax) {
-    if(f->tnow  + dt > tmax)
-      dt = tmax - f->tnow; 
+    /* if(f->tnow  + dt > tmax) */
+    /*   dt = tmax - f->tnow;  */
 
-    if(dt <= 0.0)
-      break;
+    /* if(dt <= 0.0) */
+    /*   break; */
     
     if (iter % freq == 0)
       printf("t=%f iter=%d/%d dt=%f\n", f->tnow, iter, f->itermax, dt);
