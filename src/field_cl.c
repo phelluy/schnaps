@@ -751,9 +751,7 @@ void dtfield_CL(field *f, real tnow, cl_mem *wn_cl,
 		cl_uint nwait, cl_event *wait, cl_event *done)
 {
   // TODO: move into field?
-  cl_event macrobounds;
-  cl_event macrofaces;
-  
+
   const int nmacro = f->macromesh.nbelems;
 
   for(int ie = 0; ie < nmacro; ++ie) {
@@ -761,43 +759,26 @@ void dtfield_CL(field *f, real tnow, cl_mem *wn_cl,
     set_buf_to_zero_cl(f->dtwn_cl + ie, mcell, f,
 		       nwait, wait, f->clv_zbuf + ie);
   }
-  
-  // Macrocell interfaces must be launched serially
-  const int ninterfaces = f->macromesh.nmacrointerfaces;
-  if(ninterfaces > 0) {
-    int ifa = f->macromesh.macrointerface[0];
-    DGMacroCellInterface_CL(f->mface + ifa, f, wn_cl,
-			    nmacro, f->clv_zbuf, f->clv_mci);
 
-    for(int i = 1; i < ninterfaces; ++i) {
-      int ifa = f->macromesh.macrointerface[i];
-      DGMacroCellInterface_CL(f->mface + ifa, f, wn_cl,
-			      1, f->clv_mci + i - 1, f->clv_mci + i);
-    }
-    //empty_kernel(f, ninterfaces, f->clv_mci, &macrofaces);
-    empty_kernel(f, 1, f->clv_mci + ninterfaces - 1, &macrofaces);
-  } else {
-    empty_kernel(f, nmacro, f->clv_zbuf, &macrofaces);
-  }
 
-  // This wait shouldn't in principle be necessary, but
-  // testfieldrk4_cl fails without it.
-  clWaitForEvents(1, &macrofaces);
-  
-  // Boundary terms may also need to be launched serially.
-  const int nboundaryfaces = f->macromesh.nboundaryfaces;
-  if(nboundaryfaces > 0) {
-    int ifa = f->macromesh.boundaryface[0];
-    DGBoundary_CL(f->mface + ifa, f, wn_cl,
-		  1, &macrofaces, f->clv_boundary);
-    for(int i = 1; i < nboundaryfaces; ++i) {
-      int ifa = f->macromesh.boundaryface[i];
-      DGBoundary_CL(f->mface + ifa, f, wn_cl,
-		    1, f->clv_boundary + i - 1, f->clv_boundary + i);
+  for(int i = 0; i < f->nwaves; ++i) {
+    for(int j = 0; j < f->wavecount[i]; ++j) {
+      int ifa = f->wave[i][j];
+      MacroFace *mface = f->mface + ifa;
+      if(mface->ieR != -1) {
+	// interface
+	DGMacroCellInterface_CL(mface, f, wn_cl,
+				(i == 0) ? nmacro : f->wavecount[i - 1],
+				(i == 0) ? f->clv_zbuf : f->clv_wave[i - 1],
+				f->clv_wave[i] + j);
+      } else {
+	// boundary
+	DGBoundary_CL(mface, f, wn_cl,
+		      (i == 0) ? nmacro : f->wavecount[i - 1],
+		      (i == 0) ? f->clv_zbuf : f->clv_wave[i - 1],
+		      f->clv_wave[i] + j);
+      }
     }
-    empty_kernel(f, nboundaryfaces, f->clv_boundary, &macrobounds);
-  } else {
-    empty_kernel(f, 1, &macrofaces, &macrobounds);
   }
   
   unsigned int ndim = 3;
@@ -820,7 +801,8 @@ void dtfield_CL(field *f, real tnow, cl_mem *wn_cl,
     }
 
     DGFlux_CL(f, fluxlist[0], ie, wn_cl + ie, 
-	      1, &macrobounds, f->clv_flux[fluxlist[0]] + ie);
+	      f->wavecount[f->nwaves - 1], f->clv_wave[f->nwaves - 1],
+	      f->clv_flux[fluxlist[0]] + ie);
     for(int d = 1; d < nflux; ++d) {
       DGFlux_CL(f, fluxlist[d], ie, wn_cl + ie, 
 		1, f->clv_flux[fluxlist[d - 1]] + ie,
@@ -844,10 +826,13 @@ void dtfield_CL(field *f, real tnow, cl_mem *wn_cl,
   empty_kernel(f, nmacro, f->clv_mass, done);
 
   // Add times for sources after everything is finished
-  for(int i = 0; i < ninterfaces; ++i)
-    f->minter_time += clv_duration(f->clv_mci[i]);
-  for(int i = 0; i < nboundaryfaces; ++i)
-    f->boundary_time += clv_duration(f->clv_boundary[i]);
+
+  // FIXME
+  /* for(int i = 0; i < ninterfaces; ++i) */
+  /*   f->minter_time += clv_duration(f->clv_mci[i]); */
+  /* for(int i = 0; i < nboundaryfaces; ++i) */
+  /*   f->boundary_time += clv_duration(f->clv_boundary[i]); */
+
   for(int ie = 0; ie < nmacro; ++ie) {
     f->zbuf_time += clv_duration(f->clv_zbuf[ie]);
     if(f->use_source_cl)
@@ -861,8 +846,6 @@ void dtfield_CL(field *f, real tnow, cl_mem *wn_cl,
     f->mass_time += clv_duration(f->clv_mass[ie]);
   }
 
-  clReleaseEvent(macrobounds);
-  clReleaseEvent(macrofaces);
 }
 
 // Set kernel arguments for first stage of RK2

@@ -146,6 +146,7 @@ typedef struct field {
   int *wavecount;
   int **wave;
 
+  cl_event **clv_wave;
   
   //! \brief opencl data
   CLInfo cli;

@@ -491,6 +491,11 @@ void init_field_macrofaces(field *f)
   free(thiswave);
   free(face);
 
+  f->clv_wave = calloc(f->nwaves, sizeof(cl_event*));
+  for(int i = 0; i < f->nwaves; ++i) {
+    f->clv_wave[i] = calloc(f->wavecount[i], sizeof(cl_event));
+  }
+  
   // FIXME: comment this out when things are working.
   for(int i = 0; i < f->nwaves; ++i) {
     printf("wave %d:\t%d interfaces/boundaries:\n", i, f->wavecount[i]);
