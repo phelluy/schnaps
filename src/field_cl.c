@@ -997,7 +997,7 @@ void RK2_CL(field *f, real tmax, real dt,
     if(f->tnow  + dt > tmax)
       dt = tmax - f->tnow;
 
-    if(dt <= 0.0)
+    if(dt <= 1-16)
       break;
     
     if (iter % freq == 0)
@@ -1259,7 +1259,7 @@ void RK4_CL(field *f, real tmax, real dt,
     if(f->tnow  + dt > tmax)
       dt = tmax - f->tnow; 
 
-    if(dt <= 0.0)
+    if(dt <= 1e-15)
       break;
     
     if (iter % freq == 0)
