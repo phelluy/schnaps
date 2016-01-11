@@ -398,6 +398,95 @@ void init_field_cl(field *f)
 }
 #endif
 
+void colour_mface_graph(field *f, int *face, int nfaces,
+			int *nwaves, int **wavecount, int ***wave)
+{
+  *nwaves = 0;
+  *wavecount = calloc(1, sizeof(int));
+  *wave = calloc(1, sizeof(int*));
+
+  bool go = true;
+  int *thiswave = calloc(nfaces, sizeof(int));
+  while(go) {
+
+    int nwave = 0;
+    for(int i = 0; i < nfaces; ++i) {
+      int ifa = face[i];
+      if(ifa != -1) {
+	bool addme = true;
+	MacroFace *mfaceA = f->mface + i;
+      
+	for(int j = 0; j < nwave; ++j) {
+	  if(touching(mfaceA, f->mface + thiswave[j])) {
+	    addme = false;
+	    break;
+	  }
+	}
+      
+	if(addme) {
+	  thiswave[nwave++] = ifa;
+	  face[i] = -1;
+	}
+      
+      }
+    }
+
+    /*
+    printf("wave %d\tnwave: %d\n", *nwaves, nwave);
+    for(int j = 0; j < nwave; ++j) {
+      printf("\t%d\n", thiswave[j]);
+    }
+    */
+    
+    if(nwave == 0) {
+      go = false;
+    } else {
+      // Add the wave to the waves.
+      int **newwave = calloc(*nwaves + 1, sizeof(int*));
+      int *newwavecount = calloc(*nwaves + 1, sizeof(int));
+      for(int i = 0; i < *nwaves; ++i) {
+	newwave[i] = wave[0][i];
+	newwavecount[i] = wavecount[0][i];
+	printf("\tnewwavecount: %d\n", newwavecount[i]);
+      }
+
+      newwave[*nwaves] = calloc(nwave, sizeof(int));
+      for(int j = 0; j < nwave; ++j) {
+	newwave[*nwaves][j] = thiswave[j];
+      }
+      newwavecount[*nwaves] = nwave;
+
+      int **tempwave = *wave;
+      *wave = newwave;
+      free(tempwave);
+
+      int *tempcount = *wavecount;
+      *wavecount = newwavecount;
+      free(tempcount);
+
+      for(int i = 0; i < *nwaves + 1; ++i) {
+	printf("\twavecount: %d\n", wavecount[0][i]);
+      }
+
+      *nwaves += 1;
+    }
+
+  }
+
+  free(thiswave);
+
+  /*
+  for(int i = 0; i < *nwaves; ++i) {
+    int wcount = wavecount[0][i];
+    printf("wave %d\tnwaves: %d\n", i, wcount);
+    for(int j = 0; j < wcount; ++j) {
+      printf("\tifa: %d\n", wave[0][i][j]);
+    }
+  }
+  */
+  
+}
+
 void init_field_macrofaces(field *f)
 {
   const int nfaces = f->macromesh.nbfaces;
@@ -419,76 +508,8 @@ void init_field_macrofaces(field *f)
   for(int i = 0; i < nfaces; ++i) {
     face[i] = i;
   }
-
-  f->nwaves = 0;
-  f->wave = calloc(f->nwaves + 1, sizeof(int*));
-  f->wavecount = calloc(f->nwaves + 1, sizeof(int));
-  
-  bool go = true;
-  int *thiswave = calloc(nfaces, sizeof(int));
-  while(go) {
-
-    int nwave = 0;
-    for(int i = 0; i < nfaces; ++i) {
-      if(face[i] != -1) {
-	bool addme = true;
-	MacroFace *mfaceA = f->mface + i;
-      
-	for(int j = 0; j < nwave; ++j) {
-	  if(touching(mfaceA, f->mface + thiswave[j])) {
-	    addme = false;
-	    break;
-	  }
-	}
-      
-	if(addme) {
-	  thiswave[nwave++] = i;
-	  face[i] = -1;
-	}
-      
-      }
-    }
-
-    /*
-    printf("nwave: %d\n", nwave);
-    for(int j = 0; j < nwave; ++j) {
-      printf("\t%d\n", thiswave[j]);
-    }
-    */
-    
-    if(nwave == 0) {
-      go = false;
-    } else {
-      // Add the wave to the waves.
-      int **newwave = calloc(f->nwaves + 1, sizeof(int*));
-      int *newwavecount = calloc(f->nwaves + 1, sizeof(int));
-      for(int i = 0; i < f->nwaves; ++i) {
-	newwave[i] = f->wave[i];
-	newwavecount[i] = f->wavecount[i];
-      }
-
-      newwave[f->nwaves] = calloc(nwave, sizeof(int));
-      for(int j = 0; j < nwave; ++j) {	
-	newwave[f->nwaves][j] = thiswave[j];
-      }
-
-      newwavecount[f->nwaves] = nwave;
-
-      // swap wave and newwave
-      int **temp = f->wave;
-      f->wave = newwave;
-      free(temp);
-
-      int *tempcount = f->wavecount;
-      f->wavecount = newwavecount;
-      free(tempcount);
-
-      f->nwaves += 1;
-    }
-
-  }
-
-  free(thiswave);
+  colour_mface_graph(f, face, nfaces,
+		     &f->nwaves, &f->wavecount, &f->wave);
   free(face);
 
   f->clv_wave = calloc(f->nwaves, sizeof(cl_event*));
