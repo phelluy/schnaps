@@ -502,7 +502,7 @@ void init_field_macrofaces(field *f)
     for(int j = 0; j < f->wavecount[i]; ++j) {
       int ifa = f->wave[i][j];
       MacroFace *mface = f->mface + ifa;
-      printf("\t%d\tmface %d:\tA->ieL%d\tA->ieL%d\t\n",
+      printf("\t%d\tmface %d:\tieL: %d\tieR%d\t\n",
 	     j, ifa, mface->ieL, mface->ieR);
     }
   }
