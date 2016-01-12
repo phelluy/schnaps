@@ -214,8 +214,9 @@ void ipg_to_xyz(const int *raf, const int *deg, int *ic, int *ix,
 #pragma end_opencl
 
 // From a reference point find the nearest gauss point
-// Warning: works only  degree 1,2 or 3
-int ref_ipg(int *param, real *xref) {
+// Warning: works only  degree 1, 2, or 3
+int ref_ipg(int *param, real *xref)
+{
   int deg[3], nraf[3];
 
   // Approximation degree in each direction
@@ -228,37 +229,37 @@ int ref_ipg(int *param, real *xref) {
   nraf[1] = param[4];
   nraf[2] = param[5];
 
-  real hh[3] = {1./nraf[0],1./nraf[1],1./nraf[2]};
-
-  int ic[3],ix[3];
+  real hh[3] = {1.0 / nraf[0],
+		1.0 / nraf[1],
+		1.0 / nraf[2]};
 
   // get the subcell id
-  ic[0] = floor(xref[0] * nraf[0]);
-  ic[1] = floor(xref[1] * nraf[1]);
-  ic[2] = floor(xref[2] * nraf[2]);
+  int ic[3] = {floor(xref[0] * nraf[0]),
+	       floor(xref[1] * nraf[1]),
+	       floor(xref[2] * nraf[2]) };
 
   //printf("x=%f ic[0]=%d nrafx=%d\n",xref[0], ic[0],nraf[0]);
   //printf("y=%f ic[1]=%d nrafy=%d\n",xref[1], ic[1],nraf[1]);
   //printf("z=%f ic[2]=%d nrafz=%d\n",xref[2], ic[2],nraf[2]);
-  assert(ic[0] >=0 && ic[0]<nraf[0]);
-  assert(ic[1] >=0 && ic[1]<nraf[1]);
-  assert(ic[2] >=0 && ic[2]<nraf[2]);
+  assert(ic[0] >=0 && ic[0] < nraf[0]);
+  assert(ic[1] >=0 && ic[1] < nraf[1]);
+  assert(ic[2] >=0 && ic[2] < nraf[2]);
 
   // subcell index in the macrocell
   //int nc = ic[0] + nraf[0] * (ic[1] + nraf[1] * ic[2]);
   //int offset = (deg[0] + 1) * (deg[1] + 1) * (deg[2] + 1)*nc;
 
   // round to the nearest integer
-  ix[0] = floor((xref[0] - ic[0] * hh[0]) / hh[0] * deg[0] + 0.5);
-  ix[1] = floor((xref[1] - ic[1] * hh[1]) / hh[1] * deg[1] + 0.5);
-  ix[2] = floor((xref[2] - ic[2] * hh[2]) / hh[2] * deg[2] + 0.5);
+  int ix[3] = {floor((xref[0] - ic[0] * hh[0]) / hh[0] * deg[0] + 0.5),
+	       floor((xref[1] - ic[1] * hh[1]) / hh[1] * deg[1] + 0.5),
+	       floor((xref[2] - ic[2] * hh[2]) / hh[2] * deg[2] + 0.5) };
   //int ix[2]=floor(xref[2]*deg[2]+0.5);
 
   //printf("xref %f %f %f ix[0]=%d ix[1]=%d ix[2]=%d\n",
   //	 xref[0],xref[1],xref[2],ix[0],ix[1],ix[2]);
 
   int ipg;
-  xyz_to_ipg(nraf,deg,ic,ix,&ipg);
+  xyz_to_ipg(nraf, deg, ic, ix, &ipg);
 
   //return ix[0] + (deg[0] + 1) * (ix[1] + (deg[1] + 1) * ix[2]) + offset;
   return ipg;

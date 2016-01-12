@@ -750,37 +750,69 @@ void set_buf_to_zero_cl(cl_mem *buf, MacroCell *mcell, field *f,
 void dtfield_CL(field *f, real tnow, cl_mem *wn_cl,
 		cl_uint nwait, cl_event *wait, cl_event *done)
 {
-  // TODO: move into field?
-
   const int nmacro = f->macromesh.nbelems;
 
+  cl_event **clv_iwave = calloc(f->niwaves, sizeof(cl_event*));
+  for(int i = 0; i < f->niwaves; ++i) {
+    clv_iwave[i] = calloc(f->iwavecount[i], sizeof(cl_event));
+  }
+  
+  cl_event macrofaces;
+  cl_event macrobounds;
+  
   for(int ie = 0; ie < nmacro; ++ie) {
     MacroCell *mcell = f->mcell + ie;
     set_buf_to_zero_cl(f->dtwn_cl + ie, mcell, f,
 		       nwait, wait, f->clv_zbuf + ie);
   }
 
-
-  for(int i = 0; i < f->nwaves; ++i) {
-    for(int j = 0; j < f->wavecount[i]; ++j) {
-      int ifa = f->wave[i][j];
+  if(f->niwaves > 0) {
+    for(int j = 0; j < f->iwavecount[0]; ++j) {
+      int ifa = f->iwave[0][j];
       MacroFace *mface = f->mface + ifa;
-      if(mface->ieR != -1) {
-	// interface
+      DGMacroCellInterface_CL(mface, f, wn_cl,
+			      nmacro, f->clv_zbuf,
+			      &f->clv_iwave[0][j]);
+    }
+    
+
+    for(int i = 1; i < f->niwaves; ++i) {
+      for(int j = 0; j < f->iwavecount[i]; ++j) {
+	int ifa = f->iwave[i][j];
+	MacroFace *mface = f->mface + ifa;
 	DGMacroCellInterface_CL(mface, f, wn_cl,
-				(i == 0) ? nmacro : f->wavecount[i - 1],
-				(i == 0) ? f->clv_zbuf : f->clv_wave[i - 1],
-				f->clv_wave[i] + j);
-      } else {
-	// boundary
-	DGBoundary_CL(mface, f, wn_cl,
-		      (i == 0) ? nmacro : f->wavecount[i - 1],
-		      (i == 0) ? f->clv_zbuf : f->clv_wave[i - 1],
-		      f->clv_wave[i] + j);
+				f->iwavecount[i - 1],
+				f->clv_iwave[i - 1],
+				f->clv_iwave[i] + j);
       }
     }
+    empty_kernel(f, f->iwavecount[f->niwaves - 1],
+		 f->clv_iwave[f->niwaves - 1],
+		 &macrofaces);
+  } else {
+    empty_kernel(f, nmacro, f->clv_zbuf, &macrofaces);
   }
-  
+
+  if(f->nbwaves > 0) {
+    for(int i = 0; i < f->nbwaves; ++i) {
+
+
+      for(int j = 0; j < f->bwavecount[i]; ++j) {
+	int ifa = f->bwave[i][j];
+	MacroFace *mface = f->mface + ifa;
+	DGBoundary_CL(mface, f, wn_cl,
+		      (i == 0) ? 1 : f->bwavecount[i - 1],
+		      (i == 0) ? &macrofaces : f->clv_bwave[i - 1],
+		      f->clv_bwave[i] + j);
+      }
+    }
+    empty_kernel(f, f->bwavecount[f->nbwaves - 1],
+		 f->clv_bwave[f->nbwaves - 1],
+		 &macrobounds);
+  } else {
+    empty_kernel(f, 1, &macrofaces, &macrobounds);
+  }
+
   unsigned int ndim = 3;
   if(f->macromesh.is2d)
     ndim = 2;
@@ -801,7 +833,7 @@ void dtfield_CL(field *f, real tnow, cl_mem *wn_cl,
     }
 
     DGFlux_CL(f, fluxlist[0], ie, wn_cl + ie, 
-	      f->wavecount[f->nwaves - 1], f->clv_wave[f->nwaves - 1],
+	      1, &macrobounds,
 	      f->clv_flux[fluxlist[0]] + ie);
     for(int d = 1; d < nflux; ++d) {
       DGFlux_CL(f, fluxlist[d], ie, wn_cl + ie, 
@@ -846,6 +878,8 @@ void dtfield_CL(field *f, real tnow, cl_mem *wn_cl,
     f->mass_time += clv_duration(f->clv_mass[ie]);
   }
 
+  clReleaseEvent(macrobounds);
+  clReleaseEvent(macrofaces);
 }
 
 // Set kernel arguments for first stage of RK2

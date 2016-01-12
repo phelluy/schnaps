@@ -141,12 +141,17 @@ typedef struct field {
 
 #ifdef _WITH_OPENCL
 
-  // For launching the macrocell interfaces / boundaries in parallel
-  int nwaves;
-  int *wavecount;
-  int **wave;
-
-  cl_event **clv_wave;
+  // For launching the macrocell interfaces in parallel
+  int niwaves;
+  int *iwavecount;
+  int **iwave;
+  cl_event **clv_iwave;
+  
+  // For launching the macrocell boundaries in parallel
+  int nbwaves;
+  int *bwavecount;
+  int **bwave;
+  cl_event **clv_bwave;
   
   //! \brief opencl data
   CLInfo cli;

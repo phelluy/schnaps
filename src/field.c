@@ -398,20 +398,25 @@ void init_field_cl(field *f)
 }
 #endif
 
-void colour_mface_graph(field *f, int *face, int nfaces,
+void colour_mface_graph(const field *f, const int *face, const int nfaces,
 			int *nwaves, int **wavecount, int ***wave)
 {
   *nwaves = 0;
   *wavecount = calloc(1, sizeof(int));
   *wave = calloc(1, sizeof(int*));
 
+  int *facecopy = calloc(nfaces, sizeof(int));
+  for(int i = 0; i < nfaces; ++i) {
+    facecopy[i] = face[i];
+  }
+  
   bool go = true;
   int *thiswave = calloc(nfaces, sizeof(int));
   while(go) {
 
     int nwave = 0;
     for(int i = 0; i < nfaces; ++i) {
-      int ifa = face[i];
+      int ifa = facecopy[i];
       if(ifa != -1) {
 	bool addme = true;
 	MacroFace *mfaceA = f->mface + i;
@@ -425,7 +430,7 @@ void colour_mface_graph(field *f, int *face, int nfaces,
       
 	if(addme) {
 	  thiswave[nwave++] = ifa;
-	  face[i] = -1;
+	  facecopy[i] = -1;
 	}
       
       }
@@ -447,7 +452,7 @@ void colour_mface_graph(field *f, int *face, int nfaces,
       for(int i = 0; i < *nwaves; ++i) {
 	newwave[i] = wave[0][i];
 	newwavecount[i] = wavecount[0][i];
-	printf("\tnewwavecount: %d\n", newwavecount[i]);
+	//printf("\tnewwavecount: %d\n", newwavecount[i]);
       }
 
       newwave[*nwaves] = calloc(nwave, sizeof(int));
@@ -464,9 +469,9 @@ void colour_mface_graph(field *f, int *face, int nfaces,
       *wavecount = newwavecount;
       free(tempcount);
 
-      for(int i = 0; i < *nwaves + 1; ++i) {
-	printf("\twavecount: %d\n", wavecount[0][i]);
-      }
+      /* for(int i = 0; i < *nwaves + 1; ++i) { */
+      /* 	printf("\twavecount: %d\n", wavecount[0][i]); */
+      /* } */
 
       *nwaves += 1;
     }
@@ -484,7 +489,6 @@ void colour_mface_graph(field *f, int *face, int nfaces,
     }
   }
   */
-  
 }
 
 void init_field_macrofaces(field *f)
@@ -503,27 +507,43 @@ void init_field_macrofaces(field *f)
     mface->locfaR = f->macromesh.face2elem[4 * ifa + 3];
   }
 
-  int *face = calloc(nfaces, sizeof(int));
+  const int ninterfaces = f->macromesh.nmacrointerfaces;
+  colour_mface_graph(f, f->macromesh.macrointerface, ninterfaces,
+		     &f->niwaves, &f->iwavecount, &f->iwave);
 
-  for(int i = 0; i < nfaces; ++i) {
-    face[i] = i;
+  f->clv_iwave = calloc(f->niwaves, sizeof(cl_event*));
+  for(int i = 0; i < f->niwaves; ++i) {
+    f->clv_iwave[i] = calloc(f->iwavecount[i], sizeof(cl_event));
   }
-  colour_mface_graph(f, face, nfaces,
-		     &f->nwaves, &f->wavecount, &f->wave);
-  free(face);
+  
+  
+  // FIXME: comment this out when things are working.
+  for(int i = 0; i < f->niwaves; ++i) {
+    printf("wave %d:\t%d interfaces:\n", i, f->iwavecount[i]);
+    for(int j = 0; j < f->iwavecount[i]; ++j) {
+      int ifa = f->iwave[i][j];
+      MacroFace *mface = f->mface + ifa;
+      printf("\t%d\tmface %d:\tieL: %d\tieR: %d\t\n",
+	     j, ifa, mface->ieL, mface->ieR);
+    }
+  }
+  
+  const int nboundaryfaces = f->macromesh.nboundaryfaces;
+  colour_mface_graph(f, f->macromesh.boundaryface, nboundaryfaces,
+		     &f->nbwaves, &f->bwavecount, &f->bwave);
 
-  f->clv_wave = calloc(f->nwaves, sizeof(cl_event*));
-  for(int i = 0; i < f->nwaves; ++i) {
-    f->clv_wave[i] = calloc(f->wavecount[i], sizeof(cl_event));
+  f->clv_bwave = calloc(f->nbwaves, sizeof(cl_event*));
+  for(int i = 0; i < f->nbwaves; ++i) {
+    f->clv_bwave[i] = calloc(f->bwavecount[i], sizeof(cl_event));
   }
   
   // FIXME: comment this out when things are working.
-  for(int i = 0; i < f->nwaves; ++i) {
-    printf("wave %d:\t%d interfaces/boundaries:\n", i, f->wavecount[i]);
-    for(int j = 0; j < f->wavecount[i]; ++j) {
-      int ifa = f->wave[i][j];
+  for(int i = 0; i < f->nbwaves; ++i) {
+    printf("wave %d:\t%d boundaries:\n", i, f->bwavecount[i]);
+    for(int j = 0; j < f->bwavecount[i]; ++j) {
+      int ifa = f->bwave[i][j];
       MacroFace *mface = f->mface + ifa;
-      printf("\t%d\tmface %d:\tieL: %d\tieR%d\t\n",
+      printf("\t%d\tmface %d:\tieL: %d\tieR: %d\t\n",
 	     j, ifa, mface->ieL, mface->ieR);
     }
   }
