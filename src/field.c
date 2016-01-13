@@ -387,6 +387,15 @@ void init_field_cl(field *f)
   init_field_macrocells_cl(f);
   
   // Set timers to zero
+  f->zbuf_calls = 0;
+  f->mass_calls = 0;
+  f->vol_calls = 0;
+  f->flux_calls = 0;
+  f->minter_calls = 0;
+  f->boundary_calls = 0;
+  f->source_calls = 0;
+  f->rk_calls = 0;
+
   f->zbuf_time = 0;
   f->mass_time = 0;
   f->vol_time = 0;
