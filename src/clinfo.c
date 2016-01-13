@@ -554,6 +554,7 @@ void InitCLInfo(CLInfo *cli, int platform_num, int device_num)
   socl = strcmp(vendor, "INRIA") ==  0;
   
   if(!socl) {
+
     cli->context = clCreateContext(NULL, // no context properties
 				   1,         // only one device in the list
 				   &cli->device, // device list
@@ -565,6 +566,37 @@ void InitCLInfo(CLInfo *cli, int platform_num, int device_num)
     if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
     assert(status >= CL_SUCCESS);
 
+#if 0
+    //#ifdef CL_VERSION_2_0
+
+    /*
+    cl_queue_properties properties[]
+      = {
+      //CL_QUEUE_SIZE, 16*1024*1024,
+      CL_QUEUE_PROPERTIES,
+      (cl_command_queue_properties)
+      CL_QUEUE_PROFILING_ENABLE
+      // | CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE
+      // | CL_QUEUE_ON_DEVICE |
+      // | CL_QUEUE_ON_DEVICE_DEFAULT
+      , 0
+    };
+    */
+
+    cl_queue_properties properties[] =
+      {CL_QUEUE_PROPERTIES,
+       CL_QUEUE_PROFILING_ENABLE
+       | CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE
+       , 0};
+    cli->commandqueue
+      = clCreateCommandQueueWithProperties(cli->context,
+					   cli->device,
+					   properties,
+					   &status);
+    if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+    assert(status >= CL_SUCCESS);
+#else
+    // OpenCL 1.x
     cli->commandqueue 
       = clCreateCommandQueue(cli->context,
 			     cli->device,
@@ -574,6 +606,8 @@ void InitCLInfo(CLInfo *cli, int platform_num, int device_num)
 			     &status);
     if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
     assert(status >= CL_SUCCESS);
+#endif
+
   } else {
     cl_context_properties properties[]
       = {CL_CONTEXT_PLATFORM,
