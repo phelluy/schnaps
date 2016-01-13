@@ -783,6 +783,10 @@ void dtfield_CL(field *f, real tnow, cl_mem *wn_cl,
 				evwait,
 				f->clv_iwave[i] + j);
       }
+
+      // Needed for AMD Tahiti:
+      clWaitForEvents(f->iwavecount[i], f->clv_iwave[i]);
+
     }
     empty_kernel(f, f->iwavecount[f->niwaves - 1],
 		 f->clv_iwave[f->niwaves - 1],
@@ -808,6 +812,8 @@ void dtfield_CL(field *f, real tnow, cl_mem *wn_cl,
 		      nwait, evwait,
 		      f->clv_bwave[i] + j);
       }
+      // Needed for AMD Tahiti:
+      clWaitForEvents(f->bwavecount[i], f->clv_bwave[i]);
     }
     empty_kernel(f, f->bwavecount[f->nbwaves - 1],
 		 f->clv_bwave[f->nbwaves - 1],
