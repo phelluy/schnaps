@@ -528,13 +528,15 @@ void init_field_macrofaces(field *f)
   
   // FIXME: comment this out when things are working.
   for(int i = 0; i < f->niwaves; ++i) {
-    printf("wave %d:\t%d interfaces:\n", i, f->iwavecount[i]);
+    printf("wave %d:\t%d interfaces\n", i, f->iwavecount[i]);
+    /*
     for(int j = 0; j < f->iwavecount[i]; ++j) {
       int ifa = f->iwave[i][j];
       MacroFace *mface = f->mface + ifa;
       printf("\t%d\tmface %d:\tieL: %d\tieR: %d\t\n",
 	     j, ifa, mface->ieL, mface->ieR);
     }
+    */
   }
   
   const int nboundaryfaces = f->macromesh.nboundaryfaces;
@@ -548,13 +550,15 @@ void init_field_macrofaces(field *f)
   
   // FIXME: comment this out when things are working.
   for(int i = 0; i < f->nbwaves; ++i) {
-    printf("wave %d:\t%d boundaries:\n", i, f->bwavecount[i]);
+    printf("wave %d:\t%d boundaries\n", i, f->bwavecount[i]);
+    /*
     for(int j = 0; j < f->bwavecount[i]; ++j) {
       int ifa = f->bwave[i][j];
       MacroFace *mface = f->mface + ifa;
       printf("\t%d\tmface %d:\tieL: %d\tieR: %d\t\n",
 	     j, ifa, mface->ieL, mface->ieR);
     }
+    */
   }
 }
 
