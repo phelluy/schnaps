@@ -844,20 +844,34 @@ void dtfield_CL(field *f, real tnow, cl_mem *wn_cl,
   empty_kernel(f, nmacro, f->clv_mass, done);
 
   // Add times for sources after everything is finished
-  for(int i = 0; i < ninterfaces; ++i)
+  for(int i = 0; i < ninterfaces; ++i) {
+    f->minter_calls++;
     f->minter_time += clv_duration(f->clv_mci[i]);
-  for(int i = 0; i < nboundaryfaces; ++i)
+  }
+  for(int i = 0; i < nboundaryfaces; ++i) {
+    f->boundary_calls++;
     f->boundary_time += clv_duration(f->clv_boundary[i]);
+  }
   for(int ie = 0; ie < nmacro; ++ie) {
+    f->zbuf_calls++;
     f->zbuf_time += clv_duration(f->clv_zbuf[ie]);
-    if(f->use_source_cl)
+    if(f->use_source_cl) {
+      f->source_calls++;
       f->source_time += clv_duration(f->clv_source[ie]);
+    }
+    f->flux_calls++;
     f->flux_time += clv_duration(f->clv_flux[0][ie]);
-    if(ndim > 1) 
+    if(ndim > 1) {
       f->flux_time += clv_duration(f->clv_flux[1][ie]);
-    if(ndim > 2)
+      f->flux_calls++;
+    }
+    if(ndim > 2) {
+      f->flux_calls++;
       f->flux_time += clv_duration(f->clv_flux[2][ie]);
+    }
+    f->vol_calls++;
     f->vol_time += clv_duration(f->clv_volume[ie]);
+    f->mass_calls++;
     f->mass_time += clv_duration(f->clv_mass[ie]);
   }
 
@@ -1045,7 +1059,9 @@ void RK2_CL(field *f, real tmax, real dt,
 
     clWaitForEvents(nmacro, stage2);
     for(int ie = 0; ie < nmacro; ++ie) {
+      f->rk_calls++;
       f->rk_time += clv_duration(stage1[ie]);
+      f->rk_calls++;
       f->rk_time += clv_duration(stage2[ie]);
     }
 
@@ -1330,9 +1346,13 @@ void RK4_CL(field *f, real tmax, real dt,
     clWaitForEvents(nmacro, stage3);
 
     for(int ie = 0; ie < nmacro; ++ie) {
+      f->rk_calls++;
       f->rk_time += clv_duration(stage0[ie]);
+      f->rk_calls++;
       f->rk_time += clv_duration(stage1[ie]);
+      f->rk_calls++;
       f->rk_time += clv_duration(stage2[ie]);
+      f->rk_calls++;
       f->rk_time += clv_duration(stage3[ie]);
     }
     
@@ -1378,6 +1398,15 @@ void RK4_CL(field *f, real tmax, real dt,
   free(l3);
 }
 
+void printtimes(char* name, cl_ulong ns, int ncall, double N)
+{
+  double s = 1e-9 * ns;
+  double meantime = ncall > 0 ? s / ncall : 0.0;
+  
+  printf("%s%f%%\t%gs\t%d\t%g\n", 
+	 name, ns * N, s, ncall, meantime);
+}
+
 void show_cl_timing(field *f)
 {
   printf("\n");
@@ -1395,48 +1424,30 @@ void show_cl_timing(field *f)
   total += f->rk_time;
   total += f->flux_time;
   
-  real N = 100.0 / total;
+  double N = 100.0 / total;
 
   cl_ulong ns;
+  int ncall;
+  
+  printf("Kernel name:             percent\ttotal   \tncalls\tmean time\n");
 
-  ns = f->zbuf_time;
-  printf("set_buf_to_zero_cl time:      %f%% \t%luns \t%fs\n", 
-	 ns * N, (unsigned long) ns, 1e-9 * ns);
-
-  ns = f->minter_time;
-  printf("DGMacroCellInterface_CL time: %f%% \t%luns \t%fs\n", 
-	 ns * N, (unsigned long) ns, 1e-9 * ns);
-
-  ns = f->boundary_time;
-  printf("DGBoundary time:              %f%% \t%luns \t%fs\n", 
-	 ns * N, (unsigned long) ns, 1e-9 * ns);
-
-  ns = f->vol_time;
-  printf("DGVolume_CL time:             %f%% \t%luns \t%fs\n", 
-	 ns * N, (unsigned long) ns, 1e-9 * ns);
-
-  ns = f->flux_time;
-  printf("DGFlux_CL time:               %f%% \t%luns \t%fs\n", 
-	 ns * N, (unsigned long) ns, 1e-9 * ns);
-
-  ns = f->mass_time;
-  printf("DGMass_CL time:               %f%% \t%luns \t%fs\n", 
-	 ns * N, (unsigned long) ns, 1e-9 * ns);
-
-  ns = f->source_time;
-  printf("DGSource_CL time:             %f%% \t%luns \t%fs\n", 
-	 ns * N, (unsigned long) ns, 1e-9 * ns);
-
-  ns = f->rk_time;
-  printf("rk time:                      %f%% \t%luns \t%fs\n", 
-	 ns*N, (unsigned long) ns, 1e-9 * ns);
+  
+  printtimes("set_buf_to_zero_cl:      ", f->zbuf_time, f->zbuf_calls, N);
+  printtimes("DGMacroCellInterface_CL: ", f->minter_time, f->minter_calls, N); 
+  printtimes("DGBoundary:              ", f->boundary_time, f->boundary_calls,
+	     N); 
+  printtimes("DGVolume_CL:             ", f->vol_time, f->vol_calls, N);
+  printtimes("DGFlux_CL:               ", f->flux_time, f->flux_calls, N);
+  printtimes("DGMass_CL:               ", f->mass_time, f->mass_calls, N);
+  printtimes("DGSource_CL:             ", f->source_time, f->source_calls, N);
+  printtimes("rk:                      ", f->rk_time, f->rk_calls, N);
 
   printf("\n");
   
   ns = total;
   double total_time = 1e-9 * ns;
-  printf("total time:                   %f%% \t%luns \t%fs\n", 
-	 ns*N, (unsigned long) ns, total_time);
+  printf("total:                   %f%%\t%fs\n", 
+	 ns*N, total_time);
 
   printf("\n");
 }

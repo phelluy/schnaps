@@ -195,6 +195,15 @@ typedef struct field {
   cl_event *clv_boundary;
 
   // OpenCL timing
+  int zbuf_calls;
+  int mass_calls;
+  int vol_calls;
+  int flux_calls;
+  int minter_calls;
+  int boundary_calls;
+  int source_calls;
+  int rk_calls;
+
   cl_ulong zbuf_time;
   cl_ulong mass_time;
   cl_ulong vol_time;
