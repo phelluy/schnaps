@@ -752,11 +752,6 @@ void dtfield_CL(field *f, real tnow, cl_mem *wn_cl,
 {
   const int nmacro = f->macromesh.nbelems;
 
-  cl_event **clv_iwave = calloc(f->niwaves, sizeof(cl_event*));
-  for(int i = 0; i < f->niwaves; ++i) {
-    clv_iwave[i] = calloc(f->iwavecount[i], sizeof(cl_event));
-  }
-  
   cl_event macrofaces;
   cl_event macrobounds;
   
@@ -766,23 +761,26 @@ void dtfield_CL(field *f, real tnow, cl_mem *wn_cl,
 		       nwait, wait, f->clv_zbuf + ie);
   }
 
+#define _SERIALWAVE 1
+  
   if(f->niwaves > 0) {
-    for(int j = 0; j < f->iwavecount[0]; ++j) {
-      int ifa = f->iwave[0][j];
-      MacroFace *mface = f->mface + ifa;
-      DGMacroCellInterface_CL(mface, f, wn_cl,
-			      nmacro, f->clv_zbuf,
-			      &f->clv_iwave[0][j]);
-    }
-    
-
-    for(int i = 1; i < f->niwaves; ++i) {
+    for(int i = 0; i < f->niwaves; ++i) {
       for(int j = 0; j < f->iwavecount[i]; ++j) {
 	int ifa = f->iwave[i][j];
 	MacroFace *mface = f->mface + ifa;
+#if _SERIALWAVE
+	int nwait = (i == 0 && j == 0) ? nmacro : 1;
+	cl_event *evwait
+	  = (i == 0 && j == 0) ? f->clv_zbuf :
+	  (j == 0) ? f->clv_iwave[i - 1] + f->iwavecount[i - 1] -1
+	  : f->clv_iwave[i] + j - 1;
+#else
+	int nwait = (i == 0) ? nmacro : f->iwavecount[i - 1];
+	cl_event *evwait = (i == 0) ?  f->clv_zbuf: f->clv_iwave[i - 1];
+#endif
 	DGMacroCellInterface_CL(mface, f, wn_cl,
-				f->iwavecount[i - 1],
-				f->clv_iwave[i - 1],
+				nwait,
+				evwait,
 				f->clv_iwave[i] + j);
       }
     }
@@ -792,17 +790,22 @@ void dtfield_CL(field *f, real tnow, cl_mem *wn_cl,
   } else {
     empty_kernel(f, nmacro, f->clv_zbuf, &macrofaces);
   }
-
+  
   if(f->nbwaves > 0) {
     for(int i = 0; i < f->nbwaves; ++i) {
-
-
       for(int j = 0; j < f->bwavecount[i]; ++j) {
 	int ifa = f->bwave[i][j];
 	MacroFace *mface = f->mface + ifa;
+#if _SERIALWAVE
+	int nwait = 1;
+	cl_event *evwait = (i == 0 && j ==0) ? &macrofaces :
+	  (j == 0) ? f->clv_bwave[i - 1] : f->clv_bwave[i] + j - 1;
+#else
+	int nwait = (i == 0) ? 1 : f->bwavecount[i - 1];
+	cl_event *evwait = (i == 0) ? &macrofaces : f->clv_bwave[i - 1];
+#endif
 	DGBoundary_CL(mface, f, wn_cl,
-		      (i == 0) ? 1 : f->bwavecount[i - 1],
-		      (i == 0) ? &macrofaces : f->clv_bwave[i - 1],
+		      nwait, evwait,
 		      f->clv_bwave[i] + j);
       }
     }
