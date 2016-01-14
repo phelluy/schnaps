@@ -754,6 +754,15 @@ void dtfield_CL(field *f, real tnow, cl_mem *wn_cl,
 
   cl_event macrofaces;
   cl_event macrobounds;
+  cl_event zbuf;
+
+  // We need to add an event for each wave so that the following
+  // kernels have nwait=1, which reduces the overhead of launching
+  // kernels.
+  cl_event * cl_iwave = f->niwaves == 0 ? NULL :
+    calloc(f->niwaves, sizeof(cl_event));
+  cl_event * cl_bwave = f->nbwaves == 0 ? NULL :
+    calloc(f->nbwaves, sizeof(cl_event));
   
   for(int ie = 0; ie < nmacro; ++ie) {
     MacroCell *mcell = f->mcell + ie;
@@ -761,36 +770,23 @@ void dtfield_CL(field *f, real tnow, cl_mem *wn_cl,
 		       nwait, wait, f->clv_zbuf + ie);
   }
 
-#define _SERIALWAVE 1
+  empty_kernel(f, nmacro, f->clv_zbuf, &zbuf);
   
   if(f->niwaves > 0) {
     for(int i = 0; i < f->niwaves; ++i) {
       for(int j = 0; j < f->iwavecount[i]; ++j) {
 	int ifa = f->iwave[i][j];
 	MacroFace *mface = f->mface + ifa;
-#if _SERIALWAVE
-	int nwait = (i == 0 && j == 0) ? nmacro : 1;
-	cl_event *evwait
-	  = (i == 0 && j == 0) ? f->clv_zbuf :
-	  (j == 0) ? f->clv_iwave[i - 1] + f->iwavecount[i - 1] -1
-	  : f->clv_iwave[i] + j - 1;
-#else
-	int nwait = (i == 0) ? nmacro : f->iwavecount[i - 1];
-	cl_event *evwait = (i == 0) ?  f->clv_zbuf: f->clv_iwave[i - 1];
-#endif
 	DGMacroCellInterface_CL(mface, f, wn_cl,
-				nwait,
-				evwait,
+				1,
+				(i == 0) ?  &zbuf: cl_iwave + i - 1,
 				f->clv_iwave[i] + j);
       }
-
-      // Needed for AMD Tahiti:
       clWaitForEvents(f->iwavecount[i], f->clv_iwave[i]);
-
+      empty_kernel(f, f->iwavecount[i], f->clv_iwave[i],
+		   cl_iwave + i);
     }
-    empty_kernel(f, f->iwavecount[f->niwaves - 1],
-		 f->clv_iwave[f->niwaves - 1],
-		 &macrofaces);
+    empty_kernel(f, 1, f->clv_iwave[f->niwaves - 1], &macrofaces);
   } else {
     empty_kernel(f, nmacro, f->clv_zbuf, &macrofaces);
   }
@@ -800,24 +796,15 @@ void dtfield_CL(field *f, real tnow, cl_mem *wn_cl,
       for(int j = 0; j < f->bwavecount[i]; ++j) {
 	int ifa = f->bwave[i][j];
 	MacroFace *mface = f->mface + ifa;
-#if _SERIALWAVE
-	int nwait = 1;
-	cl_event *evwait = (i == 0 && j ==0) ? &macrofaces :
-	  (j == 0) ? f->clv_bwave[i - 1] : f->clv_bwave[i] + j - 1;
-#else
-	int nwait = (i == 0) ? 1 : f->bwavecount[i - 1];
-	cl_event *evwait = (i == 0) ? &macrofaces : f->clv_bwave[i - 1];
-#endif
 	DGBoundary_CL(mface, f, wn_cl,
-		      nwait, evwait,
+		      1, (i == 0) ? &macrofaces : cl_bwave + i - 1,
 		      f->clv_bwave[i] + j);
       }
-      // Needed for AMD Tahiti:
       clWaitForEvents(f->bwavecount[i], f->clv_bwave[i]);
+      empty_kernel(f, f->bwavecount[i], f->clv_bwave[i],
+		   cl_bwave + i);
     }
-    empty_kernel(f, f->bwavecount[f->nbwaves - 1],
-		 f->clv_bwave[f->nbwaves - 1],
-		 &macrobounds);
+    empty_kernel(f, 1, f->clv_bwave[f->nbwaves - 1], &macrobounds);
   } else {
     empty_kernel(f, 1, &macrofaces, &macrobounds);
   }
@@ -901,6 +888,18 @@ void dtfield_CL(field *f, real tnow, cl_mem *wn_cl,
     f->mass_time += clv_duration(f->clv_mass[ie]);
   }
 
+  for(int i = 0; i < f->niwaves; ++i) {
+    clReleaseEvent(cl_iwave[i]);
+  }
+  if(f->niwaves > 0)
+    free(cl_iwave);
+  
+  for(int i = 0; i < f->nbwaves; ++i) {
+    clReleaseEvent(cl_bwave[i]);
+  }
+  if(f->nbwaves > 0)
+    free(cl_bwave);
+  
   clReleaseEvent(macrobounds);
   clReleaseEvent(macrofaces);
 }
