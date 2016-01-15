@@ -135,8 +135,6 @@ typedef struct field {
   //! vmax
   real vmax;
 
-  
-
   //! \brief Pointer to a generic function called before computing dtfield. 
   //! \param[inout] f a field (to be converted from void*)
   void (*pre_dtfield)(void *f, real *w);
@@ -166,6 +164,19 @@ typedef struct field {
   MacroCell *mcell;
 
 #ifdef _WITH_OPENCL
+
+  // For launching the macrocell interfaces in parallel
+  int niwaves;
+  int *iwavecount;
+  int **iwave;
+  cl_event **clv_iwave;
+  
+  // For launching the macrocell boundaries in parallel
+  int nbwaves;
+  int *bwavecount;
+  int **bwave;
+  cl_event **clv_bwave;
+  
   //! \brief opencl data
   CLInfo cli;
   //! \brief copy of the dtwn array
@@ -223,6 +234,15 @@ typedef struct field {
   cl_event *clv_boundary;
 
   // OpenCL timing
+  int zbuf_calls;
+  int mass_calls;
+  int vol_calls;
+  int flux_calls;
+  int minter_calls;
+  int boundary_calls;
+  int source_calls;
+  int rk_calls;
+
   cl_ulong zbuf_time;
   cl_ulong mass_time;
   cl_ulong vol_time;
@@ -295,6 +315,8 @@ void DGVolumeSlow(field *f);
 //! Fast version: multithreaded and with tensor products optimizations
 //! \param[inout] f a field
 void dtfield(field *f, real tnow, real *w, real *dtw);
+
+bool touching(const MacroFace *A, const MacroFace *B);
 
 //! \brief  compute the Discontinuous Galerkin inter-macrocells boundary terms
 //! The argument has to be void* (for compatibility with pthread)

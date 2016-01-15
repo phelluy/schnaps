@@ -999,50 +999,61 @@ void dtfield_CL(field *f, real tnow, cl_mem *wn_cl,
 {
   const int nmacro = f->macromesh.nbelems;
 
+  cl_event macrofaces;
+  cl_event macrobounds;
+  cl_event zbuf;
+
+  // We need to add an event for each wave so that the following
+  // kernels have nwait=1, which reduces the overhead of launching
+  // kernels.
+  cl_event * cl_iwave = f->niwaves == 0 ? NULL :
+    calloc(f->niwaves, sizeof(cl_event));
+  cl_event * cl_bwave = f->nbwaves == 0 ? NULL :
+    calloc(f->nbwaves, sizeof(cl_event));
+  
   for(int ie = 0; ie < nmacro; ++ie) {
     MacroCell *mcell = f->mcell + ie;
     set_buf_to_zero_cl(f->dtwn_cl + ie, mcell, f,
 		       nwait, wait, f->clv_zbuf + ie);
   }
-    
-  // Macrocell interfaces must be launched serially
-  const int ninterfaces = f->macromesh.nmacrointerfaces;
-  for(int i = 0; i < ninterfaces; ++i) {
-    int ifa = f->macromesh.macrointerface[i];
-    DGMacroCellInterface_CL(f->mface + ifa, f, wn_cl,
-    			    i == 0 ? nmacro : 1,
-    			    i == 0 ? f->clv_zbuf : f->clv_mci + i - 1,
-    			    f->clv_mci + i);
-  }
 
-  cl_event *startboundary = ninterfaces > 0 ?
-    f->clv_mci + ninterfaces - 1: f->clv_zbuf;
-  int nwaitstartboundary =  ninterfaces > 0 ? 1 : nmacro;
+  empty_kernel(f, nmacro, f->clv_zbuf, &zbuf);
   
-  // Boundary terms may also need to be launched serially.
-  const int nboundaryfaces = f->macromesh.nboundaryfaces;
-  for(int i = 0; i < nboundaryfaces; ++i) {
-    int ifa = f->macromesh.boundaryface[i];
-    DGBoundary_CL(f->mface + ifa, f, wn_cl, tnow,
-		  nwaitstartboundary,
-		  i == 0 ?  startboundary : f->clv_boundary + i - 1,
-		  f->clv_boundary + i);
-  }
-
-  // If there are no interfaces and no boundaries, just wait for zerobuf.
-  cl_event *startmacroloop;
-  int nwaitstartmacroloop;
-  if(ninterfaces == 0 && nboundaryfaces == 0) {
-    startmacroloop = f->clv_zbuf;
-    nwaitstartmacroloop = nmacro;
-  } else {
-    if(nboundaryfaces > 0) {
-      startmacroloop = f->clv_boundary + nboundaryfaces - 1;
-    } else {
-      startmacroloop = f->clv_mci + ninterfaces - 1;
+  if(f->niwaves > 0) {
+    for(int i = 0; i < f->niwaves; ++i) {
+      for(int j = 0; j < f->iwavecount[i]; ++j) {
+	int ifa = f->iwave[i][j];
+	MacroFace *mface = f->mface + ifa;
+	DGMacroCellInterface_CL(mface, f, wn_cl,
+				1,
+				(i == 0) ?  &zbuf: cl_iwave + i - 1,
+				f->clv_iwave[i] + j);
+      }
+      clWaitForEvents(f->iwavecount[i], f->clv_iwave[i]);
+      empty_kernel(f, f->iwavecount[i], f->clv_iwave[i],
+		   cl_iwave + i);
     }
-    // TODO: interfaces and boundaries might be parallealized
-    nwaitstartmacroloop = 1;
+    empty_kernel(f, 1, f->clv_iwave[f->niwaves - 1], &macrofaces);
+  } else {
+    empty_kernel(f, nmacro, f->clv_zbuf, &macrofaces);
+  }
+  
+  if(f->nbwaves > 0) {
+    for(int i = 0; i < f->nbwaves; ++i) {
+      for(int j = 0; j < f->bwavecount[i]; ++j) {
+	int ifa = f->bwave[i][j];
+	MacroFace *mface = f->mface + ifa;
+	DGBoundary_CL(mface, f, wn_cl, f->tnow,
+		      1, (i == 0) ? &macrofaces : cl_bwave + i - 1,
+		      f->clv_bwave[i] + j);
+      }
+      clWaitForEvents(f->bwavecount[i], f->clv_bwave[i]);
+      empty_kernel(f, f->bwavecount[i], f->clv_bwave[i],
+		   cl_bwave + i);
+    }
+    empty_kernel(f, 1, f->clv_bwave[f->nbwaves - 1], &macrobounds);
+  } else {
+    empty_kernel(f, 1, &macrofaces, &macrobounds);
   }
 
   unsigned int ndim = 3;
@@ -1051,42 +1062,34 @@ void dtfield_CL(field *f, real tnow, cl_mem *wn_cl,
   if(f->macromesh.is1d)
     ndim = 1;
   
-  cl_event *dtfielddone = f->clv_mass;
-  
   // The kernels for the intra-macrocell computations can be launched
   // in parallel between macrocells.
-  //const int nmacro = f->macromesh.nbelems;
   for(int ie = 0; ie < nmacro; ++ie) {
     MacroCell *mcell = f->mcell + ie;
-
-    int *param = f->interp_param;
-    int nraf[3] = {param[4], param[5], param[6]};
 
     int nflux = 0;
     int fluxlist[3];
     for(int d = 0; d < ndim; ++d) {
-      if(nraf[d] > 1) {
+      if(mcell->raf[d] > 1) {
 	fluxlist[nflux++] = d;
       }
     }
 
-    for(int d = 0; d < nflux; ++d) {
+    DGFlux_CL(mcell, f, fluxlist[0], wn_cl + ie, 
+	      1, &macrobounds,
+	      f->clv_flux[fluxlist[0]] + ie);
+    for(int d = 1; d < nflux; ++d) {
       DGFlux_CL(mcell, f, fluxlist[d], wn_cl + ie, 
-		d == 0 ? nwaitstartmacroloop : 1,
-		d == 0 ? startmacroloop : f->clv_flux[fluxlist[d - 1]] + ie,
+		1, f->clv_flux[fluxlist[d - 1]] + ie,
 		f->clv_flux[fluxlist[d]] + ie);
     }
     
     DGVolume_CL(mcell, f, wn_cl + ie,
-  		nflux > 0 ? 1 : nwaitstartmacroloop,
-  		nflux > 0 ? f->clv_flux[nflux - 1] + ie : startmacroloop,
-  		f->clv_volume + ie);
+  		1, f->clv_flux[nflux - 1] + ie, f->clv_volume + ie);
 
     if(f->use_source_cl) {
       DGSource_CL(mcell, f, tnow, wn_cl + ie, 
-		  1,
-		  f->clv_volume + ie,
-		  f->clv_source + ie);
+		  1, f->clv_volume + ie, f->clv_source + ie);
     }
     
     DGMass_CL(mcell, f,
@@ -1095,27 +1098,57 @@ void dtfield_CL(field *f, real tnow, cl_mem *wn_cl,
   	      f->clv_mass + ie);
   }
 
-  // Manage events with empty kernel
-  empty_kernel(f, nmacro, dtfielddone, done);
-
-  // Add times for sources after everything is finished
-  for(int i = 0; i < ninterfaces; ++i)
-    f->minter_time += clv_duration(f->clv_mci[i]);
-  for(int i = 0; i < nboundaryfaces; ++i)
-    f->boundary_time += clv_duration(f->clv_boundary[i]);
+  empty_kernel(f, nmacro, f->clv_mass, done);
+  
+  for(int i = 0; i < f->niwaves; ++i) {
+    for(int j = 0; j < f->iwavecount[i]; ++j) {
+      f->minter_calls++;
+      f->minter_time += clv_duration(f->clv_iwave[i][j]);
+    }
+  }
+  for(int i = 0; i < f->nbwaves; ++i) {
+    for(int j = 0; j < f->bwavecount[i]; ++j) {
+      f->boundary_calls++;
+      f->boundary_time += clv_duration(f->clv_bwave[i][j]);
+    }
+  }
   for(int ie = 0; ie < nmacro; ++ie) {
+    f->zbuf_calls++;
     f->zbuf_time += clv_duration(f->clv_zbuf[ie]);
-    if(f->use_source_cl)
+    if(f->use_source_cl) {
+      f->source_calls++;
       f->source_time += clv_duration(f->clv_source[ie]);
+    }
+    f->flux_calls++;
     f->flux_time += clv_duration(f->clv_flux[0][ie]);
-    if(ndim > 1) 
+    if(ndim > 1) {
       f->flux_time += clv_duration(f->clv_flux[1][ie]);
-    if(ndim > 2)
+      f->flux_calls++;
+    }
+    if(ndim > 2) {
+      f->flux_calls++;
       f->flux_time += clv_duration(f->clv_flux[2][ie]);
+    }
+    f->vol_calls++;
     f->vol_time += clv_duration(f->clv_volume[ie]);
+    f->mass_calls++;
     f->mass_time += clv_duration(f->clv_mass[ie]);
   }
 
+  for(int i = 0; i < f->niwaves; ++i) {
+    clReleaseEvent(cl_iwave[i]);
+  }
+  if(f->niwaves > 0)
+    free(cl_iwave);
+  
+  for(int i = 0; i < f->nbwaves; ++i) {
+    clReleaseEvent(cl_bwave[i]);
+  }
+  if(f->nbwaves > 0)
+    free(cl_bwave);
+  
+  clReleaseEvent(macrobounds);
+  clReleaseEvent(macrofaces);
 }
 
 // Set kernel arguments for first stage of RK2
@@ -1148,11 +1181,10 @@ void init_RK2_CL_stage1(MacroCell *mcell, field *f,
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
   
-  real halfdt = 0.5 * dt;
   status = clSetKernelArg(kernel,
 			  argnum++,
 			  sizeof(real),
-			  &halfdt);
+			  &dt);
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 }
@@ -1223,6 +1255,111 @@ void RK2_CL_stage2(MacroCell *mcell, field *f,
 				  nwait, wait, done);
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
+}
+
+// Time integration by a second-order Runge-Kutta algorithm, OpenCL version.
+void RK2_CL(field *f, real tmax, real dt,
+	    cl_uint nwait, cl_event *wait, cl_event *done) 
+{
+  if(dt <= 0)
+    dt = set_dt(f);
+
+  f->itermax = tmax / dt;
+  int freq = (1 >= f->itermax / 10)? 1 : f->itermax / 10;
+  int iter = 0;
+
+  cl_int status;
+
+  const int nmacro = f->macromesh.nbelems;
+  
+  cl_mem *wnp1_cl = calloc(nmacro, sizeof(cl_mem));
+  for(int ie = 0; ie < nmacro; ++ie) {
+    MacroCell *mcell = f->mcell + ie;
+    wnp1_cl[ie] = clCreateBuffer(f->cli.context,
+				 0,
+				 sizeof(real) * mcell->nreal,
+				 NULL,
+				 &status);
+    if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+    assert(status >= CL_SUCCESS);
+  }
+
+  cl_event start;
+  cl_event *stage1 =  calloc(nmacro, sizeof(cl_event));
+  cl_event *stage2 =  calloc(nmacro, sizeof(cl_event));
+  cl_event source1;
+  cl_event source2;
+
+  printf("Starting RK2_CL\n");
+  
+  struct timeval t_start;
+  gettimeofday(&t_start, NULL);
+
+  empty_kernel(f, nwait, wait, &start);
+  while(f->tnow < tmax) {
+    
+    if (iter % freq == 0)
+      printf("t=%f iter=%d/%d dt=%f\n", f->tnow, iter, f->itermax, dt);
+
+    // stage 0
+    dtfield_CL(f, f->tnow, f->wn_cl,
+	       1, &start, &source1);
+    
+    for(int ie = 0; ie < nmacro; ++ie) { 
+      MacroCell *mcell = f->mcell + ie;
+      init_RK2_CL_stage1(mcell, f, 0.5 * dt, wnp1_cl);
+      RK2_CL_stage1(mcell, f, f->wsize, 1, &source1, stage1 + ie);
+    }
+    
+    f->tnow += 0.5 * dt;
+
+    // stage 1
+    dtfield_CL(f, f->tnow, wnp1_cl,
+	       nmacro, stage1, &source2);
+    for(int ie = 0; ie < nmacro; ++ie) { 
+      MacroCell *mcell = f->mcell + ie;
+      init_RK2_CL_stage2(mcell, f, dt);
+      RK2_CL_stage2(mcell, f, f->wsize, 1, &source2, stage2 + ie);
+    }
+    
+    f->tnow += 0.5 * dt;
+
+    clWaitForEvents(nmacro, stage2);
+    for(int ie = 0; ie < nmacro; ++ie) {
+      f->rk_calls++;
+      f->rk_time += clv_duration(stage1[ie]);
+      f->rk_calls++;
+      f->rk_time += clv_duration(stage2[ie]);
+    }
+
+    iter++;
+  }
+
+  printf("t=%f iter=%d/%d dt=%f\n", f->tnow, iter, f->itermax, dt);
+  empty_kernel(f, nmacro, stage2, done);
+  
+  struct timeval t_end;
+  gettimeofday(&t_end, NULL);
+
+  // Release events
+  clReleaseEvent(start);
+  for(int ie = 0; ie < nmacro; ++ie) {
+    clReleaseEvent(stage1[ie]);
+    clReleaseEvent(stage2[ie]);
+  }
+  free(stage2);
+  free(stage1);
+
+  // Release memory
+  for(int ie = 0; ie < nmacro; ++ie) {
+    clReleaseMemObject(wnp1_cl[ie]);
+  }
+  free(wnp1_cl);
+  
+  double rkseconds = (t_end.tv_sec - t_start.tv_sec) * 1.0 // seconds
+    + (t_end.tv_usec - t_start.tv_usec) * 1e-6; // microseconds
+  printf("\nTotal RK time (s):\n%f\n", rkseconds);
+  printf("\nTotal RK time per time-step (s):\n%f\n", rkseconds / iter );
 }
 
 void RK4_CL_stageA(MacroCell *mcell, field *f, 
@@ -1344,8 +1481,7 @@ void RK4_final_inplace_CL(MacroCell *mcell, field *f,
   assert(status >= CL_SUCCESS);
 }
 
-// Time integration by a fourth-order Runge-Kutta algorithm, OpenCL
-// version.
+// Time integration by a fourth-order Runge-Kutta algorithm, OpenCL version.
 void RK4_CL(field *f, real tmax, real dt,
 	    cl_uint nwait, cl_event *wait, cl_event *done) 
 {
@@ -1353,13 +1489,16 @@ void RK4_CL(field *f, real tmax, real dt,
     dt = set_dt(f);
 
   f->itermax = tmax / dt;
-  int freq = (1 >= f->itermax / 10)? 1 : f->itermax / 10;
+  int nouts = 10;
+
+  int freq = (1 >= f->itermax / nouts)? 1 : f->itermax / nouts;
   int iter = 0;
 
   cl_int status;  
 
   const int nmacro = f->macromesh.nbelems;
 
+  // Allocate memory for RK stages
   cl_mem *l1 = calloc(nmacro, sizeof(cl_mem));
   cl_mem *l2 = calloc(nmacro, sizeof(cl_mem));
   cl_mem *l3 = calloc(nmacro, sizeof(cl_mem));
@@ -1396,6 +1535,7 @@ void RK4_CL(field *f, real tmax, real dt,
   cl_mem *w = f->wn_cl;
   cl_mem *dtw = f->dtwn_cl;
 
+  // Set up events for source and stage.
   cl_event source0;
   cl_event source1;
   cl_event source2;
@@ -1405,8 +1545,9 @@ void RK4_CL(field *f, real tmax, real dt,
   cl_event *stage1 = calloc(nmacro, sizeof(cl_event));
   cl_event *stage2 = calloc(nmacro, sizeof(cl_event));
   cl_event *stage3 = calloc(nmacro, sizeof(cl_event));
-  for(int ie = 0; ie < nmacro; ++ie)
-    empty_kernel(f, nwait, wait, stage3 + ie);
+
+  cl_event start;
+  empty_kernel(f, nwait, wait, &start);
   
   printf("Starting RK4_CL\n");
 
@@ -1414,12 +1555,14 @@ void RK4_CL(field *f, real tmax, real dt,
   gettimeofday(&t_start, NULL);
 
   while(f->tnow < tmax) {
+    
     if (iter % freq == 0)
       printf("t=%f iter=%d/%d dt=%f\n", f->tnow, iter, f->itermax, dt);
 
+    
     // stage 0
     dtfield_CL(f, f->tnow, w, 
-	       nmacro, stage3, &source0);
+	       1, &start, &source0);
     for(int ie = 0; ie < nmacro; ++ie) { 
       MacroCell *mcell = f->mcell + ie;
       RK4_CL_stageA(mcell, f, l1 + ie, w + ie, dtw,
@@ -1450,7 +1593,7 @@ void RK4_CL(field *f, real tmax, real dt,
     }
     
     f->tnow += 0.5 * dt;
-    
+        
     // stage 3
     dtfield_CL(f, f->tnow, l3, 
 	       nmacro, stage2, &source3);
@@ -1461,34 +1604,39 @@ void RK4_CL(field *f, real tmax, real dt,
 			   1, &source3, stage3 + ie);
     }
 
-    // TODO: this includes a wait, so we might want to disable it.
+    clWaitForEvents(nmacro, stage3);
+
     for(int ie = 0; ie < nmacro; ++ie) {
+      f->rk_calls++;
       f->rk_time += clv_duration(stage0[ie]);
+      f->rk_calls++;
       f->rk_time += clv_duration(stage1[ie]);
+      f->rk_calls++;
       f->rk_time += clv_duration(stage2[ie]);
+      f->rk_calls++;
       f->rk_time += clv_duration(stage3[ie]);
     }
-      
+    
     iter++;
   }
 
   empty_kernel(f, nmacro, stage3, done);
+  printf("t=%f iter=%d/%d dt=%f\n", f->tnow, iter, f->itermax, dt);
   
   struct timeval t_end;
   gettimeofday(&t_end, NULL); 
-
-  // TODO: free cl_mems
   
   double rkseconds = (t_end.tv_sec - t_start.tv_sec) * 1.0 // seconds
     + (t_end.tv_usec - t_start.tv_usec) * 1e-6; // microseconds
   printf("\nTotal RK time (s):\n%f\n", rkseconds);
   printf("\nTotal RK time per time-step (s):\n%f\n", rkseconds / iter );
   
+  // Release events
+  clReleaseEvent(start);
   clReleaseEvent(source0);
   clReleaseEvent(source1);
   clReleaseEvent(source2);
   clReleaseEvent(source3);
-
   for(int ie = 0; ie < nmacro; ++ie) {
     clReleaseEvent(stage0[ie]);
     clReleaseEvent(stage1[ie]);
@@ -1499,107 +1647,25 @@ void RK4_CL(field *f, real tmax, real dt,
   free(stage1);
   free(stage2);
   free(stage3);
-  
-  printf("\nt=%f iter=%d/%d dt=%f\n", f->tnow, iter, f->itermax, dt);
+
+  // Release buffers
+  for(int ie = 0; ie < nmacro; ++ie) {
+    clReleaseMemObject(l1[ie]);
+    clReleaseMemObject(l2[ie]);
+    clReleaseMemObject(l3[ie]);
+  }
+  free(l1);
+  free(l2);
+  free(l3);
 }
 
-
-// Time integration by a second-order Runge-Kutta algorithm, OpenCL
-// version.
-void RK2_CL(field *f, real tmax, real dt,
-	    cl_uint nwait, cl_event *wait, cl_event *done) 
+void printtimes(char* name, cl_ulong ns, int ncall, double N)
 {
-  if(dt <= 0)
-    dt = set_dt(f);
-
-  f->itermax = tmax / dt;
-  int freq = (1 >= f->itermax / 10)? 1 : f->itermax / 10;
-  int iter = 0;
-
-  cl_int status;
-
-  const int nmacro = f->macromesh.nbelems;
+  double s = 1e-9 * ns;
+  double meantime = ncall > 0 ? s / ncall : 0.0;
   
-  cl_mem *wnp1_cl = calloc(nmacro, sizeof(cl_mem));
-  for(int ie = 0; ie < nmacro; ++ie) {
-    MacroCell *mcell = f->mcell + ie;
-    
-    wnp1_cl[ie] = clCreateBuffer(f->cli.context,
-				 0,
-				 sizeof(real) * mcell->nreal,
-				 NULL,
-				 &status);
-    if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
-    assert(status >= CL_SUCCESS);
-  }
-
-  cl_event *stage1 =  calloc(nmacro, sizeof(cl_event));
-  cl_event *stage2 =  calloc(nmacro, sizeof(cl_event));
-  for(int ie = 0; ie < nmacro; ++ie) {
-    empty_kernel(f, nwait, wait, stage2 + ie);
-  }
-  
-  cl_event source1;
-  cl_event source2;
-
-  printf("Starting RK2_CL\n");
-  
-  struct timeval t_start;
-  gettimeofday(&t_start, NULL);
-
-  while(f->tnow < tmax) {
-    //printf("iter: %d\n", iter);
-    if (iter % freq == 0)
-      printf("t=%f iter=%d/%d dt=%f\n", f->tnow, iter, f->itermax, dt);
-    
-    dtfield_CL(f, f->tnow, f->wn_cl,
-	       nmacro, stage2, &source1);
-    
-    for(int ie = 0; ie < nmacro; ++ie) { 
-      MacroCell *mcell = f->mcell + ie;
-      init_RK2_CL_stage1(mcell, f, dt, wnp1_cl);
-      RK2_CL_stage1(mcell, f, f->wsize, 1, &source1, stage1 + ie);
-    }
-    
-    f->tnow += 0.5 * dt;
-
-    dtfield_CL(f, f->tnow, wnp1_cl,
-	       nmacro, stage1, &source2);
-    for(int ie = 0; ie < nmacro; ++ie) { 
-      MacroCell *mcell = f->mcell + ie;
-      init_RK2_CL_stage2(mcell, f, dt);
-      RK2_CL_stage2(mcell, f, f->wsize, 1, &source2, stage2 + ie);
-    }
-    
-    f->tnow += 0.5 * dt;
-
-    // TODO: this includes a wait, so we might want to disable it.
-    for(int ie = 0; ie < nmacro; ++ie) {
-      f->rk_time += clv_duration(stage1[ie]);
-      f->rk_time += clv_duration(stage2[ie]);
-    }
-
-    iter++;
-  }
-
-  empty_kernel(f, nmacro, stage2, done);
-  
-  struct timeval t_end;
-  gettimeofday(&t_end, NULL);
-    
-  for(int ie = 0; ie < nmacro; ++ie) {
-    clReleaseEvent(stage1[ie]);
-    clReleaseEvent(stage2[ie]);
-  }
-  free(stage2);
-  free(stage1);
-  
-  double rkseconds = (t_end.tv_sec - t_start.tv_sec) * 1.0 // seconds
-    + (t_end.tv_usec - t_start.tv_usec) * 1e-6; // microseconds
-  printf("\nTotal RK time (s):\n%f\n", rkseconds);
-  printf("\nTotal RK time per time-step (s):\n%f\n", rkseconds / iter );
- 
-  printf("\nt=%f iter=%d/%d dt=%f\n", f->tnow, iter, f->itermax, dt);
+  printf("%s%f%%\t%gs\t%d\t%g\n", 
+	 name, ns * N, s, ncall, meantime);
 }
 
 void show_cl_timing(field *f)
@@ -1619,48 +1685,30 @@ void show_cl_timing(field *f)
   total += f->rk_time;
   total += f->flux_time;
   
-  real N = 100.0 / total;
+  double N = 100.0 / total;
 
   cl_ulong ns;
+  int ncall;
+  
+  printf("Kernel name:             percent\ttotal   \tncalls\tmean time\n");
 
-  ns = f->zbuf_time;
-  printf("set_buf_to_zero_cl time:      %f%% \t%luns \t%fs\n", 
-	 ns * N, (unsigned long) ns, 1e-9 * ns);
-
-  ns = f->minter_time;
-  printf("DGMacroCellInterface_CL time: %f%% \t%luns \t%fs\n", 
-	 ns * N, (unsigned long) ns, 1e-9 * ns);
-
-  ns = f->boundary_time;
-  printf("DGBoundary time:              %f%% \t%luns \t%fs\n", 
-	 ns * N, (unsigned long) ns, 1e-9 * ns);
-
-  ns = f->vol_time;
-  printf("DGVolume_CL time:             %f%% \t%luns \t%fs\n", 
-	 ns * N, (unsigned long) ns, 1e-9 * ns);
-
-  ns = f->flux_time;
-  printf("DGFlux_CL time:               %f%% \t%luns \t%fs\n", 
-	 ns * N, (unsigned long) ns, 1e-9 * ns);
-
-  ns = f->mass_time;
-  printf("DGMass_CL time:               %f%% \t%luns \t%fs\n", 
-	 ns * N, (unsigned long) ns, 1e-9 * ns);
-
-  ns = f->source_time;
-  printf("DGSource_CL time:             %f%% \t%luns \t%fs\n", 
-	 ns * N, (unsigned long) ns, 1e-9 * ns);
-
-  ns = f->rk_time;
-  printf("rk time:                      %f%% \t%luns \t%fs\n", 
-	 ns*N, (unsigned long) ns, 1e-9 * ns);
+  
+  printtimes("set_buf_to_zero_cl:      ", f->zbuf_time, f->zbuf_calls, N);
+  printtimes("DGMacroCellInterface_CL: ", f->minter_time, f->minter_calls, N); 
+  printtimes("DGBoundary:              ", f->boundary_time, f->boundary_calls,
+	     N); 
+  printtimes("DGVolume_CL:             ", f->vol_time, f->vol_calls, N);
+  printtimes("DGFlux_CL:               ", f->flux_time, f->flux_calls, N);
+  printtimes("DGMass_CL:               ", f->mass_time, f->mass_calls, N);
+  printtimes("DGSource_CL:             ", f->source_time, f->source_calls, N);
+  printtimes("rk:                      ", f->rk_time, f->rk_calls, N);
 
   printf("\n");
   
   ns = total;
   double total_time = 1e-9 * ns;
-  printf("total time:                   %f%% \t%luns \t%fs\n", 
-	 ns*N, (unsigned long) ns, total_time);
+  printf("total:                   %f%%\t%fs\n", 
+	 ns*N, total_time);
 
   printf("\n");
 }

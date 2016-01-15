@@ -4,8 +4,9 @@
 #include <assert.h>
 #include <math.h>
 
-int TestfieldRK2(void){
-  int test = true;
+int TestfieldRK2()
+{
+  int retval = 0;
 
   field f;
   init_empty_field(&f);
@@ -112,16 +113,18 @@ int TestfieldRK2(void){
 
   real tolerance = 0.001;
 
-  test = dd < tolerance;
+  if(dd > tolerance)
+    retval += 1;
   
-  return test;
+  return retval;
 }
 
-int main(void) {
-  int resu = TestfieldRK2();
-  if(resu) 
+int main()
+{
+  int retval = TestfieldRK2();
+  if(retval == 0) 
     printf("field RK2 test OK !\n");
   else 
     printf("field RK2 test failed !\n");
-  return !resu;
+  return retval;
 } 

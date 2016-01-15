@@ -1,25 +1,26 @@
-//#include "macromesh.h"
-//#include "geometry.h"
-//#include "interpolation.h"
 #include "test.h"
 #include "model.h"
-//#include "field.h"
 #include <stdbool.h>
 
 #include <stdio.h>
 #include <math.h>
 #include <assert.h>
 
-int main(void) {
+int main()
+{
   // Unit tests
-  int resu = TestModel();
-  if (resu) printf("Model test OK !\n");
-  else printf("Model test failed !\n");
-  return !resu;
+  int retval = TestModel();
+  if(retval == 0)
+    printf("Model test OK !\n");
+  else
+    printf("Model test failed !\n");
+  return retval;
 } 
 
-int TestModel(void){
-  int test = true;
+int TestModel()
+{
+  int retval = 0;
+  
   // Creation of a simple transport model
   Model tr;
   tr.cfl = 0.05;
@@ -31,20 +32,29 @@ int TestModel(void){
 
   real wL[tr.m];
   real wR[tr.m];
-  real flux1[tr.m], flux2[tr.m];
+  real nflux[tr.m];
+  real bflux[tr.m];
 
-  real x[3] = {1, 1, 2};
-  real t = 0;
+  for(int iv = 0; iv < tr.m; ++iv) {
+    wL[iv] = 0.0;
+    wR[iv] = 0.0;
+    nflux[iv] = 0.0;
+    bflux[iv] = 0.0;
+  }
+
+  real x[3] = {1.0, 1.0, 2.0};
+  real t = 0.0;
   real vn[3] = {sqrt(1.0 / 3.0), sqrt(1.0 / 3.0), sqrt(1.0 / 3.0)};
-
-  real vmax = 1.0;
+  
   tr.InitData(x, wR);
-  tr.NumFlux(wL, wR, vn, flux1);
-  printf("NumFlux %f \n", flux1[0]);
-  tr.BoundaryFlux(x, t, wL, vn, flux2);
-  printf("BoundaryFlux %f \n", flux2[0]);
+  tr.NumFlux(wL, wR, vn, nflux);
+  printf("NumFlux %f \n", nflux[0]);
+  tr.BoundaryFlux(x, t, wL, vn, bflux);
+  printf("BoundaryFlux %f \n", bflux[0]);
 
-  real err = fabs(flux2[0] - flux1[0]);
-  test = (err < 1e-8);
-  return test;
-};
+  real err = fabs(bflux[0] - nflux[0]);
+  if(err > 1e-8)
+    retval++;
+  
+  return retval;
+}

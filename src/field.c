@@ -463,6 +463,15 @@ void init_field_cl(field *f)
   init_field_MacroFaces_cl(f);
   
   // Set timers to zero
+  f->zbuf_calls = 0;
+  f->mass_calls = 0;
+  f->vol_calls = 0;
+  f->flux_calls = 0;
+  f->minter_calls = 0;
+  f->boundary_calls = 0;
+  f->source_calls = 0;
+  f->rk_calls = 0;
+
   f->zbuf_time = 0;
   f->mass_time = 0;
   f->vol_time = 0;
@@ -845,6 +854,99 @@ void init_field_macrointerfaces(field *f)
   }
 }
 
+void colour_mface_graph(const field *f, const int *face, const int nfaces,
+			int *nwaves, int **wavecount, int ***wave)
+{
+  *nwaves = 0;
+  *wavecount = calloc(1, sizeof(int));
+  *wave = calloc(1, sizeof(int*));
+
+  int *facecopy = calloc(nfaces, sizeof(int));
+  for(int i = 0; i < nfaces; ++i) {
+    facecopy[i] = face[i];
+  }
+  
+  bool go = true;
+  int *thiswave = calloc(nfaces, sizeof(int));
+  while(go) {
+
+    int nwave = 0;
+    for(int i = 0; i < nfaces; ++i) {
+      int ifa = facecopy[i];
+      if(ifa != -1) {
+	bool addme = true;
+	MacroFace *mfaceA = f->mface + i;
+      
+	for(int j = 0; j < nwave; ++j) {
+	  if(touching(mfaceA, f->mface + thiswave[j])) {
+	    addme = false;
+	    break;
+	  }
+	}
+      
+	if(addme) {
+	  thiswave[nwave++] = ifa;
+	  facecopy[i] = -1;
+	}
+      
+      }
+    }
+
+    /*
+    printf("wave %d\tnwave: %d\n", *nwaves, nwave);
+    for(int j = 0; j < nwave; ++j) {
+      printf("\t%d\n", thiswave[j]);
+    }
+    */
+    
+    if(nwave == 0) {
+      go = false;
+    } else {
+      // Add the wave to the waves.
+      int **newwave = calloc(*nwaves + 1, sizeof(int*));
+      int *newwavecount = calloc(*nwaves + 1, sizeof(int));
+      for(int i = 0; i < *nwaves; ++i) {
+	newwave[i] = wave[0][i];
+	newwavecount[i] = wavecount[0][i];
+	//printf("\tnewwavecount: %d\n", newwavecount[i]);
+      }
+
+      newwave[*nwaves] = calloc(nwave, sizeof(int));
+      for(int j = 0; j < nwave; ++j) {
+	newwave[*nwaves][j] = thiswave[j];
+      }
+      newwavecount[*nwaves] = nwave;
+
+      int **tempwave = *wave;
+      *wave = newwave;
+      free(tempwave);
+
+      int *tempcount = *wavecount;
+      *wavecount = newwavecount;
+      free(tempcount);
+
+      /* for(int i = 0; i < *nwaves + 1; ++i) { */
+      /* 	printf("\twavecount: %d\n", wavecount[0][i]); */
+      /* } */
+
+      *nwaves += 1;
+    }
+
+  }
+
+  free(thiswave);
+
+  /*
+  for(int i = 0; i < *nwaves; ++i) {
+    int wcount = wavecount[0][i];
+    printf("wave %d\tnwaves: %d\n", i, wcount);
+    for(int j = 0; j < wcount; ++j) {
+      printf("\tifa: %d\n", wave[0][i][j]);
+    }
+  }
+  */
+}
+
 void init_field_macrofaces(field *f)
 {
   f->mface = calloc(f->macromesh.nbfaces, sizeof(MacroFace));
@@ -864,6 +966,51 @@ void init_field_macrofaces(field *f)
   }
   
   init_field_macrointerfaces(f);
+
+  const int ninterfaces = f->macromesh.nmacrointerfaces;
+  colour_mface_graph(f, f->macromesh.macrointerface, ninterfaces,
+		     &f->niwaves, &f->iwavecount, &f->iwave);
+
+  f->clv_iwave = calloc(f->niwaves, sizeof(cl_event*));
+  for(int i = 0; i < f->niwaves; ++i) {
+    f->clv_iwave[i] = calloc(f->iwavecount[i], sizeof(cl_event));
+  }
+  
+  
+  // FIXME: comment this out when things are working.
+  for(int i = 0; i < f->niwaves; ++i) {
+    printf("wave %d:\t%d interfaces\n", i, f->iwavecount[i]);
+    /*
+    for(int j = 0; j < f->iwavecount[i]; ++j) {
+      int ifa = f->iwave[i][j];
+      MacroFace *mface = f->mface + ifa;
+      printf("\t%d\tmface %d:\tieL: %d\tieR: %d\t\n",
+	     j, ifa, mface->ieL, mface->ieR);
+    }
+    */
+  }
+  
+  const int nboundaryfaces = f->macromesh.nboundaryfaces;
+  colour_mface_graph(f, f->macromesh.boundaryface, nboundaryfaces,
+		     &f->nbwaves, &f->bwavecount, &f->bwave);
+
+  f->clv_bwave = calloc(f->nbwaves, sizeof(cl_event*));
+  for(int i = 0; i < f->nbwaves; ++i) {
+    f->clv_bwave[i] = calloc(f->bwavecount[i], sizeof(cl_event));
+  }
+  
+  // FIXME: comment this out when things are working.
+  for(int i = 0; i < f->nbwaves; ++i) {
+    printf("wave %d:\t%d boundaries\n", i, f->bwavecount[i]);
+    /*
+    for(int j = 0; j < f->bwavecount[i]; ++j) {
+      int ifa = f->bwave[i][j];
+      MacroFace *mface = f->mface + ifa;
+      printf("\t%d\tmface %d:\tieL: %d\tieR: %d\t\n",
+	     j, ifa, mface->ieL, mface->ieR);
+    }
+    */
+  }
 }
 
 void setMacroCellmass(MacroCell *mcell, field *f)
@@ -1006,7 +1153,6 @@ void free_field(field *f)
 
 #ifdef _WITH_OPENCL
   //  cl_int status;
-
 
 #endif
 
@@ -1443,6 +1589,62 @@ void DGSubCellInterface(MacroCell *mcell, field *f, real *wmc, real *dtwmc)
       } // subcell icl2 loop
     } // subcell icl1 loop
   } // subcell icl0 loop
+}
+
+bool touching(const MacroFace *A, const MacroFace *B)
+{
+  if(A->ieR != -1) {
+    if(B->ieR  != -1) {
+      // Both A and B are interfaces
+
+      if(A->ieL != A->ieR &&
+	 B->ieL != B->ieR &&
+	 A->ieL != B->ieL &&
+	 A->ieR != B->ieR &&
+	 A->ieL != B->ieR &&
+	 A->ieR != B->ieL) {
+	// If none of the macrocells are the same, they are not touching. 
+	return false;
+      }
+
+      // TODO:
+      // If the faces are on opposite sides, they are not touching.
+    } else {
+      //A is an interface, B is a boundary
+
+      if(A->ieL != A->ieR &&
+	 A->ieL != B->ieL &&
+	 A->ieR != B->ieL) {
+	// If none of the macrocells are the same, they are not touching. 
+	return false;
+      }
+
+      // TODO:
+      // If the faces are on opposite sides, they are not touching.
+    }
+  } else {
+    if(B->ieR  != -1) {
+      // A is a boundary, B is an interface
+
+      if(B->ieL != B->ieR &&
+	 B->ieL != A->ieL &&
+	 B->ieR != A->ieL) {
+	// If none of the macrocells are the same, they are not touching. 
+	return false;
+      }
+
+      // TODO:
+      // If the faces are on opposite sides, they are not touching.
+    } else {
+      // A is a boundary, B is a boundary
+      if(A->ieL != B->ieL) {
+	// Boundaries do not touch if they are not on the same macrocell.
+	return false;
+      }
+    }
+  }
+    
+  return true;
 }
 
 // Compute the Discontinuous Galerkin inter-macrocells boundary terms
@@ -1971,6 +2173,9 @@ void RK2(field *f, real tmax, real dt)
     f->Diagnostics = malloc(size_diags * sizeof(real));
 
   while(f->tnow < tmax) {
+    if(f->tnow  + dt > tmax)
+      dt = tmax - f->tnow;
+    
     if (iter % freq == 0)
       printf("t=%f iter=%d/%d dt=%f\n", f->tnow, iter, f->itermax, dt);
 
@@ -1988,9 +2193,10 @@ void RK2(field *f, real tmax, real dt)
       f->update_after_rk(f, f->wn);
 
     iter++;
-    f->iter_time=iter;
+    f->iter_time = iter;
   }
   printf("t=%f iter=%d/%d dt=%f\n", f->tnow, iter, f->itermax, dt);
+
   free(wnp1);
 }
 
@@ -2077,11 +2283,11 @@ void RK4(field *f, real tmax, real dt)
 }
 
 // Compute the normalized L2 distance with the imposed data
-real L2error(field *f) {
-  //int param[8] = {f->model.m, _DEGX, _DEGY, _DEGZ, _RAFX, _RAFY, _RAFZ, 0};
+real L2error(field *f)
+{
   real error = 0;
   real mean = 0;
-
+  
   for (int ie = 0; ie < f->macromesh.nbelems; ie++) {
     MacroCell *mcell = f->mcell + ie;
 
@@ -2094,8 +2300,9 @@ real L2error(field *f) {
 	w[iv] = f->wn[imem];
       }
 
-      real wex[f->model.m];
-      real wpg, det;
+      real wexact[f->model.m];
+      real wpg;
+      real det;
       // Compute wpg, det, and the exact solution
       { 
 	real xphy[3], xpgref[3];
@@ -2112,13 +2319,13 @@ real L2error(field *f) {
 	det = dot_product(dtau[0], codtau[0]);
 
 	// Get the exact value
-	f->model.ImposedData(xphy, f->tnow, wex);
+	f->model.ImposedData(xphy, f->tnow, wexact);
       }
 
       for(int iv = 0; iv < f->model.m; iv++) {
-	real diff = w[iv] - wex[iv];
+	real diff = w[iv] - wexact[iv];
         error += diff * diff * wpg * det;
-        mean += wex[iv] * wex[iv] * wpg * det;
+        mean += wexact[iv] * wexact[iv] * wpg * det;
       }
     }
   }
