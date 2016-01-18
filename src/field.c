@@ -59,9 +59,9 @@ real min_grid_spacing(field *f)
     }
     
     for(int ifa = 0; ifa < 6; ifa++) {
-      // loop on the faces
       for(int ipgf = 0; ipgf < NPGF(mcell->raf, mcell->deg, ifa); ipgf++) {
-	real xpgref[3], wpg;
+	real xpgref[3];
+	real wpg;
 	// get the coordinates of the Gauss point
 	int *deg = f->interp_param + 1;
 	int *raf = f->interp_param + 4;

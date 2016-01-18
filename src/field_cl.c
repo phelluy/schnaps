@@ -511,6 +511,7 @@ void ExtractedDGBoundary_CL(MacroFace *mface, field *f, real tnow,
 // wn_cl is an array of cl_mems, one per macrocell.
 void init_DGMacroCellInterface_CL(field *f, 
 				  int ieL, int ieR, int locfaL, int locfaR,
+				  int Rcorner,
 				  cl_mem *wn_cl)
 {
   cl_int status;
@@ -583,6 +584,13 @@ void init_DGMacroCellInterface_CL(field *f,
                           f->dtwn_cl + ieR);
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
+  
+  status = clSetKernelArg(kernel,
+                          argnum++,
+                          sizeof(int),
+                          &Rcorner);
+  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status >= CL_SUCCESS);
 }
 
 void DGMacroCellInterface_CL(MacroFace *mface, field *f, cl_mem *wn_cl,
@@ -610,7 +618,7 @@ void DGMacroCellInterface_CL(MacroFace *mface, field *f, cl_mem *wn_cl,
 
   // Set the remaining loop-dependant kernel arguments
   init_DGMacroCellInterface_CL(f, 
-			       ieL, ieR, locfaL, locfaR, 
+			       ieL, ieR, locfaL, locfaR, mface->Rcorner,
 			       wn_cl);
 
   status = clEnqueueNDRangeKernel(f->cli.commandqueue,

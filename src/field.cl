@@ -1734,19 +1734,20 @@ void ExtractedDGBoundaryFlux(__constant int *param,
   
 }
 
-// Compute the Discontinuous Galerkin inter-macrocells boundary terms.
-// Second implementation with a loop on the faces.
+// DGMacroCellInterface using direct access to neighbouring cells (ie
+// without a Newton iteration).
 __kernel
 void DGMacroCellInterface(__constant int *param,        // interp param
-                          int locfaL,                   // left face index
-			  int locfaR,                   // right face index
-                          __constant real *physnodeL,   // left physnode
-			  __constant real *physnodeR,   // right physnode
-                          __global real *wnL,           // field 
-                          __global real *dtwnL,         // time derivative
-                          __global real *wnR,           // field 
-                          __global real *dtwnR          // time derivative
-			  )
+			   int locfaL,                   // left face index
+			   int locfaR,                   // right face index
+			   __constant real *physnodeL,   // left physnode
+			   __constant real *physnodeR,   // right physnode
+			   __global real *wnL,           // field 
+			   __global real *dtwnL,         // time derivative
+			   __global real *wnR,           // field 
+			   __global real *dtwnR,          // time derivative
+			   const int Rcorner
+			   )
 {
   // Index of the point on the face.
   int ipgfL = get_global_id(0);
@@ -1755,6 +1756,35 @@ void DGMacroCellInterface(__constant int *param,        // interp param
   const int deg[3] = {param[1], param[2], param[3]};
   const int raf[3] = {param[4], param[5], param[6]};
 
+  const int dnpg[3] = {deg[0] + 1, deg[1] + 1, deg[2] + 1};
+  
+  const int axis_permut[6][4] = { {0, 2, 1, 0},
+				  {1, 2, 0, 1},
+				  {2, 0, 1, 1},
+				  {2, 1, 0, 0},
+				  {0, 1, 2, 1},
+				  {1, 0, 2, 0} };
+
+  int paxisL[4] = {axis_permut[locfaL][0],
+		   axis_permut[locfaL][1],
+		   axis_permut[locfaL][2],
+		   axis_permut[locfaL][3] } ;
+
+  int paxisR[4] = {axis_permut[locfaR][0],
+		   axis_permut[locfaR][1],
+		   axis_permut[locfaR][2],
+		   axis_permut[locfaR][3] } ;
+  
+  int d0L = paxisL[0];
+  int d1L = paxisL[1];
+  int d2L = paxisL[2];
+  int signL = paxisL[3] == 0 ? -1 : 1;
+
+  int d0R = paxisR[0];
+  int d1R = paxisR[1];
+  int d2R = paxisR[2];
+  int signR = paxisR[3] == 0 ? -1 : 1;
+    
   real xpgref[3]; // reference point for L
   real xpgref_in[3]; // reference point slightly in R
   real wpg;
@@ -1767,7 +1797,7 @@ void DGMacroCellInterface(__constant int *param,        // interp param
   ipg_to_xyz(raf, deg, icL, ixL, &ipgL);
 
   compute_xpgin(raf, deg, icL, ixL, locfaL, xpgref_in);
-  
+
   // Normal vector at gauss point based on xpgref
   real vnds[3];
   {
@@ -1783,6 +1813,52 @@ void DGMacroCellInterface(__constant int *param,        // interp param
     ComputeNormal(codtau, locfaL, vnds);
   }
 
+#if 1
+  int icR[3];
+  icR[d2R] = signR == -1 ?  0 : raf[d2R] - 1;
+  
+  int ixR[3];
+  ixR[d2R] = signR == -1 ?  0 : dnpg[d2R] - 1;
+  switch(Rcorner) {
+    case 0:
+      // Rcorner = 0: R0 = L1, R1 = L0
+      icR[d0R] = icL[d1L];
+      icR[d1R] = icL[d0L];
+
+      ixR[d0R] = ixL[d1L];
+      ixR[d1R] = ixL[d0L];
+      break;
+
+    case 1:
+      // Rcorner = 1: R0 = L0, R1 = -L1
+      icR[d0R] = icL[d0L];
+      icR[d1R] = raf[d1L] - icL[d1L] - 1;
+	      
+      ixR[d0R] = ixL[d0L];
+      ixR[d1R] = dnpg[d1L] - ixL[d1L] - 1;
+      break;
+
+    case 2:
+      // Rcorner = 2: R0 = -L1, R1 = -L0
+      icR[d0R] = raf[d0L] - icL[d1L] - 1;
+      icR[d1R] = raf[d1L] - icL[d0L] - 1;
+	      
+      ixR[d0R] = dnpg[d0L] - ixL[d1L] - 1;
+      ixR[d1R] = dnpg[d1L] - ixL[d0L] - 1;
+      break;
+	      
+    case 3:
+      // Rcorner = 3: R0 = -L0, R1 = -L1
+      icR[d0R] = raf[d0L] - icL[d0L] - 1;
+      icR[d1R] = icL[d1L];
+	      
+      ixR[d0R] = dnpg[d0L] - ixL[d0L] - 1;
+      ixR[d1R] = ixL[d1L];
+      break;
+  }
+  int ipgR = xyz_to_ipg(raf, deg, icR, ixR); 
+
+#else
   // Find the volumic index for the opposite side:
   int ipgR;
   {
@@ -1810,6 +1886,7 @@ void DGMacroCellInterface(__constant int *param,        // interp param
     Phy2Ref(physnodeR, xphy, xrefR);
     ipgR = ref_ipg(raf, deg, xrefR);
   }
+#endif
   
   real wL[_M];
   real wR[_M];
