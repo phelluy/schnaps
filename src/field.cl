@@ -1778,15 +1778,13 @@ void DGMacroCellInterface(__constant int *param,        // interp param
   int d0L = paxisL[0];
   int d1L = paxisL[1];
   int d2L = paxisL[2];
-  int signL = paxisL[3] == 0 ? -1 : 1;
 
   int d0R = paxisR[0];
   int d1R = paxisR[1];
   int d2R = paxisR[2];
-  int signR = paxisR[3] == 0 ? -1 : 1;
+  int signR = paxisR[3];
     
   real xpgref[3]; // reference point for L
-  real xpgref_in[3]; // reference point slightly in R
   real wpg;
 
   // Compute volumic index in the left MacroCell.
@@ -1795,8 +1793,6 @@ void DGMacroCellInterface(__constant int *param,        // interp param
   int icL[3];
   int ixL[3];
   ipg_to_xyz(raf, deg, icL, ixL, &ipgL);
-
-  compute_xpgin(raf, deg, icL, ixL, locfaL, xpgref_in);
 
   // Normal vector at gauss point based on xpgref
   real vnds[3];
@@ -1813,12 +1809,15 @@ void DGMacroCellInterface(__constant int *param,        // interp param
     ComputeNormal(codtau, locfaL, vnds);
   }
 
-#if 1
+  // Direct access using corner-matching
   int icR[3];
-  icR[d2R] = signR == -1 ?  0 : raf[d2R] - 1;
+  //icR[d2R] = signR == 0 ?  0 : raf[d2R] - 1;
+  icR[d2R] = select(0, raf[d2R] - 1, signR);
   
   int ixR[3];
-  ixR[d2R] = signR == -1 ?  0 : dnpg[d2R] - 1;
+  //ixR[d2R] = signR == 0 ?  0 : dnpg[d2R] - 1;
+  ixR[d2R] = select(0, dnpg[d2R] - 1, signR);
+  
   switch(Rcorner) {
     case 0:
       // Rcorner = 0: R0 = L1, R1 = L0
@@ -1857,36 +1856,6 @@ void DGMacroCellInterface(__constant int *param,        // interp param
       break;
   }
   int ipgR = xyz_to_ipg(raf, deg, icR, ixR); 
-
-#else
-  // Find the volumic index for the opposite side:
-  int ipgR;
-  {
-    real gradphi[20][4];
-    compute_gradphi(xpgref_in, gradphi);
-
-    real xphy[3];
-    compute_xphy(physnodeL, gradphi, xphy);
-    
-#if defined(_PERIODX) || defined(_PERIODY) || defined(_PERIODZ)
-#ifndef _PERIODX
-#define _PERIODX -1
-#endif
-#ifndef _PERIODY
-#define _PERIODY -1
-#endif
-#ifndef _PERIODZ
-#define _PERIODZ -1
-#endif
-    real period[3] = {_PERIODX, _PERIODY, _PERIODZ};
-    PeriodicCorrection(xphy, period);
-#endif
-
-    real xrefR[3];
-    Phy2Ref(physnodeR, xphy, xrefR);
-    ipgR = ref_ipg(raf, deg, xrefR);
-  }
-#endif
   
   real wL[_M];
   real wR[_M];
