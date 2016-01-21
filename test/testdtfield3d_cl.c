@@ -62,15 +62,14 @@ int TestDtfield3D_CL()
 
   CopyfieldtoGPU(&f);  
   
-  cl_event clv_dtfield = clCreateUserEvent(f.cli.context, NULL);
-
   real tnow = 0.0;
   
-  dtfield_CL(&f, tnow, f.wn_cl, 0, NULL, &clv_dtfield);
-  clWaitForEvents(1, &clv_dtfield);
+  dtfield_CL(&f, tnow, f.wn_cl, 0, 0, 0);
+  clFinish(f.cli.commandqueue);
 
   CopyfieldtoCPU(&f);
-
+  clFinish(f.cli.commandqueue);
+  
   // Displayfield(&f);
   show_cl_timing(&f);
 
