@@ -94,7 +94,6 @@ int TestKernelInterface()
     MacroFace *mface = f.mface + ifa;
     int ieL = mface->ieL;
     MacroCell *mcellL = f.mcell + ieL;
-    //ExtractInterface_CL(mcellL, &f, mface->locfaL, f.wn_cl[ieL], 0, 0, 0);
     ExtractedDGBoundary_CL(mface, &f, tnow, 0, 0, 0);
     clFinish(f.cli.commandqueue);
   }
@@ -108,9 +107,7 @@ int TestKernelInterface()
       clFinish(f.cli.commandqueue);
     }
   }
-  
-  // FIXME: add actual computation, addition to dtwn_cl, and comparisons
-  
+    
   CopyfieldtoCPU(&f);
  
   // OpenCL version
@@ -149,7 +146,7 @@ int TestKernelInterface()
       if(error > maxerr) 
 	maxerr = error;
     }
-#if 0
+#if 1
     // FIXME: re-instate
     printf("maxerr between OpencL-extract and OpenCL: %f\n", maxerr);
     if(maxerr > tolerance)

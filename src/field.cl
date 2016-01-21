@@ -1552,7 +1552,7 @@ void DGMass(__constant int *param,      // interp param
 
 __kernel
 void ExtractInterface(__constant int *param,   // interp param
-		      const int ifa,
+		      const int locfa,
 		      const __global real *wn, // volumic input
 		      __global real *wface     // output
 		      )
@@ -1562,29 +1562,22 @@ void ExtractInterface(__constant int *param,   // interp param
   const int raf[3] = {param[4], param[5], param[6]};
   
   const int ipgf = get_global_id(0);
-  const int iv = get_global_id(1);
 
-  int pic[3];
-  int pix[3];
+  // FIXME: xref and wpg are useless and should not be computed
+  real xref[3];
+  real wpg;
+  int ipgL = ref_pg_face(deg, raf, locfa, ipgf, xref, &wpg);
+  int imemL0 = VARINDEX(param, ipgL, 0);
+  const __global real *wn0 = wn + imemL0;
   
-  ipgf_to_pxyz(deg, raf, ifa, ipgf, pic, pix);
-
-  int ic[3];
-  int ix[3];
-  unpermute_indices(ic, pic, ifa);
-  unpermute_indices(ix, pix, ifa);
-  
-  // FIXME: do something with this.
-
-  int vpos = xyz_to_ipg(raf, deg, ic, ix) * m + iv;
-  int fpos = ipgf * m + iv;
-  
-  wface[fpos] = wn[vpos];
+  for(int iv = 0; iv < m; ++iv) {
+    wface[ipgf * m + iv] = wn0[iv];
+  }
 }
 
 __kernel
 void InsertInterface(__constant int *param,   // interp param
-		     const int ifa,
+		     const int locfa,
 		     __global real *dtwn, // volumic input
 		     const __global real *wface     // output
 		     )
@@ -1594,24 +1587,17 @@ void InsertInterface(__constant int *param,   // interp param
   const int raf[3] = {param[4], param[5], param[6]};
   
   const int ipgf = get_global_id(0);
-  const int iv = get_global_id(1);
 
-  int pic[3];
-  int pix[3];
+  // FIXME: xref and wpg are useless and should not be computed
+  real xref[3];
+  real wpg;
+  int ipgL = ref_pg_face(deg, raf, locfa, ipgf, xref, &wpg);
+  int imemL0 = VARINDEX(param, ipgL, 0);
+  __global real *dtwn0 = dtwn + imemL0;
   
-  ipgf_to_pxyz(deg, raf, ifa, ipgf, pic, pix);
-
-  int ic[3];
-  int ix[3];
-  unpermute_indices(ic, pic, ifa);
-  unpermute_indices(ix, pix, ifa);
-  
-  // FIXME: do something with this.
-
-  int vpos = xyz_to_ipg(raf, deg, ic, ix) * m + iv;
-  int fpos = ipgf * m + iv;
-  
-  dtwn[vpos] = wface[fpos];
+  for(int iv = 0; iv < m; ++iv) {
+     dtwn0[iv] += wface[ipgf * m + iv];
+  }
 }
 
 __kernel
@@ -1687,10 +1673,6 @@ void ExtractedDGBoundaryFlux(__constant int *param,
   
   int ipgf = get_global_id(0);
 
-  for(int iv = 0; iv < m; ++iv) {
-    faceL[ipgf * m + iv] = 0.0;
-  }
-
   real xref[3];    // reference coordinates
   real wpg;        // weighting for the GL point
   int ipgL = ref_pg_face(deg, raf, locfa, ipgf, xref, &wpg);
@@ -1715,10 +1697,8 @@ void ExtractedDGBoundaryFlux(__constant int *param,
   }
   
   real wL[_M];
-  
-  __global real *wn0 = faceL + ipgf * m;;
   for(int iv = 0; iv < m; ++iv) {
-    wL[iv] = wn0[iv];
+    wL[iv] = faceL[ipgf * m + iv];
   }
 
 #ifndef BOUNDARYFLUX
@@ -1729,9 +1709,8 @@ void ExtractedDGBoundaryFlux(__constant int *param,
   BOUNDARYFLUX(xphy, tnow, wL, vnds, flux);
 
   for(int iv = 0; iv < m; ++iv) {
-    wn0[iv] = flux[iv];
+    faceL[ipgf * m + iv] = -flux[iv] * wpg;
   }
-  
 }
 
 // DGMacroCellInterface using direct access to neighbouring cells (ie
