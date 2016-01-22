@@ -77,7 +77,7 @@ int TestDtfield_CL()
   CopyfieldtoGPU(&f);
   
   real tnow = 0.0;
-  dtfield_CL(&f, tnow, f.wn_cl, 0, NULL, NULL);
+  dtfield_extract_CL(&f, tnow, f.wn_cl, 0, NULL, NULL);
 
   CopyfieldtoCPU(&f);
 

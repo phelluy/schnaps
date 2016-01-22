@@ -1173,60 +1173,79 @@ void dtfield_extract_CL(field *f, real tnow, cl_mem *wn_cl,
   // kernels have nwait=1, which reduces the overhead of launching
   // kernels.
 
-  const int nboundaryfaces = f->macromesh.nboundaryfaces;
-  const int ninterfaces = f->macromesh.nmacrointerfaces;
+  // FIXME: deal with the cases where these can be zero.
+  const int nboundary = f->macromesh.nboundaryfaces;
+  const int ninterface = f->macromesh.nmacrointerfaces;
   
   unsigned int ndim = 3;
   if(f->macromesh.is2d)
     ndim = 2;
   if(f->macromesh.is1d)
     ndim = 1;
-
+  
   const int ncellfaces = 2 * ndim;
   // 1d: face 0, 2; 2d: face 0, 1, 2, 3, etc.
   int ifalist[6] = {0, 2, 1, 3, 4, 5};
+
+  // TODO: move to field struct.
+  const int nextract = ncellfaces * nmacro;
+  cl_event* clv_extract = calloc(nextract, sizeof(cl_event));
+  cl_event* clv_insert = calloc(nextract, sizeof(cl_event));
+  cl_event clv_extracts;
+  cl_event clv_inserts;
+
+  cl_event* clv_boundary = calloc(nboundary, sizeof(cl_event));
+  cl_event* clv_interface = calloc(ninterface, sizeof(cl_event));
+  cl_event clv_bi[2];
   
   for(int ie = 0; ie < nmacro; ++ie) {
     set_buf_to_zero_cl(f->dtwn_cl + ie, f->mcell + ie, f,
-		       0, 0 ,0);
+		       nwait, wait, f->clv_zbuf + ie);
   }
-  clFinish(f->cli.commandqueue);
 
+  empty_kernel(f, nmacro, f->clv_zbuf, &zbuf);
+  
   for(int ie = 0; ie < f->macromesh.nbelems; ++ie) {
     MacroCell *mcell = f->mcell + ie;
+    int offset = ie * ncellfaces;
     for(int ifa = 0; ifa < ncellfaces; ++ifa) {
-      ExtractInterface_CL(mcell, f, ifalist[ifa], wn_cl[ie], 0, 0, 0);
+      ExtractInterface_CL(mcell, f, ifalist[ifa], wn_cl[ie],
+			  1, &zbuf, clv_extract + offset + ifa);
     }
   }
-  clFinish(f->cli.commandqueue);
+
+  empty_kernel(f, nextract, clv_extract, &clv_extracts);
   
-  for(int i = 0; i < ninterfaces; ++i) {
+  for(int i = 0; i < ninterface; ++i) {
     int ifa = f->macromesh.macrointerface[i];
     MacroFace *mface = f->mface + ifa;
-    ExtractedDGInterface_CL(mface, f, 0, 0, 0);
+    ExtractedDGInterface_CL(mface, f, 1, &clv_extracts, clv_interface + i);
   }
-  clFinish(f->cli.commandqueue);
-  
-  for(int i = 0; i < nboundaryfaces; ++i) {
+
+  for(int i = 0; i < nboundary; ++i) {
     int ifa = f->macromesh.boundaryface[i];
     MacroFace *mface = f->mface + ifa;
     int ieL = mface->ieL;
     MacroCell *mcellL = f->mcell + ieL;
-    ExtractedDGBoundary_CL(mface, f, tnow, 0, 0, 0);
+    ExtractedDGBoundary_CL(mface, f, tnow,
+			   1, &clv_extracts, clv_boundary + i);
   }
-  clFinish(f->cli.commandqueue);
+
+  empty_kernel(f, nboundary, clv_boundary, &clv_bi[0]);
+  empty_kernel(f, ninterface, clv_interface, &clv_bi[1]);
 
   for(int ie = 0; ie < f->macromesh.nbelems; ++ie) {
     MacroCell *mcell = f->mcell + ie;
-    assert(f->macromesh.is2d);
-    for(int ifa = 0; ifa < 4; ++ifa) {
-      InsertInterface_CL(mcell, f, ifa, f->dtwn_cl[ie], 0, 0, 0);
-      clFinish(f->cli.commandqueue);
+    int offset = ie * ncellfaces;
+    for(int ifa = 0; ifa < ncellfaces; ++ifa) {
+      InsertInterface_CL(mcell, f, ifalist[ifa], f->dtwn_cl[ie],
+			 ifa == 0 ? 2 : 1,
+			 ifa == 0 ? clv_bi : clv_insert + offset + ifa - 1,
+			 clv_insert + offset + ifa);
     }
   }
 
-  
-  empty_kernel(f, 0, 0, &macrobounds);
+  empty_kernel(f, nextract, clv_insert, &macrobounds);
   
   // The kernels for the intra-macrocell computations can be launched
   // in parallel between macrocells.
@@ -1289,6 +1308,32 @@ void dtfield_extract_CL(field *f, real tnow, cl_mem *wn_cl,
     f->mass_time += clv_duration(f->clv_mass[ie]);
   }
 
+  for(int i = 0; i < ncellfaces * nmacro; ++i) {
+    clReleaseEvent(clv_extract[i]);
+    clReleaseEvent(clv_insert[i]);
+  }
+  free(clv_extract);
+  free(clv_insert);
+  clReleaseEvent(clv_extracts);
+  clReleaseEvent(clv_inserts);
+  
+  for(int i = 0; i < nboundary; ++i) {
+    clReleaseEvent(clv_boundary[i]);
+  }
+  free(clv_boundary);
+
+  for(int i = 0; i < ninterface; ++i) {
+    clReleaseEvent(clv_interface[i]);
+  }
+  free(clv_interface);
+
+  clReleaseEvent(clv_bi[0]);
+  clReleaseEvent(clv_bi[1]);
+
+
+
+  
+  
   clReleaseEvent(macrobounds);
 }
 
