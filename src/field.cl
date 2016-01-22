@@ -175,8 +175,8 @@ void compute_gradphi(const real xref[3], real gradphi[20][4])
 }
 
 inline void compute_xphy(__constant real *physnode,
-		  real gradphi[20][4],
-		  real xphy[3])
+			 real gradphi[20][4],
+			 real xphy[3])
 {
   // FIXME: FP_FAST_FMA checks for double, we should also look at
   // FP_FAST_FMAF for single-precision comparison.
@@ -484,7 +484,7 @@ void ipgf_to_pxyz(const int *deg,
 int ref_pg_face(const int *deg,
 		const int *raf,
 		const int ifa,  // face index
-		int ipgf,       // facial index of the point
+		const int ipgf,       // facial index of the point
                 real *xpg,      // reference-space coordinates
 		real *wpg)      // weight for the point
 {
@@ -1615,10 +1615,25 @@ inline void xyzL_to_xyzR(const int* raf, const int* deg,
   int Rcorner1 = select(0, 1, Rcorner == 1);
   int Rcorner2 = select(0, 1, Rcorner == 2);
   
+  // Using ternary operator:
   /* icR[d0R] = */
   /*   (Rcorner == 0) ? icL[d1L] : */
   /*   (Rcorner == 1) ? icL[d0L] : */
   /*   (Rcorner == 2) ? raf[d0L] - icL[d1L] - 1 : raf[d0L] - icL[d0L] - 1; */
+  /* icR[d1R] = */
+  /*   (Rcorner == 0) ? icL[d0L] : */
+  /*   (Rcorner == 1) ? raf[d1L] - icL[d1L] - 1 : */
+  /*   (Rcorner == 2) ? raf[d1L] - icL[d0L] - 1 : icL[d1L]; */
+  /* ixR[d0R] = */
+  /*   (Rcorner == 0) ? ixL[d1L] : */
+  /*   (Rcorner == 1) ? ixL[d0L] : */
+  /*   (Rcorner == 2) ? dnpg[d0L] - ixL[d1L] - 1 : dnpg[d0L] - ixL[d0L] - 1; */
+  /* ixR[d1R] = */
+  /*   (Rcorner == 0) ? ixL[d0L] : */
+  /*   (Rcorner == 1) ? dnpg[d1L] - ixL[d1L] - 1 : */
+  /*   (Rcorner == 2) ? dnpg[d1L] - ixL[d0L] - 1 : ixL[d1L]; */
+
+  // Using OpenCL's select:
   icR[d0R] = select(select(select(raf[d0L] - icL[d0L] - 1,
 				  raf[d0L] - icL[d1L] - 1,
 				  Rcorner2),
@@ -1627,10 +1642,6 @@ inline void xyzL_to_xyzR(const int* raf, const int* deg,
 		    icL[d1L],
 		    Rcorner0);
 
-  /* icR[d1R] = */
-  /*   (Rcorner == 0) ? icL[d0L] : */
-  /*   (Rcorner == 1) ? raf[d1L] - icL[d1L] - 1 : */
-  /*   (Rcorner == 2) ? raf[d1L] - icL[d0L] - 1 : icL[d1L]; */
   icR[d1R] = select(select(select(icL[d1L],
 				  raf[d1L] - icL[d0L] - 1,
 				  Rcorner2),
@@ -1638,11 +1649,6 @@ inline void xyzL_to_xyzR(const int* raf, const int* deg,
 			   Rcorner1),
 		    icL[d0L],
 		    Rcorner0);
-
-  /* ixR[d0R] = */
-  /*   (Rcorner == 0) ? ixL[d1L] : */
-  /*   (Rcorner == 1) ? ixL[d0L] : */
-  /*   (Rcorner == 2) ? dnpg[d0L] - ixL[d1L] - 1 : dnpg[d0L] - ixL[d0L] - 1; */
   ixR[d0R] = select(select(select(dnpg[d0L] - ixL[d0L] - 1,
 				  dnpg[d0L] - ixL[d1L] - 1,
 				  Rcorner2),
@@ -1650,18 +1656,14 @@ inline void xyzL_to_xyzR(const int* raf, const int* deg,
 			   Rcorner1),
 		    ixL[d1L],
 		    Rcorner0);
-
-  /* ixR[d1R] = */
-  /*   (Rcorner == 0) ? ixL[d0L] : */
-  /*   (Rcorner == 1) ? dnpg[d1L] - ixL[d1L] - 1 : */
-  /*   (Rcorner == 2) ? dnpg[d1L] - ixL[d0L] - 1 : ixL[d1L]; */
   ixR[d1R] = select(select(select(ixL[d1L],
 				  dnpg[d1L] - ixL[d0L] - 1,
 				  Rcorner2),
 			   dnpg[d1L] - ixL[d1L] - 1,
 			   Rcorner1),
 		    ixL[d0L] , Rcorner0);
-      
+
+  // Using a switch:
   /* switch(Rcorner) { */
   /*   case 0: */
   /*     // Rcorner = 0: R0 = L1, R1 = L0 */
@@ -1694,19 +1696,50 @@ inline void xyzL_to_xyzR(const int* raf, const int* deg,
   /* } */
 }
 
+inline int xyz_to_ipgf(const int* deg0,
+		       const int* raf0,
+		       const int* ic0,
+		       const int* ix0,
+		       const int locfa)
+{
+  // copy of ix and ic
+  int ix[3] = {ix0[0], ix0[1], ix0[2]};
+  int ic[3] = {ic0[0], ic0[1], ic0[2]};
+  
+  int raf[3] = {raf0[0], raf0[1], raf0[2]};
+  int deg[3] = {deg0[0], deg0[1], deg0[2]};
+
+  const int paxis[4] = {axis_permut[locfa][0],
+			axis_permut[locfa][1],
+			axis_permut[locfa][2],
+			axis_permut[locfa][3]};
+
+  int d2 = paxis[2];
+  
+  ix[d2] = 0;
+  ic[d2] = 0;
+  raf[d2] = 1;
+  deg[d2] = 0;
+  
+  return xyz_to_ipg(raf, deg, ic, ix); 
+}
+
 __kernel
 void ExtractedDGInterfaceFlux(__constant int *param,
+			      const int locfaL,            // left face index
+			      const int locfaR,            // right face index
+			      __constant real *physnodeL,  // left physnode
 			      int Rcorner,
 			      __global real *faceL,
 			      __global real *faceR)
 {
-
-#if 0
   const int m = param[0];
   const int deg[3] = {param[1], param[2], param[3]};
   const int raf[3] = {param[4], param[5], param[6]};
 
-  const int ipgf = get_global_id(0);
+  const int dnpg[3] = {deg[0] + 1, deg[1] + 1, deg[2] + 1};
+  
+  const int ipgfL = get_global_id(0);
 
   const int axis_permut[6][4] = { {0, 2, 1, 0},
 				  {1, 2, 0, 1},
@@ -1733,29 +1766,13 @@ void ExtractedDGInterfaceFlux(__constant int *param,
   int d2R = paxisR[2];
   int signR = paxisR[3];
 
-
   real xref[3];
   real wpg;
-  int ipgL = ref_pg_face(deg, raf, locfa, ipgf, xref, &wpg);
+  int ipgL = ref_pg_face(deg, raf, locfaL, ipgfL, xref, &wpg);
 
   int icL[3];
   int ixL[3];
   ipg_to_xyz(raf, deg, icL, ixL, &ipgL);
-
-  // Normal vector at gauss point based on xpgref
-  real vnds[3];
-  {
-    real gradphi[20][4];
-    compute_gradphi(xpgref, gradphi);
-
-    real dtau[3][3];
-    compute_dtau(physnodeL, gradphi, dtau);
-
-    real codtau[3][3];
-    compute_codtau(dtau, codtau);
-
-    ComputeNormal(codtau, locfaL, vnds);
-  }
 
   // Direct access using corner-matching
   int icR[3];
@@ -1765,48 +1782,45 @@ void ExtractedDGInterfaceFlux(__constant int *param,
   int ixR[3];
   //ixR[d2R] = signR == 0 ?  0 : dnpg[d2R] - 1;
   ixR[d2R] = select(0, dnpg[d2R] - 1, signR);
-  
-  
- 
-  // The kernel is launched with ND range given by {the number of
-  // points in the first L facial direction, the number of points in
-  // the second L facial direciton}
 
-  // FIXME
+  xyzL_to_xyzR(raf, deg, Rcorner, d0L, d1L, ixL, icL, d0R, d1R, ixR, icR);
 
-  /* const int m = param[0]; */
+  int ipgfR = xyz_to_ipgf(deg, raf, icR, ixR, locfaR);
   
-  /* // Copy Intrafces into __local memory */
+  // Normal vector at gauss point based on xref
+  real vnds[3];
+  {
+    real gradphi[20][4];
+    compute_gradphi(xref, gradphi);
+    real dtau[3][3];
+    compute_dtau(physnodeL, gradphi, dtau);
+    real codtau[3][3];
+    compute_codtau(dtau, codtau);
+    ComputeNormal(codtau, locfaL, vnds);
+  }
+
+  real wL[_M];
+  real wR[_M];
+
+  int imemL0 = ipgfL * m;
+  int imemR0 = ipgfR * m;
+
+  __global real *wnL0 = faceL + imemL0;
+  __global real *wnR0 = faceR + imemR0;
+  for(int iv = 0; iv < m; iv++) {
+    wL[iv] = wnL0[iv];
+    wR[iv] = wnR0[iv];
+  }
+
+  real flux[_M];
+  NUMFLUX(wL, wR, vnds, flux);
+
+  for(int iv = 0; iv < m; ++iv) {
+    real fluxwpg = flux[iv] * wpg;
+    wnL0[iv] = -fluxwpg;
+    wnR0[iv] = fluxwpg;
+  }
   
-  /* for(int i = 0; i < m; ++i) { */
-  /*   int pos = get_local_id(1) */
-  /*     + get_local_id(0)* get_local_size(1) */
-  /*     + i * get_local_size(1) * get_local_size(1); */
-  /*   fL[pos] = faceL[pos]; */
-  /*   fR[pos] = faceR[pos]; */
-  /* } */
-   
-  /* barrier(CLK_LOCAL_MEM_FENCE); */
-
-  /* // Compute flux */
-
-  /* // The point with 2D face indices (d0, d1) is at memory location */
-  /* // d1 * n0 * m  + d0 * m */
-  /* const int d0 = get_global_id(0); // first dimension */
-  /* const int d1 = get_global_id(1); // second dimension */
-  /* const int n0 = get_global_size(0); */
-
-  /* barrier(CLK_LOCAL_MEM_FENCE); */
-  
-  /* // Copy flux back into input buffers */
-  /* for(int i = 0; i < m; ++i) { */
-  /*   int pos = get_local_id(1) */
-  /*     + get_local_id(0) * get_local_size(1) */
-  /*     + i * get_local_size(1) * get_local_size(1); */
-  /*   faceL[pos] = fL[pos]; */
-  /*   faceR[pos] = fR[pos]; */
-  /* } */
-#endif
 }
 
 __kernel
@@ -1816,7 +1830,6 @@ void ExtractedDGBoundaryFlux(__constant int *param,
 			     int locfa,
 			     real tnow)
 {
-  // FIXME
   const int raf[3] = {param[4], param[5], param[6]};
   const int deg[3] = {param[1], param[2], param[3]};
   const int m = param[0];
@@ -1834,15 +1847,11 @@ void ExtractedDGBoundaryFlux(__constant int *param,
   {
     real gradphi[20][4];
     compute_gradphi(xref, gradphi);
-    
     compute_xphy(physnode, gradphi, xphy);
-
     real dtau[3][3];  
     compute_dtau(physnode, gradphi, dtau);
-
     real codtau[3][3];
     compute_codtau(dtau, codtau);
-
     ComputeNormal(codtau, locfa, vnds);
   }
   
@@ -1867,14 +1876,14 @@ void ExtractedDGBoundaryFlux(__constant int *param,
 // without a Newton iteration).
 __kernel
 void DGMacroCellInterface(__constant int *param,        // interp param
-			   int locfaL,                   // left face index
-			   int locfaR,                   // right face index
-			   __constant real *physnodeL,   // left physnode
-			   __constant real *physnodeR,   // right physnode
-			   __global real *wnL,           // field 
-			   __global real *dtwnL,         // time derivative
-			   __global real *wnR,           // field 
-			   __global real *dtwnR,          // time derivative
+			   const int locfaL,            // left face index
+			   const int locfaR,            // right face index
+			   __constant real *physnodeL,  // left physnode
+			   __constant real *physnodeR,  // right physnode
+			   __global real *wnL,          // field 
+			   __global real *dtwnL,        // time derivative
+			   __global real *wnR,          // field 
+			   __global real *dtwnR,        // time derivative
 			   const int Rcorner
 			   )
 {
@@ -1912,28 +1921,25 @@ void DGMacroCellInterface(__constant int *param,        // interp param
   int d2R = paxisR[2];
   int signR = paxisR[3];
     
-  real xpgref[3]; // reference point for L
+  real xref[3]; // reference point for L
   real wpg;
 
   // Compute volumic index in the left MacroCell.
-  int ipgL = ref_pg_face(deg, raf, locfaL, ipgfL, xpgref, &wpg);
+  int ipgL = ref_pg_face(deg, raf, locfaL, ipgfL, xref, &wpg);
 
   int icL[3];
   int ixL[3];
   ipg_to_xyz(raf, deg, icL, ixL, &ipgL);
 
-  // Normal vector at gauss point based on xpgref
+  // Normal vector at gauss point based on xref
   real vnds[3];
   {
     real gradphi[20][4];
-    compute_gradphi(xpgref, gradphi);
-
+    compute_gradphi(xref, gradphi);
     real dtau[3][3];
     compute_dtau(physnodeL, gradphi, dtau);
-
     real codtau[3][3];
     compute_codtau(dtau, codtau);
-
     ComputeNormal(codtau, locfaL, vnds);
   }
 

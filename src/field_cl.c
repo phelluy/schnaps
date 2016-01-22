@@ -372,6 +372,28 @@ void init_extracted_DGInterface_CL(MacroFace *mface, field *f)
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 
+
+  status = clSetKernelArg(kernel,
+                          argnum++,
+                          sizeof(int),
+			  &mface->locfaL);
+  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status >= CL_SUCCESS);
+
+  status = clSetKernelArg(kernel,
+                          argnum++,
+                          sizeof(int),
+			  &mface->locfaR);
+  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status >= CL_SUCCESS);
+
+  status = clSetKernelArg(kernel,
+                          argnum++,
+                          sizeof(cl_mem),
+			  &mcellL->physnode_cl);
+  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status >= CL_SUCCESS);
+  
   status = clSetKernelArg(kernel,
 			  argnum++,
                           sizeof(int),
