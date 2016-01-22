@@ -1158,6 +1158,141 @@ void dtfield_CL(field *f, real tnow, cl_mem *wn_cl,
   clReleaseEvent(macrofaces);
 }
 
+// Apply the Discontinuous Galerkin approximation for computing the
+// time derivative of the field. OpenCL version with face extraction.
+// wn_cl is an array of pointers to the macrocell wn_cls.
+void dtfield_extract_CL(field *f, real tnow, cl_mem *wn_cl,
+			cl_uint nwait, cl_event *wait, cl_event *done)
+{
+  const int nmacro = f->macromesh.nbelems;
+
+  cl_event macrobounds;
+  cl_event zbuf;
+
+  // We need to add an event for each wave so that the following
+  // kernels have nwait=1, which reduces the overhead of launching
+  // kernels.
+
+  const int nboundaryfaces = f->macromesh.nboundaryfaces;
+  const int ninterfaces = f->macromesh.nmacrointerfaces;
+  
+  unsigned int ndim = 3;
+  if(f->macromesh.is2d)
+    ndim = 2;
+  if(f->macromesh.is1d)
+    ndim = 1;
+
+  const int ncellfaces = 2 * ndim;
+  // 1d: face 0, 2; 2d: face 0, 1, 2, 3, etc.
+  int ifalist[6] = {0, 2, 1, 3, 4, 5};
+  
+  for(int ie = 0; ie < nmacro; ++ie) {
+    set_buf_to_zero_cl(f->dtwn_cl + ie, f->mcell + ie, f,
+		       0, 0 ,0);
+  }
+  clFinish(f->cli.commandqueue);
+
+  for(int ie = 0; ie < f->macromesh.nbelems; ++ie) {
+    MacroCell *mcell = f->mcell + ie;
+    for(int ifa = 0; ifa < ncellfaces; ++ifa) {
+      ExtractInterface_CL(mcell, f, ifalist[ifa], wn_cl[ie], 0, 0, 0);
+    }
+  }
+  clFinish(f->cli.commandqueue);
+  
+  for(int i = 0; i < ninterfaces; ++i) {
+    int ifa = f->macromesh.macrointerface[i];
+    MacroFace *mface = f->mface + ifa;
+    ExtractedDGInterface_CL(mface, f, 0, 0, 0);
+  }
+  clFinish(f->cli.commandqueue);
+  
+  for(int i = 0; i < nboundaryfaces; ++i) {
+    int ifa = f->macromesh.boundaryface[i];
+    MacroFace *mface = f->mface + ifa;
+    int ieL = mface->ieL;
+    MacroCell *mcellL = f->mcell + ieL;
+    ExtractedDGBoundary_CL(mface, f, tnow, 0, 0, 0);
+  }
+  clFinish(f->cli.commandqueue);
+
+  for(int ie = 0; ie < f->macromesh.nbelems; ++ie) {
+    MacroCell *mcell = f->mcell + ie;
+    assert(f->macromesh.is2d);
+    for(int ifa = 0; ifa < 4; ++ifa) {
+      InsertInterface_CL(mcell, f, ifa, f->dtwn_cl[ie], 0, 0, 0);
+      clFinish(f->cli.commandqueue);
+    }
+  }
+
+  
+  empty_kernel(f, 0, 0, &macrobounds);
+  
+  // The kernels for the intra-macrocell computations can be launched
+  // in parallel between macrocells.
+  for(int ie = 0; ie < nmacro; ++ie) {
+    MacroCell *mcell = f->mcell + ie;
+
+    int nflux = 0;
+    int fluxlist[3];
+    for(int d = 0; d < ndim; ++d) {
+      if(mcell->raf[d] > 1) {
+	fluxlist[nflux++] = d;
+      }
+    }
+
+    DGFlux_CL(mcell, f, fluxlist[0], wn_cl + ie, 
+	      1, &macrobounds,
+	      f->clv_flux[fluxlist[0]] + ie);
+    for(int d = 1; d < nflux; ++d) {
+      DGFlux_CL(mcell, f, fluxlist[d], wn_cl + ie, 
+		1, f->clv_flux[fluxlist[d - 1]] + ie,
+		f->clv_flux[fluxlist[d]] + ie);
+    }
+    
+    DGVolume_CL(mcell, f, wn_cl + ie,
+  		1, f->clv_flux[nflux - 1] + ie, f->clv_volume + ie);
+
+    if(f->use_source_cl) {
+      DGSource_CL(mcell, f, tnow, wn_cl + ie, 
+		  1, f->clv_volume + ie, f->clv_source + ie);
+    }
+    
+    DGMass_CL(mcell, f,
+  	      1,
+	      f->use_source_cl ? f->clv_source + ie : f->clv_volume + ie,
+  	      f->clv_mass + ie);
+  }
+
+  empty_kernel(f, nmacro, f->clv_mass, done);
+  
+  for(int ie = 0; ie < nmacro; ++ie) {
+    f->zbuf_calls++;
+    f->zbuf_time += clv_duration(f->clv_zbuf[ie]);
+    if(f->use_source_cl) {
+      f->source_calls++;
+      f->source_time += clv_duration(f->clv_source[ie]);
+    }
+    f->flux_calls++;
+    f->flux_time += clv_duration(f->clv_flux[0][ie]);
+    if(ndim > 1) {
+      f->flux_time += clv_duration(f->clv_flux[1][ie]);
+      f->flux_calls++;
+    }
+    if(ndim > 2) {
+      f->flux_calls++;
+      f->flux_time += clv_duration(f->clv_flux[2][ie]);
+    }
+    f->vol_calls++;
+    f->vol_time += clv_duration(f->clv_volume[ie]);
+    f->mass_calls++;
+    f->mass_time += clv_duration(f->clv_mass[ie]);
+  }
+
+  clReleaseEvent(macrobounds);
+}
+
+
 // Set kernel arguments for first stage of RK2
 // wnp1_cl is a pointer to an array of cl_mems, one per macrocell
 void init_RK2_CL_stage1(MacroCell *mcell, field *f,
@@ -1292,8 +1427,8 @@ void RK2_CL(field *f, real tmax, real dt,
   }
 
   cl_event start;
-  cl_event *stage1 =  calloc(nmacro, sizeof(cl_event));
-  cl_event *stage2 =  calloc(nmacro, sizeof(cl_event));
+  cl_event *stage1 = calloc(nmacro, sizeof(cl_event));
+  cl_event *stage2 = calloc(nmacro, sizeof(cl_event));
   cl_event source1;
   cl_event source2;
 
@@ -1309,7 +1444,7 @@ void RK2_CL(field *f, real tmax, real dt,
       printf("t=%f iter=%d/%d dt=%f\n", f->tnow, iter, f->itermax, dt);
 
     // stage 0
-    dtfield_CL(f, f->tnow, f->wn_cl,
+    dtfield_extract_CL(f, f->tnow, f->wn_cl,
 	       1, &start, &source1);
     
     for(int ie = 0; ie < nmacro; ++ie) { 
@@ -1321,7 +1456,7 @@ void RK2_CL(field *f, real tmax, real dt,
     f->tnow += 0.5 * dt;
 
     // stage 1
-    dtfield_CL(f, f->tnow, wnp1_cl,
+    dtfield_extract_CL(f, f->tnow, wnp1_cl,
 	       nmacro, stage1, &source2);
     for(int ie = 0; ie < nmacro; ++ie) { 
       MacroCell *mcell = f->mcell + ie;

@@ -45,6 +45,10 @@ void DGSource_CL(MacroCell *mcell, field *f, real tnow, cl_mem *wn_cl,
 void DGMass_CL(MacroCell *mcell, field *f,
 	       cl_uint nwait, cl_event *wait, cl_event *done);
 
+
+void dtfield_extract_CL(field *f, real tnow, cl_mem *wn_cl,
+			cl_uint nwait, cl_event *wait, cl_event *done);
+
 void show_cl_timing(field *f);
 #endif // _WITH_OPENCL
 
