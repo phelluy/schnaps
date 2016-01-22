@@ -1585,7 +1585,8 @@ void InsertInterface(__constant int *param,   // interp param
   const int m = param[0];
   const int deg[3] = {param[1], param[2], param[3]};
   const int raf[3] = {param[4], param[5], param[6]};
-  
+
+
   const int ipgf = get_global_id(0);
 
   // FIXME: xref and wpg are useless and should not be computed
@@ -1600,6 +1601,99 @@ void InsertInterface(__constant int *param,   // interp param
   }
 }
 
+inline void xyzL_to_xyzR(const int* raf, const int* deg,
+			 const int Rcorner,
+			 const int d0L, const int d1L,
+			 const int* ixL, const int* icL,
+			 const int d0R, const int d1R,
+			 int* ixR, int* icR)
+{
+  const int dnpg[3] = {deg[0] + 1, deg[1] + 1, deg[2] + 1};
+
+  // Direct access using corner-matching
+  int Rcorner0 = select(0, 1, Rcorner == 0);
+  int Rcorner1 = select(0, 1, Rcorner == 1);
+  int Rcorner2 = select(0, 1, Rcorner == 2);
+  
+  /* icR[d0R] = */
+  /*   (Rcorner == 0) ? icL[d1L] : */
+  /*   (Rcorner == 1) ? icL[d0L] : */
+  /*   (Rcorner == 2) ? raf[d0L] - icL[d1L] - 1 : raf[d0L] - icL[d0L] - 1; */
+  icR[d0R] = select(select(select(raf[d0L] - icL[d0L] - 1,
+				  raf[d0L] - icL[d1L] - 1,
+				  Rcorner2),
+			   icL[d0L],
+			   Rcorner1),
+		    icL[d1L],
+		    Rcorner0);
+
+  /* icR[d1R] = */
+  /*   (Rcorner == 0) ? icL[d0L] : */
+  /*   (Rcorner == 1) ? raf[d1L] - icL[d1L] - 1 : */
+  /*   (Rcorner == 2) ? raf[d1L] - icL[d0L] - 1 : icL[d1L]; */
+  icR[d1R] = select(select(select(icL[d1L],
+				  raf[d1L] - icL[d0L] - 1,
+				  Rcorner2),
+			   raf[d1L] - icL[d1L] - 1,
+			   Rcorner1),
+		    icL[d0L],
+		    Rcorner0);
+
+  /* ixR[d0R] = */
+  /*   (Rcorner == 0) ? ixL[d1L] : */
+  /*   (Rcorner == 1) ? ixL[d0L] : */
+  /*   (Rcorner == 2) ? dnpg[d0L] - ixL[d1L] - 1 : dnpg[d0L] - ixL[d0L] - 1; */
+  ixR[d0R] = select(select(select(dnpg[d0L] - ixL[d0L] - 1,
+				  dnpg[d0L] - ixL[d1L] - 1,
+				  Rcorner2),
+			   ixL[d0L],
+			   Rcorner1),
+		    ixL[d1L],
+		    Rcorner0);
+
+  /* ixR[d1R] = */
+  /*   (Rcorner == 0) ? ixL[d0L] : */
+  /*   (Rcorner == 1) ? dnpg[d1L] - ixL[d1L] - 1 : */
+  /*   (Rcorner == 2) ? dnpg[d1L] - ixL[d0L] - 1 : ixL[d1L]; */
+  ixR[d1R] = select(select(select(ixL[d1L],
+				  dnpg[d1L] - ixL[d0L] - 1,
+				  Rcorner2),
+			   dnpg[d1L] - ixL[d1L] - 1,
+			   Rcorner1),
+		    ixL[d0L] , Rcorner0);
+      
+  /* switch(Rcorner) { */
+  /*   case 0: */
+  /*     // Rcorner = 0: R0 = L1, R1 = L0 */
+  /*     //icR[d0R] = icL[d1L]; */
+  /*     //icR[d1R] = icL[d0L]; */
+  /*     //ixR[d0R] = ixL[d1L]; */
+  /*     //ixR[d1R] = ixL[d0L]; */
+  /*     break; */
+  /*   case 1: */
+  /*     // Rcorner = 1: R0 = L0, R1 = -L1 */
+  /*     //icR[d0R] = icL[d0L]; */
+  /*     //icR[d1R] = raf[d1L] - icL[d1L] - 1; */
+  /*     //ixR[d0R] = ixL[d0L]; */
+  /*     //ixR[d1R] = dnpg[d1L] - ixL[d1L] - 1; */
+  /*     break; */
+  /*   case 2: */
+  /*     // Rcorner = 2: R0 = -L1, R1 = -L0 */
+  /*     //icR[d0R] = raf[d0L] - icL[d1L] - 1; */
+  /*     //icR[d1R] = raf[d1L] - icL[d0L] - 1; */
+  /*     //ixR[d0R] = dnpg[d0L] - ixL[d1L] - 1; */
+  /*     //ixR[d1R] = dnpg[d1L] - ixL[d0L] - 1; */
+  /*     break; */
+  /*   case 3: */
+  /*     // Rcorner = 3: R0 = -L0, R1 = -L1 */
+  /*     //icR[d0R] = raf[d0L] - icL[d0L] - 1; */
+  /*     //icR[d1R] = icL[d1L]; */
+  /*     //ixR[d0R] = dnpg[d0L] - ixL[d0L] - 1; */
+  /*     //ixR[d1R] = ixL[d1L]; */
+  /*     break; */
+  /* } */
+}
+
 __kernel
 void ExtractedDGInterfaceFlux(__constant int *param,
 			      int Rcorner,
@@ -1607,17 +1701,73 @@ void ExtractedDGInterfaceFlux(__constant int *param,
 			      __global real *faceR)
 {
 
+#if 0
   const int m = param[0];
+  const int deg[3] = {param[1], param[2], param[3]};
+  const int raf[3] = {param[4], param[5], param[6]};
+
   const int ipgf = get_global_id(0);
+
+  const int axis_permut[6][4] = { {0, 2, 1, 0},
+				  {1, 2, 0, 1},
+				  {2, 0, 1, 1},
+				  {2, 1, 0, 0},
+				  {0, 1, 2, 1},
+				  {1, 0, 2, 0} };
+
+  int paxisL[4] = {axis_permut[locfaL][0],
+		   axis_permut[locfaL][1],
+		   axis_permut[locfaL][2],
+		   axis_permut[locfaL][3] } ;
+
+  int paxisR[4] = {axis_permut[locfaR][0],
+		   axis_permut[locfaR][1],
+		   axis_permut[locfaR][2],
+		   axis_permut[locfaR][3] } ;
   
-  for(int iv = 0; iv < m; ++iv) {
-    faceL[ipgf * m + iv] = 0.0;
+  int d0L = paxisL[0];
+  int d1L = paxisL[1];
+
+  int d0R = paxisR[0];
+  int d1R = paxisR[1];
+  int d2R = paxisR[2];
+  int signR = paxisR[3];
+
+
+  real xref[3];
+  real wpg;
+  int ipgL = ref_pg_face(deg, raf, locfa, ipgf, xref, &wpg);
+
+  int icL[3];
+  int ixL[3];
+  ipg_to_xyz(raf, deg, icL, ixL, &ipgL);
+
+  // Normal vector at gauss point based on xpgref
+  real vnds[3];
+  {
+    real gradphi[20][4];
+    compute_gradphi(xpgref, gradphi);
+
+    real dtau[3][3];
+    compute_dtau(physnodeL, gradphi, dtau);
+
+    real codtau[3][3];
+    compute_codtau(dtau, codtau);
+
+    ComputeNormal(codtau, locfaL, vnds);
   }
 
-  for(int iv = 0; iv < m; ++iv) {
-    faceR[ipgf * m + iv] = 0.0;
-  }
-
+  // Direct access using corner-matching
+  int icR[3];
+  //icR[d2R] = signR == 0 ?  0 : raf[d2R] - 1;
+  icR[d2R] = select(0, raf[d2R] - 1, signR);
+  
+  int ixR[3];
+  //ixR[d2R] = signR == 0 ?  0 : dnpg[d2R] - 1;
+  ixR[d2R] = select(0, dnpg[d2R] - 1, signR);
+  
+  
+ 
   // The kernel is launched with ND range given by {the number of
   // points in the first L facial direction, the number of points in
   // the second L facial direciton}
@@ -1656,7 +1806,7 @@ void ExtractedDGInterfaceFlux(__constant int *param,
   /*   faceL[pos] = fL[pos]; */
   /*   faceR[pos] = fR[pos]; */
   /* } */
-
+#endif
 }
 
 __kernel
@@ -1796,87 +1946,8 @@ void DGMacroCellInterface(__constant int *param,        // interp param
   //ixR[d2R] = signR == 0 ?  0 : dnpg[d2R] - 1;
   ixR[d2R] = select(0, dnpg[d2R] - 1, signR);
 
-  int Rcorner0 = select(0, 1, Rcorner == 0);
-  int Rcorner1 = select(0, 1, Rcorner == 1);
-  int Rcorner2 = select(0, 1, Rcorner == 2);
-  
-  /* icR[d0R] = */
-  /*   (Rcorner == 0) ? icL[d1L] : */
-  /*   (Rcorner == 1) ? icL[d0L] : */
-  /*   (Rcorner == 2) ? raf[d0L] - icL[d1L] - 1 : raf[d0L] - icL[d0L] - 1; */
-  icR[d0R] = select(select(select(raf[d0L] - icL[d0L] - 1,
-				  raf[d0L] - icL[d1L] - 1,
-				  Rcorner2),
-			   icL[d0L],
-			   Rcorner1),
-		    icL[d1L],
-		    Rcorner0);
+  xyzL_to_xyzR(raf, deg, Rcorner, d0L, d1L, ixL, icL, d0R, d1R, ixR, icR);
 
-  /* icR[d1R] = */
-  /*   (Rcorner == 0) ? icL[d0L] : */
-  /*   (Rcorner == 1) ? raf[d1L] - icL[d1L] - 1 : */
-  /*   (Rcorner == 2) ? raf[d1L] - icL[d0L] - 1 : icL[d1L]; */
-  icR[d1R] = select(select(select(icL[d1L],
-				  raf[d1L] - icL[d0L] - 1,
-				  Rcorner2),
-			   raf[d1L] - icL[d1L] - 1,
-			   Rcorner1),
-		    icL[d0L],
-		    Rcorner0);
-
-  /* ixR[d0R] = */
-  /*   (Rcorner == 0) ? ixL[d1L] : */
-  /*   (Rcorner == 1) ? ixL[d0L] : */
-  /*   (Rcorner == 2) ? dnpg[d0L] - ixL[d1L] - 1 : dnpg[d0L] - ixL[d0L] - 1; */
-  ixR[d0R] = select(select(select(dnpg[d0L] - ixL[d0L] - 1,
-				  dnpg[d0L] - ixL[d1L] - 1,
-				  Rcorner2),
-			   ixL[d0L],
-			   Rcorner1),
-		    ixL[d1L],
-		    Rcorner0);
-
-  /* ixR[d1R] = */
-  /*   (Rcorner == 0) ? ixL[d0L] : */
-  /*   (Rcorner == 1) ? dnpg[d1L] - ixL[d1L] - 1 : */
-  /*   (Rcorner == 2) ? dnpg[d1L] - ixL[d0L] - 1 : ixL[d1L]; */
-  ixR[d1R] = select(select(select(ixL[d1L],
-				  dnpg[d1L] - ixL[d0L] - 1,
-				  Rcorner2),
-			   dnpg[d1L] - ixL[d1L] - 1,
-			   Rcorner1),
-		    ixL[d0L] , Rcorner0);
-      
-  /* switch(Rcorner) { */
-  /*   case 0: */
-  /*     // Rcorner = 0: R0 = L1, R1 = L0 */
-  /*     //icR[d0R] = icL[d1L]; */
-  /*     //icR[d1R] = icL[d0L]; */
-  /*     //ixR[d0R] = ixL[d1L]; */
-  /*     //ixR[d1R] = ixL[d0L]; */
-  /*     break; */
-  /*   case 1: */
-  /*     // Rcorner = 1: R0 = L0, R1 = -L1 */
-  /*     //icR[d0R] = icL[d0L]; */
-  /*     //icR[d1R] = raf[d1L] - icL[d1L] - 1; */
-  /*     //ixR[d0R] = ixL[d0L]; */
-  /*     //ixR[d1R] = dnpg[d1L] - ixL[d1L] - 1; */
-  /*     break; */
-  /*   case 2: */
-  /*     // Rcorner = 2: R0 = -L1, R1 = -L0 */
-  /*     //icR[d0R] = raf[d0L] - icL[d1L] - 1; */
-  /*     //icR[d1R] = raf[d1L] - icL[d0L] - 1; */
-  /*     //ixR[d0R] = dnpg[d0L] - ixL[d1L] - 1; */
-  /*     //ixR[d1R] = dnpg[d1L] - ixL[d0L] - 1; */
-  /*     break; */
-  /*   case 3: */
-  /*     // Rcorner = 3: R0 = -L0, R1 = -L1 */
-  /*     //icR[d0R] = raf[d0L] - icL[d0L] - 1; */
-  /*     //icR[d1R] = icL[d1L]; */
-  /*     //ixR[d0R] = dnpg[d0L] - ixL[d0L] - 1; */
-  /*     //ixR[d1R] = ixL[d1L]; */
-  /*     break; */
-  /* } */
   int ipgR = xyz_to_ipg(raf, deg, icR, ixR); 
   
   real wL[_M];
