@@ -28,6 +28,8 @@ int main(int argc, char *argv[])
   int m = 1;
   bool writeout = false;
 
+  bool extract_cl = false;
+  
   int len;
   
   len = strlen(fluxdefault) + 1;
@@ -60,6 +62,7 @@ int main(int argc, char *argv[])
 \t-b <string> Boundary flux\n\
 \t-i <string> Initialization function\n\
 \t-I <string> Imposed data function\n\
+\t-E <0 or 1> Extract interfaces and boundaries\n\
 \t-G <string> gmsh filename\n\
 \t-s <float> dt\n\
 \t-T <float> tmax\n\
@@ -69,7 +72,7 @@ int main(int argc, char *argv[])
 \t-D <int> OpencL device number\n";
 
   for (;;) {
-    int cc = getopt(argc, argv, "c:n:m:d:r:s:f:b:w:i:I:T:P:D:g:G:h");
+    int cc = getopt(argc, argv, "c:n:m:d:r:s:f:b:w:i:I:T:P:D:g:G:E:h");
     if (cc == -1) break;
     switch (cc) {
     case 0:
@@ -142,6 +145,9 @@ int main(int argc, char *argv[])
       break;
     case 'w':
       writeout = atoi(optarg);
+      break;
+    case 'E':
+      extract_cl = atoi(optarg);
       break;
 #ifdef _WITH_OPENCL
     case 'g':
@@ -237,6 +243,11 @@ int main(int argc, char *argv[])
 
   // Prepare the initial fields
   Initfield(&f);
+
+  if(extract_cl) {
+    printf("MacroCell interfaces and boundaries are extracted for computation.\n");
+  }
+  f.extract_cl = extract_cl;
 
   // AffineMapMacroMesh(&f.macromesh);
   CheckMacroMesh(&f.macromesh, f.interp.interp_param + 1);

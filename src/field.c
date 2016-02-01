@@ -95,6 +95,7 @@ void init_empty_field(field *f)
 {
 #ifdef _WITH_OPENCL
   f->use_source_cl = false;
+  f->extract_cl = false;
 #endif
 }
 

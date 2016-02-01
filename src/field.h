@@ -165,6 +165,8 @@ typedef struct field {
 
 #ifdef _WITH_OPENCL
 
+  bool extract_cl;
+  
   // For launching the macrocell interfaces in parallel
   int niwaves;
   int *iwavecount;

@@ -997,12 +997,12 @@ void set_buf_to_zero_cl(cl_mem *buf, MacroCell *mcell, field *f,
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 }
-
+		
 // Apply the Discontinuous Galerkin approximation for computing the
 // time derivative of the field. OpenCL version.
 // wn_cl is an array of pointers to the macrocell wn_cls.
-void dtfield_CL(field *f, real tnow, cl_mem *wn_cl,
-		cl_uint nwait, cl_event *wait, cl_event *done)
+void dtfield_noextract_CL(field *f, real tnow, cl_mem *wn_cl,
+			  cl_uint nwait, cl_event *wait, cl_event *done)
 {
   const int nmacro = f->macromesh.nbelems;
 
@@ -1320,6 +1320,14 @@ void dtfield_extract_CL(field *f, real tnow, cl_mem *wn_cl,
   clReleaseEvent(macrobounds);
 }
 
+void dtfield_CL(field *f, real tnow, cl_mem *wn_cl,
+		  cl_uint nwait, cl_event *wait, cl_event *done)
+{
+  if(f->extract_cl)
+    dtfield_extract_CL(f, tnow, wn_cl, nwait, wait, done);
+  else
+    dtfield_noextract_CL(f, tnow, wn_cl, nwait, wait, done);
+}
 
 // Set kernel arguments for first stage of RK2
 // wnp1_cl is a pointer to an array of cl_mems, one per macrocell
@@ -1472,7 +1480,7 @@ void RK2_CL(field *f, real tmax, real dt,
       printf("t=%f iter=%d/%d dt=%f\n", f->tnow, iter, f->itermax, dt);
 
     // stage 0
-    dtfield_extract_CL(f, f->tnow, f->wn_cl,
+    dtfield_CL(f, f->tnow, f->wn_cl,
 	       1, &start, &source1);
     
     for(int ie = 0; ie < nmacro; ++ie) { 
@@ -1484,7 +1492,7 @@ void RK2_CL(field *f, real tmax, real dt,
     f->tnow += 0.5 * dt;
 
     // stage 1
-    dtfield_extract_CL(f, f->tnow, wnp1_cl,
+    dtfield_CL(f, f->tnow, wnp1_cl,
 	       nmacro, stage1, &source2);
     for(int ie = 0; ie < nmacro; ++ie) { 
       MacroCell *mcell = f->mcell + ie;
