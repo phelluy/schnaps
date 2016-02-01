@@ -303,7 +303,7 @@ void init_empty_field(field *f);
 
 //! free the buffers created in Initfield.
 //! \param[inout] f a field
-void Freefield(field *f);
+void freefield(field *f);
 
 //! \brief compute the Discontinuous Galerkin volume terms
 //! slow version (no optimization using the tensors products)

@@ -1147,15 +1147,56 @@ void Initfield(field *f)
   printf("field init done\n");
 }
 
+void free_field_events(field *f)
+{
+  cl_int status;
+  
+  const int nmacro = f->macromesh.nbelems;
+  for(int ie = 0; ie < nmacro; ++ie) 
+    clReleaseEvent(f->clv_zbuf[ie]);
+  free(f->clv_zbuf);
+  
+  const int ninterfaces = f->macromesh.nmacrointerfaces;
+  for(int i = 0; i < ninterfaces; ++i) 
+    clReleaseEvent(f->clv_mci[i]);
+  if(ninterfaces > 0)
+    free(f->clv_mci);
+  
+  const int nbound = f->macromesh.nboundaryfaces;
+  for(int i = 0; i < nbound; ++i) 
+    clReleaseEvent(f->clv_boundary[i]);
+  if(nbound > 0)
+    free(f->clv_boundary);
+  
+  
+  for(int dim = 0; dim < 3; ++dim) {
+    for(int ie = 0; ie < nmacro; ++ie) 
+      clReleaseEvent(f->clv_flux[dim][ie]);
+    free(f->clv_flux[dim]);
+  }
+  free(f->clv_flux);
+  
+  for(int ie = 0; ie < nmacro; ++ie) {
+    clReleaseEvent(f->clv_volume[ie]);
+    clReleaseEvent(f->clv_source[ie]);
+    clReleaseEvent(f->clv_mass[ie]);
+  }
+  free(f->clv_volume);
+  free(f->clv_source);
+  free(f->clv_mass);
+}
+
 // This is the destructor for a field
-void free_field(field *f) 
+void freefield(field *f) 
 {
 
 #ifdef _WITH_OPENCL
   //  cl_int status;
 
+  // Clean up OpenCL events.
+  free_field_events(f);
 #endif
-
+  
   // FIXME: free mcells and mface contents.
   free(f->mcell);
   free(f->mface);

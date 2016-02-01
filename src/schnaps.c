@@ -304,5 +304,7 @@ int main(int argc, char *argv[])
  
   printf("\n");
   printf("L2 error: %f\n", dd);
+
+  freefield(&f);
   return 0;
 }
