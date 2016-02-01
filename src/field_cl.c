@@ -1189,15 +1189,9 @@ void dtfield_extract_CL(field *f, real tnow, cl_mem *wn_cl,
 
   // TODO: move to field struct.
   const int nextract = ncellfaces * nmacro;
-  cl_event* clv_extract = calloc(nextract, sizeof(cl_event));
-  cl_event* clv_insert = calloc(nextract, sizeof(cl_event));
   cl_event clv_extracts;
   cl_event clv_inserts;
 
-  cl_event* clv_boundary = (nboundary > 0) ?
-    calloc(nboundary, sizeof(cl_event)) : NULL;
-  cl_event* clv_interface = (ninterface > 0) ?
-    calloc(ninterface, sizeof(cl_event)) : NULL;
   cl_event clv_bi[2];
   
   for(int ie = 0; ie < nmacro; ++ie) {
@@ -1212,11 +1206,11 @@ void dtfield_extract_CL(field *f, real tnow, cl_mem *wn_cl,
     int offset = ie * ncellfaces;
     for(int ifa = 0; ifa < ncellfaces; ++ifa) {
       ExtractInterface_CL(mcell, f, ifalist[ifa], wn_cl[ie],
-			  1, &zbuf, clv_extract + offset + ifa);
+			  1, &zbuf, f->clv_extract + offset + ifa);
     }
   }
 
-  empty_kernel(f, nextract, clv_extract, &clv_extracts);
+  empty_kernel(f, nextract, f->clv_extract, &clv_extracts);
   
   if(nboundary > 0) {
     for(int i = 0; i < nboundary; ++i) {
@@ -1225,9 +1219,9 @@ void dtfield_extract_CL(field *f, real tnow, cl_mem *wn_cl,
       int ieL = mface->ieL;
       MacroCell *mcellL = f->mcell + ieL;
       ExtractedDGBoundary_CL(mface, f, tnow,
-			     1, &clv_extracts, clv_boundary + i);
+			     1, &clv_extracts, f->clv_boundary + i);
     }
-    empty_kernel(f, nboundary, clv_boundary, &clv_bi[0]);
+    empty_kernel(f, nboundary, f->clv_boundary, &clv_bi[0]);
   } else {
     empty_kernel(f, 1, &clv_extracts, &clv_bi[0]);
   }
@@ -1236,9 +1230,9 @@ void dtfield_extract_CL(field *f, real tnow, cl_mem *wn_cl,
     for(int i = 0; i < ninterface; ++i) {
       int ifa = f->macromesh.macrointerface[i];
       MacroFace *mface = f->mface + ifa;
-      ExtractedDGInterface_CL(mface, f, 1, &clv_extracts, clv_interface + i);
+      ExtractedDGInterface_CL(mface, f, 1, &clv_extracts, f->clv_interface + i);
     }
-    empty_kernel(f, ninterface, clv_interface, &clv_bi[1]);
+    empty_kernel(f, ninterface, f->clv_interface, &clv_bi[1]);
   } else {
     empty_kernel(f, 1, &clv_extracts, &clv_bi[1]);
   }
@@ -1249,12 +1243,12 @@ void dtfield_extract_CL(field *f, real tnow, cl_mem *wn_cl,
     for(int ifa = 0; ifa < ncellfaces; ++ifa) {
       InsertInterface_CL(mcell, f, ifalist[ifa], f->dtwn_cl[ie],
 			 ifa == 0 ? 2 : 1,
-			 ifa == 0 ? clv_bi : clv_insert + offset + ifa - 1,
-			 clv_insert + offset + ifa);
+			 ifa == 0 ? clv_bi : f->clv_insert + offset + ifa - 1,
+			 f->clv_insert + offset + ifa);
     }
   }
 
-  empty_kernel(f, nextract, clv_insert, &macrobounds);
+  empty_kernel(f, nextract, f->clv_insert, &macrobounds);
   
   // The kernels for the intra-macrocell computations can be launched
   // in parallel between macrocells.
@@ -1317,28 +1311,8 @@ void dtfield_extract_CL(field *f, real tnow, cl_mem *wn_cl,
     f->mass_time += clv_duration(f->clv_mass[ie]);
   }
 
-  for(int i = 0; i < ncellfaces * nmacro; ++i) {
-    clReleaseEvent(clv_extract[i]);
-    clReleaseEvent(clv_insert[i]);
-  }
-  free(clv_extract);
-  free(clv_insert);
   clReleaseEvent(clv_extracts);
   clReleaseEvent(clv_inserts);
-  
-  if(nboundary > 0) {
-    for(int i = 0; i < nboundary; ++i) {
-      clReleaseEvent(clv_boundary[i]);
-    }
-    free(clv_boundary);
-  }
-  
-  if(ninterface > 0) {
-    for(int i = 0; i < ninterface; ++i) {
-      clReleaseEvent(clv_interface[i]);
-    }
-    free(clv_interface);
-  }
   
   clReleaseEvent(clv_bi[0]);
   clReleaseEvent(clv_bi[1]);

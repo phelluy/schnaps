@@ -176,6 +176,11 @@ typedef struct field {
   int *bwavecount;
   int **bwave;
   cl_event **clv_bwave;
+
+  // For extracted interfaces / boundaries
+  cl_event* clv_extract;
+  cl_event* clv_insert;
+  
   
   //! \brief opencl data
   CLInfo cli;
@@ -232,6 +237,7 @@ typedef struct field {
   cl_event *clv_mci;
   // Boundary term events
   cl_event *clv_boundary;
+  cl_event *clv_interface;
 
   // OpenCL timing
   int zbuf_calls;

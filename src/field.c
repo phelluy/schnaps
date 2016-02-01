@@ -309,9 +309,9 @@ void init_field_events_cl(field *f)
   if(ninterfaces > 0)
     f->clv_mci = calloc(ninterfaces, sizeof(cl_event));
     
-  const int nbound = f->macromesh.nboundaryfaces;
-  if(nbound > 0)
-    f->clv_boundary = calloc(nbound, sizeof(cl_event));
+  const int nboundary =  f->macromesh.nboundaryfaces;
+  if(nboundary > 0)
+    f->clv_boundary = calloc(nboundary, sizeof(cl_event));
 
   f->clv_flux = calloc(3, sizeof(cl_event*));
   for(int dim = 0; dim < 3; ++dim) {
@@ -321,6 +321,25 @@ void init_field_events_cl(field *f)
   f->clv_volume = calloc(nmacro, sizeof(cl_event));
   f->clv_source = calloc(nmacro, sizeof(cl_event));
   f->clv_mass = calloc(nmacro, sizeof(cl_event));
+
+  // Init extraction and extracted interface/boundary events
+
+  unsigned int ndim = 3;
+  if(f->macromesh.is2d)
+    ndim = 2;
+  if(f->macromesh.is1d)
+    ndim = 1;
+  
+  const int ncellfaces = 2 * ndim;
+
+  const int nextract = ncellfaces * nmacro;
+  f->clv_extract = calloc(nextract, sizeof(cl_event));
+  f->clv_insert = calloc(nextract, sizeof(cl_event));
+
+  const int ninterface = f->macromesh.nmacrointerfaces;
+  if(ninterface > 0)
+    f->clv_interface = calloc(ninterface, sizeof(cl_event));
+  
 }
 
 void init_field_macrocells_cl(field *f)
@@ -1161,14 +1180,7 @@ void free_field_events(field *f)
     clReleaseEvent(f->clv_mci[i]);
   if(ninterfaces > 0)
     free(f->clv_mci);
-  
-  const int nbound = f->macromesh.nboundaryfaces;
-  for(int i = 0; i < nbound; ++i) 
-    clReleaseEvent(f->clv_boundary[i]);
-  if(nbound > 0)
-    free(f->clv_boundary);
-  
-  
+    
   for(int dim = 0; dim < 3; ++dim) {
     for(int ie = 0; ie < nmacro; ++ie) 
       clReleaseEvent(f->clv_flux[dim][ie]);
@@ -1184,6 +1196,38 @@ void free_field_events(field *f)
   free(f->clv_volume);
   free(f->clv_source);
   free(f->clv_mass);
+
+  // Extracted events
+  unsigned int ndim = 3;
+  if(f->macromesh.is2d)
+    ndim = 2;
+  if(f->macromesh.is1d)
+    ndim = 1;
+  const int ncellfaces = 2 * ndim;
+  for(int i = 0; i < ncellfaces * nmacro; ++i) {
+    clReleaseEvent(f->clv_extract[i]);
+    clReleaseEvent(f->clv_insert[i]);
+  }
+  free(f->clv_extract);
+  free(f->clv_insert);
+
+  const int nboundary = f->macromesh.nboundaryfaces;
+  const int ninterface = f->macromesh.nmacrointerfaces;
+ 
+  if(nboundary > 0) {
+    for(int i = 0; i < nboundary; ++i) {
+      clReleaseEvent(f->clv_boundary[i]);
+    }
+    free(f->clv_boundary);
+  }
+  
+  if(ninterface > 0) {
+    for(int i = 0; i < ninterface; ++i) {
+      clReleaseEvent(f->clv_interface[i]);
+    }
+    free(f->clv_interface);
+  }
+
 }
 
 // This is the destructor for a field
