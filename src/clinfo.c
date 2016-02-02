@@ -609,6 +609,9 @@ void InitCLInfo(CLInfo *cli, int platform_num, int device_num)
 #endif
 
   } else {
+    // We are using the SOCL platform, which requires a non-standard
+    // context and command queue.
+
     cl_context_properties properties[]
       = {CL_CONTEXT_PLATFORM,
 	 (cl_context_properties)platforms[platform_num], 0};
@@ -616,6 +619,7 @@ void InitCLInfo(CLInfo *cli, int platform_num, int device_num)
     for(int i = 0; i < ndevices; ++i) {
       devicelist[i] = get_device_id(cli->platform, i);
     }
+
     cli->context = clCreateContext(properties, ndevices, devicelist,
 				   NULL, NULL, &status);
 
