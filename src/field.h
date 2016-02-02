@@ -260,6 +260,9 @@ typedef struct field {
   cl_ulong source_time;
   cl_ulong rk_time;
 
+  cl_ulong extractinsert_time;
+  int extractinsert_calls;
+
 #endif
 } field;
 

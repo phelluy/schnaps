@@ -500,6 +500,9 @@ void init_field_cl(field *f)
   f->boundary_time = 0;
   f->source_time = 0;
   f->rk_time = 0;
+  
+  f->extractinsert_time = 0;
+  f->extractinsert_calls = 0;
 }
 #endif
 

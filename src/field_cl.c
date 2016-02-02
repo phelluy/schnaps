@@ -1287,6 +1287,8 @@ void dtfield_extract_CL(field *f, real tnow, cl_mem *wn_cl,
   }
 
   empty_kernel(f, nmacro, f->clv_mass, done);
+
+  clWaitForEvents(nmacro, f->clv_mass);
   
   for(int ie = 0; ie < nmacro; ++ie) {
     f->zbuf_calls++;
@@ -1309,6 +1311,26 @@ void dtfield_extract_CL(field *f, real tnow, cl_mem *wn_cl,
     f->vol_time += clv_duration(f->clv_volume[ie]);
     f->mass_calls++;
     f->mass_time += clv_duration(f->clv_mass[ie]);
+  }
+
+  for(int ie = 0; ie < f->macromesh.nbelems; ++ie) {
+    int offset = ie * ncellfaces;
+    for(int ifa = 0; ifa < ncellfaces; ++ifa) {
+      f->extractinsert_calls++;
+      f->extractinsert_time += clv_duration(f->clv_extract[offset + ifa]);
+      f->extractinsert_calls++;
+      f->extractinsert_time += clv_duration(f->clv_insert[offset + ifa]);
+    }
+  }
+
+  for(int i = 0; i < nboundary; ++i) {
+    f->boundary_calls++;
+    f->boundary_time += clv_duration(f->clv_boundary[i]);
+  }
+
+  for(int i = 0; i < nboundary; ++i) {
+    f->minter_calls++;
+    f->minter_time += clv_duration(f->clv_interface[i]);
   }
 
   clReleaseEvent(clv_extracts);
@@ -1862,6 +1884,7 @@ void show_cl_timing(field *f)
   total += f->source_time;
   total += f->rk_time;
   total += f->flux_time;
+  total += f->extractinsert_time;
   
   double N = 100.0 / total;
 
@@ -1875,6 +1898,8 @@ void show_cl_timing(field *f)
   printtimes("DGMacroCellInterface_CL: ", f->minter_time, f->minter_calls, N); 
   printtimes("DGBoundary:              ", f->boundary_time, f->boundary_calls,
 	     N); 
+  printtimes("Insert / extract:        ", f->extractinsert_time,
+	     f->extractinsert_calls, N);
   printtimes("DGVolume_CL:             ", f->vol_time, f->vol_calls, N);
   printtimes("DGFlux_CL:               ", f->flux_time, f->flux_calls, N);
   printtimes("DGMass_CL:               ", f->mass_time, f->mass_calls, N);
