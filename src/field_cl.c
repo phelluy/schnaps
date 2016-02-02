@@ -1328,7 +1328,7 @@ void dtfield_extract_CL(field *f, real tnow, cl_mem *wn_cl,
     f->boundary_time += clv_duration(f->clv_boundary[i]);
   }
 
-  for(int i = 0; i < nboundary; ++i) {
+  for(int i = 0; i < ninterface; ++i) {
     f->minter_calls++;
     f->minter_time += clv_duration(f->clv_interface[i]);
   }
