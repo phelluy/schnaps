@@ -11,6 +11,7 @@
 #include "quantities_vp.h"
 #include "solverpoisson.h"
 #include "model.h"
+#include <sys/time.h>
 
 #ifdef _WITH_OPENCL 
 #include "clutils.h"
@@ -2261,9 +2262,11 @@ void RK2(field *f, real tmax, real dt)
   if(f->nb_diags != 0)
     f->Diagnostics = malloc(size_diags * sizeof(real));
 
+  struct timeval t_start;
+  gettimeofday(&t_start, NULL);
   while(f->tnow < tmax) {
-    if(f->tnow  + dt > tmax)
-      dt = tmax - f->tnow;
+    /* if(f->tnow  + dt > tmax) */
+    /*   dt = tmax - f->tnow; */
     
     if (iter % freq == 0)
       printf("t=%f iter=%d/%d dt=%f\n", f->tnow, iter, f->itermax, dt);
@@ -2284,7 +2287,13 @@ void RK2(field *f, real tmax, real dt)
     iter++;
     f->iter_time = iter;
   }
-  printf("t=%f iter=%d/%d dt=%f\n", f->tnow, iter, f->itermax, dt);
+  struct timeval t_end;
+  gettimeofday(&t_end, NULL);
+
+  double rkseconds = (t_end.tv_sec - t_start.tv_sec) * 1.0 // seconds
+    + (t_end.tv_usec - t_start.tv_usec) * 1e-6; // microseconds
+  printf("\nTotal RK time (s):\n%f\n", rkseconds);
+  printf("\nTotal RK time per time-step (s):\n%f\n", rkseconds / iter );
 
   free(wnp1);
 }
