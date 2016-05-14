@@ -161,12 +161,14 @@ void Maxwell2DCleanSource(const real *x, const real t, const real *w,
   // w: (Ex, Ey, Hz, \lambda, rho, Jx, Jy)
   
   // FIXME add documentation
+
+  // FIXMEFIXMEFIXME: this looks totally wrong.
   
-  const real khi = 1.0;
-  source[0] = -w[4];
-  source[1] = -w[5];
+  const real khi = 1.0; // FIXME: what is khi ????
+  source[0] = -w[4]; // Ex -= dt * lambda ????
+  source[1] = -w[5]; // Ey -= dt * rho ????
   source[2] = 0;
-  source[3] = khi * w[6];
+  source[3] = khi * w[6]; // lambda += dt * khi * Jy ????
   source[4] = 0;
   source[5] = 0;
   source[6] = 0;
