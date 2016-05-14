@@ -12,7 +12,9 @@ int main()
 {
   ADERDG adg;
 
-  InitADERDG(&adg,-1,1);
+  double xmin = -1.0;
+  double xmax = 1.0;
+  InitADERDG(&adg, xmin, xmax);
 
   /* for(int ie = 1; ie <= _NBELEMS_IN; ie++) */
   /*   { */
@@ -25,47 +27,47 @@ int main()
 
   /* assert(1==2); */
 
-  ADERSolve(&adg,0.5);
+  double tmax = 0.5;
+  ADERSolve(&adg, tmax);
 
   Plot(&adg);
 
   return 0;
-
 }
 
 double stretching(double x)
 {
-  double alpha=2;
-  double beta=2;
+  double alpha = 2.0;
+  double beta = 2.0;
   //return x;
-  return alpha * x + (3 - 2 * alpha - beta) * x * x +
-    (alpha - 2 + beta) *  pow( x,  3.);
+  return alpha * x + (3 - 2 * alpha - beta) * x * x
+    + (alpha - 2 + beta) *  pow( x,  3.);
 }
 
-void InitADERDG(ADERDG* adg,double xmin,double xmax)
+void InitADERDG(ADERDG* adg, double xmin, double xmax)
 {
   adg->xmin = xmin;
   adg->xmax = xmax;
 
-  for(int i = 0; i < _NBFACES; i++){
+  for(int i = 0; i < _NBFACES; i++) {
     double xh = (double)i / _NBELEMS_IN;
     double x = stretching(xh);
-    adg->face[i] = xmin + x * (xmax-xmin);
+    adg->face[i] = xmin + x * (xmax - xmin);
     //printf("i=%d x=%f\n",i, adg->face[i]);
   }
 
-  adg->dx=0;
-  for(int ie = 1; ie <= _NBELEMS_IN;ie++){
-    adg->dx=_MAX(adg->dx, adg->face[ie]- adg->face[ie-1]);
+  adg->dx = 0.0;
+  for(int ie = 1; ie <= _NBELEMS_IN; ie++) {
+    adg->dx = _MAX(adg->dx, adg->face[ie] - adg->face[ie - 1]);
   }
 
   adg->cfl = _CFL;
   adg->dt = adg->cfl * adg->dx;  // TODO: put the velocity
-  adg->ncfl=0;
+  adg->ncfl = 0;
 
   for(int ie = 1; ie <= _NBELEMS_IN; ie++) {
     adg->cell_level[ie] =
-      (int) (log(adg->dx/(adg->face[ie] - adg->face[ie-1])) / log(2));
+      (int) (log(adg->dx / (adg->face[ie] - adg->face[ie-1])) / log(2));
     adg->ncfl = _MAX ( adg->ncfl , adg->cell_level[ie] );
   }
   // convention: first and last cell are among the biggest elements
@@ -76,12 +78,13 @@ void InitADERDG(ADERDG* adg,double xmin,double xmax)
 
   adg->dt_small = adg->dt / (1 << adg->ncfl);
 
-  printf("small dt=%f max cell size=%f\n",adg->dt_small,adg->dx);
+  printf("small dt=%f max cell size=%f\n", adg->dt_small, adg->dx);
 
-  for(int ie = 1;ie <= _NBELEMS_IN; ie++){
-    for(int j = 0;j < _NGLOPS; j++){
+  for(int ie = 1; ie <= _NBELEMS_IN; ie++) {
+    for(int j = 0;j < _NGLOPS; j++) {
       double h = adg->face[ie] - adg->face[ie-1];
-      double x = adg->face[ie-1] + h * gauss_lob_point[gauss_lob_offset[_D]+j];
+      double x = adg->face[ie-1]
+	+ h * gauss_lob_point[gauss_lob_offset[_D] + j];
       ExactSol(x, 0, adg->wnow[ie][j]);
     }
   }
@@ -210,6 +213,8 @@ void ADERTimeStep(ADERDG* adg)
 
 void NumFlux(double* wL,double* wR,double* flux)
 {
+  // Upwind flux for transport equation with two velocities.
+
   double vn = velocity[0];
   double vnp = vn > 0 ? vn : 0;
   double vnm = vn - vnp;
@@ -219,7 +224,6 @@ void NumFlux(double* wL,double* wR,double* flux)
   vnp = vn > 0 ? vn : 0;
   vnm = vn - vnp;
   flux[1] = vnp * wL[1] + vnm * wR[1];
-
   
   /* flux[0] = vn * (wL[0] + wR[0]) / 2;  */
   /* flux[1] = vn * (wL[1] + wR[1]) / 2;  */
@@ -260,7 +264,6 @@ void BigStep(ADERDG* adg)
 
 void Plot(ADERDG* adg)
 {
-
   FILE * gnufile;
   gnufile = fopen("adgplot.dat", "w" );
 
@@ -341,7 +344,7 @@ void Predictor(ADERDG* adg,int ie,double s)
       w[2] = (2 * t * t - t) * w0[0] 
 	+ (-4 * t * t + 4 * t) * w0[1] + (1 + 2 * t * t - 3 * t) * w0[2];
       break;
-
+      
     case 3 :
       w[0] = 0.1000000000e1 * (0.1e1 + 0.6e1 * t + 0.10e2 * t * t + 0.5e1 * pow(t, 0.3e1)) * w0[0] - 0.1809016994e1 * (0.1065247584e2 * t + 0.4472135954e1 + 0.618033988e1 * t * t) * t * w0[1] + 0.6909830056e0 * (0.2065247584e2 * t + 0.4472135954e1 + 0.1618033988e2 * t * t) * t * w0[2] - 0.1000000000e1 * t * (0.1e1 + 0.5e1 * t + 0.5e1 * t * t) * w0[3];
       w[1] = 0.5000000000e0 * t * (0.1170820393e2 * t + 0.3236067977e1 + 0.10e2 * t * t) * w0[0] - 0.3618033987e0 * (-0.2763932023e1 + 0.2763932023e2 * t * t + 0.3090169942e2 * pow(t, 0.3e1)) * w0[1] + 0.1000000000e1 * t * (0.1118033988e2 * t * t + 0.5e1 * t - 0.2236067977e1) * w0[2] - 0.5000000000e0 * t * (0.1708203931e1 * t - 0.1236067977e1 + 0.10e2 * t * t) * w0[3];

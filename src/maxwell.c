@@ -14,16 +14,15 @@ void Maxwell2DNumFlux_centered(real *wL, real *wR, real *vnorm, real *flux)
   const real ny = vnorm[1];
   const real khi = 1.0;
 
-  // FIXME: improve names for these (refer to E, H, etc).
-  const real s0 = 0.5 * ( wR[0] + wL[0] );
-  const real s1 = 0.5 * ( wR[1] + wL[1] );
-  const real s2 = 0.5 * ( wR[2] + wL[2] );
-  const real s3 = 0.5 * ( wR[3] + wL[3] );
+  const real Esx = 0.5 * ( wR[0] + wL[0] );
+  const real Esy = 0.5 * ( wR[1] + wL[1] );
+  const real Hsz = 0.5 * ( wR[2] + wL[2] );
+  const real ls =  0.5 * ( wR[3] + wL[3] );
 
-  flux[0] = -ny * s2 + khi * nx * s3;
-  flux[1] =  nx * s2 + khi * ny * s3;
-  flux[2] = -ny * s0 + nx * s1;
-  flux[3] = khi * (nx * s0 + ny * s1);
+  flux[0] = -ny * Hsz + khi * nx * ls;
+  flux[1] =  nx * Hsz + khi * ny * ls;
+  flux[2] = -ny * Esx + nx * Esy;
+  flux[3] = khi * (nx * Esx + ny * Esy);
   flux[4] = 0.0;
   flux[5] = 0.0;
   flux[6] = 0.0;
@@ -31,7 +30,7 @@ void Maxwell2DNumFlux_centered(real *wL, real *wR, real *vnorm, real *flux)
 #pragma end_opencl
 
 #pragma start_opencl
-void Maxwell2DNumFlux_uncentered(real *wL, real *wR, real *vnorm, real *flux) 
+void Maxwell2DNumFlux_upwind(real *wL, real *wR, real *vnorm, real *flux) 
 {
   // w: (Ex, Ey, Hz, \lambda, rho, Jx, Jy)
 
@@ -43,26 +42,26 @@ void Maxwell2DNumFlux_uncentered(real *wL, real *wR, real *vnorm, real *flux)
   const real overr = 1.0 / (r + 1e-16);
   const real khi = 1.0;
 
-  const real s0 = 0.5 * ( wR[0] + wL[0] );
-  const real s1 = 0.5 * ( wR[1] + wL[1] );
-  const real s2 = 0.5 * ( wR[2] + wL[2] );
-  const real s3 = 0.5 * ( wR[3] + wL[3] );
+  const real Esx = 0.5 * ( wR[0] + wL[0] );
+  const real Esy = 0.5 * ( wR[1] + wL[1] );
+  const real Hsz = 0.5 * ( wR[2] + wL[2] );
+  const real ls = 0.5 * ( wR[3] + wL[3] );
 
-  const real d0 = 0.5 * ( wR[0] - wL[0] );
-  const real d1 = 0.5 * ( wR[1] - wL[1] );
-  const real d2 = 0.5 * ( wR[2] - wL[2] );
-  const real d3 = 0.5 * ( wR[3] - wL[3] );
+  const real Edx = 0.5 * ( wR[0] - wL[0] );
+  const real Edy = 0.5 * ( wR[1] - wL[1] );
+  const real Hdz = 0.5 * ( wR[2] - wL[2] );
+  const real ld = 0.5 * ( wR[3] - wL[3] );
 
   flux[0] = 
-    -ny * s2 + khi * nx * s3
-    -overr * ( d0 * (ny * ny + khi * nx * nx)
-	       + d1 * nx * ny * (khi - 1) );
+    -ny * Hsz + khi * nx * ls
+    -overr * ( Edx * (ny * ny + khi * nx * nx)
+	       + Edy * nx * ny * (khi - 1) );
   flux[1] = 
-    nx * s2 + khi * ny * s3
-    -overr * ((nx * ny * (khi - 1)) * d0
-	      +(nx * nx + khi * ny * ny) * d1);
-  flux[2] = -ny * s0 + nx * s1 - r * d2;
-  flux[3] = khi * (nx * s0 + ny * s1 -r * d3);
+    nx * Hsz + khi * ny * ls
+    -overr * ((nx * ny * (khi - 1)) * Edx
+	      +(nx * nx + khi * ny * ny) * Edy);
+  flux[2] = -ny * Esx + nx * Esy - r * Hdz;
+  flux[3] = khi * (nx * Esx + ny * Esy -r * ld);
   flux[4] = 0.0;
   flux[5] = 0.0;
   flux[6] = 0.0;
@@ -80,7 +79,7 @@ void Maxwell2DNumFlux_unoptimised(real *wL, real *wR, real *vnorm, real *flux)
   const real ny = vnorm[1];
   const real r = sqrt(nx * nx + ny * ny);
   const real overr = 1.0 / (r + 1e-16);
-  // Centered flux if eps=0, uncentered flux if eps=1
+  // Centered flux if eps=0, upwind flux if eps=1
   const real eps = 1;
   const real khi = 1.0;
 
@@ -139,12 +138,12 @@ void Maxwell2DImposedData(const real *x, const real t, real *w)
 #pragma end_opencl
 
 #pragma start_opencl
-void Maxwell2DBoundaryFlux_uncentered(real *x, real t, 
+void Maxwell2DBoundaryFlux_upwind(real *x, real t, 
 				      real *wL, real *vnorm, real *flux)
 {
   real wR[7];
   Maxwell2DImposedData(x, t, wR);
-  Maxwell2DNumFlux_uncentered(wL, wR, vnorm, flux);
+  Maxwell2DNumFlux_upwind(wL, wR, vnorm, flux);
 }
 #pragma end_opencl
 
@@ -174,9 +173,9 @@ void Maxwell2DSource(const real *x, const real t, const real *w, real *source,
 #pragma end_opencl
 
 #pragma start_opencl
-void Maxwell3DNumFlux_uncentered(real *wL, real *wR, real *vnorm, real *flux) 
+void Maxwell3DNumFlux_upwind(real *wL, real *wR, real *vnorm, real *flux) 
 {
-  // Uncentered flux (upwind) for Maxwell's equations
+  // Upwind flux (upwind) for Maxwell's equations
 
   // Data layout: w = {Ex, Ey, Ez, Hx, Hy, Hz}
 
@@ -186,8 +185,6 @@ void Maxwell3DNumFlux_uncentered(real *wL, real *wR, real *vnorm, real *flux)
   // and the last three are
   //   n x {{E}} + n x n x [[H]] / r 
 
-  // Operation count: 57 *, 31 +, 15 -, 1 /, 1 sqrt
-  
   const real nx = vnorm[0];
   const real ny = vnorm[1];
   const real nz = vnorm[2];
@@ -235,10 +232,9 @@ void Maxwell3DNumFlux_uncentered(real *wL, real *wR, real *vnorm, real *flux)
 #pragma end_opencl
 
 #pragma start_opencl
-void Maxwell3DNumFluxClean_uncentered(real *wL, real *wR, real *vnorm, 
-				      real *flux) 
+void Maxwell3DNumFluxClean_upwind(real *wL, real *wR, real *vnorm, real *flux) 
 {
-  // Uncentered flux (upwind) for Maxwell's equations
+  // Upwind flux for Maxwell's equations
 
   // Data layout: w = {Ex, Ey, Ez, Hx, Hy, Hz, lambda_E, lambda_H}
 
@@ -254,25 +250,13 @@ void Maxwell3DNumFluxClean_uncentered(real *wL, real *wR, real *vnorm,
   // The lambda_H flux is
   // c2 * ( n . {{H}} + r [[lambda_H]] )
 
-  // Operation count (not including Maxwell3DNumFlux_uncentered):
-  // 43 *, 28 +, 8 -, 1 sqrt
-  
   // We first compute the uncleaned flux, and then add the cleaning
   // (which is cleaner, though perhaps uses a few extra operations).
-  Maxwell3DNumFlux_uncentered(wL, wR, vnorm, flux);
-
-  // FIXME: temp
-  /* flux[6] = 0.0; */
-  /* flux[7] = 0.0; */
-  /* return;  */
+  Maxwell3DNumFlux_upwind(wL, wR, vnorm, flux);
 
   // FIXME: how do we set these?  What are good values?
   const real c1 = 0.1; // E-cleaning parameter
   const real c2 = 0.1; // H-cleaning parameter
-
-  // FIXME: temp
-  /* const real c1 = 0.0; */
-  /* const real c2 = 0.0; */
 
   // Consts based on vnorm
   const real nx = vnorm[0];
@@ -399,12 +383,12 @@ void Maxwell3DInitData(real *x, real *w)
 #pragma end_opencl
 
 #pragma start_opencl
-void Maxwell3DBoundaryFlux_uncentered(real *x, real t, 
+void Maxwell3DBoundaryFlux_upwind(real *x, real t, 
 				      real *wL, real *vnorm, real *flux)
 {
   real wR[8];
   Maxwell3DImposedData(x, t, wR);
-  Maxwell3DNumFluxClean_uncentered(wL, wR, vnorm, flux);
+  Maxwell3DNumFluxClean_upwind(wL, wR, vnorm, flux);
 }
 #pragma end_opencl
 

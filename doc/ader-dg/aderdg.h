@@ -14,8 +14,6 @@ const double velocity[_M]={1,-1};
 // activate ader predictor
 #define _ADER
 
-
-
 // nb of gauss lobatto points in one element
 #define _NGLOPS (_D+1)
 // nb of internal elements (not counting the two boundary
@@ -23,11 +21,9 @@ const double velocity[_M]={1,-1};
 #define _NBELEMS (_NBELEMS_IN+2)
 #define _NBFACES (_NBELEMS_IN+1)
 
-
-
 typedef struct ADERDG{
 
-  double xmin,xmax;
+  double xmin, xmax;
 
   double face[_NBFACES];
 

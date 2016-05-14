@@ -42,7 +42,7 @@ void Coil2DBoundaryFlux(real x[3], real t, real wL[], real *vnorm,
 {
   real wR[7];
   Coil2DImposedData(x, t, wR);
-  Maxwell2DNumFlux_uncentered(wL, wR, vnorm, flux);
+  Maxwell2DNumFlux_upwind(wL, wR, vnorm, flux);
 }
 
 void Coil2DInitData(real x[3], real w[])
@@ -62,7 +62,7 @@ int TestCoil2D(void)
   f.model.cfl = 0.2;  
   f.model.m = 7; // num of conservative variables
 
-  f.model.NumFlux = Maxwell2DNumFlux_uncentered;
+  f.model.NumFlux = Maxwell2DNumFlux_upwind;
   f.model.BoundaryFlux = Coil2DBoundaryFlux;
   f.model.InitData = Coil2DInitData;
   f.model.ImposedData = Coil2DImposedData;

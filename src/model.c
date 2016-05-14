@@ -14,8 +14,8 @@ fluxptr numflux(const char *name)
   if(strcmp(name, "TransNumFlux2d") == 0)
     return &TransNumFlux2d;
 
-  if(strcmp(name, "Maxwell3DNumFluxClean_uncentered") == 0)
-    return &Maxwell3DNumFluxClean_uncentered;
+  if(strcmp(name, "Maxwell3DNumFluxClean_upwind") == 0)
+    return &Maxwell3DNumFluxClean_upwind;
 
   printf("Numerical flux %s not found!\n", name);
   assert(false);
@@ -27,8 +27,8 @@ bfluxptr bflux(const char *name)
   if(strcmp(name, "TransBoundaryFlux2d") == 0)
     return &TransBoundaryFlux2d;
 
-  if(strcmp(name, "Maxwell3DBoundaryFlux_uncentered") == 0)
-    return &Maxwell3DBoundaryFlux_uncentered;
+  if(strcmp(name, "Maxwell3DBoundaryFlux_upwind") == 0)
+    return &Maxwell3DBoundaryFlux_upwind;
 
   printf("Boundary flux %s not found!\n", name);
   assert(false);

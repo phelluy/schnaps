@@ -13,8 +13,8 @@ int TestMaxwell3D()
   f.model.cfl = 0.05;  
   f.model.m = 8; // num of conservative variables
 
-  f.model.NumFlux = Maxwell3DNumFluxClean_uncentered;
-  f.model.BoundaryFlux = Maxwell3DBoundaryFlux_uncentered;
+  f.model.NumFlux = Maxwell3DNumFluxClean_upwind;
+  f.model.BoundaryFlux = Maxwell3DBoundaryFlux_upwind;
   f.model.InitData = Maxwell3DInitData;
   f.model.ImposedData = Maxwell3DImposedData;
   f.varindex = GenericVarindex;
@@ -41,12 +41,12 @@ int TestMaxwell3D()
 
   // Source is for rho and J, which are zero here.
   //set_source_CL(&f, "Maxwell3DSource");
-  sprintf(numflux_cl_name, "%s", "Maxwell3DNumFluxClean_uncentered");
+  sprintf(numflux_cl_name, "%s", "Maxwell3DNumFluxClean_upwind");
   sprintf(buf," -D NUMFLUX=");
   strcat(buf, numflux_cl_name);
   strcat(cl_buildoptions, buf);
 
-  sprintf(buf, " -D BOUNDARYFLUX=%s", "Maxwell3DBoundaryFlux_uncentered");
+  sprintf(buf, " -D BOUNDARYFLUX=%s", "Maxwell3DBoundaryFlux_upwind");
   strcat(cl_buildoptions, buf);
 
   Initfield(&f);

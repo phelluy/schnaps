@@ -8,7 +8,7 @@
 //! \param[in] vn : normal vector
 //! \param[out] flux : the flux
 #pragma start_opencl
-void Maxwell2DNumFlux_uncentered(real *wL, real *wR, real *vn, real *flux);
+void Maxwell2DNumFlux_upwind(real *wL, real *wR, real *vn, real *flux);
 #pragma end_opencl
 
 //! \brief The particular flux for the maxwell2d model
@@ -34,8 +34,8 @@ void Maxwell2DImposedData(const real * x, const real t, real *w);
 //! \param[in] vn : normal vector
 //! \param[out] flux : the flux
 #pragma start_opencl
-void Maxwell2DBoundaryFlux_uncentered(real *x, real t, real *wL, 
-				    real *vn, real *flux);
+void Maxwell2DBoundaryFlux_upwind(real *x, real t, real *wL,
+				  real *vn, real *flux);
 #pragma end_opencl
 
 //! \brief The particular init data for the maxwell2d model
@@ -51,12 +51,11 @@ void Maxwell2DSource(const real *x, const real t, const real *w, real *source,
 
 
 #pragma start_opencl
-void Maxwell3DNumFlux_uncentered(real *wL, real *wR, real *vnorm, real *flux);
+void Maxwell3DNumFlux_upwind(real *wL, real *wR, real *vnorm, real *flux);
 #pragma end_opencl
 
 #pragma start_opencl
-void Maxwell3DNumFluxClean_uncentered(real *wL, real *wR, real *vnorm, 
-					real *flux);
+void Maxwell3DNumFluxClean_upwind(real *wL, real *wR, real *vnorm, real *flux);
 #pragma end_opencl
 
 #pragma start_opencl
@@ -68,7 +67,7 @@ void Maxwell3DInitData(real *x, real *w);
 #pragma end_opencl
 
 #pragma start_opencl
-void Maxwell3DBoundaryFlux_uncentered(real *x, real t, 
+void Maxwell3DBoundaryFlux_upwind(real *x, real t, 
 					real *wL, real *vnorm, real *flux);
 #pragma end_opencl
 

@@ -13,9 +13,9 @@ int TestMaxwell2D()
   f.model.cfl = 0.05;  
   f.model.m = 7; // num of conservative variables
 
-  f.model.NumFlux = Maxwell2DNumFlux_uncentered;
+  f.model.NumFlux = Maxwell2DNumFlux_upwind;
   //f.model.NumFlux = Maxwell2DNumFlux_centered;
-  f.model.BoundaryFlux = Maxwell2DBoundaryFlux_uncentered;
+  f.model.BoundaryFlux = Maxwell2DBoundaryFlux_upwind;
   f.model.InitData = Maxwell2DInitData;
   f.model.ImposedData = Maxwell2DImposedData;
   f.varindex = GenericVarindex;
@@ -41,12 +41,12 @@ int TestMaxwell2D()
   strcat(cl_buildoptions, buf);
 
   set_source_CL(&f, "Maxwell2DSource");
-  sprintf(numflux_cl_name, "%s", "Maxwell2DNumFlux_uncentered");
+  sprintf(numflux_cl_name, "%s", "Maxwell2DNumFlux_upwind");
   sprintf(buf," -D NUMFLUX=");
   strcat(buf, numflux_cl_name);
   strcat(cl_buildoptions, buf);
 
-  sprintf(buf, " -D BOUNDARYFLUX=%s", "Maxwell2DBoundaryFlux_uncentered");
+  sprintf(buf, " -D BOUNDARYFLUX=%s", "Maxwell2DBoundaryFlux_upwind");
   strcat(cl_buildoptions, buf);
 
   Initfield(&f);
