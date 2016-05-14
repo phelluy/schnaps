@@ -4,7 +4,7 @@
 #include <assert.h>
 
 #pragma start_opencl
-void Maxwell2DNumFlux_centered(real *wL, real *wR, real *vnorm, real *flux) 
+void Maxwell2DCleanNumFlux_centered(real *wL, real *wR, real *vnorm, real *flux)
 {
   // w: (Ex, Ey, Hz, \lambda, rho, Jx, Jy)
 
@@ -30,7 +30,7 @@ void Maxwell2DNumFlux_centered(real *wL, real *wR, real *vnorm, real *flux)
 #pragma end_opencl
 
 #pragma start_opencl
-void Maxwell2DNumFlux_upwind(real *wL, real *wR, real *vnorm, real *flux) 
+void Maxwell2DCleanNumFlux_upwind(real *wL, real *wR, real *vnorm, real *flux) 
 {
   // w: (Ex, Ey, Hz, \lambda, rho, Jx, Jy)
 
@@ -45,12 +45,12 @@ void Maxwell2DNumFlux_upwind(real *wL, real *wR, real *vnorm, real *flux)
   const real Esx = 0.5 * ( wR[0] + wL[0] );
   const real Esy = 0.5 * ( wR[1] + wL[1] );
   const real Hsz = 0.5 * ( wR[2] + wL[2] );
-  const real ls = 0.5 * ( wR[3] + wL[3] );
+  const real ls =  0.5 * ( wR[3] + wL[3] );
 
   const real Edx = 0.5 * ( wR[0] - wL[0] );
   const real Edy = 0.5 * ( wR[1] - wL[1] );
   const real Hdz = 0.5 * ( wR[2] - wL[2] );
-  const real ld = 0.5 * ( wR[3] - wL[3] );
+  const real ld =  0.5 * ( wR[3] - wL[3] );
 
   flux[0] = 
     -ny * Hsz + khi * nx * ls
@@ -69,7 +69,8 @@ void Maxwell2DNumFlux_upwind(real *wL, real *wR, real *vnorm, real *flux)
 #pragma end_opencl
 
 #pragma start_opencl
-void Maxwell2DNumFlux_unoptimised(real *wL, real *wR, real *vnorm, real *flux) 
+void Maxwell2DCleanNumFlux_unoptimised(real *wL, real *wR, real *vnorm,
+				       real *flux) 
 {
   // w: (Ex, Ey, Hz, \lambda, rho, Jx, Jy)
 
@@ -113,7 +114,7 @@ void Maxwell2DNumFlux_unoptimised(real *wL, real *wR, real *vnorm, real *flux)
 #pragma end_opencl
 
 #pragma start_opencl
-void Maxwell2DImposedData(const real *x, const real t, real *w) 
+void Maxwell2DCleanImposedData(const real *x, const real t, real *w) 
 {
   // w: (Ex, Ey, Hz, \lambda, rho, Jx, Jy)
 
@@ -138,24 +139,24 @@ void Maxwell2DImposedData(const real *x, const real t, real *w)
 #pragma end_opencl
 
 #pragma start_opencl
-void Maxwell2DBoundaryFlux_upwind(real *x, real t, 
-				      real *wL, real *vnorm, real *flux)
+void Maxwell2DCleanBoundaryFlux_upwind(real *x, real t, 
+				       real *wL, real *vnorm, real *flux)
 {
   real wR[7];
-  Maxwell2DImposedData(x, t, wR);
-  Maxwell2DNumFlux_upwind(wL, wR, vnorm, flux);
+  Maxwell2DCleanImposedData(x, t, wR);
+  Maxwell2DCleanNumFlux_upwind(wL, wR, vnorm, flux);
 }
 #pragma end_opencl
 
-void Maxwell2DInitData(real *x, real *w) 
+void Maxwell2DCleanInitData(real *x, real *w) 
 {
   real t = 0;
-  Maxwell2DImposedData(x, t, w);
+  Maxwell2DCleanImposedData(x, t, w);
 }
 
 #pragma start_opencl
-void Maxwell2DSource(const real *x, const real t, const real *w, real *source,
-		     int m)
+void Maxwell2DCleanSource(const real *x, const real t, const real *w,
+			  real *source, int m)
 {
   // w: (Ex, Ey, Hz, \lambda, rho, Jx, Jy)
   
@@ -232,7 +233,7 @@ void Maxwell3DNumFlux_upwind(real *wL, real *wR, real *vnorm, real *flux)
 #pragma end_opencl
 
 #pragma start_opencl
-void Maxwell3DNumFluxClean_upwind(real *wL, real *wR, real *vnorm, real *flux) 
+void Maxwell3DCleanNumFlux_upwind(real *wL, real *wR, real *vnorm, real *flux) 
 {
   // Upwind flux for Maxwell's equations
 
@@ -313,7 +314,7 @@ void Maxwell3DNumFluxClean_upwind(real *wL, real *wR, real *vnorm, real *flux)
 #pragma end_opencl
 
 #pragma start_opencl
-void Maxwell3DImposedData(const real *x, const real t, real *w) 
+void Maxwell3DCleanImposedData(const real *x, const real t, real *w) 
 {
   // Data layout: w = {Ex, Ey, Ez, Hx, Hy, Hz, lambda_E, lambda_H}
 
@@ -344,7 +345,7 @@ void Maxwell3DImposedData(const real *x, const real t, real *w)
   real xdotVn = Vn[0] * x[0] + Vn[1] * x[1] + Vn[2] * x[2];
   real magnitude = cos(M_PI * 2.0 * test_cos_frequency * (xdotVn - t));
 
-  for(int ii=0;ii<6;ii++){
+  for(int ii = 0; ii < 6; ii++) {
     w[ii] = Ws[ii] * magnitude;
   }
 #else
@@ -375,20 +376,20 @@ void Maxwell3DImposedData(const real *x, const real t, real *w)
 #pragma end_opencl
 
 #pragma start_opencl
-void Maxwell3DInitData(real *x, real *w) 
+void Maxwell3DCleanInitData(real *x, real *w) 
 {
   real t = 0;
-  Maxwell3DImposedData(x, t, w);
+  Maxwell3DCleanImposedData(x, t, w);
 }
 #pragma end_opencl
 
 #pragma start_opencl
-void Maxwell3DBoundaryFlux_upwind(real *x, real t, 
-				      real *wL, real *vnorm, real *flux)
+void Maxwell3DCleanBoundaryFlux_upwind(real *x, real t, 
+				       real *wL, real *vnorm, real *flux)
 {
   real wR[8];
-  Maxwell3DImposedData(x, t, wR);
-  Maxwell3DNumFluxClean_upwind(wL, wR, vnorm, flux);
+  Maxwell3DCleanImposedData(x, t, wR);
+  Maxwell3DCleanNumFlux_upwind(wL, wR, vnorm, flux);
 }
 #pragma end_opencl
 

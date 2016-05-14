@@ -6,20 +6,21 @@
 
 int TestMaxwell2D()
 {
-  bool test = true;
+  int retval = 0;
+
   field f;
   init_empty_field(&f);
 
   f.model.cfl = 0.05;  
   f.model.m = 7; // num of conservative variables
 
-  f.model.NumFlux = Maxwell2DNumFlux_upwind;
+  f.model.NumFlux = Maxwell2DCleanNumFlux_upwind;
   //f.model.NumFlux = Maxwell2DNumFlux_centered;
-  f.model.BoundaryFlux = Maxwell2DBoundaryFlux_upwind;
-  f.model.InitData = Maxwell2DInitData;
-  f.model.ImposedData = Maxwell2DImposedData;
+  f.model.BoundaryFlux = Maxwell2DCleanBoundaryFlux_upwind;
+  f.model.InitData = Maxwell2DCleanInitData;
+  f.model.ImposedData = Maxwell2DCleanImposedData;
   f.varindex = GenericVarindex;
-  f.model.Source = Maxwell2DSource;
+  f.model.Source = Maxwell2DCleanSource;
   
   f.interp.interp_param[0] = f.model.m;
   f.interp.interp_param[1] = 3; // x direction degree
@@ -29,29 +30,29 @@ int TestMaxwell2D()
   f.interp.interp_param[5] = 4; // y direction refinement
   f.interp.interp_param[6] = 1; // z direction refinement
 
-  ReadMacroMesh(&(f.macromesh), "../test/testcube.msh");
+  ReadMacroMesh(&f.macromesh, "../test/testcube.msh");
 
-  Detect2DMacroMesh(&(f.macromesh));
+  Detect2DMacroMesh(&f.macromesh);
   assert(f.macromesh.is2d);
 
-  BuildConnectivity(&(f.macromesh));
+  BuildConnectivity(&f.macromesh);
 
   char buf[1000];
   sprintf(buf, "-D _M=%d", f.model.m);
   strcat(cl_buildoptions, buf);
 
-  set_source_CL(&f, "Maxwell2DSource");
-  sprintf(numflux_cl_name, "%s", "Maxwell2DNumFlux_upwind");
+  set_source_CL(&f, "Maxwell2DCleanSource");
+  sprintf(numflux_cl_name, "%s", "Maxwell2DCleanNumFlux_upwind");
   sprintf(buf," -D NUMFLUX=");
   strcat(buf, numflux_cl_name);
   strcat(cl_buildoptions, buf);
 
-  sprintf(buf, " -D BOUNDARYFLUX=%s", "Maxwell2DBoundaryFlux_upwind");
+  sprintf(buf, " -D BOUNDARYFLUX=%s", "Maxwell2DCleanBoundaryFlux_upwind");
   strcat(cl_buildoptions, buf);
 
   Initfield(&f);
   
-  CheckMacroMesh(&(f.macromesh), f.interp.interp_param + 1);
+  CheckMacroMesh(&f.macromesh, f.interp.interp_param + 1);
 
   real tmax = 0.1;
   f.vmax = 1;
@@ -76,17 +77,19 @@ int TestMaxwell2D()
 
   real dd = L2error(&f);
   real tolerance = 1.1e-2;
-  test = test && (dd < tolerance);
+  if(dd > tolerance)
+    retval += 1;
   printf("L2 error: %f\n", dd);
 
-  return test;
+  return retval;
 }
 
-int main(void) {
-  int resu = TestMaxwell2D();
-  if (resu) 
+int main()
+{
+  int retval = TestMaxwell2D();
+  if(retval == 0) 
     printf("Maxwell2D test OK!\n");
   else 
     printf("Maxwell2D failed !\n");
-  return !resu;
+  return retval;
 }

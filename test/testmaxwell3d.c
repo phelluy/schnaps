@@ -6,17 +6,17 @@
 
 int TestMaxwell3D() 
 {
-  bool test = true;
+  int retval = 0;
   field f;
   init_empty_field(&f);
 
   f.model.cfl = 0.05;  
   f.model.m = 8; // num of conservative variables
 
-  f.model.NumFlux = Maxwell3DNumFluxClean_upwind;
-  f.model.BoundaryFlux = Maxwell3DBoundaryFlux_upwind;
-  f.model.InitData = Maxwell3DInitData;
-  f.model.ImposedData = Maxwell3DImposedData;
+  f.model.NumFlux = Maxwell3DCleanNumFlux_upwind;
+  f.model.BoundaryFlux = Maxwell3DCleanBoundaryFlux_upwind;
+  f.model.InitData = Maxwell3DCleanInitData;
+  f.model.ImposedData = Maxwell3DCleanImposedData;
   f.varindex = GenericVarindex;
     
   f.interp.interp_param[0] = f.model.m;
@@ -27,13 +27,9 @@ int TestMaxwell3D()
   f.interp.interp_param[5] = 2; // y direction refinement
   f.interp.interp_param[6] = 2; // z direction refinement
 
-  ReadMacroMesh(&(f.macromesh), "../test/testcube.msh");
+  ReadMacroMesh(&f.macromesh, "../test/testcube.msh");
 
-  // FIXME: temp
-  /* Detect2DMacroMesh(&(f.macromesh)); */
-  /* assert(f.macromesh.is2d); */
-
-  BuildConnectivity(&(f.macromesh));
+  BuildConnectivity(&f.macromesh);
 
   char buf[1000];
   sprintf(buf, "-D _M=%d", f.model.m);
@@ -41,18 +37,18 @@ int TestMaxwell3D()
 
   // Source is for rho and J, which are zero here.
   //set_source_CL(&f, "Maxwell3DSource");
-  sprintf(numflux_cl_name, "%s", "Maxwell3DNumFluxClean_upwind");
+  sprintf(numflux_cl_name, "%s", "Maxwell3DCleanNumFlux_upwind");
   sprintf(buf," -D NUMFLUX=");
   strcat(buf, numflux_cl_name);
   strcat(cl_buildoptions, buf);
 
-  sprintf(buf, " -D BOUNDARYFLUX=%s", "Maxwell3DBoundaryFlux_upwind");
+  sprintf(buf, " -D BOUNDARYFLUX=%s", "Maxwell3DCleanBoundaryFlux_upwind");
   strcat(cl_buildoptions, buf);
 
   Initfield(&f);
   f.tnow = 0.0;
   
-  CheckMacroMesh(&(f.macromesh), f.interp.interp_param + 1);
+  CheckMacroMesh(&f.macromesh, f.interp.interp_param + 1);
 
   real tmax = 0.1;
   f.vmax = 1.0;
@@ -78,18 +74,20 @@ int TestMaxwell3D()
 
   real dd = L2error(&f);
   real tolerance = 0.08;
-  test = test && (dd < tolerance);
+  if(dd > tolerance)
+    retval += 1;
+  
   printf("L2 error: %f\n", dd);
 
-  return test;
+  return retval;
 }
 
 int main() 
 {
-  int resu = TestMaxwell3D();
-  if (resu) 
+  int retval = TestMaxwell3D();
+  if(retval == 0) 
     printf("Maxwell3D test OK!\n");
   else 
     printf("Maxwell3D failed !\n");
-  return !resu;
+  return retval;
 }

@@ -14,8 +14,8 @@ fluxptr numflux(const char *name)
   if(strcmp(name, "TransNumFlux2d") == 0)
     return &TransNumFlux2d;
 
-  if(strcmp(name, "Maxwell3DNumFluxClean_upwind") == 0)
-    return &Maxwell3DNumFluxClean_upwind;
+  if(strcmp(name, "Maxwell3DCleanNumFlux_upwind") == 0)
+    return &Maxwell3DCleanNumFlux_upwind;
 
   printf("Numerical flux %s not found!\n", name);
   assert(false);
@@ -27,8 +27,8 @@ bfluxptr bflux(const char *name)
   if(strcmp(name, "TransBoundaryFlux2d") == 0)
     return &TransBoundaryFlux2d;
 
-  if(strcmp(name, "Maxwell3DBoundaryFlux_upwind") == 0)
-    return &Maxwell3DBoundaryFlux_upwind;
+  if(strcmp(name, "Maxwell3DCleanBoundaryFlux_upwind") == 0)
+    return &Maxwell3DCleanBoundaryFlux_upwind;
 
   printf("Boundary flux %s not found!\n", name);
   assert(false);
@@ -40,8 +40,8 @@ initdataptr initdata(const char *name)
   if(strcmp(name, "TransInitData2d") == 0)
     return &TransInitData2d;
 
-  if(strcmp(name, "Maxwell3DInitData") == 0)
-    return &Maxwell3DInitData;
+  if(strcmp(name, "Maxwell3DCleanInitData") == 0)
+    return &Maxwell3DCleanInitData;
 
   printf("Init data %s not found!\n", name);
   assert(false);
@@ -56,8 +56,8 @@ imposeddataptr imposeddata(const char *name)
   if(strcmp(name, "TestTransImposedData2d") == 0)
     return &TestTransImposedData2d;
   
-  if(strcmp(name, "Maxwell3DImposedData") == 0)
-    return &Maxwell3DImposedData;
+  if(strcmp(name, "Maxwell3DCleanImposedData") == 0)
+    return &Maxwell3DCleanImposedData;
 
   printf("Imposed data %s not found!\n", name);
   assert(false);
