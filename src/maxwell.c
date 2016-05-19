@@ -8,22 +8,30 @@ void Maxwell2DCleanNumFlux_centered(real *wL, real *wR, real *vnorm, real *flux)
 {
   // w: (Ex, Ey, Hz, \lambda, rho, Jx, Jy)
 
-  // FIXME add documentation
-  
   const real nx = vnorm[0];
   const real ny = vnorm[1];
   const real khi = 1.0;
 
-  const real Esx = 0.5 * ( wR[0] + wL[0] );
-  const real Esy = 0.5 * ( wR[1] + wL[1] );
-  const real Hsz = 0.5 * ( wR[2] + wL[2] );
-  const real ls =  0.5 * ( wR[3] + wL[3] );
+  // mean of L and R
+  const real MEx = 0.5 * ( wL[0] + wR[0] );
+  const real MEy = 0.5 * ( wL[1] + wR[1] );
+  const real MHz = 0.5 * ( wL[2] + wR[2] );
+  const real Mlambda =  0.5 * ( wL[3] + wR[3] );
 
-  flux[0] = -ny * Hsz + khi * nx * ls;
-  flux[1] =  nx * Hsz + khi * ny * ls;
-  flux[2] = -ny * Esx + nx * Esy;
-  flux[3] = khi * (nx * Esx + ny * Esy);
+  // (Ex Ey) flux = (-ny , nx) * Mhz + khi * (nx , ny) * Mlambda 
+  flux[0] = -ny * MHz + khi * nx * Mlambda;
+  flux[1] =  nx * MHz + khi * ny * Mlambda;
+
+  // Hz flux = - (Ex , Ey) x (nx , ny)
+  flux[2] = -ny * MEx + nx * MEy;
+
+  // Lambda flux
+  flux[3] = khi * (nx * MEx + ny * MEy);
+
+  // rho flux
   flux[4] = 0.0;
+
+  // Jx, Jy flux
   flux[5] = 0.0;
   flux[6] = 0.0;
 }
@@ -107,9 +115,9 @@ void Maxwell2DCleanNumFlux_unoptimised(real *wL, real *wR, real *vnorm,
   flux[1] *= 0.5;
   flux[2] *= 0.5;
   flux[3] *= 0.5;
-  flux[4] = 0;
-  flux[5] = 0;
-  flux[6] = 0;
+  flux[4] = 0.0;
+  flux[5] = 0.0;
+  flux[6] = 0.0;
 }
 #pragma end_opencl
 
@@ -131,10 +139,10 @@ void Maxwell2DCleanImposedData(const real *x, const real t, real *w)
   w[0] = -v * c / r;
   w[1] = u * c / r;
   w[2] = c / r;
-  w[3] = 0;
-  w[4] = 0;
-  w[5] = 0;
-  w[6] = 0;
+  w[3] = 0.0;
+  w[4] = 0.0;
+  w[5] = 0.0;
+  w[6] = 0.0;
 }
 #pragma end_opencl
 
@@ -150,7 +158,7 @@ void Maxwell2DCleanBoundaryFlux_upwind(real *x, real t,
 
 void Maxwell2DCleanInitData(real *x, real *w) 
 {
-  real t = 0;
+  real t = 0.0;
   Maxwell2DCleanImposedData(x, t, w);
 }
 
@@ -167,11 +175,11 @@ void Maxwell2DCleanSource(const real *x, const real t, const real *w,
   const real khi = 1.0; // FIXME: what is khi ????
   source[0] = -w[4]; // Ex -= dt * lambda ????
   source[1] = -w[5]; // Ey -= dt * rho ????
-  source[2] = 0;
+  source[2] = 0.0;
   source[3] = khi * w[6]; // lambda += dt * khi * Jy ????
-  source[4] = 0;
-  source[5] = 0;
-  source[6] = 0;
+  source[4] = 0.0;
+  source[5] = 0.0;
+  source[6] = 0.0;
 }
 #pragma end_opencl
 
@@ -380,7 +388,7 @@ void Maxwell3DCleanImposedData(const real *x, const real t, real *w)
 #pragma start_opencl
 void Maxwell3DCleanInitData(real *x, real *w) 
 {
-  real t = 0;
+  real t = 0.0;
   Maxwell3DCleanImposedData(x, t, w);
 }
 #pragma end_opencl
