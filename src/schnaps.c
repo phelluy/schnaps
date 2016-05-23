@@ -18,7 +18,7 @@ int main(int argc, char *argv[])
   int deg[3] = {3, 3, 3}; // Poynomial degree
   int raf[3] = {2, 2, 2}; // Number of subcells per macrocell
   real cfl = 0.05;
-  real tmax = 0.1;
+  real tmax = 0.04;
   real dt = 0;
   char *fluxdefault = "TransNumFlux2d";
   char *bfluxdefault = "TransBoundaryFlux2d";
@@ -27,7 +27,8 @@ int main(int argc, char *argv[])
   char *mshdefault = "../geo/disque.msh";
   int m = 1;
   bool writeout = false;
-
+  int rkorder = 4;
+  
   bool extract_cl = false;
   
   int len;
@@ -66,13 +67,14 @@ int main(int argc, char *argv[])
 \t-G <string> gmsh filename\n\
 \t-s <float> dt\n\
 \t-T <float> tmax\n\
+\t-K <int> Order of RK method (2 or 4)\n\
 \t-w <0=false or 1=true> Write output to disk.\n";
   char *openclusage = "\t-g <0=false or 1=true> Use OpenCL\n\
 \t-P <int> OpencL platform number\n \
 \t-D <int> OpencL device number\n";
 
   for (;;) {
-    int cc = getopt(argc, argv, "c:n:m:d:r:s:f:b:w:i:I:T:P:D:g:G:E:h");
+    int cc = getopt(argc, argv, "c:n:m:d:r:s:f:b:w:i:I:T:K:P:D:g:G:E:h");
     if (cc == -1) break;
     switch (cc) {
     case 0:
@@ -102,6 +104,9 @@ int main(int argc, char *argv[])
     case 'T':
       tmax = atof(optarg);
       // TODO: check that arg is >= 0
+      break;
+    case 'K':
+      rkorder = atoi(optarg);
       break;
     case 'f':
       {
@@ -286,8 +291,18 @@ int main(int argc, char *argv[])
 #ifdef _WITH_OPENCL
     CopyfieldtoGPU(&f);
 
-    RK2_CL(&f, tmax, dt, 0, NULL, NULL);
-
+    switch(rkorder){
+    case 2:
+      RK2_CL(&f, tmax, dt, 0, NULL, NULL);
+      break;
+    case 4:
+      RK4_CL(&f, tmax, dt, 0, NULL, NULL);
+      break;
+    default:
+      printf("Invalid RK order choice.\n");
+      exit(1);
+    }
+    
     cl_int status = clFinish(f.cli.commandqueue);
     if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
     assert(status >= CL_SUCCESS);
@@ -302,7 +317,18 @@ int main(int argc, char *argv[])
     exit(1);
 #endif
   } else {
-    RK2(&f, tmax, dt);
+
+    switch(rkorder){
+    case 2:
+      RK2(&f, tmax, dt);
+      break;
+    case 4:
+      RK4(&f, tmax, dt);
+      break;
+    default:
+      printf("Invalid RK order choice.\n");
+      exit(1);
+    }
   }
 
   // Save the results and the error

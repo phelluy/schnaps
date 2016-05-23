@@ -8,6 +8,11 @@ void Maxwell2DCleanNumFlux_centered(real *wL, real *wR, real *vnorm, real *flux)
 {
   // w: (Ex, Ey, Hz, \lambda, rho, Jx, Jy)
 
+  // source for E: -n \times (0, 0, Hz)
+  // source for H: \hat{z} \cdot n \timex (Ex, Ey, 0)
+  // source for lambda: n \cdot (Ex, Ey)
+  // FIXME: check
+  
   const real nx = vnorm[0];
   const real ny = vnorm[1];
   const real khi = 1.0;
@@ -40,8 +45,13 @@ void Maxwell2DCleanNumFlux_centered(real *wL, real *wR, real *vnorm, real *flux)
 #pragma start_opencl
 void Maxwell2DCleanNumFlux_upwind(real *wL, real *wR, real *vnorm, real *flux) 
 {
-  // w: (Ex, Ey, Hz, \lambda, rho, Jx, Jy)
+  // w: (Ex, Ey, Hz, lambda, rho, Jx, Jy)
 
+  // source for E: -n \times (0, 0, Hz)
+  // source for H: \hat{z} \cdot n \timex (Ex, Ey, 0)
+  // source for lambda: n \cdot (Ex, Ey)
+  // FIXME: check
+  
   // FIXME add documentation
 
   const real nx = vnorm[0];
@@ -50,26 +60,35 @@ void Maxwell2DCleanNumFlux_upwind(real *wL, real *wR, real *vnorm, real *flux)
   const real overr = 1.0 / (r + 1e-16);
   const real khi = 1.0;
 
-  const real Esx = 0.5 * ( wR[0] + wL[0] );
-  const real Esy = 0.5 * ( wR[1] + wL[1] );
-  const real Hsz = 0.5 * ( wR[2] + wL[2] );
-  const real ls =  0.5 * ( wR[3] + wL[3] );
+  // Mean of L and R
+  const real MEx = 0.5 * ( wR[0] + wL[0] );
+  const real MEy = 0.5 * ( wR[1] + wL[1] );
+  const real MHz = 0.5 * ( wR[2] + wL[2] );
+  const real Mlambda =  0.5 * ( wR[3] + wL[3] );
 
-  const real Edx = 0.5 * ( wR[0] - wL[0] );
-  const real Edy = 0.5 * ( wR[1] - wL[1] );
-  const real Hdz = 0.5 * ( wR[2] - wL[2] );
-  const real ld =  0.5 * ( wR[3] - wL[3] );
+  // Half or R - L
+  const real DEx = 0.5 * ( wR[0] - wL[0] );
+  const real DEy = 0.5 * ( wR[1] - wL[1] );
+  const real DHz = 0.5 * ( wR[2] - wL[2] );
+  const real Dlambda =  0.5 * ( wR[3] - wL[3] );
 
+  // (Ex , Ey) flux: (-ny, nx) Mhz + (nx , ny) Mlambda + FIXME
   flux[0] = 
-    -ny * Hsz + khi * nx * ls
-    -overr * ( Edx * (ny * ny + khi * nx * nx)
-	       + Edy * nx * ny * (khi - 1) );
+    -ny * MHz + khi * nx * Mlambda
+    -overr * ( DEx * (ny * ny + khi * nx * nx)
+	       + DEy * nx * ny * (khi - 1) );
   flux[1] = 
-    nx * Hsz + khi * ny * ls
-    -overr * ((nx * ny * (khi - 1)) * Edx
-	      +(nx * nx + khi * ny * ny) * Edy);
-  flux[2] = -ny * Esx + nx * Esy - r * Hdz;
-  flux[3] = khi * (nx * Esx + ny * Esy -r * ld);
+    nx * MHz + khi * ny * Mlambda
+    -overr * ((nx * ny * (khi - 1)) * DEx
+	      +(nx * nx + khi * ny * ny) * DEy);
+
+  // Hz fluxL 
+  flux[2] = -ny * MEx + nx * MEy - r * DHz;
+
+  // lambda flux: 
+  flux[3] = khi * (nx * MEx + ny * MEy -r * Dlambda);
+
+  // rho, Jx, Jy, flux:
   flux[4] = 0.0;
   flux[5] = 0.0;
   flux[6] = 0.0;
@@ -124,7 +143,7 @@ void Maxwell2DCleanNumFlux_unoptimised(real *wL, real *wR, real *vnorm,
 #pragma start_opencl
 void Maxwell2DCleanImposedData(const real *x, const real t, real *w) 
 {
-  // w: (Ex, Ey, Hz, \lambda, rho, Jx, Jy)
+  // w: (Ex, Ey, Hz, lambda, rho, Jx, Jy)
 
   // FIXME add documentation
   
