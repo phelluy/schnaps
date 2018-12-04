@@ -64,7 +64,7 @@ int TestLaura_SPU(int argc, char *argv[]) {
   MacroMesh mesh;
   // char *mshname =  "../geo/laura_cube.msh"; //TODO: ajouter le msh
   // char *mshname =  "../test/testcube.msh";
-  char *mshname =  "../example/test_torus.msh";
+  char *mshname =  "../example/test_torus_400.msh";
 
   printf("\n\n---------------------------------------------------------\n");
   printf("1/ Reading Macromesh\n");
