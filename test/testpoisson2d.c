@@ -7,11 +7,11 @@
 #include "solverpoisson.h"
 #include "linear_solver.h"
 
-
-void TestPoisson_ImposedData(const real x[3],const real t,real w[]);
-void TestPoisson_InitData(real x[3],real w[]);
-void TestPoisson_BoundaryFlux(real x[3],real t,real wL[],real* vnorm,
-			      real* flux);
+int TestPoisson2d(void) ;
+void TestPoisson_ImposedData(const schnaps_real x[3],const schnaps_real t,schnaps_real w[]);
+void TestPoisson_InitData(schnaps_real x[3],schnaps_real w[]);
+void TestPoisson_BoundaryFlux(schnaps_real x[3],schnaps_real t,schnaps_real wL[],schnaps_real* vnorm,
+			      schnaps_real* flux);
 
 int main(void) 
 {
@@ -30,120 +30,120 @@ int TestPoisson2d(void)
 {
   bool test = true;
 
-  field f;
-  init_empty_field(&f);
+  // 2D meshes:
+  // test/disque2d.msh
+  // test/testdisque2d.msh
+  // test/testmacromesh.msh
+  // test/unit-cube.msh
 
-  int vec=1;
+  // 3D meshes"
+  // test/testdisque.msh
 
-  // num of conservative variables f(vi) for each vi, phi, E, rho, u,
-  // p, e (ou T)
-  f.model.m=_INDEX_MAX; 
-  f.vmax = _VMAX; // maximal wave speed
-  f.model.NumFlux = VlasovP_Lagrangian_NumFlux;
-  f.model.Source = VlasovP_Lagrangian_Source;
-   //f.model.Source = NULL;
   
-  f.model.BoundaryFlux = TestPoisson_BoundaryFlux;
-  f.model.InitData = TestPoisson_InitData;
-  f.model.ImposedData = TestPoisson_ImposedData;
-  f.model.Source = NULL;
- 
-  f.varindex = GenericVarindex;
-  f.pre_dtfield = NULL;
-  f.update_after_rk = NULL; 
-   
-    
-  f.interp.interp_param[0] = f.model.m;  // _M
-  f.interp.interp_param[1] = 3;  // x direction degree
-  f.interp.interp_param[2] = 3;  // y direction degree
-  f.interp.interp_param[3] = 0;  // z direction degree
-  f.interp.interp_param[4] = 2;  // x direction refinement
-  f.interp.interp_param[5] = 2;  // y direction refinement
-  f.interp.interp_param[6] = 1;  // z direction refinement
-  // read the gmsh file
-  ReadMacroMesh(&(f.macromesh),"../test/testdisque2d.msh");
-  //ReadMacroMesh(&(f.macromesh),"geo/square.msh");
-  // try to detect a 2d mesh
-  //bool is1d=Detect1DMacroMesh(&(f.macromesh));
-  Detect2DMacroMesh(&(f.macromesh));
-  bool is2d=f.macromesh.is2d;
+  MacroMesh mesh;
+  ReadMacroMesh(&mesh,"../test/testdisque2d.msh");
+  Detect2DMacroMesh(&mesh);
+  bool is2d=mesh.is2d;
   assert(is2d);
+  BuildConnectivity(&mesh);
 
-  // mesh preparation
-  BuildConnectivity(&(f.macromesh));
+  Model model;
 
-  PrintMacroMesh(&(f.macromesh));
-  //assert(1==2);
-  //AffineMapMacroMesh(&(f.macromesh));
+
+  schnaps_real degV=2;
+  schnaps_real nbEV=12;
+  KineticData * kd=&schnaps_kinetic_data;
+
+  InitKineticData(kd,nbEV,degV);
  
-  // prepare the initial fields
-  Initfield(&f);
-  f.nb_diags=0;
+  model.m=kd->index_max; // num of conservative variables f(vi) for each vi, phi, E, rho, u, p, e (ou T)
+  model.NumFlux=VlasovP_Lagrangian_NumFlux;
+  model.Source = VlasovP_Lagrangian_Source;
   
-  // prudence...
-  CheckMacroMesh(&(f.macromesh),f.interp.interp_param+1);
+  model.BoundaryFlux = TestPoisson_BoundaryFlux;
+  model.InitData = TestPoisson_InitData;
+  model.ImposedData = TestPoisson_ImposedData;
+ 
+  int deg[]={2, 2, 0};
+  int raf[]={1, 1, 1};
+   
+ 
+  CheckMacroMesh(&mesh, deg, raf);
+  Simulation simu;
+  EmptySimulation(&simu);
 
-  printf("cfl param =%f\n",f.hmin);
+  InitSimulation(&simu, &mesh, deg, raf, &model);
 
-  PoissonSolver ps;
-  InitPoissonSolver(&ps,&f,_INDEX_PHI);
+  ContinuousSolver ps;
+  
+  int nb_var=1;
+  int * listvar= malloc(nb_var * sizeof(int));
+  listvar[0]=kd->index_phi;
+  
+  InitContinuousSolver(&ps,&simu,1,nb_var,listvar);
 
-#ifdef PARALUTION
-  ps.lsol.solver_type = PAR_AMG;
+  ps.matrix_assembly=ContinuousOperator_Poisson2D;
+  ps.rhs_assembly=RHSPoisson_Continuous;
+  ps.bc_assembly= ExactDirichletContinuousMatrix;
+  ps.postcomputation_assembly=Computation_ElectricField_Poisson;
+
+  ps.lsol.solver_type = GMRES;
   ps.lsol.pc_type=NONE;
-#else
-  ps.lsol.solver_type = LU;
-  ps.lsol.pc_type=NONE;
-#endif
 
-  SolvePoisson2D(&ps,_Dirichlet_Poisson_BC);
 
-  real errl2 = L2error(&f);
+  SolveContinuous2D(&ps);
+
+  schnaps_real errl2 = L2error(&simu);
 
   printf("Erreur L2=%f\n",errl2);
 
-    real tolerance;
-  if(sizeof(real) == sizeof(double))
-    tolerance = 1e-3;
-  else
-    tolerance = 1e-2;
-  test = test && (errl2 < tolerance);
+  test = test && (errl2 < 2e-2);
 
   printf("Plot...\n");
 
 
-  /* Plotfield(_INDEX_PHI, false, &f, NULL, "dgvisu.msh"); */
-  /* Plotfield(_INDEX_EX, false, &f, NULL, "dgex.msh"); */
+  PlotFields(kd->index_rho, false, &simu, NULL, "dgvisu.msh");
+  PlotFields(kd->index_ex, false, &simu, NULL, "dgex.msh");
+
+#ifdef PARALUTION 
+  paralution_end();
+#endif
+
+  FreeMacroMesh(&mesh);
 
 
   return test;
 }
 
-void TestPoisson_ImposedData(const real x[3], const real t, real w[])
+void TestPoisson_ImposedData(const schnaps_real x[3], const schnaps_real t, schnaps_real w[])
 {
-  for(int i = 0; i < _INDEX_MAX; i++){
+  KineticData * kd=&schnaps_kinetic_data;
+  for(int i = 0; i < kd->index_max+1; i++){
     w[i] = 0;
   }
   // exact value of the potential
   // and electric field
-  w[_INDEX_PHI] = (x[0] * x[0] + x[1] * x[1])/4;
-  w[_INDEX_EX] =  -x[0]/2;
-  w[_INDEX_RHO] = -1; //rho init
+  w[kd->index_phi] = (x[0] * x[0] + x[1] * x[1])/4;
+  w[kd->index_ex] =  -x[0]/2;
+  w[kd->index_ey] =  -x[1]/2;
+  w[kd->index_ez] =  0;
+  w[kd->index_rho] = -1; //rho init
   /* w[_INDEX_PHI] = x[0] ; */
   /* w[_INDEX_EX] =  -1; */
   /* w[_INDEX_RHO] = 0; //rho init */
 }
 
-void TestPoisson_InitData(real x[3], real w[])
+void TestPoisson_InitData(schnaps_real x[3], schnaps_real w[])
 {
-  real t = 0;
+  schnaps_real t = 0;
   TestPoisson_ImposedData(x, t, w);
 }
 
-void TestPoisson_BoundaryFlux(real x[3], real t, real wL[], real *vnorm, 
-			      real *flux)
+void TestPoisson_BoundaryFlux(schnaps_real x[3], schnaps_real t, schnaps_real wL[], schnaps_real *vnorm, 
+			      schnaps_real *flux)
 {
-  real wR[_INDEX_MAX];
+  KineticData * kd=&schnaps_kinetic_data;
+  schnaps_real wR[kd->index_max];
   TestPoisson_ImposedData(x, t, wR);
   VlasovP_Lagrangian_NumFlux(wL, wR, vnorm, flux);
 }

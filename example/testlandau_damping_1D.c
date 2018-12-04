@@ -9,12 +9,14 @@
 #include "solverpoisson.h"
 
 
-void Test_Landau_Damping_ImposedData(const real x[3], const real t,real w[]);
-void Test_Landau_Damping_InitData(real x[3],real w[]);
-void Test_Landau_Damping_BoundaryFlux(real x[3],real t,real wL[],real* vnorm, real* flux);
+int TestLandau_Damping_1D(void);
 
-void UpdateVlasovPoisson(void* field, real *w);
-void PlotVlasovPoisson(void* vf, real * w);
+void Test_Landau_Damping_ImposedData(const schnaps_real x[3], const schnaps_real t,schnaps_real w[]);
+void Test_Landau_Damping_InitData(schnaps_real x[3],schnaps_real w[]);
+void Test_Landau_Damping_BoundaryFlux(schnaps_real x[3],schnaps_real t,schnaps_real wL[],schnaps_real* vnorm, schnaps_real* flux);
+
+void UpdateVlasovPoisson(void* field);
+void PlotVlasovPoisson(void* vf, schnaps_real * w);
 
 int main(void) {
   
@@ -30,157 +32,169 @@ int main(void) {
 
 
 int TestLandau_Damping_1D(void) {
-
-  bool test=true;
-
-  field f;
-  init_empty_field(&f);
-
+  
+  int test=0;
   int vec=1;
-  real k=0.5;
-  real pi=4.0*atan(1.0);
-  
-  f.model.m=_INDEX_MAX; // num of conservative variables f(vi) for each vi, phi, E, rho, u, p, e (ou T)
-  f.model.NumFlux=VlasovP_Lagrangian_NumFlux;
- 
-  //f.model.Source = NULL;
- 
-  f.model.InitData=Test_Landau_Damping_InitData;
-  f.model.ImposedData=Test_Landau_Damping_ImposedData;
-  f.model.BoundaryFlux=Test_Landau_Damping_BoundaryFlux;
+  schnaps_real k=0.5;
+  schnaps_real pi=4.0*atan(1.0);
 
-  f.varindex=GenericVarindex;
-    
-  f.interp.interp_param[0]=f.model.m;  // _M
-  f.interp.interp_param[1]=2;  // x direction degree
-  f.interp.interp_param[2]=0;  // y direction degree
-  f.interp.interp_param[3]=0;  // z direction degree
-  f.interp.interp_param[4]=32;  // x direction refinement
-  f.interp.interp_param[5]=1;  // y direction refinement
-  f.interp.interp_param[6]=1;  // z direction refinement
- // read the gmsh file
-  ReadMacroMesh(&(f.macromesh),"../test/testcube.msh");
-  
-  real A[3][3] = {{2.0*pi/k, 0, 0}, {0, 1, 0}, {0, 0,1}};
-  real x0[3] = {0, 0, 0};
-  AffineMapMacroMesh(&(f.macromesh),A,x0);
+  MacroMesh mesh;
+  ReadMacroMesh(&mesh,"../test/testcube.msh");
+  schnaps_real A[3][3] = {{2.0*pi/k, 0, 0}, {0, 1, 0}, {0, 0,1}};
+  schnaps_real x0[3] = {0, 0, 0};
+  AffineMapMacroMesh(&mesh,A,x0);
 
-  // try to detect a 2d mesh
-  Detect1DMacroMesh(&(f.macromesh));
-  bool is1d=f.macromesh.is1d;
+  // try to detect a 1d mesh
+  Detect1DMacroMesh(&mesh);
+  bool is1d=mesh.is1d;
   assert(is1d);
 
   // mesh preparation
-  f.macromesh.period[0]=2.0*pi/k;
-  BuildConnectivity(&(f.macromesh));
- 
-  // prepare the initial fields
-  f.model.cfl=0.5;
+  mesh.period[0]=2.0*pi/k;
+  BuildConnectivity(&mesh);
 
-  Initfield(&f);
-  f.vmax = _VMAX; // maximal wave speed
-  f.macromesh.is1d=true;
-    //f.macromesh.is1d=true;
-  f.nb_diags=4;
-  f.pre_dtfield=UpdateVlasovPoisson;
-  f.post_dtfield=NULL;
-  f.update_after_rk=PlotVlasovPoisson;
-  f.model.Source = VlasovP_Lagrangian_Source;
-  // prudence...
-  CheckMacroMesh(&(f.macromesh),f.interp.interp_param+1);
-
-  printf("cfl param =%f\n",f.hmin);
   
-  real dt = set_dt(&f);
-  RK4(&f,20, dt);
+  Model model;
+  schnaps_real degV=2;
+  schnaps_real nbEV=24;
+  KineticData * kd=&schnaps_kinetic_data;
 
+  InitKineticData(kd,nbEV,degV);
+  
+  model.m=kd->index_max; // num of conservative variables f(vi) for each vi, phi, E, rho, u, p, e (ou T)
+  model.NumFlux=VlasovP_Lagrangian_NumFlux;
+  model.InitData =Test_Landau_Damping_InitData;
+  model.ImposedData = Test_Landau_Damping_ImposedData;
+  model.BoundaryFlux = Test_Landau_Damping_BoundaryFlux;
+  model.Source = VlasovP_Lagrangian_Source;
+
+  
+  int deg[]={3, 0, 0};
+  int raf[]={24, 1, 1};
+
+  CheckMacroMesh(&mesh, deg, raf);
+  Simulation simu;
+  EmptySimulation(&simu);
+
+  InitSimulation(&simu, &mesh, deg, raf, &model);
+  simu.vmax = kd->vmax; // maximal wave speed
+  simu.cfl=0.25;
+  simu.nb_diags = 4;
+  simu.pre_dtfields = UpdateVlasovPoisson;
+  simu.post_dtfields=NULL;
+  simu.update_after_rk = PlotVlasovPoisson;
  
   
-   // save the results and the error
-  int iel=_NB_ELEM_V/2;
-  int iloc=0;//_DEG_V;
-  printf("Trace vi=%f\n",-_VMAX+iel*_DV+_DV*glop(_DEG_V,iloc));
-  Plotfield(iloc+iel*_DEG_V,(1==0),&f,"sol f ","dgvisu.msh");
-  Plotfield(_INDEX_EX,(1==0),&f,"sol","dgvisuEx.msh");
-  Plotfield(_INDEX_PHI,(1==0),&f,"sol","dgvisuPhi.msh");
-  Plotfield(_INDEX_RHO,(1==0),&f,"sol","dgvisuRho.msh");
+  schnaps_real tmax = 30;
+  RK2(&simu, tmax);
 
-  Plot_Energies(&f, dt);
+    // save the results and the error
+  int iel = 2 * kd->nb_elem_v / 3;
+  int iloc = kd->deg_v;
+  printf("Trace vi=%f\n", -kd->vmax + iel * kd->dv + kd->dv * glop(kd->deg_v, iloc));
+  PlotFields(iloc+iel*kd->deg_v,false,&simu,"sol f ","dgvisu.msh");
+  PlotFields(kd->index_ex,false,&simu,"sol","dgvisuEx.msh");
+  PlotFields(kd->index_phi,false,&simu,"sol","dgvisuPhi.msh");
+  PlotFields(kd->index_rho,false,&simu,"sol","dgvisuRho.msh");
+  Plot_Energies(&simu, simu.dt);
+ 
 
   test= 1;
 
-  return test;
+  return test; 
 
 }
 
-void Test_Landau_Damping_ImposedData(const real x[3], const real t, real w[])
+void Test_Landau_Damping_ImposedData(const schnaps_real x[3], const schnaps_real t, schnaps_real w[])
 {
   //parameters of the case
+  KineticData * kd=&schnaps_kinetic_data;
+  schnaps_real k=0.5;
+  schnaps_real eps = 0.001;
+  schnaps_real my_pi= 4.0*atan(1.0);
   
-  real k=0.5;
-  real eps = 0.05;
-  real my_pi= 4.0*atan(1.0);
-  
-  for(int i=0;i<_INDEX_MAX_KIN+1;i++){
-    int j=i%_DEG_V; // local connectivity put in function
-    int nel=i/_DEG_V; // element num (TODO : function)
+  for(int i=0;i<kd->index_max_kin+1;i++){
+    int j=i%kd->deg_v; // local connectivity put in function
+    int nel=i/kd->deg_v; // element num (TODO : function)
 
-    real vi = (-_VMAX+nel*_DV +
-		 _DV* glop(_DEG_V,j));
+    schnaps_real vi = (-kd->vmax+nel*kd->dv +
+		 kd->dv* glop(kd->deg_v,j));
  
     w[i]=(1.0+eps*cos(k*x[0]))*(1.0/sqrt(2.0*my_pi))*exp(-(vi*vi)/2.0);
 
   }
   // exact value of the potential
   // and electric field
-  w[_INDEX_PHI]=-(eps/(k*k))*cos(k*x[0]);
-  w[_INDEX_EX]=(eps/k)*sin(k*x[0]);
-  w[_INDEX_RHO]=1; //rho init
-  w[_INDEX_VELOCITY]=0; // u init
-  w[_INDEX_PRESSURE]=0; // p init
-  w[_INDEX_TEMP]=0; // e ou T init
+  w[kd->index_phi]=-(eps/(k*k))*cos(k*x[0]);
+  w[kd->index_ex]=(eps/k)*sin(k*x[0]);
+  w[kd->index_rho]=1; //rho init
+  w[kd->index_u]=0; // u init
+  w[kd->index_P]=0; // p init
+  w[kd->index_T]=0; // e ou T init
 
 };
 
-void Test_Landau_Damping_InitData(real x[3],real w[]){
+void Test_Landau_Damping_InitData(schnaps_real x[3],schnaps_real w[]){
 
-  real t=0;
+  schnaps_real t=0;
   Test_Landau_Damping_ImposedData(x,t,w);
 
 };
 
 
 
-void Test_Landau_Damping_BoundaryFlux(real x[3],real t,real wL[],real* vnorm,
-				       real* flux){
-  real wR[_INDEX_MAX];
+void Test_Landau_Damping_BoundaryFlux(schnaps_real x[3],schnaps_real t,schnaps_real wL[],schnaps_real* vnorm,
+				       schnaps_real* flux){
+  KineticData * kd=&schnaps_kinetic_data;
+  schnaps_real wR[kd->index_max];
   Test_Landau_Damping_ImposedData(x,t,wR);
   VlasovP_Lagrangian_NumFlux(wL,wR,vnorm,flux);
   assert(1==2);
 };
 
 
-void UpdateVlasovPoisson(void* vf, real * w){
-  int type_bc;
-  real bc_l, bc_r;
-  int itermax;
-  field* f=vf;
-  type_bc=2;
-  bc_l=0;
-  bc_r=0;
+void UpdateVlasovPoisson(void *si) {
+  Simulation *simu = si;
+  KineticData * kd=&schnaps_kinetic_data;
+  int type_bc = 1;
+
+  Computation_charge_density(simu);
+  static ContinuousSolver ps;
+  static bool is_init = false;
+
+  if (!is_init){
+    is_init = true;
+    int nb_var=1;
+    int * listvar= malloc(nb_var * sizeof(int));
+    listvar[0]=kd->index_phi;
+    InitContinuousSolver(&ps,simu,1,nb_var,listvar);
     
-  Computation_charge_density(f,w);
+    ps.matrix_assembly=ContinuousOperator_Poisson1D;
+    ps.rhs_assembly=RHSPoisson_Continuous;
+    ps.bc_assembly=Periodic_BoundaryCondition_Poisson1D;
+    ps.postcomputation_assembly=Computation_ElectricField_Poisson;
+    
+    ps.lsol.solver_type = LU;
+    ps.lsol.pc_type=NONE;
+  }
   
-  SolvePoisson1D(f,w,type_bc,bc_l,bc_r,LU,NONE);    
+  SolveContinuous2D(&ps);
+  //freeContinuousSolver(&ps);
+}
+
+void PlotVlasovPoisson(void *si, schnaps_real *w) {
+  schnaps_real k_energy = 0, e_energy = 0, t_energy = 0, t_charge=0;
   
+  Simulation *simu = si;
+  
+  Energies(simu, w, k_energy, e_energy, t_energy,1);
+  Charge_total(simu,w,t_charge,4);
+  si = simu; 
 }
 
 
-void PlotVlasovPoisson(void* vf, real * w){
-  real k_energy=0,e_energy=0,t_energy=0,t_charge=0;
-  
-  field* f=vf;
-  Energies(f,w,k_energy,e_energy,t_energy,1);
-  Charge_total(f,w,t_charge,4);
-  vf=f;
-}
+
+
+
+
+

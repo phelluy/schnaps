@@ -7,32 +7,55 @@
 int Testfield(void){
   int test = true;
 
-  field f;
-  init_empty_field(&f);
+  Model model;
   
-  f.model.cfl = 0.05;
-  f.model.m = 1; // only one conservative variable
-  f.model.NumFlux = TransNumFlux;
-  f.model.BoundaryFlux = TestTransBoundaryFlux;
-  f.model.InitData = TestTransInitData;
-  f.model.ImposedData = TestTransImposedData;
-  f.varindex = GenericVarindex;
+  model.cfl = 0.05;
+  model.m = 1; // only one conservative variable
+  model.NumFlux = TransNumFlux;
+  model.BoundaryFlux = TestTransBoundaryFlux;
+  model.InitData = TestTransInitData;
+  model.ImposedData = TestTransImposedData;
 
-  f.interp.interp_param[0] = 1; // _M
-  f.interp.interp_param[1] = 2; // x direction degree
-  f.interp.interp_param[2] = 2; // y direction degree
-  f.interp.interp_param[3] = 2; // z direction degree
-  f.interp.interp_param[4] = 2; // x direction refinement
-  f.interp.interp_param[5] = 2; // y direction refinement
-  f.interp.interp_param[6] = 2; // z direction refinement
+  int deg[]={2, 2, 2};
+  int raf[]={2, 2, 2};
+  
+  MacroMesh mesh;
+  ReadMacroMesh(&mesh,"../test/testmacromesh.msh");
+  BuildConnectivity(&mesh);
 
-  ReadMacroMesh(&(f.macromesh),"../test/testmacromesh.msh");
-  BuildConnectivity(&(f.macromesh));
+  CheckMacroMesh(&mesh, deg, raf);
 
-  Initfield(&f);
-  CheckMacroMesh(&(f.macromesh), f.interp.interp_param + 1);
+  field f;
 
-  //Plotfield(0, false, &f, NULL, "testvisufield.msh");
+  schnaps_real physnode[20][3];
+
+  for(int inoloc = 0; inoloc < 20; inoloc++) {
+    int ino = mesh.elem2node[20 * 0 + inoloc];
+    physnode[inoloc][0] = mesh.node[3 * ino + 0];
+    physnode[inoloc][1] = mesh.node[3 * ino + 1];
+    physnode[inoloc][2] = mesh.node[3 * ino + 2];
+  }
+  
+  init_empty_field(&f);
+  Initfield(&f, model, physnode, deg, raf, NULL, NULL);
+
+
+  int ipg = 4;
+
+  schnaps_real xref[3],xphy[3],wtest[1];
+
+  ref_pg_vol(f.deg, f.raf, ipg, xref, NULL, NULL);
+  schnaps_ref2phy(f.physnode,
+	  xref,
+	  NULL, -1, // dphiref, ifa
+	  xphy, NULL,
+	  NULL, NULL, NULL); // codtau, dphi, vnds
+
+  int imem = f.varindex(f.deg, f.raf, f.model.m,ipg,0);
+  f.model.InitData(xphy,wtest);
+  test = fabs(f.wn[imem] - wtest[0]) < _SMALL;
+
+  FreeMacroMesh(&mesh);
   
   return test;
 }

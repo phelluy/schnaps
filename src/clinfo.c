@@ -6,6 +6,12 @@
 #include "clutils.h"
 #include <stdbool.h>
 
+//#define DISABLE_PRINTF_CL
+
+#ifdef DISABLE_PRINTF_CL
+    #define printf(fmt, ...) (0)
+#endif
+
 
 bool cldevice_exists(cl_platform_id *platform, cl_uint ndevice)
 {
@@ -36,7 +42,7 @@ cl_uint get_nbplatforms()
 }
 
 bool clplatform_exists(cl_uint nplatform)
-{ 
+{
   cl_uint nbplatforms = get_nbplatforms();
   if(nplatform < nbplatforms)
     return true;
@@ -48,12 +54,12 @@ cl_platform_id get_platform_id(cl_uint nplatform)
 {
   cl_uint nbplatforms = get_nbplatforms();
   cl_platform_id *platforms = malloc(sizeof(cl_platform_id[nbplatforms]));
-  
+
   cl_int status;
   status = clGetPlatformIDs(nbplatforms, platforms, NULL);
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
-  
+
   cl_platform_id the_platform = platforms[nplatform];
 
   free(platforms);
@@ -118,144 +124,22 @@ cl_device_id get_device_id(cl_platform_id platform, cl_uint ndevice)
 #endif
 }
 
-char* get_cldevice_extensions(cl_device_id device)
+void get_cldevice_extensions(cl_device_id device, char * buf, size_t bufsize)
 {
   cl_int status;
-  size_t bufsize;
-
   status = clGetDeviceInfo(device,
 			   CL_DEVICE_EXTENSIONS,
- 			   0,
-			   NULL,
-			   &bufsize);
+			   bufsize,
+			   buf,
+			   NULL);
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
-
-  if(bufsize > 0) {
-    char *buf = malloc(bufsize);
-    status = clGetDeviceInfo(device,
-			     CL_DEVICE_EXTENSIONS,
-			     bufsize,
-			     buf,
-			     NULL);
-    if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
-    assert(status >= CL_SUCCESS);
-    return buf;
-  }
-  return NULL;
 }
 
-char* get_platform_vendor(cl_platform_id platform)
+bool cldevice_supports_double(cl_device_id *device)
 {
-  cl_int status;
-  size_t bufsize;
-
-  status = clGetPlatformInfo(platform,
-			     CL_PLATFORM_VENDOR,
-			     0,
-			     NULL,
-			     &bufsize);
-  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status >= CL_SUCCESS);
-
-  if(bufsize > 0) {
-    char *buf = malloc(bufsize);
-    status = clGetPlatformInfo(platform,
-			       CL_PLATFORM_VENDOR,
-			       bufsize,
-			       buf,
-			       NULL);
-    if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
-    assert(status >= CL_SUCCESS);
-    return buf;
-  }
-  
-  return NULL;
-}
-
-char* get_platform_version(cl_platform_id platform)
-{
-  cl_int status;
-  size_t bufsize;
-
-  status = clGetPlatformInfo(platform,
-			       CL_PLATFORM_VERSION,
-			     0,
-			     NULL,
-			     &bufsize);
-  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status >= CL_SUCCESS);
-
-  if(bufsize > 0) {
-    char *buf = malloc(bufsize);
-    status = clGetPlatformInfo(platform,
-			       CL_PLATFORM_VERSION,
-			       bufsize,
-			       buf,
-			       NULL);
-    if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
-    assert(status >= CL_SUCCESS);
-    return buf;
-  }
-  return NULL;
-}
-char* get_platform_name(cl_platform_id platform)
-{
-  cl_int status;
-  size_t bufsize;
-
-  status = clGetPlatformInfo(platform,
-			     CL_PLATFORM_NAME,
-			     0,
-			     NULL,
-			     &bufsize);
-  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status >= CL_SUCCESS);
-
-  if(bufsize > 0) {
-    char *buf = malloc(bufsize);
-    status = clGetPlatformInfo(platform,
-			       CL_PLATFORM_NAME,
-			       bufsize,
-			       buf,
-			       NULL);
-    if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
-    assert(status >= CL_SUCCESS);
-    return buf;
-  }
-  return NULL;
-}
-
-char* get_device_name(cl_device_id device)
-{
-  cl_int status;
-  size_t bufsize;
-
-  status = clGetDeviceInfo(device,
-			   CL_DEVICE_NAME,
- 			   0,
-			   NULL,
-			   &bufsize);
-  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status >= CL_SUCCESS);
-
-  if(bufsize > 0) {
-    char *buf = malloc(bufsize);
-    status = clGetDeviceInfo(device,
-			     CL_DEVICE_NAME,
-			     bufsize,
-			     buf,
-			     NULL);
-    if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
-    assert(status >= CL_SUCCESS);
-    return buf;
-  }
-  return NULL;
-}
-
-bool cldevice_supports_double(cl_device_id device)
-{
-  char *clextensions = get_cldevice_extensions(device);
+  char clextensions[1000];
+  get_cldevice_extensions(*device, clextensions, sizeof(clextensions));
   printf("\tOpenCL extensions: %s\n", clextensions);
   if(strstr(clextensions, "cl_khr_fp64") != NULL) {
     printf("\t\tDouble-precision enabled (cl_khr_fp64).\n");
@@ -279,106 +163,132 @@ bool cldevice_is_acceptable(cl_uint nplatform, cl_uint ndevice)
     return false;
   }
 
-  if(sizeof(real) == sizeof(double)) {
-      cl_device_id device = get_device_id(platform, ndevice);
-      if(!cldevice_supports_double(device)) {
-	printf("cldevice does not support double\n");
-	return false;
-      }
-    }
+#ifdef _DOUBLE_PRECISION
+  cl_device_id device = get_device_id(platform, ndevice);
+  if(!cldevice_supports_double(&device)) {
+    printf("cldevice does not support double\n");
+    return false;
+  }
+#endif
 
   return true;
 }
-		       
-void print_platforms(CLInfo *cli)
+
+
+
+void InitCLInfo(CLInfo *cli, int platform_num, int device_num)
 {
   cl_int status;
-  
-  int nplatforms = get_nbplatforms();
-  
+
+  /* numbers of platforms */
+  cli->nbplatforms = get_nbplatforms();
+  assert(cli->nbplatforms > 0);
+
   /* platform array construction */
-  cl_platform_id *platforms = malloc(nplatforms * sizeof(cl_platform_id));
-    
+  cl_platform_id *platforms = malloc(sizeof(cl_platform_id[cli->nbplatforms]));
+  assert(platforms);
+
+  // Store the platform_ids in platforms
   status = clGetPlatformIDs(cli->nbplatforms, platforms, NULL);
-  
+  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status >= CL_SUCCESS);
+
+  printf("\nAvailable OpenCL platforms:\n");
+
   char pbuf[2000];
-  for(int i = 0; i < nplatforms; ++i) {
+  for(int i = 0; i < cli->nbplatforms; ++i) {
     printf("\nPlatform %d:\n", i);
+    status = clGetPlatformInfo(platforms[i],
+			       CL_PLATFORM_NAME,
+			       sizeof(pbuf),
+			       pbuf,
+			       NULL);
+    if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+    assert(status >= CL_SUCCESS);
+    printf("\t%s\n", pbuf);
 
-    char* platname = get_platform_name(platforms[i]);
-    printf("\t%s\n", platname);
-    free(platname);
-    
-    char* platvendor = get_platform_vendor(platforms[i]);
-    printf("\t%s\n", platvendor);
-    free(platvendor);
-    
-    char* platversion = get_platform_version(platforms[i]);
-    printf("\t%s\n", platversion);
-    free(platversion);
+    status = clGetPlatformInfo(platforms[i],
+			       CL_PLATFORM_VENDOR,
+			       sizeof(pbuf),
+			       pbuf,
+			       NULL);
+    if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+    assert(status >= CL_SUCCESS);
+    printf("\t%s\n",pbuf);
 
-    int ndevices = get_nbdevices(platforms + i);
-    printf("\tnumber of devices: %d\n", ndevices);
-
-    for(int j = 0; j < ndevices; ++j) {
-      printf("\t\tdevice %d:\n", j);
-      cl_device_id  devid = get_device_id(platforms[i], j);
-      char* devname = get_device_name(devid);
-      printf("\t\t%s\n", devname);
-      free(devname);
-    }
-   
+    //  opencl version
+    status = clGetPlatformInfo(platforms[i],
+			       CL_PLATFORM_VERSION,
+			       sizeof(cli->platformname),
+			       cli->platformname,
+			       NULL);
+    if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+    assert(status >= CL_SUCCESS);
+    printf("\t%s\n",cli->platformname);
   }
 
-  free(platforms);
-}
+  cli->platformnum = platform_num;
+  assert(cli->platformnum < cli->nbplatforms);
 
-void print_device_type(CLInfo *cli)
-{
-  cl_int status;
-  
-  cl_device_type dtype;
+  cl_platform_id platform = get_platform_id(platform_num);
+
+  // devices count
+  int ndevices = get_nbdevices(&platform);
+  assert(ndevices > 0);
+
+  //printf("\nWe choose device %d/%d ", device_num, ndevices);
+  assert(device_num < ndevices);
+  //printf("of platform %d/%d\n", platform_num, cli->nbplatforms - 1);
+
+  cli->device = get_device_id(platform, device_num);
+
+  // device name
   status = clGetDeviceInfo(cli->device,
-			   CL_DEVICE_TYPE,
-			   sizeof(dtype), 
-			   &dtype, 
+			   CL_DEVICE_NAME,
+			   sizeof(cli->devicename),
+			   cli->devicename,
 			   NULL);
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
-  printf("\tDevice type: ");
-  switch(dtype) {
-  case CL_DEVICE_TYPE_CPU:
-    printf("CL_DEVICE_TYPE_CPU (%d)\n", (int)dtype);
-    break;
-  case CL_DEVICE_TYPE_GPU:
-    printf("CL_DEVICE_TYPE_GPU (%d)\n", (int)dtype);
-    break;
-  case CL_DEVICE_TYPE_ACCELERATOR:
-    printf("CL_DEVICE_TYPE_ACCELERATOR (%d)\n", (int)dtype);
-    break;
-  case CL_DEVICE_TYPE_DEFAULT:
-    printf("CL_DEVICE_TYPE_DEFAULT (%d)\n", (int)dtype);
-    break;
-  default:
-    printf("ERROR: unknown OpenCL device type %d\n", (int)dtype);
-  }
-}
+  //printf("%s\n", cli->devicename);
 
-void print_opencl_version(CLInfo *cli)
-{
-  cl_int status;
-  
-  char buf[128];
-  status = clGetDeviceInfo(cli->device, CL_DEVICE_VERSION,
-			   128, buf, NULL);
+  cl_device_type dtype;
+  status = clGetDeviceInfo(cli->device,
+			   CL_DEVICE_TYPE,
+			   sizeof(dtype),
+			   &dtype,
+			   NULL);
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
-  printf("\tOpenCL version: %s\n", buf);
-}
+  /* printf("\tDevice type: "); */
+  /* switch(dtype) { */
+  /* case CL_DEVICE_TYPE_CPU: */
+  /*   printf("CL_DEVICE_TYPE_CPU (%d)\n", (int)dtype); */
+  /*   break; */
+  /* case CL_DEVICE_TYPE_GPU: */
+  /*   printf("CL_DEVICE_TYPE_GPU (%d)\n", (int)dtype); */
+  /*   break; */
+  /* case CL_DEVICE_TYPE_ACCELERATOR: */
+  /*   printf("CL_DEVICE_TYPE_ACCELERATOR (%d)\n", (int)dtype); */
+  /*   break; */
+  /* case CL_DEVICE_TYPE_DEFAULT: */
+  /*   printf("CL_DEVICE_TYPE_DEFAULT (%d)\n", (int)dtype); */
+  /*   break; */
+  /* default: */
+  /*   printf("ERROR: unknown OpenCL device type %d\n", (int)dtype); */
+  /* } */
 
-void set_device_memory(CLInfo *cli)
-{
-  cl_int status;
+  // OpenCL version
+  {
+    char buf[128];
+    status = clGetDeviceInfo(cli->device, CL_DEVICE_VERSION,
+			     128, buf, NULL);
+    if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+    assert(status >= CL_SUCCESS);
+    //printf("\tOpenCL version: %s\n", buf);
+  }
+
+  // device memory
   status = clGetDeviceInfo(cli->device,
 			   CL_DEVICE_GLOBAL_MEM_SIZE,
 			   sizeof(cl_ulong),
@@ -386,11 +296,8 @@ void set_device_memory(CLInfo *cli)
 			   NULL);
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
-}
+  //printf("\tGlobal memory: %f MB\n",cli->devicememsize/1024./1024.);
 
-void set_max_buffer_size(CLInfo *cli)
-{
-  cl_int status;
   status = clGetDeviceInfo(cli->device,
 			   CL_DEVICE_MAX_MEM_ALLOC_SIZE,
 			   sizeof(cl_ulong),
@@ -398,11 +305,7 @@ void set_max_buffer_size(CLInfo *cli)
 			   NULL);
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
-}
-
-void set_local_memory_size(CLInfo *cli)
-{
-  cl_int status;
+  //printf("\tMax buffer size: %f MB\n",cli->maxmembuffer/1024./1024.);
 
   // compute unit size cache
   status = clGetDeviceInfo(cli->device,
@@ -412,11 +315,7 @@ void set_local_memory_size(CLInfo *cli)
 			   NULL);
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
-}
-
-void set_max_constant_memory_size(CLInfo *cli)
-{
-  cl_int status;
+  //printf("\tLocal memory size: %f KB\n",cli->cachesize/1024.);
 
   // get maxconstmem
   status = clGetDeviceInfo(cli->device,
@@ -426,12 +325,9 @@ void set_max_constant_memory_size(CLInfo *cli)
 			   NULL);
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
-}
+  //printf("\tConst mem: %f KB\n",cli->maxconstmem/1024.);
 
-void print_global_mem_cache_size(CLInfo *cli)
-{
-  cl_int status;
-
+  // get global cache size
   cl_ulong global_mem_cache_size;
   status = clGetDeviceInfo(cli->device,
 			   CL_DEVICE_GLOBAL_MEM_CACHE_SIZE,
@@ -440,13 +336,8 @@ void print_global_mem_cache_size(CLInfo *cli)
 			   NULL);
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
-  printf("\tGlobal memory cache size: %d bytes\n", (int)global_mem_cache_size);
-}
-  
-void print_max_constant_arguments(CLInfo *cli)
-{
-  cl_int status;
-  
+  //printf("\tGlobal memory cache size: %d bytes\n", (int)global_mem_cache_size);
+
   // get maxconst args
   int maxcstargs;
   status = clGetDeviceInfo(cli->device,
@@ -456,12 +347,7 @@ void print_max_constant_arguments(CLInfo *cli)
 			   NULL);
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
-  printf("\tMax Const args: %d \n",maxcstargs);
-}
-
-void set_max_compute_units(CLInfo *cli)
-{
-  cl_int status;
+  //printf("\tMax Const args: %d \n",maxcstargs);
 
   // nb of compute units
   status = clGetDeviceInfo(cli->device,
@@ -471,11 +357,7 @@ void set_max_compute_units(CLInfo *cli)
 			   NULL);
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
-}
-
-void set_max_workgroup_size(CLInfo *cli)
-{
-  cl_int status;
+  //printf("\tNb of compute units: %d\n",cli->nbcomputeunits);
 
   // max workgroup size
   status = clGetDeviceInfo(cli->device,
@@ -485,160 +367,61 @@ void set_max_workgroup_size(CLInfo *cli)
 			   NULL);
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
+  //printf("\tMax workgroup size: %zu\n",cli->maxworkgroupsize);
+
+  // OpenCL extensions
+  get_cldevice_extensions(cli->device, cli->clextensions,
+			  sizeof(cli->clextensions));
+  //printf("\tOpenCL extensions: %s\n", cli->clextensions);
+
+  // First opencl context
+  cli->context = clCreateContext(NULL, // no context properties
+				 1,         // only one device in the list
+				 &cli->device, // device list
+				 NULL, // callback function
+				 NULL, // function arguments
+				 &status);
+  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status >= CL_SUCCESS);
+
+#if 0
+  //#ifdef CL_VERSION_2_0
+  cl_queue_properties queue_properties = CL_QUEUE_PROFILING_ENABLE;
+  cli->commandqueue
+    = clCreateCommandQueueWithProperties(cli->context,
+					 cli->device,
+					 &queue_properties,
+					 &status);
+#else
+  cli->commandqueue = clCreateCommandQueue(cli->context,
+					   cli->device,
+					   CL_QUEUE_PROFILING_ENABLE,
+					   &status);
+#endif
+  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status >= CL_SUCCESS);
+
+  printf("\nOpenCL Init OK\n\n");
 }
 
-void set_clinfo_data(CLInfo *cli)
-{
-  cli->platformname = get_platform_name(cli->platform);
-  cli->devicename = get_device_name(cli->device);
-  set_device_memory(cli);
-  set_max_buffer_size(cli);
-  set_local_memory_size(cli);
-  set_max_constant_memory_size(cli);
-  set_max_compute_units(cli);
-  set_max_workgroup_size(cli);
-  cli->clextensions = get_cldevice_extensions(cli->device);
-}
 
-void PrintCLInfo(CLInfo *cli)
-{
-  printf("OpenCL information:\n");
-  printf("\tPlatform: %s\n", cli->platformname);
-  printf("\tDevice: %s\n", cli->devicename);
+
+void PrintCLInfo(CLInfo *cli){
+  cl_int status;  // for checking OpenCL errors
+  char pbuf[2000];
+
+  printf("%sPlatform: \n",cli->platformname);
+  printf("\tDevice: %s\n",cli->devicename);
 
   // device memory
-  printf("\tGlobal memory: %f MB\n", cli->devicememsize / 1024.0 / 1024.0);
-  printf("\tMax buffer size: %f MB\n", cli->maxmembuffer / 1024.0 / 1024.0);
-  printf("\tLocal memory size: %f KB\n", cli->cachesize / 1024.0);
+  printf("\tGlobal memory: %f MB\n", cli->devicememsize/1024./1024.);
+  printf("\tMax buffer size: %f MB\n", cli->maxmembuffer/1024./1024.);
+  printf("\tLocal memory size: %f KB\n", cli->cachesize/1024.);
   printf("\tNb of compute units: %d\n", cli->nbcomputeunits);
   printf("\tMax workgroup size: %zu\n", cli->maxworkgroupsize);
-  print_global_mem_cache_size(cli);
-  print_max_constant_arguments(cli);
-  print_device_type(cli);
-  print_opencl_version(cli);
   printf("\tOpenCL extensions:\n%s\n", cli->clextensions);
 }
 
-void InitCLInfo(CLInfo *cli, int platform_num, int device_num)
-{
-  cl_int status;
-  
-  cli->nbplatforms = get_nbplatforms();
-  cl_platform_id *platforms = malloc(cli->nbplatforms * sizeof(cl_platform_id));
- 
-  status = clGetPlatformIDs(cli->nbplatforms, platforms, NULL);
-  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status >= CL_SUCCESS);
-  
-  printf("\nAvailable OpenCL platforms:\n");
-  print_platforms(cli);
-  
-  cli->platformnum = platform_num;
-  cli->platform = get_platform_id(platform_num);
-
-  int ndevices = get_nbdevices(&cli->platform);
-  assert(ndevices > 0);
-  assert(device_num < ndevices);
-  
-  printf("\nUsing OpenCL platform %d, device %d.\n", platform_num, device_num);
-
-  cli->device = get_device_id(cli->platform, device_num);
-
-  set_clinfo_data(cli);
-  PrintCLInfo(cli);
-
-  bool socl = false;
-  char vendor[256];
-  clGetPlatformInfo(cli->platform, CL_PLATFORM_VENDOR, sizeof(vendor),
-		    vendor, NULL);
-  socl = strcmp(vendor, "INRIA") ==  0;
-  
-  if(!socl) {
-
-    cli->context = clCreateContext(NULL, // no context properties
-				   1,         // only one device in the list
-				   &cli->device, // device list
-				   NULL, // callback function
-				   NULL, // function arguments
-				   &status);
-
-
-    if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
-    assert(status >= CL_SUCCESS);
-
-#if 0
-    //#ifdef CL_VERSION_2_0
-
-    /*
-    cl_queue_properties properties[]
-      = {
-      //CL_QUEUE_SIZE, 16*1024*1024,
-      CL_QUEUE_PROPERTIES,
-      (cl_command_queue_properties)
-      CL_QUEUE_PROFILING_ENABLE
-      // | CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE
-      // | CL_QUEUE_ON_DEVICE |
-      // | CL_QUEUE_ON_DEVICE_DEFAULT
-      , 0
-    };
-    */
-
-    cl_queue_properties properties[] =
-      {CL_QUEUE_PROPERTIES,
-       CL_QUEUE_PROFILING_ENABLE
-       | CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE
-       , 0};
-    cli->commandqueue
-      = clCreateCommandQueueWithProperties(cli->context,
-					   cli->device,
-					   properties,
-					   &status);
-    if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
-    assert(status >= CL_SUCCESS);
-#else
-    // OpenCL 1.x
-    cli->commandqueue 
-      = clCreateCommandQueue(cli->context,
-			     cli->device,
-			     CL_QUEUE_PROFILING_ENABLE
-			     | CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE
-			     ,
-			     &status);
-    if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
-    assert(status >= CL_SUCCESS);
-#endif
-
-  } else {
-    // We are using the SOCL platform, which requires a non-standard
-    // context and command queue.
-
-    cl_context_properties properties[]
-      = {CL_CONTEXT_PLATFORM,
-	 (cl_context_properties)platforms[platform_num], 0};
-    cl_device_id *devicelist = calloc(ndevices, sizeof(cl_device_id));
-    for(int i = 0; i < ndevices; ++i) {
-      devicelist[i] = get_device_id(cli->platform, i);
-    }
-
-    cli->context = clCreateContext(properties, ndevices, devicelist,
-				   NULL, NULL, &status);
-
-    if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
-    assert(status >= CL_SUCCESS);
-
-    cli->commandqueue 
-      = clCreateCommandQueue(cli->context,
-			     NULL,
-			     CL_QUEUE_PROFILING_ENABLE
-			     | CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE
-			     ,
-			     &status);
-    if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
-    assert(status >= CL_SUCCESS);
-  }
-
-  printf("\tOpenCL Init OK\n\n");
-}
 
 void BuildKernels(CLInfo *cli, char *strprog, char *buildoptions)
 {
@@ -651,47 +434,43 @@ void BuildKernels(CLInfo *cli, char *strprog, char *buildoptions)
 					   &status);
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
-  
-  if(!(cli->program)) 
+
+  if(!(cli->program))
     printf("Failed to create program.\n");
 
-  int deflen = 20;
+  int deflen = 400;
   char *buildoptions0
-    = (buildoptions == NULL)
-    ?  malloc(deflen + 1)
-    : malloc(deflen + strlen(buildoptions) + 1);
-  
-  if(sizeof(real) == sizeof(double))
-    sprintf(buildoptions0, "-D real=double ");
-  else
-    sprintf(buildoptions0, "-D real=float ");
+    = (buildoptions == NULL) ?
+    malloc(deflen + 1) :
+    malloc(deflen + strlen(buildoptions) + 1);
 
-  if(buildoptions != NULL) {
+#ifdef _DOUBLE_PRECISION
+  sprintf(buildoptions0, "-D schnaps_real=double ");
+#else
+  sprintf(buildoptions0, "-cl-single-precision-constant -D schnaps_real=float ");
+#endif
+  if(buildoptions != NULL)
     strcat(buildoptions0, buildoptions);
-  }
-    
+
   printf("OpenCL compilation arguments: %s\n", buildoptions0);
   status = clBuildProgram(cli->program,
 			  0,               // one device
 			  NULL,
 			  buildoptions0,
 			  NULL, NULL);
+
   free(buildoptions0);
 
   if(status < CL_SUCCESS) {
     //printf("%s\n", strprog); // Print the OpenCL code
     printf("%s\n", clErrorString(status));
-    printf("Compilation output:\n");
-    print_build_debug(&cli->program, &cli->device);
-  } else {
-    printf("Compilation output:\n");
-    print_build_debug(&cli->program, &cli->device);
+    printf("Compilation output:\n%s\n",
+  	   print_build_debug(&(cli->program), &cli->device));
   }
-    
   assert(status >= CL_SUCCESS);
 }
 
-void ReadFile(char filename[], char **s) {
+void ReadFile(char filename[], char **s){
   FILE *f = fopen(filename , "r");
   assert(f);
 
@@ -711,10 +490,120 @@ void ReadFile(char filename[], char **s) {
 
 //! \brief scan all *.h and *.c in order to find the code
 //! to be shared with opencl
-//! such code is enclosed between \#pragma start_opencl and 
+//! such code is enclosed between \#pragma start_opencl and
 // \#pragma end_opencl
 void GetOpenCLCode(void){
   int status;
+#ifdef __APPLE__
+  status = system("sh ../get_opencl_code_apple.sh");
+#else
   status = system("sh ../get_opencl_code.sh");
+#endif
   assert(status == 0);
 }
+
+schnaps_real cl_dev_gflops(char *platform_name)
+{
+  //if(strcmp(platform_name, "Intel(R) Core(TM) i3-4010U CPU @ 1.70GHz") == 0)
+  //  return 2;
+  if(strcmp(platform_name, "Intel(R) Many Integrated Core Acceleration Card")
+     == 0)
+    return 1011.0;
+  if(strcmp(platform_name, "Tahiti") == 0)
+    return (sizeof(schnaps_real) == sizeof(float)) ? 3788.8 : 947.2;
+  if(strcmp(platform_name, "Tesla K80") == 0)
+    return 2910;
+  if(strcmp(platform_name, "GeForce GT 540M") == 0)
+    return 258.048;
+  return 0;
+}
+
+schnaps_real cl_dev_bwidth(char *platform_name)
+{
+  //if(strcmp(platform_name, "Intel(R) Core(TM) i3-4010U CPU @ 1.70GHz") == 0)
+  //  return 2;
+
+  if(strcmp(platform_name, "Intel(R) Many Integrated Core Acceleration Card")
+     == 0)
+    return 320.0;
+  if(strcmp(platform_name, "Tesla K80") == 0)
+    return 264.0;
+  if(strcmp(platform_name, "Tahiti") == 0)
+    return 480;
+  if(strcmp(platform_name, "GeForce GT 540M") == 0)
+    return 28.8;
+  return 0;
+}
+
+// Given the dev_flops (in gflop/s) and the bandwidth (in GB/s), the
+// number of operations (flop_count), and the number of real io
+// transfers (io_count), compute the theoretical execution time.
+schnaps_real kernel_min_time(schnaps_real dev_flops, schnaps_real bandwidth,
+		       unsigned long int flop_count, unsigned long int io_count)
+{
+  return flop_count / (1e9 * dev_flops);
+}
+
+void print_kernel_perf(schnaps_real dev_gflops, schnaps_real dev_bwidth,
+		       unsigned long int flop_count, unsigned long int io_count,
+		       cl_ulong kernel_time_ns)
+{
+  if(dev_gflops > 0 && dev_bwidth > 0) {
+    printf("\tKernel flop count:\t\t%lu\n", flop_count);
+    printf("\tKernel io count:\t\t%lu\n", io_count);
+    schnaps_real total_time = 1e-9 * kernel_time_ns;
+    printf("\tKernel time:\t\t\t%f s\n", total_time);
+    schnaps_real min_time_total = kernel_min_time(dev_gflops, dev_bwidth,
+					    flop_count, io_count);
+    printf("\tTheoretical kernel time:\t%f s\n", min_time_total);
+    printf("\tEfficiency:\t\t\t%f%%\n", 100.0 * min_time_total / total_time);
+  }
+}
+
+
+cl_device_type GetDeviceTypeFromName(const char *name) {
+  cl_int status;
+
+  // Loop over platforms
+  for(int ip = 0; ip < get_nbplatforms(); ++ip) {
+    cl_platform_id platform = get_platform_id(ip);
+
+    // Loop over devices
+    for(int id = 0; id < get_nbdevices(&platform); ++id) {
+      cl_device_id device = get_device_id(platform, id);
+
+      // Get device name
+      char buffer[1000];
+      status = clGetDeviceInfo(device,
+                               CL_DEVICE_NAME,
+                               sizeof(buffer),
+                               buffer,
+                               NULL);
+      if (status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+      assert(status >= CL_SUCCESS);
+
+      // Check that name contains device name
+      if (strstr(name, buffer) != NULL) {
+        // Get device type
+        cl_device_type type;
+        status = clGetDeviceInfo(device,
+                                 CL_DEVICE_TYPE,
+                                 sizeof(type),
+                                 &type,
+                                 NULL);
+        if (status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+        assert(status >= CL_SUCCESS);
+
+        return type;
+      }
+    }
+  }
+
+  printf("%s\n", clErrorString(CL_DEVICE_NOT_FOUND));
+  assert(CL_DEVICE_NOT_FOUND);
+}
+
+
+#ifdef DISABLE_PRINTF_CL
+    #undef printf
+#endif

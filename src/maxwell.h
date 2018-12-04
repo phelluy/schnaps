@@ -8,7 +8,7 @@
 //! \param[in] vn : normal vector
 //! \param[out] flux : the flux
 #pragma start_opencl
-void Maxwell2DCleanNumFlux_upwind(real *wL, real *wR, real *vn, real *flux);
+void Maxwell2DNumFlux_upwind(schnaps_real *wL, schnaps_real *wR, schnaps_real *vn, schnaps_real *flux);
 #pragma end_opencl
 
 //! \brief The particular flux for the maxwell2d model
@@ -16,16 +16,15 @@ void Maxwell2DCleanNumFlux_upwind(real *wL, real *wR, real *vn, real *flux);
 //! \param[in] vn : normal vector
 //! \param[out] flux : the flux
 #pragma start_opencl
-void Maxwell2DCleanNumFlux_centered(real *wL, real *wR, real *vn, real *flux);
+void Maxwell2DNumFlux_centered(schnaps_real *wL, schnaps_real *wR, schnaps_real *vn, schnaps_real *flux);
 #pragma end_opencl
 
-void Maxwell2DCleanNumFlux_unoptimised(real *wL, real *wR, real *vnorm,
-				       real *flux);
+void Maxwell2DNumFlux_unoptimised(schnaps_real *wL, schnaps_real *wR, schnaps_real *vnorm, schnaps_real *flux);
 //! \brief The particular imposed data for the maxwell2d model
 //! \param[in] x, t : space and time position
 //! \param[out] w : imposed state at point x and time t
 #pragma start_opencl
-void Maxwell2DCleanImposedData(const real * x, const real t, real *w);
+void Maxwell2DImposedData(const schnaps_real * x, const schnaps_real t, schnaps_real *w);
 #pragma end_opencl
 
 //! \brief The particular boundary flux for the maxwell2d model
@@ -35,41 +34,46 @@ void Maxwell2DCleanImposedData(const real * x, const real t, real *w);
 //! \param[in] vn : normal vector
 //! \param[out] flux : the flux
 #pragma start_opencl
-void Maxwell2DCleanBoundaryFlux_upwind(real *x, real t, real *wL,
-				       real *vn, real *flux);
+void Maxwell2DBoundaryFlux_upwind(schnaps_real *x, schnaps_real t, schnaps_real *wL,
+				    schnaps_real *vn, schnaps_real *flux);
 #pragma end_opencl
 
 //! \brief The particular init data for the maxwell2d model
 //! \param[in] x : space position
 //! \param[out] w : init state at point x
-void Maxwell2DCleanInitData(real *x, real *w);
+void Maxwell2DInitData(schnaps_real *x, schnaps_real *w);
 
 #pragma start_opencl
-void Maxwell2DCleanSource(const real *x, const real t, const real *w,
-			  real *source, int m);
+void Maxwell2DSource(const schnaps_real *x, const schnaps_real t, const schnaps_real *w, schnaps_real *source);
 #pragma end_opencl
 
 
 
 #pragma start_opencl
-void Maxwell3DNumFlux_upwind(real *wL, real *wR, real *vnorm, real *flux);
+void Maxwell3DNumFlux_upwind(schnaps_real *wL, schnaps_real *wR, schnaps_real *vnorm, schnaps_real *flux);
 #pragma end_opencl
 
 #pragma start_opencl
-void Maxwell3DCleanNumFlux_upwind(real *wL, real *wR, real *vnorm, real *flux);
+void Maxwell3DNumFluxClean_upwind(schnaps_real *wL, schnaps_real *wR, schnaps_real *vnorm,
+					schnaps_real *flux);
 #pragma end_opencl
 
 #pragma start_opencl
-void Maxwell3DCleanImposedData(const real *x, const real t, real *w);
+void Maxwell3DImposedData(const schnaps_real *x, const schnaps_real t, schnaps_real *w);
 #pragma end_opencl
 
 #pragma start_opencl
-void Maxwell3DCleanInitData(real *x, real *w);
+void Maxwell3DInitData(schnaps_real *x, schnaps_real *w);
 #pragma end_opencl
 
 #pragma start_opencl
-void Maxwell3DCleanBoundaryFlux_upwind(real *x, real t, 
-					real *wL, real *vnorm, real *flux);
+void Maxwell3DBoundaryFlux_upwind(schnaps_real *x, schnaps_real t,
+					schnaps_real *wL, schnaps_real *vnorm, schnaps_real *flux);
+#pragma end_opencl
+
+#pragma start_opencl
+void Maxwell3DBoundaryFluxClean_upwind(schnaps_real *x, schnaps_real t,
+					schnaps_real *wL, schnaps_real *vnorm, schnaps_real *flux);
 #pragma end_opencl
 
 #endif

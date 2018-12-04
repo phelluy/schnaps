@@ -1,26 +1,25 @@
+//#include "macromesh.h"
+//#include "geometry.h"
+//#include "interpolation.h"
 #include "test.h"
 #include "model.h"
+//#include "field.h"
 #include <stdbool.h>
 
 #include <stdio.h>
 #include <math.h>
 #include <assert.h>
-
-int main()
-{
+int TestModel(void);
+int main(void) {
   // Unit tests
-  int retval = TestModel();
-  if(retval == 0)
-    printf("Model test OK !\n");
-  else
-    printf("Model test failed !\n");
-  return retval;
+  int resu = TestModel();
+  if (resu) printf("Model test OK !\n");
+  else printf("Model test failed !\n");
+  return !resu;
 } 
 
-int TestModel()
-{
-  int retval = 0;
-  
+int TestModel(void){
+  int test = true;
   // Creation of a simple transport model
   Model tr;
   tr.cfl = 0.05;
@@ -30,31 +29,24 @@ int TestModel()
   tr.InitData = TestTransInitData;
   tr.ImposedData = TestTransImposedData;
 
-  real wL[tr.m];
-  real wR[tr.m];
-  real nflux[tr.m];
-  real bflux[tr.m];
+  schnaps_real wL[tr.m];
+  schnaps_real wR[tr.m];
+  schnaps_real flux1[tr.m], flux2[tr.m];
 
-  for(int iv = 0; iv < tr.m; ++iv) {
-    wL[iv] = 0.0;
-    wR[iv] = 0.0;
-    nflux[iv] = 0.0;
-    bflux[iv] = 0.0;
-  }
+  schnaps_real x[3] = {1, 1, 2};
+  schnaps_real t = 0;
+  schnaps_real vn[3] = {sqrt(1.0 / 3.0), sqrt(1.0 / 3.0), sqrt(1.0 / 3.0)};
+  schnaps_real vmax = 1.0;
 
-  real x[3] = {1.0, 1.0, 2.0};
-  real t = 0.0;
-  real vn[3] = {sqrt(1.0 / 3.0), sqrt(1.0 / 3.0), sqrt(1.0 / 3.0)};
-  
+  wL[0]=0;
+      
   tr.InitData(x, wR);
-  tr.NumFlux(wL, wR, vn, nflux);
-  printf("NumFlux %f \n", nflux[0]);
-  tr.BoundaryFlux(x, t, wL, vn, bflux);
-  printf("BoundaryFlux %f \n", bflux[0]);
+  tr.NumFlux(wL, wR, vn, flux1);
+  printf("NumFlux %.6e \n", flux1[0]);
+  tr.BoundaryFlux(x, t, wL, vn, flux2);
+  printf("BoundaryFlux %.6e \n", flux2[0]);
 
-  real err = fabs(bflux[0] - nflux[0]);
-  if(err > 1e-8)
-    retval++;
-  
-  return retval;
-}
+  schnaps_real err = fabs(flux2[0] - flux1[0]);
+  test = (err < 1e-8);
+  return test;
+};

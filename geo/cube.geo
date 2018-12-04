@@ -1,4 +1,4 @@
-raf = 2;
+raf = 1;
 raf2= 1;
 Point(1) = {-1, -1, 0, raf};
 Point(2) = {1, -1, 0, raf};

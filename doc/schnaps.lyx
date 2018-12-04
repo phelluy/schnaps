@@ -1,7 +1,9 @@
-#LyX 2.0 created this file. For more info see http://www.lyx.org/
-\lyxformat 413
+#LyX 2.2 created this file. For more info see http://www.lyx.org/
+\lyxformat 508
 \begin_document
 \begin_header
+\save_transient_properties true
+\origin unavailable
 \textclass article
 \begin_preamble
 \usepackage{bbold}
@@ -16,16 +18,16 @@
 \language_package default
 \inputencoding auto
 \fontencoding global
-\font_roman default
-\font_sans default
-\font_typewriter default
+\font_roman "default" "default"
+\font_sans "default" "default"
+\font_typewriter "default" "default"
+\font_math "auto" "auto"
 \font_default_family default
 \use_non_tex_fonts false
 \font_sc false
 \font_osf false
-\font_sf_scale 100
-\font_tt_scale 100
-
+\font_sf_scale 100 100
+\font_tt_scale 100 100
 \graphics default
 \default_output_format default
 \output_sync 0
@@ -45,15 +47,24 @@
 \pdf_pdfusetitle true
 \papersize a4paper
 \use_geometry true
-\use_amsmath 1
-\use_esint 1
-\use_mhchem 1
-\use_mathdots 1
+\use_package amsmath 1
+\use_package amssymb 1
+\use_package cancel 1
+\use_package esint 1
+\use_package mathdots 1
+\use_package mathtools 1
+\use_package mhchem 1
+\use_package stackrel 1
+\use_package stmaryrd 1
+\use_package undertilde 1
 \cite_engine basic
+\cite_engine_type default
+\biblio_style plain
 \use_bibtopic false
 \use_indices false
 \paperorientation portrait
 \suppress_date false
+\justification true
 \use_refstyle 1
 \index Index
 \shortcut idx
@@ -82,7 +93,7 @@
 
 \begin_layout Standard
 \begin_inset FormulaMacro
-\renewcommand{\nraf}{\text{{nraf}}}
+\newcommand{\nraf}{\text{{nraf}}}
 {\mathrm{nraf}}
 \end_inset
 
@@ -90,8 +101,7 @@
 \end_layout
 
 \begin_layout Title
-SCHNAPS: une bibliothèque pour la résolution numérique des lois de conservation
- sur ordinateur massivement multicoeur
+SCHNAPS: Solveur Conservatif Hyperbolique Non-linéaire Appliqué aux PlaSmas
 \end_layout
 
 \begin_layout Author
@@ -108,11 +118,23 @@ LatexCommand tableofcontents
 \end_layout
 
 \begin_layout Section
-Méthode Galerkin Discontinu (GD)
+Introduction
 \end_layout
 
-\begin_layout Subsection
-Systèmes de lois de conservation
+\begin_layout Standard
+Dans ce chapitre, nous rappelons d'abord rapidement le formalisme de la
+ méthode Galerkin Discontinu (GD).
+ Cette méthode est très générale puisqu'elle autorise des maillages non-conforme
+s ainsi que des degrés d'approximation non-uniforme.
+ Cependant sa programmation dans un cadre trop général risque d'être inefficace
+ sur un ordinateur hybride possédant plusieurs niveaux de mémoires et de
+ parallélisme: les indirections mémoire, les trop grandes variations de
+ paramètres, un rangement arbitraire des données en mémoire peuvent conduire
+ à des performances désastreuses.
+ Nous allons donc présenter ici les choix que nous avons fait afin d'obtenir
+ un bon compromis entre la généralité de la méthode et son efficacité.
+ Le résultat de ces compromis est le logiciel SCHNAPS développé depuis deux
+ à l'IRMA Strasbourg.
 \end_layout
 
 \begin_layout Standard
@@ -125,10 +147,18 @@ Solveur Conservatif Hyperbolique Non-linéaire Appliqué aux PlasmaS
 \end_inset
 
 .
- Il s'agit d'une bibliothèque de classes C pour résoudre numériquement des
- systèmes de lois de conservation sur des ordinateurs massivement parallèles,
- avec plusieurs niveaux de parallélisme, par exemple un gros cluster de
- GPU.
+ Il s'agit d'une bibliothèque C99 pour résoudre numériquement des systèmes
+ de lois de conservation sur des ordinateurs massivement parallèles, avec
+ plusieurs niveaux de parallélisme, par exemple un gros cluster comprenant
+ à la fois des CPU et des GPU.
+\end_layout
+
+\begin_layout Section
+Méthode Galerkin Discontinu (GD)
+\end_layout
+
+\begin_layout Subsection
+Systèmes de lois de conservation
 \end_layout
 
 \begin_layout Standard
@@ -164,7 +194,7 @@ Dans cette équation, l'inconnue
 \end_inset
 
 , 
-\begin_inset Formula $x=(x_{1},x_{2},x_{3})$
+\begin_inset Formula $transfertsx=(x_{1},x_{2},x_{3})$
 \end_inset
 
  et du temps 
@@ -323,7 +353,7 @@ reference "eq:slc"
 
 \end_inset
 
-Souvent, le flux numérique vérifie aussi une propriété de conservation
+Souvent, le flux numérique vérifie aussi une propriété de conservationtransferts
 \begin_inset Formula 
 \begin{equation}
 \forall W_{L},W_{R},n,\quad F(W_{L},W_{R},n)=-F(W_{R},W_{L},-n),\label{eq:consflux}
@@ -708,13 +738,17 @@ Comme
 \end_inset
 
 .
- Par conséquent, comme dans la méthode des volumes finis, nous devons introduire
+ Par conséquent, comme dans la méthode des volumes finis, nous devons utiliser
  un flux numérique 
 \begin_inset Formula $F(W_{L},W_{R},n_{LR})$
 \end_inset
 
-.
- Généralement, le flux numérique satisfait deux conditions
+, introduit dans la section précédente.
+ Le flux numérique satisfait souvent les deux conditions
+\begin_inset Separator latexpar
+\end_inset
+
+
 \end_layout
 
 \begin_deeper
@@ -773,7 +807,7 @@ reference "eq:DG"
 \begin_inset Formula $F(W_{L},W_{R},n_{LR})$
 \end_inset
 
- par un flux frontière
+ par le flux frontière
 \begin_inset Formula 
 \[
 F_{b}(W_{L},n_{LR}).
@@ -817,15 +851,203 @@ SCHNAPS: philosophie
 \begin_layout Standard
 Dans cette section nous tentons de donner une vue d'ensemble synthétique
  de la conception du logiciel.
- Pour une vue détaillée de la hiérarchie des classes nous renvoyons à la
- documentation doxygen de SCHNAPS (voir section 
+\end_layout
+
+\begin_layout Subsection
+StarPU
+\end_layout
+
+\begin_layout Standard
+Afin d'exploiter les architectures d'ordinateurs hybrides les plus récentes,
+ il est indispensable de pouvoir soumettre de façon asynchrone des opérations
+ de calcul ou de transferts (copies mémoire ou communications).
+ Ces opérations, appelées tâches (
+\begin_inset Quotes eld
+\end_inset
+
+tasks
+\begin_inset Quotes erd
+\end_inset
+
+ en anglais), dépendent en général les unes des autres.
+ Ce sont les dépendances entre les tâches qui permettent de déterminer l'ordre
+ dans lequel elle doivent être exécutées et si certaines d'entre elles peuvent
+ être réalisées en parallèle.
+\end_layout
+
+\begin_layout Standard
+Les dépendances entre tâches sont souvent représentée par un graphe.
+ Les noeuds du graphe correspondent aux tâches.
+ La présence d'un arc orienté de la tâche A vers la tâches B indique qu'il
+ faut attendre la fin de A avant de lancer B.
+ Voir Figure 
 \begin_inset CommandInset ref
 LatexCommand ref
-reference "sub:Documentation"
+reference "fig:Graphe-des-tâches"
 
 \end_inset
 
+.
+ En général, la construction d'un graphe des tâches ne nécessite que la
+ connaissance des dépendances entre les données.
+ Il suffit d'indiquer sur quelles données chaque tâche va opérer et si ces
+ données sont accédées en lecture (R), écriture (W) ou lecture/écriture
+ (RW).
+ Il existe une littérature plus qu'abondante sur ces techniques algorithmiques.
+ Ce n'est pas l'objet de cette thèse de rentrer trop dans les détails.
+ Nous renvoyons par exemple à 
+\begin_inset CommandInset citation
+LatexCommand cite
+key "cosnard1995automatic,cosnard1999compact"
+
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Standard
+La programmation efficace et générale de ce type d'algorithme est compliquée
+ 
+\begin_inset CommandInset citation
+LatexCommand cite
+key "strub2015resolution"
+
+\end_inset
+
+.
+ Nous avons donc décidé de déléguer la répartition des tâches sur les processeur
+s disponibles à une bibliothèque informatique spécialisée.
+ Ce type de bibliothèque, aussi appelée 
+\begin_inset Quotes eld
+\end_inset
+
+support d’exécution
+\begin_inset Quotes erd
+\end_inset
+
+ ou 
+\begin_inset Quotes eld
+\end_inset
+
+runtime
+\begin_inset Quotes erd
+\end_inset
+
+ en anglais permet de décrire à la fois le code des tâches ainsi que le
+ type d'accès aux données.
+\end_layout
+
+\begin_layout Standard
+Nous avons choisi le support d’exécution StarPU 
+\begin_inset Flex URL
+status open
+
+\begin_layout Plain Layout
+
+http://starpu.gforge.inria.fr/
+\end_layout
+
+\end_inset
+
+.
+ Il s'agit d'un logiciel développé depuis plus de 10 ans à l'Inria Bordeaux
+ 
+\begin_inset CommandInset citation
+LatexCommand cite
+key "augonnet2011starpu"
+
+\end_inset
+
+.
+ Au coeur de StarPU il y a les 
+\begin_inset Quotes eld
+\end_inset
+
+codelettes
+\begin_inset Quotes erd
+\end_inset
+
+ (ou 
+\begin_inset Quotes eld
+\end_inset
+
+codelet
+\begin_inset Quotes erd
+\end_inset
+
+ en anglais).
+ Une codelette est une fonction écrite en C99 qui réalise l'implémentation
+ d'une tâche.
+ Une même tâche peut avoir plusieurs implémentations, donc plusieurs codelettes,
+ différentes.
+ Par exemple, pour une opération de calcul donnée, il est possible de programmer
+ plusieurs codelettes avec des optimisations différentes, ainsi qu'une ou
+ plusieurs codelettes pour divers type d'accélérateurs (GPU ou Xeon Phi
+ par exemple).
+ Le fait de pouvoir lancer les codelettes sur plusieurs types de matériel
+ justifie le nom de StarPU que l'on peut aussi orthographier *PU: tous les
+ types de processeurs (C ou G PU) sont accessibles.
+ Une tâche est alors déterminée par ses codelettes ainsi que par la description
+ du type d'accès aux données (R, W ou RW).
+\end_layout
+
+\begin_layout Standard
+Une fois les codelettes et les tâches décrites, le programmeur n'a plus
+ qu'à décrire son algorithme de manière séquentielle en soumettant les tâches
+ à StarPU dans un ordre qui produirait le résultat correct.
+ StarPU se charge alors de distribuer les calculs sur les processeurs et
+ les accélérateurs disponibles sur le noeud de calcul.
+ En fonction des dépendances, les tâches peuvent être réorganisées et exécutées
+ en parallèle si possible.
+ Par ailleurs StarPU dispose de plusieurs stratégies d'ordonnancement (
+\begin_inset Quotes eld
+\end_inset
+
+scheduling
+\begin_inset Quotes erd
+\end_inset
+
+) qui permettent de tenir compte des efficacités relatives de codelettes,
+ des vitesses de transfert mémoire entre les accélérateurs, etc.
+ afin d'offrir la meilleure exploitation possible des ressources de calcul.
+ 
+\end_layout
+
+\begin_layout Subsection
+MPI
+\end_layout
+
+\begin_layout Standard
+StarPU est efficace pour répartir les tâches sur un noeud de calcul d'un
+ supercalculateur.
+ Typiquement, un tel noeud est aujourd'hui constitué d'un ou plusieurs CPU
+ multicoeur et, de plus en plus souvent, d'un ou plusieurs accélérateurs
+ de type GPU.
+ Pour les communications entre noeuds, StarPU utilise l'environnement MPI
+ (
+\begin_inset Quotes eld
+\end_inset
+
+Message Passing Interface
+\begin_inset Quotes erd
+\end_inset
+
 ).
+ Pour l'instant, StarPU n'est pas capable de distribuer les tâches entre
+ les noeuds MPI.
+ En revanche, il est capable de générer automatiquement les tâches de communicat
+ions nécessaires au déroulement correct du graphe des tâches.
+ Pour cela, l'utilisateur doit établir une distribution initiale des données
+ et concevoir un logiciel dans lequel chaque noeud MPI possède une copie
+ du graphe des tâches.
+ Chaque noeud MPI doit alors (formellement) lancer toutes les tâches du
+ graphe.
+ Même si tous le graphe est parcouru, la perte d'efficacité est faible car
+ seules les tâches pour lesquelles les données sont disponibles seront effective
+ment réalisées.
+ Si une tâche a besoin d'accéder en lecture à des données d'un noeud MPI
+ voisin, StarPU génère automatiquement les dépendances et les transferts
+ nécessaires.
 \end_layout
 
 \begin_layout Subsection
@@ -835,64 +1057,65 @@ OpenCL
 \begin_layout Standard
 SCHNAPS est une bibliothèque, écrite en C, qui permet de résoudre numériquement
  un système de lois de conservation générique par la méthode GD sur un calculate
-ur disposant d'un ou plusieurs accélérateurs supportant l'environnement
- OpenCL.
+ur disposant d'un ou plusieurs accélérateurs de type GPU ou CPU multicoeur.
+ Afin d'écrire les codelettes spécifiques pour le GPU, nous avons choisi
+ l'environnement OpenCL.
  OpenCL permet d'écrire et d'exécuter en parallèle des programmes (appelés
  
 \shape italic
 kernels
 \shape default
 ) sur tous les processeurs d'un accélérateur.
- Lorsque plusieurs accélérateurs sont disponibles, SCHNAPS utilise l'environneme
-nt MPI pour les communications entre les accélérateurs.
- Cette approche très générale permet d'utiliser SCHNAPS sur une grande variété
- de calculateurs.
- SCHNAPS pourra aussi bien tourner sur un PC disposant d'un seul CPU classique
- que sur un supercalculateur avec des centaines de GPU.
-\end_layout
-
-\begin_layout Standard
-La classe 
-\family typewriter
-CLInfo
-\family default
- contient des informations et des méthodes pour initialiser l'environnement
- OpenCL.
 \end_layout
 
 \begin_layout Standard
 Une particularité d'OpenCL est qu'une partie du code est compilée à l'exécution.
  Cette particularité s'explique par la nécessité d'être compatible avec
  des accélérateurs d'architectures matérielles différentes.
- SCHNAPS intègre donc une notion de 
-\shape italic
-fonction
-\shape default
- enrichie (
-\family typewriter
-Function
-\family default
-).
- Les fonctions SCHNAPS se comportent comme des fonctions C traditionnelles,
- mais contiennent également leur propre header et code source.
- Elles peuvent être appelées depuis le programme hôte ou depuis un kernel
- OpenCL.
+\end_layout
+
+\begin_layout Standard
+SCHNAPS intègre donc un mécanisme afin de partager du code source de fonction
+ avec OpenCL.
+ Lorsqu'une portion de code source de SCHNAPS est inclus entre deux balises
+ #pragma start_opencl ...
+ #pragma end_opencl, cette portion de code sera également compilée une deuxième
+ fois à l'exécution pour des appels OpenCL.
+ Les fonctions SCHNAPS se comportent donc comme des fonctions C traditionnelles,
+ mais elles peuvent être appelées indifféremment depuis le programme hôte
+ ou depuis un kernel OpenCL.
 \end_layout
 
 \begin_layout Standard
 Par ailleurs, pour calculer sur des accélérateurs de type GPU, il est nécessaire
  de dupliquer des données entre le CPU et le GPU.
- Pour cela, nous utilisons une classe de 
-\shape italic
-buffers OpenCL
-\shape default
- (
-\family typewriter
-CLBuffer
-\family default
-).
- Cette classe permet d'allouer un vecteur sur le CPU et le GPU.
- Elle s'occupe aussi des synchronisations entre le CPU et le GPU.
+ Ces copies mémoire sont coûteuses et doivent être traitées avec précaution
+ pour éviter notamment les conflits d'accès.
+ Auparavant nous gérions ces transferts nous-mêmes grâces au mécanisme des
+ évènements (
+\begin_inset Quotes eld
+\end_inset
+
+events
+\begin_inset Quotes erd
+\end_inset
+
+) OpenCL.
+ Grâce aux évènements, OpenCL permet également l'implémentation d'un graphe
+ des tâches et de ses dépendances.
+ Cependant il faut décrire 
+\begin_inset Quotes eld
+\end_inset
+
+à la main
+\begin_inset Quotes erd
+\end_inset
+
+ les dépendance et il n'y a pas de mécanisme automatique pour les inférer
+ à partir de l'accès aux données.
+ Depuis l'intégration de StarPU à SCHNAPS nous avons donc préféré déléguer
+ cette gestion au support d'exécution.
+ 
 \end_layout
 
 \begin_layout Subsection
@@ -955,8 +1178,10 @@ etc.
 \end_layout
 
 \begin_layout Standard
-Toutes ces informations sont données dans des fonctions SCHNAPS, car elles
- doivent pouvoir être appelées depuis les kernels OpenCL.
+Toutes ces informations sont données dans des fonctions SCHNAPS (entourées
+ des balises balises #pragma start_opencl ...
+ #pragma end_opencl), car elles doivent pouvoir être appelées depuis les
+ kernels OpenCL.
 \end_layout
 
 \begin_layout Subsection
@@ -966,11 +1191,17 @@ Sous-domaines
 \begin_layout Standard
 Afin d'atteindre de bonnes performances en calcul parallèle, SCHNAPS repose
  sur plusieurs niveaux de parallélisme.
- Le premier niveau est un parallélisme à gros grain, géré par la bibliothèque
- MPI.
- Un autre niveau de parallélisme à grain plus fin est géré à partir de l'environ
-nement OpenCL, qui permet d'exploiter la puissance de calcul des processeurs
- multicoeurs ou d'accélérateurs, comme les GPUs.
+ Le premier niveau correspond à celui des sous-domaines.
+ C'est un parallélisme à gros grain.
+ Les transferts entre sous-domaines sont réalisés grâce à la bibliothèque
+ MPI par StarPU.
+\end_layout
+
+\begin_layout Standard
+Un niveau intermédiaire de parallélisme est piloté par StarPU qui distribue
+ les tâches de calcul sur les accélérateurs du noeud MPI.
+ Enfin, un troisième niveau de parallélisme à grain fin est piloté au niveau
+ des accélérateurs OpenCL.
 \end_layout
 
 \begin_layout Standard
@@ -985,7 +1216,10 @@ sous-domaines
 \shape default
 .
  Chaque sous-domaine est associé à un noeud MPI.
- Un noeud MPI ne connaît que son sous-domaine.
+ Un noeud MPI ne possède que les données de son sous-domaine.
+ Mais il dispose aussi d'informations minimales sur le reste du maillage
+ afin de pouvoir construire le graphe des tâches StarPU du calcul global.
+ 
 \end_layout
 
 \begin_layout Standard
@@ -994,163 +1228,71 @@ e MPI.
 \end_layout
 
 \begin_layout Subsection
-Zones
+Macrocellules et champs
 \end_layout
 
 \begin_layout Standard
-Par ailleurs, chaque sous-domaine est lui-même découpé en 
-\shape italic
-zones
-\shape default
-.
- Les zones sont constituées d'éléments partageant les mêmes caractéristiques
- (modélisation physique, interpolation, forme, 
-\shape slanted
-etc.
-\shape default
-) Ce regroupement assure une meilleure parallélisation, car les calculs
- des éléments d'une même zone sont similaires.
- Il existe des 
-\shape italic
-zones volumiques
-\shape default
- pour les calculs dans le volume.
- Il existe aussi des 
-\shape italic
-zones d'interface
-\shape default
- (ou 
-\shape italic
-zones surfaciques
-\shape default
-) constituées d'éléments surfaciques pour la modélisation de termes d'interface.
+Par ailleurs, chaque sous-domaine est lui-même découpé en macrocellules.
+ Les macrocellules sont obtenus grâce à un diffémorphisme (transformation
+ géométrique) qui envoie le cube de référence 
+\begin_inset Formula $[0,1]^{3}$
+\end_inset
+
+ sur un hexaèdre courbé.
+ Il est possible d'envisager des transformation trilinéaires: hexaèdre à
+ 8 noeud de type H8 dans la terminologie élément fini; ou des transformations
+ quadratiques: hexaèdre à 20 noeud de type H20.
 \end_layout
 
 \begin_layout Standard
-Les échanges de données entre les zones volumiques sont assurés par les
- zones surfaciques.
- Les zones surfaciques au bord des sous-domaines sont également utilisées
- pour les communications MPI.
+Les macro-cellules sont ensuite subdivisées dans chaque directions en sous-cellu
+les partageant les mêmes caractéristiques (modélisation physique, interpolation).
+ Notons que dans chaque macrocellule, les sous-cellules sont organisées
+ suivant une grille courbe mais régulière et que les données géométriques
+ de type H8 ou H20 sont partagées entre toutes les sous-cellules.
+ Cette organisation a deux avantages.
+ Elle permet d'abord de manipuler des structures de données géométriques
+ légères car seul un maillage grossier est nécessaire.
+ C'est ce maillage grossier (macro-maillage), qui est partagé entre les
+ noeuds MPI et qui permet de construire le graphe des tâches StarPU.
+ D'autre part, l'organisation régulière des sous-cellules permet d'envisager
+ des optimisations très efficaces notamment dans les calculs sur GPU.
+ Les paramètres de découpage sont en général décrit dans deux tableaux deg[0:2]
+ et raf[0:2].
+ deg[i] représente le degré d'interpolation dans la direction du maillage
+ logique i et raf[i] le nombre de sous-cellules dans cette direction.
+ Dans la direction i il y a donc (deg[i]+1)*raf[i] points d'interpolation.
+ Il est possible d'avoir des paramètres de discrétisation différents suivant
+ chaque direction, ce qui permet par exemple de réaliser des calculs 1D
+ ou 2D, même si la structure du maillage est toujours 3D.
 \end_layout
 
 \begin_layout Standard
-Nous réalisons les calculs à l'intérieur des zones à partir de kernels OpenCL.
- Ces kernels calculent les flux, les termes sources dans les zones volumiques.
- Les kernels calculent également les flux provenant des zones surfaciques.
- Ils réalisent enfin les extractions de données des zones volumiques vers
- les zones d'interfaces.
+A chaque macro-cellule du macro-maillage est associé un champ.
+ Cette structure contient les valeurs des variables conservatives sur les
+ points d'interpolation à l'intérieur des sous-cellules.
 \end_layout
 
 \begin_layout Standard
-Cette notion de zones existe dans plusieurs classes:
+Les échanges de données entre macrocellules et le calcul des conditions
+ aux limites sont assurés par une structure d'interface.
+ Cette structure est en particulier chargée d'extraire les données de bord
+ des macrocellules dans des tampons.
+ Ces tampons sont très utiles pour optimiser les dépendances de données
+ et offrir plus de liberté à StarPU pour optimiser le parcours du graphe
+ des tâches
 \end_layout
 
-\begin_layout Itemize
-Le 
-\shape italic
-maillage de zone
-\shape default
- (
-\family typewriter
-ZoneMesh
-\family default
-) permet de décrire le maillage géométrique, éventuellement déstructuré,
- mais conforme, d'une zone.
- Cette classe permet de décrire aussi bien un maillage volumique que surfacique.
- Pour créer un maillage non conforme, il est nécessaire d'utiliser plusieurs
- maillages volumiques reliés par un maillage surfacique.
- Un 
-\family typewriter
-ZoneMesh
-\family default
- contient une structure classique de maillage: noeuds géométriques, éléments,
- tableaux de connectivité éléments vers noeuds et éléments vers éléments.
- Si le 
-\family typewriter
-ZoneMesh
-\family default
- est surfacique, il contient en plus deux pointeurs vers les 
-\family typewriter
-ZoneMesh
-\family default
- volumiques voisins de gauche et de droite.
- Dans ce cas, la connectivité éléments vers éléments permet de retrouver
- les voisins volumiques d'un élément surfacique.
-\end_layout
-
-\begin_layout Itemize
-Le 
-\shape italic
-champ de zone
-\shape default
- (
-\family typewriter
-ZoneField
-\family default
-) permet de décrire un champ complet de variables conservatives sur un 
-\family typewriter
-ZoneMesh
-\family default
-.
- Le 
-\family typewriter
-ZoneField
-\family default
- pointe vers un 
-\family typewriter
-Model
-\family default
-.
- Il contient également une fonction SCHNAPS très importante pour les performance
-s: la fonction 
-\family typewriter
-varindex
-\family default
-.
- Cette fonction permet de retrouver en mémoire une donnée conservative,
- connaissant son indice, son élément et son numéro de point Gauss.
- Le rangement effectif en mémoire de la donnée est réalisé dans cette fonction.
- Il est important de faire attention à ce rangement afin de maximiser la
- localité des accès mémoires.
- La réécriture de cette fonction permet de changer l'organisation des données
- en mémoire sans changer la plupart des algorithmes GD.
-\end_layout
-
-\begin_layout Itemize
-Les classes 
-\family typewriter
-ZoneSimulation
-\family default
- et 
-\family typewriter
-ZoneInterface
-\family default
- contiennent un maillage et des champs de zone.
- Elles contiennent également les algorithmes nécessaires à l'implémentation
- de la méthode GD.
- La classe 
-\family typewriter
-ZoneSimulation
-\family default
- est plus particulièrement dédiée aux algorithmes sur les zones volumiques,
- tandis que la classe 
-\family typewriter
-ZoneInterface
-\family default
- s'occupe plutôt des tâches surfaciques.
- Par exemple nous trouvons dans 
-\family typewriter
-ZoneSimulation
-\family default
- l'algorithme qui permet d'assembler les flux des faces internes d'une zone.
- Les flux d'interface sont calculés par 
-\family typewriter
-ZoneInterface
-\family default
-.
- Ce découpage assure un recouvrement des communications par les calculs:
- le calcul des faces internes peut en effet commencer même si les communications
- des interfaces ne sont pas terminées.
+\begin_layout Standard
+Nous réalisons les calculs sur les champ des macrocellules à partir de codelette
+s StarPU.
+ Ces codelettes calculent les flux, les termes sources dans les macrocellules.
+ Les codelettes calculent également les flux provenant des interfaces.
+ Ils réalisent enfin les extractions de données volumiques vers les interfaces.
+ Nous avons écrit à chaque fois deux versions des codelettes: une version
+ C pour CPU et une version OpenCL qui peut s'exécuter sur un CPU multicoeur
+ ou un GPU.
+ 
 \end_layout
 
 \begin_layout Subsection
@@ -1162,29 +1304,10 @@ Une
 \shape italic
 simulation
 \shape default
- (
-\family typewriter
-Simulation
-\family default
-) contient toutes les zones d'un sous-domaine.
+ est une collection de champs sur des macrocellules.
  Cette classe est conçue pour contenir les algorithmes à appliquer sur les
- zones.
- En particulier, c'est cette classe qui construit un graphe des tâches pour
- lancer les calculs OpenCL et les communications MPI de façon asynchrone.
- Un exemple de graphe des tâches pour un calcul sur un sous-domaine avec
- trois zones est représenté Figure 
-\begin_inset CommandInset ref
-LatexCommand ref
-reference "fig:Graphe-des-tâches"
-
-\end_inset
-
-.
- Le graphe est exécuté de façon totalement asynchrone.
- SCHNAPS utilise le mécanisme des événements OpenCL pour gérer les dépendances
- entre les tâches.
- Les communications MPI sont lancées dans des threads indépendants afin
- de ne pas bloquer le déroulement du calcul OpenCL.
+ macrocellules.
+ En particulier, c'est cette classe qui lance les tâches StarPU.
 \end_layout
 
 \begin_layout Standard
@@ -1207,7 +1330,7 @@ status open
 \end_inset
 
 
-\begin_inset Caption
+\begin_inset Caption Standard
 
 \begin_layout Plain Layout
 \begin_inset CommandInset label
@@ -1241,7 +1364,7 @@ nt les dépendances entre les tâches (une tâche doit attendre la fin des
 Éléments géométriques
 \begin_inset CommandInset label
 LatexCommand label
-name "sub:elem_geom"
+name "subsec:elem_geom"
 
 \end_inset
 
@@ -1331,29 +1454,17 @@ nb_face_nodes
 
 \begin_layout Standard
 Nous utiliserons ce formalisme pour toutes les familles d'éléments finis
- de SCHNAPS, qu'il s'agisse d'hexaèdres, de quadrangles, de triangles, de
- tétraèdres, d'éléments courbes.
- Les éléments de type surfacique (qui se trouvent dans les zones d'interface)
- sont décrits avec ce formalisme.
- Pour ces éléments, nous utilisons de plus un paramétrage volumique au voisinage
- de la surface dans la direction du vecteur normal.
- Par exemple, le quadrangle à 4 noeuds (élément de type Q4) est 
-\begin_inset Quotes eld
-\end_inset
-
-épaissi
-\begin_inset Quotes erd
-\end_inset
-
- dans la direction de son vecteur normal en un élément de type H8.
- Les quatre noeuds supplémentaires sont déduits des 4 noeuds initiaux.
- 
+ de SCHNAPS, qu'il s'agisse d'hexaèdres H8 ou H20.
+ A l'avenir nous envisageons de traiter également des tétraèdres ou d'autres
+ éléments courbes.
 \end_layout
 
 \begin_layout Standard
 À titre d'exemple, nous montrons maintenant précisément comment nous pouvons
  définir l'interpolation pour des hexaèdres à 8 noeuds (éléments de type
  H8 dans la terminologie classique des éléments finis).
+ En général, dans SCHNAPS nous utilisons des éléments quadratiques de type
+ H20, mais la description du H8 est plus simple.
  Dans ce cas, l'élément de référence 
 \begin_inset Formula $\hat{L}$
 \end_inset
@@ -1678,7 +1789,7 @@ end{tikzpicture}
 \begin_layout Plain Layout
 \noindent
 \align center
-\begin_inset Caption
+\begin_inset Caption Standard
 
 \begin_layout Plain Layout
 Cube de référence.
@@ -1799,11 +1910,7 @@ Pour un numéro de face
 \end_layout
 
 \begin_layout Standard
-La géométrie des éléments est décrite dans la classe 
-\family typewriter
-ElementGeometry
-\family default
-.
+La géométrie des éléments est décrite dans la struture geometry.
  Cette classe contient des fonctions SCHNAPS (qui pourront donc être appelées
  depuis les kernel OpenCL) pour calculer la transformation géométrique 
 \begin_inset Formula $\tau$
@@ -1825,9 +1932,9 @@ Interpolation
 \begin_layout Standard
 Une fois définie la géométrie d'un élément, on peut définir l'interpolation
  d'un champ scalaire.
- Cette information est décrite dans la classe 
+ Cette information est décrite dans la struture 
 \family typewriter
-ElementInterpolation
+interpolation
 \family default
 .
 \end_layout
@@ -1837,23 +1944,28 @@ Pour l'instant dans SCHNAPS, pour des raisons d'efficacité, nous utilisons
  une approximation nodale adaptée à la quadrature numérique (voir 
 \begin_inset CommandInset citation
 LatexCommand cite
-key "CFP06,KWBH09"
+key "cohen2006spatial,klockner2009nodal"
 
 \end_inset
 
-): les champs sont définis aux points d'intégration de Gauss des éléments.
+): les champs sont définis aux points d'intégration de Gauss-Lobatto des
+ éléments.
  Ce choix permet d'accéder directement aux champs pour l'intégration numérique
- dans le volume.
+ dans le volume et sur les faces.
  Ce choix assure aussi que les matrices masses locales sont diagonales.
 \end_layout
 
 \begin_layout Standard
-Nous décrivons par exemple comment nous interpolons les champs sur un élément
- de type H8 avec des polynômes de degré 
+Pour commencer, nous décrivons par exemple comment nous interpolons les
+ champs sur un élément de type H8 avec des polynômes de degré 
 \begin_inset Formula $d$
 \end_inset
 
 .
+ Pour simplifier, nous considérons d'abord le cas où la macrocellule corresponda
+nte ne contient qu'une seule sous-cellules.
+ C'est à dire nous supposons que raf[0]=raf[1]=raf[2]=1 dans les trois direction
+s.
 \end_layout
 
 \begin_layout Standard
@@ -1870,19 +1982,19 @@ Pour l'interpolation nous fixons d'abord dans la cellule
 \begin_inset Formula $(d+1)$
 \end_inset
 
- zéros 
+ points de Gauss-Lobatto 
 \begin_inset Formula $(\xi_{i})_{i=0\cdots d}$
 \end_inset
 
- du 
-\begin_inset Formula $(d+1)^{\text{ième}}$
-\end_inset
-
- polynôme de Legendre sur 
+ sur 
 \begin_inset Formula $[0,1],$
 \end_inset
 
- e
+ et les poids d'intégration correspondants 
+\begin_inset Formula $\omega_{i}$
+\end_inset
+
+
 \begin_inset Float figure
 wide false
 sideways false
@@ -2090,7 +2202,7 @@ end{tikzpicture}
 \begin_layout Plain Layout
 \noindent
 \align center
-\begin_inset Caption
+\begin_inset Caption Standard
 
 \begin_layout Plain Layout
 Cube de référence.
@@ -2108,10 +2220,6 @@ name "fig:cube_ref-1"
 
 \end_layout
 
-\end_inset
-
-t les poids d'intégration correspondants 
-\begin_inset Formula $\omega_{i}$
 \end_inset
 
 .
@@ -2208,7 +2316,7 @@ on géométrique.
 \begin_layout Standard
 La classe 
 \family typewriter
-ElementInterpolation
+interpolation
 \family default
  contient des fonctions permettant de calculer: la position des points de
  Gauss du volume ou des faces, les poids de Gauss, les valeurs des fonctions
@@ -2249,7 +2357,8 @@ Nous décrivons par exemple comment nous interpolons les champs sur un élément
 
 \end_inset
 
-Pour l'interpolation nous fixons d'abord dans la cellule 
+En fait, chaque macrocellule peut-être découpée en plusieurs sous-cellules.
+ Pour l'interpolation nous fixons d'abord dans la macrocellule 
 \begin_inset Formula $L$
 \end_inset
 
@@ -2454,7 +2563,7 @@ exemple de point GL
  introduit à la section 
 \begin_inset CommandInset ref
 LatexCommand ref
-reference "sub:elem_geom"
+reference "subsec:elem_geom"
 
 \end_inset
 
@@ -2468,7 +2577,7 @@ reference "sub:elem_geom"
 \left\{ \begin{array}{lcl}
 i(\mathrm{axis\_permut}(\texttt{ifa},0)) & = & i'(0),\\
 i(\mathrm{axis\_permut}(\texttt{ifa},1)) & = & i'(1),\\
-i(\mathrm{axis\_permut}(\texttt{ifa},2)) & = & \mathrm{axis\_permut}(\texttt{ifa},3)\, d(\mathrm{axis\_permut}(\texttt{ifa},3)).
+i(\mathrm{axis\_permut}(\texttt{ifa},2)) & = & \mathrm{axis\_permut}(\texttt{ifa},3)\,d(\mathrm{axis\_permut}(\texttt{ifa},3)).
 \end{array}\right.
 \]
 
@@ -2595,7 +2704,7 @@ Dans le détail, on a
 \left\{ \begin{array}{lcl}
 i(\mathrm{axis\_permut}(\texttt{ifa},0)) & = & i'(0),\\
 i(\mathrm{axis\_permut}(\texttt{ifa},1)) & = & i'(1),\\
-i(\mathrm{axis\_permut}(\texttt{ifa},2)) & = & \mathrm{axis\_permut}(\texttt{ifa},3)\, d(\mathrm{axis\_permut}(\texttt{ifa},3)).
+i(\mathrm{axis\_permut}(\texttt{ifa},2)) & = & \mathrm{axis\_permut}(\texttt{ifa},3)\,d(\mathrm{axis\_permut}(\texttt{ifa},3)).
 \end{array}\right.
 \]
 
@@ -2834,438 +2943,48 @@ Algorithme GD avec optimisation des accès mémoire sur une macro-cellule
 \end_layout
 
 \begin_layout Standard
-to do
-\end_layout
-
-\begin_layout Subsection
-Autres classes
-\end_layout
-
-\begin_layout Standard
-Pour des raisons pratiques, nous avons dû développer d'autres utilitaires:
-\end_layout
-
-\begin_layout Itemize
-La classe 
-\family typewriter
-Mesher
-\family default
- permet de réaliser rapidement des maillages constitués de blocs structurés
- curvilignes.
- Ce mailleur, indépendant de SCHNAPS, permet d'alimenter rapidement des
- tests unitaires ou de réaliser des calculs sur des géométries simples.
-\end_layout
-
-\begin_layout Itemize
-La classe 
-\family typewriter
-GmshConverter
-\family default
- contient des outils pour convertir des maillages issus de gmsh ou de 
-\family typewriter
-Mesher
-\family default
- dans le format SCHNAPS.
+to do (je m'en occupe)
 \end_layout
 
 \begin_layout Section
-Installation
+Programmation de la MHD dans SCHNAPS
 \end_layout
 
 \begin_layout Subsection
-Prérequis
+Commentaires sur la programmation
 \end_layout
 
 \begin_layout Standard
-L'installation de SCHNAPS repose sur:
-\end_layout
-
-\begin_layout Itemize
-Système Linux ou Mac récent.
- Windows est prévu, mais pas encore opérationnel.
-\end_layout
-
-\begin_layout Itemize
-Un compilateur C récent supportant la norme C99.
- Testé avec gcc et clang.
-\end_layout
-
-\begin_layout Itemize
-git pour le gestionnaire de version.
-\end_layout
-
-\begin_layout Itemize
-scons comme système de compilation.
-\end_layout
-
-\begin_layout Itemize
-doxygen pour construire la documentation.
-\end_layout
-
-\begin_layout Itemize
-au moins un pilote OpenCL.
- Testé avec les pilotes AMD (CPU ou GPU), Intel (CPU ou GPU), NVIDIA.
-\end_layout
-
-\begin_layout Itemize
-boost.
- Nous utilisons boost-graph pour implémenter le graphe des tâches et boost-test
- pour les tests unitaires.
-\end_layout
-
-\begin_layout Itemize
-MPI pour le parallélisme multi-gpu.
- MPI est facultatif et peut-être désactivé.
-\end_layout
-
-\begin_layout Itemize
-gmsh pour la visualisation de certains résultats et pour construire les
- maillages de certains tests unitaires.
-\end_layout
-
-\begin_layout Standard
-SCHNAPS utilise la bibliothèque LGPL ANN 
-\begin_inset Flex URL
-status collapsed
-
-\begin_layout Plain Layout
-
-http://www.cs.umd.edu/~mount/ANN/
-\end_layout
-
-\end_inset
-
-.
- Les sources de cette bibliothèque sont incluses dans la distribution.
+Description des fonctions fluxnum, etc.
 \end_layout
 
 \begin_layout Subsection
-Téléchargement
+Premières validations
 \end_layout
 
 \begin_layout Standard
-SCHNAPS est hébergé sur github.
-\end_layout
-
-\begin_layout Standard
-Pour pouvoir modifer SCHNAPS, il faut d'abord ouvrir un compte sur github
- et demander à être membre du projet SCHNAPS.
-\end_layout
-
-\begin_layout Standard
-Pour télécharger la dernière version
-\end_layout
-
-\begin_layout Standard
-
-\family typewriter
-git clone https://github.com/phelluy/SCHNAPS.git
-\end_layout
-
-\begin_layout Standard
-Il est aussi possible de télécharger une archive zip à partir de l'interface
- web de github.
+Validation pseudo 1D.
+ Orszag tang 2D périodique
 \end_layout
 
 \begin_layout Subsection
-Compilation
+Tests de performances
 \end_layout
 
 \begin_layout Standard
-Se placer dans le dossier SCHNAPS:
+comparaisons: ordre, StarPU, 2D/3D activation ou désactivation des CPU/GPU
+ dans StarPU.
 \end_layout
 
 \begin_layout Standard
-
-\family typewriter
-cd SCHNAPS
-\end_layout
-
-\begin_layout Standard
-Il faut choisir où placer l'exécutable.
- On peut par exemple créer un dossier bin dans le dossier SCHNAPS:
-\end_layout
-
-\begin_layout Standard
-
-\family typewriter
-mkdir bin
-\end_layout
-
-\begin_layout Standard
-Il faut ensuite créer une variable d'environnement pour que scons retrouve
- ce dossier:
-\end_layout
-
-\begin_layout Standard
-
-\family typewriter
-export SCHNAPS_INSTALL_DIR=$(PWD)/bin
-\end_layout
-
-\begin_layout Standard
-Pour la compilation, il suffit de taper:
-\end_layout
-
-\begin_layout Standard
-
-\family typewriter
-scons
-\end_layout
-
-\begin_layout Standard
-Pour compiler la version MPI
-\end_layout
-
-\begin_layout Standard
-
-\family typewriter
-scons --mpi
-\end_layout
-
-\begin_layout Subsection
-Tests
-\end_layout
-
-\begin_layout Standard
-Pour l'instant, SCHNAPS est en cours de développement.
- Nous avons implémenté des tests unitaires ainsi que quelques tests de calculs
- GD pour des modèles et des géométries simples.
-\end_layout
-
-\begin_layout Standard
-Pour lancer tous les tests en mode debug simple précision:
-\end_layout
-
-\begin_layout Standard
-
-\family typewriter
-./bin/SCHNAPS_utest_dbg
-\end_layout
-
-\begin_layout Standard
-Pour lancer un test particulier:
-\end_layout
-
-\begin_layout Standard
-
-\family typewriter
-./bin/SCHNAPS_utest_dbg --run-test=NOM_DU_TEST
-\end_layout
-
-\begin_layout Standard
-Par exemple:
-\end_layout
-
-\begin_layout Standard
-
-\family typewriter
-./bin/SCHNAPS_utest_dbg --run_test=test_transport --report_level=detailed
-\end_layout
-
-\begin_layout Standard
-lance un test de résolution de l'équation de transport sur un cube.
- La solution exacte est appliquée sur les frontières du cube.
- Ce test génère plusieurs fichiers de visualisation.
- Pour voir la solution à l'instant final, on peut par exemple faire:
-\end_layout
-
-\begin_layout Standard
-
-\family typewriter
-gmsh test_transport_fin.msh
-\end_layout
-
-\begin_layout Standard
-Autre exemple:
-\end_layout
-
-\begin_layout Standard
-
-\family typewriter
-./bin/SCHNAPS_utest_dbg --run_test=test_interface_raf_nonraf 
-\backslash
-
-\end_layout
-
-\begin_layout Standard
-
-\family typewriter
---report_level=detailed
-\end_layout
-
-\begin_layout Standard
-lance un test de résolution de l'équation de transport sur un maillage constitué
- de 3 zones.
- Une des zones est maillée plus grossièrement que les deux autres.
- Les raccords entre les trois zones sont donc conformes ou non conformes.
- De plus, deux des zones sont constituées de cellules courbes.
- 
-\end_layout
-
-\begin_layout Standard
-Affichage du résultat à l'instant final:
-\end_layout
-
-\begin_layout Standard
-
-\family typewriter
-gmsh end_test_interface_raf_0.msh -open 
-\backslash
- 
-\end_layout
-
-\begin_layout Standard
-
-\family typewriter
-end_test_interface_raf_1.msh -open end_test_interface_raf_2.msh
-\end_layout
-
-\begin_layout Standard
-(il faut ajuster les échelles dans les menus gmsh pour que le post-traitement
- des trois zones soit uniforme).
-\end_layout
-
-\begin_layout Standard
-Exemple utilisant MPI:
-\end_layout
-
-\begin_layout Standard
-mpirun -np 2 ./bin/SCHNAPS_utest_mpi_dbg --run_test=test_simulation_mpi
-\end_layout
-
-\begin_layout Standard
-Ce test exécute le même calcul que précédemment, mais sur deux devices OpenCL.
- Si l'ordinateur sur lequel ce test est lancé dispose d'un seul GPU, une
- partie des calculs est réalisés sur le CPU (qui est un device OpenCL comme
- un autre...)
-\end_layout
-
-\begin_layout Subsection
-Documentation détaillée
-\begin_inset CommandInset label
-LatexCommand label
-name "sub:Documentation"
+\begin_inset CommandInset bibtex
+LatexCommand bibtex
+bibfiles "biblio_chapitre_schnaps"
+options "plain"
 
 \end_inset
 
 
-\end_layout
-
-\begin_layout Standard
-Pour construire la documentation, se placer dans le dossier doc:
-\end_layout
-
-\begin_layout Standard
-
-\family typewriter
-cd doc
-\end_layout
-
-\begin_layout Standard
-Lancer la création de la documentation avec doxygen
-\end_layout
-
-\begin_layout Standard
-
-\family typewriter
-doxygen doxySCHNAPS
-\end_layout
-
-\begin_layout Standard
-Visualiser la documentation:
-\end_layout
-
-\begin_layout Standard
-
-\family typewriter
-firefox ./html/index.html
-\end_layout
-
-\begin_layout Section
-Travaux en cours
-\end_layout
-
-\begin_layout Standard
-Nous avons prévu les étapes suivantes dans le développement de SCHNAPS:
-\end_layout
-
-\begin_layout Enumerate
-Enrichissement des modèles physiques: Maxwell, MHD, 
-\shape italic
-etc.
-\end_layout
-
-\begin_layout Enumerate
-Optimisation des kernels.
-\end_layout
-
-\begin_layout Enumerate
-Incorporation de divers outils: fentes, plaques, sorties sur fichiers, 
-\shape italic
-etc.
-\end_layout
-
-\begin_layout Enumerate
-Prise en compte des formats de fichiers AxesSim (amelet).
-\end_layout
-
-\begin_layout Enumerate
-éléments d'ordre élevé (pour la prise en compte des géométrie courbes).
-\end_layout
-
-\begin_layout Enumerate
-Interpolation de Gauss-Lobatto.
-\end_layout
-
-\begin_layout Enumerate
-Autres.
-\end_layout
-
-\begin_layout Standard
-Nous sommes arrivés à un développement de SCHNAPS qui fait que les tâches
- 1 à 7 peuvent être réalisées dans n'importe quel ordre et en parallèle
- par les contributeurs, en fonction de leurs priorités...
-\end_layout
-
-\begin_layout Bibliography
-
-\lang english
-\begin_inset CommandInset bibitem
-LatexCommand bibitem
-key "CFP06"
-
-\end_inset
-
-G.
- Cohen, X.
- Ferrières and S.
- Pernet.
- A spatial high order hexahedral discontinuous Galerkin method to solve
- Maxwell’s equations in time-domain.
- J.
- Comput.
- Phys., vol.
- 217, no.
- 2, pages 340–363, 2006.
-\end_layout
-
-\begin_layout Bibliography
-
-\lang english
-\begin_inset CommandInset bibitem
-LatexCommand bibitem
-key "KWBH09"
-
-\end_inset
-
-A.
- Klockner, T.
- Warburton, J.
- Bridge, J.S.
- Hesthaven, Nodal discontinuous Galerkin methods on graphics processors,
- Journal of Computational Physics, Volume 228, Issue 21, 20 November 2009,
- Pages 7863-7882
 \end_layout
 
 \end_body

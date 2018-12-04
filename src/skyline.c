@@ -3,16 +3,25 @@
 #include <stdlib.h>
 #include <assert.h>
 #include "skyline.h"
+#include "math.h"
 
 
-int sol_(real *vkgs, real *vkgd, real *
-	 vkgi, real *vfg, int *kld, real *vu, int neq, 
-	 int ifac, int isol, int nsym, real *
+int sol_(schnaps_real *vkgs, schnaps_real *vkgd, schnaps_real *
+	 vkgi, schnaps_real *vfg, int *kld, schnaps_real *vu, int neq, 
+	 int ifac, int isol, int nsym, schnaps_real *
 	 energ, int *ier);
+
+int mulku_(schnaps_real *vkgs, schnaps_real *vkgd, schnaps_real *
+	   vkgi, int *kld, schnaps_real *vfg, int neq, int nsym, 
+	   schnaps_real *vres, int nsky);
+
+schnaps_real scal_(schnaps_real *x, schnaps_real *y, int *n);
+
 
 void InitSkyline(Skyline* sky, int n){
 
   sky->is_alloc=false;
+  sky->copy_is_alloc=false;
   sky->is_sym=false;
   sky->is_lu=false;
 
@@ -21,18 +30,21 @@ void InitSkyline(Skyline* sky, int n){
   sky->nmem=0;
 
   sky->vkgs=NULL;
+  sky->copy_vkgs=NULL;
 
-  sky->vkgd=malloc(n*sizeof(real));
+  sky->vkgd=calloc(n,sizeof(schnaps_real));
   assert(sky->vkgd);
   for(int i=0;i<n;i++) sky->vkgd[i]=0;
+  sky->copy_vkgd=NULL;
 
   sky->vkgi=NULL;
+  sky->copy_vkgi=NULL;
 
-  sky->prof=malloc(n*sizeof(int));
+  sky->prof=calloc(n,sizeof(int));
   assert(sky->prof);
   for(int i=0;i<n;i++) sky->prof[i]=0;
 
-  sky->kld=malloc((n+1)*sizeof(int));
+  sky->kld=calloc((n+1),sizeof(int));
   assert(sky->kld);
   for(int i=0;i<n+1;i++) sky->kld[i]=0;
 
@@ -49,7 +61,7 @@ void SwitchOn(Skyline* sky,int i,int j){
 
 void AllocateSkyline(Skyline* sky){
 
-  assert(! sky->is_alloc);
+  assert(!sky->is_alloc);
 
   sky->kld[0]=0;
   for(int i=0;i<sky->neq;i++){
@@ -57,11 +69,11 @@ void AllocateSkyline(Skyline* sky){
   }
   sky->nmem=sky->kld[sky->neq];
 
-  sky->vkgs=malloc(sky->nmem * sizeof(real));
+  sky->vkgs=calloc(sky->nmem,sizeof(schnaps_real));
   assert(sky->vkgs);
 
   if (! sky->is_sym){
-    sky->vkgi=malloc(sky->nmem * sizeof(real));
+    sky->vkgi=calloc(sky->nmem,sizeof(schnaps_real));
     assert(sky->vkgi);
   }
   else{
@@ -79,12 +91,71 @@ void AllocateSkyline(Skyline* sky){
 
 }
 
-void SetSkyline(Skyline* sky,int i,int j,real val){
+void AllocateCopySkyline(Skyline* sky){
+
+  assert(!sky->copy_is_alloc);
+
+  sky->copy_vkgs=calloc(sky->nmem,sizeof(schnaps_real));
+  assert(sky->copy_vkgs);
+
+  if (! sky->is_sym){
+    sky->copy_vkgi=calloc(sky->nmem,sizeof(schnaps_real));
+    assert(sky->copy_vkgi);
+  }
+  else{
+    sky->copy_vkgi=sky->copy_vkgs;
+  }
+
+  sky->copy_vkgd=calloc(sky->neq,sizeof(schnaps_real));
+  assert(sky->copy_vkgd);
+  for(int i=0;i<sky->neq;i++) sky->copy_vkgd[i]=0;
+
+  sky->copy_is_alloc=true;
+
+  // fill with zeros
+  for(int k=0;k<sky->nmem;k++){
+    sky->copy_vkgs[k]=0;
+    if (! sky->is_sym) sky->copy_vkgi[k]=0;
+  }
+
+  // Copying right after allocating.
+  for (int i=0; i<sky->nmem; i++){
+    sky->copy_vkgs[i] = sky->vkgs[i];
+    if (!sky->is_sym) sky->copy_vkgi[i] = sky->vkgi[i];
+  }
+  for (int i=0; i<sky->neq; i++){
+    sky->copy_vkgd[i] = sky->vkgd[i];
+  }
+
+}
+
+void ZeroSkyline(Skyline* sky){
 
   assert(sky->is_alloc);
 
+  for(int i=0;i<sky->neq;i++) sky->vkgd[i]=0;
 
-  if (i==j){
+  for(int k=0;k<sky->nmem;k++) sky->vkgs[k]=0;
+
+  if (!sky->is_sym){
+    for(int k=0;k<sky->nmem;k++) sky->vkgi[k]=0;
+  }
+
+}
+
+void AddSkyline(Skyline* sky,int i,int j,schnaps_real val){
+
+  assert(sky->is_alloc);
+  
+  if ((j-i > sky->prof[j] || i-j > sky->prof[i]) && (val>0.0)){
+    printf("problem of profil with add %d %d\n",i,j);
+  }
+  
+  if ((j-i > sky->prof[j] || i-j > sky->prof[i]) && val==0.0)
+    {
+      ;
+    }
+  else if (i==j){
     sky->vkgd[i]+=val;
   }
   else if (j>i){
@@ -98,11 +169,42 @@ void SetSkyline(Skyline* sky,int i,int j,real val){
     //printf("i=%d j=%d k=%d nmem=%d\n",i,j,k,sky->nmem);
     //printf("i=%d j=%d k=%d v=%f\n",i,j,k,sky->vkgi[k]);
   }
+  
 
 
+}
+
+void SetSkyline(Skyline* sky,int i,int j,schnaps_real val){
+
+  assert(sky->is_alloc);
+
+  if ((j-i > sky->prof[j] || i-j > sky->prof[i]) && (val>0.0)){
+    printf("problem of profil with set %d %d\n",i,j);
+  }
+  
+  if ((j-i > sky->prof[j] || i-j > sky->prof[i]) && val==0.0)
+    {
+      ;
+    }
+  else if (i==j){
+    sky->vkgd[i]=val;
+  }
+  else if (j>i){
+    int k=sky->kld[j+1]-j+i;
+    sky->vkgs[k]=val;
+  }
+  else {
+    assert(!(sky->is_sym));
+    int k=sky->kld[i+1]-i+j;
+    sky->vkgi[k]=val;
+    //printf("i=%d j=%d k=%d nmem=%d\n",i,j,k,sky->nmem);
+    //printf("i=%d j=%d k=%d v=%f\n",i,j,k,sky->vkgi[k]);
+  }
+  
+  
 } 
 
-real GetSkyline(Skyline* sky,int i,int j){
+schnaps_real GetSkyline(Skyline* sky,int i,int j){
 
   if (sky->is_sym && i>j){
     int temp=i;
@@ -111,7 +213,7 @@ real GetSkyline(Skyline* sky,int i,int j){
   }
 
   if (j-i > sky->prof[j] || i-j > sky->prof[i]){
-    return 0;
+    return 0.0;
   }
   else if (i==j){
     return sky->vkgd[i];
@@ -132,7 +234,9 @@ void DisplaySkyline(Skyline* sky){
 
   int n=sky->neq;
 
+  //#define _FULL
 
+#ifdef _FULL
   printf("profil=");
   for(int i=0;i<n;i++){
     printf("%d ",sky->prof[i]);
@@ -147,42 +251,62 @@ void DisplaySkyline(Skyline* sky){
 
   printf("vkgd=");
   for(int i=0;i<n;i++){
-    printf("%f ",sky->vkgd[i]);
+    printf("%.5e ",sky->vkgd[i]);
   }
   printf("\n");
-
+  
   printf("vkgs=");
   for(int i=0;i<sky->nmem;i++){
-    printf("%f ",sky->vkgs[i]);
+    printf("%.5e ",sky->vkgs[i]);
   }
   printf("\n");
 
   printf("vkgi=");
   for(int i=0;i<sky->nmem;i++){
-    printf("%f ",sky->vkgi[i]);
+    printf("%.5e ",sky->vkgi[i]);
   }
   printf("\n");
-
+  printf("\n");
+  printf("\n");
   for(int i=0;i<n;i++){
     for(int j=0;j<n;j++){
-      printf("%f ",GetSkyline(sky,i,j));
+      printf("%.3e ", GetSkyline(sky,i,j));
     }   
     printf("\n");
   }
+
+#else
+  printf("\n");
+  for(int i=0;i<n;i++){
+    for(int j=0;j<n;j++){
+      if (fabs(GetSkyline(sky,i,j)) < 1e-8) {
+	printf(" ");
+      } else {
+	printf("*");
+      }
+    }   
+    printf("\n");
+  }
+#endif
+  
 }
 
 
 
 void FactoLU(Skyline* sky){
 
-  real* vfg=NULL;
-  real* vu=NULL;
-  real energ;
+  schnaps_real* vfg=NULL;
+  schnaps_real* vu=NULL;
+  schnaps_real energ;
   int ier;
   int ifac=1;
   int isol=0;
   int nsym=1;
   if (sky->is_sym) nsym=0;
+  // Allocating and storing old matrix inside copies.
+  if (!sky->copy_is_alloc) AllocateCopySkyline(sky);
+  printf("LU factorization in progress...\n");
+  printf("address sky=%p\n",sky);
 
   sol_(sky->vkgs,sky->vkgd, sky->vkgi,
        vfg, sky->kld, vu, sky->neq, 
@@ -193,25 +317,120 @@ void FactoLU(Skyline* sky){
 
 }
 
-void SolveSkyline(Skyline* sky,real* vfg,real* vu){
+void MatVectSkyline(Skyline * sky, schnaps_real * x, schnaps_real * prod) {
+
+  //assert(!sky->is_lu);
+
+  int nsym=1;
+  if (sky->is_sym) nsym=0;
+
+  for(int i=0; i < sky->neq; i++) prod[i]=0;
+  if (!sky->is_lu){
+    mulku_(sky->vkgs, sky->vkgd, sky->vkgi,
+	   sky->kld, x, sky->neq, nsym, 
+	   prod, sky->nmem);
+  }
+  else
+    {
+      mulku_(sky->copy_vkgs, sky->copy_vkgd, sky->copy_vkgi,
+	     sky->kld, x, sky->neq, nsym, 
+	     prod, sky->nmem);
+    }
+}
+
+
+
+void SolveSkyline(Skyline* sky,schnaps_real* vfg,schnaps_real* vu){
   assert(sky->is_lu);
 
-  real energ;
-  int ier;
+  schnaps_real energ;
+  int ier,iter;
   int ifac=0;
   int isol=1;
   int nsym=1;
+  schnaps_real * vec_temp;
+  schnaps_real * sol_temp;
+  schnaps_real * sol_temp2;
+  int nb_iterations=2;
+
+  sol_temp=calloc(sky->neq,sizeof(schnaps_real));
+  sol_temp2=calloc(sky->neq,sizeof(schnaps_real));  
+  vec_temp=calloc(sky->neq,sizeof(schnaps_real));
+  
+  if (sky->is_sym) nsym=0;
+
+  sol_(sky->vkgs,sky->vkgd, sky->vkgi,
+       vfg, sky->kld, sol_temp, sky->neq, 
+       ifac, isol, nsym,&energ, &ier);
+
+  /////////// Post treatment ////////////
+  for(iter=0;iter<nb_iterations;iter++) {
+
+    if(iter>0){
+      for(int i=0; i < sky->neq; i++){
+	sol_temp[i]=sol_temp2[i];
+      }
+    }
+       
+    MatVectSkyline(sky,sol_temp,vec_temp);
+
+
+    for(int i=0; i < sky->neq; i++){
+      vec_temp[i]=vec_temp[i]-vfg[i];
+    }
+      
+    sol_(sky->vkgs,sky->vkgd, sky->vkgi,
+	 vec_temp, sky->kld, sol_temp2, sky->neq, 
+	 ifac, isol, nsym,&energ, &ier);
+    
+    schnaps_real error=0.0;
+    for(int i=0; i < sky->neq; i++){
+      error=error+fabs(sol_temp2[i]);
+    }
+    //printf("llllU %.13e %d \n",error,iter);
+    
+    for(int i=0; i < sky->neq; i++){
+      sol_temp2[i]=sol_temp[i]-sol_temp2[i];
+    }
+   
+    if(error <1.e-12 || iter==nb_iterations){
+      break;
+    }
+  }
+
+  if(iter>0){
+    for(int i=0; i < sky->neq; i++){
+      vu[i]=sol_temp2[i];
+    }
+  }
+  else
+    {
+      for(int i=0; i < sky->neq; i++){
+	vu[i]=sol_temp[i];
+      }
+    }
+  free(sol_temp);
+  free(sol_temp2);
+  free(vec_temp);
+}
+
+void FastSolveSkyline(Skyline* sky,schnaps_real* vfg,schnaps_real* vu){
+  assert(sky->is_lu);
+
+  schnaps_real energ;
+  int ier,iter;
+  int ifac=0;
+  int isol=1;
+  int nsym=1;
+
   if (sky->is_sym) nsym=0;
 
   sol_(sky->vkgs,sky->vkgd, sky->vkgi,
        vfg, sky->kld, vu, sky->neq, 
-       ifac, isol, nsym,
-       &energ, &ier);
-
+       ifac, isol, nsym,&energ, &ier);
 
 
 }
-
 
 
 
@@ -227,6 +446,11 @@ void FreeSkyline(Skyline* sky){
   free(sky->prof);
   free(sky->kld);
 
+  if (sky->is_lu){
+    free(sky->copy_vkgs);
+    free(sky->copy_vkgd);
+    if (! sky->is_sym)  free(sky->copy_vkgi);
+  }
   sky->is_alloc=false;
   //InitSkyline(sky,sky->neq);
 
@@ -236,14 +460,14 @@ void FreeSkyline(Skyline* sky){
 
 static int c__1 = 1;
 
-/* Subroutine */ int sol_(real *vkgs, real *vkgd, real *
-			  vkgi, real *vfg, int *kld, real *vu, int neq, 
-			  int ifac, int isol, int nsym, real *
+/* Subroutine */ int sol_(schnaps_real *vkgs, schnaps_real *vkgd, schnaps_real *
+			  vkgi, schnaps_real *vfg, int *kld, schnaps_real *vu, int neq, 
+			  int ifac, int isol, int nsym, schnaps_real *
 			  energ, int *ier)
 {
   /* Initialized data */
 
-  static real vzero = 0.;
+  static schnaps_real vzero = 0.0;
 
   /* Format strings */
   static char fmt_8000[] = "sol pivot nul equation";
@@ -256,12 +480,12 @@ static int c__1 = 1;
 
   /* Local variables */
   static int i__;
-  static real c1, c2;
+  static schnaps_real c1=0.0, c2=0.0;
   static int j1, j2, ic, ij, ik, jbk, jck, jhj, jhk, lhk, jhj1, jhk1, 
     lhk1;
-  extern real scal_(real *, real *, int *);
+  extern schnaps_real scal_(schnaps_real *, schnaps_real *, int *);
   static int imin, imax, imin1;
-  static real cdiag;
+  static schnaps_real cdiag=0.0;
 
   /*   resolution d'un systeme lineaire symetrique ou non. la matrice est */
   /*   stockee par ligne de ciel,en memoire dans les tables vkgs,vkgd,vkgi */
@@ -304,7 +528,6 @@ static int c__1 = 1;
 
   ik = 1;
   if (vkgd[1] == vzero) {
-    // https://xkcd.com/292/
     goto L800;
   }
   *energ = vzero;
@@ -341,18 +564,15 @@ static int c__1 = 1;
 
     imax = ik - 1;
     if (lhk1 < 0) {
-      // https://xkcd.com/292/
       goto L100;
     }
     if (ifac != 1) {
-      // https://xkcd.com/292/
       goto L90;
     }
     if (nsym == 1) {
       vkgi[jhk] /= vkgd[imin1];
     }
     if (lhk1 == 0) {
-      // https://xkcd.com/292/
       goto L40;
     }
 
@@ -374,22 +594,18 @@ static int c__1 = 1;
       //ic = min(i__3,i__4);
       ic = i__3 < i__4 ? i__3 : i__4;
       if (ic <= 0 && nsym == 0) {
-	// https://xkcd.com/292/
 	goto L20;
       }
       c1 = vzero;
       if (ic <= 0) {
-	// https://xkcd.com/292/
 	goto L17;
       }
       j1 = jhj1 - ic;
       j2 = jck - ic;
       if (nsym == 1) {
-	// https://xkcd.com/292/
 	goto L15;
       }
       vkgs[jck] -= scal_(&vkgs[j1], &vkgs[j2], &ic);
-      // https://xkcd.com/292/
       goto L20;
     L15:
       vkgs[jck] -= scal_(&vkgi[j1], &vkgs[j2], &ic);
@@ -411,12 +627,10 @@ static int c__1 = 1;
     for (ij = imin1; ij <= i__2; ++ij) {
       c1 = vkgs[jck];
       if (nsym == 1) {
-	// https://xkcd.com/292/
 	goto L50;
       }
       c2 = c1 / vkgd[ij];
       vkgs[jck] = c2;
-      // https://xkcd.com/292/
       goto L60;
     L50:
       c2 = vkgi[jck];
@@ -427,7 +641,6 @@ static int c__1 = 1;
     }
     vkgd[ik] -= cdiag;
     if (vkgd[ik] == 0.f) {
-      // https://xkcd.com/292/
       goto L800;
     }
 
@@ -435,7 +648,6 @@ static int c__1 = 1;
 
   L90:
     if (isol != 1) {
-      // https://xkcd.com/292/
       goto L100;
     }
     if (nsym != 1) {
@@ -448,21 +660,18 @@ static int c__1 = 1;
     jhk = jhk1;
   }
   if (isol != 1) {
-    // https://xkcd.com/292/
     goto L9999;
   }
 
   /* -------  resolution du systeme diagonal : */
 
   if (nsym == 1) {
-    // https://xkcd.com/292/
     goto L120;
   }
   i__1 = neq;
   for (ik = 1; ik <= i__1; ++ik) {
     c1 = vkgd[ik];
     if (c1 == vzero) {
-      // https://xkcd.com/292/
       goto L800;
     }
     c2 = vu[ik] / c1;
@@ -482,14 +691,12 @@ static int c__1 = 1;
     vu[ik] /= vkgd[ik];
   }
   if (ik == 1) {
-    // https://xkcd.com/292/
     goto L9999;
   }
   c1 = vu[ik];
   jhk = kld[ik]+_Z;
   jbk = jhk1 - 1;
   if (jhk > jbk) {
-    // https://xkcd.com/292/
     goto L150;
   }
   ij = ik - jbk + jhk - 1;
@@ -501,7 +708,6 @@ static int c__1 = 1;
   }
  L150:
   jhk1 = jhk;
-  // https://xkcd.com/292/
   goto L130;
 
   /* -------  erreurs */
@@ -514,7 +720,6 @@ static int c__1 = 1;
   /* e_wsfe(); */
 	
   *ier = 1;
-  // https://xkcd.com/292/
   goto L9999;
 
   /* -------  fin */
@@ -524,15 +729,15 @@ static int c__1 = 1;
   /* ===========================   fin du module sol    ================== */
 } /* sol_ */
 
-real scal_(real *x, real *y, int *n)
+schnaps_real scal_(schnaps_real *x, schnaps_real *y, int *n)
 {
   /* Initialized data */
 
-  static real zero = 0.;
+  static schnaps_real zero = 0.0;
 
   /* System generated locals */
   int i__1;
-  real ret_val;
+  schnaps_real ret_val=0.0;
 
   /* Local variables */
   static int i__;
@@ -555,3 +760,268 @@ real scal_(real *x, real *y, int *n)
 } /* scal_ */
 
 
+/* muls.f -- translated by f2c (version 20100827).
+   You must link the resulting object file with libf2c:
+   on Microsoft Windows system, link with libf2c.lib;
+   on Linux or Unix systems, link with .../path/to/libf2c.a -lm
+   or, if you install libf2c.a in a standard place, with -lf2c -lm
+   -- in that order, at the end of the command line, as in
+   cc *.o -lf2c -lm
+   Source for libf2c is in /netlib/f2c/libf2c.zip, e.g.,
+
+   http://www.netlib.org/f2c/libf2c.zip
+*/
+
+//#include "f2c.h"
+
+/* Subroutine */ int mulku_(schnaps_real *vkgs, schnaps_real *vkgd, schnaps_real *
+			    vkgi, int *kld, schnaps_real *vfg, int neq, int nsym, 
+			    schnaps_real *vres, int nsky)
+{
+  /* System generated locals */
+  int i__1, i__2;
+
+  /* Local variables */
+  static schnaps_real c__;
+  static int j, i0, i1, ij, ik, jhk, lhk, jhk1;
+  //extern schnaps_real scal_(schnaps_real *, schnaps_real *, int *);
+
+  /* =======================================================================MULK   2 */
+  /*     CE SOUS-PROGRAMME AJOUTE AU VECTEUR RES LE PRODUIT DE LA          MULK   3 */
+  /*     MATRICE KG PAR LE VECTEUR FG                                      MULK   4 */
+  /*       ENTREES                                                         MULK   5 */
+  /*          VKGS,VKGD,VKGI  MATRICE KG STOCKEE PAR LIGNE DE CIEL (SYM.   MULK   6 */
+  /*                          OU NON SYM.)                                 MULK   7 */
+  /*          KLD     TABLE DES POINTEURS DES HAUTS DE COLONNES DE KG      MULK   8 */
+  /*          VFG     VECTEUR FG                                           MULK   9 */
+  /*          NEQ     DIMENSION DES VECTEURS FG ET RES                     MULK  10 */
+  /*          NSYM    .EQ.1 SI LE PROBLEME N'EST PAS SYMETRIQUE            MULK  11 */
+  /*          VRES    VECTEUR RES                                          MULK  12 */
+  /*       SORTIE                                                          MULK  13 */
+  /*          VRES    VECTEUR RES                                          MULK  14 */
+  /* =======================================================================MULK  15 */
+  /* -----------------------------------------------------------------------MULK  18 */
+  /* -------  POUR CHAQUE COLONNE DE LA MATRICE KG                          MULK  19 */
+  /* Parameter adjustments */
+  --vres;
+  --vfg;
+  --kld;
+  --vkgd;
+  --vkgi;
+  --vkgs;
+
+  /* Function Body */
+  i__1 = neq;
+  for (ik = 1; ik <= i__1; ++ik) {
+    jhk = kld[ik]+_Z;
+    jhk1 = kld[ik + 1]+_Z;
+    lhk = jhk1 - jhk;
+    /* -------  TERME DIAGONAL                                                MULK  24 */
+    c__ = vkgd[ik] * vfg[ik];
+    if (lhk <= 0) {
+      goto L20;
+    }
+    i0 = ik - lhk;
+    /* -------  TERMES DE LIGNE                                               MULK  28 */
+    if (nsym != 1) {
+      c__ += scal_(&vkgs[jhk], &vfg[i0], &lhk);
+    }
+    if (nsym == 1) {
+      c__ += scal_(&vkgi[jhk], &vfg[i0], &lhk);
+    }
+    /* -------  TERMES DE COLONNE                                             MULK  31 */
+    j = jhk;
+    i1 = ik - 1;
+    i__2 = i1;
+    for (ij = i0; ij <= i__2; ++ij) {
+      vres[ij] += vkgs[j] * vfg[ik];
+      /* L10: */
+      ++j;
+    }
+  L20:
+    vres[ik] += c__;
+  }
+  return 0;
+} /* mulku_ */
+
+void PLU_Square(int n, schnaps_real *a, int *sigma){
+
+  // init permutation to identity
+  for(int p = 0; p < n; ++p) sigma[p] = p;
+  
+  // elimination in column p
+  for(int p = 0; p < n - 1; ++p){
+
+    // search max piv
+    double sup = 0;
+    int pmax = p;
+    for(int i = p; i < n; i++) {
+      if (sup <= fabs(a[i * n + p])){
+	sup = fabs(a[i * n + p]);
+	pmax = i;
+      }	
+    }  
+
+    // swap two lines
+    for(int j = 0; j < n; j++){
+      schnaps_real aux = a[p * n + j];
+      a[p * n + j] = a[pmax * n + j];
+      a[pmax * n + j] = aux;
+    }
+
+    // store permutation
+    int temp = sigma[p];
+    sigma[p] = sigma[pmax];
+    sigma[pmax] = temp;
+
+    for(int i = p + 1; i < n; i++){
+      schnaps_real c = a[i * n + p] / a[ p * n + p];
+      for(int j = p + 1; j < n; j++)
+	a[i * n + j]-= c * a[p * n + j];
+      a[i * n + p] = c;
+    }
+  }
+
+  //display
+  /* for(int i = 0; i < n; ++i){ */
+  /*   for(int j = 0; j < n; j++){ */
+  /*     printf("(%f,%f) ", creal(a[i * n + j]), cimag(a[i * n + j])); */
+  /*   } */
+  /*   printf("\n"); */
+  /* } */
+  /* printf("permut="); */
+  /* for(int i = 0; i < n; ++i) printf("%d ",sigma[i]); */
+  /* printf("\n"); */
+}
+
+void PLU_Solve(int n, schnaps_real *a, int *sigma, schnaps_real *b,
+	       schnaps_real *x){
+
+  x[0] = b[sigma[0]];
+  for(int i = 1; i < n; ++i){
+    x[i] = b[sigma[i]];
+    for(int j = 0; j < i; j++){
+      x[i] -= a[i * n + j] * x[j];
+    }
+  }
+
+  x[n-1] /= a[n * n - 1];
+  for(int i = n-2; i >= 0; --i){
+    for(int j = i + 1; j < n; j++){
+      x[i] -= a[i * n + j] * x[j];
+    }
+    x[i] /= a[i * n + i];
+  }
+
+  /* printf("sol="); */
+  /* for(int i = 0; i < n; ++i) printf("(%f,%f) ",creal(x[i]),cimag(x[i])); */
+  /* printf("\n"); */
+
+
+}
+
+void InvertSquare(int n, schnaps_real *As, schnaps_real *B){
+  
+  int sigma[n];
+
+  schnaps_real A[n*n];
+
+  for(int k = 0; k < n * n; k++) A[k] = As[k];
+  
+  PLU_Square(n, A, sigma);
+    
+  
+  schnaps_real r[n], x[n];
+  
+  for(int j = 0; j < n; j++){
+    
+    for(int i = 0; i < n; i++){
+      r[i] = (i==j);
+    }
+    
+
+    PLU_Solve(n, A, sigma, r, x);
+    
+    for(int i = 0; i < n; i++) B[i * n + j] = x[i]; 
+				 
+    /* for(int i = 0; i < n; i++) printf("j=%d i=%d r=%f %f\n", */
+    /* 				      j,i, */
+    /* 				      creal(x[i]), */
+    /* 				      cimag(x[i])); */
+
+
+  }
+
+  /* assert(1==2); */
+
+  /* //display */
+  /* for(int i = 0; i < n; ++i){ */
+  /*   for(int j = 0; j < n; j++){ */
+  /*     printf("(%f,%f) ", creal(B[i * n + j]), cimag(B[i * n + j])); */
+  /*   } */
+  /*   printf("\n"); */
+  /* } */
+
+  
+}
+
+void TestPLU(void)
+{
+  schnaps_real A[16] = {.2,-1,0,0,
+		  -1,2,-1,0,
+		  0,-1,2,-1,
+		  0.1,0,-1,2};
+
+  schnaps_real As[16] = {.2,-1,0,0,
+		  -1,2,-1,0,
+		  0,-1,2,-1,
+		  0.1,0,-1,2};
+
+  int sigma[4] = {0,1,2,3};
+
+  schnaps_real b[4] = {-0.8,0,0,1};
+
+  schnaps_real x[4];
+
+
+
+  //PLU_Square(4, A, sigma);
+  //PLU_Solve(4, A, sigma, b, x);
+  schnaps_real B[16];
+  InvertSquare(4, A, B);
+  
+  printf("[%f, %f, %f, %f]\n", B[0],B[1],B[2],B[3]);
+  printf("[%f, %f, %f, %f]\n", B[4],B[5],B[6],B[7]);
+  printf("[%f, %f, %f, %f]\n", B[8],B[9],B[10],B[11]);
+  printf("[%f, %f, %f, %f]\n", B[12],B[13],B[14],B[15]);
+  
+  
+  
+  
+  
+  PLU_Square(4, As, sigma);
+  PLU_Solve(4, As, sigma, b, x);
+  int n = 4;
+  double res = 0;
+  for(int i = 0; i < n; i++){
+    for(int k = 0; k < n; k++) x[i] -= B[i*n+k]*b[k];
+    //printf("b=(%f,%f)\n",creal(x[i]),cimag(x[i]));
+    res += fabs(x[i]);
+  }
+  
+  for(int i = 0; i < n; i++){
+    for(int j = 0; j < n; j++){
+      schnaps_real v = 0;
+      for(int k =  0; k < n; k++){
+	v += A[n * i + k] * B[n * k + j];
+      }
+      printf("i=%d j=%d aij=(%f)\n",i,j,
+	     v);
+    }
+  }
+
+
+
+  printf("test inversion, erreur=%f\n",res);
+  assert(res < 1e-14);
+}

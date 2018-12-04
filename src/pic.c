@@ -7,7 +7,7 @@
 void InitPIC(PIC* pic,int n){
 
   pic->nbparts=n;
-  pic->xv=malloc(sizeof(real) * 6 * n);
+  pic->xv=malloc(sizeof(schnaps_real) * 6 * n);
   assert(pic->xv);
   pic->cell_id=malloc(sizeof(int)  * n);
   pic->old_cell_id=malloc(sizeof(int)  * n);
@@ -23,9 +23,9 @@ void FreePIC(PIC* pic){
   if (pic->old_cell_id != NULL) free(pic->old_cell_id);
 }
 
-real corput(int n,int k1,int k2){
-  real corput=0;
-  real s=1;
+schnaps_real corput(int n,int k1,int k2){
+  schnaps_real corput=0;
+  schnaps_real s=1;
   while(n > 0){
     s/=k1;
     corput+=(k2*n%k1)%k1*s;
@@ -34,14 +34,14 @@ real corput(int n,int k1,int k2){
   return corput;
 }
 
-void BoxMuller3d(real *xx,int* k1, int* k2)
+void BoxMuller3d(schnaps_real *xx,int* k1, int* k2)
 {
-  real x1, x2, rsq;
+  schnaps_real x1, x2, rsq;
   
   static int iset=0;
   static int n[4]={0,0,0,0};
   static int n2=0;
-  static real gset;
+  static schnaps_real gset;
   
   if (iset == 0)
     {
@@ -77,31 +77,30 @@ void BoxMuller3d(real *xx,int* k1, int* k2)
 
 void CreateCoil2DParticles(PIC* pic,MacroMesh *m){
 
-  real delta=1; // coil radius
-  real current=1; // electric current
-  real v0=1;  // tangential particle velocity
-  real pi=4*atan(1.);
+  schnaps_real delta=1; // coil radius
+  schnaps_real current=1; // electric current
+  schnaps_real v0=1;  // tangential particle velocity
+  schnaps_real pi=4*atan(1.);
 
-  pic->weight= pi*delta*current/v0/pic->nbparts;
+  pic->weight= 2 * pi * delta * current / v0 / pic->nbparts;
 
 
-  for(int np=0;np<pic->nbparts;np++){
+  for(int np = 0; np<pic->nbparts; np++){
 
-    real xphi[3];
+    schnaps_real xphi[3];
 
-    real rax=corput(np+1,5,3);
+    schnaps_real rax=corput(np+1,5,3);
     xphi[0]=delta*cos(rax*2*pi);
     xphi[1]=delta*sin(rax*2*pi);
     xphi[2]=0.5;
-    real vx=-v0*sin(rax*2*pi);
-    real vy=v0*cos(rax*2*pi);
-    real vz=0;
+    schnaps_real vx=-v0*sin(rax*2*pi);
+    schnaps_real vy=v0*cos(rax*2*pi);
+    schnaps_real vz=0;
 
-    real weight=2*pi*delta*current/v0/pic->nbparts;
-
-    real xref[3];
+    schnaps_real xref[3];
 
     int num_elem=NumElemFromPoint(m,xphi,xref);
+    //printf("part %d numelem=%d\n",np,num_elem);
     pic->cell_id[np]=num_elem;
     pic->old_cell_id[np]=num_elem;
 
@@ -126,10 +125,10 @@ void CreateParticles(PIC* pic,MacroMesh *m){
   int n=0;
   int np=0;
   
-  real vt=1;
+  schnaps_real vt=1;
 
-  real xp[3];
-  real vp[3];
+  schnaps_real xp[3];
+  schnaps_real vp[3];
 
   //srand(time(NULL));
   //int r = rand();
@@ -138,14 +137,14 @@ void CreateParticles(PIC* pic,MacroMesh *m){
   while(np < pic->nbparts){
 
     for(int idim=0;idim<3;idim++){
-      real r=corput(n,k1[idim],k2[idim]);
+      schnaps_real r=corput(n,k1[idim],k2[idim]);
       //real r=rand();
       //r/=RAND_MAX;
       xp[idim]=m->xmin[idim]+r*
 	(m->xmax[idim]-m->xmin[idim]);
     }
 
-    real xref[3];
+    schnaps_real xref[3];
 
     int num_elem=NumElemFromPoint(m,xp,xref);
     //printf("numelem=%d %f %f %f\n",num_elem,xp[0],xp[1],xp[2]);
@@ -159,7 +158,7 @@ void CreateParticles(PIC* pic,MacroMesh *m){
       pic->xv[np*6+1]=xref[1];
       pic->xv[np*6+2]=xref[2];
 
-      real vp[3]={1,0,0};
+      schnaps_real vp[3]={1,0,0};
       BoxMuller3d(vp,k1+3,k2+3);
 
 	/*      for(int idim=0;idim<3;idim++){
@@ -178,94 +177,102 @@ void CreateParticles(PIC* pic,MacroMesh *m){
     }
 
     n++;
+
+    
   }
+  
+
 }
 
-void AccumulateParticles(void *fv, real *w)
-{
-  field *f = fv;
-  PIC *pic = f->pic;
+void AccumulateParticles(void *vs, schnaps_real *w){
+  Simulation *simu = vs;
+  PIC *pic = simu->pic;
 
-  int *raf = f->interp_param + 4;
-  int *deg = f->interp_param + 1;
+  static int icall=0;
   
-  int npg = NPG(raf, deg);
-    
-  for(int ie = 0; ie < f->macromesh.nbelems; ie++){
-    MacroCell *mcell = f->mcell + ie;
-    
-    for(int ipg = 0; ipg < npg; ipg++){
-      int iv = 4;
-      int imem = f->varindex(f->interp_param, ipg, iv) + mcell->woffset;
-      f->wn[imem]=0;
-      iv = 5;
-      imem = f->varindex(f->interp_param, ipg, iv) + mcell->woffset;
-      f->wn[imem]=0;
-      iv = 6;
-      imem = f->varindex(f->interp_param, ipg, iv) + mcell->woffset;
-      f->wn[imem]=0;
-    } 
-
-  }
+  assert(simu->pic != NULL);
   
-  for(int i=0;i<pic->nbparts;i++) {
-    
-    int ie=pic->old_cell_id[i];
 
-    // https://xkcd.com/292/
-    // FIXME: remove goto
-    if (ie < 0) goto nexti;
-
-    MacroCell *mcell = f->mcell + ie;
-    
-    int npg=NPG(raf, deg);
-    real physnode[20][3];
-    for(int inoloc = 0; inoloc < 20; inoloc++) {
-      int ino = f->macromesh.elem2node[20*ie+inoloc];
-      physnode[inoloc][0] = f->macromesh.node[3 * ino + 0];
-      physnode[inoloc][1] = f->macromesh.node[3 * ino + 1];
-      physnode[inoloc][2] = f->macromesh.node[3 * ino + 2];
+    for(int ie = 0; ie < simu->macromesh.nbelems; ie++){
+      field *f = simu->fd + ie;
+      int offset = ie * f->wsize;
+      //real *wf = f->wn;
+      schnaps_real *wf = w + offset;
+      //assert(1==3); xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+       int npg = NPG(f->deg, f->raf);
+      for(int ipg = 0; ipg < npg; ipg++){
+	int iv = 4;
+	int imem = f->varindex(f->deg, f->raf, f->model.m, ipg, iv);
+	wf[imem] = 0;
+	iv = 5;
+	imem = f->varindex(f->deg, f->raf, f->model.m, ipg, iv);
+	wf[imem]=0;
+	iv = 6;
+	imem = f->varindex(f->deg, f->raf, f->model.m, ipg, iv);
+	wf[imem]=0;
+      } 
     }
-    real dtau[3][3], codtau[3][3];
-    Ref2Phy(physnode, // phys. nodes
+  
+  
+  for(int i = 0; i < pic->nbparts; i++) {
+    
+    int ie = pic->old_cell_id[i];
+    
+    if (ie < 0) goto nexti;
+ 
+    field *f = simu->fd + ie;
+
+    int offset = ie * f->wsize;
+    
+    schnaps_real *wf = w + offset;
+
+    int npg = NPG(f->deg, f->raf);
+    schnaps_real dtau[3][3], codtau[3][3];
+    schnaps_ref2phy(f->physnode, // phys. nodes
 	    pic->xv + 6 * i, // xref
 	    NULL, -1, // dpsiref, ifa
 	    NULL, dtau, // xphy, dtau
 	    codtau, NULL, NULL); // codtau, dpsi, vnds
-    real det = dot_product(dtau[0], codtau[0]);
+    schnaps_real det = dot_product(dtau[0], codtau[0]);
 
-    for(int ib=0;ib < npg;ib++){
-      real wpg;
-      int *raf = f->interp_param + 4;
-      int *deg = f->interp_param + 1;
-      ref_pg_vol(raf, deg, ib, NULL, &wpg, NULL);
+    for(int ib=0 ; ib < npg; ib++){
+      schnaps_real wpg;
+      ref_pg_vol(f->deg, f->raf, ib, NULL, &wpg, NULL);
       //printf("det=%f wpg=%f \n", det, wpg);
       wpg *= det;
-      real psi;
-      psi_ref(f->interp_param+1,ib,pic->xv + 6*i,&psi,NULL);
+      schnaps_real psi;
+      psi_ref(f->deg, f->raf, ib, pic->xv + 6 * i, &psi, NULL);
 
       int iv = 6;  // rho index
-      int imem = f->varindex(f->interp_param, ib, iv) + mcell->woffset;
-      w[imem] += psi / wpg * pic->weight;
+      int imem = f->varindex(f->deg, f->raf, f->model.m, ib, iv);
+      wf[imem] += psi / wpg * pic->weight;
  
       iv = 4;  // j1 index
-      imem = f->varindex(f->interp_param, ib, iv) + mcell->woffset;
-      w[imem] += pic->xv[6 * i + 3] * psi / wpg * pic->weight;
+      imem = f->varindex(f->deg, f->raf, f->model.m, ib, iv);
+      wf[imem] += pic->xv[6 * i + 3] * psi / wpg * pic->weight;
 
       iv = 5;  // j2 index
-      imem = f->varindex(f->interp_param, ib, iv) + mcell->woffset;
-      w[imem] += pic->xv[6 * i + 4] * psi / wpg * pic->weight;
+      imem = f->varindex(f->deg, f->raf, f->model.m, ib, iv);
+      wf[imem] += pic->xv[6 * i + 4] * psi / wpg * pic->weight;
+
+      /* if (i == 35){ */
+      /* 	icall++; */
+      /* 	printf("call %d psi=%f w=%f ie=%d\n",icall,psi,wf[imem],ie); */
+      /* } */
     }
+      
+    
+    
     
   nexti:  
     assert(1==1);
   }
+  
 }
 
-void PlotParticles(PIC* pic,MacroMesh *m)
-{
-  // FIXME: the output filenames should be specified.
-  // FIXME: the output files should be closed at some point.
+
+
+void PlotParticles(PIC* pic,MacroMesh *m){
   
   FILE * gmshfile;
   FILE * gnufile;
@@ -273,7 +280,7 @@ void PlotParticles(PIC* pic,MacroMesh *m)
   gnufile = fopen("partplot.dat", "w" );
 
   float x,y,z,vx,vy,vz;
-  fprintf(gmshfile, "$MeshFormat\n2.2 0 %d\n", (int) sizeof(real));
+  fprintf(gmshfile, "$MeshFormat\n2.2 0 %d\n", (int) sizeof(schnaps_real));
   fprintf(gmshfile, "$EndMeshFormat\n$Nodes\n%d\n", pic->nbparts);
   /* fic << "$MeshFormat"<<endl; */
   /* fic << "2 0 8" << endl; */
@@ -289,7 +296,7 @@ void PlotParticles(PIC* pic,MacroMesh *m)
     
     
     // Get the physical nodes of element ie
-    real physnode[20][3];
+    schnaps_real physnode[20][3];
     for(int inoloc = 0; inoloc < 20; inoloc++) {
       int ino = m->elem2node[20*ie+inoloc];
       physnode[inoloc][0] = m->node[3 * ino + 0];
@@ -297,8 +304,8 @@ void PlotParticles(PIC* pic,MacroMesh *m)
       physnode[inoloc][2] = m->node[3 * ino + 2];
     }
    
-    real xphy[3];
-    Ref2Phy(physnode, // phys. nodes
+    schnaps_real xphy[3];
+    schnaps_ref2phy(physnode, // phys. nodes
 	    &(pic->xv[6*i]), // xref
 	    NULL, -1, // dpsiref, ifa
 	    xphy, NULL, // xphy, dtau
@@ -329,41 +336,34 @@ void PlotParticles(PIC* pic,MacroMesh *m)
 
 }
 
-void PushParticles(field *f,PIC* pic){
+void PushParticles(Simulation *simu,PIC* pic){
 
   for(int i=0;i<pic->nbparts;i++) {
     
 
     // jacobian of tau at the particle
-    real physnode[20][3];
     int ie=pic->cell_id[i];
     if (ie >=0) {
-      real w[f->model.m];
-      InterpField(f,pic->cell_id[i],&(pic->xv[6*i]),w);
+      schnaps_real w[simu->fd[ie].model.m];
+      InterpField(simu->fd + ie, &(pic->xv[6*i]),w);
 
-      for(int inoloc = 0; inoloc < 20; inoloc++) {
-	int ino = f->macromesh.elem2node[20*ie+inoloc];
-	physnode[inoloc][0] = f->macromesh.node[3 * ino + 0];
-	physnode[inoloc][1] = f->macromesh.node[3 * ino + 1];
-	physnode[inoloc][2] = f->macromesh.node[3 * ino + 2];
-      }
 
-      real dtau[3][3],codtau[3][3];
+      schnaps_real dtau[3][3],codtau[3][3];
       
-      real xphy[3];
-      Ref2Phy(physnode, // phys. nodes
+      schnaps_real xphy[3];
+      schnaps_ref2phy(simu->fd[ie].physnode, // phys. nodes
 	      &(pic->xv[6*i]), // xref
 	      NULL, -1, // dpsiref, ifa
 	      xphy, dtau, // xphy, dtau
 	      codtau, NULL, NULL); // codtau, dpsi, vnds
-      real det = dot_product(dtau[0], codtau[0]);
+      schnaps_real det = dot_product(dtau[0], codtau[0]);
       
       
       //printf("w=%f %f %f %f\n",w[0],w[1],w[2],w[3]);
       
       // 2D motion
       
-      real vref[3];
+      schnaps_real vref[3];
       pic->xv[6*i+3+0] +=pic->dt * (w[0]+w[2]*pic->xv[6*i+4]);
       pic->xv[6*i+3+1] +=pic->dt * (w[1]-w[2]*pic->xv[6*i+3]);
       pic->xv[6*i+3+2] +=0;
@@ -388,7 +388,7 @@ void PushParticles(field *f,PIC* pic){
       //is_out = false;
 
       if (is_out) {
-	Ref2Phy(physnode, // phys. nodes
+	schnaps_ref2phy(simu->fd[ie].physnode, // phys. nodes
 		&(pic->xv[6*i]), // xref
 		NULL, -1, // dpsiref, ifa
 		xphy, NULL, // xphy, dtau
@@ -396,7 +396,7 @@ void PushParticles(field *f,PIC* pic){
 	int old=pic->cell_id[i];
 	printf("oldref=%f %f %f \n",pic->xv[6*i+0],
 	       pic->xv[6*i+1],pic->xv[6*i+2]);
-	pic->cell_id[i]= NumElemFromPoint(&(f->macromesh),
+	pic->cell_id[i]= NumElemFromPoint(&(simu->macromesh),
 					  xphy,
 					  &(pic->xv[6*i]));
 	if (pic->cell_id[i] != -1) pic->old_cell_id[i]=pic->cell_id[i]; 

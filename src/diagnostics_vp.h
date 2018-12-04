@@ -10,24 +10,26 @@
 #include "geometry.h"
 #include "skyline.h"
 #include "quantities_vp.h"
+#include "simulation.h"
 
 
 //! \brief compute square of velocity L2 error
-//! \param[in] w : values of f at glops
-//! \param[in] x : point of the mesh
-//! \param[in] t : time
-//! \param[in] t : type of L2norm. if type_norm=0 this is the numerical solution if type_norm=1 this is the error 
-real L2VelError(field * f,real* x,real *w);
+schnaps_real L2VelError(field * f,schnaps_real* x,schnaps_real *w);
 
-real L2_Kinetic_error(field* f);
+schnaps_real L2_Kinetic_error(Simulation * simu);
 
-real local_kinetic_energy(field * f,real* x,real *w);
+schnaps_real local_kinetic_energy(field * f,schnaps_real* x,schnaps_real *w);
 
-void Energies(field* f,real * w,real k_energy, real e_energy, real t_energy,int first_diag);
+void Energies(Simulation* simu,schnaps_real * w, schnaps_real k_energy,
+	      schnaps_real e_energy, schnaps_real t_energy,int first_diag);
 
-void Charge_total(field* f,real * w, real t_charge,int first_diag);
+void Charge_total(Simulation * simu, schnaps_real * w, schnaps_real t_charge,
+		  int first_diag);
 
-void Plot_Energies(field* f, real dt);
+void Taux_instability(Simulation * simu, schnaps_real * w, schnaps_real mode,
+		      schnaps_real taux_ins,int first_diag);
+
+void Plot_Energies(Simulation *simu, schnaps_real dt);
 
 
 #endif

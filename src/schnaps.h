@@ -25,7 +25,7 @@ http://www.cecill.info/licences/Licence_CeCILL_V1.1-US.html
 nécessite git
 
 Accès développeur:
-git clone git+ssh://<gforge_account_name>\@scm.gforge.inria.fr//gitroot/schnaps/schnaps.git
+git clone git+ssh://\<gforge_account_name\>\@scm.gforge.inria.fr//gitroot/schnaps/schnaps.git
 
 Accès lecture seule:
 git clone https://gforge.inria.fr/git/schnaps/schnaps.git
@@ -94,13 +94,18 @@ firefox html/index.html
 
 #include "global.h"
 #include "geometry.h"
-#include "field.h"
+#include "simulation.h"
 #include "pic.h"
 #include "skyline.h"
+#include "skyline_spu.h"
+#include "klu_csr.h"
 #include "linear_solver.h"
+#include "advanced_linear_solver.h"
+#include "solvercontinuous.h"
 #ifdef _WITH_OPENCL
 #include "field_cl.h"
 #include "clinfo.h"
+#include "simulation_spu.h"
 #endif
 
 #include "maxwell.h"

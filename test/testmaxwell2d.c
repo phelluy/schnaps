@@ -4,92 +4,118 @@
 #include "test.h"
 #include <string.h>
 
-int TestMaxwell2D()
-{
-  int retval = 0;
+int TestMaxwell2D(void) {
+  bool test = true;
 
-  field f;
-  init_empty_field(&f);
+  // 2D meshes:
+  // test/disque2d.msh
+  // test/testdisque2d.msh
+  // test/testmacromesh.msh
+  // test/unit-cube.msh
 
-  f.model.cfl = 0.05;  
-  f.model.m = 7; // num of conservative variables
+  // 3D meshes"
+  // test/testdisque.msh
 
-  f.model.NumFlux = Maxwell2DCleanNumFlux_upwind;
-  //f.model.NumFlux = Maxwell2DNumFlux_centered;
-  f.model.BoundaryFlux = Maxwell2DCleanBoundaryFlux_upwind;
-  f.model.InitData = Maxwell2DCleanInitData;
-  f.model.ImposedData = Maxwell2DCleanImposedData;
-  f.varindex = GenericVarindex;
-  f.model.Source = Maxwell2DCleanSource;
+  char *mshname =  "../test/testcube.msh";
   
-  f.interp.interp_param[0] = f.model.m;
-  f.interp.interp_param[1] = 3; // x direction degree
-  f.interp.interp_param[2] = 3; // y direction degree
-  f.interp.interp_param[3] = 0; // z direction degree
-  f.interp.interp_param[4] = 4; // x direction refinement
-  f.interp.interp_param[5] = 4; // y direction refinement
-  f.interp.interp_param[6] = 1; // z direction refinement
+  MacroMesh mesh;
+  ReadMacroMesh(&mesh,"../test/testcube.msh");
+  //ReadMacroMesh(&mesh,"../test/testmacromesh.msh");
+  Detect2DMacroMesh(&mesh);
+  BuildConnectivity(&mesh);
 
-  ReadMacroMesh(&f.macromesh, "../test/testcube.msh");
+  Model model;
 
-  Detect2DMacroMesh(&f.macromesh);
-  assert(f.macromesh.is2d);
+  model.m = 7;
 
-  BuildConnectivity(&f.macromesh);
+  model.NumFlux = Maxwell2DNumFlux_upwind;
+  //f.model.NumFlux = Maxwell2DNumFlux_centered;
+  model.BoundaryFlux = Maxwell2DBoundaryFlux_upwind;
+  model.InitData = Maxwell2DInitData;
+  model.ImposedData = Maxwell2DImposedData;
+  model.Source = Maxwell2DSource;
+  //model.Source = NULL;
+
+
+  int deg[]={3, 3, 0};
+  int raf[]={4, 4, 1};
+
+  assert(mesh.is2d);
+
+#ifdef _WITH_OPENCL
+  if(!cldevice_is_acceptable(nplatform_cl, ndevice_cl)) {
+    printf("OpenCL device not acceptable.\n");
+    return true;
+  }
+#endif
+  
+  CheckMacroMesh(&mesh, deg, raf);
+
+
+
+  Simulation simu;
+  EmptySimulation(&simu);
+
+#ifdef _WITH_OPENCL
 
   char buf[1000];
-  sprintf(buf, "-D _M=%d", f.model.m);
+  sprintf(buf, "-D _M=%d", model.m);
   strcat(cl_buildoptions, buf);
 
-  set_source_CL(&f, "Maxwell2DCleanSource");
-  sprintf(numflux_cl_name, "%s", "Maxwell2DCleanNumFlux_upwind");
+  set_source_CL(&simu, "Maxwell2DSource");
+  sprintf(numflux_cl_name, "%s", "Maxwell2DNumFlux_upwind");
   sprintf(buf," -D NUMFLUX=");
   strcat(buf, numflux_cl_name);
   strcat(cl_buildoptions, buf);
 
-  sprintf(buf, " -D BOUNDARYFLUX=%s", "Maxwell2DCleanBoundaryFlux_upwind");
+  sprintf(buf, " -D BOUNDARYFLUX=%s", "Maxwell2DBoundaryFlux_upwind");
   strcat(cl_buildoptions, buf);
+#endif
 
-  Initfield(&f);
-  
-  CheckMacroMesh(&f.macromesh, f.interp.interp_param + 1);
 
-  real tmax = 0.1;
-  f.vmax = 1;
-  real dt = set_dt(&f);
+  InitSimulation(&simu, &mesh, deg, raf, &model);
+ 
+  schnaps_real tmax = .5;
+  simu.cfl=0.2;
+  simu.vmax=1;
 
-#if 0
+#if 1
   // C version
-  RK2(&f, tmax, dt);
+  RK2(&simu, tmax);
 #else
   // OpenCL version
-  CopyfieldtoGPU(&f);
-  RK2_CL(&f, tmax, dt, 0, 0, 0);
-  CopyfieldtoCPU(&f);
+  schnaps_real dt = 0;
+  RK2_CL(&simu, tmax, dt, 0, 0, 0);
+
+  CopyfieldtoCPU(&simu); 
   printf("\nOpenCL Kernel time:\n");
-  show_cl_timing(&f);
+  show_cl_timing(&simu);
   printf("\n");
 #endif
 
-  // Save the results and the error
-  /* Plotfield(0, false, &f, NULL, "dgvisu.msh"); */
-  /* Plotfield(0, true, &f, "error", "dgerror.msh"); */
 
-  real dd = L2error(&f);
-  real tolerance = 1.1e-2;
-  if(dd > tolerance)
-    retval += 1;
-  printf("L2 error: %f\n", dd);
+  PlotFields(0, false, &simu, NULL, "dgvisu.msh");
+  PlotFields(0, true , &simu, "error", "dgerror.msh");
 
-  return retval;
+  schnaps_real dd = 0;
+  dd = L2error(&simu);
+
+  printf("erreur L2=%f\n", dd);
+
+  schnaps_real tolerance = 0.0025;
+
+  test = dd < tolerance;
+
+  FreeMacroMesh(&mesh);
+ 
+  return test;
 }
 
-int main()
-{
-  int retval = TestMaxwell2D();
-  if(retval == 0) 
+int main(void) {
+  int resu = TestMaxwell2D();
+  if (resu) 
     printf("Maxwell2D test OK!\n");
   else 
     printf("Maxwell2D failed !\n");
-  return retval;
+  return !resu;
 }

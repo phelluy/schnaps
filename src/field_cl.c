@@ -1,148 +1,147 @@
-#include "field.h"
-#include "field_cl.h"
 #include "clinfo.h"
 #include "clutils.h"
+#include "field.h"
+#include "field_cl.h"
+#include "gyro.h"
+#ifdef _WITH_PYTHONLIBS
+#include "python_call.h"
+#endif
 #include <assert.h>
 #include <string.h>
 #include <sys/time.h>
 
-void empty_kernel(field *f,
-		  cl_uint nwait, cl_event *wait, cl_event *done) 
+
+
+#ifdef _WITH_OPENCL
+
+void DGCharge_CL(Simulation *simu, cl_mem *w_cl,
+		 cl_uint nwait, cl_event *wait, cl_event *done);
+
+
+void CopyfieldtoCPU(Simulation *simu)
 {
   cl_int status;
-  status = clEnqueueTask(f->cli.commandqueue,
-			 f->empty_kernel,
-			 nwait, wait, done);
-  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status >= CL_SUCCESS);
-}
+
+  //DGCharge_CL(simu,&simu->w_cl,0,0,0);
+
   
-#ifdef _WITH_OPENCL
-
-
-void CopyfieldtoCPU(field *f)
-{
-  // TODO: use map instead of read / writes?
-  cl_int status;
-
-  status = clFinish(f->cli.commandqueue);
+  // Ensure that all the buffers are mapped
+  status = clFinish(simu->cli.commandqueue);
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 
-  const int nmacro = f->macromesh.nbelems;
-  for(int ie = 0; ie < nmacro; ++ie) {
-    MacroCell *mcell = f->mcell + ie;
-
-    status = clEnqueueReadBuffer(f->cli.commandqueue,
-				 mcell->wn_cl,
-				 CL_TRUE,
-				 0,
-				 mcell->nreal * sizeof(real),
-				 f->wn + mcell->woffset,
-				 0, NULL, NULL);
-    if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
-    assert(status >= CL_SUCCESS);
-
-    status = clEnqueueReadBuffer(f->cli.commandqueue,
-				 mcell->dtwn_cl,
-				 CL_TRUE,
-				 0,
-				 mcell->nreal * sizeof(real),
-				 f->dtwn + mcell->woffset,
-				 0, NULL, NULL);
-    if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
-    assert(status >= CL_SUCCESS);
-  }
-
-  status = clFinish(f->cli.commandqueue);
+  void *chkptr;
+  chkptr = clEnqueueMapBuffer(simu->cli.commandqueue,
+			      simu->dtw_cl, // buffer to copy from
+			      CL_TRUE, // block until the buffer is available
+			      CL_MAP_READ, // we just want to see the results
+			      0, // offset
+			      simu->wsize * sizeof(schnaps_real), // buffersize
+			      0, NULL, NULL, // events management
+			      &status);
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
-}
+  assert(chkptr == simu->dtw);
 
-void CopyfieldtoGPU(field *f)
-{
-  cl_int status;
-
-  status = clFinish(f->cli.commandqueue);
+  chkptr = clEnqueueMapBuffer(simu->cli.commandqueue,
+			      simu->w_cl, // buffer to copy from
+			      CL_TRUE, // block until the buffer is available
+			      CL_MAP_READ, // we just want to see the results
+			      0, // offset
+			      simu->wsize * sizeof(schnaps_real), // buffersize
+			      0, NULL, NULL, // events management
+			      &status);
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
+  assert(chkptr == simu->w);
 
-  const int nmacro = f->macromesh.nbelems;
-
-  for(int ie = 0; ie < nmacro; ++ie) {
-    MacroCell *mcell = f->mcell + ie;
-
-    status = clEnqueueWriteBuffer(f->cli.commandqueue,
-				  f->wn_cl[ie],
-				  CL_TRUE,
-				  0,
-				  mcell->nreal * sizeof(real),
-				  f->wn + mcell->woffset,
-				  0, NULL, NULL);
-    if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
-    assert(status >= CL_SUCCESS);
-
-    status = clEnqueueWriteBuffer(f->cli.commandqueue,
-				  f->dtwn_cl[ie],
-				  //mcell->dtwn_cl,
-				  CL_TRUE,
-				  0,
-				  mcell->nreal * sizeof(real),
-				  f->dtwn + mcell->woffset,
-				  0, NULL, NULL);
-    if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
-    assert(status >= CL_SUCCESS);
-  }
-
-  status = clFinish(f->cli.commandqueue);
+  status = clFinish(simu->cli.commandqueue);
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
+  
 }
 
 
-void set_source_CL(field *f, char *sourcename_cl) 
+void CopyCPU2GPU(Simulation *simu)
+{
+  cl_int status;
+
+  status = clFinish(simu->cli.commandqueue);
+  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status >= CL_SUCCESS);
+
+  void *chkptr_dtwcl;
+  void *chkptr_wcl;
+  status = clEnqueueUnmapMemObject(simu->cli.commandqueue,
+				simu->dtw_cl, // buffer to copy from
+				chkptr_dtwcl,
+				0, NULL, NULL);
+  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+
+  status = clEnqueueUnmapMemObject(simu->cli.commandqueue,
+				simu->w_cl, // buffer to copy from
+				chkptr_wcl,
+				0, NULL, NULL);
+  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+
+  status = clFinish(simu->cli.commandqueue);
+  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status >= CL_SUCCESS);
+  
+}
+
+void set_source_CL(Simulation *simu, char *sourcename_cl)
 {
 #ifdef _WITH_OPENCL
-  f->use_source_cl = true;
+  simu->use_source_cl = true;
   int namelength = strlen(sourcename_cl);
   if(namelength > 0) {
-    f->sourcename_cl = calloc(sizeof(char), namelength + 1);
-    strcat(f->sourcename_cl, sourcename_cl);
+    simu->sourcename_cl = calloc(sizeof(char), namelength + 1);
+    strcat(simu->sourcename_cl, sourcename_cl);
   } else {
     printf("The source name %s is empty!\n", sourcename_cl);
     assert(false);
   }
-  printf("%s\n", f->sourcename_cl);
+  printf("%s\n", simu->sourcename_cl);
 #endif
 }
 
-// wn_cl is an array of cl_mems, one per macrocell
-void init_DGBoundary_CL(field *f, 
+void init_DGBoundary_CL(Simulation *simu,
 			int ieL, int locfaL,
-			cl_mem *wn_cl,
-			real tnow)
+			cl_mem physnodeL_cl,
+			cl_mem *w_cl,
+			size_t cachesize)
 {
   cl_int status;
-  cl_kernel kernel = f->dgboundary;
+  cl_kernel kernel = simu->dgboundary;
 
-  MacroCell *mcell = f->mcell + ieL;
-  
   unsigned int argnum = 0;
-  
+
+  // __constant int *param,        // 0: interp param
   status = clSetKernelArg(kernel,
                           argnum++,
                           sizeof(cl_mem),
-                          &f->param_cl);
+                          &simu->param_cl);
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 
+  // real tnow,                  // 1: current time
   status = clSetKernelArg(kernel,
   			  argnum++,
-  			  sizeof(real),
-  			  &tnow);
+  			  sizeof(schnaps_real),
+  			  &simu->tnow);
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 
+  // int ieL,                      // 2: left macrocell
+  status = clSetKernelArg(kernel,
+  			  argnum++,
+  			  sizeof(int),
+  			  &ieL);
+  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status >= CL_SUCCESS);
+
+  // int locfaL,                   // 3: left face index
   status = clSetKernelArg(kernel,
   			  argnum++,
   			  sizeof(int),
@@ -150,384 +149,105 @@ void init_DGBoundary_CL(field *f,
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 
+  // __constant real *physnodeL, // 4: left physnode
   status = clSetKernelArg(kernel,
                           argnum++,
                           sizeof(cl_mem),
-                          &mcell->physnode_cl);
+                          &physnodeL_cl);
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 
+  // __global real *w,          // 5: field
   status = clSetKernelArg(kernel,
                           argnum++,
                           sizeof(cl_mem),
-                          wn_cl + ieL);
+                          w_cl);
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 
+  // __global real *dtw,        // 6: time derivative
   status = clSetKernelArg(kernel,
                           argnum++,
                           sizeof(cl_mem),
-                          f->dtwn_cl + ieL);
+                          &simu->dtw_cl);
+  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status >= CL_SUCCESS);
+
+  // __local real *cache         // 7: local mem
+  status = clSetKernelArg(kernel,
+                          argnum++,
+                          sizeof(schnaps_real) * cachesize,
+                          NULL);
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 }
 
-// wn_cl is an array of cl_mems, one per macrocell
-void DGBoundary_CL(MacroFace *mface, field *f, cl_mem *wn_cl, real tnow,
-		   cl_uint nwait, cl_event *wait, cl_event *done) 
+void DGBoundary_CL(int ifa, Simulation *simu, cl_mem *w_cl,
+		   cl_uint nwait, cl_event *wait, cl_event *done)
 {
-  int *param = f->interp_param;
+  int *param = simu->interp_param;
   cl_int status;
 
-  int ifa = mface->ifa;
-  int ieL = mface->ieL;
-  int locfaL = mface->locfaL;
-  int ieR = mface->ieR;
+  int ieL =    simu->macromesh.face2elem[4 * ifa];
+  int locfaL = simu->macromesh.face2elem[4 * ifa + 1];
 
-  assert(ieR == -1);
-  
-  size_t numworkitems = mface->npgf;
-  init_DGBoundary_CL(f, ieL, locfaL, wn_cl, tnow);
-  
-  status = clEnqueueNDRangeKernel(f->cli.commandqueue,
-				  f->dgboundary,
+  field *f = simu->fd;
+  size_t numworkitems = NPGF(f->deg, f->raf, locfaL);
+  size_t cachesize = 1; // TODO make use of cache
+  init_DGBoundary_CL(simu, ieL, locfaL, simu->physnodes_cl, w_cl, cachesize);
+  status = clEnqueueNDRangeKernel(simu->cli.commandqueue,
+				  simu->dgboundary,
 				  1, // cl_uint work_dim,
 				  NULL, // global_work_offset,
-				  &numworkitems, // global_work_size, 
-				  NULL, // size_t *local_work_size, 
-				  nwait, 
+				  &numworkitems, // global_work_size,
+				  NULL, // size_t *local_work_size,
+				  nwait,
 				  wait, // *wait_list,
 				  done); // *event
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
-}
 
-void init_ExtractInterface_CL(MacroCell *mcell,
-			      field *f,
-			      int ifa,
-			      cl_mem wn_cl)
-{
-  cl_int status;
-  cl_kernel kernel = f->ExtractInterface;
-
-  unsigned int argnum = 0;
-
-  status = clSetKernelArg(kernel,
-			  argnum++,
-                          sizeof(cl_mem),
-                          &f->param_cl);
-  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status >= CL_SUCCESS);
-
-  status = clSetKernelArg(kernel,
-			  argnum++,
-                          sizeof(int),
-                          &ifa);
-  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status >= CL_SUCCESS);
-
-  status = clSetKernelArg(kernel,
-			  argnum++,
-                          sizeof(cl_mem),
-                          &wn_cl);
-  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status >= CL_SUCCESS);
-  
-  status = clSetKernelArg(kernel,
-			  argnum++,
-                          sizeof(cl_mem),
-			  mcell->interface_cl + ifa);
-  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status >= CL_SUCCESS);
-}
-
-void ExtractInterface_CL(MacroCell *mcell, field *f, int locfa, cl_mem wn_cl,
-			 cl_uint nwait, cl_event *wait, cl_event *done)
-{
-  // Extract the faces with normals in direction i2 on both side of
-  // the MacroCell.
-
-  int *param = f->interp_param;
-  int m = param[0];
-  int *raf = mcell->raf;
-  int *deg = mcell->deg;
-
-  //const int faces[3][2] = { {2, 0}, {1, 3}, {4,5} };
-  
-  const int axis_permut[6][4] = { {0, 2, 1, 0},
-				  {1, 2, 0, 1},
-				  {2, 0, 1, 1},
-				  {2, 1, 0, 0},
-				  {0, 1, 2, 1},
-				  {1, 0, 2, 0} };
-  
-  const int paxis[4] = {axis_permut[locfa][0],
-			axis_permut[locfa][1],
-			axis_permut[locfa][2],
-			axis_permut[locfa][3] };
-
-  const int d0 = paxis[0];
-  const int d1 = paxis[1];
-  
-  init_ExtractInterface_CL(mcell, f, locfa, wn_cl);
-  
-  // Number of points on the face.
-  int npgf = NPGF(raf, deg, locfa);
-  size_t numworkitems[1] = {npgf};
-  
-  cl_int status;
-  status = clEnqueueNDRangeKernel(f->cli.commandqueue,
-				  f->ExtractInterface,
-				  1,            // cl_uint work_dim,
-				  NULL,         // global_work_offset,
-				  numworkitems, // global_work_size, 
-				  NULL,          // size_t *local_work_size, 
-				  nwait, wait, done);
-  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status >= CL_SUCCESS);
-}
-
-void init_InsertInterface_CL(MacroCell *mcell,
-			     field *f,
-			     int locfa,
-			     cl_mem dtwn_cl)
-{
-  cl_int status;
-  cl_kernel kernel = f->InsertInterface;
-
-  unsigned int argnum = 0;
-
-  status = clSetKernelArg(kernel,
-			  argnum++,
-                          sizeof(cl_mem),
-                          &f->param_cl);
-  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status >= CL_SUCCESS);
-
-  status = clSetKernelArg(kernel,
-			  argnum++,
-                          sizeof(int),
-                          &locfa);
-  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status >= CL_SUCCESS);
-
-  status = clSetKernelArg(kernel,
-			  argnum++,
-                          sizeof(cl_mem),
-                          &dtwn_cl);
-  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status >= CL_SUCCESS);
-  
-  status = clSetKernelArg(kernel,
-			  argnum++,
-                          sizeof(cl_mem),
-			  mcell->interface_cl + locfa);
-  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status >= CL_SUCCESS);
-}
-
-void InsertInterface_CL(MacroCell *mcell, field *f, int locfa, cl_mem dtwn_cl,
-			cl_uint nwait, cl_event *wait, cl_event *done)
-{
-  // Extract the faces with normals in direction i2 on both side of
-  // the MacroCell.
-
-  int *param = f->interp_param;
-  int m = param[0];
-  int *raf = mcell->raf;
-  int *deg = mcell->deg;
-
-  init_InsertInterface_CL(mcell, f, locfa, dtwn_cl);
-  
-  // Number of points on the face.
-  int npgf = NPGF(raf, deg, locfa);
-  size_t numworkitems[1] = {npgf};
-  
-  cl_int status;
-  status = clEnqueueNDRangeKernel(f->cli.commandqueue,
-				  f->InsertInterface,
-				  1,            // cl_uint work_dim,
-				  NULL,         // global_work_offset,
-				  numworkitems, // global_work_size, 
-				  NULL,          // size_t *local_work_size, 
-				  nwait, wait, done);
-  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status >= CL_SUCCESS);
-}
-
-void init_extracted_DGInterface_CL(MacroFace *mface, field *f)
-{
-  cl_int status;
-  cl_kernel kernel = f->ExtractedDGInterfaceFlux;
-
-  MacroCell *mcellL = f->mcell + mface->ieL;
-  MacroCell *mcellR = f->mcell + mface->ieR;
-    
-  unsigned int argnum = 0;
-
-  status = clSetKernelArg(kernel,
-			  argnum++,
-                          sizeof(cl_mem),
-                          &f->param_cl);
-  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status >= CL_SUCCESS);
-
-
-  status = clSetKernelArg(kernel,
-                          argnum++,
-                          sizeof(int),
-			  &mface->locfaL);
-  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status >= CL_SUCCESS);
-
-  status = clSetKernelArg(kernel,
-                          argnum++,
-                          sizeof(int),
-			  &mface->locfaR);
-  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status >= CL_SUCCESS);
-
-  status = clSetKernelArg(kernel,
-                          argnum++,
-                          sizeof(cl_mem),
-			  &mcellL->physnode_cl);
-  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status >= CL_SUCCESS);
-  
-  status = clSetKernelArg(kernel,
-			  argnum++,
-                          sizeof(int),
-                          &mface->Rcorner);
-  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status >= CL_SUCCESS);
-  
-  status = clSetKernelArg(kernel,
-  			  argnum++,
-                          sizeof(cl_mem),
-			  &mface->wL_cl);
-  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status >= CL_SUCCESS);
-
-  status = clSetKernelArg(kernel,
-  			  argnum++,
-                          sizeof(cl_mem),
-			  &mface->wR_cl);
-  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status >= CL_SUCCESS);
-}
-
-void ExtractedDGInterface_CL(MacroFace *mface, field *f,
-			     cl_uint nwait, cl_event *wait, cl_event *done)
-{
-
-  MacroCell *mcellL = f->mcell + mface->ieL;
-  
-  size_t numworkitems[1] = {mface->npgf};
-
-  init_extracted_DGInterface_CL(mface, f);
-  
-  cl_int status;
-  status = clEnqueueNDRangeKernel(f->cli.commandqueue,
-				  f->ExtractedDGInterfaceFlux,
-				  1,            // cl_uint work_dim,
-				  NULL,         // global_work_offset,
-				  numworkitems, // global_work_size, 
-				  NULL,         // size_t *local_work_size, 
-				  nwait, wait, done);
-  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status >= CL_SUCCESS);
-}
-
-void init_extracted_DGBoundary_CL(MacroFace *mface, field *f, real tnow)
-{
-  cl_int status;
-  cl_kernel kernel = f->ExtractedDGBoundaryFlux;
-
-  MacroCell *mcellL = f->mcell + mface->ieL;
-    
-  unsigned int argnum = 0;
-
-  status = clSetKernelArg(kernel,
-			  argnum++,
-                          sizeof(cl_mem),
-                          &f->param_cl);
-  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status >= CL_SUCCESS);
-
-  status = clSetKernelArg(kernel,
-                          argnum++,
-                          sizeof(cl_mem),
-			  &mcellL->physnode_cl);
-  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status >= CL_SUCCESS);
-  
-  status = clSetKernelArg(kernel,
-  			  argnum++,
-                          sizeof(cl_mem),
-			  mcellL->interface_cl + mface->locfaL);
-
-  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status >= CL_SUCCESS);
-
-  status = clSetKernelArg(kernel,
-  			  argnum++,
-                          sizeof(int),
-			  &mface->locfaL);
-
-  status = clSetKernelArg(kernel,
-  			  argnum++,
-                          sizeof(real),
-			  &tnow);
-
-  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status >= CL_SUCCESS);
-}
-
-void ExtractedDGBoundary_CL(MacroFace *mface, field *f, real tnow,
-			    cl_uint nwait,
-			    cl_event *wait,
-			    cl_event *done)
-{
-  MacroCell *mcellL = f->mcell + mface->ieL;
-  
-  size_t numworkitems = mface->npgf;
-
-  init_extracted_DGBoundary_CL(mface, f, tnow);
-  
-  cl_int status;
-  status = clEnqueueNDRangeKernel(f->cli.commandqueue,
-				  f->ExtractedDGBoundaryFlux,
-				  1,            // cl_uint work_dim,
-				  NULL,         // global_work_offset,
-				  &numworkitems, // global_work_size, 
-				  NULL,         // size_t *local_work_size, 
-				  nwait, wait, done);
-  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status >= CL_SUCCESS);
 }
 
 // Set the loop-dependant kernel arguments for DGMacroCellInterface_CL
-// wn_cl is an array of cl_mems, one per macrocell.
-void init_DGMacroCellInterface_CL(field *f, 
+void init_DGMacroCellInterface_CL(Simulation *simu,
 				  int ieL, int ieR, int locfaL, int locfaR,
-				  int Rcorner,
-				  cl_mem *wn_cl)
+				  cl_mem physnodeL_cl,
+				  cl_mem *w_cl,
+				  size_t cachesize)
 {
+  //printf("loop_init_DGMacroCellInterface_CL\n");
   cl_int status;
-  cl_kernel kernel = f->dginterface;
+  cl_kernel kernel = simu->dginterface;
 
-  MacroCell *mcellL = f->mcell + ieL;
-  MacroCell *mcellR = f->mcell + ieR;
-  
+  // Set kernel arguments
   unsigned int argnum = 0;
 
+  //__constant int *param,        // 0: interp param
   status = clSetKernelArg(kernel,
 			 argnum++,
                           sizeof(cl_mem),
-                          &f->param_cl);
+                          &simu->param_cl);
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 
+  //int ieL,                      // 1: left macrocell
+  status = clSetKernelArg(kernel,
+			  argnum++,
+			  sizeof(int),
+			  &ieL);
+  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status >= CL_SUCCESS);
+
+  //int ieR,                      // 2: right macrocell
+  status = clSetKernelArg(kernel,
+			  argnum++,
+			  sizeof(int),
+			  &ieR);
+  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status >= CL_SUCCESS);
+
+  //int locfaL,                   // 3: left face index
   status = clSetKernelArg(kernel,
 			  argnum++,
 			  sizeof(int),
@@ -535,6 +255,7 @@ void init_DGMacroCellInterface_CL(field *f,
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 
+  //int locfaR,                   // 4: right face index
   status = clSetKernelArg(kernel,
 			  argnum++,
 			  sizeof(int),
@@ -542,1378 +263,1692 @@ void init_DGMacroCellInterface_CL(field *f,
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 
+  //__constant real *physnodeL, // 5: left physnode
   status = clSetKernelArg(kernel,
                           argnum++,
                           sizeof(cl_mem),
-			  &mcellL->physnode_cl);
+                          &physnodeL_cl);
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 
+  //__constant real *physnodeR, // 6: right physnode
+  /* status = clSetKernelArg(kernel, */
+  /*                         argnum++, */
+  /*                         sizeof(cl_mem), */
+  /*                         &physnodeR_cl); */
+  /* if(status < CL_SUCCESS) printf("%s\n", clErrorString(status)); */
+  /* assert(status >= CL_SUCCESS); */
+
+  //__global real *w,          // 7: field
   status = clSetKernelArg(kernel,
                           argnum++,
                           sizeof(cl_mem),
-                          &mcellR->physnode_cl);
+                          w_cl);
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 
+  //__global real *dtw,        // 8: time derivative
   status = clSetKernelArg(kernel,
                           argnum++,
                           sizeof(cl_mem),
-                          wn_cl + ieL);
+                          &simu->dtw_cl);
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 
+  //__local real *cache         // 9: local mem
   status = clSetKernelArg(kernel,
                           argnum++,
-                          sizeof(cl_mem),
-                          f->dtwn_cl + ieL);
-  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
-
-  assert(status >= CL_SUCCESS);
-  status = clSetKernelArg(kernel,
-                          argnum++,
-                          sizeof(cl_mem),
-                          wn_cl + ieR);
-  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status >= CL_SUCCESS);
-
-  status = clSetKernelArg(kernel,
-                          argnum++,
-                          sizeof(cl_mem),
-                          f->dtwn_cl + ieR);
-  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status >= CL_SUCCESS);
-  
-  status = clSetKernelArg(kernel,
-                          argnum++,
-                          sizeof(int),
-                          &Rcorner);
+                          sizeof(schnaps_real) * cachesize,
+                          NULL);
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 }
 
-void DGMacroCellInterface_CL(MacroFace *mface, field *f, cl_mem *wn_cl,
-			     cl_uint nwait, cl_event *wait, cl_event *done) 
+void DGMacroCellInterface_CL(int ifa, Simulation *simu, cl_mem *w_cl,
+			     cl_uint nwait, cl_event *wait, cl_event *done)
 {
-  int *param = f->interp_param;
+  int *param = simu->interp_param;
   cl_int status;
-  cl_kernel kernel = f->dginterface;
+  cl_kernel kernel = simu->dginterface;
   status = clSetKernelArg(kernel,
                           7,
                           sizeof(cl_mem),
-                          wn_cl);
+                          w_cl);
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 
-  int ifa = mface->ifa;
+  int ieL =    simu->macromesh.face2elem[4 * ifa];
+  int locfaL = simu->macromesh.face2elem[4 * ifa + 1];
+  int ieR =    simu->macromesh.face2elem[4 * ifa + 2];
+  int locfaR = simu->macromesh.face2elem[4 * ifa + 3];
 
-  int ieL = mface->ieL;
-  int locfaL = mface->locfaL;
-  int ieR = mface->ieR;
-  int locfaR = mface->locfaR;
+  
+  field *f = simu->fd;
+  size_t numworkitems = NPGF(f->deg, f->raf, locfaL);
+  if(ieR >= 0) {
+    // Set the remaining loop-dependant kernel arguments
+    size_t kernel_cachesize = 1;
+    init_DGMacroCellInterface_CL(simu,
+				 ieL, ieR, locfaL, locfaR,
+				 simu->physnodes_cl,
+				 w_cl,
+				 kernel_cachesize);
 
-  size_t numworkitems = mface->npgf;
-  assert(ieR >= 0);
+    status = clEnqueueNDRangeKernel(simu->cli.commandqueue,
+				    kernel,
+				    1, // cl_uint work_dim,
+				    NULL, // global_work_offset,
+				    &numworkitems, // global_work_size,
+				    NULL, // size_t *local_work_size,
+				    nwait,  // nwait,
+				    wait, // *wait_list,
+				    done); // *event
+    if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+    assert(status >= CL_SUCCESS);
+  } else {
+    // Set the event to completed status.
+    if(done != NULL)
+      clSetUserEventStatus(*done, CL_COMPLETE);
+  }
 
-  // Set the remaining loop-dependant kernel arguments
-  init_DGMacroCellInterface_CL(f, 
-			       ieL, ieR, locfaL, locfaR, mface->Rcorner,
-			       wn_cl);
-
-  status = clEnqueueNDRangeKernel(f->cli.commandqueue,
-				  kernel,
-				  1,    // cl_uint work_dim,
-				  NULL, // global_work_offset,
-				  &numworkitems, // global_work_size, 
-				  NULL, // size_t *local_work_size, 
-				  nwait, wait, done);
-  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status >= CL_SUCCESS);
 }
 
 // Set up kernel arguments, etc, for DGMass_CL.
-void init_DGMass_CL(MacroCell *mcell, field *f)
+void init_DGMass_CL(Simulation *simu)
 {
   cl_int status;
-  cl_kernel kernel = f->dgmass;
+  cl_kernel kernel = simu->dgmass;
   int argnum = 0;
 
   status = clSetKernelArg(kernel,
                           argnum++,
                           sizeof(cl_mem),
-                          &f->param_cl);
-  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status >= CL_SUCCESS);
-  
-  status = clSetKernelArg(f->dgmass,
-                          argnum++,
-                          sizeof(cl_mem),
-			  &mcell->physnode_cl);
+                          &simu->param_cl);
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 
-  status = clSetKernelArg(f->dgmass,
-                          argnum++,
+  /* int ie, // macrocel index */
+  // Set in loop on call.
+  argnum++;
+
+  /* __constant real* physnode,  // macrocell nodes */
+  status = clSetKernelArg(simu->dgmass,           // kernel name
+                          argnum++,              // arg num
                           sizeof(cl_mem),
-			  &mcell->mass_cl);
+                          &simu->physnodes_cl);     // opencl buffer
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 
+  /* __global real* dtw // time derivative */
   status = clSetKernelArg(kernel,
                           argnum++,
                           sizeof(cl_mem),
-                          f->dtwn_cl + mcell->ie);
-  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status >= CL_SUCCESS);
-
-  status = clSetKernelArg(kernel,
-                          argnum++,
-			  sizeof(real) * mcell->nrealsubcell,
-                          NULL);
+                          &simu->dtw_cl);
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 }
 
 // Apply division by the mass matrix OpenCL version
-void DGMass_CL(MacroCell *mcell, field *f,
+void DGMass_CL(int ie, Simulation *simu,
 	       cl_uint nwait, cl_event *wait, cl_event *done)
 {
-  //printf("DGMass_CL\n");
-  int *param = f->interp_param;
+
+  int *param = simu->interp_param;
   cl_int status;
 
-  init_DGMass_CL(mcell, f);
-  
-  size_t global_work_size = mcell->npg;
-  size_t local_work_size = mcell->npgsubcell;
+  init_DGMass_CL(simu);
 
-  status = clEnqueueNDRangeKernel(f->cli.commandqueue,
-				  f->dgmass,
-				  1,
-				  NULL,
-				  &global_work_size,
-				  &local_work_size,
-				  nwait, wait, done);
+  //clSetUserEventStatus(simu->clv_mass, CL_COMPLETE);
+  //if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+  //assert(status >= CL_SUCCESS);
+
+  // Loop on the elements
+
+  status = clSetKernelArg(simu->dgmass,
+			  1,
+			  sizeof(int),
+			  (void *)&ie);
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
+
+  // The groupsize is the number of glops in a subcell
+  size_t groupsize = (param[1] + 1) * (param[2] + 1) * (param[3] + 1);
+  // The total work items number is (the number of glops in a
+  // subcell) * (number of subcells)
+  size_t numworkitems = param[4] * param[5] * param[6] * groupsize;
+
+  unsigned int m = simu->interp_param[0];
+  unsigned int nreadsdgmass = m;
+  unsigned int nmultsdgmass = 53 + 2 * m + 2601;
+  simu->flops_mass += numworkitems * nmultsdgmass;
+  simu->reads_mass += numworkitems * nreadsdgmass;
+
+  status = clEnqueueNDRangeKernel(simu->cli.commandqueue,
+				  simu->dgmass,
+				  1, // cl_uint work_dim,
+				  NULL, // size_t *global_work_offset,
+				  &numworkitems, // size_t *global_work_size,
+				  &groupsize, // size_t *local_work_size,
+				  nwait, // cl_uint num_events_in_wait_list,
+				  wait, //*event_wait_list,
+				  done); // cl_event *event
+  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status >= CL_SUCCESS);
+
 }
 
-// wn_cl is a pointer to a macrocell's wn_cl
-void init_DGFlux_CL(field *f, MacroCell *mcell, int dim0, cl_mem *wn_cl, 
+void init_DGFlux_CL(Simulation *simu, int ie, int dim0, cl_mem *w_cl,
 		    size_t cachesize)
 {
   //printf("DGFlux cachesize:%zu\n", cachesize);
 
-  cl_kernel kernel = f->dgflux;
+  cl_kernel kernel = simu->dgflux;
   cl_int status;
-  int argnum = 0; 
+  int argnum = 0;
 
+  // __constant int *param, // interp param
   status = clSetKernelArg(kernel,
                           argnum++,
                           sizeof(cl_mem),
-                          &f->param_cl);
+                          &simu->param_cl);
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 
-  status = clSetKernelArg(kernel, 
-			  argnum++, 
-			  sizeof(int), 
+  //xxx
+ 
+  // int ie, // macrocel index
+  status = clSetKernelArg(kernel,
+			  argnum++,
+			  sizeof(int),
+			  (void *)&ie);
+  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status >= CL_SUCCESS);
+
+  
+  // int dim0, // face direction
+  status = clSetKernelArg(kernel,
+			  argnum++,
+			  sizeof(int),
 			  (void *)&dim0);
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
-    
+
+  // __constant real *physnode, // macrocell nodes
   status = clSetKernelArg(kernel,
                           argnum++,
                           sizeof(cl_mem),
-                          &mcell->physnode_cl);
+                          &simu->physnodes_cl);
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 
+  //  __global real *w, // field values
   status = clSetKernelArg(kernel,
                           argnum++,
                           sizeof(cl_mem),
-                          wn_cl);
+                          w_cl);
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 
+  // __global real *dtw // time derivative
   status = clSetKernelArg(kernel,
                           argnum++,
                           sizeof(cl_mem),
-                          f->dtwn_cl + mcell->ie);
+                          &simu->dtw_cl);
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 
+  // __local real* wloc,       // 6: w local memory
   status = clSetKernelArg(kernel,
                           argnum++,
-                          sizeof(real) * cachesize,
+                          sizeof(schnaps_real) * cachesize,
                           NULL);
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 }
 
-// wn_cl is a pointer to a macrocell's wn_cl
-void DGFlux_CL(MacroCell *mcell, field *f, int dim0, cl_mem *wn_cl,
+void DGFlux_CL(Simulation *simu, int dim0, int ie, cl_mem *w_cl,
 	       cl_uint nwait, cl_event *wait, cl_event *done)
 {
-  // FIXME: instead of ie, pass a MacroCell.
-  
   // Unpack the parameters
-  int *param = f->interp_param;
+  int *param = simu->interp_param;
   int m = param[0];
   int deg[3] = {param[1], param[2], param[3]};
   int nraf[3] = {param[4], param[5], param[6]};
+  size_t cachesize = 1; 
 
   int dim[3];
   dim[0] = dim0;
   dim[1] = (dim[0] + 1) % 3;
   dim[2] = (dim[1] + 1) % 3;
 
-  // Number of points per subcell face
+  // Number of points per face
   int npgf = (deg[dim[1]] + 1) * (deg[dim[2]] + 1);
 
-  // Number of subcell faces
+  // Number of faces
   int nf = (nraf[dim[0]] - 1) * nraf[dim[1]] * nraf[dim[2]];
-  assert(nf > 0);
 
-  size_t numworkitems = nf * npgf;
-  size_t groupsize = npgf;
-  init_DGFlux_CL(f, mcell, dim0, wn_cl, 4 * m * groupsize);
+  // debugging output
+  /* printf("\ndim0: %d\n", dim0); */
+  /* printf("dim: %d %d %d\n", dim[0], dim[1], dim[2]); */
+  /* printf("deg: %d %d %d\n", deg[0], deg[1], deg[2]); */
+  /* printf("nraf: %d %d %d\n", nraf[0], nraf[1], nraf[2]); */
+  /* printf("npgf: %d\n", npgf); */
+  /* printf("nf: %d\n", nf); */
 
-  // Launch the kernel
-  cl_int status;
-  status = clEnqueueNDRangeKernel(f->cli.commandqueue,
-				  f->dgflux,
-				  1,
-				  NULL,
-				  &numworkitems,
-				  &groupsize,
-				  nwait,
-				  wait,
-				  done);
-  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status >= CL_SUCCESS);
+  if(nf > 0) { // If there are faces to work on, launch the kernel
+    // Set kernel args
+    size_t numworkitems = nf * npgf;
+    size_t groupsize = npgf;
+#if _CACHEMEMORY
+  cachesize =  4 * m * groupsize;
+#endif
+    init_DGFlux_CL(simu, ie, dim0, w_cl, cachesize);
+
+    unsigned int nreadsdgflux = 4 * m;
+    unsigned int nmultsdgflux = 2601 + 92 + 28 * m;
+    nmultsdgflux += 3 * m; // Using NUMFLUX = NumFlux
+    simu->flops_flux += numworkitems * nmultsdgflux;
+    simu->reads_flux += numworkitems * nreadsdgflux;
+
+    // Launch the kernel
+    cl_int status;
+    status = clEnqueueNDRangeKernel(simu->cli.commandqueue,
+				    simu->dgflux,
+				    1,
+				    NULL,
+				    &numworkitems,
+				    &groupsize,
+				    nwait,
+				    wait,
+				    done);
+    if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+    assert(status >= CL_SUCCESS);
+  } else {
+    if(done != NULL)
+      clSetUserEventStatus(*done, CL_COMPLETE);
+  }
+
 }
 
 // Set kernel argument for DGVolume_CL
-void init_DGVolume_CL(MacroCell *mcell, field *f, cl_mem *wn_cl)
+void init_DGVolume_CL(Simulation *simu, cl_mem *w_cl, size_t cachesize)
 {
   //printf("DGVolume cachesize:%zu\n", cachesize);
 
   cl_int status;
   int argnum = 0;
-  cl_kernel kernel = f->dgvolume;
+  cl_kernel kernel = simu->dgvolume;
 
   status = clSetKernelArg(kernel,
                           argnum++,
                           sizeof(cl_mem),
-                          &f->param_cl);
+                          &simu->param_cl);
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 
-  status = clSetKernelArg(kernel,
-                          argnum++,
-                          sizeof(cl_mem),
-                          &mcell->physnode_cl);
-  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status >= CL_SUCCESS);
+  // ie
+  argnum++;
 
   status = clSetKernelArg(kernel,
                           argnum++,
                           sizeof(cl_mem),
-                          wn_cl);
+                          &simu->physnodes_cl);
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 
   status = clSetKernelArg(kernel,
                           argnum++,
-                          sizeof(cl_mem),
-                          f->dtwn_cl + mcell->ie);
-  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status >= CL_SUCCESS);
-
-  status = clSetKernelArg(kernel,
-                          argnum++,
-                          sizeof(real) * mcell->nrealsubcell,
-                          NULL);
-  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status >= CL_SUCCESS);
-  
-  status = clSetKernelArg(kernel,
-                          argnum++,
-			  sizeof(real) * mcell->nrealsubcell,
-                          NULL);
-  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status >= CL_SUCCESS);
-}
-
-// Apply division by the mass matrix OpenCL version
-void DGVolume_CL(MacroCell *mcell, field *f, cl_mem *wn_cl,
-		 cl_uint nwait, cl_event *wait, cl_event *done) 
-{
-  cl_kernel kernel = f->dgvolume;
-
-  int *param = f->interp_param;
-  int m = param[0];
-
-  size_t groupsize = mcell->npgsubcell;
-  size_t numworkitems = mcell->npg;
-  
-  init_DGVolume_CL(mcell, f, wn_cl);
-  int ie = mcell->ie;
-
-  cl_int status;
-  status = clEnqueueNDRangeKernel(f->cli.commandqueue,
-				  kernel,
-				  1,
-				  NULL,
-				  &numworkitems,
-				  &groupsize,
-				  nwait,
-				  wait,
-				  done);
-  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status >= CL_SUCCESS);
-}
-
-void init_DGSource_CL(MacroCell *mcell, field *f,
-		      real tnow, cl_mem *wn_cl)
-{
-  cl_int status;
-  int argnum = 0;
-  cl_kernel kernel = f->dgsource;
-
-  int ie = mcell->ie;
-  
-  status = clSetKernelArg(kernel,
-                          argnum++,
-                          sizeof(cl_mem),
-                          &f->param_cl);
-  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status >= CL_SUCCESS);
-
-  status = clSetKernelArg(kernel,
-                          argnum++,
-                          sizeof(cl_mem),
-                          &mcell->physnode_cl);
-  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status >= CL_SUCCESS);
-
-  status = clSetKernelArg(kernel,
-                          argnum++,
-                          sizeof(cl_mem),
-			  &mcell->mass_cl);
-  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status >= CL_SUCCESS);
-  
-  status = clSetKernelArg(kernel,
-  			  argnum++,
-  			  sizeof(real),
-  			  &tnow);
-  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status >= CL_SUCCESS);
-
-  status = clSetKernelArg(kernel,
-                          argnum++,
-                          sizeof(cl_mem),
-                          wn_cl);
-  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status >= CL_SUCCESS);
-
-  status = clSetKernelArg(kernel,
-                          argnum++,
-                          sizeof(cl_mem),
-                          f->dtwn_cl + mcell->ie);
-  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status >= CL_SUCCESS);
-
-  status = clSetKernelArg(kernel,
-                          argnum++,
-			  sizeof(real) * mcell->nrealsubcell,
-                          NULL);
-  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status >= CL_SUCCESS);
-  
-  status = clSetKernelArg(kernel,
-                          argnum++,
-			  sizeof(real) * mcell->nrealsubcell,
-                          NULL);
-  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status >= CL_SUCCESS);
-}
-
-// Apply division by the mass matrix OpenCL version
-void DGSource_CL(MacroCell *mcell, field *f, real tnow, cl_mem *wn_cl,
-		 cl_uint nwait, cl_event *wait, cl_event *done) 
-{
-  cl_kernel kernel = f->dgsource;
-  int *param = f->interp_param;
-
-  cl_int status;
-  int m = param[0];
-
-  size_t groupsize = mcell->npgsubcell;
-  size_t numworkitems = mcell->npg;
-     
-  init_DGSource_CL(mcell, f, tnow, wn_cl);
-  
-  status = clEnqueueNDRangeKernel(f->cli.commandqueue,
-				  kernel,
-				  1,
-				  NULL,
-				  &numworkitems,
-				  &groupsize,
-				  nwait,
-				  wait,
-				  done);
-  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status >= CL_SUCCESS);
-}
-
-void set_buf_to_zero_cl(cl_mem *buf, MacroCell *mcell, field *f,
-			cl_uint nwait, cl_event *wait,  cl_event *done)
-{
-  cl_int status;
-
-  cl_kernel kernel = f->zero_buf;
-
-  int argnum = 0;
-  
-  status = clSetKernelArg(kernel,
-                          argnum++, 
-                          sizeof(cl_mem),
-                          buf);
-  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status >= CL_SUCCESS);
-  
-  size_t numworkitems = mcell->nreal;
-  status = clEnqueueNDRangeKernel(f->cli.commandqueue,
-				  kernel,
-				  1, NULL,
-				  &numworkitems,
-				  NULL,
-				  nwait, 
-				  wait, 
-				  done);
-  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status >= CL_SUCCESS);
-}
-		
-// Apply the Discontinuous Galerkin approximation for computing the
-// time derivative of the field. OpenCL version.
-// wn_cl is an array of pointers to the macrocell wn_cls.
-void dtfield_noextract_CL(field *f, real tnow, cl_mem *wn_cl,
-			  cl_uint nwait, cl_event *wait, cl_event *done)
-{
-  const int nmacro = f->macromesh.nbelems;
-
-  cl_event macrofaces;
-  cl_event macrobounds;
-  cl_event zbuf;
-
-  // We need to add an event for each wave so that the following
-  // kernels have nwait=1, which reduces the overhead of launching
-  // kernels.
-  cl_event * cl_iwave = f->niwaves == 0 ? NULL :
-    calloc(f->niwaves, sizeof(cl_event));
-  cl_event * cl_bwave = f->nbwaves == 0 ? NULL :
-    calloc(f->nbwaves, sizeof(cl_event));
-  
-  for(int ie = 0; ie < nmacro; ++ie) {
-    MacroCell *mcell = f->mcell + ie;
-    set_buf_to_zero_cl(f->dtwn_cl + ie, mcell, f,
-		       nwait, wait, f->clv_zbuf + ie);
-  }
-
-  empty_kernel(f, nmacro, f->clv_zbuf, &zbuf);
-  
-  if(f->niwaves > 0) {
-    for(int i = 0; i < f->niwaves; ++i) {
-      for(int j = 0; j < f->iwavecount[i]; ++j) {
-	int ifa = f->iwave[i][j];
-	MacroFace *mface = f->mface + ifa;
-	DGMacroCellInterface_CL(mface, f, wn_cl,
-				1,
-				(i == 0) ?  &zbuf: cl_iwave + i - 1,
-				f->clv_iwave[i] + j);
-      }
-      clWaitForEvents(f->iwavecount[i], f->clv_iwave[i]);
-      empty_kernel(f, f->iwavecount[i], f->clv_iwave[i],
-		   cl_iwave + i);
-    }
-    empty_kernel(f, 1, f->clv_iwave[f->niwaves - 1], &macrofaces);
-  } else {
-    empty_kernel(f, nmacro, f->clv_zbuf, &macrofaces);
-  }
-  
-  if(f->nbwaves > 0) {
-    for(int i = 0; i < f->nbwaves; ++i) {
-      for(int j = 0; j < f->bwavecount[i]; ++j) {
-	int ifa = f->bwave[i][j];
-	MacroFace *mface = f->mface + ifa;
-	DGBoundary_CL(mface, f, wn_cl, f->tnow,
-		      1, (i == 0) ? &macrofaces : cl_bwave + i - 1,
-		      f->clv_bwave[i] + j);
-      }
-      clWaitForEvents(f->bwavecount[i], f->clv_bwave[i]);
-      empty_kernel(f, f->bwavecount[i], f->clv_bwave[i],
-		   cl_bwave + i);
-    }
-    empty_kernel(f, 1, f->clv_bwave[f->nbwaves - 1], &macrobounds);
-  } else {
-    empty_kernel(f, 1, &macrofaces, &macrobounds);
-  }
-
-  unsigned int ndim = 3;
-  if(f->macromesh.is2d)
-    ndim = 2;
-  if(f->macromesh.is1d)
-    ndim = 1;
-  
-  // The kernels for the intra-macrocell computations can be launched
-  // in parallel between macrocells.
-  for(int ie = 0; ie < nmacro; ++ie) {
-    MacroCell *mcell = f->mcell + ie;
-
-    int nflux = 0;
-    int fluxlist[3];
-    for(int d = 0; d < ndim; ++d) {
-      if(mcell->raf[d] > 1) {
-	fluxlist[nflux++] = d;
-      }
-    }
-
-    DGFlux_CL(mcell, f, fluxlist[0], wn_cl + ie, 
-	      1, &macrobounds,
-	      f->clv_flux[fluxlist[0]] + ie);
-    for(int d = 1; d < nflux; ++d) {
-      DGFlux_CL(mcell, f, fluxlist[d], wn_cl + ie, 
-		1, f->clv_flux[fluxlist[d - 1]] + ie,
-		f->clv_flux[fluxlist[d]] + ie);
-    }
-    
-    DGVolume_CL(mcell, f, wn_cl + ie,
-  		1, f->clv_flux[nflux - 1] + ie, f->clv_volume + ie);
-
-    if(f->use_source_cl) {
-      DGSource_CL(mcell, f, tnow, wn_cl + ie, 
-		  1, f->clv_volume + ie, f->clv_source + ie);
-    }
-    
-    DGMass_CL(mcell, f,
-  	      1,
-	      f->use_source_cl ? f->clv_source + ie : f->clv_volume + ie,
-  	      f->clv_mass + ie);
-  }
-
-  empty_kernel(f, nmacro, f->clv_mass, done);
-  
-  for(int i = 0; i < f->niwaves; ++i) {
-    for(int j = 0; j < f->iwavecount[i]; ++j) {
-      f->minter_calls++;
-      f->minter_time += clv_duration(f->clv_iwave[i][j]);
-    }
-  }
-  for(int i = 0; i < f->nbwaves; ++i) {
-    for(int j = 0; j < f->bwavecount[i]; ++j) {
-      f->boundary_calls++;
-      f->boundary_time += clv_duration(f->clv_bwave[i][j]);
-    }
-  }
-  for(int ie = 0; ie < nmacro; ++ie) {
-    f->zbuf_calls++;
-    f->zbuf_time += clv_duration(f->clv_zbuf[ie]);
-    if(f->use_source_cl) {
-      f->source_calls++;
-      f->source_time += clv_duration(f->clv_source[ie]);
-    }
-    f->flux_calls++;
-    f->flux_time += clv_duration(f->clv_flux[0][ie]);
-    if(ndim > 1) {
-      f->flux_time += clv_duration(f->clv_flux[1][ie]);
-      f->flux_calls++;
-    }
-    if(ndim > 2) {
-      f->flux_calls++;
-      f->flux_time += clv_duration(f->clv_flux[2][ie]);
-    }
-    f->vol_calls++;
-    f->vol_time += clv_duration(f->clv_volume[ie]);
-    f->mass_calls++;
-    f->mass_time += clv_duration(f->clv_mass[ie]);
-  }
-
-  for(int i = 0; i < f->niwaves; ++i) {
-    clReleaseEvent(cl_iwave[i]);
-  }
-  if(f->niwaves > 0)
-    free(cl_iwave);
-  
-  for(int i = 0; i < f->nbwaves; ++i) {
-    clReleaseEvent(cl_bwave[i]);
-  }
-  if(f->nbwaves > 0)
-    free(cl_bwave);
-  
-  clReleaseEvent(macrobounds);
-  clReleaseEvent(macrofaces);
-}
-
-// Apply the Discontinuous Galerkin approximation for computing the
-// time derivative of the field. OpenCL version with face extraction.
-// wn_cl is an array of pointers to the macrocell wn_cls.
-void dtfield_extract_CL(field *f, real tnow, cl_mem *wn_cl,
-			cl_uint nwait, cl_event *wait, cl_event *done)
-{
-  const int nmacro = f->macromesh.nbelems;
-
-  cl_event macrobounds;
-  cl_event zbuf;
-
-  // We need to add an event for each wave so that the following
-  // kernels have nwait=1, which reduces the overhead of launching
-  // kernels.
-
-  // FIXME: deal with the cases where these can be zero.
-  const int nboundary = f->macromesh.nboundaryfaces;
-  const int ninterface = f->macromesh.nmacrointerfaces;
-  
-  unsigned int ndim = 3;
-  if(f->macromesh.is2d)
-    ndim = 2;
-  if(f->macromesh.is1d)
-    ndim = 1;
-  
-  const int ncellfaces = 2 * ndim;
-  // 1d: face 0, 2; 2d: face 0, 1, 2, 3, etc.
-  int ifalist[6] = {0, 2, 1, 3, 4, 5};
-
-  // TODO: move to field struct.
-  const int nextract = ncellfaces * nmacro;
-  cl_event clv_extracts;
-  cl_event clv_inserts;
-
-  cl_event clv_bi[2];
-  
-  for(int ie = 0; ie < nmacro; ++ie) {
-    set_buf_to_zero_cl(f->dtwn_cl + ie, f->mcell + ie, f,
-		       nwait, wait, f->clv_zbuf + ie);
-  }
-
-  empty_kernel(f, nmacro, f->clv_zbuf, &zbuf);
-  
-  for(int ie = 0; ie < f->macromesh.nbelems; ++ie) {
-    MacroCell *mcell = f->mcell + ie;
-    int offset = ie * ncellfaces;
-    for(int ifa = 0; ifa < ncellfaces; ++ifa) {
-      ExtractInterface_CL(mcell, f, ifalist[ifa], wn_cl[ie],
-			  1, &zbuf, f->clv_extract + offset + ifa);
-    }
-  }
-
-  empty_kernel(f, nextract, f->clv_extract, &clv_extracts);
-  
-  if(nboundary > 0) {
-    for(int i = 0; i < nboundary; ++i) {
-      int ifa = f->macromesh.boundaryface[i];
-      MacroFace *mface = f->mface + ifa;
-      int ieL = mface->ieL;
-      MacroCell *mcellL = f->mcell + ieL;
-      ExtractedDGBoundary_CL(mface, f, tnow,
-			     1, &clv_extracts, f->clv_boundary + i);
-    }
-    empty_kernel(f, nboundary, f->clv_boundary, &clv_bi[0]);
-  } else {
-    empty_kernel(f, 1, &clv_extracts, &clv_bi[0]);
-  }
-
-  if(ninterface > 0) {
-    for(int i = 0; i < ninterface; ++i) {
-      int ifa = f->macromesh.macrointerface[i];
-      MacroFace *mface = f->mface + ifa;
-      ExtractedDGInterface_CL(mface, f, 1, &clv_extracts, f->clv_interface + i);
-    }
-    empty_kernel(f, ninterface, f->clv_interface, &clv_bi[1]);
-  } else {
-    empty_kernel(f, 1, &clv_extracts, &clv_bi[1]);
-  }
-
-  for(int ie = 0; ie < f->macromesh.nbelems; ++ie) {
-    MacroCell *mcell = f->mcell + ie;
-    int offset = ie * ncellfaces;
-    for(int ifa = 0; ifa < ncellfaces; ++ifa) {
-      InsertInterface_CL(mcell, f, ifalist[ifa], f->dtwn_cl[ie],
-			 ifa == 0 ? 2 : 1,
-			 ifa == 0 ? clv_bi : f->clv_insert + offset + ifa - 1,
-			 f->clv_insert + offset + ifa);
-    }
-  }
-
-  empty_kernel(f, nextract, f->clv_insert, &macrobounds);
-  
-  // The kernels for the intra-macrocell computations can be launched
-  // in parallel between macrocells.
-  for(int ie = 0; ie < nmacro; ++ie) {
-    MacroCell *mcell = f->mcell + ie;
-
-    int nflux = 0;
-    int fluxlist[3];
-    for(int d = 0; d < ndim; ++d) {
-      if(mcell->raf[d] > 1) {
-	fluxlist[nflux++] = d;
-      }
-    }
-
-    DGFlux_CL(mcell, f, fluxlist[0], wn_cl + ie, 
-	      1, &macrobounds,
-	      f->clv_flux[fluxlist[0]] + ie);
-    for(int d = 1; d < nflux; ++d) {
-      DGFlux_CL(mcell, f, fluxlist[d], wn_cl + ie, 
-		1, f->clv_flux[fluxlist[d - 1]] + ie,
-		f->clv_flux[fluxlist[d]] + ie);
-    }
-    
-    DGVolume_CL(mcell, f, wn_cl + ie,
-  		1, f->clv_flux[nflux - 1] + ie, f->clv_volume + ie);
-
-    if(f->use_source_cl) {
-      DGSource_CL(mcell, f, tnow, wn_cl + ie, 
-		  1, f->clv_volume + ie, f->clv_source + ie);
-    }
-    
-    DGMass_CL(mcell, f,
-  	      1,
-	      f->use_source_cl ? f->clv_source + ie : f->clv_volume + ie,
-  	      f->clv_mass + ie);
-  }
-
-  empty_kernel(f, nmacro, f->clv_mass, done);
-
-  clWaitForEvents(nmacro, f->clv_mass);
-  
-  for(int ie = 0; ie < nmacro; ++ie) {
-    f->zbuf_calls++;
-    f->zbuf_time += clv_duration(f->clv_zbuf[ie]);
-    if(f->use_source_cl) {
-      f->source_calls++;
-      f->source_time += clv_duration(f->clv_source[ie]);
-    }
-    f->flux_calls++;
-    f->flux_time += clv_duration(f->clv_flux[0][ie]);
-    if(ndim > 1) {
-      f->flux_time += clv_duration(f->clv_flux[1][ie]);
-      f->flux_calls++;
-    }
-    if(ndim > 2) {
-      f->flux_calls++;
-      f->flux_time += clv_duration(f->clv_flux[2][ie]);
-    }
-    f->vol_calls++;
-    f->vol_time += clv_duration(f->clv_volume[ie]);
-    f->mass_calls++;
-    f->mass_time += clv_duration(f->clv_mass[ie]);
-  }
-
-  for(int ie = 0; ie < f->macromesh.nbelems; ++ie) {
-    int offset = ie * ncellfaces;
-    for(int ifa = 0; ifa < ncellfaces; ++ifa) {
-      f->extractinsert_calls++;
-      f->extractinsert_time += clv_duration(f->clv_extract[offset + ifa]);
-      f->extractinsert_calls++;
-      f->extractinsert_time += clv_duration(f->clv_insert[offset + ifa]);
-    }
-  }
-
-  for(int i = 0; i < nboundary; ++i) {
-    f->boundary_calls++;
-    f->boundary_time += clv_duration(f->clv_boundary[i]);
-  }
-
-  for(int i = 0; i < ninterface; ++i) {
-    f->minter_calls++;
-    f->minter_time += clv_duration(f->clv_interface[i]);
-  }
-
-  clReleaseEvent(clv_extracts);
-  clReleaseEvent(clv_inserts);
-  
-  clReleaseEvent(clv_bi[0]);
-  clReleaseEvent(clv_bi[1]);
-  
-  clReleaseEvent(macrobounds);
-}
-
-void dtfield_CL(field *f, real tnow, cl_mem *wn_cl,
-		  cl_uint nwait, cl_event *wait, cl_event *done)
-{
-  if(f->extract_cl)
-    dtfield_extract_CL(f, tnow, wn_cl, nwait, wait, done);
-  else
-    dtfield_noextract_CL(f, tnow, wn_cl, nwait, wait, done);
-}
-
-// Set kernel arguments for first stage of RK2
-// wnp1_cl is a pointer to an array of cl_mems, one per macrocell
-void init_RK2_CL_stage1(MacroCell *mcell, field *f,
-			const real dt, cl_mem *wnp1_cl)
-{
-  cl_kernel kernel = f->RK_out_CL;
-  cl_int status;
-  int argnum = 0;
-
-  status = clSetKernelArg(kernel,
-			  argnum++, 
-                          sizeof(cl_mem),
-                          wnp1_cl + mcell->ie);
-  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status >= CL_SUCCESS);
-  
-  status = clSetKernelArg(kernel,
-			  argnum++, 
-                          sizeof(cl_mem),
-                          f->wn_cl + mcell->ie);
-  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status >= CL_SUCCESS);
-
-  status = clSetKernelArg(kernel,
-			  argnum++, 
-                          sizeof(cl_mem),
-                          f->dtwn_cl + mcell->ie);
-  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status >= CL_SUCCESS);
-  
-  status = clSetKernelArg(kernel,
-			  argnum++,
-			  sizeof(real),
-			  &dt);
-  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status >= CL_SUCCESS);
-}
-
-// Launch first stage of RK2 integration
-void RK2_CL_stage1(MacroCell *mcell, field *f,
-		   size_t numworkitems, // FIXME: remove
-		   cl_uint nwait, cl_event *wait, cl_event *done)
-{
-  cl_int status;
-  size_t nwork = mcell->nreal;
-  
-  status = clEnqueueNDRangeKernel(f->cli.commandqueue,
-				  f->RK_out_CL,
-				  1, 
-				  NULL,
-				  &nwork,
-				  NULL,
-				  nwait, 
-				  wait, 
-				  done);
-  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status >= CL_SUCCESS);
-}
-
-// Set kernel arguments for second stage of RK2
-void init_RK2_CL_stage2(MacroCell *mcell, field *f, const real dt) 
-{
-  cl_kernel kernel = f->RK_in_CL;
-  cl_int status;
-  int argnum = 0;
-
-  status = clSetKernelArg(kernel,
-			  argnum++, 
-                          sizeof(cl_mem),
-                          f->wn_cl + mcell->ie);
-  assert(status >= CL_SUCCESS);
-
-  status = clSetKernelArg(kernel,
-			  argnum++,
-                          sizeof(cl_mem),
-                          f->dtwn_cl + mcell->ie);
-  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status >= CL_SUCCESS);
-
-  status = clSetKernelArg(kernel,
-			  argnum++,
-			  sizeof(real),
-			  &dt);
-  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status >= CL_SUCCESS);
-}
-
-// Launch second stage of RK2 integration
-void RK2_CL_stage2(MacroCell *mcell, field *f,
-		   size_t numworkitems, // FIXME: remove
-		   cl_uint nwait, cl_event *wait, cl_event *done)
-{
-  cl_int status;
-
-  size_t nwork = mcell->nreal;
-
-  status = clEnqueueNDRangeKernel(f->cli.commandqueue,
-				  f->RK_in_CL,
-				  1, NULL,
-				  &nwork,
-				  NULL,
-				  nwait, wait, done);
-  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status >= CL_SUCCESS);
-}
-
-// Time integration by a second-order Runge-Kutta algorithm, OpenCL version.
-void RK2_CL(field *f, real tmax, real dt,
-	    cl_uint nwait, cl_event *wait, cl_event *done) 
-{
-  if(dt <= 0)
-    dt = set_dt(f);
-
-  f->itermax = tmax / dt;
-  int freq = (1 >= f->itermax / 10)? 1 : f->itermax / 10;
-  int iter = 0;
-
-  cl_int status;
-
-  const int nmacro = f->macromesh.nbelems;
-  
-  cl_mem *wnp1_cl = calloc(nmacro, sizeof(cl_mem));
-  for(int ie = 0; ie < nmacro; ++ie) {
-    MacroCell *mcell = f->mcell + ie;
-    wnp1_cl[ie] = clCreateBuffer(f->cli.context,
-				 0,
-				 sizeof(real) * mcell->nreal,
-				 NULL,
-				 &status);
-    if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
-    assert(status >= CL_SUCCESS);
-  }
-
-  cl_event start;
-  cl_event *stage1 = calloc(nmacro, sizeof(cl_event));
-  cl_event *stage2 = calloc(nmacro, sizeof(cl_event));
-  cl_event source1;
-  cl_event source2;
-
-  printf("Starting RK2_CL\n");
-  
-  struct timeval t_start;
-  gettimeofday(&t_start, NULL);
-
-  empty_kernel(f, nwait, wait, &start);
-  while(f->tnow < tmax) {
-    
-    if (iter % freq == 0)
-      printf("t=%f iter=%d/%d dt=%f\n", f->tnow, iter, f->itermax, dt);
-
-    // stage 0
-    dtfield_CL(f, f->tnow, f->wn_cl,
-	       1, &start, &source1);
-    
-    for(int ie = 0; ie < nmacro; ++ie) { 
-      MacroCell *mcell = f->mcell + ie;
-      init_RK2_CL_stage1(mcell, f, 0.5 * dt, wnp1_cl);
-      RK2_CL_stage1(mcell, f, f->wsize, 1, &source1, stage1 + ie);
-    }
-    
-    f->tnow += 0.5 * dt;
-
-    // stage 1
-    dtfield_CL(f, f->tnow, wnp1_cl,
-	       nmacro, stage1, &source2);
-    for(int ie = 0; ie < nmacro; ++ie) { 
-      MacroCell *mcell = f->mcell + ie;
-      init_RK2_CL_stage2(mcell, f, dt);
-      RK2_CL_stage2(mcell, f, f->wsize, 1, &source2, stage2 + ie);
-    }
-    
-    f->tnow += 0.5 * dt;
-
-    clWaitForEvents(nmacro, stage2);
-    for(int ie = 0; ie < nmacro; ++ie) {
-      f->rk_calls++;
-      f->rk_time += clv_duration(stage1[ie]);
-      f->rk_calls++;
-      f->rk_time += clv_duration(stage2[ie]);
-    }
-
-    iter++;
-  }
-
-  printf("t=%f iter=%d/%d dt=%f\n", f->tnow, iter, f->itermax, dt);
-  empty_kernel(f, nmacro, stage2, done);
-  
-  struct timeval t_end;
-  gettimeofday(&t_end, NULL);
-
-  // Release events
-  clReleaseEvent(start);
-  for(int ie = 0; ie < nmacro; ++ie) {
-    clReleaseEvent(stage1[ie]);
-    clReleaseEvent(stage2[ie]);
-  }
-  free(stage2);
-  free(stage1);
-
-  // Release memory
-  for(int ie = 0; ie < nmacro; ++ie) {
-    clReleaseMemObject(wnp1_cl[ie]);
-  }
-  free(wnp1_cl);
-  
-  double rkseconds = (t_end.tv_sec - t_start.tv_sec) * 1.0 // seconds
-    + (t_end.tv_usec - t_start.tv_usec) * 1e-6; // microseconds
-  printf("\nTotal RK time (s):\n%f\n", rkseconds);
-  printf("\nTotal RK time per time-step (s):\n%f\n", rkseconds / iter );
-}
-
-void RK4_CL_stageA(MacroCell *mcell, field *f, 
-		   cl_mem *wnp1, cl_mem *wn, cl_mem *dtw, 
-		   const real dt, size_t numworkitems, 
-		   cl_uint nwait, cl_event *wait, cl_event *done)
-{
-  cl_kernel kernel = f->RK4_first_stages;
-  cl_int status;
-  int argnum = 0;
-
-  status = clSetKernelArg(kernel,
-			  argnum++, 
-                          sizeof(cl_mem),
-                          wnp1);
-  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status >= CL_SUCCESS);
-  
-  status = clSetKernelArg(kernel,
-			  argnum++, 
-                          sizeof(cl_mem),
-                          wn);
-  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status >= CL_SUCCESS);
-
-  status = clSetKernelArg(kernel,
-			  argnum++, 
-                          sizeof(cl_mem),
-                          dtw + mcell->ie);
-  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status >= CL_SUCCESS);
-
-  //real dt,
-  status = clSetKernelArg(kernel,
-			  argnum++,
-			  sizeof(real),
-			  &dt);
-  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status >= CL_SUCCESS);
-
-  size_t nwork = mcell->nreal;
-  status = clEnqueueNDRangeKernel(f->cli.commandqueue,
-  				  kernel,
-  				  1,
-  				  NULL,
-  				  &nwork,
-  				  NULL,
-  				  nwait,
-  				  wait,
-  				  done);
-  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
-  assert(status >= CL_SUCCESS);
-}
-
-void RK4_final_inplace_CL(MacroCell *mcell, field *f, 
-			  cl_mem *w_cl, cl_mem *l1, cl_mem *l2, cl_mem *l3, 
-			  cl_mem *dtw_cl, const real dt, 
-			  const size_t numworkitems, 
-			  cl_uint nwait, cl_event *wait, cl_event *done)
-{
-  cl_kernel kernel = f->RK4_final_stage;
-  cl_int status;
-  int argnum = 0;
-
-  status = clSetKernelArg(kernel,
-			  argnum++, 
                           sizeof(cl_mem),
                           w_cl);
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 
   status = clSetKernelArg(kernel,
-			  argnum++, 
+                          argnum++,
                           sizeof(cl_mem),
-                          l1);
+                          &simu->dtw_cl);
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 
   status = clSetKernelArg(kernel,
-			  argnum++, 
+                          argnum++,
+                          sizeof(schnaps_real) * cachesize,
+                          NULL);
+  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status >= CL_SUCCESS);
+
+  /* status = clSetKernelArg(kernel, */
+  /*                         argnum++, */
+  /*                         sizeof(cl_real) * cachesize, */
+  /*                         NULL); */
+  /* if(status < CL_SUCCESS) printf("%s\n", clErrorString(status)); */
+  /* assert(status >= CL_SUCCESS); */
+}
+
+// Apply division by the mass matrix OpenCL version
+void DGVolume_CL(int ie, Simulation *simu, cl_mem *w_cl,
+		 cl_uint nwait, cl_event *wait, cl_event *done)
+{
+  cl_kernel kernel = simu->dgvolume;
+  int *param = simu->interp_param;
+  size_t cachesize = 1; 
+  cl_int status;
+  int m = param[0];
+  const int npgc[3] = {param[1] + 1, param[2] + 1, param[3] + 1};
+  const int npg = npgc[0] * npgc[1] * npgc[2];
+  size_t groupsize = npg;
+  // The total work items number is the number of glops in a subcell
+  // * number of subcells
+  const int nraf[3] = {param[4], param[5], param[6]};
+  size_t numworkitems = nraf[0] * nraf[1] * nraf[2] * groupsize;
+
+  unsigned int nreadsdgvol = 2 * m; // read m from w, write m to dtw
+  unsigned int nmultsdgvol = 2601 + (npgc[0] + npgc[1] + npgc[2]) * 6 * m;
+  nmultsdgvol += (npgc[0] + npgc[1] + npgc[2]) * 54;
+  // Using NUMFLUX = NumFlux (3 * m multiplies):
+  nmultsdgvol += (npgc[0] + npgc[1] + npgc[2]) * 6 * m;
+ #if _CACHEMEMORY
+  cachesize = 2 * groupsize * m;
+#endif
+  //printf("cache memory = :%zu \n",cachesize);
+  init_DGVolume_CL(simu, w_cl, cachesize);
+
+  simu->flops_vol += numworkitems * nmultsdgvol;
+  simu->reads_vol += numworkitems * nreadsdgvol;
+
+  status = clSetKernelArg(kernel,
+			  1,
+			  sizeof(int),
+			  &ie);
+  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status >= CL_SUCCESS);
+
+  // The groupsize is the number of glops in a subcell
+  /* size_t groupsize = (param[1] + 1)* (param[2] + 1)*(param[3] + 1); */
+  /* // The total work items number is the number of glops in a subcell */
+  /* // * number of subcells */
+  /* size_t numworkitems = param[4] * param[5] * param[6] * groupsize; */
+  //printf("groupsize=%zd numworkitems=%zd\n", groupsize, numworkitems);
+  status = clEnqueueNDRangeKernel(simu->cli.commandqueue,
+				  kernel,
+				  1,
+				  NULL,
+				  &numworkitems,
+				  &groupsize,
+				  nwait,
+				  wait,
+				  done);
+  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status >= CL_SUCCESS);
+
+}
+
+// Set kernel argument for DGCharge_CL
+void init_DGCharge_CL(Simulation *simu, cl_mem *w_cl)
+{
+  //printf("DGVolume cachesize:%zu\n", cachesize);
+
+  cl_int status;
+  int argnum = 0;
+  cl_kernel kernel = simu->dgcharge;
+
+  status = clSetKernelArg(kernel,
+                          argnum++,
                           sizeof(cl_mem),
-                          l2);
+                          &simu->param_cl);
+  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status >= CL_SUCCESS);
+
+  // ie
+  argnum++;
+
+  status = clSetKernelArg(kernel,
+                          argnum++,
+                          sizeof(cl_mem),
+                          w_cl);
+  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status >= CL_SUCCESS);
+}
+
+// Set kernel argument for DGVolume_CL
+void init_DGSource_CL(Simulation *simu, cl_mem *w_cl, size_t cachesize)
+{
+  //printf("DGVolume cachesize:%zu\n", cachesize);
+
+  cl_int status;
+  int argnum = 0;
+  cl_kernel kernel = simu->dgsource;
+
+  status = clSetKernelArg(kernel,
+                          argnum++,
+                          sizeof(cl_mem),
+                          &simu->param_cl);
+  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status >= CL_SUCCESS);
+
+  // ie
+  argnum++;
+
+  status = clSetKernelArg(kernel,
+                          argnum++,
+                          sizeof(cl_mem),
+                          &simu->physnodes_cl);
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 
   status = clSetKernelArg(kernel,
-			  argnum++, 
-                          sizeof(cl_mem),
-                          l3);
+  			  argnum++,
+  			  sizeof(schnaps_real),
+  			  &simu->tnow);
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 
   status = clSetKernelArg(kernel,
-			  argnum++, 
+                          argnum++,
                           sizeof(cl_mem),
-                          dtw_cl + mcell->ie);
+                          w_cl);
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 
-  real halfdt = 0.5 * dt;
+  status = clSetKernelArg(kernel,
+                          argnum++,
+                          sizeof(cl_mem),
+                          &simu->dtw_cl);
+  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status >= CL_SUCCESS);
+
+  status = clSetKernelArg(kernel,
+                          argnum++,
+                          sizeof(schnaps_real) * cachesize,
+                          NULL);
+  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status >= CL_SUCCESS);
+}
+
+// compute charge in opencl
+void DGCharge_CL(Simulation *simu, cl_mem *w_cl,
+		 cl_uint nwait, cl_event *wait, cl_event *done)
+{
+  cl_kernel kernel = simu->dgcharge;
+  int *param = simu->interp_param;
+
+  cl_int status;
+  int m = param[0];
+  size_t groupsize = (param[1] + 1) * (param[2] + 1) * (param[3] + 1);
+  // The total work items number is the number of glops in a subcell
+  // times the number of subcells
+  size_t numworkitems = param[4] * param[5] * param[6] * groupsize;
+  __constant KineticData *kd = &schnaps_kinetic_data; //xxx _constant
+  init_DGCharge_CL(simu, w_cl);
+  void* chkptr_rho[simu->macromesh.nbelems];
+  void* chkptr_phi[simu->macromesh.nbelems];
+  void* chkptr_elec[simu->macromesh.nbelems];
+  for(int ie = 0; ie < simu->macromesh.nbelems; ie++) {
+    // Loop on the elements
+    status = clSetKernelArg(kernel,
+			    1,
+			    sizeof(int),
+			    &ie);
+    if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+    assert(status >= CL_SUCCESS);
+    // The groupsize is the number of glops in a subcell
+    size_t groupsize = (param[1] + 1)* (param[2] + 1)*(param[3] + 1);
+    // The total work items number is the number of glops in a subcell
+    // * number of subcells
+    size_t numworkitems = param[4] * param[5] * param[6] * groupsize;
+    //printf("groupsize=%zd numworkitems=%zd\n", groupsize, numworkitems);
+    status = clEnqueueNDRangeKernel(simu->cli.commandqueue,
+    				    kernel,
+    				    1,
+    				    NULL,
+    				    &numworkitems,
+    				    &groupsize,
+    				    nwait,
+    				    wait,
+    				    //NULL);
+                                    simu->clv_charge + ie); //bug here
+    /* 	CopyfieldtoCPU(simu); */
+    /* if(ie == 0) PlotFields(kd->index_rho,(1==0),simu,"rho","rho1.msh"); */
+    /* assert(1==0); */
+    if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+    assert(status >= CL_SUCCESS);
+
+    // accès à  la charge en Read Only -> cpu
+    int woffset = ie * m * NPG(param + 1, param + 4);
+    field * f = simu->fd + ie; 
+    int start = f->varindex(param + 1, param + 4, m, 0, kd->index_rho) + woffset;
+    int end = f->varindex(param + 1, param + 4, m, 0, kd->index_rho + 1) + woffset;
+    size_t soffset = start * sizeof(schnaps_real);
+    chkptr_rho[ie] = clEnqueueMapBuffer(simu->cli.commandqueue,
+				*w_cl, // buffer to copy from
+				CL_TRUE, // block until the buffer is available
+				CL_MAP_READ, // we just want to see the results
+				soffset, // offset
+				(end - start) * sizeof(schnaps_real), // buffersize
+				1, simu->clv_charge + ie, NULL, // events management
+				&status);
+    if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+    assert(status >= CL_SUCCESS);
+    assert(chkptr_rho[ie] == simu->w + start);
+    // accès à  phi en write Only -> cpu
+    start = f->varindex(param + 1, param + 4, m, 0, kd->index_phi) + woffset;
+    end = f->varindex(param + 1, param + 4, m, 0, kd->index_phi + 1) + woffset;
+    soffset = start * sizeof(schnaps_real);
+    chkptr_phi[ie] = clEnqueueMapBuffer(simu->cli.commandqueue,
+				*w_cl, // buffer to copy from
+				CL_TRUE, // block until the buffer is available
+				CL_MAP_WRITE, // we just want to see the results
+				soffset, // offset
+				(end - start) * sizeof(schnaps_real), // buffersize
+				0, NULL, NULL, // events management
+				&status);
+    if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+    assert(status >= CL_SUCCESS);
+    assert(chkptr_phi[ie] == simu->w + start);
+    // copier ex ey ez en Write Only
+    start = f->varindex(param + 1, param + 4, m, 0, kd->index_ex) + woffset;
+    end = f->varindex(param + 1, param + 4, m, 0, kd->index_ez + 1) + woffset;
+    soffset = start * sizeof(schnaps_real);
+    chkptr_elec[ie] = clEnqueueMapBuffer(simu->cli.commandqueue,
+				*w_cl, // buffer to copy from
+				CL_TRUE, // block until the buffer is available
+				CL_MAP_WRITE, // we just want to see the results
+				soffset, // offset
+				(end - start) * sizeof(schnaps_real), // buffersize
+				0, NULL, NULL, // events management
+				&status);
+    if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+    assert(status >= CL_SUCCESS);
+    assert(chkptr_elec[ie] == simu->w + start);
+  }
+  // résoudre poisson
+  //status = clFinish(simu->cli.commandqueue);
+  UpdateGyroPoisson(simu);
+ 
+  for(int ie = 0; ie < simu->macromesh.nbelems; ie++) {
+
+    // libère accès à  la charge en Read Only -> cpu
+ 
+    status = clEnqueueUnmapMemObject (simu->cli.commandqueue,
+				*w_cl, // buffer to copy from
+				chkptr_rho[ie],
+				0, NULL, NULL);
+    if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+
+    status = clEnqueueUnmapMemObject (simu->cli.commandqueue,
+				*w_cl, // buffer to copy from
+				chkptr_phi[ie],
+				0, NULL, NULL);
+    if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+
+    status = clEnqueueUnmapMemObject (simu->cli.commandqueue,
+				*w_cl, // buffer to copy from
+				chkptr_elec[ie],
+				0, NULL, done);
+    if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+    
+  }
+
+  
+  status = clFinish(simu->cli.commandqueue);
+}
+
+
+
+
+// Apply division by the mass matrix OpenCL version
+void DGSource_CL(int ie, Simulation *simu, cl_mem *w_cl,
+		 cl_uint nwait, cl_event *wait, cl_event *done)
+{
+  cl_kernel kernel = simu->dgsource;
+  int *param = simu->interp_param;
+
+  cl_int status;
+  int m = param[0];
+  size_t groupsize = (param[1] + 1) * (param[2] + 1) * (param[3] + 1);
+  // The total work items number is the number of glops in a subcell
+  // times the number of subcells
+  size_t numworkitems = param[4] * param[5] * param[6] * groupsize;
+
+  /* unsigned int nreadsdgvol = 2 * m; // read m from w, write m to dtw */
+  /* unsigned int nmultsdgvol = 1296 + m; */
+  /* nmultsdgvol += 3 * m; // Using NUMFLUX = NumFlux */
+
+  /* simu->nmults += numworkitems * nmultsdgvol; */
+  /* simu->nreads += numworkitems * nreadsdgvol; */
+
+  init_DGSource_CL(simu, w_cl, 2 * groupsize * m);
+
+
+  // Loop on the elements
+  status = clSetKernelArg(kernel,
+			  1,
+			  sizeof(int),
+			  &ie);
+  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status >= CL_SUCCESS);
+
+  // The groupsize is the number of glops in a subcell
+  /* size_t groupsize = (param[1] + 1)* (param[2] + 1)*(param[3] + 1); */
+  /* // The total work items number is the number of glops in a subcell */
+  /* // * number of subcells */
+  /* size_t numworkitems = param[4] * param[5] * param[6] * groupsize; */
+  /* //printf("groupsize=%zd numworkitems=%zd\n", groupsize, numworkitems); */
+  status = clEnqueueNDRangeKernel(simu->cli.commandqueue,
+				  kernel,
+				  1,
+				  NULL,
+				  &numworkitems,
+				  &groupsize,
+				  nwait,
+				  wait,
+				  done);
+  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status >= CL_SUCCESS);
+
+}
+
+void set_buf_to_zero_cl(cl_mem *buf, int size, Simulation *simu,
+			cl_uint nwait, cl_event *wait,  cl_event *done)
+{
+  cl_int status;
+
+  cl_kernel kernel = simu->zero_buf;
+
+  // associates the param buffer to the 0th kernel argument
+  status = clSetKernelArg(kernel,
+                          0,
+                          sizeof(cl_mem),
+                          buf);
+  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status >= CL_SUCCESS);
+
+  size_t numworkitems = size;
+  status = clEnqueueNDRangeKernel(simu->cli.commandqueue,
+				  kernel,
+				  1, NULL,
+				  &numworkitems,
+				  NULL,
+				  nwait,
+				  wait,
+				  done);
+  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status >= CL_SUCCESS);
+}
+
+// Apply the Discontinuous Galerkin approximation for computing the
+// time derivative of the field. OpenCL version.
+void dtfield_CL(Simulation *simu, cl_mem *w_cl,
+		cl_uint nwait, cl_event *wait, cl_event *done)
+{
+
+  set_buf_to_zero_cl(&simu->dtw_cl, simu->wsize, simu,
+  		     nwait, wait, &simu->clv_zbuf);
+
+   
+  if (schnaps_ocl_getcharge) {
+    DGCharge_CL(simu, &simu->w_cl, nwait, wait, simu->clv_poisson);
+    __constant KineticData *kd = &schnaps_kinetic_data; //xxx _constant
+    clWaitForEvents(1, simu->clv_poisson);
+  }
+  
+
+  // Macrocell interfaces must be launched serially
+  const int ninterfaces = simu->macromesh.nmacrointerfaces;
+  
+  for(int i = 0; i < ninterfaces; ++i) {
+    int ifa = simu->macromesh.macrointerface[i];
+    DGMacroCellInterface_CL(ifa, simu, w_cl,
+    			    1,
+    			    i == 0 ? &simu->clv_zbuf : simu->clv_mci + i - 1,
+    			    simu->clv_mci + i);
+
+  }
+  cl_event *startboundary = ninterfaces > 0 ?
+    simu->clv_mci + ninterfaces - 1: &simu->clv_zbuf;
+
+  // Boundary terms may also need to be launched serially.
+  const int nboundaryfaces = simu->macromesh.nboundaryfaces;
+  for(int i = 0; i < nboundaryfaces; ++i) {
+    int ifa = simu->macromesh.boundaryface[i];
+    DGBoundary_CL(ifa, simu, w_cl,
+		  1,
+		  i == 0 ?  startboundary : simu->clv_boundary + i - 1,
+		  simu->clv_boundary + i);
+  }
+
+  // If there are no interfaces and no boundaries, just wait for zerobuf.
+  cl_event *startmacroloop;
+  if(ninterfaces == 0 && nboundaryfaces == 0) {
+    startmacroloop = &simu->clv_zbuf;
+  } else {
+    if(nboundaryfaces > 0) {
+      startmacroloop = simu->clv_boundary + nboundaryfaces - 1;
+    } else {
+      startmacroloop = simu->clv_mci + ninterfaces - 1;
+    }
+  }
+
+  cl_event *fluxdone = simu->clv_flux2;
+  unsigned int ndim = 3;
+  if(simu->macromesh.is2d) {
+    ndim = 2;
+    fluxdone = simu->clv_flux1;
+  }
+  if(simu->macromesh.is1d) {
+    ndim = 1;
+    fluxdone = simu->clv_flux0;
+  }
+
+  cl_event *dtfielddone = simu->use_source_cl ? simu->clv_source : simu->clv_mass;
+
+  // The kernels for the intra-macrocell computations can be launched
+  // in parallel between macrocells.
+  const int nmacro = simu->macromesh.nbelems;
+  for(int ie = 0; ie < nmacro; ++ie) {
+    DGFlux_CL(simu, 0, ie, w_cl,
+	      1, startmacroloop,
+	      simu->clv_flux0 + ie);
+
+    if(ndim > 1) {
+      DGFlux_CL(simu, 1, ie, w_cl,
+		1, simu->clv_flux0 + ie,
+		simu->clv_flux1 + ie);
+    }
+
+    if(ndim > 2) {
+      DGFlux_CL(simu, 2, ie, w_cl,
+		1, simu->clv_flux1 + ie,
+		simu->clv_flux2 + ie);
+    }
+
+    DGVolume_CL(ie, simu, w_cl,
+  		1,
+  		fluxdone + ie,
+  		simu->clv_volume + ie);
+
+    DGMass_CL(ie, simu,
+  	      1,
+  	      simu->clv_volume + ie,
+  	      simu->clv_mass + ie);
+
+    if(simu->use_source_cl) {
+      DGSource_CL(ie, simu, w_cl,
+		  1,
+		  simu->clv_mass + ie,
+		  simu->clv_source + ie);
+     }
+  }
+  clWaitForEvents(nmacro, dtfielddone);
+
+  
+  // Add times for sources after everything is finished
+  simu->zbuf_time += clv_duration(simu->clv_zbuf);
+
+  for(int i = 0; i < ninterfaces; ++i)
+    simu->minter_time += clv_duration(simu->clv_mci[i]);
+
+  for(int i = 0; i < nboundaryfaces; ++i)
+    simu->boundary_time += clv_duration(simu->clv_boundary[i]);
+
+  for(int ie = 0; ie < nmacro; ++ie) {
+    if(simu->use_source_cl)
+      simu->source_time += clv_duration(simu->clv_source[ie]);
+    simu->flux_time += clv_duration(simu->clv_flux0[ie]);
+    if(ndim > 1)
+      simu->flux_time += clv_duration(simu->clv_flux1[ie]);
+    if(ndim > 2)
+      simu->flux_time += clv_duration(simu->clv_flux2[ie]);
+    simu->vol_time += clv_duration(simu->clv_volume[ie]);
+    simu->mass_time += clv_duration(simu->clv_mass[ie]);
+  }
+
+  if(done != NULL)
+    clSetUserEventStatus(*done, CL_COMPLETE);
+
+ 
+}
+
+// Set kernel arguments for first stage of RK2
+void init_RK2_CL_stage1(Simulation *simu, const schnaps_real dt, cl_mem *wp1_cl)
+{
+  cl_kernel kernel = simu->RK_out_CL;
+  cl_int status;
+  int argnum = 0;
+
+  //__global real *wp1 // field values
   status = clSetKernelArg(kernel,
 			  argnum++,
-			  sizeof(real),
+                          sizeof(cl_mem),
+                          wp1_cl);
+  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status >= CL_SUCCESS);
+
+  // __global real *w,
+  status = clSetKernelArg(kernel,
+			  argnum++,
+                          sizeof(cl_mem),
+                          &simu->w_cl);
+  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status >= CL_SUCCESS);
+
+  //__global real* dtw // time derivative
+  status = clSetKernelArg(kernel,
+			  argnum++,
+                          sizeof(cl_mem),
+                          &simu->dtw_cl);
+  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status >= CL_SUCCESS);
+
+  //real dt, // time step for the stage
+  schnaps_real halfdt = 0.5 * dt;
+  status = clSetKernelArg(kernel,
+			  argnum++,
+			  sizeof(schnaps_real),
+			  &halfdt);
+  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status >= CL_SUCCESS);
+  
+  
+}
+
+// Launch first stage of RK2 integration
+void RK2_CL_stage1(Simulation *simu, size_t numworkitems,
+		   cl_uint nwait, cl_event *wait, cl_event *done)
+{
+  cl_int status;
+  status = clEnqueueNDRangeKernel(simu->cli.commandqueue,
+				  simu->RK_out_CL,
+				  1,
+				  NULL,
+				  &numworkitems,
+				  NULL,
+				  nwait,
+				  wait,
+				  done);
+  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status >= CL_SUCCESS);
+}
+
+// Set kernel arguments for second stage of RK2
+void init_RK2_CL_stage2(Simulation *simu, const schnaps_real dt)
+{
+  cl_kernel kernel = simu->RK_in_CL;
+  cl_int status;
+  int argnum = 0;
+
+  status = clSetKernelArg(kernel,
+			  argnum++,
+                          sizeof(cl_mem),
+                          &simu->w_cl);
+  assert(status >= CL_SUCCESS);
+
+  status = clSetKernelArg(kernel,
+			  argnum++,
+                          sizeof(cl_mem),
+                          &simu->dtw_cl);
+  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status >= CL_SUCCESS);
+
+  status = clSetKernelArg(kernel,
+			  argnum++,
+			  sizeof(schnaps_real),
+			  &dt);
+  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status >= CL_SUCCESS);
+}
+
+// Launch second stage of RK2 integration
+void RK2_CL_stage2(Simulation *simu, size_t numworkitems,
+		   cl_uint nwait, cl_event *wait, cl_event *done)
+{
+  cl_int status;
+  status = clEnqueueNDRangeKernel(simu->cli.commandqueue,
+				  simu->RK_in_CL,
+				  1, NULL,
+				  &numworkitems,
+				  NULL,
+				  nwait, wait, done);
+  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status >= CL_SUCCESS);
+}
+
+void RK4_CL_stageA(Simulation *simu,
+		   cl_mem *wp1, cl_mem *w, cl_mem *dtw,
+		   const schnaps_real dt, const int sizew, size_t numworkitems,
+		   cl_uint nwait, cl_event *wait, cl_event *done)
+{
+  // l_1 = w_n + 0.5dt * S(w_n, t_0)
+
+  cl_kernel kernel = simu->RK_out_CL;
+  cl_int status;
+  int argnum = 0;
+
+  //__global real *wp1 // field values
+  status = clSetKernelArg(kernel,
+			  argnum++,
+                          sizeof(cl_mem),
+                          wp1);
+  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status >= CL_SUCCESS);
+
+  // __global real *w,
+  status = clSetKernelArg(kernel,
+			  argnum++,
+                          sizeof(cl_mem),
+                          w);
+  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status >= CL_SUCCESS);
+
+  //__global real *dtw // time derivative
+  status = clSetKernelArg(kernel,
+			  argnum++,
+                          sizeof(cl_mem),
+                          dtw);
+  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status >= CL_SUCCESS);
+
+  //real dt,
+  status = clSetKernelArg(kernel,
+			  argnum++,
+			  sizeof(schnaps_real),
 			  &dt);
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
 
-  size_t nwork = mcell->nreal;
-  status = clEnqueueNDRangeKernel(f->cli.commandqueue,
+  status = clEnqueueNDRangeKernel(simu->cli.commandqueue,
   				  kernel,
   				  1,
   				  NULL,
-  				  &nwork,
+  				  &numworkitems,
   				  NULL,
   				  nwait,
   				  wait,
   				  done);
   if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
   assert(status >= CL_SUCCESS);
+
 }
 
-// Time integration by a fourth-order Runge-Kutta algorithm, OpenCL version.
-void RK4_CL(field *f, real tmax, real dt,
-	    cl_uint nwait, cl_event *wait, cl_event *done) 
+void RK4_final_inplace_CL(Simulation *simu,
+			  cl_mem *w_cl, cl_mem *l1, cl_mem *l2, cl_mem *l3,
+			  cl_mem *dtw_cl, const schnaps_real dt,
+			  const size_t numworkitems,
+			  cl_uint nwait, cl_event *wait, cl_event *done)
 {
-  if(dt <= 0)
-    dt = set_dt(f);
+  cl_kernel kernel = simu->RK4_final_stage;
+  cl_int status;
+  int argnum = 0;
+ __constant KineticData *kd = &schnaps_kinetic_data; //xxx _constant
+  // __global real *w,
+  status = clSetKernelArg(kernel,
+			  argnum++,
+                          sizeof(cl_mem),
+                          w_cl);
+  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status >= CL_SUCCESS);
 
-  f->itermax = tmax / dt;
-  int nouts = 10;
+  // __global real *l1,
+  status = clSetKernelArg(kernel,
+			  argnum++,
+                          sizeof(cl_mem),
+                          l1);
+  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status >= CL_SUCCESS);
 
-  int freq = (1 >= f->itermax / nouts)? 1 : f->itermax / nouts;
+  // __global real *l2,
+  status = clSetKernelArg(kernel,
+			  argnum++,
+                          sizeof(cl_mem),
+                          l2);
+  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status >= CL_SUCCESS);
+
+  // __global real *l3,
+  status = clSetKernelArg(kernel,
+			  argnum++,
+                          sizeof(cl_mem),
+                          l3);
+                         
+  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status >= CL_SUCCESS);
+
+  // __global real *dtw,
+  status = clSetKernelArg(kernel,
+			  argnum++,
+                          sizeof(cl_mem),
+                          dtw_cl);
+  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status >= CL_SUCCESS);
+
+  // const real dt
+   schnaps_real halfdt = 0.5 * dt;
+  status = clSetKernelArg(kernel,
+			  argnum++,
+			  sizeof(schnaps_real),
+			  &dt);
+  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status >= CL_SUCCESS);
+  status = clEnqueueNDRangeKernel(simu->cli.commandqueue,
+  				  kernel,
+  				  1,
+  				  NULL,
+  				  &numworkitems,
+  				  NULL,
+  				  nwait,
+  				  wait,
+  				  done);
+  				   
+  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status >= CL_SUCCESS);
+}
+
+// Time integration by a fourth-order Runge-Kutta algorithm, OpenCL
+// version.
+void RK4_CL(Simulation *simu, schnaps_real tmax, schnaps_real dt,
+	    cl_uint nwait, cl_event *wait, cl_event *done)
+{
+  simu->dt = Get_Dt_RK(simu);
+  if(dt <= 0) dt = simu->dt;
+  assert(simu->tnow == 0);
+  //KineticData *kd = &schnaps_kinetic_data;
+  simu->itermax_rk = tmax / dt;
+  int freq = (1 >= simu->itermax_rk / 10)? 1 : simu->itermax_rk / 10;
+  field *f = simu->fd;
+  int sizew = simu->macromesh.nbelems * f->model.m * NPG(f->deg, f->raf);
   int iter = 0;
+  cl_int status;
+  cl_mem l1 = clCreateBuffer(simu->cli.context,
+			     0,
+			     sizeof(schnaps_real) * simu->wsize,
+			     NULL,
+			     &status);
+  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status >= CL_SUCCESS);
 
-  cl_int status;  
+  cl_mem l2 = clCreateBuffer(simu->cli.context,
+			     0,
+			     sizeof(schnaps_real) * simu->wsize,
+			     NULL,
+			     &status);
+  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status >= CL_SUCCESS);
+  cl_mem l3 = clCreateBuffer(simu->cli.context,
+			     0,
+			     sizeof(schnaps_real) * simu->wsize,
+			     NULL,
+			     &status);
+  /* int size_diags;
+  // size_diags = simu->nb_diags * simu->itermax_rk;
+  //allouer pour Diagnostic
+   if(simu->nb_diags != 0)
+    simu->Diagnostics = malloc(size_diags * sizeof(schnaps_real));
+  */
+  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status >= CL_SUCCESS);
 
-  const int nmacro = f->macromesh.nbelems;
+  size_t numworkitems = simu->wsize;
 
-  // Allocate memory for RK stages
-  cl_mem *l1 = calloc(nmacro, sizeof(cl_mem));
-  cl_mem *l2 = calloc(nmacro, sizeof(cl_mem));
-  cl_mem *l3 = calloc(nmacro, sizeof(cl_mem));
-  for(int ie = 0; ie < nmacro; ++ie) {
-    MacroCell *mcell = f->mcell + ie;
-    
-    l1[ie] = clCreateBuffer(f->cli.context,
-			    0,
-			    sizeof(real) * mcell->nreal,
-			    NULL,
-			    &status);
-    if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
-    assert(status >= CL_SUCCESS);
-
-    l2[ie] = clCreateBuffer(f->cli.context,
-			    0,
-			    sizeof(real) * mcell->nreal,
-			    NULL,
-			    &status);
-    if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
-    assert(status >= CL_SUCCESS);
-
-    l3[ie] = clCreateBuffer(f->cli.context,
-			    0,
-			    sizeof(real) * mcell->nreal,
-			    NULL,
-			    &status);
-    if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
-    assert(status >= CL_SUCCESS);
+  cl_mem *w = &simu->w_cl;
+  cl_mem *dtw = &simu->dtw_cl;
+  int nstages = 4;
+  cl_event source[nstages];
+  cl_event stage[nstages];
+  for(int i = 0; i < nstages; ++i) {
+    source[i] = clCreateUserEvent(simu->cli.context, &status);
+    stage[i] = clCreateUserEvent(simu->cli.context, &status);
   }
 
-  size_t numworkitems = f->wsize;
+  clWaitForEvents(nwait, wait);
 
-  cl_mem *w = f->wn_cl;
-  cl_mem *dtw = f->dtwn_cl;
-
-  // Set up events for source and stage.
-  cl_event source0;
-  cl_event source1;
-  cl_event source2;
-  cl_event source3;
-  
-  cl_event *stage0 = calloc(nmacro, sizeof(cl_event));
-  cl_event *stage1 = calloc(nmacro, sizeof(cl_event));
-  cl_event *stage2 = calloc(nmacro, sizeof(cl_event));
-  cl_event *stage3 = calloc(nmacro, sizeof(cl_event));
-
-  cl_event start;
-  empty_kernel(f, nwait, wait, &start);
-  
   printf("Starting RK4_CL\n");
 
+  status = clSetUserEventStatus(stage[3], CL_COMPLETE);
+
+
+
   struct timeval t_start;
+  struct timeval t_end;
   gettimeofday(&t_start, NULL);
-
-  while(f->tnow < tmax) {
-    
+  while(simu->tnow < tmax) {
     if (iter % freq == 0)
-      printf("t=%f iter=%d/%d dt=%f\n", f->tnow, iter, f->itermax, dt);
+      printf("t=%f iter=%d/%d dt=%f\n", simu->tnow, iter, simu->itermax_rk, dt);
 
-    
     // stage 0
-    dtfield_CL(f, f->tnow, w, 
-	       1, &start, &source0);
-    for(int ie = 0; ie < nmacro; ++ie) { 
-      MacroCell *mcell = f->mcell + ie;
-      RK4_CL_stageA(mcell, f, l1 + ie, w + ie, dtw,
-		    0.5 * dt, numworkitems,
-		    1, &source0, stage0 + ie);
-    }
-    
-    f->tnow += 0.5 * dt;
-    
+    dtfield_CL(simu, w,
+	       1, stage +3, source);
+    RK4_CL_stageA(simu, &l1, w, dtw,
+    		  0.5 * dt, sizew, numworkitems,
+		  1, source, stage);
+
+    //clFinish(simu->cli.commandqueue); //--
+    //	assert(1==0);		 
     // stage 1
-    dtfield_CL(f, f->tnow, l1,
-	       nmacro, stage0, &source1);
-    for(int ie = 0; ie < nmacro; ++ie) { 
-      MacroCell *mcell = f->mcell + ie;
-      RK4_CL_stageA(mcell, f, l2 + ie, w + ie, dtw,
-		    0.5 * dt, numworkitems,
-		    1, &source1, stage1 + ie);
-    }
-    
+    dtfield_CL(simu, &l1, 1, stage, source + 1);
+    RK4_CL_stageA(simu, &l2, w, dtw,
+    		  0.5 * dt, sizew, numworkitems,
+		  1, source + 1, stage + 1);
+	
+		  
+
     // stage 2
-    dtfield_CL(f, f->tnow, l2, 
-	       nmacro, stage1, &source2);
-    for(int ie = 0; ie < nmacro; ++ie) { 
-      MacroCell *mcell = f->mcell + ie;
-      RK4_CL_stageA(mcell, f, l3 + ie, w + ie, dtw,
-		    dt, numworkitems,
-		    1, &source2, stage2 + ie);
-    }
-    
-    f->tnow += 0.5 * dt;
-        
+    dtfield_CL(simu, &l2,
+	       1, stage + 1, source + 2);
+    RK4_CL_stageA(simu, &l3, w, dtw,
+    		  dt, sizew, numworkitems,
+		  1, source + 2, stage + 2);
+
+	/* CopyfieldtoCPU(simu);	 */
+	/* PlotFields(schnaps_kinetic_data.index_rho,(1==0),simu,"sol","dens.msh"); */
+
+			 
     // stage 3
-    dtfield_CL(f, f->tnow, l3, 
-	       nmacro, stage2, &source3);
-    for(int ie = 0; ie < nmacro; ++ie) { 
-      MacroCell *mcell = f->mcell + ie;
-      RK4_final_inplace_CL(mcell, f, w + ie, l1 + ie, l2 + ie, l3 + ie, 
-			   dtw, dt, numworkitems,
-			   1, &source3, stage3 + ie);
-    }
+    dtfield_CL(simu, &l3,
+	       1, stage + 2, source + 3);
+	       		  
+    RK4_final_inplace_CL(simu, w, &l1, &l2, &l3,
+			 dtw, dt, numworkitems,
+			 1, source + 3, stage + 3);
 
-    clWaitForEvents(nmacro, stage3);
-
-    for(int ie = 0; ie < nmacro; ++ie) {
-      f->rk_calls++;
-      f->rk_time += clv_duration(stage0[ie]);
-      f->rk_calls++;
-      f->rk_time += clv_duration(stage1[ie]);
-      f->rk_calls++;
-      f->rk_time += clv_duration(stage2[ie]);
-      f->rk_calls++;
-      f->rk_time += clv_duration(stage3[ie]);
+	
+	
+    /*  //copy les valeur de GPU2CPU pour calculer les valeurs de Diagnostics
+      CopyfieldtoCPU(simu);
+    //copy les valeur dans Diagnostics
+    if(simu->update_after_rk != NULL){
+    simu->update_after_rk(simu, simu->w);
     }
-    
+    //unmap pour retourner les valeur en GPU
+      CopyCPU2GPU(simu);
+    */
+      simu->tnow += dt;
+
+    for(int i = 0; i < nstages; ++i)
+      simu->rk_time += clv_duration(stage[i]);
+
     iter++;
   }
+  gettimeofday(&t_end, NULL);
 
-  empty_kernel(f, nmacro, stage3, done);
-  printf("t=%f iter=%d/%d dt=%f\n", f->tnow, iter, f->itermax, dt);
-  
-  struct timeval t_end;
-  gettimeofday(&t_end, NULL); 
-  
-  double rkseconds = (t_end.tv_sec - t_start.tv_sec) * 1.0 // seconds
+  if(done != NULL)
+    status = clSetUserEventStatus(*done, CL_COMPLETE);
+
+ schnaps_real rkseconds = (t_end.tv_sec - t_start.tv_sec) * 1.0 // seconds
     + (t_end.tv_usec - t_start.tv_usec) * 1e-6; // microseconds
   printf("\nTotal RK time (s):\n%f\n", rkseconds);
   printf("\nTotal RK time per time-step (s):\n%f\n", rkseconds / iter );
-  
-  // Release events
-  clReleaseEvent(start);
-  clReleaseEvent(source0);
-  clReleaseEvent(source1);
-  clReleaseEvent(source2);
-  clReleaseEvent(source3);
-  for(int ie = 0; ie < nmacro; ++ie) {
-    clReleaseEvent(stage0[ie]);
-    clReleaseEvent(stage1[ie]);
-    clReleaseEvent(stage2[ie]);
-    clReleaseEvent(stage3[ie]);
-  }
-  free(stage0);
-  free(stage1);
-  free(stage2);
-  free(stage3);
 
-  // Release buffers
-  for(int ie = 0; ie < nmacro; ++ie) {
-    clReleaseMemObject(l1[ie]);
-    clReleaseMemObject(l2[ie]);
-    clReleaseMemObject(l3[ie]);
+
+  for(int i = 0; i < nstages; ++i) {
+    clReleaseEvent(source[i]);
+    clReleaseEvent(stage[i]);
   }
-  free(l1);
-  free(l2);
-  free(l3);
+
+  //printf("\nt=%f iter=%d/%d dt=%f\n", simu->tnow, iter, simu->itermax_rk, dt);
+     
+  
 }
 
-void printtimes(char* name, cl_ulong ns, int ncall, double N)
+
+// Time integration by a second-order Runge-Kutta algorithm, OpenCL
+// version.
+void RK2_CL(Simulation *simu, schnaps_real tmax, schnaps_real dt,
+	    cl_uint nwait, cl_event *wait, cl_event *done)
 {
-  double s = 1e-9 * ns;
-  double meantime = ncall > 0 ? s / ncall : 0.0;
-  
-  printf("%s%f%%\t%gs\t%d\t%g\n", 
-	 name, ns * N, s, ncall, meantime);
+
+
+  simu->dt = Get_Dt_RK(simu);
+
+  if(dt <= 0)
+    dt = simu->dt;
+
+  assert(simu->tnow == 0);
+  simu->itermax_rk = tmax / dt;
+  int freq = (1 >= simu->itermax_rk / 10)? 1 : simu->itermax_rk / 10;
+  int iter = 0;
+
+  cl_int status;
+  cl_mem wp1_cl = clCreateBuffer(simu->cli.context,
+				  0, // no flags
+				  sizeof(schnaps_real) * simu->wsize,
+				  NULL, // do not use a host pointer
+				  &status);
+  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status >= CL_SUCCESS);
+
+  // Set up kernels
+  init_RK2_CL_stage1(simu, dt, &wp1_cl);
+  init_RK2_CL_stage2(simu, dt);
+
+  cl_event source1 = clCreateUserEvent(simu->cli.context, &status);
+  cl_event stage1 =  clCreateUserEvent(simu->cli.context, &status);
+  cl_event source2 = clCreateUserEvent(simu->cli.context, &status);
+  cl_event stage2 =  clCreateUserEvent(simu->cli.context, &status);
+
+  status = clSetUserEventStatus(stage2, CL_COMPLETE);
+
+  if(nwait > 0)
+    clWaitForEvents(nwait, wait);
+
+  printf("Starting RK2_CL\n");
+
+  struct timeval t_start;
+  struct timeval t_end;
+  gettimeofday(&t_start, NULL);
+  while(simu->tnow < tmax) {
+    //printf("iter: %d\n", iter);
+    if (iter % freq == 0)
+      printf("t=%f iter=%d/%d dt=%f\n", simu->tnow, iter, simu->itermax_rk, dt);
+
+    dtfield_CL(simu, &simu->w_cl, 1, &stage2, &source1);
+    RK2_CL_stage1(simu, simu->wsize, 1, &source1, &stage1);
+
+    simu->tnow += 0.5 * dt;
+
+    dtfield_CL(simu, &wp1_cl, 1, &stage1, &source2);
+    RK2_CL_stage2(simu, simu->wsize, 1, &source2, &stage2);
+
+    simu->tnow += 0.5 * dt;
+
+    simu->rk_time += clv_duration(stage1);
+    simu->rk_time += clv_duration(stage2);
+    iter++;
+  }
+  status = clFinish(simu->cli.commandqueue);
+  gettimeofday(&t_end, NULL);
+  if(done != NULL)
+    status = clSetUserEventStatus(*done, CL_COMPLETE);
+
+  clReleaseEvent(stage2);
+  clReleaseEvent(stage1);
+
+  schnaps_real rkseconds = (t_end.tv_sec - t_start.tv_sec) * 1.0 // seconds
+    + (t_end.tv_usec - t_start.tv_usec) * 1e-6; // microseconds
+  printf("\nTotal RK time (s):\n%f\n", rkseconds);
+  printf("\nTotal RK time per time-step (s):\n%f\n", rkseconds / iter );
+
+  printf("\nt=%f iter=%d/%d dt=%f\n", simu->tnow, iter, simu->itermax_rk, dt);
+
+
 }
 
-void show_cl_timing(field *f)
+void show_cl_timing(Simulation *simu)
 {
   printf("\n");
- 
+  printf("Device characteristics:\n");
+  printf("\tname:\t%s\n", simu->cli.devicename);
+  schnaps_real dev_gflops = cl_dev_gflops(simu->cli.devicename);
+  schnaps_real dev_bwidth = cl_dev_bwidth(simu->cli.devicename);
+  printf("\tgflops:   \t%f\n", dev_gflops);
+  printf("\tbandwidth:\t%f\n", dev_bwidth);
+
+  printf("\n");
+  printf("Roofline counts:\n");
+  unsigned long int flops_total = simu->flops_vol + simu->flops_flux + simu->flops_mass;
+  unsigned long int reads_total = simu->reads_vol + simu->reads_flux + simu->reads_mass;
+  printf("Number of real multiplies in kernels:               %lu\n",
+	 flops_total);
+  printf("Number of reads/writes of reals from global memory: %lu\n",
+	 reads_total);
+  //printf("NB: real multiplies assumes the flux involved 3m multiplies.\n");
+  printf("Terms included in roofline: volume, flux, and mass.\n");
+
+  cl_ulong roofline_time_ns = simu->vol_time + simu->flux_time + simu->mass_time;
+  schnaps_real roofline_time_s = 1e-9 * roofline_time_ns;
+  schnaps_real roofline_flops = flops_total / roofline_time_s;
+  schnaps_real roofline_bw = sizeof(schnaps_real) * reads_total / roofline_time_s;
+
+  // Volume terms
+  schnaps_real vol_time_s = 1e-9 * simu->vol_time;
+  schnaps_real vol_flops = simu->flops_vol / vol_time_s;
+  schnaps_real vol_bw = sizeof(schnaps_real) * simu->reads_vol / vol_time_s;
+  printf("DGVol:  GFLOP/s: %f\tbandwidth (GB/s): %f\n",
+	 1e-9 * vol_flops, 1e-9 * vol_bw);
+
+  // Flux terms
+  schnaps_real flux_time_s = 1e-9 * simu->flux_time;
+  schnaps_real flux_flops = simu->flops_flux / flux_time_s;
+  schnaps_real flux_bw = sizeof(schnaps_real) * simu->reads_flux / flux_time_s;
+  printf("DGFlux: GFLOP/s: %f\tbandwidth (GB/s): %f\n",
+	 1e-9 * flux_flops, 1e-9 * flux_bw);
+
+  // Mass terms
+  schnaps_real mass_time_s = 1e-9 * simu->mass_time;
+  schnaps_real mass_flops = simu->flops_mass / mass_time_s;
+  schnaps_real mass_bw = sizeof(schnaps_real) * simu->reads_mass / mass_time_s;
+  printf("DGMass: GFLOP/s: %f\tbandwidth (GB/s): %f\n",
+	 1e-9 * mass_flops, 1e-9 * mass_bw);
+
+  printf("Total:  GFLOP/s: %f\tbandwidth (GB/s): %f\n",
+	 1e-9 * roofline_flops, 1e-9 * roofline_bw);
+
   printf("\n");
 
-  printf("Kernel execution times:\n"); 
+  printf("Kernel execution times:\n");
   cl_ulong total = 0;
-  total += f->zbuf_time;
-  total += f->minter_time;
-  total += f->boundary_time;
-  total += f->vol_time;
-  total += f->mass_time;
-  total += f->source_time;
-  total += f->rk_time;
-  total += f->flux_time;
-  total += f->extractinsert_time;
-  
-  double N = 100.0 / total;
+  total += simu->zbuf_time;
+  total += simu->minter_time;
+  total += simu->boundary_time;
+  total += simu->vol_time;
+  total += simu->mass_time;
+  total += simu->source_time;
+  total += simu->rk_time;
+  total += simu->flux_time;
+
+  schnaps_real N = 100.0 / total;
 
   cl_ulong ns;
-  int ncall;
-  
-  printf("Kernel name:             percent\ttotal   \tncalls\tmean time\n");
 
-  
-  printtimes("set_buf_to_zero_cl:      ", f->zbuf_time, f->zbuf_calls, N);
-  printtimes("DGMacroCellInterface_CL: ", f->minter_time, f->minter_calls, N); 
-  printtimes("DGBoundary:              ", f->boundary_time, f->boundary_calls,
-	     N); 
-  printtimes("Insert / extract:        ", f->extractinsert_time,
-	     f->extractinsert_calls, N);
-  printtimes("DGVolume_CL:             ", f->vol_time, f->vol_calls, N);
-  printtimes("DGFlux_CL:               ", f->flux_time, f->flux_calls, N);
-  printtimes("DGMass_CL:               ", f->mass_time, f->mass_calls, N);
-  printtimes("DGSource_CL:             ", f->source_time, f->source_calls, N);
-  printtimes("rk:                      ", f->rk_time, f->rk_calls, N);
+  ns = simu->zbuf_time;
+  printf("set_buf_to_zero_cl time:      %f%% \t%luns \t%fs\n",
+	 ns * N, (unsigned long) ns, 1e-9 * ns);
+
+  ns = simu->minter_time;
+  printf("DGMacroCellInterface_CL time: %f%% \t%luns \t%fs\n",
+	 ns * N, (unsigned long) ns, 1e-9 * ns);
+
+  ns = simu->boundary_time;
+  printf("DGBoundary time:              %f%% \t%luns \t%fs\n",
+	 ns * N, (unsigned long) ns, 1e-9 * ns);
+
+  ns = simu->vol_time;
+  printf("DGVolume_CL time:             %f%% \t%luns \t%fs\n",
+	 ns * N, (unsigned long) ns, 1e-9 * ns);
+
+  ns = simu->flux_time;
+  printf("DGFlux_CL time:               %f%% \t%luns \t%fs\n",
+	 ns * N, (unsigned long) ns, 1e-9 * ns);
+
+  ns = simu->mass_time;
+  printf("DGMass_CL time:               %f%% \t%luns \t%fs\n",
+	 ns * N, (unsigned long) ns, 1e-9 * ns);
+
+  ns = simu->source_time;
+  printf("DGSource_CL time:             %f%% \t%luns \t%fs\n",
+	 ns * N, (unsigned long) ns, 1e-9 * ns);
+
+  ns = simu->rk_time;
+  printf("rk time:                      %f%% \t%luns \t%fs\n",
+	 ns*N, (unsigned long) ns, 1e-9 * ns);
 
   printf("\n");
-  
+
   ns = total;
-  double total_time = 1e-9 * ns;
-  printf("total:                   %f%%\t%fs\n", 
-	 ns*N, total_time);
+  schnaps_real total_time = 1e-9 * ns;
+  printf("total time:                   %f%% \t%luns \t%fs\n",
+	 ns*N, (unsigned long) ns, total_time);
 
   printf("\n");
+  print_kernel_perf(dev_gflops, dev_bwidth,
+		    flops_total, reads_total, total);
+  printf("\n");
+}
+
+
+void init_field_cl(Simulation *simu)
+{
+  InitCLInfo(&simu->cli, nplatform_cl, ndevice_cl);
+  cl_int status;
+
+  simu->w_cl = clCreateBuffer(simu->cli.context,
+			    CL_MEM_READ_WRITE | CL_MEM_USE_HOST_PTR,
+			    sizeof(schnaps_real) * simu->wsize,
+			    simu->w,
+			    &status);
+  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status >= CL_SUCCESS);
+
+  simu->dtw_cl = clCreateBuffer(simu->cli.context,
+			      CL_MEM_READ_WRITE | CL_MEM_USE_HOST_PTR,
+			      sizeof(schnaps_real) * simu->wsize,
+			      simu->dtw,
+			      &status);
+  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status >= CL_SUCCESS);
+
+  field *f = simu->fd;
+  /* simu->interp_param[0]=f->model.m; */
+
+  /* 		       f->deg[0], f->deg[1], f->deg[2], */
+  /* 		       f->raf[0], f->raf[1], f->raf[2] }; */
+
+  simu->param_cl = clCreateBuffer(simu->cli.context,
+			       CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR,
+			       sizeof(int) * 7,
+			       simu->interp_param,
+			       &status);
+  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status >= CL_SUCCESS);
+
+  
+  // Allocate one physnode buffer
+  //f->physnode = calloc(60, sizeof(real));
+  simu->physnode_cl = clCreateBuffer(simu->cli.context,
+				  CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR,
+				  sizeof(schnaps_real) * 60,
+				  f->physnode,
+				  &status);
+  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status >= CL_SUCCESS);
+
+  // Allocate and fill buffer for all macrocell geometries.
+  const int nmacro = simu->macromesh.nbelems;
+  const size_t buf_size = sizeof(schnaps_real) * 60 * nmacro;
+  simu->physnodes_cl = clCreateBuffer(simu->cli.context,
+				   CL_MEM_READ_ONLY,
+				   buf_size,
+				   NULL,
+				   &status);
+  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status >= CL_SUCCESS);
+  set_physnodes_cl(simu);
+
+  // Allocate one physnode buffer for R macrocell
+  simu->physnodeR = calloc(60, sizeof(schnaps_real));
+  simu->physnodeR_cl = clCreateBuffer(simu->cli.context,
+				   CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR,
+				   sizeof(schnaps_real) * 60,
+				   f->physnode,
+				   &status);
+
+  // Program compilation
+    char *strprog;
+#ifdef _WITH_PYTHONLIBS
+    Py_ssize_t ocl_buffer_size = 0;
+    call_py_opencl_src_extract(&strprog,&ocl_buffer_size);
+   
+    // GetOpenCLCode();
+    // ReadFile("schnaps.cl", &strprog);
+    // printf("%s\n",strprog);
+#else 
+  GetOpenCLCode();
+  ReadFile("schnaps.cl", &strprog);
+#endif
+  printf("\t%s\n", numflux_cl_name);
+  //printf("\t%s\n", strprog);
+
+  char buf[1000];
+
+  // Set simulation parameters
+  sprintf(buf, " -D _M=%d", simu->interp_param[0]);
+  strcat(cl_buildoptions, buf);
+
+  // If the source term is set (via set_source_CL) then add it to the
+  // buildoptions and compile using the new buildoptions.
+  if(simu->use_source_cl) {
+    char *temp;
+    int len0 = strlen(cl_buildoptions);
+    char *D_SOURCE_FUNC = " -D_SOURCE_FUNC=";
+    int len1 = strlen(D_SOURCE_FUNC);
+    int len2 = strlen(simu->sourcename_cl);
+    temp = calloc(sizeof(char), len0 + len1 + len2 + 3);
+    printf("lens=%d %d %d \n",len0,len1,len2);
+    strcat(temp, cl_buildoptions);
+    strcat(temp, D_SOURCE_FUNC);
+    strcat(temp, simu->sourcename_cl);
+    strcat(temp, " ");
+    BuildKernels(&simu->cli, strprog, temp);
+  } else {
+    printf("No source term\n");
+    BuildKernels(&simu->cli, strprog, cl_buildoptions);
+  }
+
+  simu->dgmass = clCreateKernel(simu->cli.program,
+			     "DGMass",
+			     &status);
+  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status >= CL_SUCCESS);
+
+  simu->dgflux = clCreateKernel(simu->cli.program,
+			     "DGFlux",
+			     &status);
+  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status >= CL_SUCCESS);
+
+  
+  simu->dgvolume = clCreateKernel(simu->cli.program,
+			       "DGVolume",
+			       &status);
+  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status >= CL_SUCCESS);
+
+  simu->dgsource = clCreateKernel(simu->cli.program,
+			       "DGSource",
+			       &status);
+  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status >= CL_SUCCESS);
+
+ if (schnaps_ocl_getcharge) {
+  simu->dgcharge = clCreateKernel(simu->cli.program,
+			       "DGCharge",
+			       &status);
+}
+  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status >= CL_SUCCESS);
+
+  simu->dginterface = clCreateKernel(simu->cli.program,
+				  "DGMacroCellInterface",
+				  &status);
+  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status >= CL_SUCCESS);
+
+  simu->dgboundary = clCreateKernel(simu->cli.program,
+				 "DGBoundary",
+				 &status);
+  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status >= CL_SUCCESS);
+
+  simu->RK_out_CL = clCreateKernel(simu->cli.program,
+				"RK_out_CL",
+				&status);
+  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status >= CL_SUCCESS);
+
+  simu->RK4_final_stage = clCreateKernel(simu->cli.program,
+				      "RK4_final_stage",
+				      &status);
+  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status >= CL_SUCCESS);
+
+  simu->RK_in_CL = clCreateKernel(simu->cli.program,
+			       "RK_in_CL",
+			       &status);
+  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status >= CL_SUCCESS);
+
+  simu->zero_buf = clCreateKernel(simu->cli.program,
+			       "set_buffer_to_zero",
+			       &status);
+  if(status < CL_SUCCESS) printf("%s\n", clErrorString(status));
+  assert(status >= CL_SUCCESS);
+
+  // Initialize events. // FIXME: free on exit
+  simu->clv_zbuf = clCreateUserEvent(simu->cli.context, &status);
+
+  const int ninterfaces = simu->macromesh.nmacrointerfaces;
+  if(ninterfaces > 0) {
+    simu->clv_mci = calloc(ninterfaces, sizeof(cl_event));
+    for(int ifa = 0; ifa < ninterfaces; ++ifa)
+      simu->clv_mci[ifa] = clCreateUserEvent(simu->cli.context, &status);
+  }
+
+  const int nbound = simu->macromesh.nboundaryfaces;
+  if(nbound > 0) {
+    simu->clv_boundary = calloc(nbound, sizeof(cl_event));
+    for(int ifa = 0; ifa < nbound; ++ifa)
+      simu->clv_boundary[ifa] = clCreateUserEvent(simu->cli.context, &status);
+  }
+
+  simu->clv_mass = calloc(nmacro, sizeof(cl_event));
+  for(int ie = 0; ie < nmacro; ++ie)
+    simu->clv_mass[ie] = clCreateUserEvent(simu->cli.context, &status);
+
+  simu->clv_flux0 = calloc(nmacro, sizeof(cl_event));
+  simu->clv_flux1 = calloc(nmacro, sizeof(cl_event));
+  simu->clv_flux2 = calloc(nmacro, sizeof(cl_event));
+  for(int ie = 0; ie < nmacro; ++ie) {
+    simu->clv_flux0[ie] = clCreateUserEvent(simu->cli.context, &status);
+    simu->clv_flux1[ie] = clCreateUserEvent(simu->cli.context, &status);
+    simu->clv_flux2[ie] = clCreateUserEvent(simu->cli.context, &status);
+  }
+
+  simu->clv_volume = calloc(nmacro, sizeof(cl_event));
+  for(int ie = 0; ie < nmacro; ++ie) {
+    simu->clv_volume[ie] = clCreateUserEvent(simu->cli.context, &status);
+  }
+
+  simu->clv_source = calloc(nmacro, sizeof(cl_event));
+  for(int ie = 0; ie < nmacro; ++ie) {
+    simu->clv_source[ie] = clCreateUserEvent(simu->cli.context, &status);
+  }
+
+ 
+  if (schnaps_ocl_getcharge) {
+    simu->clv_charge = calloc(nmacro, sizeof(cl_event)); 
+ 	for(int ie = 0; ie < nmacro; ++ie) {
+    	simu->clv_charge[ie] = clCreateUserEvent(simu->cli.context, &status);
+  	}
+  }
+
+  // Set timers to zero
+  simu->zbuf_time = 0;
+  simu->mass_time = 0;
+  simu->vol_time = 0;
+  simu->flux_time = 0;
+  simu->minter_time = 0;
+  simu->boundary_time = 0;
+  simu->source_time = 0;
+  simu->rk_time = 0;
+
+  // Set roofline counts to zero
+  simu->flops_vol = 0;
+  simu->flops_flux = 0;
+  simu->flops_mass = 0;
+  simu->reads_vol = 0;
+  simu->reads_flux = 0;
+  simu->reads_mass = 0;
+
+
+  if (schnaps_ocl_getcharge) {
+    status = clFinish(simu->cli.commandqueue);
+
+    // just check that the good varindex is chosen
+    field * f = simu->fd + 0; 
+    int *param = simu->interp_param;
+    int m = param[0];
+    // ipg = 0
+    int i1 = f->varindex(param + 1, param + 4, m, 0, 0);
+    // ipg = 1
+    int i2 = f->varindex(param + 1, param + 4, m, 1, 0);
+    schnaps_real *addr1 = &simu->w[i1];
+    schnaps_real *addr2 = &simu->w[i2];
+    assert(addr1 + 1 == addr2);
+    /////////////////////////////
+    /* cl_event *wait = NULL; */
+    /* DGCharge_CL(simu, &simu->w_cl, 0, wait, simu->clv_poisson); */
+    /* status = clFinish(simu->cli.commandqueue); */
+  }
+  
 }
 
 #endif // _WITH_OPENCL

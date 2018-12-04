@@ -1,84 +1,142 @@
-SCHNAPS
-=======
-
-Solver for Conservative Hypebolic Non-linear systems Applied to PlasmaS
+# SCHNAPS
 
 Solveur pour les lois de Conservation Hyperboliques Non-linéaires
 Appliqué aux PlasmaS
 
+## Mode d'emploi
 
-Downloads:
+### Téléchargement (nécessite git)
 
-Develloper access:
-git clone git+ssh://<gforge_account_name>\@scm.gforge.inria.fr//gitroot/schnaps/schnaps.git
+Accès développeur:
+`git@gitlab.math.unistra.fr:tonus/schnaps.git`
 
-Read-only access:
-git clone https://gforge.inria.fr/git/schnaps/schnaps.git
+Accès lecture seule:
+`git clone https://gforge.inria.fr/git/schnaps/schnaps.git`
 
+### Compilation
 
-Compilation:
+se placer dans le dossier schnaps
 
-From the schnaps folder, first
+créer un dossier
 
-mkdir build
+	mkdir build
 
-cd build
+se placer dans ce dossier
 
-cmake ..
+	cd build
 
-make
+If StarPU isn't in the standard (system-wide) location, one can
+specify the location with export STARPU_DIR=<...>
 
-gmsh ../geo/disque.geo -3
+puis:
 
-ctest
+	cmake ..
+	make
+	ctest
 
-By default, the OpenCL code runs on platform 0, device 0.  This
-can be changed in schnaps via command-line argument.  The unit tests
-run on the default platform/device, which can be changed via
+Une série de tests démarre. Il est conseillé de faire repasser ces
+tests après toute modification du code.
 
-cmake -D_CL_PLATFORM=1 -D_CL_DEVICE=1  ..
+Si certains tests StarPU ne passent pas, désactiver les codelets
+OpenCL et CUDA avant de lancer ctest:
 
-By default, computations are done in double-precision.  This can be
-changed via
+	export STARPU_NOPENCL=0
+	export STARPU_NCUDA=0
 
-cmake -DSINGLE_PRECISION:BOOL=ON
+### Pour lancer schnaps:
 
+#### générer le maillage:
 
-The main schnaps program is schnaps.  To generate .msh files from .geo
-files, one run
+	gmsh disque.geo -3
 
-gmsh <file>.geo -3
+	./schnaps
 
-The resulting .msh file can be passed to schnaps via command-line
-arguments (see ./schnaps -h for a list of options).
+Cet exemple consiste à résoudre l'équation de transport à
+l'intérieur d'un cylindre.
 
-The main executable schnaps will output to a gmsh file "dgvisu.msh" if
-the one calls it with ./schnaps -w 1.  By default no output is
-written.
+(Edit: en ce moment cet exemple est désactivé) 
 
-The default arguments for schnaps results in a simulation of 2D
-transport in a disc.  The results can be viewed via
+La visualisation  des résultats utilise gmsh
 
-gmsh dgvisu.msh
+	gmsh dgvisu.msh
 
-The default gmsh visualizer is quite coarse, but the visualization can
-be improved by the setting "Adapt visuzliation grid" in
-tools -> options -> View [0].
+(puis tools -> options -> view[0] -> adapt visualization grid pour
+afficher une image plus jolie...)
 
-
-There is some basic documentation with doxygen, which can be generated via
-
-cd doc/
-doxygen doxyschnaps
-
-
-Debugging:
-
-valgrind doesn't play terribly well with the AMD drivers.  This can be
-ameliorated by using the provided suppression file, libamdocl.supp, via
-
-valgrind --suppressions=libamdocl.supp <executable>
+Adapter le fichier source `schnaps.c` pour traiter des cas avec
+d'autres maillages. Des exemples de maillages se trouvent dans le
+dossier geo.
 
 
-SCHNAPS is under the CeCILL license:
+#### SCHNAPS est sous licence CeCILL:
+
 http://www.cecill.info/licences/Licence_CeCILL_V1.1-US.html
+
+#### Génération de la documentation (avec doxygen):
+
+	cd doc/
+	doxygen doxyschnaps
+	 *
+	 *
+	 */
+
+#### Installation de StarPU (préalable à l'installation de schnaps)
+
+Facultatif (permet de visualiser les traces starpu):
+Télécharger FxT
+
+	mkdir /usr/local/fxtdir
+	cd FxT
+	./bootstrap
+	export FXTDIR=/usr/local/fxtdir
+	./configure --prefix=$FXTDIR
+	make -j4
+	make install
+
+Indispensable:
+Télécharger StarPU a partir de la base svn (voir site StarPU)
+brew 
+
+	cd StarPu/
+	mkdir build
+	./autogen.sh
+(installer les paquets brew manquants)
+Si Fxt a été installé:
+
+	../configure --with-fxt=$FXTDIR
+
+sinon:
+
+	../configure
+	make -j4
+	make check (facultatif)
+	make install
+
+Remarque: il y a une limitation de taille des kernels opencl dans
+StarPU qui est corrigée avec ce patch:
+
+	Index: `src/drivers/opencl/driver_opencl_utils.c
+
+	--- src/drivers/opencl/driver_opencl_utils.c    (révision 16654)
+	+++ src/drivers/opencl/driver_opencl_utils.c    (copie de travail)
+	@@ -364,7 +364,7 @@
+	     char located_file_name[1024];
+	     char located_dir_name[1024];
+	     char new_build_options[1024];
+	-    char opencl_program_source[16384];
+	+    char opencl_program_source[131072];
+
+     // Do not try to load and compile the file if there is no devices
+     nb_devices = starpu_opencl_worker_get_count();
+
+
+Désactiver les codelets opencl et cuda (éventuellement) :
+
+	export STARPU_NOPENCL=0 
+	export STARPU_NCUDA=0 
+
+Pour visualiser les traces, télécharger et compiler VITE a partir de
+la base svn (voir site http://vite.gforge.inria.fr/) Installer
+graphviz pour visualiser les graphes de tâche.
+
+

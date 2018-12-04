@@ -9,12 +9,21 @@
 #include "interpolation.h"
 #include "geometry.h"
 #include "skyline.h"
-#include "quantities_vp.h"
+#include "simulation.h"
 
-void Computation_charge_density(field *f, real * w);
+void Computation_charge_density(Simulation *simu);
 
-void Compute_electric_field(field* f, real * w);
+//void Compute_electric_field(field * f, real * w);
 void ComputeElectricField(field* f);
-real Computation_charge_average(field *f,real * w);
+
+schnaps_real Computation_charge_average(Simulation *simu);
+
+schnaps_real Computation_Maxwellian(schnaps_real rho, schnaps_real U, schnaps_real T, schnaps_real v);
+
+void Computation_Fluid_Quantities(Simulation *simu);
+
+void Computation_Fluid_Quantities_loc(Simulation *simu, schnaps_real *w);
+
+void Collision_Source(Simulation *simu);
 
 #endif

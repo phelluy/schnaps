@@ -4,144 +4,108 @@
 #include "macromesh.h"
 #include "interpolation.h"
 #include "model.h"
+#include "linear_solver.h"
+#include "skyline_spu.h"
+
+#include <starpu.h>
 
 #ifdef _WITH_OPENCL
 #include "clinfo.h"
 #endif
 
-//! \brief A simple struct for packing a field
-//! and a cells range.  To be passed to a thread
-//! as a void* pointer.
-typedef struct MacroCell {
-  // Index of the macrocell
-  int ie;
 
-  // Local copy of physnode for the macrocell
-  real physnode[20][3];
+typedef int (*varindexptr)(int*, int*, int, int, int);
 
-  // Order of polynomial interpretation in one subcell
-  int deg[3];
-
-  // Number of points in each direction
-  int dnpg[3];
-  
-  // Number of subcells in each direction in the macrocell
-  int raf[3];
-
-  // Number of real values in the macrocell
-  int nreal;
-
-  // Number of subcells per macrocell
-  int nsubcell;
-
-  // Number of colocation points per subcell
-  int npgsubcell;
-
-  // Number of real values per sucell
-  int nrealsubcell;
-
-  // Number of colocation points in the macrocell
-  int npg;
-
-  // Number of colocation points in each direction in the macrocell
-  int npgdir[3];
-
-  // Offset to the macrocell's buffer relative to the start of the
-  // field's buffer (in numbers of reals).
-  int woffset;
-
-  // Buffer of mass values for each collocation point in the macrocell.
-  real *mass;
-  
-#ifdef _WITH_OPENCL
-  // OpenCL copy of geometry data
-  cl_mem physnode_cl;
-
-  // OpenCL copy of the the mass for each collocation point in the macrocell
-  cl_mem mass_cl;
-  
-  // The macrocell's field.
-  cl_mem wn_cl;
-
-  // The macrocell's dtwn.
-  cl_mem dtwn_cl;
-
-  // Array of OCL buffers for interface extraction.
-  cl_mem *interface_cl;
-#endif
-} MacroCell;
-
-//! \brief A simple struct for packing a field
-//! and a faces range.  To be passed to a thread
-//! as a void* pointer.
-typedef struct MacroFace {
-  int ifa;
-  int ieL;
-  int locfaL;
-  int ieR;
-  int locfaR;
-  
-  // Determine the relative orientation of the faces.
-  // Rcorner = 0: R0 = L1, R1 = L0
-  // Rcorner = 1: R0 = L0, R1 = -L1
-  // Rcorner = 2: R0 = -L1, R1 = -L0
-  // Rcorner = 3: R0 = -L0, R1 = L1
-  int Rcorner;
-  
-  // Number of points on the macrocell interface.
-  int npgf;
-
-#ifdef _WITH_OPENCL
-  cl_mem wL_cl;
-  cl_mem wR_cl;
-#endif
-} MacroFace;
 
 //! \brief Data structure for managing a  discrete vector field
 //! solution of a DG approximation
 typedef struct field {
-  //! Underlying mesh
-  MacroMesh macromesh;
+  //! Physical nodes of the macrocell
+  schnaps_real physnode[20][3];
+  
   //! Physical and numerical model
   Model model;
   //! Interpolation used for each component of the field
   Interpolation interp;
-  //! A copy of the interpolation parameters
-  int interp_param[8];
-  //! Current time
-  real tnow;
-  //! CFL parameter min_i (vol_i / surf_i)
-  real hmin;
+
+  //! Refinement of the macrocell in each direction
+  int raf[3];
+
+  //! Degrees of interpolation in each direction
+  int deg[3];
+
+  //! number og Gauss points in each direction
+  int npg[3];
+
+  //! id of the field in the macromesh
+  int id;
+  
+  //! Current time and time steps
+  schnaps_real tnow;
+  schnaps_real dt;
+
+  //! Crank-Nicholson parameter
+  schnaps_real theta;
+
+  //! ref length of the mesh subcells
+  schnaps_real hmin;
+
+  //! two arrays for storing jacobians and det at glops
+  //! NULL if store_det is false
+  schnaps_real *jacobian;
+  schnaps_real *det;
+  bool store_det;
+
+  //! period in each direction
+  //! if negative: non-periodic computation (default)
+  schnaps_real period[3];
+
 
   //! PIC struct pointer (=NULL if not used)
-  void *pic;
+  //void *pic;
 
-  // TODO: once the output of the diagnostics is done by appending,
-  // remove dt, ieter_time, itermax, nb_diags, and Diagnostics.
-  int iter_time;
-  //! final time iter
-  int itermax;
-  //! nb of diagnostics
-  int nb_diags;
-  //! table for diagnostics
-  real *Diagnostics;
+  //! a solver for the locally implicit scheme
+  LinearSolver* solver;
+  Skyline_SPU* solver_spu;
+  
+  //! a vector handle for the solver rhs
+  starpu_data_handle_t rhs_handle;
+  bool local_source_cl_init;
+  
+  //! another solver for computing the rhs
+  //! the matrix is not factorized
+  LinearSolver* rmat;
+  Skyline_SPU* rmat_spu;
+  
+  //! starpu registering flag
+  bool starpu_registered;
 
+  
   //! Size of the field buffers
   int wsize;
-  //! fields at time steps n
-  real *wn;
+  //! fields at current time step
+  schnaps_real *wn;
+  starpu_data_handle_t wn_handle;
+  
   //! Time derivative of the field
-  real *dtwn;
-  //! vmax
-  real vmax;
+  //! is equal to res
+  //! only used in explicit schemes
+  schnaps_real *dtwn;
+  starpu_data_handle_t dtwn_handle;
+
+  //! residual
+  //! is equal to dtwn
+  //! only used in implicit schemes
+  schnaps_real *res;
+  starpu_data_handle_t res_handle;
 
   //! \brief Pointer to a generic function called before computing dtfield. 
   //! \param[inout] f a field (to be converted from void*)
-  void (*pre_dtfield)(void *f, real *w);
+  void (*pre_dtfield)(void *f, schnaps_real *w);
 
   //! \brief Pointer to a generic function called after computing dtfield. 
   //! \param[inout] f a field (to be converted from void*)
-  void (*post_dtfield)(void *f, real *w);
+  void (*post_dtfield)(void *f, schnaps_real *w);
 
   //! \brief generic update function called 
   //! \brief called at each runge-kutta sustep
@@ -149,286 +113,147 @@ typedef struct field {
   //! \param[in] elem macro element index
   //! \param[in] ipg glop index
   //! \param[in] iv field component index
-  void (*update_after_rk)(void *f, real *w);
+  void (*update_after_rk)(void *f, schnaps_real *w);
 
   //! \brief Memory arrangement of field components
-  //! \param[in] param interpolation parameters
-  //! \param[in] elem macro element index
+  //! \param[in] param interpolation parameters  WRONG 
+  //! \param[in] elem macro element index WRONG
   //! \param[in] ipg glop index
   //! \param[in] iv field component index
-  int (*varindex)(int* param, int ipg, int iv);
+  int (*varindex)(int* deg, int *raf, int m, int ipg, int iv);
 
-  // Array of pointers to MacroFaces used for DGMacroCellInterface
-  MacroFace *mface;
-  // Array of pointers to MacroCell used for various DG routines
-  MacroCell *mcell;
-
-#ifdef _WITH_OPENCL
-
-  bool extract_cl;
-  
-  // For launching the macrocell interfaces in parallel
-  int niwaves;
-  int *iwavecount;
-  int **iwave;
-  cl_event **clv_iwave;
-  
-  // For launching the macrocell boundaries in parallel
-  int nbwaves;
-  int *bwavecount;
-  int **bwave;
-  cl_event **clv_bwave;
-
-  // For extracted interfaces / boundaries
-  cl_event* clv_extract;
-  cl_event* clv_insert;
-  
-  
-  //! \brief opencl data
-  CLInfo cli;
-  //! \brief copy of the dtwn array
-  cl_mem *wn_cl;
-  cl_mem *dtwn_cl;
-  //! \brief copy of the params
-  cl_mem param_cl;
-  //! \brief copy physnode
-
-  real *physnodeR;
-
-  bool use_source_cl;
-  char *sourcename_cl;
-
-  //! opencl kernels
-  cl_kernel dgmass;
-  cl_kernel dgflux;
-  cl_kernel dgvolume;
-  cl_kernel dgsource;
-  cl_kernel dginterface;
-  cl_kernel ExtractInterface;
-  cl_kernel InsertInterface;
-  cl_kernel ExtractedDGInterfaceFlux;
-  cl_kernel ExtractedDGBoundaryFlux;
-  cl_kernel dgboundary;
-  cl_kernel RK_out_CL;
-  cl_kernel RK_in_CL;
-  cl_kernel RK4_first_stages;
-  cl_kernel RK4_final_stage;
-  cl_kernel zero_buf;
-  cl_kernel empty_kernel;
-
-  // OpenCL events
-
-  // TODO: move some of these event to MacroCells
-
-  // set_buf_to_zero events
-  cl_event *clv_zbuf;
-  
-  // Subcell mass events
-  cl_event *clv_mass; 
-
-  // Subcell flux events
-  cl_event **clv_flux;
-
-  // Subcell volume events
-  cl_event *clv_volume; 
-
-  // Subcell volume events
-  cl_event *clv_source; 
-
-  // Macrocell interface events
-  cl_event *clv_mci;
-  // Boundary term events
-  cl_event *clv_boundary;
-  cl_event *clv_interface;
-
-  // OpenCL timing
-  int zbuf_calls;
-  int mass_calls;
-  int vol_calls;
-  int flux_calls;
-  int minter_calls;
-  int boundary_calls;
-  int source_calls;
-  int rk_calls;
-
-  cl_ulong zbuf_time;
-  cl_ulong mass_time;
-  cl_ulong vol_time;
-  cl_ulong flux_time;
-  cl_ulong minter_time;
-  cl_ulong boundary_time;
-  cl_ulong source_time;
-  cl_ulong rk_time;
-
-  cl_ulong extractinsert_time;
-  int extractinsert_calls;
-
-#endif
+  //! \brief Memory arrangement of field components/Reverse lookup 
+  //! \param[in] deg interpolation  degree vector
+  //! \param[in] deg interpolation subcell refinement level vector
+  //! \param[in] m model number of field components
+  //! \param[in] imem memory position
+  //! \param[out] ipg glop index in the arrays wn wnp1 or dtwn.
+  //! \param[out] iv field component index
+  void (*varindex_to_ipgiv)(int *def,int *raf,int m, int imem, int *ipg,int *iv);
 } field;
 
 //! \brief memory arrangement of field components.
 //! Generic implementation.
-//! \param[in] param interpolation parameters
-//! param[0] = M
-//! param[1] = deg x
-//! param[2] = deg y
-//! param[3] = deg z
-//! param[4] = raf x
-//! param[5] = raf y
-//! param[6] = raf z
-//! \param[in] elem macro element index
+//! \param[in] deg degrees parameters
+//! \param[in] raf refinement parameters
+//! \param[in] m number of conservative variables
 //! \param[in] ipg glop index
 //! \param[in] iv field component index
 //! \returns the memory position in the arrays wn wnp1 or dtwn.
 #pragma start_opencl
-int GenericVarindex(__constant int *param, int ipg, int iv);
+int GenericVarindex(__constant int *deg, __constant int *raf, int m,
+		    int ipg, int iv);
 #pragma end_opencl
+
+//! \brief memory arrangement of field components/reverse lookup function 
+//! CAUTION : must be consistent with GenericVarindex
+//! Generic implementation. 
+//! \param[in] deg degrees parameters
+//! \param[in] raf refinement parameters
+//! \param[in] m number of conservative variables
+//! \param[in] imem memory position in the arrays wn wnp1 or dtwn.
+//! \param[out] ipg glop index
+//! \param[out] iv field component index
+//! \returns the memory position in the arrays wn wnp1 or dtwn.
+
+void GenericVarindex_toipgiv(int *deg, int *raf, int m, int imem,int *ipg,int *iv);
 
 //! \brief memory arrangement of field components.
-//! with 3D components
-//! \param[in] param interpolation parameters
-//! param[0] = M
-//! param[1] = deg x
-//! param[2] = deg y
-//! param[3] = deg z
-//! param[4] = raf x
-//! param[5] = raf y
-//! param[6] = raf z
-//! \param[in] elem macro element index
-//! \param[in] ix components of the glop in its subcell
-//! \param[in] ic components of the subcell in the macrocell
-//! \param[in] iv component of the conservative variable
-/* //! \returns the memory position in the arrays wn wnp1 or dtwn. */
+//! Generic implementation continuous case
+//! \param[in] deg degrees parameters
+//! \param[in] raf refinement parameters
+//! \param[in] m number of conservative variables
+//! \param[in] ipg glop index
+//! \param[in] iv field component index
+//! \returns the memory position in the arrays wn wnp1 or dtwn.
 #pragma start_opencl
-/* int GenericVarindex3d(int m, */
-/* 		      int nx0, int nx1, int nx2, */
-/* 		      int nc0, int nc1, int nc2, */
-/* 		      int elem, int *ix,int *ic, int iv); */
+int GenericVarindex_CG(__constant int *deg, __constant int *raf, int m,
+		    int ipg, int iv);
 #pragma end_opencl
 
-//! field initialization. Computation of the initial at each glop.
+//! \brief field initialization. Computation of the initial at each glop.
 //! \param[inout] f a field
-void Initfield(field *f);
+//! \param[in] m a model
+//! \param[in] physnode list of geometrical nodes of the macroelement
+//! \param[in] deg degrees parameters 
+//! \param[in] raf refinements parameters 
+//! \param[in] w a pointer to field value (if NULL memory will be allocated)
+//! \param[inout] dtw a pointer to derivatives (if NULL memory will be allocated)
+void Initfield(field *f, Model m, schnaps_real physnode[][3], int *deg, int *raf, schnaps_real *w, schnaps_real* dtw);
 
+//! \brief clean empty field initialization
+//! \param[inout] f a field
 void init_empty_field(field *f);
+
+//! \brief init of starpu data inside a field (called at the end of Initfield)
+//! \param[inout] f a field
+void Initfield_SPU(field *f);
 
 //! free the buffers created in Initfield.
 //! \param[inout] f a field
-void freefield(field *f);
+void Freefield(field *f);
+
+//! \brief  compute the Discontinuous Galerkin inter-macrocells boundary terms second implementation with a loop on the faces
+//! \param[in] locfaL local index of the face in the left element
+//! \param[inout] fL a left field
+//! \param[in] offsetL left offset for accessing data in w and dtw
+//! \param[inout] fR a right field
+//! \param[in] offsetR right offset for accessing data in w and dtw
+//! \param[in] w field data 
+//! \param[out] dtw time derivative of the field data w
+void DGMacroCellInterface(int locfaL,
+			  field *fL, int offsetL, field *fR, int offsetR,
+			  schnaps_real *w, schnaps_real *dtw);
 
 //! \brief compute the Discontinuous Galerkin volume terms
-//! slow version (no optimization using the tensors products)
-//! \param[inout] f a field
-void DGVolumeSlow(field *f);
+//! \param[in] f a field
+void DGVolume(field *f, schnaps_real *w, schnaps_real *dtw);
 
-//! \brief apply the Discontinuous Galerkin approximation for computing
-//! the time derivative of the field. Works with several subcells.
-//! Fast version: multithreaded and with tensor products optimizations
-//! \param[inout] f a field
-void dtfield(field *f, real tnow, real *w, real *dtw);
 
-bool touching(const MacroFace *A, const MacroFace *B);
-
-//! \brief  compute the Discontinuous Galerkin inter-macrocells boundary terms
-//! The argument has to be void* (for compatibility with pthread)
-//! but it is logically a MacroCell*
-//! \param[inout] mcell a MacroCell
-void DGMacroCellInterfaceSlow(MacroCell *mcell, field *f, real *w, real *dtw);
-
-void DGMacroCellInterface(MacroFace *mface, field *f,
-			  real *wmcL, real *wmcR,
-			  real *dtwmcL, real *dtwmcR);
-void DGMacroCellBoundary(MacroFace *mface, field *f, real *w, real *dtw);
-
-//! \brief compute the Discontinuous Galerkin volume terms
-//! The argument has to be void* (for compatibility with pthread)
-//! but it is logically a MacroCell*
-//! \param[inout] mcell a MacroCell
-void DGVolume(MacroCell *mcell, field *f, real *w, real *dtw);
+//! \brief compute the average value on a cell for each cell of the mesh
+//! \param[in] f a field
+void DGAverage(field *f, schnaps_real *w);
 
 //! \brief compute the Discontinuous Galerkin inter-subcells terms
-//! \param[inout] mcell a MacroCell
-void DGSubCellInterface(MacroCell *mcell, field *f, real *w, real *dtw);
+//! \param[in] f a field
+void DGSubCellInterface(field *f, schnaps_real *w, schnaps_real *dtw);
 
 //! \brief  apply the DG mass term
-//! \param[inout] mcell a MacroCell
-void DGMass(MacroCell *mcell, field *f, real *dtw);
+//! \param[in] f a field
+void DGMass(field *f, schnaps_real *w, schnaps_real *dtw);
 
 //! \brief Add the source term
-//! \param[inout] mcell a MacroCell
-//! \param[in] w: the field
-//! \param[out] dtw: the derivative
-void DGSource(MacroCell *mcell, field *f, real tnow, real *w, real *dtw);
-
-//! \brief An out-of-place RK stage
-//! \param[out] fwnp1 field at time n+1
-//! \param[in] fwn field at time n
-//! \param[in] fdtwn time derivative of the field
-//! \param[in] time step
-//! \param[in] size of the field buffer
-void RK_out(real *fwnp1, real *fwn, real *fdtwn, const real dt, 
-	    const int sizew);
-
-//! \brief An in-place RK stage
-//! \param[inout] fwnp1 field at time n+1
-//! \param[in] fdtwn time derivative of the field
-//! \param[in] time step
-//! \param[in] size of the field buffer
-void RK_in(real *fwnp1, real *fdtwn, const real dt, const int sizew);
-
-real set_dt(field *f);
-
-//! \brief Time integration by a second order Runge-Kutta algorithm
-//! \param[inout] f a field
-//! \param[in] tmax physical duration of the simulation
-void RK2(field *f, real tmax, real dt);
-
-//! \brief Time integration by a second order Runge-Kutta algorithm
-//! \param[inout] f a field
-//! \param[in] tmax physical duration of the simulation
-void RK4(field *f, real tmax, real dt);
-
-#ifdef _WITH_OPENCL
-//! \brief OpenCL version of RK2
-//! time integration by a second order Runge-Kutta algorithm
-//! \param[inout] f a field
-//! \param[in] tmax physical duration of the simulation
-void RK2_CL(field *f, real tmax, real dt,
-	    cl_uint nwait, cl_event *wait, cl_event *done);
-void RK4_CL(field *f, real tmax, real dt,
-	    cl_uint nwait, cl_event *wait, cl_event *done);
-#endif
-
-//! \brief save the results in the gmsh format
-//! \param[in] typplot index of the field variable to plot.
-//! \param[in] compare if true, the numerical solution is compared
 //! \param[in] f a field
-//! with the analytical solution
-//! \param[in] filename the path to the gmsh visualization file.
-void Plotfield(int typplot, int compare, field *f, char *fieldname, 
-	       char *filename);
+void DGSource(field *f, schnaps_real *w, schnaps_real *dtw);
+
+/* //! \brief save the results in the gmsh format */
+/* //! \param[in] typplot index of the field variable to plot. */
+/* //! \param[in] compare if true, the numerical solution is compared */
+/* //! with the analytical solution */
+/* //! \param[in] f a field */
+/* //! \param[in] fieldname name of the plotted data */
+/* //! \param[in] filename the path to the gmsh visualization file. */
+/* void Plotfield(int typplot, int compare, field *f, char *fieldname,  */
+/* 	       char *filename); */
 
 //! \brief interpolate field at a reference point a macrocell
 //! \param[in] f a field
 //! \param[in] ie the macrocell index
 //! \param[in] xref reference coordinates
 //! \param[out] w the m field values
-void InterpField(field *f,int ie,real* xref,real* w);
+void InterpField(field *f,schnaps_real* xref,schnaps_real* w);
 
 //! \brief  display the field on screen
 //! \param[in] f the field.
 void Displayfield(field *f);
 
-//! \brief Save 1D results in a text file
-//! \param[in] f the field.
-//! \param[in] dir fixed direction to plot
-//! \param[in] fixval fixed value to plot
-//! \param[in] filename the path to the gmsh visualization file.
-void Gnuplot(field* f,int dir, real fixval,char* filename);
+//! \brief  register field data for starpuy
+//! \param[inout] f the field.
+void Registerfield_SPU(field *f);
 
-//! \brief compute the normalized L2 distance with the imposed data
-//! \param[in] f the field.
-//! \returns the error.
-real L2error(field *f);
+//! \brief  unregister field data for starpuy
+//! \param[inout] f the field.
+void Unregisterfield_SPU(field *f);
+
 
 #endif

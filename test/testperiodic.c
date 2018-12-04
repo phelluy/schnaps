@@ -8,13 +8,15 @@
 #include "diagnostics_vp.h"
 #include "solverpoisson.h"
 
-void TestPeriodic_ImposedData(const real *x, const real t, real *w);
-void TestPeriodic_InitData(real *x, real *w);
-void TestPeriodic_BoundaryFlux(real *x, real t, real *wL, real *vnorm,
-			       real *flux);
+int TestPeriodic(void);
 
-int main()
-{
+
+void TestPeriodic_ImposedData(const schnaps_real *x, const schnaps_real t, schnaps_real *w);
+void TestPeriodic_InitData(schnaps_real *x, schnaps_real *w);
+void TestPeriodic_BoundaryFlux(schnaps_real *x, schnaps_real t, schnaps_real *wL, schnaps_real *vnorm,
+			       schnaps_real *flux);
+
+int main(void) {
   // unit tests
     
   int resu = TestPeriodic();
@@ -28,105 +30,94 @@ int main()
 int TestPeriodic(void) {
   bool test = true;
 
+  MacroMesh mesh;
+  ReadMacroMesh(&mesh,"../test/testcube.msh");
+  Detect1DMacroMesh(&mesh);
+  assert(mesh.is1d);
+  // periodic mesh
+  mesh.period[0] = 1;
+  BuildConnectivity(&mesh);
+  int deg[]={2, 0, 0};
+  int raf[]={16, 1, 1};
 
-  field f;
-  init_empty_field(&f);  
+  CheckMacroMesh(&mesh,deg,raf);
+  PrintMacroMesh(&mesh);
 
-  f.model.m = _INDEX_MAX; // num of conservative variables
-  f.vmax = _VMAX; // maximal wave speed 
-  f.model.NumFlux = VlasovP_Lagrangian_NumFlux;
-  f.model.Source = NULL;
+
+  Model model;
+  schnaps_real degV=2;
+  schnaps_real nbEV=24;
+  KineticData * kd=&schnaps_kinetic_data;
+
+  InitKineticData(kd,nbEV,degV);
+ 
   
-  f.model.BoundaryFlux = TestPeriodic_BoundaryFlux;
-  f.model.InitData = TestPeriodic_InitData;
-  f.model.ImposedData = TestPeriodic_ImposedData;
+  model.m=kd->index_max; // num of conservative variables f(vi) for each vi, phi, E, rho, u, p, e (ou T)
+  model.NumFlux=VlasovP_Lagrangian_NumFlux;
+  model.Source = NULL;
+  model.BoundaryFlux = TestPeriodic_BoundaryFlux;
+  model.InitData = TestPeriodic_InitData;
+  model.ImposedData = TestPeriodic_ImposedData;
+
+  Simulation simu;
+
+  InitSimulation(&simu, &mesh, deg, raf, &model);
+  printf("cfl param =%f\n",simu.hmin);
+
+  simu.vmax = kd->vmax; // maximal wave speed 
+  simu.cfl = 0.05;
+  schnaps_real tmax = 0.4;
  
-  f.varindex=GenericVarindex;
-  f.pre_dtfield = NULL;
-  f.post_dtfield = NULL;
-  f.update_after_rk = NULL; 
-  f.model.cfl = 0.05;
-    
-  f.interp.interp_param[0] = f.model.m;  // _M
-  f.interp.interp_param[1] = 2;  // x direction degree
-  f.interp.interp_param[2] = 0;  // y direction degree
-  f.interp.interp_param[3] = 0;  // z direction degree
-  f.interp.interp_param[4] = 4;  // x direction refinement
-  f.interp.interp_param[5] = 1;  // y direction refinement
-  f.interp.interp_param[6] = 1;  // z direction refinement
-  // read the gmsh file
-  ReadMacroMesh(&f.macromesh, "../test/testcube.msh");
-  // try to detect a 2d mesh
-  Detect1DMacroMesh(&(f.macromesh));
-  assert(f.macromesh.is1d);
+  RK4(&simu,tmax);
 
-  // mesh preparation
-  f.macromesh.period[0] = 1;
-
-  BuildConnectivity(&(f.macromesh));
-
-  PrintMacroMesh(&(f.macromesh));
-  //AffineMapMacroMesh(&(f.macromesh));
- 
-  // prepare the initial fields
-  Initfield(&f);
-  f.nb_diags = 0;
-
-  CheckMacroMesh(&(f.macromesh),f.interp.interp_param + 1);
-
-  printf("minimum grid spacing: %f\n", f.hmin);
-
-  f.vmax = _VMAX;
-  real dt = set_dt(&f);
-  real tmax = 0.5;
-  RK2(&f, tmax, dt);
- 
   // save the results and the error
-  /* Plotfield(0, false, &f, "sol","dgvisu.msh"); */
-  /* Plotfield(0, true, &f, "error","dgerror.msh"); */
+  PlotFields(0, false, &simu, "sol","dgvisu.msh");
+  PlotFields(0, true, &simu, "error","dgerror.msh");
 
-  real dd = L2error(&f);
-  real dd_Kinetic = L2_Kinetic_error(&f);
-  
-  printf("erreur kinetic L2: %lf\n", dd_Kinetic);
+  schnaps_real dd = L2error(&simu);
+
   printf("erreur L2: %lf\n", dd);
   test = test && (dd<2e-1);
 
-  //SolvePoisson(&f);
+  FreeMacroMesh(&mesh);
 
   return test;
 }
 
-void TestPeriodic_ImposedData(const real x[3], const real t,real w[])
+void TestPeriodic_ImposedData(const schnaps_real x[3], const schnaps_real t,schnaps_real w[])
 {
-  real pi = 4 * atan(1.0);
-  for(int i = 0; i < _INDEX_MAX_KIN + 1 ; ++i) {
-    int j = i % _DEG_V; // local connectivity put in function
-    int nel = i / _DEG_V; // element num (TODO : function)
+  KineticData * kd=&schnaps_kinetic_data;
+  schnaps_real pi = 4 * atan(1.0);
+  for(int i = 0; i < kd->index_max_kin + 1 ; ++i) {
+    int j = i % kd->deg_v; // local connectivity put in function
+    int nel = i / kd->deg_v; // element num (TODO : function)
 
-    real vi = (-_VMAX + nel * _DV + _DV * glop(_DEG_V, j));
+    schnaps_real vi = (-kd->vmax + nel * kd->dv + kd->dv * glop(kd->deg_v, j));
 
     w[i] = cos(2 * pi * ( x[0] - vi * t) );
   }
   // exact value of the potential and electric field
-  w[_INDEX_PHI] = 0;
-  w[_INDEX_EX] = 0;
-  w[_INDEX_RHO] = 2.0; //rho init
-  w[_INDEX_VELOCITY] = 0; // u init
-  w[_INDEX_PRESSURE] = 0; // p init
-  w[_INDEX_TEMP] = 0; // e ou T init
+  w[kd->index_phi] = 0;
+  w[kd->index_ex] = 0;
+  w[kd->index_ey] = 0;
+  w[kd->index_ez] = 0;
+  w[kd->index_rho] = 2.0; //rho init
+  w[kd->index_u] = 0; // u init
+  w[kd->index_P] = 0; // p init
+  w[kd->index_T] = 0; // e ou T init
 }
 
-void TestPeriodic_InitData(real x[3], real w[])
+void TestPeriodic_InitData(schnaps_real x[3], schnaps_real w[])
 {
-  real t = 0;
+  schnaps_real t = 0;
   TestPeriodic_ImposedData(x, t, w);
 }
 
-void TestPeriodic_BoundaryFlux(real x[3], real t, real wL[], real *vnorm,
-			       real* flux)
+void TestPeriodic_BoundaryFlux(schnaps_real x[3], schnaps_real t, schnaps_real wL[], schnaps_real *vnorm,
+			       schnaps_real* flux)
 {
-  real wR[_MV + 6];
+  KineticData * kd=&schnaps_kinetic_data;
+  schnaps_real wR[kd->index_max];
   TestPeriodic_ImposedData(x, t, wR);
   VlasovP_Lagrangian_NumFlux(wL, wR, vnorm, flux);
   assert(false);

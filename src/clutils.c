@@ -9,7 +9,7 @@
 cl_ulong clv_starttime(cl_event clv) 
 {
   cl_ulong time;
-  clWaitForEvents(1, &clv); // necessary for profiling
+  clWaitForEvents(1, &clv);
   clGetEventProfilingInfo(clv,
 			  CL_PROFILING_COMMAND_START,
 			  sizeof(time),
@@ -20,7 +20,7 @@ cl_ulong clv_starttime(cl_event clv)
 cl_ulong clv_endtime(cl_event clv) 
 {
   cl_ulong time;
-  clWaitForEvents(1, &clv); // necessary for profiling
+  clWaitForEvents(1, &clv);
   clGetEventProfilingInfo(clv,
 			  CL_PROFILING_COMMAND_END,
 			  sizeof(time),
@@ -230,17 +230,17 @@ const char* clErrorString(const cl_int err)
   return errString;
 }
 
-void print_build_debug(cl_program* program, cl_device_id *device) 
+char *print_build_debug(cl_program* program, cl_device_id *device) 
 {
-  size_t log_size;
+  size_t log_size = 1000000;
   clGetProgramBuildInfo(*program,
   			*device,
   			CL_PROGRAM_BUILD_LOG,
   			0,
   			NULL,
   			&log_size);
-
-  char *log = (char*)calloc(log_size + 1 , sizeof(char));
+  char *log = (char*)calloc(log_size , sizeof(char));
+  //char *log = (char*)malloc((log_size + 1) * sizeof(char));
   clGetProgramBuildInfo(*program, 
 			*device, 
 			CL_PROGRAM_BUILD_LOG, 
@@ -248,5 +248,5 @@ void print_build_debug(cl_program* program, cl_device_id *device)
 			log, 
 			NULL);
   printf("%s\n",log);
-  free(log);
+  return log;
 }

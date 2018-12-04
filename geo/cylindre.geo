@@ -1,8 +1,8 @@
-Lz = 2; // Cylinder length
+Lz = 1; // Cylinder length
 R = 1;  // Cylinder radius
 rafxy = 1; 
-rafz = 2;
-h=0.7*R/2;
+rafz = 1;
+h=0.3*R;
 Point(1) = {-h, -h, 0};
 Point(2) = {h, -h, 0};
 Point(3) = {h, h, 0};

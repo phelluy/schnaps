@@ -7,24 +7,32 @@
 #include "geometry.h"
 #include "skyline.h"
 #include "quantities_vp.h"
+#include "collision.h"
 
-void Computation_charge_density(field *f, real * w)
-{ 
-  for(int ie=0; ie < f->macromesh.nbelems; ie++) {
-    MacroCell *mcell = f->mcell + ie;
-    
-    for(int ipg = 0; ipg < NPG(mcell->raf, mcell->deg); ipg++) {
-      int imemc=f->varindex(f->interp_param,ipg,_INDEX_RHO) + mcell->woffset;
-      w[imemc]=0;
+
+
+
+void Computation_charge_density(Simulation *simu){
+
+  KineticData *kd = &schnaps_kinetic_data;
+  for(int ie = 0; ie < simu->macromesh.nbelems; ie++){
+    field * f = simu->fd + ie; 
   
-      for(int ielv=0;ielv<_NB_ELEM_V;ielv++){
+    for(int ipg=0;ipg<NPG(f->deg, f-> raf);ipg++){
+      int imemc=f->varindex(f->deg, f->raf, f->model.m,ipg,kd->index_rho);
+
+      f->wn[imemc]=0;
+      //simu->w[imemc]=0;
+  
+      for(int ielv=0;ielv<kd->nb_elem_v;ielv++){
 	// loop on the local glops
-	for(int iloc=0;iloc<_DEG_V+1;iloc++){
-	  real omega=wglop(_DEG_V,iloc);
-	  real vi=-_VMAX+ielv*_DV+_DV*glop(_DEG_V,iloc);
-	  int ipgv=iloc+ielv*_DEG_V;
-	  int imem = f->varindex(f->interp_param, ipg, ipgv) + mcell->woffset;
-	  w[imemc]+=omega*_DV*w[imem];
+	for(int iloc=0;iloc<kd->deg_v+1;iloc++){
+	  schnaps_real omega=wglop(kd->deg_v,iloc);
+	  schnaps_real vi=-kd->vmax+ielv*kd->dv+kd->dv*glop(kd->deg_v,iloc);
+	  int ipgv=iloc+ielv*kd->deg_v;
+	  int imem=f->varindex(f->deg, f->raf, f->model.m,ipg,ipgv);
+
+	  f->wn[imemc]+=omega*kd->dv*f->wn[imem];
 	}
       }
     }
@@ -32,365 +40,242 @@ void Computation_charge_density(field *f, real * w)
   
 }
 
+void Computation_Fluid_Quantities(Simulation *simu){
 
-real Computation_charge_average(field *f,real * w) {
-  //int param[8] = {f->model.m, _DEGX, _DEGY, _DEGZ, _RAFX, _RAFY, _RAFZ, 0};
-  real average = 0;
-  real rho_imem = 0;
-  real size_domain = 0;
+  KineticData *kd = &schnaps_kinetic_data;
 
-  for (int ie = 0; ie < f->macromesh.nbelems; ie++) {
-    MacroCell *mcell = f->mcell + ie;
+  for(int ie = 0; ie < simu->macromesh.nbelems; ie++){
+    field * f = simu->fd + ie; 
+  
+    for(int ipg=0;ipg<NPG(f->deg, f-> raf);ipg++){
+      int imem_rho=f->varindex(f->deg, f->raf, f->model.m,ipg,kd->index_rho);
+      int imem_U=f->varindex(f->deg, f->raf, f->model.m,ipg,kd->index_u);
+      int imem_P=f->varindex(f->deg, f->raf, f->model.m,ipg,kd->index_P);
+      int imem_T=f->varindex(f->deg, f->raf, f->model.m,ipg,kd->index_T);
+      simu->w[imem_rho]=0;
+      simu->w[imem_U]=0;
+      simu->w[imem_T]=0;
+      simu->w[imem_P]=0;
 
-    // Get the physical nodes of element ie
-    real physnode[20][3];
-    for(int inoloc = 0; inoloc < 20; inoloc++) {
-      int ino = f->macromesh.elem2node[20*ie+inoloc];
-      physnode[inoloc][0] = f->macromesh.node[3 * ino + 0];
-      physnode[inoloc][1] = f->macromesh.node[3 * ino + 1];
-      physnode[inoloc][2] = f->macromesh.node[3 * ino + 2];
-    }
-
-    // Loop on the glops (for numerical integration)
-    const int npg = NPG(mcell->raf, mcell->deg);
-    for(int ipg = 0; ipg < npg; ipg++) {
-	int imem = f->varindex(f->interp_param, ipg, _INDEX_RHO)
-	  + mcell->woffset;
-	rho_imem = f->wn[imem];
-      
-      real wpg, det;
-      // Compute wpg, det, and the exact solution
-      { 
-	real xphy[3], xpgref[3];
-	real dtau[3][3], codtau[3][3];
-	// Get the coordinates of the Gauss point
-	int* raf = f->interp_param + 4;
-	int* deg = f->interp_param + 1;
-	ref_pg_vol(raf, deg, ipg, xpgref, &wpg, NULL);
-	Ref2Phy(physnode, // phys. nodes
-		xpgref, // xref
-		NULL, -1, // dpsiref, ifa
-		xphy, dtau, // xphy, dtau
-		codtau, NULL, NULL); // codtau, dpsi, vnds
-	det = dot_product(dtau[0], codtau[0]);
+      schnaps_real rhoU=0,rho=0,U=0,tensor_P=0;
+      for(int ielv=0;ielv<kd->nb_elem_v;ielv++){
+	// loop on the local glops
+	for(int iloc=0;iloc<kd->deg_v+1;iloc++){
+	  schnaps_real omega=wglop(kd->deg_v,iloc);
+	  schnaps_real vi=-kd->vmax+ielv*kd->dv+kd->dv*glop(kd->deg_v,iloc);
+	  int ipgv=iloc+ielv*kd->deg_v;
+	  int imem=f->varindex(f->deg, f->raf, f->model.m, ipg, ipgv);
+	  
+	  rho+=omega*kd->dv*simu->w[imem];
+	  rhoU+=omega*kd->dv*vi*simu->w[imem];
+	  tensor_P+=omega*kd->dv*vi*vi*simu->w[imem];
+	}
       }
-
-
-        average += rho_imem * wpg * det;
-	size_domain +=  wpg * det;
-
-      
+      simu->w[imem_rho]=rho;
+      simu->w[imem_U]=rhoU/rho;
+      simu->w[imem_T]=tensor_P/rho;
+      simu->w[imem_P]=(0.5*tensor_P-0.5*rhoU*rhoU/rho)*(kd->gamma-1);
+           
     }
   }
-  return average/size_domain;
+}
+
+void Computation_Fluid_Quantities_loc(Simulation *simu, schnaps_real *w){
+  
+  KineticData *kd = &schnaps_kinetic_data;
+  field * f = simu->fd + 0;
+  
+  w[kd->index_rho]=0;
+  w[kd->index_u]=0;
+  w[kd->index_P]=0;
+  w[kd->index_T]=0;
+  
+  schnaps_real rhoU=0,rho=0,U=0,tensor_P=0;
+  for(int ielv=0;ielv<kd->nb_elem_v;ielv++){
+    // loop on the local glops
+    for(int iloc=0;iloc<kd->deg_v+1;iloc++){
+      schnaps_real omega=wglop(kd->deg_v,iloc);
+      schnaps_real vi=-kd->vmax+ielv*kd->dv+kd->dv*glop(kd->deg_v,iloc);
+      int ipgv=iloc+ielv*kd->deg_v;
+      rho+=omega*kd->dv*w[ipgv];
+      rhoU+=omega*kd->dv*vi*w[ipgv];
+      tensor_P+=omega*kd->dv*vi*vi*w[ipgv];
+    }
+  }
+  
+  w[kd->index_rho]=rho;
+  w[kd->index_u]=rhoU/rho;
+  w[kd->index_T]=tensor_P/rho;
+  w[kd->index_P]=(0.5*tensor_P-0.5*rhoU*rhoU/rho)*(kd->gamma-1);
+}
+
+
+
+schnaps_real Computation_Maxwellian(schnaps_real rho, schnaps_real U, schnaps_real T, schnaps_real v){ 
+
+  schnaps_real maxw;
+  schnaps_real my_pi= 4.0*atan(1.0);
+  
+  maxw= (rho/pow(2*my_pi*T,0.5))*exp(-pow(U-v,2.0)/(2.0*T));
+
+  return maxw;
+
+}
+  
+schnaps_real Computation_charge_average(Simulation *simu) {
+  KineticData *kd = &schnaps_kinetic_data;
+  field * f=&simu->fd[0];
+  schnaps_real average = 0;
+  schnaps_real rho_imem = 0;
+  schnaps_real size_domain = 0;
+
+
+  // Loop on the glops (for numerical integration)
+  const int npg = NPG(f->deg, f->raf);
+  for(int ipg = 0; ipg < npg; ipg++) {
+    int imem = f->varindex(f->deg, f->raf, f->model.m,
+			   ipg, kd->index_rho);
+    rho_imem = f->wn[imem];
+      
+    schnaps_real wpg, det;
+    // Compute wpg, det, and the exact solution
+    { 
+      schnaps_real xphy[3], xpgref[3];
+      schnaps_real dtau[3][3], codtau[3][3];
+      // Get the coordinates of the Gauss point
+      ref_pg_vol(f->deg, f->raf, ipg, xpgref, &wpg, NULL);
+      schnaps_ref2phy(f->physnode, // phys. nodes
+		      xpgref, // xref
+		      NULL, -1, // dpsiref, ifa
+		      xphy, dtau, // xphy, dtau
+		      codtau, NULL, NULL); // codtau, dpsi, vnds
+      det = dot_product(dtau[0], codtau[0]);
+    }
+
+    average += rho_imem * wpg * det;
+    size_domain +=  wpg * det;
+
+  }
+  return average / size_domain;
 }
 
 
 void ComputeElectricField(field* f){
-
-  int nraf[3] = {f->interp_param[4], 
-		 f->interp_param[5],
-		 f->interp_param[6]};
+  KineticData *kd = &schnaps_kinetic_data;
+  int nraf[3] = {f->raf[0], 
+		 f->raf[1],
+		 f->raf[2]};
   
-  int npg[3] = {f->interp_param[1] + 1, 
-		f->interp_param[2] + 1,
-		f->interp_param[3] + 1};
+  int npg[3] = {f->deg[0] + 1, 
+		f->deg[1] + 1,
+		f->deg[2] + 1};
     
-  int nbel = f->macromesh.nbelems * nraf[0] * nraf[1] * nraf[2];
-
+  int nbel =  nraf[0] * nraf[1] * nraf[2];
   int nnodes = npg[0] * npg[1] * npg[2] ;
- 
   int npgmacrocell = nnodes * nraf[0] * nraf[1] * nraf[2];
 
-
-  // FIXME: wrong naming convention for ie.
   for (int ie = 0; ie < nbel; ie++){
 
-    // get the physical nodes of element ie
+    /* int iemacro = ie / (nraf[0] * nraf[1] * nraf[2]); */
+    /* int isubcell = ie % (nraf[0] * nraf[1] * nraf[2]); */
 
-    int iemacro = ie / (nraf[0] * nraf[1] * nraf[2]);
-    int isubcell = ie % (nraf[0] * nraf[1] * nraf[2]);
-    MacroCell *mcell = f->mcell + iemacro;
-    
-    real physnode[20][3];
-    for(int ino = 0; ino < 20; ino++) {
-      int numnoe = f->macromesh.elem2node[20 * iemacro + ino];
-      for(int ii = 0; ii < 3; ii++) {
-	physnode[ino][ii] = f->macromesh.node[3 * numnoe + ii];
-      }
-    }
+    int iemacro = 0;
+    int isubcell = ie; 
 
+    //loop on the gauss points of the subcell
     for(int ipg = 0;ipg < nnodes; ipg++){
       //real wpg;
-      real xref[3];
+      schnaps_real xref[3];
       int ipgmacro= ipg + isubcell * nnodes;
 
-      int *raf = f->interp_param+4;
-      int *deg = f->interp_param+1;
-      ref_pg_vol(raf, deg, ipgmacro, xref, NULL, NULL);
-      int iex = f->varindex(f->interp_param, ipgmacro, _INDEX_EX)
-	+ mcell->woffset;
+      ref_pg_vol(f->deg,f->raf,ipgmacro,xref,NULL,NULL);
+      int iex = f->varindex(f->deg,f->raf,f->model.m,
+    			    ipgmacro,kd->index_ex);
       f->wn[iex] = 0;
+
+      int iey = f->varindex(f->deg,f->raf,f->model.m,
+      			    ipgmacro,kd->index_ey);
+    f->wn[iey] = 0;
+
+    int iez = f->varindex(f->deg,f->raf,f->model.m,
+    			    ipgmacro,kd->index_ez);
+      f->wn[iez] = 0;
       
       for(int ib=0; ib < nnodes; ib++){
-	real dtau[3][3],codtau[3][3];
-	real dphiref[3];
-	real dphi[3];
-	int ibmacro = ib + isubcell * nnodes;
-	grad_psi_pg(f->interp_param+1,ibmacro,ipgmacro,dphiref);
-	Ref2Phy(physnode,xref,dphiref,0,NULL,
-		  dtau,codtau,dphi,NULL);
-	real det = dot_product(dtau[0], codtau[0]);
-	int ipot = f->varindex(f->interp_param, ibmacro, _INDEX_PHI)
-	  + mcell->woffset;
-	f->wn[iex] -= f->wn[ipot] * dphi[0] / det;
+    	schnaps_real dtau[3][3],codtau[3][3];
+    	schnaps_real dphiref[3];
+    	schnaps_real dphi[3];
+    	int ibmacro = ib + isubcell * nnodes;
+    	grad_psi_pg(f->deg,f->raf,ibmacro,ipgmacro,dphiref);
+    	schnaps_ref2phy(f->physnode,xref,dphiref,0,NULL,
+    			dtau,codtau,dphi,NULL);
+    	schnaps_real detx = dot_product(dtau[0], codtau[0]);
+    	schnaps_real dety = dot_product(dtau[1], codtau[1]);
+    	schnaps_real detz = dot_product(dtau[2], codtau[2]);
+    	int ipot = f->varindex(f->deg,f->raf,f->model.m,
+    			       ibmacro,kd->index_phi);
+    	f->wn[iex] -= f->wn[ipot] * dphi[0] / detx;
+    	f->wn[iey] -= f->wn[ipot] * dphi[1] / dety;
+    	f->wn[iez] -= f->wn[ipot] * dphi[2] / detz;
       }
     }
+ 
 
   }
 }
 
-void Compute_electric_field(field* f, real * w){
-
-  int nraf[3] = {f->interp_param[4], 
-		 f->interp_param[5],
-		 f->interp_param[6]};
-  
-  int npg[3] = {f->interp_param[1] + 1, 
-		f->interp_param[2] + 1,
-		f->interp_param[3] + 1};
-    
-  int nnodes = npg[0] * npg[1] * npg[2] ;
- 
-  int npgmacrocell = nnodes * nraf[0] * nraf[1] * nraf[2];
 
 
-  for (int ie=0;ie<f->macromesh.nbelems;ie++){
-    MacroCell *mcell = f->mcell + ie;
 
-    // get the physical nodes of element ie
-    real physnode[20][3];
-    for(int inoloc=0;inoloc<20;inoloc++){
-      int ino=f->macromesh.elem2node[20*ie+inoloc];
-      physnode[inoloc][0]=f->macromesh.node[3*ino+0];
-      physnode[inoloc][1]=f->macromesh.node[3*ino+1];
-      physnode[inoloc][2]=f->macromesh.node[3*ino+2];
-    }
 
-    for(int ipg = 0;ipg < npgmacrocell; ipg++){
-      //real wpg;
-      real xref[3];
+void Collision_Source(Simulation *simu) {
+  KineticData * kd=&schnaps_kinetic_data;
 
-      int *raf = f->interp_param+4;
-      int *deg = f->interp_param+1;
-      ref_pg_vol(raf, deg, ipg,xref,NULL,NULL);
-      int iex = f->varindex(f->interp_param, ipg, _INDEX_EX)
-	+ mcell->woffset;
-      w[iex] = 0;
-      
-      for(int ib=0; ib < npgmacrocell; ib++){
-	real dtau[3][3],codtau[3][3];
-	real dphiref[3];
-	real dphi[3];
-	grad_psi_pg(f->interp_param+1,ib,ipg,dphiref);
-	Ref2Phy(physnode,xref,dphiref,0,NULL,
-		  dtau,codtau,dphi,NULL);
-	real det = dot_product(dtau[0], codtau[0]);
-	int ipot = f->varindex(f->interp_param, ib, _INDEX_PHI)
-	  + mcell->woffset;
-	w[iex] -= w[ipot] * dphi[0] / det;
-      }
+  field * f0 = simu->fd + 0;  
+  schnaps_real w_loc[f0->model.m];
+  schnaps_real source_loc[f0->model.m];
+
+  if(kd->time_order == 1){    
+    for(int ie = 0; ie < simu->macromesh.nbelems; ie++){
+      field * f = simu->fd + ie;     
+      for(int ipg=0;ipg<NPG(f->deg, f-> raf);ipg++){
+	for(int iv=0;iv<f->model.m;iv++){
+	  int imemc=f->varindex(f->deg, f->raf, f->model.m, ipg, iv);
+	  w_loc[iv] = simu->w[imemc];
+	}
+	Computation_Fluid_Quantities_loc(simu,w_loc);
+	BGK_Source(w_loc, source_loc);
+	for(int iv=0;iv<f->model.m;iv++){
+	  int imemc=f->varindex(f->deg, f->raf, f->model.m, ipg, iv);
+	  simu->w[imemc] = simu->w[imemc]+simu->dt*source_loc[iv];
+	}     
+      }  
     }
   }
-}
-
-//void Compute_electric_field(field* f, real * w)/* { */
-
-/*   int nraf[3] = {f->interp_param[4],  */
-/* 		 f->interp_param[5], */
-/* 		 f->interp_param[6]}; */
-  
-/*   int npg[3] = {f->interp_param[1] + 1,  */
-/* 		f->interp_param[2] + 1, */
-/* 		f->interp_param[3] + 1}; */
-    
-/*   int nnodes = npg[0] * npg[1] * npg[2] ; */
- 
-/*   int npgmacrocell = nnodes * nraf[0] * nraf[1] * nraf[2]; */
-
-
-/*   for (int ie=0;ie<f->macromesh.nbelems;ie++){ */
-/*     // get the physical nodes of element ie */
-/*     real physnode[20][3]; */
-/*     for(int inoloc=0;inoloc<20;inoloc++){ */
-/*       int ino=f->macromesh.elem2node[20*ie+inoloc]; */
-/*       physnode[inoloc][0]=f->macromesh.node[3*ino+0]; */
-/*       physnode[inoloc][1]=f->macromesh.node[3*ino+1]; */
-/*       physnode[inoloc][2]=f->macromesh.node[3*ino+2]; */
-/*     } */
-
-/*     for(int ipg = 0;ipg < npgmacrocell; ipg++){ */
-/*       //real wpg; */
-/*       real xref[3]; */
-
-/*       ref_pg_vol(f->interp_param+1,ipg,xref,NULL,NULL); */
-/*       int iex = f->varindex(f->interp_param,ie, */
-/* 			    ipg,_INDEX_EX); */
-/*       w[iex] = 0; */
-      
-/*       for(int ib=0; ib < npgmacrocell; ib++){ */
-/* 	real dtau[3][3],codtau[3][3]; */
-/* 	real dphiref[3]; */
-/* 	real dphi[3]; */
-/* 	grad_psi_pg(f->interp_param+1,ib,ipg,dphiref); */
-/* 	Ref2Phy(physnode,xref,dphiref,0,NULL, */
-/* 		  dtau,codtau,dphi,NULL); */
-/* 	real det = dot_product(dtau[0], codtau[0]); */
-/* 	int ipot = f->varindex(f->interp_param,ie, */
-/* 			   ib,_INDEX_PHI); */
-/* 	w[iex] -= w[ipot] * dphi[0] / det; */
-/*       } */
-/*     } */
-/*   } */
-  
-/* } */  
-  /*
-  for (int ie=0;ie<f->macromesh.nbelems;ie++){
-    // get the physical nodes of element ie
-    real physnode[20][3];
-    for(int inoloc=0;inoloc<20;inoloc++){
-      int ino=f->macromesh.elem2node[20*ie+inoloc];
-      physnode[inoloc][0]=f->macromesh.node[3*ino+0];
-      physnode[inoloc][1]=f->macromesh.node[3*ino+1];
-      physnode[inoloc][2]=f->macromesh.node[3*ino+2];
+  else {
+    for(int ie = 0; ie < simu->macromesh.nbelems; ie++){
+      field * f = simu->fd + ie;      
+      for(int ipg=0;ipg<NPG(f->deg, f-> raf);ipg++){
+	for(int iv=0;iv<f->model.m;iv++){
+	  int imemc=f->varindex(f->deg, f->raf, f->model.m, ipg, iv);
+	  w_loc[iv] = simu->w[imemc];
+	}
+	Computation_Fluid_Quantities_loc(simu,w_loc);
+	BGK_Source(w_loc, source_loc);  
+	for(int iv=0;iv<f->model.m;iv++){
+	  int imemc=f->varindex(f->deg, f->raf, f->model.m, ipg, iv);
+	  w_loc[iv]=simu->w[imemc]+0.5*simu->dt*source_loc[iv];
+	}
+	Computation_Fluid_Quantities_loc(simu,w_loc);
+	BGK_Source(w_loc, source_loc);
+	for(int iv=0;iv<f->model.m;iv++){
+	  int imemc=f->varindex(f->deg, f->raf, f->model.m, ipg, iv);
+	  simu->w[imemc]=simu->w[imemc]+simu->dt*source_loc[iv];
+	}
+      }  
     }
-
-    const int m = f->model.m;
-    const int deg[3]={f->interp_param[1],
-		      f->interp_param[2],
-		      f->interp_param[3]};
-    const int npg[3] = {deg[0]+1,
-			deg[1]+1,
-			deg[2]+1};
-    const int nraf[3]={f->interp_param[4],
-		       f->interp_param[5],
-		       f->interp_param[6]};
-
-    const unsigned int sc_npg=npg[0]*npg[1]*npg[2];
-
-
-    int f_interp_param[8]= {f->interp_param[0],
-			    f->interp_param[1],
-			    f->interp_param[2],
-			    f->interp_param[3],
-			    f->interp_param[4],
-			    f->interp_param[5],
-			    f->interp_param[6],
-			    f->interp_param[7]};
-
-    // loop on the subcells
-    for(int icL0 = 0; icL0 < nraf[0]; icL0++){
-      for(int icL1 = 0; icL1 < nraf[1]; icL1++){
-	for(int icL2 = 0; icL2 < nraf[2]; icL2++){
-
-	  int icL[3] = {icL0,icL1,icL2};
-	  // get the L subcell id
-	  int ncL=icL[0]+nraf[0]*(icL[1]+nraf[1]*icL[2]);
-	  // first glop index in the subcell
-	  int offsetL=npg[0]*npg[1]*npg[2]*ncL;
-
-	  // compute all of the xref for the subcell
-	  real *xref0 = malloc(sc_npg * sizeof(real));
-	  real *xref1 = malloc(sc_npg * sizeof(real));
-	  real *xref2 = malloc(sc_npg * sizeof(real));
-	  int *imems = malloc(m * sc_npg * sizeof(int));
-	  int pos=0;
-	  for(unsigned int p=0; p < sc_npg; ++p) {
-	    real xref[3];
-	    real tomega;
-	    ref_pg_vol(f->interp_param+1,offsetL+p,xref,&tomega,NULL);
-	    xref0[p] = xref[0];
-	    xref1[p] = xref[1];
-	    xref2[p] = xref[2];
-	    
-	    for(int im=0; im < m; ++im) {
-	      imems[pos++] = f->varindex(f_interp_param,ie,offsetL+p,im);
-	    }
-	  }
-
-	  // loop in the "cross" in the three directions
-	  // TO DO activate the 3D case !!!
-	  //for(int dim0 = 0; dim0 < 3; dim0++){
-	  for(int dim0 = 0; dim0 < 1; dim0++){
-	    // point p at which we compute the flux
-    
-	    for(int p0 = 0; p0 < npg[0]; p0++){
-	      for(int p1 = 0; p1 < npg[1]; p1++){
-		for(int p2 = 0; p2 < npg[2]; p2++){
-		  int p[3]={p0,p1,p2};
-		  int ipgL=offsetL+p[0]+npg[0]*(p[1]+npg[1]*p[2]);*/
-		  /* for(int iv=0; iv < m; ivx++){ */
-		  /*   ///int imemL=f->varindex(f_interp_param,ie,ipgL,iv); */
-		  /*   wL[iv] = f->wn[imems[m*(ipgL-offsetL)+iv]];  */
-
-		  /*   //wL[iv] = f->wn[imemL]; */
-		  /* } */
-		  //wn[imems[m*(ipgL-offsetL)+_MV+dim0]]=0;
-  //real gradx[3]={0,0,0};
-
-  /*  int q[3]={p[0],p[1],p[2]}; 
-		  // loop on the direction dim0 on the "cross"
-		  for(int iq = 0; iq < npg[dim0]; iq++){
-		    q[dim0]=(p[dim0]+iq)%npg[dim0];
-		    int ipgR=offsetL+q[0]+npg[0]*(q[1]+npg[1]*q[2]);
-		    real phiq=w[imems[m*(ipgR-offsetL)+_INDEX_PHI]];
-		    real dphiref[3]={0,0,0};
-		    // compute grad phi_q at glop p
-		    dphiref[dim0]=dlag(deg[dim0],q[dim0],p[dim0])*nraf[dim0];
-
-		    real xrefL[3]={xref0[ipgL-offsetL],
-		    		     xref1[ipgL-offsetL],
-		    		     xref2[ipgL-offsetL]}; 
-				     //real wpgL=omega[ipgL-offsetL]; */
-		    /* real xrefL[3], wpgL; */
-		    /* ref_pg_vol(f->interp_param+1,ipgL,xrefL,&wpgL,NULL); */
-
-		    // mapping from the ref glop to the physical glop 
-  /*	    real dtau[3][3],codtau[3][3],dphiL[3];
-		    Ref2Phy(physnode,
-			    xrefL,
-			    dphiref,  // dphiref
-			    -1,    // ifa                                 
-			    NULL,  // xphy  
-			    dtau,
-			    codtau,
-			    dphiL,  // dphi
-			    NULL);  // vnds   
-    
-		    //f->model.NumFlux(wL,wL,dphiL,flux);
-
-		    gradx[0]+=phiq*dphiL[0];
-		  } // iq
-		  w[imems[m*(ipgL-offsetL)+_INDEX_EX+dim0]]=gradx[0];		  
-		  //printf("grad=%f\n",gradx[0]);
-		} // p2
-	      } // p1
-	    } // p0
-	    
-	  } // dim loop
-	  
-	  free(xref0);
-	  free(xref1);
-	  free(xref2);
-	  free(imems);
-
-	} // icl2
-      } //icl1
-    } // icl0
   }
-  */
 
-
-
-
-
+  Computation_Fluid_Quantities(simu);
+  
+};

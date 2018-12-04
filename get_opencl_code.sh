@@ -3,12 +3,13 @@
 rm -f schnaps.cl
 touch schnaps.cl
 
-#echo "#ifdef cl_khr_fp64" >> schnaps.cl
+echo "#ifdef cl_khr_fp64" >> schnaps.cl
 echo "#pragma OPENCL EXTENSION cl_khr_fp64: enable" >> schnaps.cl
-#echo "#pragma OPENCL EXTENSION cl_amd_printf : enable" >> schnaps.cl
-#echo "#else" >> schnaps.cl
-#echo "#error" >> schnaps.cl
-#echo "#endif" >> schnaps.cl
+echo "#else" >> schnaps.cl
+echo "//#error" >> schnaps.cl
+echo "#endif" >> schnaps.cl
+echo "#define M_PI 3.1415926535897932385" >> schnaps.cl
+
 
 echo >> schnaps.cl
 
@@ -32,3 +33,9 @@ cat ../src/field.cl >> schnaps.cl
 rm -f schnaps0.cl
 
 exit 0
+	 #  3 - test/testfieldrk2_cl (OTHER_FAULT)
+	 #  8 - test/testcharge_ocl (SEGFAULT)
+	 # 24 - test/testfielddg_spu (OTHER_FAULT)
+	 # 29 - test/testmeq2_cl (OTHER_FAULT)
+	 # 44 - test/testfieldrk4_cl (OTHER_FAULT)
+	 # 51 - test/testlinearsolver (Failed)

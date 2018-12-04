@@ -12,7 +12,7 @@
 #define _XOPEN_SOURCE 700
 
 int main(int argc, char *argv[]) 
-{
+{/*
   // Unit tests
   real cfl = 0.5;
   int deg = 3;
@@ -149,7 +149,7 @@ int main(int argc, char *argv[])
   set_vlasov_params(&f.model);
 
   // Read the gmsh file
-  ReadMacroMesh(&f.macromesh, "../geo/square.msh");
+  ReadMacroMesh(&f.macromesh, "geo/square.msh");
   // Try to detect a 2d mesh
   Detect2DMacroMesh(&f.macromesh);
   assert(f.macromesh.is2d);
@@ -170,7 +170,7 @@ int main(int argc, char *argv[])
   CheckMacroMesh(&f.macromesh, f.interp.interp_param + 1);
 
   /* real executiontime; */
-  /* struct timespec tstart, tend; */
+  /* struct timespec tstart, tend; 
   if(usegpu) {
     printf("Using OpenCL:\n");
     //clock_gettime(CLOCK_MONOTONIC, &tstart);
@@ -189,7 +189,7 @@ int main(int argc, char *argv[])
     RK2(&f, tmax, dt);
     //clock_gettime(CLOCK_MONOTONIC, &tend);
   }
-  /* executiontime = seconds(tend, tstart); */
+  /* executiontime = seconds(tend, tstart); 
 
   // Save the results and the error
   if(writemsh) {
@@ -209,7 +209,7 @@ int main(int argc, char *argv[])
 	Plotfield(mplot, false, &f, fieldname, filename);
       }
     }
-    /* Plotfield(mplot, true, &f, "dgerror.msh"); */
+    /* Plotfield(mplot, true, &f, "dgerror.msh"); 
   }
 
   printf("tmax: %f, cfl: %f, deg: %d, nrafx: %d, nrafy: %d\n", 
@@ -231,7 +231,7 @@ int main(int argc, char *argv[])
   /*
   printf("executiontime (s):\n");
   printf("%f\n", executiontime);
-  */
+  
 
   printf("itermax (s):\n");
   printf("%d\n", f.itermax);
@@ -239,7 +239,7 @@ int main(int argc, char *argv[])
   /*
   printf("perRK2time (s):\n");
   printf("%f\n", executiontime / (real)f.itermax);
-  */
+  
 
   real tolerance = 1e-2;
   test = test && (dd < tolerance);
@@ -248,5 +248,5 @@ int main(int argc, char *argv[])
     printf("multiple velocity transport test OK !\n");
   else 
     printf("multiple velocity transport test failed !\n");
-  return !test;
+  return !test; */
 }

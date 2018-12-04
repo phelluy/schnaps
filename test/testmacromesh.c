@@ -5,6 +5,8 @@
 #include "test.h"
 #include "schnaps.h"
 
+int TestMacroMesh(void);
+
 int main(void) {
   // Unit tests
   int resu=TestMacroMesh();
@@ -18,12 +20,13 @@ int TestMacroMesh(void)
 {
   MacroMesh m;
 
-  int param[]={4, 4, 4, 1, 1, 1, 0};
+  int deg[]={4, 4, 4};
+  int raf[]={2, 2, 2};
   
   // test gmsh file reading
   ReadMacroMesh(&m, "../test/testmacromesh.msh");
   BuildConnectivity(&m);
-  CheckMacroMesh(&m, param);
+  CheckMacroMesh(&m, deg, raf);
   PrintMacroMesh(&m);
 
   int test = (m.nbelems == 5);
@@ -32,8 +35,8 @@ int TestMacroMesh(void)
 
 
   // test search methods
-  real xphy[3]={1,1.1,0.5};
-  real xref[3];
+  schnaps_real xphy[3]={1,1.1,0.5};
+  schnaps_real xref[3];
 
   test= test && IsInElem(&m,0,xphy,xref);
 
@@ -53,13 +56,13 @@ int TestMacroMesh(void)
   printf("xphy=%f %f %f is in elem=%d\n",xphy[0],xphy[1],xphy[2],num);
   test=test && (num == 0);
 
-  real xphy2[3]={1,0,0.33};
+  schnaps_real xphy2[3]={1,0,0.33};
   num=NumElemFromPoint(&m,xphy2,NULL);
   printf("xphy=%f %f %f is in elem=%d\n",xphy2[0],xphy2[1],xphy2[2],num);
   test=test && (num == 3);
 
 
-
+  FreeMacroMesh(&m);
 
 
   return test;

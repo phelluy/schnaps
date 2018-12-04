@@ -1,209 +1,167 @@
 #ifndef _ADERDG_H
 #define _ADERDG_H
-
-// number of conservative variables
+#include <stdbool.h>
+// Number of conservative variables
 #define _M 2
-const double velocity[_M]={1,-1};
-// polynomial degree
-#define _D 2
-// number of interior elements
-#define _NBELEMS_IN 200
 
-#define _CFL 0.15
+const double velocity[_M] = {1, -1};
 
-// activate ader predictor
-#define _ADER
+// Polynomial degree
+#define _D 1
 
-// nb of gauss lobatto points in one element
-#define _NGLOPS (_D+1)
-// nb of internal elements (not counting the two boundary
-// elements)
-#define _NBELEMS (_NBELEMS_IN+2)
-#define _NBFACES (_NBELEMS_IN+1)
+// Number of interior elements (without fictional boundary elements)
+#define _NBELEMS_IN 1000
 
-typedef struct ADERDG{
+// CFL
+#if (_D == 0)
+#define _CFL 0.56
+#elif (_D == 1)
+#define _CFL 0.5
+#elif (_D == 2)
+#define _CFL 0.17
+#elif (_D == 3)
+#define _CFL 0.08
+#elif (_D == 4)
+#define _CFL 0.05
+#endif
 
+// Number of gauss lobatto points in one element
+#define _NGLOPS (_D + 1)
+// Total number of elements (counting the two boundary elements)
+#define _NBELEMS (_NBELEMS_IN + 2)
+// Number of interfaces (counting the two boundary interfaces)
+#define _NBFACES (_NBELEMS_IN + 1)
+
+
+
+//! \brief 1-D ADER-DG data
+typedef struct ADERDG {
+
+  //! \brief 1-D mesh boundaries (without fictional boundary elements)
   double xmin, xmax;
 
+  //! \brief Interface coordinates
   double face[_NBFACES];
 
-  // three arrays for maintaining previous and next
-  // values of the _M conservatives variables at the _D+1
-  // and there derivatives
-  // Gauss points of each cell -> size = _M * (_D+1) * nbelems
-  double wnow[_NBELEMS][_D+1][_M];
-  double wnext[_NBELEMS][_D+1][_M];
-  double dtw[_NBELEMS][_D+1][_M];
-  // one array for the current predicted values
-  double wpred[_NBELEMS][_D+1][_M];
-
-  // current time evolution on the bigger cells
-  double tnow;
-  // macro time step
+  //! \brief Maximal time step (of the biggest cells)
   double dt;
-  // maximal cell size
-  double dx;
-  // time step of the smalles cells
+
+  //! \brief Minimal time step (of the smallest cells)
   double dt_small;
 
-  double cfl;
-
-  // number of CFL levels
+  //! \brief Number of levels
   int ncfl;
 
-  // current time iteration
-  int iter;
+  //! \brief Cell levels
+  int cell_level[_NBELEMS];
 
-  int cell_level[_NBELEMS];  
-  int face_level[_NBFACES];  
-  
+  //! \brief Interface levels
+  int face_level[_NBFACES];
+
+  //! \brief Interface ids ordered according to their level
+  int face_order[_NBFACES];
+
+  //! \brief Current time (last global update)
+  double tnow;
+
+  //! \brief Cell current time (last local update)
+  double cell_tnow[_NBELEMS];
+
+
+  // Three arrays for maintaining previous and next values of the
+  // _M conservatives variables at the _D + 1 gauss points and their derivatives
+  // ---------------------------------------------------------------------------
+  //! \brief Field at current local time
+  double wnow[_NBELEMS][_D + 1][_M];
+
+  //! \brief Field at future local time
+  double wnext[_NBELEMS][_D + 1][_M];
+
+  //! \brief Derivatives
+  double dtw[_NBELEMS][_D + 1][_M];
+
+
+  //! \brief Predicted values
+  double wpred[_NBELEMS][_D + 1][_M];
+
+  //! \brief Indicate if predicted values have been computed for current step
+  bool pred_done[_NBELEMS];
+
 
 } ADERDG;
 
-void InitADERDG(ADERDG* adg,double xmin,double xmax);
 
-void Predictor(ADERDG* adg,int ie,double s);
+//! \brief ADER-DG initialization function
+//! \param[in] xmin mesh left boundary
+//! \param[in] xmax mesh right boundary
+//! \todo put the velocity
+void ADERDG_Init(ADERDG*, double xmin, double xmax);
 
-void VolumeTerms(ADERDG* adg,int ie);
+//! \brief Plot ADERDG data in gnuplot
+// $ plot 'adgplot.dat' using 1:2 w l , 'adgplot.dat' using 1:4
+// $ plot 'adgplot.dat' using 1:3 w l , 'adgplot.dat' using 1:5
+void ADERDG_Plot(ADERDG*);
 
+//! \brief Perform a resolution by the ADER-DG method
+//! \param[in] tmax final time
+void ADERDG_Solve(ADERDG*, double tmax);
 
-// perform a resolution by the ADER method
-void ADERSolve(ADERDG* adg,double tmax);
+//! \brief Predictor
+//! \param[in] ie element id
+//! \param[in] tpred prediction time
+void ADERDG_Predictor(ADERDG*, int ie, double tpred);
 
-// perform a standard time step of the ADER method
-void ADERTimeStep(ADERDG* adg);
+//! \brief Perform a standard time step with ADER-DG method
+void ADERDG_TimeStep(ADERDG*);
 
-// perform a macro time step of the ADER method
-void BigStep(ADERDG* adg);
-
-double stretching(double xh);
-
-
-void NumFlux(double* wL,double* wR,double* flux);
-
-
-void ExactSol(double x,double t,double w[_M]);
-
-
-// plotting in gnuplot
-//plot 'adgplot.dat' using 1:2 w l , 'adgplot.dat' using 1:4  
-//plot 'adgplot.dat' using 1:3 w l , 'adgplot.dat' using 1:5 
-void Plot(ADERDG* adg);
+//! \brief Perform a macro time step with ADER-DG method
+void ADERDG_BigStep(ADERDG*);
 
 
 
+// Model
+// -----------------------------------------------------------------------------
 
-//! Gauss LObatto Points (GLOP) up to order 4
-static const double gauss_lob_point[] = {
-  0.5,
-  0,
-  1,
-  0,
-  0.5,
-  1,
-  0,
-  0.276393202250021030359082633127,
-  0.723606797749978969640917366873,
-  1,
-  0,
-  0.172673164646011428100853771877,
-  0.5,
-  0.827326835353988571899146228123,
-  1
-};
+//! \brief Exact solution
+//! \param[in] x coordinate
+//! \param[in] t time
+//! \param[out] w exact solution
+void ExactSol(double x, double t, double w[_M]);
 
-//! GLOP weights up to order 4
-static const double gauss_lob_weight[] = {
-  1,
-  0.5,
-  0.5,
-  0.166666666666666666666666666667,
-  0.666666666666666666666666666668,
-  0.166666666666666666666666666667,
-  0.0833333333333333333333333333333,
-  0.416666666666666666666666666666,
-  0.416666666666666666666666666666,
-  0.0833333333333333333333333333333,
-  0.05,
-  0.272222222222222222222222222223,
-  0.355555555555555555555555555556,
-  0.272222222222222222222222222219,
-  0.05
-};
+//! \brief Numerical flux
+//! \param[in] wL left field
+//! \param[in] wR right field
+//! \param[out] flux flux
+void NumFlux(double* wL, double* wR, double* flux);
 
-//! indirection for finding the GLOP
-//! data for a given degree in the previous arrays
-static const int gauss_lob_offset[] = {0, 1, 3, 6, 10};
-
-static const double gauss_lob_dpsi[] = {
-  0.0,
-  -1.,
-  -1.,
-  1.,
-  1.,
-  -3.,
-  -1.,
-  1.,
-  4.,
-  0.,
-  -4.,
-  -1.,
-  1.,
-  3.,
-  -6,
-  -1.61803398874989484820458683436,
-  .618033988749894848204586834362,
-  -1,
-  8.09016994374947424102293417177,
-  0,
-  -2.23606797749978969640917366872,
-  3.09016994374947424102293417184,
-  -3.09016994374947424102293417182,
-  2.23606797749978969640917366872,
-  0,
-  -8.09016994374947424102293417177,
-  1,
-  -.618033988749894848204586834362,
-  1.61803398874989484820458683436,
-  6,
-  -10,
-  -2.48198050606196571569743868436,
-  .75,
-  -.518019493938034284302561315632,
-  1,
-  13.5130049774484800076860550594,
-  0,
-  -2.67316915539090667050969419631,
-  1.52752523165194666886268239794,
-  -2.82032835588485332564727827404,
-  -5.33333333333333333333333333336,
-  3.49148624377587810025755976667,
-  0,
-  -3.49148624377587810025755976662,
-  5.33333333333333333333333333336,
-  2.82032835588485332564727827399,
-  -1.52752523165194666886268239791,
-  2.67316915539090667050969419635,
-  0,
-  -13.5130049774484800076860550594,
-  -1,
-  .518019493938034284302561315631,
-  -.75,
-  2.48198050606196571569743868437,
-  10
-};
-
-//! indirection for finding the GLOP
-//! data for a given degree in the previous arrays
-static const int gauss_lob_dpsi_offset[] = {0, 1, 5, 14, 30};
+//! \brief Prediction
+//! \param[in] wnow current field
+//! \param[in] pw prediction weight
+//! \param[out] wpred predicted field
+void Prediction(double* wnow, double pw, double* wpred);
 
 
-//return glop weight i
-double wglop(int deg,int i);
 
-// returns glop i
-double glop(int deg,int i);
-// return the 1d derivative of lagrange polynomial ib at glop ipg
-double dlag(int deg,int ib,int ipg);
+// Interpolation
+// -----------------------------------------------------------------------------
+
+//! \brief GLOP ipg
+//! \param[in] deg interpolation degree
+//! \param[in] ipg gauss point
+//! \return local GLOP coordinate
+double glop(int deg, int ipg);
+
+//! \brief Weight of GLOP ipg
+//! \param[in] deg interpolation degree
+//! \param[in] ipg gauss point
+//! \return GLOP weight
+double wglop(int deg, int ipg);
+
+//! \brief 1-D derivative of lagrange polynomial ib at GLOP ipg
+//! \param[in] deg interpolation degree
+//! \param[in] ib lagrange polynomial
+//! \param[in] ipg gauss point
+//! \return derivative
+double dlag(int deg, int ib, int ipg);
 
 #endif

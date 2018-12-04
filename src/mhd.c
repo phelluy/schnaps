@@ -11,8 +11,8 @@
 //#pragma end_opencl
 
 #pragma start_opencl
-void conservatives(real *y, real *w) {
-  real gam = 1.6666666666;
+void conservatives(schnaps_real *y, schnaps_real *w) {
+  schnaps_real gam = 1.6666666666;
 
   w[0] = y[0];
   w[1] = y[0]*y[1];
@@ -29,8 +29,8 @@ void conservatives(real *y, real *w) {
 
 #pragma start_opencl
 // FIXME: documentation????
-void primitives(real *W, real *Y) {
-  real gam = 1.6666666666;
+void primitives(schnaps_real *W, schnaps_real *Y) {
+  schnaps_real gam = 1.6666666666;
 
   Y[0] = W[0];
   Y[1] = W[1]/W[0];
@@ -48,11 +48,11 @@ void primitives(real *W, real *Y) {
 #pragma end_opencl
 
 #pragma start_opencl
-void jacobmhd(real* W,real* vn, real *M){
-  real gam = 1.6666666666;
-  real Y[9];
+void jacobmhd(schnaps_real* W,schnaps_real* vn, schnaps_real *M){
+  schnaps_real gam = 1.6666666666;
+  schnaps_real Y[9];
 
-  real rho, ux, uy, uz, by, bz, p, bx;
+  schnaps_real rho, ux, uy, uz, by, bz, p, bx;
 
   for(int i = 0; i < 9; i++){
     for(int j = 0; j < 9; j++) {
@@ -147,7 +147,7 @@ void jacobmhd(real* W,real* vn, real *M){
 // Matrix-Vector multiplication
 // FIXME: [] is not suitable for OpenCL
 #pragma start_opencl
-void matrix_vector(real *A, real *B, real *C) {
+void matrix_vector(schnaps_real *A, schnaps_real *B, schnaps_real *C) {
   for(int i = 0; i < 9; i++) {
     C[i] = 0;
     for(int j = 0; j < 9; j++) {
@@ -158,14 +158,14 @@ void matrix_vector(real *A, real *B, real *C) {
 #pragma end_opencl
 
 #pragma start_opencl
-void fluxnum(real *W,real *vn, real *flux) {
+void fluxnum(schnaps_real *W,schnaps_real *vn, schnaps_real *flux) {
 
-  real gam = 1.6666666666;
+  schnaps_real gam = 1.6666666666;
 
-  real un = W[1]/W[0]*vn[0]+W[3]/W[0]*vn[1]+W[4]/W[0]*vn[2];
-  real bn = W[7]*vn[0]+W[5]*vn[1]+W[6]*vn[2];
+  schnaps_real un = W[1]/W[0]*vn[0]+W[3]/W[0]*vn[1]+W[4]/W[0]*vn[2];
+  schnaps_real bn = W[7]*vn[0]+W[5]*vn[1]+W[6]*vn[2];
 
-  real p = (gam-1)*(W[2] - W[0]*(W[1]/W[0]*W[1]/W[0]
+  schnaps_real p = (gam-1)*(W[2] - W[0]*(W[1]/W[0]*W[1]/W[0]
 				 + W[3]/W[0]*W[3]/W[0]
 				 + W[4]/W[0]*W[4]/W[0])/2
 		    - (W[7]*W[7]+W[5]*W[5]+W[6]*W[6])/2);
@@ -189,10 +189,10 @@ void fluxnum(real *W,real *vn, real *flux) {
 #pragma end_opencl
 
 #pragma start_opencl
-void MHDNumFluxRusanov(real *wL, real *wR,real *vnorm, real *flux)
+void MHDNumFluxRusanov(schnaps_real *wL, schnaps_real *wR,schnaps_real *vnorm, schnaps_real *flux)
 {
-  real fluxL[9];
-  real fluxR[9];
+  schnaps_real fluxL[9];
+  schnaps_real fluxR[9];
   
   fluxnum(wL, vnorm, fluxL);
   fluxnum(wR, vnorm, fluxR);
@@ -204,12 +204,12 @@ void MHDNumFluxRusanov(real *wL, real *wR,real *vnorm, real *flux)
 #pragma end_opencl
 
 #pragma start_opencl
-void MHDNumFluxP2(real *wL, real *wR, real *vn, real *flux)
+void MHDNumFluxP2(schnaps_real *wL, schnaps_real *wR, schnaps_real *vn, schnaps_real *flux)
 {
-  real wmil[9];
-  real wRmwL[9];
+  schnaps_real wmil[9];
+  schnaps_real wRmwL[9];
 
-  real M[81];
+  schnaps_real M[81];
 
   // Initialize matrix to 0
   for(int i = 0; i < 9 ; i++) {
@@ -226,20 +226,20 @@ void MHDNumFluxP2(real *wL, real *wR, real *vn, real *flux)
   // calcul de la matrice M
   jacobmhd(wmil, vn, M);
 
-  real coef[3] = {1./2, 0., 1./2};
+  schnaps_real coef[3] = {1./2, 0., 1./2};
 
   // calcul de (wR-wL)
   for (int i = 0; i < 9 ; i++){
     wRmwL[i] = (wR[i] - wL[i]);
   }
 
-  real dabs[9];
+  schnaps_real dabs[9];
 
   for (int i = 0; i < 9 ; i++){
     dabs[i] = coef[2] * wRmwL[i];
   }
 
-  real Mw[9];
+  schnaps_real Mw[9];
   for(int i = 1; i >= 0; i--){
     matrix_vector(M, dabs, Mw);
     for(int j = 0; j < 9; j++){
@@ -247,8 +247,8 @@ void MHDNumFluxP2(real *wL, real *wR, real *vn, real *flux)
     }
   }
 
-  real fluxL[9];
-  real fluxR[9];
+  schnaps_real fluxL[9];
+  schnaps_real fluxR[9];
 
   fluxnum(wL, vn, fluxL);
   fluxnum(wR, vn, fluxR);
@@ -260,35 +260,28 @@ void MHDNumFluxP2(real *wL, real *wR, real *vn, real *flux)
 #pragma end_opencl
 
 #pragma start_opencl
-real rmax(real a, real b)
+void MHDNumFlux1D(schnaps_real *WL, schnaps_real *WR, schnaps_real *vn, schnaps_real *flux)
 {
-  return a > b ? a : b;
-}  
-#pragma end_opencl
+  schnaps_real gam = 1.6666666666;
 
-#pragma start_opencl
-void MHDNumFlux1D(real *WL, real *WR, real *vn, real *flux)
-{
-  real gam = 1.6666666666;
+  schnaps_real piL, piR, piyL, piyR, pizL, pizR;
+  schnaps_real a, aR, aL, al0, ar0;
+  schnaps_real cfL, cfR, cL, cR;
+  schnaps_real Xl, Xr, pxl, pxr;
+  schnaps_real alpha;
+  schnaps_real us, pis, uys, uzs, piys, pizs;
+  schnaps_real pi, piy, piz;
+  schnaps_real sigma1, sigma2, sigma3;
 
-  real piL, piR, piyL, piyR, pizL, pizR;
-  real a, aR, aL, al0, ar0;
-  real cfL, cfR, cL, cR;
-  real Xl, Xr, pxl, pxr;
-  real alpha;
-  real us, pis, uys, uzs, piys, pizs;
-  real pi, piy, piz;
-  real sigma1, sigma2, sigma3;
-
-  real YL[9];
-  real YR[9];
-  real ymil[9];
-  real ystar[9];
+  schnaps_real YL[9];
+  schnaps_real YR[9];
+  schnaps_real ymil[9];
+  schnaps_real ystar[9];
 
   primitives(WL, YL);
   primitives(WR, YR);
 
-  real b = YL[7]; // En 1D BX est constant dans YL = YR
+  schnaps_real b = YL[7]; // En 1D BX est constant dans YL = YR
 
   // calcul des parametres issus de la relaxation
   piL = YL[2] + 0.5*fabs(YL[5]*YL[5] + YL[6]*YL[6]) - 0.5*b*b;
@@ -305,7 +298,7 @@ void MHDNumFlux1D(real *WL, real *WR, real *vn, real *flux)
   }
 
   a = sqrt(gam*ymil[2]/ymil[0]);
-  real cf = sqrt(\
+  schnaps_real cf = sqrt(\
 		 0.5*((b*b + ymil[5]*ymil[5] + ymil[6]*ymil[6])/(ymil[0])+a*a)
 		 + sqrt(
 			0.25*(pow((b*b + ymil[5]*ymil[5]
@@ -338,10 +331,10 @@ void MHDNumFlux1D(real *WL, real *WR, real *vn, real *flux)
   // calcul des vitesses relaxees a gauche et a droite
   alpha = (gam-1)/2.;
 
-  Xl = (rmax(YL[1]-YR[1], 0.0)
-	+ (rmax(piR-piL, 0.0))/(YL[0]*cfL+YR[0]*cfR))/cfL;
-  Xr = (rmax(YL[1]-YR[1], 0.0)
-	+ (rmax(piL-piR, 0.0))/(YL[0]*cfL+YR[0]*cfR))/cfR;
+  Xl = (fmax(YL[1]-YR[1], 0)
+	+ (fmax(piR-piL, 0))/(YL[0]*cfL+YR[0]*cfR))/cfL;
+  Xr = (fmax(YL[1]-YR[1], 0)
+	+ (fmax(piL-piR, 0))/(YL[0]*cfL+YR[0]*cfR))/cfR;
 
   pxl = 1 - Xl/(1+alpha*Xl);
   pxr = 1 - Xr/(1+alpha*Xr);
@@ -364,15 +357,15 @@ void MHDNumFlux1D(real *WL, real *WR, real *vn, real *flux)
 		    )
 	     );
 
-  cL = al0*YL[0] + alpha*YL[0]*(rmax(YL[1]-YR[1],0.0)
-				+ (rmax(piR-piL,0.0))/(YL[0]*cfL+YR[0]*cfR));
-  cR = ar0*YR[0] + alpha*YR[0]*(rmax(YL[1]-YR[1],0.0)
-				+ (rmax(piL-piR,0.0))/(YL[0]*cfL+YR[0]*cfR));
+  cL = al0*YL[0] + alpha*YL[0]*(fmax(YL[1]-YR[1],0)
+				+ (fmax(piR-piL,0))/(YL[0]*cfL+YR[0]*cfR));
+  cR = ar0*YR[0] + alpha*YR[0]*(fmax(YL[1]-YR[1],0)
+				+ (fmax(piL-piR,0))/(YL[0]*cfL+YR[0]*cfR));
 
   // pour le 3-ondes ondes on prend des vitesses simples
   //real cA = cf;
   //real cB = cf;
-  //real b2 = 0.0;
+  //real b2 = 0;
 
   // calcul des etats intermediaires
   us = (cL*YL[1] + cR*YR[1] + piL-piR)/(cL+cR);
@@ -391,7 +384,7 @@ void MHDNumFlux1D(real *WL, real *WR, real *vn, real *flux)
   sigma3 = YR[2] + cR/YR[0];
 
   // decentrement
-  if(sigma1 > 0.0){
+  if(sigma1 > 0){
     ystar[0] = YL[0];
     ystar[1] = YL[1];
     ystar[2] = YL[2];
@@ -404,7 +397,7 @@ void MHDNumFlux1D(real *WL, real *WR, real *vn, real *flux)
     piz = pizL;
   }
   else
-    if(sigma2 > 0.0){
+    if(sigma2 > 0){
       ystar[0] = 1.0/(1.0/YL[0] + (piL-piR+cR*(YR[1]-YL[1]))/(cL*(cL+cR)));
       ystar[5] = ystar[0]*(YL[5]/YL[0] + b/(cL*cL)*piyL - b/(cL*cL)*piys);
       ystar[6] = ystar[0]*(YL[6]/YL[0] + b/(cL*cL)*pizL - b/(cL*cL)*pizs);
@@ -425,7 +418,7 @@ void MHDNumFlux1D(real *WL, real *WR, real *vn, real *flux)
 				   + (piys*piys+pizs*pizs)/(2.0*cL*cL));
     }
     else
-      if(sigma3 > 0.0){
+      if(sigma3 > 0){
 	ystar[0] = 1.0/(1.0/YR[0] + (piR-piL+cL*(YR[1]-YL[1]))/(cR*(cL+cR)));
 	ystar[5] = ystar[0]*(YR[5]/YR[0] + b/(cR*cR)*piyR - b/(cR*cR)*piys);
 	ystar[6] = ystar[0]*(YR[6]/YR[0] + b/(cR*cR)*pizR - b/(cR*cR)*pizs);
@@ -476,9 +469,9 @@ void MHDNumFlux1D(real *WL, real *WR, real *vn, real *flux)
 #pragma end_opencl
 
 #pragma start_opencl
-void MHDBoundaryFlux(real *x, real t, real *wL, real *vnorm,
-		     real *flux) {
-  real wR[9];
+void MHDBoundaryFlux(schnaps_real *x, schnaps_real t, schnaps_real *wL, schnaps_real *vnorm,
+		     schnaps_real *flux) {
+  schnaps_real wR[9];
 
   if(vnorm[1] > 0.0001 || vnorm[1] < -0.0001){
     MHDImposedData(x,t,wR);
@@ -498,17 +491,17 @@ void MHDBoundaryFlux(real *x, real t, real *wL, real *vnorm,
 #pragma end_opencl
 
 #pragma start_opencl
-void MHDInitData(real *x, real *w) {
-  real t = 0;
+void MHDInitData(schnaps_real *x, schnaps_real *w) {
+  schnaps_real t = 0;
   MHDImposedData(x, t, w);
 }
 #pragma end_opencl
 
 #pragma start_opencl
-void MHDImposedData(const real *x,const  real t, real *w) {
-  real gam = 1.6666666666;
+void MHDImposedData(const schnaps_real *x,const  schnaps_real t, schnaps_real *w) {
+  schnaps_real gam = 1.6666666666;
 
-  real yL[9];
+  schnaps_real yL[9];
   //real yR[9];
   //real wL[9];
   //real wR[9];
@@ -549,15 +542,96 @@ void MHDImposedData(const real *x,const  real t, real *w) {
   yL[1] = -sin(x[1]);
   yL[2] = gam;
   yL[3] = sin(x[0]);
-  yL[4] = 0.0;
+  yL[4] = 0;
   yL[5] = sin(2*(x[0]));
-  yL[6] = 0.0;
+  yL[6] = 0;
   yL[7] = -sin(x[1]);
-  yL[8] = 0.0;
+  yL[8] = 0;
 
   conservatives(yL, w);
 }
 #pragma end_opencl
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//                               Choc Fort                                    //
+////////////////////////////////////////////////////////////////////////////////
+
+#pragma start_opencl
+void MHDBoundaryFluxChocFort(schnaps_real *x, schnaps_real t, schnaps_real *wL, schnaps_real *vnorm,
+		     schnaps_real *flux) {
+  schnaps_real wR[9];
+
+  if(vnorm[1] > 0.0001 || vnorm[1] < -0.0001){
+    MHDImposedDataChocFort(x,t,wR);
+  }
+  else{
+    for(int i=0; i<9; i++){
+      wR[i] = wL[i];
+    }
+  }
+
+  MHDNumFluxRusanov(wL,wR,vnorm,flux);
+}
+#pragma end_opencl
+
+
+#pragma start_opencl
+void MHDInitDataChocFort(schnaps_real *x, schnaps_real *w) {
+  schnaps_real t = 0;
+  MHDImposedDataChocFort(x, t, w);
+}
+#pragma end_opencl
+
+#pragma start_opencl
+void MHDImposedDataChocFort(const schnaps_real *x,const  schnaps_real t, schnaps_real *w) {
+  schnaps_real gam = 1.6666666666;
+
+  schnaps_real yL[9];
+  schnaps_real yR[9];
+  schnaps_real wL[9];
+  schnaps_real wR[9];
+
+
+  yL[0] = 3;
+  yL[1] = 1.3;
+  yL[3] = 0;
+  yL[4] = 0;
+  yL[2] = 3;
+  yL[5] = 1;
+  yL[6] = 1;
+  yL[7] = 1.5;
+  yL[8] = 0;
+  
+  yR[0] = 1;
+  yR[1] = 1.3;
+  yR[3] = 0;
+  yR[4] = 0;
+  yR[2] = 1;
+  yR[5] = 0.0707372016677029;
+  yR[6] = 0.9974949866040544;
+  yR[7] = 1.5;
+  yR[8] = 0;
+  
+  conservatives(yL, wL);
+  conservatives(yR, wR);
+  
+  if(x[0] < 5)
+    for(int i=0; i<9; i++){
+      w[i] = wL[i];
+    }
+  else
+    for(int i=0; i<9; i++){
+      w[i] = wR[i];
+    }
+
+}
+#pragma end_opencl
+
+
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -565,9 +639,9 @@ void MHDImposedData(const real *x,const  real t, real *w) {
 ////////////////////////////////////////////////////////////////////////////////
 
 #pragma start_opencl
-void MHDBoundaryFluxOrszagTang(real *x, real t, real *wL, real *vnorm,
-                                 real *flux) {
-  real wR[9];
+void MHDBoundaryFluxOrszagTang(schnaps_real *x, schnaps_real t, schnaps_real *wL, schnaps_real *vnorm,
+                                 schnaps_real *flux) {
+  schnaps_real wR[9];
 
   MHDImposedDataOrszagTang(x,t,wR);
   MHDNumFluxRusanov(wL,wR,vnorm,flux);
@@ -576,26 +650,26 @@ void MHDBoundaryFluxOrszagTang(real *x, real t, real *wL, real *vnorm,
 #pragma end_opencl
 
 #pragma start_opencl
-void MHDInitDataOrszagTang(real *x, real *w) {
-  real t = 0;
+void MHDInitDataOrszagTang(schnaps_real *x, schnaps_real *w) {
+  schnaps_real t = 0;
   MHDImposedDataOrszagTang(x, t, w);
 }
 #pragma end_opencl
 
 #pragma start_opencl
-void MHDImposedDataOrszagTang(const real *x,const  real t, real *w) {
-  real gam = 1.6666666666;
-  real yL[9];
+void MHDImposedDataOrszagTang(const schnaps_real *x,const  schnaps_real t, schnaps_real *w) {
+  schnaps_real gam = 1.6666666666;
+  schnaps_real yL[9];
 
   yL[0] = gam*gam;
   yL[1] = -sin(x[1]);
   yL[2] = gam;
   yL[3] = sin(x[0]);
-  yL[4] = 0.0;
+  yL[4] = 0;
   yL[5] = sin(2*(x[0]));
-  yL[6] = 0.0;
+  yL[6] = 0;
   yL[7] = -sin(x[1]);
-  yL[8] = 0.0;
+  yL[8] = 0;
 
   conservatives(yL, w);
   
@@ -608,31 +682,31 @@ void MHDImposedDataOrszagTang(const real *x,const  real t, real *w) {
 ////////////////////////////////////////////////////////////////////////////////
 
 #pragma start_opencl
-void MHDBoundaryFluxReconnexion(real *x, real t, real *wL, real *vnorm,
-                                 real *flux) {
-  real wR[9];
+void MHDBoundaryFluxReconnexion(schnaps_real *x, schnaps_real t, schnaps_real *wL, schnaps_real *vnorm,
+                                 schnaps_real *flux) {
+  schnaps_real wR[9];
   MHDImposedDataReconnexion(x,t,wR);
   MHDNumFluxRusanov(wL,wR,vnorm,flux);
 }
 #pragma end_opencl
 
 #pragma start_opencl
-void MHDInitDataReconnexion(real *x, real *w) {
-  real t = 0;
+void MHDInitDataReconnexion(schnaps_real *x, schnaps_real *w) {
+  schnaps_real t = 0;
   MHDImposedDataReconnexion(x, t, w);
 }
 #pragma end_opencl
 
 #pragma start_opencl
-void MHDImposedDataReconnexion(const real *x,const  real t, real *w) {
+void MHDImposedDataReconnexion(const schnaps_real *x,const  schnaps_real t, schnaps_real *w) {
   //real gam = 1.6666666666;
-  real yL[9];
+  schnaps_real yL[9];
 
   yL[0] = 1.0;
   yL[1] = 0.1*sin(3.14159265359*(x[1]));
   yL[2] = 0.1;
-  yL[3] = 0.0;
-  yL[4] = 0.0;
+  yL[3] = 0;
+  yL[4] = 0;
   if((x[0])<(2./3.)){
     yL[5] = 1.0;
   }
@@ -642,9 +716,9 @@ void MHDImposedDataReconnexion(const real *x,const  real t, real *w) {
   else{
     yL[5] = -1.0;
   }
-  yL[6] = 0.0;
-  yL[7] = 0.0;
-  yL[8] = 0.0;
+  yL[6] = 0;
+  yL[7] = 0;
+  yL[8] = 0;
 
   conservatives(yL, w);
   
@@ -657,10 +731,10 @@ void MHDImposedDataReconnexion(const real *x,const  real t, real *w) {
 ////////////////////////////////////////////////////////////////////////////////
 
 #pragma start_opencl
-void MHDBoundaryFluxKelvinHelmotz(real *x, real t, real *wL, real *vnorm,
-                                 real *flux) {
+void MHDBoundaryFluxKelvinHelmotz(schnaps_real *x, schnaps_real t, schnaps_real *wL, schnaps_real *vnorm,
+                                 schnaps_real *flux) {
 
-  real wR[9];
+  schnaps_real wR[9];
 
   if(vnorm[1] > 0.0001 || vnorm[1] < -0.0001){
     for(int i=0; i<9; i++){
@@ -671,32 +745,33 @@ void MHDBoundaryFluxKelvinHelmotz(real *x, real t, real *wL, real *vnorm,
     MHDImposedDataKelvinHelmotz(x,t,wR);
   }
 
+  
   MHDNumFluxRusanov(wL,wR,vnorm,flux);
   
 }
 #pragma end_opencl
 
 #pragma start_opencl
-void MHDInitDataKelvinHelmotz(real *x, real *w) {
-  real t = 0;
+void MHDInitDataKelvinHelmotz(schnaps_real *x, schnaps_real *w) {
+  schnaps_real t = 0;
   MHDImposedDataKelvinHelmotz(x, t, w);
 }
 #pragma end_opencl
 
 #pragma start_opencl
-void MHDImposedDataKelvinHelmotz(const real *x,const  real t, real *w) {
+void MHDImposedDataKelvinHelmotz(const schnaps_real *x,const  schnaps_real t, schnaps_real *w) {
   //real gam = 1.6666666666;
-  real yL[9];
+  schnaps_real yL[9];
 
   yL[0] = 1.0; //reprendre 1.29 a la place de 1.806 et prendre Bx = 1.29/3.33 = 0.39
   yL[1] = (1.29/2)*tanh((x[1])/0.05);
   yL[2] = 1.0;
   yL[3] = 0.01*sin(2*3.14159265359*(x[0]))*exp(-((x[1])/0.2)*((x[1])/0.2));
-  yL[4] = 0.0;
+  yL[4] = 0;
   yL[7] = 0.39; // pour le Bx on prend le 1.29 et on divise pas le mac
-  yL[5] = 0.0;
-  yL[6] = 0.0;
-  yL[8] = 0.0;
+  yL[5] = 0;
+  yL[6] = 0;
+  yL[8] = 0;
   
   conservatives(yL, w);
   
@@ -709,9 +784,9 @@ void MHDImposedDataKelvinHelmotz(const real *x,const  real t, real *w) {
 ////////////////////////////////////////////////////////////////////////////////
 
 #pragma start_opencl
-void MHDBoundaryFluxDoubleTearing(real *x, real t, real *wL, real *vnorm,
-                                 real *flux) {
-  real wR[9];
+void MHDBoundaryFluxDoubleTearing(schnaps_real *x, schnaps_real t, schnaps_real *wL, schnaps_real *vnorm,
+                                 schnaps_real *flux) {
+  schnaps_real wR[9];
 
   //if(vnorm[1] > 0.0001 || vnorm[1] < -0.0001){
   //  for(int i=0; i<9; i++){
@@ -728,16 +803,16 @@ void MHDBoundaryFluxDoubleTearing(real *x, real t, real *wL, real *vnorm,
 #pragma end_opencl
 
 #pragma start_opencl
-void MHDInitDataDoubleTearing(real *x, real *w) {
-  real t = 0;
+void MHDInitDataDoubleTearing(schnaps_real *x, schnaps_real *w) {
+  schnaps_real t = 0;
   MHDImposedDataDoubleTearing(x, t, w);
 }
 #pragma end_opencl
 
 #pragma start_opencl
-void MHDImposedDataDoubleTearing(const real *x,const  real t, real *w) {
+void MHDImposedDataDoubleTearing(const schnaps_real *x,const  schnaps_real t, schnaps_real *w) {
   //real gam = 1.6666666666;
-  real yL[9];
+  schnaps_real yL[9];
 
   yL[5] = 1 + tanh( (x[0]-0.5)/0.2 ) - tanh( (x[0]+0.5)/0.2 );     // By
   yL[2] = -yL[5]*yL[5]/2 + 0.6;                                  // P
@@ -748,11 +823,11 @@ void MHDImposedDataDoubleTearing(const real *x,const  real t, real *w) {
   else
     yL[7] = 0.003*sin(3.14159265359*(x[1])/2)*exp(-( (x[0])*(x[0])-0.5 )/0.1 );   // Bx essayer de forcer les bord a 0. si on est < -1.5 x>1.5 je met 0
 
-  yL[1] = 0.0;                                                 // Ux
-  yL[3] = 0.0;                                                 // Uy
-  yL[4] = 0.0;                                                 // Uz
-  yL[6] = 0.0;                                                 // Bz
-  yL[8] = 0.0;                                                 // Psi
+  yL[1] = 0;                                                 // Ux
+  yL[3] = 0;                                                 // Uy
+  yL[4] = 0;                                                 // Uz
+  yL[6] = 0;                                                 // Bz
+  yL[8] = 0;                                                 // Psi
 
   
   conservatives(yL, w);

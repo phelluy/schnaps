@@ -1,83 +1,85 @@
-#include "schnaps.h"
-#include <stdio.h>
-#include <assert.h>
 #include "test.h"
+#include "schnaps.h"
+#include<stdio.h>
+#include <assert.h>
+#include <math.h>
 
-int TestmEq2()
-{
+int TestmEq2(void){
   bool test = true;
-  field f;
-  init_empty_field(&f);
- 
-  int vec = 2;
 
-  f.model.cfl = 0.05;  
-  if(vec == 2) {
-    f.model.m = 2; // num of conservative variables
-  } else {
-    f.model.m = 1; // num of conservative variables
+  // 2D meshes:
+  // test/disque2d.msh
+  // test/testdisque2d.msh
+  // test/testmacromesh.msh
+  // test/unit-cube.msh
+
+  // 3D meshes"
+  // test/testdisque.msh
+
+  char *mshname =  "../test/testcube.msh";
+  
+  MacroMesh mesh;
+  ReadMacroMesh(&mesh,"../test/testmacromesh.msh");
+  //ReadMacroMesh(&mesh,"../test/testcube2.msh");
+  Detect2DMacroMesh(&mesh);
+  BuildConnectivity(&mesh);
+
+  Model model;
+
+  model.cfl = 0.05;
+  model.m = 2;
+
+  model.NumFlux = VecTransNumFlux2d;
+  model.BoundaryFlux = VecTransBoundaryFlux2d;
+  model.InitData = VecTransInitData2d;
+  model.ImposedData = VecTransImposedData2d;
+  model.Source = NULL;
+
+  int deg[]={3, 3, 0};
+  int raf[]={2, 2, 1};
+
+  assert(mesh.is2d);
+
+
+#ifdef _WITH_OPENCL
+  if(!cldevice_is_acceptable(nplatform_cl, ndevice_cl)) {
+    printf("OpenCL device not acceptable.\n");
+    return true;
   }
-  f.model.NumFlux = VecTransNumFlux2d;
-  f.model.BoundaryFlux = VecTransBoundaryFlux2d;
-  f.model.InitData = VecTransInitData2d;
-  f.model.ImposedData = VecTransImposedData2d;
-  f.varindex = GenericVarindex;
-    
-  f.interp.interp_param[0] = f.model.m;
-  f.interp.interp_param[1] = 2; // x direction degree
-  f.interp.interp_param[2] = 2; // y direction degree
-  f.interp.interp_param[3] = 0; // z direction degree
-  f.interp.interp_param[4] = 4; // x direction refinement
-  f.interp.interp_param[5] = 4; // y direction refinement
-  f.interp.interp_param[6] = 1; // z direction refinement
-
-  // Read the gmsh file
-  ReadMacroMesh(&(f.macromesh), "../test/testcube.msh");
-  // Try to detect a 2d mesh
-  Detect2DMacroMesh(&(f.macromesh));
-  assert(f.macromesh.is2d);
-
-  // Mesh preparation
-  BuildConnectivity(&(f.macromesh));
-
-  //AffineMapMacroMesh(&(f.macromesh));
- 
-  // Prepare the initial fields
+#endif
   
-  Initfield(&f);
-  //f.dt = 1e-3;
+  CheckMacroMesh(&mesh, deg, raf);
+  Simulation simu;
+
+  InitSimulation(&simu, &mesh, deg, raf, &model);
+ 
+  schnaps_real tmax = 0.5;
+  simu.cfl=0.05;
+  simu.vmax=1;
+  RK2(&simu,tmax);
+ 
+  PlotFields(0, false, &simu, NULL, "dgvisu.msh");
+  PlotFields(0, true , &simu, "error", "dgerror.msh");
+
+  schnaps_real dd = 0;
+  dd = L2error(&simu);
+
+  printf("erreur L2=%f\n", dd);
+
+  schnaps_real tolerance = 0.015;
+
+  test = dd < tolerance;
+
+  FreeMacroMesh(&mesh);
   
-  // Prudence...
-  CheckMacroMesh(&(f.macromesh), f.interp.interp_param + 1);
-
-  printf("cfl param =%f\n", f.hmin);
-
-  // time derivative
-  //dtfield(&f);
-  //Displayfield(&f);
- 
-  real tmax = 0.1;
-  f.vmax=1;
-  real dt = set_dt(&f);
-  RK2(&f, tmax, dt);
- 
-  // Save the results and the error
-  /* Plotfield(0, false, &f, NULL, "dgvisu.msh"); */
-  /* Plotfield(0, true, &f, "error", "dgerror.msh"); */
-
-  real dd = L2error(&f);
-  real tolerance = 1e-4;
-  test = test && (dd < tolerance);
-  printf("L2 error: %f\n", dd);
-
   return test;
 }
 
 int main(void) {
   int resu = TestmEq2();
-  if (resu) 
-    printf("m greater than 1 test OK!\n");
+  if(resu) 
+    printf("m greater than 1 test OK !\n");
   else 
     printf("m greater than 1 test failed !\n");
   return !resu;
-}
+} 
