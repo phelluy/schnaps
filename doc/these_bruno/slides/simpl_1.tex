@@ -1,0 +1,29 @@
+\begin{frame}
+\frametitle{Simplifications / Terme de masse}
+\vfill
+Pour une fonction de base $\PsiPhy{\L}{i}$ fixée :
+\begin{align*}
+	\int_{\L} \Ptl{t} \At \W \PsiPhy{\L}{i} d\x
+	&\approx \int_{\L} \sum_{j}
+		\At \W'_{\L,j} \PsiPhy{\L}{j} \PsiPhy{\L}{i} d\x
+		\tag{Base} \\
+	&= \int_{\HexaRef} \sum_{j}
+		\At \W'_{\L,j}
+		\PsiRef{j} \PsiRef{i}
+		\Jac{\TGeo{\L}} d\xref
+		\tag{Chgt. var.} \\
+	&\approx \sum_{k} \sum_{j}
+		\GLW{k} \At \W'_{\L,j}
+		\PsiRef{j}(\GLN{k}) \PsiRef{i}(\GLN{k})
+		\Jac{\TGeo{\L}}(\GLN{k})
+		\tag{Quadrature} \\
+	&= \GLW{i} \At \W'_{\L,i}
+		\Jac{\TGeo{\L}} (\GLN{i})
+		\tag{Termes nuls} .
+\end{align*}
+\vfill
+\begin{itemize}
+\item Le terme de masse fait intervenir une matrice diagonale.
+\end{itemize}
+\end{frame}
+

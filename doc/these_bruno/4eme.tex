@@ -1,0 +1,109 @@
+\documentclass[a4paper,12pt]{report}
+\usepackage[hmargin=1.5cm,vmargin=2cm]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{graphicx}
+\graphicspath{{img/}} % Répertoire des images
+
+\title{\huge{\textbf{Optimisation de code Galerkin Discontinu sur ordinateur hybride. Application à la simulation numérique en électromagnétisme.}}}
+
+\author{Bruno Weber}
+
+\begin{document}
+
+\begin{titlepage}
+	\centering
+  $
+  \begin{array}{l}
+	\includegraphics[width=0.18\linewidth]{irma}
+  \end{array}
+  $
+	\hfill
+	\Large\textbf{Bruno WEBER}
+	\hfill
+  $
+  \begin{array}{l}
+	\includegraphics[width=0.18\linewidth]{axs}
+  \end{array}
+  $
+	\vfill
+	\Large\textbf{Optimisation de code Galerkin Discontinu
+		sur ordinateur hybride. Application à la simulation
+		numérique en électromagnétisme.}\\
+	\vfill
+	\framebox{
+		\parbox{0.9\linewidth}{
+\normalsize
+\textbf{Résumé :}\\
+Nous présentons dans cette thèse les évolutions apportées au
+solveur Galerkin Discontinu \texttt{teta-clac},
+issu de la collaboration IRMA-AxesSim,
+au cours du projet HOROCH (2015-2018).
+Ce solveur permet de résoudre les équations de Maxwell en
+3D, en parallèle sur un grand nombre d'accélérateurs OpenCL.
+
+L'objectif du projet HOROCH était d'effectuer des simulations
+de grande envergure sur un modèle numérique complet de corps humain.
+Ce modèle comporte 24 millions de mailles
+hexaédriques pour des calculs dans la bande de fréquences
+des objets connectés allant de 1 à 3 GHz (Bluetooth).
+Les applications sont nombreuses : téléphonie et accessoires,
+sport (maillots connectés), médecine (sondes : gélules, patchs),
+\textit{etc}.
+
+Les évolutions ainsi apportées comprennent, entre autres :
+l'optimisation des kernels OpenCL à destination des CPU
+dans le but d'utiliser au mieux les architectures hybrides~;
+l'expérimentation du runtime StarPU~; le design d'un
+schéma d'intégration à pas de temps local~;
+et bon nombre d'optimisations permettant au solveur
+de traiter des simulations de plusieurs millions de mailles.
+
+~\\
+\textbf{Mots-clés :}\\
+\raggedright
+solveur, Maxwell, électromagnétisme, système hyperbolique,
+Galerkin Discontinu, GD, GDTD, maillage, hexaèdres,
+GPU, CPU, OpenCL, MPI, StarPU,
+pas de temps local, ordre adaptatif, modèle de corps humain complet,
+objets connectés, Bluetooth.
+		}
+	}
+	\vfill
+	\framebox{
+		\parbox{0.9\linewidth}{
+\normalsize
+\textbf{Abstract:}\\
+In this thesis, we present the evolutions made to the
+Discontinuous Galerkin solver \texttt{teta-clac} --- resulting from
+the IRMA-AxesSim collaboration --- during the HOROCH project (2015-2018).
+This solver allows to solve the Maxwell equations in 3D and in parallel
+on a large amount of OpenCL accelerators.
+
+The goal of the HOROCH project was to perform large-scale simulations
+on a complete digital human body model.
+This model is composed of 24 million hexahedral cells in order
+to perform calculations in the frequency band of connected objects
+going from 1 to 3 GHz (Bluetooth).
+The applications are numerous: telephony and accessories, sport
+(connected shirts), medicine (probes: capsules, patches), \textit{etc}.
+
+The changes thus made include, among others: optimization of OpenCL kernels
+for CPUs in order to make the best use of hybrid architectures;
+StarPU runtime experimentation; the design of an integration scheme using
+local time steps; and many optimizations allowing the solver to process
+simulations of several millions of cells.
+
+~\\
+\textbf{Keywords:}\\
+\raggedright
+solver, Maxwell, electromagnetism, hyperbolic system,
+Discontinuous Galerkin, DG, DGTD, mesh, hexahedrons,
+GPU, CPU, OpenCL, MPI, StarPU,
+local time step, adaptive order, complete human body model,
+connected objects, Bluetooth.
+		}
+	}
+\end{titlepage}
+
+\end{document}

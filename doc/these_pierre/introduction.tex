@@ -1,0 +1,131 @@
+\chapter{Introduction}
+\label{chap:Introduction}
+
+Au courant des dix dernières années, les notions de performances et de qualité acoustique sont apparues comme des préoccupations majeures dans le domaine du génie du bâtiment. En effet, que cela soit en terme de prévisions, situées alors en amont, mais aussi en aval, lors d'opérations de contrôle, le confort acoustique est une préoccupation inhérente à tout type de construction : locaux tertiaires, habitations de particuliers, ateliers \dots Pour les habitations aux particuliers, une enquête TNS-SOFRES (2010) établit que la préoccupation majeure des occupants est le confort acoustique leur étant associé. Ingénieurs, acousticiens du bâtiment, mais aussi techniciens, travaillent donc conjointement pour l'élaboration et l'amélioration du confort acoustique des constructions. A l'aube de l'établissement d'un indice de performance acoustique (basé sur la même idée que le Diagnostic de Performance Énergétique), la capacité à prévoir la propagation du son dans un bâtiment apparait donc comme une vraie nécessité.\\
+\newline
+La théorie de la propagation du son prend racine dans la mécanique des milieux continus, qui au travers de certaines approximations, nous mène à la bien connue équation des ondes \cite{13}. La propagation du son dans un milieu matériel constitue un phénomène complexe étendu sur plusieurs échelles de temps et d'espace. \textit{De facto}, sa simulation numérique à l'échelle du bâtiment se révèle être un véritable challenge. A l'heure actuelle, la majorité des calculs sont obtenus en utilisant des formules empiriques très simplifiées (théorie de Sabine) ou alors via des codes Monte-Carlo (SPPS) au coût calculatoire très élevé. Ces derniers simulent dans une approche énergétique, le trajet de particules sonores ainsi que leurs interactions avec les parois du domaine. De par leur nature, les codes Monte-Carlo restent proche des phénomènes physiques sous sous-jacents, néanmoins le calcul de grandeurs macroscopiques, impose le tirage d'un très grand nombre de particules. On s'aperçoit alors très vite de la limite "pratique" de ces codes lors d'applications à des géométries complexes où certaines zones de l'espace ne sont alors traversées que par une faible nombre de particules. De nouvelles approches sont donc apparues afin de simuler le transport acoustique : le modèle de diffusion et le modèle cinétique de transport. Cette thèse traite du modèle cinétique de transport appliqué à l'acoustique et de sa résolution numérique.
+
+% \section{Un modèle cinétique pour la propagation acoustique}
+
+% \subsection{Le concept de particule sonore}
+% Le champ acoustique peut-être décomposé en deux parties, le champ direct et le champ réverbéré. Le champ réverbéré est issu des multiples réflexions, diffractions et diffusions se produisant sur les bords du domaine considéré \cite{13}.\\
+% Dans le domaine de hautes fréquences étudié (80-5000 $Hz$), les effets de superposition des ondes sont moyennés et chaque source peut être alors considérée comme indépendante. De ce fait, la densité d'énergie en un point $\x$ à l'instant $t$ peut être considérée comme la somme des contributions de chacune des sources. Sous cette approche, le son réverbéré peut être modélisé de manière purement énergétique \cite{21},\cite{24},\cite{25}. \\
+% L'idée principale sous-jacente repose sur la définition d'une quantité énergétique infinitésimale appelé phonon (à énergie élémentaire $e$), et de représenter le champ acoustique réverbéré, comme la dynamique d'un gaz de phonons se déplaçant chacun à la vitesse du son $c$. \\
+% \newline
+ % A l'inverse de la théorie cinétique des gaz, les interactions entre les particules sont ici négligées. On considère alors qu'un phonon obéit aux lois de la mécanique classique et se meut d'un mouvement de translation rectiligne entre deux collisions avec les bords du domaine. Cela suppose ainsi une vision déterministe dans laquelle la position et la direction de propagation de la particule sont connues à l'instant $t$. Enfin sur les échelles de temps considérées, on conviendra que les interactions avec les parois se font de manière instantanée. 
+ % \begin{center}
+% \Image[width=0.6\linewidth]{./Figures/intro/dessinb.png}{}
+% \captionof{figure}{Analogie graphique, entre la théorie cinétique des gaz, le transport radiatif et le concept de transport acoustique}
+% \end{center}
+ % Si l'on considère à présent un système composé de $N$ phonons dans l'espace à 3 dimensions, un état microscopique du système est alors spécifié par la donnée des $3N$ coordonnées spatiales $q_1,\dots,q_{3N}$ et des $3N$ composantes $p_1,\dots,p_{3N}$ d'impulsions (translations) associées aux particules. On peut alors introduire l'espace des phases du système comme l'espace à $6N$ dimensions constitué de l'ensemble des coordonnées accessibles  $q_1,\dots,q_{3N}$, $p_1,\dots,p_{3N}$. Un état microscopique du système est donc un point dans l'espace des phases. Ce point se déplace au cours du temps en fonction des lois de la mécanique classique.
+% \begin{remark} Dans l'approche énergétique, les notions ondulatoires de fréquence et de phase se perdent, justifiant ainsi l'emploi d'un espace des phases uniquement constitué des coordonnées d'espace et d'impulsion.\end{remark}
+% Lorsque $N$ devient très grand, la définition de l'état macroscopique du système revient à considérer un ensemble constitué d'un nombre extrêmement grand d'états microscopiques. Suivant le principe énoncé par J.W Gibbs en 1902, on peut voir cet ensemble comme une collection d'états microscopique différents, mais aboutissant chacun au même état macroscopique.  L'idée de Gibbs est alors d'étudier l'ensemble des points de l'espace des phases représentant cette collection d'état microscopique. Lorsque le nombre $N$ tend vers l'infini, les points considérés deviennent denses dans l'espace des phases, on peut alors leur associer une fonction de distribution $f$ dépendant de $6N$ variables. 
+% \newline
+% Au vu du nombre extrêmement élevé de degrés de libertés microscopiques, il nous est impossible de disposer d'une connaissance complète à cette échelle. Une simplification importante provient du fait que nos particules n'interagissent pas entre elles : on peut donc appliquer le principe d'ergodicité et réduire la connaissance microscopique du système à celle d'une fonction de distribution $f$ d'une \textbf{unique} particule sur un espace des phases à seulement 6 dimensions  \cite{12}.\\
+% \newline
+ % On introduit alors la fonction de distribution $\f$  représentant la probabilité de trouver une particule au point $\x$ à l'instant $t$ et se propageant dans la direction $\v$ dans le milieu fluide considéré. 
+ % \begin{remark}
+ % La quantité $f(\x,\v,t) d \v d\x$ désigne le nombre de phonons possédant une vitesse dans $\left\{ \v,\v + d\v \right\}$ et une positions dans $\left\{\x,\x + d\x \right\}$ au temps $t$.
+ % \end{remark}
+ 
+% Les grandeurs acoustique sont quant à elles associées aux deux premiers moments de la fonction de distribution $f$.
+ 
+ % \begin{definition}
+ % L'énergie acoustique $\rho$ (unit) et l'intensité acoustique $\I$  (en $W.m^-2$) sont données par,
+% \begin{equation}
+% \rho(\mathbf{x},t) = e\int_\Omega f(\mathbf{x}, \mathbf{v}, t) d\mathbf{v} \quad {et} \quad \mathbf{I}(\mathbf{x},t) = e\int_\Omega \mathbf{v} f(\mathbf{x}, \mathbf{v}, t) d\mathbf{v}\\
+% \end{equation}
+% où $e$ désigne l'énergie élementaire associé à la particule.
+% \end{definition}
+
+% \section{Formulation mathématique du problème}
+% Pour décrire la dynamique d'une particule sonore, on utilisera un modèle dit cinétique, modélisant l'évolution (dans l'espace et le temps) de la  fonction de distribution $f$. Les particules se déplacent en ligne droite à la vitesse $c$, entre deux collisions aux parois.
+
+% \subsection{L'équation de transport}
+% On considère le domaine spatial $X$ dans $\mathbb{R}^3$ et sa frontière Lipschitzienne $\partial X$. On note par $\mathbf{n}(\mathbf{x})$ la normale sortante unitaire définie en tous points $\mathbf{x}$ du bord $\partial X$. On désigne également par $\Omega$ la sphère unité dans $\mathbb{R}^3$ et par $\mathbf{v}_i$ une direction dans $\Omega$. Enfin, on note par $f(\mathbf{x}, \mathbf{v}, t)$ la fonction de distribution associée.
+
+% Le transport des particules au cours du temps $t\in \mathbb{R}^+$ dans le domaine $X$ est alors donnée par,
+
+% \begin{equation}
+% \label{eq:cin0}
+% \begin{aligned}
+% &\partial_t f(\mathbf{x},\mathbf{v},t) + \mathbf{v} \cdot \nabla_{\mathbf{x}}  f(\mathbf{x},\mathbf{v},t)  = 0  \quad \mbox{dans} \quad  X \times \Omega \times \mathbb{R}^+.\\
+% \end{aligned}
+% \end{equation}
+ 
+% On considère également l'interaction des particules aux bords du domaine, considéré ici comme immobile. Lorsqu'un phonon arrive au bord du domaine, il interagit avec les molécules de la paroi. Si l'interaction considérée est non absorbante, le phonon retournera alors dans le domaine $X$ après collision. Afin de décrire l'interaction à la paroi, notons tout d'abord par
+
+% \begin{equation}
+% \label{eq:sysh}
+% f_W = 
+% \left\{
+% \begin{aligned}
+% &f^-,\, \v' \cdot \mathbf{n} \geq 0\\
+% &f^+,\, \v \cdot \mathbf{n} < 0,\\
+% \end{aligned}
+% \right.
+% \end{equation}
+
+% la fonction de distibution en un point $\x$ du bords $\partial \Omega$, où $f^-$ et $f^+$ désignent respectivement les fonctions de distribution associées aux phonons incidents et réflechits. La mise en relation des fonctions de distribution avant et après collision se fait au travers de la notation suivante (intoduite par Cercigani \cite{}),
+
+% \begin{equation}
+% \label{eq:Cerci}
+% f^+(\x,\v,t)\, | \v \cdot \mathbf{n} |_{ \v \cdot \n < 0} =  \int_{\mathbf{n} \cdot \mathbf{v}' > 0} \mathcal{R}(\x, \v \rightarrow \v', t)f^-(\mathbf{x},\mathbf{v}',t)\, |\mathbf{n} \cdot \mathbf{v}' |d\v'
+% \end{equation}
+
+% où $\mathcal{R}(\x,\v'\rightarrow \v,t)$ désigne le du noyau de réflexion. Il représente la probabilité en un point $\x \in \partial X$, qu'une particule incidente ayant une direction comprise dans $\left\{\v' + d \v' \right\}$ reparte après colision, dans une direction appartenant à $\left\{ \v + d\v \right\}$. Ainsi, dans le cas de collisions non-absorbantes nous avons la propriété de normalisation suivante,
+
+% \begin{equation}
+% \label{eq:chproba}
+% \int_{\n \cdot \v < 0}\mathcal{R}(\x, \v' \rightarrow \v, t) d\v = 1 \quad  \forall (\x,t) \in \partial X \times \mathbb{R}^+.
+% \end{equation}
+
+% On distinguera dans la suite deux types de collisions non absorbantes.
+
+% \subsubsection{Réflexion spéculaire}
+
+% Dans le cas d'une collision purement élastique, la vitesse tangentielle de la particule reste inchangée, et sa vitesse normale est inversée. Dans ce cas, la reflexion est dite spéculaire, et son noyau de réflexion est décrit par une fonction delta telle que,
+
+% \begin{equation}
+% \label{eq:ch122}
+% \mathcal{R}_{spec}(\x, \v' \rightarrow \v, t) = \delta (\v' - \v + 2( \v \cdot \n) \n ),
+% \end{equation}
+
+% ce qui nous donne d'après \ref{eq:ch11},
+
+% \begin{equation}
+% \label{eq:ch123}
+% f^+(\x,\v,t)\, |\v \cdot \mathbf{n} |_{ \v \cdot \n < 0} =  f^-(\x,\v - 2( \v \cdot \n) \n ,t)\, | \v \cdot \mathbf{n}|
+% \end{equation}
+
+
+% \subsubsection{Réflexion diffuse}
+
+% Dans le cas d'une collision diffuse, l'énergie de la particule incidente est, après collision, intégralement réémise dans toutes les directions de la demi-sphère attachée à la paroi.
+
+% \begin{equation}
+% \label{eq:ch122}
+% \mathcal{R}_{diff}(\x, \v' \rightarrow \v, t) = f_M(\x,\v,t)
+% \end{equation}
+
+% ce qui nous donne d'après \ref{eq:ch11},
+
+% \begin{equation}
+% \label{eq:ch124}
+% f^+(\x,\v,t)\, |\v \cdot \mathbf{n} |_{ \v \cdot \n < 0} =  f_M(\x,\v,t)  \int_{\mathbf{n} \cdot \mathbf{v}' > 0} f^-(\mathbf{x},\mathbf{v}',t)\, |\mathbf{n} \cdot \mathbf{v}' |d\v'
+% \end{equation}
+
+% En introduisant le coefficients d'accomodation $\alpha$, on a alors à la paroi,
+
+% \begin{equation}
+% \begin{aligned}
+% \label{eq:ch125}
+% f^+(\x,\v,t) \, |\v \cdot \n |_{ \v \cdot \n < 0}  =& \,(1-\alpha) f^-(\x,\v - 2(\v \cdot \n)\n , t) \, |\v \cdot \n |\\
+ % &+ \alpha f_M(\x,\v,t) \int_{\v' \cdot \n > 0}f^-(\x,\v',t)\, |\v' \cdot \n |d\v'
+% \end{aligned}
+% \end{equation}
+
+% \begin{center}
+% \Image[width=0.6\linewidth]{./Figures/intro/reflec.png}{}
+% \captionof{figure}{Représentation schématique du rebond des phonons}
+% \end{center}

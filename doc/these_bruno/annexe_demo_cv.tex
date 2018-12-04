@@ -1,0 +1,345 @@
+\chapter{Démonstration de la convergence du schéma semi-discret}
+\label{annexe:demo_cv}
+
+
+Rappelons l'énoncé du théorème de convergence
+\ref{thm:convergence_pb_discret} :
+\begin{theorem*}
+	La solution du problème semi-discret \eqref{eq:formulation_semi-discrete}
+	converge vers la solution du problème continu \eqref{eq:probleme_evolution}
+	lorsque $h$ tend vers zéro.
+\end{theorem*}
+
+Nous allons démontrer ce théorème dans le cas d'une condition de bord
+de type Silver-Müller (\ref{ssect:silver_mueller}) représentée par la matrice :
+\begin{align}
+	\MatSM = - \Neg{\Aini} .
+\end{align}
+Cette condition aux limites correspond à l’application du flux de bord :
+\begin{align}
+	\FluxSM{\W}{\n} = (\Aini + \MatB) \W = \Pos{\Aini} \W .
+\end{align}
+
+Cette démonstration de la convergence de la méthode GD est une adaptation
+de celle qui est
+présentée dans les travaux de Lesaint \textit{et al.} \cite{LESAINT197489}
+et Johnson \textit{et al.} \cite{Johnson:1986:ADG:21230.21231}.
+Nous commençons par définir la forme bilinéaire $B$
+définie sur $\mathcal{H}_h^\NC \times \mathcal{H}_h^\NC$
+\eqref{eq:ev_solution_discrete} et à valeurs dans $\EnsR$ :
+\begin{equation}
+	\begin{aligned}
+		B(\Bphi,\Bpsi) &=
+		\int_{\PbEsp \setminus \UItf_h}
+			(\Ptl{i} \Ai \Bphi) \cdot \Bpsi dx \\
+		&\quad + \int_{\UItf_h \setminus \Bord{\PbEsp}}
+			(\Neg{\Aini} (\Bphi_\R - \Bphi_\L)) \cdot \Bpsi_\L ds \\
+		&\quad + \int_{\UItf_h \setminus \Bord{\PbEsp}}
+			(\Pos{\Aini} (\Bphi_\R - \Bphi_\L)) \cdot \Bpsi_\R ds \\
+		&\quad - \int_{\Bord{\PbEsp}}
+			(\Neg{\Aini} \Bphi_\L) \cdot \Bpsi_\L ds ,
+	\end{aligned}
+\end{equation}
+avec $h$ le paramètre de finesse du maillage et $\UItf_h$
+l'union des interfaces entre les mailles de ce maillage.
+
+% Asymétrique ne veut pas dire antisymétrique
+$B$ est une forme bilinéaire définie positive et, en convenant que
+$\Bphi_\R = \Bpsi_\R = 0$ sur $\Bord{\PbEsp}$ puis
+en reprenant les étapes de la section \ref{ssect:stabilite_gd},
+nous obtenons :
+\begin{align}
+	B(\Bphi,\Bphi) = \frac{1}{2} \int_{\UItf_h}
+	(\Abs{\Aini} (\Bphi_\R - \Bphi_\L))
+	\cdot (\Bphi_\R - \Bphi_\L) ds .
+\end{align}
+
+Avec cette forme bilinéaire, le problème semi-discret peut être
+mis sous la forme : trouver $\Wd$ dans $\mathcal{C}^1(\PbTps,\mathcal{H}_h^\NC)$
+tel que pour tout $\Bpsi$ dans $\mathcal{C}^1(\PbTps,\mathcal{H}_h^\NC)$ :
+\begin{subequations}
+	\begin{align}
+		\int_{\PbEsp} \Ptl{t} \Wd \cdot \Bpsi dx
+		+ B(\Wd,\Bpsi) &= 0 ,
+		\\
+		\int_{\PbEsp} \Wd(x,0) \cdot \Bpsi dx
+		&= \int_{\PbEsp} \Winit \cdot \Bpsi dx .
+	\end{align}
+\end{subequations}
+Cette dernière formulation est équivalente à celle présentée précédemment
+\eqref{eq:formulation_semi-discrete}, mais il est plus aisé de considérer
+des fonctions tests vectorielles plutôt que scalaires dans la démonstration.
+
+Nous pouvons également mettre le problème continu
+\eqref{eq:formulation_gd_finale} sous cette forme :
+\begin{subequations}
+	\begin{align}
+		\int_{\PbEsp} \Ptl{t} \W \cdot \Bpsi dx
+		+ B(\W,\Bpsi) &= 0 ,
+		\\
+		\int_{\PbEsp} \W(x,0) \cdot \Bpsi dx
+		&= \int_{\PbEsp} \Winit \cdot \Bpsi dx .
+	\end{align}
+\end{subequations}
+
+Afin de démontrer le théorème de convergence  \ref{thm:convergence_pb_discret},
+nous utiliserons le résultat suivant.
+\begin{lemma} \label{lem:maj_forme_bilin}
+	Il existe une constante positive $\lambda$ telle que pour tout
+	$\Bphi$ et $\Bpsi$ appartenant à $\mathrm{L}^2(\UItf_h)$ :
+	\begin{align}
+		\Abs{\int_{\UItf_h} (\Aini \Bphi) \cdot \Bpsi ds}
+		\le \sqrt{2 \lambda B(\Bphi,\Bphi)} \Norm{\Bpsi}_{\mathrm{L}^2(\UItf_h)} .
+	\end{align}
+\end{lemma}
+\begin{proof}
+	L’inégalité de Cauchy-Schwarz donne la majoration :
+	\begin{equation}
+		\begin{aligned}
+			\Abs{\int_{\UItf_h} (\Aini \Bphi) \cdot \Bpsi ds}
+			&\le \Norm{\Aini \Bphi}_{\mathrm{L}^2(\UItf_h)}
+				\Norm{\Bpsi}_{\mathrm{L}^2(\UItf_h)} \\
+			&= \left(
+				\int_{\UItf_h} (\Aini \Bphi) \cdot (\Aini \Bphi) ds
+				\right)^\frac{1}{2} \Norm{\Bpsi}_{\mathrm{L}^2(\UItf_h)} .
+		\end{aligned}
+	\end{equation}
+	Puisque $\Aini$ est symétrique, elle est diagonalisable en base
+	orthonormée, \textit{i.e.} il existe une matrice orthogonale $\Mat{P}$
+	et une matrice diagonale $\Mat{D}$ telles que $\Aini = \Mat{P} \Mat{D} \Trp{\Mat{P}}$.
+	Alors,
+	\begin{equation}
+		\begin{aligned}
+			(\Aini \Bphi) \cdot (\Aini \Bphi)
+			&= ((\Aini)^2 \Bphi) \cdot \Bphi \\
+			&= (\Mat{P} \Mat{D}^2 \Trp{\Mat{P}} \Bphi) \cdot \Bphi \\
+			&\le (\Mat{P} \Abs{\lambda} \Abs{\Mat{D}} \Trp{\Mat{P}} \Bphi) \cdot \Bphi \\
+			&= \Abs{\lambda} (\Mat{P} \Abs{\Mat{D}} \Trp{\Mat{P}} \Bphi) \cdot \Bphi \\
+			&= \lambda (\Abs{\Aini} \Bphi) \cdot \Bphi ,
+		\end{aligned}
+	\end{equation}
+	avec $\lambda > 0$ la plus grande valeur propre de $\Aini$.
+	Dans le cas des équations de Maxwell, cette valeur propre est la vitesse
+	de la lumière, notée $c$.
+	Nous avons donc :
+	\begin{equation}
+		\begin{aligned}
+			\Abs{\int_{\UItf_h} (\Aini \Bphi) \cdot \Bpsi ds}
+			&\le \left( c \int_{\UItf_h}
+				(\Abs{\Aini} \Bphi) \cdot \Bphi ds
+				\right)^\frac{1}{2} \Norm{\Bpsi}_{\mathrm{L}^2(\UItf_h)} \\
+			&= \sqrt{2 c B(\Bphi,\Bphi)} \Norm{\Bpsi}_{\mathrm{L}^2(\UItf_h)}.
+		\end{aligned}
+	\end{equation}
+\end{proof}
+
+Nous pouvons maintenant démontrer le théorème \ref{thm:convergence_pb_discret}.
+
+\begin{proof}[Démonstration du théorème \ref{thm:convergence_pb_discret}]
+	Notons $\pi$ la projection $\mathrm{L}^2$ sur l'espace d'approximation $\mathcal{H}_h^\NC$ :
+	\begin{align}
+		\forall  \Bphi \in  \mathcal{H}_h^\NC,
+		\int_{\Omega} \W \Bphi = \int_{\Omega} \pi (\W) \Bphi .
+	\end{align}
+	%\todo{définir cette projection ?}
+	Soient alors $\VDelta = \pi(\W) - \W \in \mathcal{H}^\NC$ l'écart entre la solution
+	continue et sa projection sur $\mathcal{H}_h^\NC$
+	et $\VDelta_h = \pi(\W) - \Wd \in \mathcal{H}_h^\NC$ l'écart entre la solution
+	discrète et la projection de la solution continue.
+	Nous avons donc $\W - \Wd = \VDelta_h - \VDelta$.
+	
+	En soustrayant le problème semi-discret au problème continu et en prenant
+	l'écart $\VDelta_h$ comme fonction test, nous obtenons :
+	\begin{align} \label{eq:delta_cd_dot_delta_pcd}
+		\int_{\PbEsp} \Ptl{t} (\VDelta_h - \VDelta) \cdot \VDelta_h dx
+		+ B(\VDelta_h - \VDelta,\VDelta_h) = 0 .
+	\end{align}
+	
+	Remarquons, par définition de la projection, que l'écart $\VDelta$
+	est orthogonal à l'espace $\mathcal{H}_h^\NC$ qui contient $\VDelta_h$,
+	$\Ptl{i} \Ai \VDelta_h$ et $\Ptl{t} \VDelta_h$, soit :
+	\begin{align}
+		\int_{\PbEsp} \VDelta \cdot \VDelta_h dx =
+		\int_{\PbEsp} \VDelta \cdot (\Ptl{i} \Ai \VDelta_h) dx =
+		\int_{\PbEsp} \VDelta \cdot (\Ptl{t} \VDelta_h) dx = 0 .
+	\end{align}
+	Ainsi :
+	\begin{equation}
+		\begin{aligned}
+			0 &= \Ptl{t} \int_{\PbEsp} \VDelta \cdot \VDelta_h dx \\
+			&= \int_{\PbEsp} (\Ptl{t} \VDelta) \cdot \VDelta_h dx
+			+ \int_{\PbEsp} \VDelta \cdot (\Ptl{t} \VDelta_h) dx \\
+			&= \int_{\PbEsp} (\Ptl{t} \VDelta) \cdot \VDelta_h dx ,
+		\end{aligned}
+	\end{equation}
+	et l'équation \eqref{eq:delta_cd_dot_delta_pcd} devient :
+	\begin{align}
+		\int_{\PbEsp} (\Ptl{t} \VDelta_h) \cdot \VDelta_h dx
+		+ B(\VDelta_h,\VDelta_h) = B(\VDelta,\VDelta_h) .
+	\end{align}
+	
+	Pour démontrer la convergence du problème semi-discret, nous souhaitons majorer
+	les membres de cette équation. Afin d'appliquer l'inégalité de Cauchy-Schwarz
+	au second membre, nous devons déterminer la partie antisymétrique de $B$,
+	soit la moitié de la différence symétrique suivante :
+	\begin{equation}
+		\begin{aligned}
+			B(\Bphi,\Bpsi) - B(\Bpsi,\Bphi) &=
+			\int_{\PbEsp \setminus \UItf_h}
+				(\Ptl{i} \Ai \Bphi) \cdot \Bpsi dx
+			- \int_{\PbEsp \setminus \UItf_h}
+				(\Ptl{i} \Ai \Bpsi) \cdot \Bphi dx \\
+			&\quad + \int_{\UItf_h}
+				(\Neg{\Aini} (\Bphi_\R - \Bphi_\L)) \cdot \Bpsi_\L ds \\
+			&\quad + \int_{\UItf_h}
+				(\Pos{\Aini} (\Bphi_\R - \Bphi_\L)) \cdot \Bpsi_\R ds \\
+			&\quad - \int_{\UItf_h}
+				(\Neg{\Aini} (\Bpsi_\R - \Bpsi_\L)) \cdot \Bphi_\L ds \\
+			&\quad - \int_{\UItf_h}
+				(\Pos{\Aini} (\Bpsi_\R - \Bpsi_\L)) \cdot \Bphi_\R ds ,
+		\end{aligned}
+	\end{equation}
+	avec $\Bphi_\R = \Bpsi_\R = 0$ sur $\Bord{\PbEsp}$.
+	En appliquant la formule de Green \eqref{eq:formule_de_green}
+	sur le premier terme de volume puis,
+	en simplifiant les termes d'interface, nous obtenons :
+	\begin{equation}
+		\begin{aligned}
+			B(\Bphi,\Bpsi) - &B(\Bpsi,\Bphi) =
+			- 2 \int_{\PbEsp \setminus \UItf_h}
+				\Bphi \cdot (\Ptl{i} \Ai \Bpsi) dx \\
+			&\quad + \int_{\UItf_h} (\Aini \Bphi_\L) \cdot \Bpsi_\L ds
+				- \int_{\UItf_h} (\Aini \Bphi_\R) \cdot \Bpsi_\R ds \\
+			&\quad + \int_{\UItf_h}
+				(\Neg{\Aini} (\Bphi_\R - \Bphi_\L)) \cdot \Bpsi_\L ds \\
+			&\quad + \int_{\UItf_h}
+				(\Pos{\Aini} (\Bphi_\R - \Bphi_\L)) \cdot \Bpsi_\R ds \\
+			&\quad - \int_{\UItf_h}
+				(\Neg{\Aini} (\Bpsi_\R - \Bpsi_\L)) \cdot \Bphi_\L ds \\
+			&\quad - \int_{\UItf_h}
+				(\Pos{\Aini} (\Bpsi_\R - \Bpsi_\L)) \cdot \Bphi_\R ds \\
+			&= - 2 \int_{\PbEsp \setminus \UItf_h}
+				\Bphi \cdot (\Ptl{i} \Ai \Bpsi) dx \\
+			&\quad + \int_{\UItf_h}
+				(\Aini (\Bphi_\L + \Bphi_\R))
+				\cdot (\Bpsi_\L - \Bpsi_\R) ds .
+		\end{aligned}
+	\end{equation}
+	En appliquant ensuite l'inégalité triangulaire suivie de l'inégalité de Cauchy-Schwarz,
+	nous obtenons la majoration suivante :
+	\begin{equation}
+		\begin{aligned}
+			\Abs{B(\VDelta,\VDelta_h)}
+			&= \Abs{B_s(\VDelta,\VDelta_h) + B_a(\VDelta,\VDelta_h)} \\
+			&= \Abs{B_s(\VDelta,\VDelta_h)
+				+ \frac{1}{2} (B(\VDelta,\VDelta_h) - B(\VDelta_h,\VDelta))} \\
+			&\le \Abs{B_s(\VDelta,\VDelta_h)}
+				+ \Abs{\frac{1}{2} (B(\VDelta,\VDelta_h) - B(\VDelta_h,\VDelta))} \\
+			&\le \sqrt{B(\VDelta,\VDelta)} \sqrt{B(\VDelta_h,\VDelta_h)} \\
+			&\quad + \Abs{\frac{1}{2} \int_{\UItf_h}
+				(\Aini (\VDelta_\L + \VDelta_\R))
+				\cdot ({\VDelta_h}_\L - {\VDelta_h}_\R) ds}
+		\end{aligned}
+	\end{equation}
+	où $B_s$, respectivement $B_a$, est la partie symétrique,
+	respectivement antisymétrique, de $B$.
+	En appliquant le lemme \ref{lem:maj_forme_bilin}, l'inégalité devient :
+	\begin{align}
+		\Abs{B(\VDelta,\VDelta_h)}
+		\le \sqrt{B(\VDelta_h,\VDelta_h)} 
+		\left( \sqrt{B(\VDelta,\VDelta)} 
+		+ K_1 \Norm{\VDelta}_{\mathrm{L}^2(\UItf_h)} \right) ,
+	\end{align}
+	avec $K_1$ une constante réelle.
+
+	Nous disposons aussi des estimations de projection
+	données par Raviart \textit{et al.} \cite{Raviart1977}
+	qui permettent de mesurer l’écart entre une solution $\W$ et son projeté
+	$\mathrm{L}^2$ sur l’espace d’approximation spatiale $\mathcal{H}_h^\NC$ :
+	\begin{subequations}
+		\begin{align}
+			\Norm{\VDelta}_{\mathrm{L}^2(\PbEsp)} &\le 
+			C h^{d + 1} \Norm{\W}_{W_{d + 1}^{2}(\Mesh)} ,
+			\\ 
+			\Norm{\VDelta}_{\mathrm{L}^2(\UItf_h)} &\le 
+			C h^{d + \frac{1}{2}} \Norm{\W}_{W_{d + 1}^{2}(\Mesh)} ,
+		\end{align}
+	\end{subequations}
+	où $C$ est une constante dépendant de $\PbEsp$,
+	$d$ est l'ordre d'approximation spatiale, $h$ est le
+	paramètre de finesse du maillage $\Mesh$ et la norme
+	$\Norm{.}_{W_{d + 1}^{2}(\Mesh)}$ est une norme de Sobolev par morceaux
+	définie par :
+	\begin{align}
+		\Norm{\W}_{W_{d + 1}^{2}(\Mesh)} =
+		\sum_{i = 0}^{\NE - 1} \Norm{\W}_{W_{d + 1}^{2}(\L_i)} =
+		\sum_{i = 0}^{\NE - 1} 
+		\left( \sum_{\Abs{\alpha} \le d + 1}
+		\Norm{\W^{(\alpha)}}_{\mathrm{L}^2(\L_i)}^2
+		\right)^\frac{1}{2} .
+	\end{align}
+	Cette estimation est valable à condition que les mailles
+	ne s’étirent pas lorsque $h$ tend vers $0$.
+	C’est le cas par exemple, si pour le passage à la limite sur $h$,
+	on considère des raffinements uniformes d’un maillage fixé initialement.
+	
+	Nous obtenons ainsi la majoration :
+	\begin{align}
+		\frac{1}{2} \Ptl{t} \Norm{\VDelta_h}_{\mathrm{L}^2(\PbEsp)}^2
+		+ B(\VDelta_h,\VDelta_h)
+		\le K_2 \sqrt{B(\VDelta_h,\VDelta_h)} 
+		h^{d + \frac{1}{2}}
+		\Norm{\W}_{W_{d + 1}^{2}(\Mesh)} ,
+	\end{align}
+	avec $K_2$ une constante réelle. Puis, en appliquant l'inégalité :
+	\begin{align}
+		\forall a, b \in \EnsR, a b \le \frac{1}{2} (a^2 + b^2) ,
+	\end{align}
+	avec $a = \sqrt{B(\VDelta_h,\VDelta_h)}$ et
+	$b = K_2 h^{d + \frac{1}{2}} \Norm{\W}_{W_{d + 1}^{2}(\Mesh)}$,
+	nous avons :
+	\begin{align}
+		\Ptl{t} \Norm{\VDelta_h}_{\mathrm{L}^2(\PbEsp)}^2
+		+ B(\VDelta_h,\VDelta_h)
+		\le K_2^2 h^{2 d + 1}
+		\Norm{\W}_{W_{d + 1}^{2}(\Mesh)}^2 ,
+	\end{align}
+	et finalement en intégrant par rapport au temps :
+	\begin{align}
+		\sqrt{\Norm{\VDelta_h}_{\mathrm{L}^2(\PbEsp)}^2 +
+		\int_{0}^{\Tmax} B(\VDelta_h,\VDelta_h) dt}
+		\le K_2 h^{d + \frac{1}{2}}
+		\sqrt{\int_{0}^{\Tmax} \Norm{\W}_{W_{d + 1}^{2}(\Mesh)}^2 dt}
+		\label{eq:cv_interfaces} .
+	\end{align}
+	Puisque $\W - \Wd = \VDelta_h - \VDelta$,% et
+	%$\Norm{\VDelta}_{\mathrm{L}^2(\PbEsp)} = O (h^{d + 1})$\todo{inutile ?},
+	nous pouvons conclure par :
+	\begin{align}
+		\Norm{\W - \Wd}_{\mathrm{L}^2(\PbEsp)}
+		\le K_2 h^{d + \frac{1}{2}}
+		\sqrt{\int_{0}^{\Tmax} \Norm{\W}_{W_{d + 1}^{2}(\Mesh)}^2 dt} .
+	\end{align}
+\end{proof}
+
+\begin{remark}
+	L’inégalité \eqref{eq:cv_interfaces} est plus précise
+	que cette dernière inégalité
+	puisqu’elle comprend un contrôle des discontinuités sur
+	les interfaces entre les mailles.
+	Ce contrôle montre qu’en un certain sens, le saut de $\Aini \W$
+	sur l’ensemble des discontinuités $\UItf_h$ tend vers
+	$0$ en norme $\mathrm{L}_2(\UItf_h)$ lorsque $h$
+	tend vers $0$.
+	Comme la longueur de l’ensemble $\UItf_h$ tend vers l’infini,
+	ce contrôle est assez fort.
+	Dans le cas de l’utilisation d’un flux centré, ce terme
+	de contrôle n’est pas présent.
+	Ainsi, les oscillations de Gibbs sont en général
+	plus importantes avec un tel flux.
+\end{remark}
+
+
+
+
+

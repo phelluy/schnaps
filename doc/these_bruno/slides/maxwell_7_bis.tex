@@ -1,0 +1,36 @@
+\begin{frame}
+\frametitle{Condition de saut}
+\vfill
+\begin{itemize}
+\item La solution doit savoir prendre en compte les discontinuités fixes entre diélectriques : phénomène de réfraction ;
+\vfill
+\item Utilisation de la relation de Rankine-Hugoniot sur la discontinuité :
+\begin{align*}
+	\nC{t} \left( (\At)_\L \W_\L - (\At)_\R \W_\R \right) =
+	\left( (\Aini)_\L \W_\L - (\Aini)_\R \W_\R \right) \ ;
+\end{align*}
+\begin{itemize}
+\item [$\nC{t}$] : vitesse de propagation de la discontinuité ;
+\item [$\n$] : normale au support de la discontinuité ;
+\end{itemize}
+\vfill
+\item Application aux équations de Maxwell avec $\nC{t} = 0$ (discontinuité fixe) :
+\begin{columns}
+\column{0.5\textwidth}
+\begin{align*}
+\n \times (\H_\L - \H_\R) &= 0 , \\
+\n \times (\E_\L - \E_\R) &= 0 .
+\end{align*}
+\column{0.5\textwidth}
+\begin{align*}
+\n \cdot (\EPrm_\L \E_\L - \EPrm_\R \E_\R) &= 0 , \\
+\n \cdot (\HPrm_\L \H_\L - \HPrm_\R \H_\R) &= 0 .
+\end{align*}
+\end{columns}
+\vfill
+\item [=>] Continuité des champs électromagnétiques tangents à la discontinuité ;
+\item [=>] Discontinuité des champs électromagnétiques normaux à la discontinuité.
+\end{itemize}
+\vfill
+\end{frame}
+

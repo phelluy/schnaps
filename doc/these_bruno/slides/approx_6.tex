@@ -1,0 +1,25 @@
+\begin{frame}
+\frametitle{Problème semi-discret}
+\vfill
+Décomposition des champs électromagnétiques dans la base d'approximation :
+\begin{align*}
+	\W(\x,t) \approx \Wd(\x,t) &= \sum_{\L \in \Mesh} \sum_{i}
+		\Wd_{\L,i}(t) \PsiPhy{\L}{i}(\x) ,
+	\\
+	\Ptl{t}\W(\x,t) \approx \Ptl{t}\Wd(\x,t) &= \sum_{\L \in \Mesh} \sum_{i}
+		\Wd'_{\L,i}(t) \PsiPhy{\L}{i}(\x) ,
+\end{align*}
+avec $\Wd$ la solution du problème dit « semi-discret ».
+\vfill
+\begin{itemize}
+\item Les seules valeurs aux points d'interpolation volumiques suffisent à définir la solution semi-discrète.
+\item La solution du problème semi-discret $\Wd$
+converge vers la solution du problème continu $\W$
+lorsque le \textit{pas de maillage} tend vers zéro (théorème : Lesaint, Johnson).
+\end{itemize}
+\vfill
+Pourquoi les hexaèdres ? Le choix de cet espace d'approximation implique des simplifications.
+\vfill
+\end{frame}
+\renewcommand{\W}{\Vec{\mathrm{w}}} % Solution discrète dans la suite
+

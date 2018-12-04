@@ -1,0 +1,32 @@
+\begin{frame}
+\frametitle{Intégration temporelle}
+\vfill
+\begin{itemize}
+\item Nous avons défini un opérateur GD pour estimer la dérivée temporelle :
+\begin{align*}
+	\Ptl{t} \W = \mathcal{G}(\W) = \A \W \ ;
+\end{align*}
+\vfill
+\item Avancée en temps :
+\begin{align*}
+	\W^{n+1} = \W^n + \int_{t_n}^{t_{n+1}} \Ptl{t} \W dt \ ;
+\end{align*}
+\begin{itemize}
+\item [$\dt$] $\in \PbTps$ : le « pas de temps » ;
+\item [$t_n$] $= n \dt$ : le temps discrétisé ;
+\item [$\W^n$] $:= \W(t_n)$ : la discrétisation temporelle de la solution ;
+\end{itemize}
+\vfill
+\item Méthode Runge-Kutta d'ordre 2 (RK2), ou Euler améliorée :
+\begin{align*}
+	\W^{n+\frac{1}{2}} &= \W^n
+		+ \frac{\dt}{2} \mathcal{G}(\W^n) ,
+	\tag{Prédiction} \\
+	\W^{n+1} &= \W^n
+		+ \dt \mathcal{G}\left(\W^{n+\frac{1}{2}}\right) .
+	\tag{Mise-à-jour}
+\end{align*}
+\end{itemize}
+\vfill
+\end{frame}
+

@@ -1,0 +1,94 @@
+\begin{frame}
+\frametitle{Système de Friedrichs / Matrices}
+\vfill
+\scalebox{0.7}{\begin{minipage}{1.42\textwidth}
+\begin{figure}
+\centering
+$
+\begin{array}{ccc}
+	\At =
+	\begin{pmatrix}
+		\EPrm &  &  &  &  &  \\
+		 & \EPrm &  &  & 0 &  \\
+		 &  & \EPrm &  &  &  \\
+		 &  &  & \HPrm &  &  \\
+		 & 0 &  &  & \HPrm &  \\
+		 &  &  &  &  & \HPrm
+	\end{pmatrix} ,
+&
+	\ACnd =
+	\begin{pmatrix}
+		\ECnd &  &  &  &  &  \\
+		 & \ECnd &  &  & 0 &  \\
+		 &  & \ECnd &  &  &  \\
+		 &  &  & \HCnd &  &  \\
+		 & 0 &  &  & \HCnd &  \\
+		 &  &  &  &  & \HCnd
+	\end{pmatrix} ,
+&
+	\Src =
+	\begin{pmatrix}
+		0 \\
+		\vdots \\
+		0
+	\end{pmatrix} ,
+\\
+& &
+\\
+	\Ac{1} =
+	\begin{pmatrix}
+		 &  &  &  &  & 0 \\
+		 & 0 &  &  & 0 & 1 \\
+		 &  &  & 0 & -1 &  \\
+		 &  & 0 & 0 &  &  \\
+		 & 0 & -1 &  & 0 &  \\
+		0 & 1 &  &  &  & 
+	\end{pmatrix} ,
+&
+	\Ac{2} =
+	\begin{pmatrix}
+		 &  &  &  &  & -1 \\
+		 & 0 &  &  & 0 &  \\
+		 &  &  & 1 &  &  \\
+		 &  & 1 &  &  &  \\
+		 & 0 &  &  & 0 &  \\
+		-1 &  &  &  &  & 
+	\end{pmatrix} ,
+&
+	\Ac{3} =
+	\begin{pmatrix}
+		 &  &  &  & 1 & 0 \\
+		 & 0 &  & -1 & 0 &  \\
+		 &  & 0 & 0 &  &  \\
+		 & -1 & 0 &  &  &  \\
+		1 & 0 &  &  & 0 &  \\
+		0 &  &  &  &  & 
+	\end{pmatrix} ,
+\end{array}
+$
+\end{figure}
+\end{minipage}}
+\vfill
+\begin{align*}
+\Aidi = 
+\begin{pmatrix}
+	0 & -\nabla \times \\
+	\nabla \times & 0
+\end{pmatrix} , \
+\mathrm{avec} \
+\nabla \times =
+\begin{pmatrix}
+	0 & -\Ptl{3} & \Ptl{2} \\
+	\Ptl{3} & 0 & -\Ptl{1} \\
+	-\Ptl{2} & \Ptl{1} & 0
+\end{pmatrix} .
+\end{align*}
+\vfill
+\begin{itemize}
+\item Matrices symétriques ;
+\item $\At$ définie positive et $\ACnd$ positive ;
+\item Dans la suite nous considérons le problème sans sources ($\ACnd = 0$).
+\end{itemize}
+\vfill
+\end{frame}
+

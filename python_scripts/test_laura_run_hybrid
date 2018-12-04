@@ -1,0 +1,29 @@
+export STARPU_HISTORY_MAX_ERROR=100
+export STARPU_GENERATE_TRACE=0
+export STARPU_WORKER_STATS=1
+export STARPU_NCUDA=0
+export STARPU_SCHED=dmdar
+export STARPU_OPENCL_ON_CPUS=0
+export STARPU_OPENCL_ONLY_ON_CPUS=0
+
+
+export STARPU_NCPU=0
+echo ""
+echo " Changing refinement===================================="
+python3 test_laura_change_raf.py ../example/testlaura_spu.c 12
+make;
+echo " Changing number of GPU -> 1...................... "
+export STARPU_NOPENCL=1
+echo " Simulation raf = 12, GPU = 1"
+./example/testlaura_spu > out_raf12_NGPU1_NCPU0.txt
+
+echo " Changing number of GPU -> 2...................... "
+export STARPU_NOPENCL=2
+echo " Simulation raf = 12, GPU = 2"
+./example/testlaura_spu > out_raf12_NGPU2_NCPU0.txt
+
+
+export STARPU_NCPU=20
+export STARPU_NOPENCL=1
+echo " Simulation raf = 12, GPU = 1 ncpu =20"
+./example/testlaura_spu > out_raf12_NGPU1_NCPU20.txt

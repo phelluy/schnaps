@@ -1,0 +1,1117 @@
+#LyX 2.1 created this file. For more info see http://www.lyx.org/
+\lyxformat 474
+\begin_document
+\begin_header
+\textclass article
+\use_default_options true
+\maintain_unincluded_children false
+\language english
+\language_package default
+\inputencoding auto
+\fontencoding global
+\font_roman default
+\font_sans default
+\font_typewriter default
+\font_math auto
+\font_default_family default
+\use_non_tex_fonts false
+\font_sc false
+\font_osf false
+\font_sf_scale 100
+\font_tt_scale 100
+\graphics default
+\default_output_format default
+\output_sync 0
+\bibtex_command default
+\index_command default
+\paperfontsize default
+\use_hyperref false
+\papersize default
+\use_geometry false
+\use_package amsmath 1
+\use_package amssymb 1
+\use_package cancel 1
+\use_package esint 1
+\use_package mathdots 1
+\use_package mathtools 1
+\use_package mhchem 1
+\use_package stackrel 1
+\use_package stmaryrd 1
+\use_package undertilde 1
+\cite_engine basic
+\cite_engine_type default
+\biblio_style plain
+\use_bibtopic false
+\use_indices false
+\paperorientation portrait
+\suppress_date false
+\justification true
+\use_refstyle 1
+\index Index
+\shortcut idx
+\color #008000
+\end_index
+\secnumdepth 3
+\tocdepth 3
+\paragraph_separation indent
+\paragraph_indentation default
+\quotes_language english
+\papercolumns 1
+\papersides 1
+\paperpagestyle default
+\tracking_changes false
+\output_changes false
+\html_math_output 0
+\html_css_as_file 0
+\html_be_strict false
+\end_header
+
+\begin_body
+
+\begin_layout Subsection*
+Reviewer 1
+\end_layout
+
+\begin_layout Enumerate
+
+\shape italic
+If this is published as part of proceedings, I recommend cutting down several
+ well-known parts (e.g.
+ OpenCL introduction, DG Gauss points) by using appropriate references.
+
+\shape default
+ We have cutting down several parts in Sections 2.2 (FV OpenMP implementation),
+ 2.3 (OpenCL description), 3.1 (Gauss points details).
+ The paper is now four pages less.
+ We also added some references.
+\end_layout
+
+\begin_layout Enumerate
+
+\emph on
+I'd recommend using 
+\backslash
+vec{} for vectors and commas to separate vector elements (x_1, ..., x_n) which
+ would improve readability.
+
+\emph default
+ Done
+\end_layout
+
+\begin_layout Enumerate
+
+\emph on
+The meaning of 
+\backslash
+vec{n} is unclear.
+ Is this a space coordinate or the normal vector? n is used later on for
+ the normal on the flux interface.
+
+\emph default
+ Done.
+ Now we use vector notation for 
+\series bold
+n
+\series default
+.
+\end_layout
+
+\begin_layout Enumerate
+
+\emph on
+sum-on-repeated-indices is known as the Einstein notation.
+
+\emph default
+ OK
+\end_layout
+
+\begin_layout Enumerate
+
+\emph on
+\begin_inset Quotes erd
+\end_inset
+
+They are easy to program on a standard parallel computer thanks to subdomain
+ decomposition
+\begin_inset Quotes erd
+\end_inset
+
+.
+ From my point of view they are easy to parallelize since the stencils only
+ access directly adjacent cells.
+ This is a huge drawback of higher-order FV methods in particular on unstructure
+d meshes.
+ 
+\begin_inset Quotes eld
+\end_inset
+
+However, on new hybrid architectures, the efficient implementation of those
+ methods is more complex.
+\begin_inset Quotes erd
+\end_inset
+
+ Efficiency is a very generic term.
+ Providing more details on this would be helpful to understand this issue.
+
+\emph default
+ We agree with the reviewer, but we don't address high order FV methods
+ in this paper.
+ Efficiency is defined in a more precise way when we describe the roofline
+ approach.
+\end_layout
+
+\begin_layout Enumerate
+
+\emph on
+Flux-based FV has similar communication patterns compared to DG formulation.
+ What is the difference/challenge to have a unified parallelization system
+ for both formulations? After reading the paper to the end, I had the impression
+ that the FV part is obsolete.
+
+\emph default
+ We agree: the message of our paper is that the DG solver is more efficient.
+ The FV description has been shortened.
+ Anyway, we keep it because the FV algorithm is compared to the DG one.
+\end_layout
+
+\begin_layout Enumerate
+
+\emph on
+References: -> 1.2.1 The used flux is called Lax-Friedrich, see e.g.
+ [A].
+
+\emph default
+ The reference has been added.
+\end_layout
+
+\begin_layout Enumerate
+
+\emph on
+Strang splitting in x1/x2 direction is (in my area) more commonly known
+ as dimensional splitting, see [A] (Sec.
+ 19.5).
+
+\emph default
+ Done.
+\end_layout
+
+\begin_layout Enumerate
+
+\emph on
+Discussion of higher-order time stepping method is missing.
+ This is typically required for higher-order space discretization.
+ Otherwise the errors in time can dominate the solution.
+
+\emph default
+ Actually, we use a second order space-time MUSCL-Hancock extension for
+ the FV scheme and a RK4 time integrator for the DG solver.
+ We don't describe the time integrators in detail in this paper.
+ This aspect is discussed in other papers.
+\end_layout
+
+\begin_layout Enumerate
+
+\emph on
+The section describing the speedup of 116 is rather straightforward and
+ well known.
+ Therefore, I suggest to shorten this section into"As a runtime baseline
+ we used results computed with '-O3' gcc flags, cache blocking and OpenMP
+ parallelization" without mentioning this speedup.
+ 
+\emph default
+Done.
+\end_layout
+
+\begin_layout Enumerate
+
+\emph on
+two-CPU SMP -> Details of this architecture are missing (Intel? Which generation
+? How many cores per CPU? AVX?) Introducing all architectures used in the
+ system e.g.
+ in the introduction can be very beneficial.
+
+\emph default
+ The CPU and GPU details are given in Table 1
+\end_layout
+
+\begin_layout Enumerate
+
+\emph on
+\begin_inset Quotes eld
+\end_inset
+
+This animation uses the possibility to share GPU buffers between OpenGL
+ and OpenCL drivers (OpenGL/OpenCL interops).
+ We have also performed magneto-hydro-dynamics (MHD) simulation on very
+ fine grids in [11].
+\begin_inset Quotes erd
+\end_inset
+
+ Both sentences seem to be obsolete since they don't contribute to this
+ paper.
+
+\emph default
+ We deleted these sentences.
+\end_layout
+
+\begin_layout Enumerate
+
+\emph on
+OpenMP also supports SIMD annotations.
+ Was this used for the OpenMP implementation? Only then a comparison to
+ OpenCL is reasonable.
+
+\emph default
+ We have not used such annotations but we use gcc __attribute__ in order
+ to help compiler vectorizations.
+\end_layout
+
+\begin_layout Enumerate
+
+\emph on
+1.2) I would have been interested in speedup results depending on the problem
+ size.
+
+\emph default
+ We decided to choose sufficiently large grids in such a way that the speedup
+ does not change too much as the problem size increases.
+ Of course, with smaller grids the speedup is less interesting because of
+ cache effects.
+\end_layout
+
+\begin_layout Enumerate
+
+\emph on
+1.3.1.1: Can this entire section be cut down by referencing to [8] and stating
+ that Gauss quadrature points are used for quadrature and nodal representation
+ on volumes and faces?
+\emph default
+ The size of this section has been reduced.
+\end_layout
+
+\begin_layout Enumerate
+
+\emph on
+\begin_inset Quotes eld
+\end_inset
+
+..., The DG method presents many advantages:" T -> t, The DG Method also has
+ well-known disadvantages and one should not only mention advantages.
+
+\emph default
+ Possible issues are also discussed in the next paragraph just after the
+ advantages list.
+\end_layout
+
+\begin_layout Enumerate
+
+\emph on
+Fig.
+ 1.7: A sideways figure would make this more readable.
+
+\emph default
+ We agree that the figure is hard to read.
+ In addition the paper is too long.
+ Thus, we have only kept one task graph picture associated to Subdomain
+ 2.
+ 
+\end_layout
+
+\begin_layout Enumerate
+
+\emph on
+Roofline model: I recommend to use streaming benchmarks as a baseline for
+ the available bandwidth.
+
+\emph default
+ The available bandwidth has been checked from several different sources
+ on the web, not only from the constructor.
+\end_layout
+
+\begin_layout Enumerate
+
+\emph on
+Fig.
+ 1.9: "We have counted..." How was this counted? Providing more details on this
+ issue would be highly beneficial.
+ In general, more details in the results section would help to improve the
+ contribution of this work.
+
+\emph default
+ We have added a comment on our counting method.
+\end_layout
+
+\begin_layout Enumerate
+
+\emph on
+\begin_inset Quotes eld
+\end_inset
+
+coalescent" should be probably "coalesced".
+ 
+\emph default
+We kept 
+\begin_inset Quotes eld
+\end_inset
+
+coalescent
+\begin_inset Quotes erd
+\end_inset
+
+, checked with a native speaker.
+\end_layout
+
+\begin_layout Enumerate
+
+\emph on
+The result section compares synchronous with asynchronous implementation
+ and many pages are dedicated to the asynchronous implementation.
+ I'm missing an implementation with a non-blocking isend/irecv which is
+ state-of-the-art since decades.
+ This would allow a fair comparison of the novelty of the presented async.
+ approach.
+
+\emph default
+ As we explain it at the end of Section 3.3, we indeed launch blocking MPI
+ communications, but inside threads generating OpenCL events.
+ Thus it is equivalent to non-blocking isend/irecv.
+ In our implementation, we let the OpenCL scheduler manage the synchronous
+ or asynchronous threads launch.
+ For the moment, it is difficult to change the program structure for isolating
+ the MPI threads to only launch them asynchronously.
+ But the question is interesting: we will certainly conduct more precise
+ investigations when we will test our code on bigger GPU clusters.
+\end_layout
+
+\begin_layout Enumerate
+
+\emph on
+Results on realistic scenario: Here, performance results (e.g.
+ regular resolved domain vs.
+ real application) would have been interesting as well, since the focus
+ of this paper is on HPC.
+
+\emph default
+ In Section 3.5 we measure the additional cost caused by inhomogeneous physical
+ zones (PML model) in a realistic simulation.
+ More comparisons would have been interesting but the paper is already 20
+ pages long...
+ 
+\end_layout
+
+\begin_layout Subsection*
+Reviewer 2
+\end_layout
+
+\begin_layout Enumerate
+
+\emph on
+The authors must not write the entire paper using the itemizeenvironment.
+ This makes the paper look like an informal report.
+ Also, I think that the paper has the wrong focus.
+ My suggestion is to rewrite it as follows: a) remove the first half, b)
+ add more information on how the CLAC framework actually works, and how
+ the reader can benefit from it, c) add some actual GPU-specific content
+ instead of just prose describing the ideas.
+
+\emph default
+ We have reorganized the paper: we suppressed 4 pages mainly about the FV
+ implementation.
+ We did not suppress the FV part completely, for comparison purposes.
+ For instance, at the end we compare the roofline efficiency of the FV and
+ DG approaches.
+ The conclusion of the paper is that the high order DG method is more efficient,
+ despite some unordered memory accesses.
+ We think that Section 3.2, while short, is a rather precise description
+ of our specific GPU implementation.
+ In addition the roofline analysis is a very GPU-oriented content.
+ The paper is already 20 pages long.
+\end_layout
+
+\begin_layout Enumerate
+
+\emph on
+Some detailed comments: Figures 1.7 and 1.8 are much too small.
+ I cannot read them.
+ The "numerical results" at the end are not numerical results, but just
+ a colorful picture.
+ Is the result correct? Which speedup factors have been obtained?
+\emph default
+ We removed the bigger task-graph picture that was indeed hard to read.
+ We also removed the colorful picture because, we agree, its artistic quality
+ does not compensate its uselessness.
+\end_layout
+
+\begin_layout Enumerate
+
+\emph on
+Also, why is single precision sufficient throughout the paper?
+\emph default
+ In this paper we do not address spectral precision computations: the FV
+ method is only 
+\begin_inset Quotes eld
+\end_inset
+
+second
+\begin_inset Quotes erd
+\end_inset
+
+ order and the DG solver is at most 5th order.
+ In addition, we did not face any stability issue with single precision.
+ Our code is designed so that it can be run in single or double precision.
+ In double precision, on the presented test cases, we obtain the same results
+ in a longer time...
+ 
+\end_layout
+
+\begin_layout Subsection*
+Reviewer 3
+\end_layout
+
+\begin_layout Enumerate
+
+\emph on
+Section 1.2 describes finite volume solver with standard optimizations.
+ These optimizations are necessary to achieve acceptable performance and
+ do not have any novelty.
+
+\emph default
+ We agree.
+ We have cut down this part.
+\end_layout
+
+\begin_layout Enumerate
+
+\emph on
+I suggest to only focus on the DG solver in the paper and show scalability
+ beyond 8 GPUs.
+
+\emph default
+ There is also comparison (in terms of features, usability and performance)
+ to existing codes missing.
+ We now focus on the DG solver.
+ We kept a much shorter description of the FV implementation because we
+ compare its efficiency to the DG efficiency in Section 3.4.
+ The scalability of a hybrid version of the DG solver on large CPU/GPU clusters
+ is the main objective of an ongoing work within the SPPEXA EXAMAG project
+\end_layout
+
+\begin_layout Subsection*
+Formatting
+\end_layout
+
+\begin_layout Enumerate
+
+\emph on
+Page 1, university and name style: please use 
+\backslash
+institute{Name of Author 
+\backslash
+at Name, Address of Institute, 
+\backslash
+email{name@email.address} as pointed out in the author instructions.
+ 
+\emph default
+Done
+\end_layout
+
+\begin_layout Enumerate
+
+\emph on
+Please remove "Chapter 1" at the beginning.
+
+\emph default
+ Done (by changing 
+\backslash
+title to 
+\backslash
+title*)
+\end_layout
+
+\begin_layout Enumerate
+
+\emph on
+All words in heading should be capitalized.
+
+\emph default
+ OK.
+\end_layout
+
+\begin_layout Enumerate
+
+\emph on
+Page 18: graphics are too big.
+
+\emph default
+ The biggest graphic has been suppressed and the other one diminished.
+\end_layout
+
+\begin_layout Enumerate
+
+\emph on
+Not all formulas are numbered; please use the equation-environment.
+
+\emph default
+ OK
+\end_layout
+
+\begin_layout Enumerate
+
+\emph on
+End punctuation to the first formula on page 11 is missing.
+
+\emph default
+ Formula has been removed.
+\end_layout
+
+\begin_layout Enumerate
+
+\emph on
+Please use 
+\backslash
+vec{...} for vector variables.
+
+\emph default
+ Done
+\end_layout
+
+\begin_layout Enumerate
+
+\emph on
+Table captions should be placed before the table.
+ 
+\emph default
+Done
+\end_layout
+
+\begin_layout Enumerate
+
+\emph on
+According to author instructions, captions should not have end punctuations.
+
+\emph default
+ Done
+\end_layout
+
+\begin_layout Enumerate
+
+\emph on
+Page 7, “These more advanced features are exploited in Section 3” should
+ be changed to “.....
+ Sect.3”
+\emph default
+ Done
+\end_layout
+
+\begin_layout Enumerate
+
+\emph on
+Page 21, “ … FV method described in Section 2.” should be changed to “...
+ Sect.2”
+\emph default
+ OK
+\end_layout
+
+\begin_layout Enumerate
+
+\emph on
+Word “Figure” should be shorted to Fig.
+ in the text.
+
+\emph default
+ OK
+\end_layout
+
+\begin_layout Standard
+\begin_inset Note Note
+status open
+
+\begin_layout Plain Layout
+Sujet : SPPEXA Proceedings: Your manuscript
+\end_layout
+
+\begin_layout Plain Layout
+Date : Tue, 2 Feb 2016 12:53:35 +0100
+\end_layout
+
+\begin_layout Plain Layout
+De : Philipp Neumann <neumanph@in.tum.de>
+\end_layout
+
+\begin_layout Plain Layout
+Pour : helluy@math.unistra.fr <helluy@math.unistra.fr>
+\end_layout
+
+\begin_layout Plain Layout
+Dear Prof.
+ Helluy,
+\end_layout
+
+\begin_layout Plain Layout
+I'd like to inform you that your manuscript "Asynchronous OpenCL/MPI
+\end_layout
+
+\begin_layout Plain Layout
+numerical simulations of conservation laws" is to be accepted for
+\end_layout
+
+\begin_layout Plain Layout
+publication in the SPPEXA Symposium proceedings right after the comments
+\end_layout
+
+\begin_layout Plain Layout
+of the reviewers have been taken into account and have been sufficiently
+\end_layout
+
+\begin_layout Plain Layout
+addressed in the revised version of the manuscript (minor revision);
+\end_layout
+
+\begin_layout Plain Layout
+this holds in particular for the comments that suggest to shift the
+\end_layout
+
+\begin_layout Plain Layout
+focus of discussion towards the DG (and away from the FV) solver.
+\end_layout
+
+\begin_layout Plain Layout
+Please take the feedback of the reviewers (review.txt) into
+\end_layout
+
+\begin_layout Plain Layout
+consideration and -- if not already done so -- use the Springer
+\end_layout
+
+\begin_layout Plain Layout
+templates when preparing the final version.
+ Please further highlight any
+\end_layout
+
+\begin_layout Plain Layout
+changes in the manuscript clearly.
+\end_layout
+
+\begin_layout Plain Layout
+To accelerate the publication process, we further attached some comments
+\end_layout
+
+\begin_layout Plain Layout
+on Springer formatting that you may take into account.
+\end_layout
+
+\begin_layout Plain Layout
+Please send me the final version of the manuscript including all
+\end_layout
+
+\begin_layout Plain Layout
+tex-sources, plots and other graphics until Feb 29 2016; also include
+\end_layout
+
+\begin_layout Plain Layout
+brief answers to the reviewer's comments in the submission.
+\end_layout
+
+\begin_layout Plain Layout
+Best regards,
+\end_layout
+
+\begin_layout Plain Layout
+Philipp Neumann
+\end_layout
+
+\begin_layout Plain Layout
+From formatting.txt:
+\end_layout
+
+\begin_layout Plain Layout
+1.
+ Page 1, university and name style: please use
+\end_layout
+
+\begin_layout Plain Layout
+
+\backslash
+institute{Name of Author 
+\backslash
+at Name, Address of Institute,
+\end_layout
+
+\begin_layout Plain Layout
+
+\backslash
+email{name@email.address}
+\end_layout
+
+\begin_layout Plain Layout
+as pointed out in the author instructions.
+\end_layout
+
+\begin_layout Plain Layout
+2.
+ Please remove "Chapter 1" at the beginning.
+\end_layout
+
+\begin_layout Plain Layout
+3.
+ All words in heading should be capitalized.
+\end_layout
+
+\begin_layout Plain Layout
+4.
+ Page 18: graphics are too big
+\end_layout
+
+\begin_layout Plain Layout
+5.
+ Not all formulas are numbered; please use the equation-environment.
+\end_layout
+
+\begin_layout Plain Layout
+6.
+ End punctuation to the first formula on page 11 is missing.
+\end_layout
+
+\begin_layout Plain Layout
+7.
+ Please use 
+\backslash
+vec{...} for vector variables.
+\end_layout
+
+\begin_layout Plain Layout
+8.
+ Table captions should be placed before the table
+\end_layout
+
+\begin_layout Plain Layout
+9.
+ According to author instructions, captions should not have end punctuations
+\end_layout
+
+\begin_layout Plain Layout
+10.
+ Page 7, “These more advanced features are exploited in Section 3”
+\end_layout
+
+\begin_layout Plain Layout
+should be changed to “.....
+ Sect.3”
+\end_layout
+
+\begin_layout Plain Layout
+11.
+ Page 21, “ … FV method described in Section 2.” should be changed
+\end_layout
+
+\begin_layout Plain Layout
+to “...
+ Sect.2”
+\end_layout
+
+\begin_layout Plain Layout
+12.
+ Word “Figure” should be shorted to Fig.
+ in the text
+\end_layout
+
+\begin_layout Plain Layout
+From review.txt:
+\end_layout
+
+\begin_layout Plain Layout
+Reviewer 1:
+\end_layout
+
+\begin_layout Plain Layout
+********************************************************************
+\end_layout
+
+\begin_layout Plain Layout
+1 Major contribution/novelty of this article (2-3 Sentences)
+\end_layout
+
+\begin_layout Plain Layout
+********************************************************************
+\end_layout
+
+\begin_layout Plain Layout
+This paper is on evaluating the parallelization models OpenCL/MPI with
+\end_layout
+
+\begin_layout Plain Layout
+well-known FV/DG solvers on hybrid architectures.
+\end_layout
+
+\begin_layout Plain Layout
+I see 4 main contributions of the presented work:
+\end_layout
+
+\begin_layout Plain Layout
+1) The authors present a method to optimize
+\end_layout
+
+\begin_layout Plain Layout
+dimensional-splitting-based implementations by using transpose
+\end_layout
+
+\begin_layout Plain Layout
+operations to improve coalesced memory access.
+\end_layout
+
+\begin_layout Plain Layout
+2) The main contribution is in the DG part of this work: They present
+\end_layout
+
+\begin_layout Plain Layout
+a DAG formulation of the different computation steps of the DG
+\end_layout
+
+\begin_layout Plain Layout
+solver.
+ This formulation can indeed have wider impact in
+\end_layout
+
+\begin_layout Plain Layout
+task-based parallelization models for Exascale computing.
+\end_layout
+
+\begin_layout Plain Layout
+3) Benefits of their approach compared to a straight-forward blocking
+\end_layout
+
+\begin_layout Plain Layout
+MPI send/recv was presented.
+\end_layout
+
+\begin_layout Plain Layout
+4) The applicability to a realistic scenario was presented in the end.
+\end_layout
+
+\begin_layout Plain Layout
+********************************************************************
+\end_layout
+
+\begin_layout Plain Layout
+2 Does the manuscript contain aspects of a review article?
+\end_layout
+
+\begin_layout Plain Layout
+********************************************************************
+\end_layout
+
+\begin_layout Plain Layout
+The authors review FV/DG methods based on Riemann solvers.
+ They put
+\end_layout
+
+\begin_layout Plain Layout
+their focus on the Lax-Friedrichs solver.
+\end_layout
+
+\begin_layout Plain Layout
+A section summarizing related work and how this work differs to the
+\end_layout
+
+\begin_layout Plain Layout
+existing work would have been helpful to see the novelty of this work.
+\end_layout
+
+\begin_layout Plain Layout
+********************************************************************
+\end_layout
+
+\begin_layout Plain Layout
+3 General remarks/corrections to improve the quality of the article 
+\end_layout
+
+\begin_layout Plain Layout
+================================================================
+\end_layout
+
+\begin_layout Plain Layout
+================================================================
+\end_layout
+
+\begin_layout Plain Layout
+================================================================
+\end_layout
+
+\begin_layout Plain Layout
+Reviewer 2:
+\end_layout
+
+\begin_layout Plain Layout
+1 Major contribution/novelty of this article (2-3 Sentences)
+\end_layout
+
+\begin_layout Plain Layout
+The article discusses essentially two different codes, namely a finite
+\end_layout
+
+\begin_layout Plain Layout
+volume scheme, and a Discontinous Galerkin approach.
+ The first one is
+\end_layout
+
+\begin_layout Plain Layout
+quite OK, but has been published before by the authors.
+ The second one
+\end_layout
+
+\begin_layout Plain Layout
+is new.
+ I like the idea of providing a general framework for general
+\end_layout
+
+\begin_layout Plain Layout
+conservation laws.
+ From a GPU Computing perspective, novelty is
+\end_layout
+
+\begin_layout Plain Layout
+marginal.
+\end_layout
+
+\begin_layout Plain Layout
+2 Does the manuscript contain aspects of a review article?
+\end_layout
+
+\begin_layout Plain Layout
+The first half of the paper is a recollection of previously published
+\end_layout
+
+\begin_layout Plain Layout
+work.
+ The second part is new.
+\end_layout
+
+\begin_layout Plain Layout
+3 General remarks/corrections to improve the quality of the article
+\end_layout
+
+\begin_layout Plain Layout
+The authors must not write the entire paper using the itemize
+\end_layout
+
+\begin_layout Plain Layout
+environment.
+ This makes the paper look like an informal report.
+ Also,
+\end_layout
+
+\begin_layout Plain Layout
+I think that the paper has the wrong focus.
+ My suggestion is to
+\end_layout
+
+\begin_layout Plain Layout
+rewrite it as follows: a) remove the first half, b) add more
+\end_layout
+
+\begin_layout Plain Layout
+information on how the CLAC framework actually works, and how the
+\end_layout
+
+\begin_layout Plain Layout
+reader can benefit from it, c) add some actual GPU-specific content
+\end_layout
+
+\begin_layout Plain Layout
+instead of just prose describing the ideas.
+\end_layout
+
+\begin_layout Plain Layout
+Some detailed comments: Figures 1.7 and 1.8 are much too small.
+ I
+\end_layout
+
+\begin_layout Plain Layout
+cannot read them.
+ The "numerical results" at the end are not numerical
+\end_layout
+
+\begin_layout Plain Layout
+results, but just a colourful picture.
+ Is the result correct? Which
+\end_layout
+
+\begin_layout Plain Layout
+speedup factors have been obtained? Also, why is single precision
+\end_layout
+
+\begin_layout Plain Layout
+sufficient throughout the paper?
+\end_layout
+
+\begin_layout Plain Layout
+================================================================
+\end_layout
+
+\begin_layout Plain Layout
+================================================================
+\end_layout
+
+\begin_layout Plain Layout
+================================================================
+\end_layout
+
+\begin_layout Plain Layout
+Reviewer 3:
+\end_layout
+
+\begin_layout Plain Layout
+The authors of the paper implemented a hybrid OpenCL/MPI DG solver
+\end_layout
+
+\begin_layout Plain Layout
+with asynchronous communication between GPU/CPU and CPU/CPU.
+ The
+\end_layout
+
+\begin_layout Plain Layout
+patched-based task scheduler has potential of further optimizations,
+\end_layout
+
+\begin_layout Plain Layout
+such as clustered local time-stepping.
+ Besides, the equation that is
+\end_layout
+
+\begin_layout Plain Layout
+solved can be exchanged easily.
+\end_layout
+
+\begin_layout Plain Layout
+Section 1.2 describes finite volume solver with standard
+\end_layout
+
+\begin_layout Plain Layout
+optimizations.
+ These optimizations are necessary to achieve acceptable
+\end_layout
+
+\begin_layout Plain Layout
+performance and do not have any novelty.
+\end_layout
+
+\begin_layout Plain Layout
+I suggest to only focus on the DG solver in the paper and show
+\end_layout
+
+\begin_layout Plain Layout
+scalability beyond 8 GPUs.
+ There is also comparison (in terms of
+\end_layout
+
+\begin_layout Plain Layout
+features, usability and performance) to existing codes missing.
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_body
+\end_document

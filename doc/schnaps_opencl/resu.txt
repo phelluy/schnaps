@@ -1,0 +1,34 @@
+
+sched: dmdar
+
+test 1: tore avec raf pol = 3 et raf tor = 5: 400 macroelem deg=3 raf=4
+
+remarque: 1 coeur est réservé à starpu et/ou au système  (donc 8 = 7 ...)
+
+pas de gpu, 8 cpu (pchelluy): 209 secondes pour 71 iter
+pas de gpu, 4 cpu (pchelluy): 365 secondes pour 71 iter
+pas de gpu, 2 cpu (pchelluy): 704 secondes pour 71 iter
+
+avec gpu, 0 cpu (pchelluy): 73 secondes pour 71 iter
+avec gpu, 8 cpu (pchelluy): 32 secondes pour 71 iter  mem gpu: 400 mo occupation max: 34%
+
+
+
+test 2: tore avec raf pol = 3 et raf tor = 5: 400 macroelem deg=3 raf=6
+
+avec gpu, 0 cpu (pchelluy): 86 secondes pour 71 iter  mem gpu: 1300 mo occupation max: 33%
+avec gpu, 8 cpu (pchelluy): 64 secondes pour 71 iter  mem gpu:  900 mo occupation max: 52%
+sans gpu, 8 cpu (pchelluy): 689 secondes pour 71 iter  
+
+
+test 3: tore avec raf pol = 3 et raf tor = 5: 400 macroelem deg=3 raf=8
+avec gpu, 8 cpu (pchelluy): 130 secondes pour 71 iter  mem gpu:  1700 mo occupation max: 58%
+avec gpu, 0 cpu (pchelluy): 171 secondes pour 71 iter  mem gpu:  1900 mo occupation max: 44%  le pc swappe...
+sans gpu, 4 cpu (pchelluy): 2902 secondes pour 71 iter 
+sans gpu, 8 cpu (pchelluy): 1650 secondes pour 71 iter 
+
+test 3: tore avec raf pol = 6 et raf tor = 10: 5000 macroelem deg=3 raf=4
+le pc plante (trop de tâches soumises: il faut une synchro à la fin de chaque pas de temps)
+avec gpu, 8 cpu (pchelluy): 1100 secondes pour 71 iter  le pc swappe, ça rame...
+
+

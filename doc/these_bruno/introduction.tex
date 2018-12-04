@@ -1,0 +1,280 @@
+\chapter*{Introduction}
+\addcontentsline{toc}{chapter}{Introduction}
+
+
+Cette thèse a été réalisée dans le cadre du projet HOROCH\footnote{HOROCH : utilisation des HPC pour l'Optimisation des Radiocommunications
+des Objets Connectés proches de l'Homme}
+au sein de l'entreprise AxesSim, en collaboration avec
+Thales Communications \& Security, les centres de recherche
+IRMA Strasbourg et ONERA Toulouse, les PME Cityzen Sciences et BodyCap,
+et financé par la DGE\footnote{Direction Générale des Entreprises}.
+
+L'objectif de ce projet était de développer, en parallèle,
+des solutions de simulation et de mesure du rayonnement
+électromagnétique des objets connectés placés à proximité
+(ou à l'intérieur) du corps humain, afin de fournir des outils avancés
+de conception d'objets connectés (IoT, pour « \textit{Internet of Things} »)
+aux PME de ce secteur d'activité.
+Les domaines d'application sont nombreux : téléphones mobiles,
+montres connectées, maillots connectés, sondes de mesure médicales
+(gélules ou patchs), \textit{etc}.
+
+Ainsi, TCS avait en charge la conception d'un banc de mesure
+sous la forme d'une arche composée de $32$ récepteurs Vivaldi.
+AxesSim avait en charge l'évolution de son solveur
+Galerkin Discontinu (GD) \texttt{teta}.
+L'IRMA, en collaboration avec AxesSim au travers de thèses CIFRE,
+est en charge du solveur GD générique \texttt{clac}
+(pour « \textit{Conservation Laws on mAny Cores} »),
+brique de base du solveur \texttt{teta}, spécialisé pour
+des applications en l'électromagnétisme.
+\\
+
+
+Pour AxesSim, l'objectif final de ce projet,
+et par extension de cette thèse, était d'effectuer une simulation
+d'une antenne BLE (pour « \textit{Bluetooth Low Energy} ») placée
+à proximité d'un modèle de corps humain complet (avec squelette et organes). Ce modèle a été obtenu par scan à rayons X,
+effectué par l'IRCAD de Strasbourg d'un mannequin anthropomorphique
+approvisionné par TCS.
+
+Le maillage non structuré du mannequin complet comporte
+environ $24$ millions de mailles hexaédriques
+pour des applications entre $1$ et $3$ GHz, bande de fréquence des IoT.
+Les antennes utilisées ont généralement une taille de l'ordre de grandeur
+de la longueur d'onde du signal émis (soit $1$-$10$ cm dans notre cas),
+avec des adaptations ou des composants d'un voire deux ordres de grandeur
+inférieurs en taille.
+
+Dans le cas de cette étude, le facteur d'échelle entre la plus petite
+maille (antenne) et la plus grande maille (vide englobant) est de l'ordre
+de $1000$. Ces variations dans la taille des mailles en fait un cas
+d'application bien adapté à la méthode GD, contrairement à la 
+méthode des différences finies, plus fréquemment utilisée, qui nécessiterait
+de mailler toute la scène de manière structurée tout en respectant
+au mieux la géométrie des plus petits détails de l'antenne.
+
+La première simulation sur corps humain complet a été effectuée en $11$ jours
+sur une machine de calcul composée de $8$ GPU NVidia de dernière génération
+pour seulement $10$ ns de temps physique.
+Cette simulation a été exécutée avec un faible ordre d'interpolation
+et a nécessité plus de $40$ Go de mémoire vive.
+Afin de permettre au solveur \texttt{teta-clac} de traiter des simulations
+de cette taille, un grand nombre d'optimisations et
+d'améliorations algorithmiques ont été nécessaires.
+Nous allons présenter les travaux qui ont été menés afin d'atteindre
+ces performances.
+\\
+
+
+
+Dans le chapitre \ref{chap:generalites}, nous commençons
+par rappeler la formulation des équations de Maxwell.
+Ce système de $4$ équations, auxquelles nous ajoutons
+l'équation de conservation de la charge, régit
+la propagation des ondes électromagnétiques et nous permettra
+de les modéliser par la simulation numérique.
+
+Nous écrivons ensuite ces équations sous la forme générique d'un
+système hyperbolique symétrique linéaire du premier ordre,
+aussi appelé système de Friedrichs. De nombreuses propriétés
+sont connues pour ces systèmes d'équations aux dérivées partielles. Nous examinons
+ensuite les possibles discontinuités des solutions de ce système
+et donnons les conditions d'existence et d'unicité d'une
+telle solution.
+
+Enfin, nous introduisons le schéma GD
+qui permet d'approcher le système hyperbolique. Le schéma GD est caractérisé par une formulation faible avec
+des fonctions test discontinues et un flux numérique sur les discontinuités.
+Nous listons alors quelques flux numériques permettant
+d'assurer la stabilité du schéma.
+Nous donnons aussi une formulation semi-discrète du problème
+qui a servi à l'implémentation informatique du solveur
+ générique \texttt{clac}.
+Des propriétés de convergence mathématique du problème semi-discret
+sont rappelées en annexe \ref{annexe:demo_cv}.
+\\
+
+
+
+Dans le chapitre \ref{chap:modeles}, nous présentons les
+principaux modèles physiques nécessaires à la résolution
+des problèmes qui nous intéressent.
+Ces modèles sont implémentés dans la surcouche applicative
+\texttt{teta} développée par AxesSim, spécialisation à l'électromagnétisme
+du solveur générique \texttt{clac}.
+
+Nous commençons par décrire des modèles de conditions
+de bord respectant les conditions d'unicité de la
+solution.
+Nous donnons aussi le détail de la construction
+du modèle de couches absorbantes PML
+(pour « \textit{Perfectly Matched Layer} »)
+permettant de résoudre un problème en domaine infini simulé.
+
+Nous présentons ensuite des techniques numériques pour représenter
+de fines plaques de matériaux.
+La suppression géométrique de ces plaques minces
+permet de simplifier la modélisation de la scène
+étudiée et diminue les temps de calcul du solveur.
+L'un de ces modèles de plaque mince sera également étendu en un
+modèle permettant l'injection de tensions ou de courants
+électriques utilisés dans la simulation de dispositifs rayonnants.
+
+Enfin, dans le but de traiter les matériaux diélectriques dont la
+permittivité varie en fonction de la
+fréquence,
+nous décrivons aussi un modèle volumique prenant en compte ces
+variations.
+Ce type de modèle est intéressant dans le cas de simulations
+faisant intervenir le corps humain qui présente ce type de matériaux.
+\\
+
+
+
+Dans le chapitre \ref{chap:implementation}, nous décrivons
+l'implémentation générique du solveur \texttt{clac}
+programmé pour traiter les mailles hexaédriques à arêtes droites.
+La méthode GD peut théoriquement être appliquée à
+tout type de maillage, notamment sur mailles tétraédriques.
+Les hexaèdres permettent diverses optimisations de la formulation GD et
+sont bien adaptés à la parallélisation sur processeur graphique.
+
+Nous commençons par introduire l'espace d'approximation
+dans lequel nous chercherons la solution numérique de notre problème.
+Cet espace est engendré par des fonctions de base à support
+inclus dans une unique maille.
+Dans le cas du solveur \texttt{teta-clac} nous utilisons
+une base de polynômes constituée
+des produits tensoriels des polynômes d'interpolation de Lagrange,
+eux-mêmes générés à partir des points d'intégration de Gauss-Legendre.
+
+Nous présentons aussi les schémas d'intégration en temps
+actuellement les plus souvent utilisés par le solveur :
+les schémas de type Runge-Kutta (RK).
+Ces schémas explicites imposent une condition
+ de type CFL afin d'assurer
+la stabilité du schéma couplé espace-temps (le plus
+souvent GD-RK$2$).
+Nous donnons la formulation des $2$
+conditions CFL utilisées pour les cas d'application
+du dernier chapitre ainsi que $2$ diagnostics de stabilité.
+\\
+
+
+
+
+Dans le chapitre \ref{chap:parallelisations_et_optimisations},
+nous décrivons l'implémentation parallèle sur (un ou) plusieurs
+accélérateurs de la méthode GD discrète décrite au chapitre précédent.
+Pour cela, nous utilisons la bibliothèque OpenCL
+(pour « \textit{Open Computing Language} ») qui permet
+d'exploiter la puissance de calcul de ces accélérateurs.
+Les cartes graphiques (GPU) récentes permettent de réaliser des calculs
+de façon massivement parallèle, et sont de ce fait
+très utilisées dans la simulation numérique.
+L'implémentation GPU a initialement été réalisée en C++ en utilisant la bibliothèque
+OpenCL au cours de la thèse de T. Strub \cite{strub:tel-01651258}, à partir du code non parallèle
+FemGD développé à l'ONERA de Toulouse.
+
+Afin de pouvoir traiter des volumes de données importants, la méthode GD est
+également parallélisée sur plusieurs accélérateurs à l'aide d'une implémentation du standard
+MPI (« \textit{Message Passing Interface} »).
+Dans notre cas, MPI offre la possibilité de lancer plusieurs
+processus qui effectuent les calculs sur différentes parties du maillage
+et communiquent par un système de messages.
+
+Cette implémentation GPU est aussi exploitable sur un processeur multi-cœurs
+(CPU) plus classique. Ces derniers ont beaucoup évolué au cours des années passées
+pour être aujourd'hui composés de plusieurs dizaines de cœurs logiques cadencés
+à des fréquences supérieures à celles des GPU. Cependant, de par leur architecture
+radicalement différente de celle des GPU, une implémentation spécifique aux CPU doit être
+développée afin de les exploiter au mieux.
+
+Nous présentons aussi une méthode d'adaptation de l'ordre d'interpolation
+spatiale appliquée aux mailles du maillage dans le but de réduire le temps
+de simulation en optimisant l'échantillonnage du domaine de calcul.
+\\
+
+
+
+
+Dans le chapitre \ref{chap:pas de temps local}, nous présentons une
+adaptation algorithmique permettant d'améliorer encore la vitesse de calcul
+du solveur : un schéma à pas de temps local par maille.
+Ce schéma permet de réduire la quantité de calculs et ne nécessite
+donc pas d'accélérateur supplémentaire pour obtenir de meilleures
+performances.
+Cette méthode d'intégration est théoriquement très efficace
+mais n'est \textit{a priori} adaptée qu'aux maillages présentant un facteur
+d'échelle important entre la plus petite et les plus grandes mailles.
+
+Nous commençons par introduire une variante locale du schéma
+RK d'ordre $2$ (RK$2$) que nous appelons LRK$2$ (pour « \textit{Local} RK$2$ »).
+Nous utilisons ensuite les propriétés locales du schéma LRK$2$ afin
+de découpler l'avancée en temps de l'approximation de la solution sur
+les différentes mailles. Ainsi, ce second schéma, que nous appelons
+LTS$2$ (pour « \textit{Local Time Step} $2$ »), permet de réduire
+considérablement le temps de simulation en divisant la quantité
+de calculs lorsque la géométrie est composée de mailles de tailles très hétérogènes.
+\\
+
+
+
+Dans le chapitre \ref{chap:runtimes}, nous montrons dans quelle
+mesure un solveur GD s'adapte à l'exécution sur ordinateur hybride.
+Les (super)calculateurs actuels sont généralement un regroupement
+de nœuds de calcul identiques, composés d'un (ou plusieurs) CPU et éventuellement d'un GPU.
+L'équilibrage de la charge de calcul est donc aisée
+entre périphériques de même nature.
+Cependant, les CPU sont très différents
+des GPU, tant au niveau de l'architecture que de la puissance de calcul.
+Ainsi, afin d'être capable d'utiliser toute la puissance de calcul
+d'un nœud hybride, il est très intéressant
+de savoir équilibrer la charge ce calcul entre un CPU et un GPU.
+
+A ces fins, nous avons utilisé la bibliothèque StarPU
+développée à l'INRIA de Bordeaux.
+Cette bibliothèque permet de se défaire de l'équilibrage manuel
+des tâches via un graphe des tâches. Ce dernier est automatiquement
+généré par StarPU qui utilise la dépendance des données
+passées en entrée et en sortie des tâches.
+Les tâches sont alors soumises aux périphériques automatiquement
+et les données sont transférées en fonction du besoin.
+
+Les expérimentations de l'utilisation de cette bibliothèque ont été
+effectuées sur le solveur universitaire \texttt{schnaps}
+et sont présentées sous la forme
+d'un article qui sera prochainement soumis.
+\\
+
+
+
+
+Enfin, dans le chapitre \ref{chap:validation}, nous donnons
+un ensemble de résultats validant notre implémentation de solveur GD,
+autant par la précision des calculs que par leur vitesse d'exécution.
+
+Nous commençons par présenter des résultats de convergence
+sur un cas académique de propagation d'une onde plane dans un cube.
+Nous en profitons pour effectuer des comparaisons entre maillages
+structurés (hexaèdres droits) et non structurés (issus du découpage de
+tétraèdres).
+
+Nous comparons ensuite notre solveur GD à un solveur implémentant
+la méthode des différences finies sur un cas d'application
+mettant en scène une antenne dipolaire à proximité de l'oreille d'une tête
+humaine simplifiée.
+Ce cas d'application est un modèle simplifié de rayonnement d'un téléphone portable.
+Nous donnons aussi les résultats, sur ce même cas d'application,
+des différents schémas d'intégration en temps que nous avons évoqués plus tôt.
+
+
+Nous présentons ensuite des calculs réalisés sur un modèle de corps humain complet, à côté duquel
+rayonne une antenne BLE.
+Il s'agit de la plus grande simulation réalisée par le solveur à ce jour.
+Ce calcul a été réalisé sur un calculateur monté par AxesSim et disposant de 8 cartes graphiques.
+
+Enfin, dans le cadre d'un appel à projets PRACE, nous avons pu avoir accès au
+supercalculateur PizDaint. Cela nous a permis, sur le cas d'application du corps humain complet, de réaliser un
+test de scalabilité forte du code GD sur plusieurs centaines de GPU.

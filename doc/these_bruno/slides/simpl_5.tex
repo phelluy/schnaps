@@ -1,0 +1,21 @@
+\begin{frame}
+\frametitle{Simplifications / Terme de flux conforme / Extrapolation}
+\vfill
+\begin{itemize}
+\item Pour un point de face $\GLN{f,j}$ donné, seules les fonctions associées aux points de volume qui s'y projettent orthogonalement sont concernées :
+\begin{align*}
+	\sum_{k} \W_{\L,k} \PsiRef{k}(\GLN{f,j})
+		= \sum_{k:\pi(f,k)=j} \W_{\L,k} \PsiRef{k}(\GLN{f,j}) ,
+\end{align*}
+\begin{align*}
+	\sum_{k} \W_{\R,k} \PsiRef{k}(\GLN{f',\sigma(j)})
+		= \sum_{k:\pi(f',k)=\sigma(j)} \W_{\R,k} \PsiRef{k}(\GLN{f',\sigma(j)}) .
+\end{align*}
+Rappel : $\PsiRef{i}(\GLN{f,j}) = 0$ ssi $\pi(f,i) \ne j$.
+\vfill
+\item Complexité de l'extrapolation pour un point de face :\\
+$(\Deg + 1)^3$ fonctions de base $\rightarrow$ $\Deg + 1$ fonctions de base.
+\end{itemize}
+\vfill
+\end{frame}
+

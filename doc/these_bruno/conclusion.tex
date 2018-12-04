@@ -1,0 +1,213 @@
+\chapter*{Conclusion}
+\addcontentsline{toc}{chapter}{Conclusion}
+
+
+Dans cette thèse, nous avons commencé par rappeler
+les équations de Maxwell et montré qu’elles constituent un système
+hyperbolique dit de Friedrichs (chapitre~\ref{chap:generalites}).
+Ce système a ensuite été présenté sous sa forme Galerkin Discontinue (GD)
+qui fait intervenir un flux numérique que nous avons choisi décentré
+afin d'améliorer la stabilité du schéma.
+Nous avons également caractérisé les
+conditions limites permettant d’assurer cette stabilité.
+La formulation GD a ensuite été présentée sous sa forme semi-discrète
+dont la solution converge vers celle du problème continu (annexe~\ref{annexe:demo_cv}).
+\\
+
+Nous avons ensuite présenté plusieurs modèles de simulation
+qui permettent de faciliter la génération de la scène simulée
+et de réduire le temps de calcul (chapitre~\ref{chap:modeles}).
+
+Nous avons commencé par décrire des modèles de conditions de bord
+respectant la condition d'existence de la solution, notamment
+la condition de Silver-Müller ainsi que les couches absorbantes PML
+très utilisées dans les applications industrielles.
+Grâce à ces modèles, le domaine de calcul peut être borné
+au plus près de la zone d'intérêt tout en limitant les
+réflexions qui viendraient polluer le domaine de calcul.
+
+Nous avons aussi donné un ensemble de modèles permettant de simuler
+les plaques minces de matériaux. Ces modèles permettent de remplacer
+les volumes fins par des surfaces, sont complémentaires sur une
+large bande de fréquences, et réduisent les temps de simulation
+tout en facilitant la phase de maillage.
+\\
+
+
+L'implémentation de la méthode GD que nous avons présentée
+(chapitre~\ref{chap:implementation}) utilise un espace
+d'approximation hexaédrique discrétisé par les points de
+Gauss-Legendre et muni des produits tensoriels des polynômes de Lagrange
+qui s'appuient sur ces points.
+Les propriétés de cet espace d'approximation
+simplifient les formules de quadrature par l'annulation
+du gradient des fonctions de base en de nombreux points d'interpolation.
+Ces simplifications n'apparaissent pas dans les mailles tétraédriques.
+
+Nous pourions aussi utiliser les points d'interpolation de Gauss-Lobatto
+qui produiraient d'importantes simplifications au niveau du terme
+de flux. Dans ce cas les points de bord sont placés sur les interfaces
+et l'extrapolation/application des champs sur le volume n'est plus
+nécessaire. Ils permettent aussi d'appliquer un schéma de type
+« \textit{split form} » qui conserve mieux l'empreinte fréquentielle
+du signal.
+Ces points feront l'objet de futurs travaux sur le solveur.
+
+Nous avons aussi présenté les schémas de type Runge-Kutta
+qui nous permettent d'intégrer temporellement la solution
+afin d'avancer cette dernière jusqu'au temps final souhaité.
+Néanmoins, la stabilité de la méthode RK$2$ et directement
+liée à la taille et la forme des mailles, ce qui complique
+son utilisation dans les applications en tétraèdres découpés.
+Nous avons donc présenté $2$ conditions de stabilité de type CFL
+ainsi que $2$ diagnostics de stabilité : le calcul des valeurs propres
+du système et la puissance itérée.
+Ce second diagnostic permet de déterminer avec précision le coefficient
+CFL de stabilité. Une implémentation OpenCL du calcul de la norme
+utilisée dans cette méthode
+nous permettra de déterminer ce coefficient rapidement et systématiquement
+en procédant à une dichotomie.
+\\
+
+
+Cette implémentation de la méthode GD a été programmée
+à destination des GPU en utilisant la bibliothèque OpenCL
+(chapitre~\ref{chap:parallelisations_et_optimisations}).
+La parallélisation sur plusieurs GPU est asurée via
+une implémentation du standard MPI.
+Le partitionnement du maillage est automatiquement généré
+à l'exécution afin de répartir la charge de calcul
+de façon équilibrée entre les accélérateurs.
+Toutes ces capacités permettent au solveur \texttt{teta-clac}
+de facilement résoudre des problèmes de grande taille sur un nombre
+quelconque de GPU.
+
+Nous avons aussi décrit les adaptations qui ont été menées dans le
+but d'optimiser les kernels de calcul OpenCL à destination des CPU.
+Les performances ont été nettement améliorées sur ce type
+de périphériques mais restent dépendantes des caractéristiques
+du périphérique en lui-même.
+
+Enfin, nous avons présenté la méthode de l'ordre d'interpolation
+spatiale adaptatif qui permet de corriger automatiquement la discrétisation
+dans les zones sur- ou sous-maillées.
+Cette méthode nous permet de mailler avec précisions (par de petites mailles)
+des géométries présentant un haut niveau de détail :
+l'ordre d'interpolation y sera automatiquement abaissé pour réduire le
+temps de calcul.
+Nous avons néanmoins constaté qu'un ordre d'interpolation trop faible
+risque de dénaturer le signal. Il est donc préférable
+de projeter l'utilisation d'un ordre d'interpolation élevé
+afin de conserver un ordre abaissé supérieur à $1$.
+\\
+
+
+
+Nous avons ensuite énoncé
+une variante locale de la méthode GD qui
+permet d'alléger les calculs de flux et de découpler l'avancée en
+temps des mailles (chapitre~\ref{chap:pas de temps local}).
+Cet opérateur local nous a permis de décrire deux schémas temporels.
+Premièrement, le schéma LRK$2$ qui est une implémentation à prédiction locale
+du schéma RK$2$. Ce schéma utilise
+un pas de temps homogène sur tout le maillage.
+Il a expérimentalement été démontré convergeant et stable.
+
+Nous avons aussi présenté le schéma LTS$2$ pour lequel le pas de
+temps est local à chaque maille.
+Les accélérations obtenues à l'aide de cette méthode sont
+très proches de l'accélération théorique en dimension $1$.
+Nous constatons aussi une accélération des calculs
+en dimension $3$, mais plus éloignée des valeurs théoriques.
+Ce schéma n'est adapté qu'aux géométries composées de mailles de tailles très hétérogènes. Dans le cas d'un facteur d'échelle entre la plus petite
+et la plus grande maille de l'ordre de $100$, le surcoût engendré par
+la multiplication des interfaces est tout juste amorti et un faible
+gain de temps est constaté ($\approx 35$ \% à l'ordre $\Deg = 1$ et
+$\approx 27$ \% à l'ordre $\Deg = 2$). Cette méthode
+devrait cependant montrer de bien meilleures accélérations
+sur un cas tel que celui du corps humain complet
+qui présente un facteur d'échelle $10$ fois plus important.
+\\
+
+
+
+Pour répondre à la problématique des architectures hybrides
+et devant le complexité de certains graphes des tâches,
+nous avons décrit 
+l'utilisation de la bibliothèque StarPU pour l'exécution
+et l'ordonnancement des tâches de calcul du solveur GD \texttt{schnaps}
+(chapitre~\ref{chap:runtimes}).
+Les résultats sur CPU multi-cœurs se sont avérés excellents :
+une efficacité presque optimale quelque soit le nombre de cœurs
+sollicités et pour diverses tailles (divers raffinements) du problème étudié.
+
+Les résultats en configuration hybride sont eux aussi
+de bonne qualité.
+Nous avons constaté que l'ajout des cœurs CPU au GPU
+a permis d'améliorer les performances du GPU seul.
+Dans le cas des plus petites tailles de problème,
+l'accélération constatée est au-delà de
+l'accélération théorique donnée par les temps sur CPU seul et GPU seul.
+\\
+
+
+
+Nous sommes ensuite revenus sur le solveur \texttt{teta-clac}
+et avons présenté des résultats
+permettant de valider notre implémentation de solveur GD, autant
+par la précision des calculs que par leur vitesse d'exécution
+(chapitre~\ref{chap:validation}).
+
+Dans un premier temps, nous avons présenté des résultats de convergence
+et de précision
+sur un cas académique de propagation d'une onde plane dans un cube
+pour différents ordres d'interpolation.
+L'ordre de convergence théorique du schéma en temps a été vérifié
+en pratique et l'erreur globale commise reste négligeable.
+Ces résultats ont été obtenus sur maillages structurés et non structurés
+et démontrent le bon fonctionnement du solveur ainsi que sa
+polyvalence du point de vue géométrique.
+
+Nous avons ensuite comparé notre solveur GD à un solveur implémentant
+la méthode des différences finies (FD) sur un cas d'application
+mettant en scène une antenne dipolaire à proximité de l'oreille d'une tête
+humaine simplifiée.
+La grande quantité d'optimisations ont permis à notre solveur GD
+de produire de hautes performances et de meilleurs temps de calcul
+que le solveur FD.
+\\
+
+Nous avons enfin présenté les résultats d'une simulation exécutée
+sur le modèle de corps humain complet dans le cadre du projet HOROCH.
+Une simulation de $10$ ns de temps physique en parallèle sur
+$8$ GPU NVidia de dernière génération.
+Cette simulation démontre la capacité du solveur \texttt{teta-clac}
+à traiter des problèmes de rayonnement
+électromagnétique d'objets connectés placés à proximité
+(ou à l'intérieur) du corps humain.
+
+Précisons que le temps de simulation sur corps humain complet
+donné à $11$ jours est issu d'un premier essai.
+L'utilisation d'un coefficient CFL plus adaptée devrait permettre
+de réduire ce temps de restitution (facteur d'accélération proche de $5$ dans le
+cas de la tête humaine simplifiée à l'ordre d'interpolation $1$).
+La finalisation de l'implémentation MPI du schéma LTS$2$ devrait
+aussi permettre de constater un important gain de temps compte tenu
+du facteur d'échelle proche de $1000$ entre la plus petite et
+la plus grande maille.
+
+Cette simulation a aussi permis d'effectuer des tests de
+scalabilité MPI allant jusqu'à 256 GPU.
+Nous avons alors évalué qu'elle pouvait être réalisée
+en moins d'un jour sur $256$ GPU.
+Ces tests témoignent du fait que le temps de calcul
+d'une simulation peut être compressé en investissant plus
+de ressources de calcul et ainsi passer de plus de $10$ jours
+à seulement quelques heures d'attente avant la restitution des données.
+C'est l'amélioration constante du solveur GD \texttt{teta-clac}
+qui nous a permis d'obtenir ces résultats encore hypothétiques
+il y a $3$ ans.
+\\
+
+
+

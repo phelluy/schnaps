@@ -1,0 +1,21 @@
+\begin{frame}
+\frametitle{Parallélisation MIMD}
+\vfill
+\begin{itemize}
+\item Architecture MIMD : \textit{Multiple Instructions, Multiple Data} ;
+\item Processeurs classiques (du langage courant) : CPU ;
+\item Peu de cœurs de calcul : dizaine(s) ;
+\item Grande quantité de mémoire : centaine(s) de Go ;
+\item Unités de calcul vectoriel (SSE, AVX).
+\item Exploités via OpenCL pour limiter les développements : compatibles aves les programmes OpenCL GPU.
+\end{itemize}
+\vfill
+Axes d'optimisation :
+\begin{itemize}
+\item Gestion de la mémoire ;
+\item Niveau de parallélisme ;
+\item Vectorisation (non traité).
+\end{itemize}
+\vfill
+\end{frame}
+

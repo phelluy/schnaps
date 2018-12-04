@@ -1,0 +1,151 @@
+\chapter*{Notations}
+\section*{The fluid and flow related quantities}
+\vspace{-6mm}
+\begin{longtable}{lcp{0.8\textwidth}l}
+  \textbf{Symbol} & & \textbf{Description} \\
+   & & & \\
+   $Re$ & : & the Reynolds number $Re = \frac{\rho D U}{\mu}$& \\
+   $D$ & : & the characteristic length & \\
+   $\mu$ & : & the viscosity of the fluid & \\
+   $\rho$ & : & the density of the fluid & \\
+   $\bu, p$ & : & the velocity and pressure of the fluid & \\
+   $\bu_h, p_h$ & : & the discrete versions of the velocity and pressure & \\
+   $\mathbf{v}, q$ & : & the velocity and the pressure test functions of the fluid & \\
+   $\stress$ & : & the stress tensor $\stress = -p \mathbf{I} +2 \mu \mathbf{D}(\mathbf{u})$ &  \\
+   $\strain{\bu}$ & : & the strain tensor: $\strain{\bu} = \frac{1}{2}( \nabla \mathbf{u} + \nabla \mathbf{u}^T)$) &  \\
+   $\lambda$ & : & Lagrange multiplier insuring the inextensibility of the membrane & \\
+   $h$ & :& the mesh size & \\
+   $\Delta t$ & : & the time step & \\
+   $d$ & : & the space dimension, in this work, $d=2 \text{ or } 3 $ & \\
+
+\end{longtable}
+
+\section*{Domains and spaces}
+\vspace{-6mm}
+\begin{longtable}{lcp{0.8\textwidth}l}
+  \textbf{Symbol} & & \textbf{Description} \\
+   & & & \\
+  $\Omega$ &: & the whole domain &\\
+  $\partial \Omega $ & : & the boundary of $\Omega $ & \\
+  $\Gamma_{in}$ &:& the \textit{inlet} of the domain in the case of an inflow/outflow problem & \\
+  $\Gamma_{out}$ &:& the \textit{outlet} of the domain in the case of an inflow/outflow problem & \\
+  $\Gamma_{w}$ &:& the \textit{wall} of the domain in the case of an inflow/outflow problem & \\
+  $\Gamma_{D}$ &:& the part of the domain boundary where a Dirichlet boundary condition is set  & \\
+  $\Gamma_{N}$ &:& the part of the domain boundary where a Neumann boundary condition is set  & \\
+  $\Gamma_{b}$ &:& the bottom part of a rectangular domain & \\
+  $L^2(\Omega)$ & : & the square-integrable functions space, whose norm is: &   \\
+  && $ \| v \|_{\Ldeux}  = \Bigg( \int_{\Omega} v^2 \Bigg)^{1/2}$ & \\
+   $L^2_0(\Omega)$ & : & the square-integrable functions space with null mean pressure &   \\
+  $[L^2(\Omega)]^d$ & : & the square-integrable scalar functions space of dimension $d$ &   \\
+  $H^1(\Omega)$ & : & the Sobolev scalar functions space, whose norm is: &  \\
+   &&$ \| v \|_{H^1(\Omega)}  =\Bigg( \| v \|^2_{\Ldeux} + \| \nabla v \|^2_{\Ldeux}\Bigg)^{1/2}$ & \\
+   $H^1_0(\Omega)$ & : & the Sobolev functions space with vanishing value at boundary &  \\
+  $[H^1(\Omega)]^d$ & : & the Sobolev functions space of dimension $d$ &  \\
+  $H^{\frac{1}{2}}(\partial\Omega)$ & : &$ \{ \bu \in L^2(\partial\Omega) | \exists \mathbf{\tilde{u}} \in H^1(\Omega), \bu=tr( \mathbf{\tilde{u}}) \}$ &  \\
+  $V_\delta$ & : & a generic discrete velocity functions space & \\
+  $Q_\delta$ & : & a generic discrete pressure functions space & \\
+  $N_{V_\delta}$ & : & number of velocity degrees of freedom  &\\
+  $N_{Q_\delta}$ & : & number of pressure degrees of freedom  &\\
+  $\varphi_{i, i=1, ..., N_{V_\delta} }$ & : & the velocity basis functions & \\
+  $\Psi_{i, \ \ i=1, ..., N_{Q_\delta}}$ & : & the pressure basis functions & \\
+  $\xi_{i, \ \ i=1, ..., N_{Q_\delta}}$ & : & the Lagrange multiplier basis functions & \\
+\end{longtable}
+
+\section*{Finite elements symbols}
+\vspace{-6mm}
+\begin{longtable}{lcp{0.8\textwidth}l}
+  \textbf{Symbol} & & \textbf{Description} \\
+   & & & \\
+    $K$ & : & a finite element & \\
+    $\hat{K}$ & : & the reference element & \\
+    $\mathbb{P}_{N}(K)$ & : & a vectorial space of polynomials with a total degree less or equal to $N$ & \\
+   ($K$, $\mathbb{P}_{N}$, $\Sigma$) & : & the Lagrange finite elements triplet &\\
+   $\Sigma = \left\{\sigma_{i}, i=1,...,T_N \right\}$ & : & defined as follows:  \begin{eqnarray*}
+  \sigma_{i} :\mathbb{P}_{N}(K) &\longrightarrow &\mathbb{R} \\
+  p &\longmapsto &p\left(\bm{a}_{i}\right)
+\end{eqnarray*} & \\
+    $\bm{a}_i$ & : & the interpolation points on $K$ & \\
+    $\hat{\Phi}^N_{i}$  & : & the basis functions of a finite element ($K$, $\mathbb{P}_{N}$, $\Sigma$) such that & \\
+   & & $ \hat{\sigma}_{j}\left(\hat{\Phi}^N_{i}\right) = \delta_{ij} , \quad 1 \leq i,j \leq \hat{T}_N $, with &\\
+   & & $\hat{\Phi}^N_{i}\left(x\right) = \sum_{j=1}^{\hat{T}_N} \alpha_{ij} \psi_{j} \left(x\right) , \quad  i=1,...,\hat{T}_N$, $\psi_{j}$ being the basis functions of the primal basis &\\
+    $\tgeoK$ & : &  the geometric application that transforms $\hatK$ into $K$ &\\
+    $\tgeoKinv$ & : & the geometric application that transforms $K$ into $\hatK$ &\\
+    && $\begin{array}{ccccccccc}
+\tgeoK : & \hat{K} \in \mathbb{R}^{d}& \rightarrow & K\in \mathbb{R}^{d} &   \ \text{and}  
+\ \  \ \ \tgeoKinv : & K \in \mathbb{R}^{d}& \rightarrow & \hat{K} \in \mathbb{R}^{d} & \\
+ &\hat{\bm{x}} & \mapsto &  \bm{x} &  & \bm{x} & \mapsto &  \hat{\bm{x}} & \\
+ \end{array}$\\
+ $a(\bu,\bv)$ & : & the bilinear form defined as follows: $\displaystyle a(\bu,\bv) = 2\mu\int_\Omega \strain{\bu}:\strain{\bv} dx$ &\\
+  $b(\bv,p)$ & : & the bilinear form defined as follows: $\displaystyle b(\bv,p)  =  - \int_\Omega p\ \divv\bv dx$ &\\
+ $c(\mathbf{w},\bu,\bv)$ & : & the trilinear form defined as follows: $\displaystyle c(\mathbf{w},\bu,\bv)  =  \rho \int_\Omega (\mathbf{w} \cdot \nabla \mathbf{u}) \cdot \mathbf{v} dx$ &\\
+\end{longtable}   
+   
+\section*{Matrices and operators}
+\vspace{-6mm}
+\begin{longtable}{lcp{0.8\textwidth}l}
+  \textbf{Symbol} & & \textbf{Description} \\
+   & & & \\
+ $\mathcal{A}$ & : & the Stokes or Navier-Stokes matrix\\
+ $\mathbf{A_u}$ & : & the stiffness matrix defined on the velocity space \\
+ $\mathbf{A}_p$ & : & the stiffness matrix defined on the pressure space \\
+ $\mathbf{B}$ & : & the divergence matrix \\
+ $\mathbf{B^T}$ & : & the transpose divergence matrix\\
+ $\mathbf{C}$ &:&the matrix arising from the explicit treatment of the convective term\\
+ $\mathbf{Q_u}$ & : & the velocity mass matrix\\
+ $\mathbf{Q}_p$ & : & the pressure mass matrix\\
+ $\mathbf{F_u}$ & : & matrix that coincides with: & \\
+ &&$\displaystyle  \mathbf{A_u}$: in the case of a Stokes problem&\\
+ &&$\displaystyle  \frac{1}{\Delta t} \mathbf{Q_u} + \mathbf{A_u}$: in case of an explicit treatment of the convective term &\\
+ &&$\displaystyle  \frac{\mathbf{Q_u}}{\Delta t} + \mathbf{A_u} + \mathbf{C}$: in the case of a semi-implicit or an implicit treatment. &\\
+ $\mathbf{S}$ &: & $\mathbf{B} \mathbf{F_u}^{-1}\mathbf{B}^T$, the Schur complement \\
+ $\mathbf{S^*}$ & : & the Schur complement approximation $\mathbf{S^*} = \mathbf{Q_pF_p^{-1}A_p}$\\
+$\mathcal{L}$ &:& the convection-diffusion operator: $\mathcal{L}= -\nu \nabla^2 + \omega_h \cdot \nabla $ & \\
+$\mathcal{E}$ & : & convection-diffusion operators with the divergence commutator defined as:  $\mathcal{E} = \nabla \cdot (-\nu\nabla^2 + \omega_h \cdot \nabla) - (-\nu\nabla^2 + \omega_h \cdot \nabla)_p \nabla$ & \\
+$\mathbf{F}_p$ & : & the pressure convection diffusion matrix associated to the operator $\mathcal{L}$ &\\
+\end{longtable}
+
+\section*{Abreviations}
+\vspace{-6mm}
+\begin{longtable}{lcp{0.8\textwidth}l}
+  \textbf{Abreviation} & & \textbf{Description} \\
+   & & & \\
+   ALE &:& Arbitrary Lagrangian Eulerian method & \\
+   AMG &:& Algebraic MultiGrid methods & \\
+   ASM &:& Additive Schwarz methods methods & \\
+   bvq &:& boundary value problem & \\
+   BDF &:& Backward Differential Formula & \\
+   bJacobi &:& Block Jacobi method & \\
+   CEMRACS &:& Centre dÕƒtŽ MathŽmatique de Recherche AvancŽe en Calcul Scientifique & \\
+   CFD &:& Computational Fluid Dynamics &\\
+   CRB &:& Certified Reduced Basis methods &\\
+   CG&:& Continuous Galerkin & \\
+   DD &:& Domain Decomposition method & \\
+   DG&:& Disontinuous Galerkin & \\
+   DOF &:& Degrees of Freedom &\\
+ FD &:& Finite difference method & \\
+ FDA &:& Food and Drugs Administration & \\
+ FE &:& Finite elements method & \\
+ \Feel &:& Finite Elements Embedded Library in C++ & \\
+ FV &:& Finite volumes method & \\
+ GAMG &:& Geometric Agglomeration MultiGrid methods & \\
+ GASM &:& Generalized Additive Schwarz Method & \\
+ CG&:& Conjugate Gradient & \\
+ GCR &:& Generalized Conjugate Residual method & \\
+ GMRES &:& Generalised Minimal RESidual method & \\
+ GPU &:& Graphics Processing Unit \\
+ LSC &:& Least Square Commutator preconditioner  & \\
+ ML &:& Multi-Levels algorithm of the Multigrid preconditioning &\\
+ MINRES &:& Minimal RESidual method & \\
+ PCD &:& Pressure Convection Diffusion preconditioner & \\
+ PDE &:& Partial Differential Equations & \\
+ \petsc &:&  Portable, Extensible Toolkit for Scientific Computation & \\
+ PMM &:& Pressure Mass Matrix preconditioner & \\
+ SEM & : & Spectral Elements Methods & \\
+SIMPLE:&:& Semi-Implicit Method for Pressure Linked Equations & \\
+SOR &:& Successive Over Relaxation method & \\ 
+VIVABRAIN &:&  VIrtual angiography simulation from 3D and 3D+t BRAIN VAscular models & \\
+\end{longtable}   
+%%% Local Variables: 
+%%% mode: latex
+%%% TeX-master: "these"
+%%% End: 

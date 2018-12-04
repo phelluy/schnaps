@@ -1,0 +1,24 @@
+\begin{frame}
+\frametitle{Parallélisation MIMD / Bilan}
+\vfill
+Performances MIMD après les optimisations (programmes OpenCL distincts) :
+\begin{figure}
+	\centering
+		\begin{tabular}{|c|c|c|}
+			\hline
+			& GPU NVidia GeForce GTX 460 & CPU Intel Core i7-920 \\ \hline\hline
+			Temps total (s) & $17.49$ & $50.63$ (\textcolor{red}{$279.38$}) \\	\hline
+			Volume (\%) & $23.47$ & $12.90$ (\textcolor{red}{$47.57$}) \\	\hline
+			Flux (\%) & $68.75$ & $70.94$ (\textcolor{red}{$48.71$}) \\	\hline
+			Masse (\%) & $5.17$ & $9.69$ (\textcolor{red}{$2.58$}) \\	\hline
+			Euler (\%) & $1.88$ & $4.47$ (\textcolor{red}{$0.81$}) \\	\hline
+		\end{tabular}
+\end{figure}
+\vfill
+\begin{itemize}
+\item Le terme de volume est très bien adapté à la parallélisation sur CPU ;
+\item Facteur d'accélération global proche de 6 !
+\end{itemize}
+\vfill
+\end{frame}
+

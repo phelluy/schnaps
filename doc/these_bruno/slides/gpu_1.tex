@@ -1,0 +1,108 @@
+\begin{frame}
+\frametitle{Parallélisation SIMD}
+\vfill
+\begin{itemize}
+\item Architecture SIMD : \textit{Simple Instruction, Multiple Data} ;
+\item Cartes graphiques : GPU ;
+\item Plusieurs milliers de cœurs de calcul (ou processeurs) ;
+\item Quelques Go de mémoire : dizaine(s) ;
+\item Exploités via OpenCL.
+\end{itemize}
+\vfill
+\begin{figure}
+\centering
+		\pgfdeclarelayer{wilayer}
+		\pgfdeclarelayer{wglayer}
+		\pgfsetlayers{main,wglayer,wilayer}
+		
+		\tikzstyle{wd}=[
+			minimum height = 1em, minimum width = 1em, outer sep = 0.1em
+		]
+		\tikzstyle{wi}=[wd,
+			draw = blue, fill = blue!20,
+		]
+		
+		\tikzstyle{brace}=[
+			decoration={brace, raise = 0.1em}, decorate
+		]
+		\tikzstyle{bracetxt}=[
+			above = 0.3em, midway
+		]
+
+		\tikzstyle{wg}=[
+			draw = yellow, fill = yellow!20, minimum width = 7em,
+			inner sep = 0.5em, outer sep = -0.1em
+		]
+		\tikzstyle{wgh}=[wg,
+			fill = yellow!40, inner sep = 0.3em
+		]
+		\tikzstyle{wgwrap}=[
+			inner sep = 0.1em
+		]
+		
+		\tikzstyle{gmem}=[
+			draw = black, fill = gray!20, minimum width = 24em, minimum height = 2em
+		]
+		\tikzstyle{lmem}=[gmem,
+			minimum width = 7em
+		]
+		
+		\begin{tikzpicture}
+			\begin{pgfonlayer}{wilayer}
+				\node (wi11) [wi] {};
+				\node (wi12) [wi, right = 0.1em of wi11] {};
+				\node (wi1d) [wd, right = 0.1em of wi12] {\small $\dots$};
+				\node (wi1k) [wi, right = 0.1em of wi1d] {};
+				\draw[brace] (wi11.north west) -- (wi1k.north east)
+					node[bracetxt, name = b1]{\tiny $k$ processeurs};
+				\node (wi21) [wi, right = 1.6em of wi1k] {};
+				\node (wi22) [wi, right = 0.1em of wi21] {};
+				\node (wi2d) [wd, right = 0.1em of wi22] {\small $\dots$};
+				\node (wi2k) [wi, right = 0.1em of wi2d] {};
+				\draw[brace] (wi21.north west) -- (wi2k.north east)
+					node[bracetxt, name = b2]{\tiny $k$ processeurs};
+				\node (win1) [wi, right = 3.2em of wi2k] {};
+				\node (win2) [wi, right = 0.1em of win1] {};
+				\node (wind) [wd, right = 0.1em of win2] {\small $\dots$};
+				\node (wink) [wi, right = 0.1em of wind] {};
+				\draw[brace] (win1.north west) -- (wink.north east)
+					node[bracetxt, name = bk]{\tiny $k$ processeurs};
+			\end{pgfonlayer}
+			
+			\begin{pgfonlayer}{wglayer}
+				\node (wg1) [wg, fit = (wi11)(wi1k)(b1)] {};
+				\node (wg1h) [wgh, above = 0em of wg1] {\small groupe $1$};
+				\node (wg2) [wg, fit = (wi21)(wi2k)(b2)] {};
+				\node (wg2h) [wgh, above = 0em of wg2] {\small groupe $2$};
+				\node (wgd) [wd, right = 0.1em of wg2] {$\dots$};
+				\node (wgn) [wg, fit = (win1)(wink)(bk)] {};
+				\node (wgnh) [wgh, above = 0em of wgn] {\small groupe $n$};
+
+				\node (wgw1) [wgwrap, fit = (wg1)(wg1h)] {};
+				\node (wgw2) [wgwrap, fit = (wg2)(wg2h)] {};
+				\node (wgwn) [wgwrap, fit = (wgn)(wgnh)] {};
+				\node (wgc) [fit = (wgw1)(wgw2)(wgwn)] {};
+				
+				\node (lmem1) [lmem, above = 1em of wgw1] {\tiny Mémoire cache (ko)};
+				\node (lmem2) [lmem, above = 1em of wgw2] {\tiny Mémoire cache (ko)};
+				\node (lmemd) [right = 0.1em of lmem2] {$\dots$};
+				\node (lmemn) [lmem, above = 1em of wgwn] {\tiny Mémoire cache (ko)};
+	
+				\node (gmem) [gmem, below = 1em of wgc] {\small Mémoire globale (Go)};
+				\node (gmem1) [below = 1.4em of wgw1] {};
+				\node (gmem2) [below = 1.4em of wgw2] {};
+				\node (gmemn) [below = 1.4em of wgwn] {};
+				
+				\draw[arrows={-latex}] (wgw1.north) -- (lmem1.south);
+				\draw[arrows={-latex}] (wgw2.north) -- (lmem2.south);
+				\draw[arrows={-latex}] (wgwn.north) -- (lmemn.south);
+				
+				\draw[arrows={-latex}] (wgw1.south) -- (gmem1.north);
+				\draw[arrows={-latex}] (wgw2.south) -- (gmem2.north);
+				\draw[arrows={-latex}] (wgwn.south) -- (gmemn.north);
+			\end{pgfonlayer}
+		\end{tikzpicture}
+\end{figure}
+\vfill
+\end{frame}
+

@@ -1,0 +1,100 @@
+\documentclass[a4paper,12pt]{report}
+\usepackage[hmargin=1.5cm,vmargin=2cm]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{graphicx}
+\graphicspath{{img/}} % Répertoire des images
+
+\title{\huge{\textbf{Optimisation de code Galerkin Discontinu sur ordinateur hybride. Application à la simulation numérique en électromagnétisme.}}}
+
+\author{Bruno Weber}
+
+\begin{document}
+
+\begin{titlepage}
+  \centering
+  $
+  \begin{array}{l}
+    \includegraphics[width=0.18\linewidth]{uds}
+  \end{array}
+  $
+  \hfill
+  \Large\textbf{INVITATION}
+  \hfill
+  $
+  \begin{array}{l}
+    \includegraphics[width=0.18\linewidth]{axs}
+  \end{array}
+  $
+  \vfill
+  \Large\textbf{Optimisation de code Galerkin Discontinu
+    sur ordinateur hybride. Application à la simulation
+    numérique en électromagnétisme.}\\
+  \vfill
+  \Large\textbf{Soutenance de thèse de Bruno WEBER}
+  \vfill
+  \large\textbf{Lundi 26 novembre 2018 à 11h00}
+  \vfill
+  \large\textbf{Salle de conférences\\
+    Institut de Recherche Mathématique Avancée (IRMA)\\
+    7 Rue René Descartes\\
+    67000 Strasbourg
+  }
+  \vfill
+
+  \parbox{0.9\linewidth}{
+    \normalsize
+    \textbf{Jury :}\\
+    \begin{tabular}{lllll}
+      \textbf{M Helluy Philippe} & &
+      Université de Strasbourg & & Directeur de thèse \\
+      \textbf{Mme Barucq Hélène} & &
+      INRIA Bordeaux & & Rapporteur \\
+      \textbf{M Ferrières Xavier} & &
+      ONERA Toulouse & & Rapporteur \\
+      \textbf{M Prud'homme Christophe} & &
+      Université de Strasbourg & & Examinateur \\
+      \textbf{M Giraudon Cyril} & &
+      AxesSim, Illkirch-Graff. & & Encadrant industriel \\
+    \end{tabular}
+  }
+  \vfill
+  \parbox{0.9\linewidth}{
+    \normalsize
+    \textbf{Résumé :}\\
+Nous présentons dans cette thèse les évolutions apportées au
+solveur Galerkin Discontinu \texttt{teta-clac},
+issu de la collaboration IRMA-AxesSim,
+au cours du projet HOROCH (2015-2018).
+Ce solveur permet de résoudre les équations de Maxwell en
+3D, en parallèle sur un grand nombre d'accélérateurs OpenCL.
+
+L'objectif du projet HOROCH était d'effectuer des simulations
+de grande envergure sur un modèle numérique complet de corps humain.
+Ce modèle comporte 24 millions de mailles
+hexaédriques pour des calculs dans la bande de fréquences
+des objets connectés allant de 1 à 3 GHz (Bluetooth).
+Les applications sont nombreuses : téléphonie et accessoires,
+sport (maillots connectés), médecine (sondes : gélules, patchs),
+\textit{etc}.
+
+Les évolutions ainsi apportées comprennent, entre autres :
+l'optimisation des kernels OpenCL à destination des CPU
+dans le but d'utiliser au mieux les architectures hybrides~;
+l'expérimentation du runtime StarPU~; le design d'un
+schéma d'intégration à pas de temps local~;
+et bon nombre d'optimisations permettant au solveur
+de traiter des simulations de plusieurs millions de mailles.
+
+~\\
+\textbf{Mots-clés :}\\
+\raggedright
+solveur, Maxwell, électromagnétisme, système hyperbolique,
+Galerkin Discontinu, GD, GDTD, maillage, hexaèdres,
+GPU, CPU, OpenCL, MPI, StarPU,
+pas de temps local, ordre adaptatif, modèle de corps humain complet,
+objets connectés, Bluetooth.
+  }
+\end{titlepage}
+
+\end{document}

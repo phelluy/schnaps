@@ -1,0 +1,28 @@
+\begin{frame}
+\frametitle{Pas de temps local / Local RK2 (LRK2)}
+\vfill
+\begin{itemize}
+\item Introduction d'un flux local dans la phase de prédiction :
+\begin{align*}
+	\Flux{\W_\L}{\W_\R}{\n} \rightarrow \Flux{\W_\L}{\W_\L}{\n} \ ;
+\end{align*}
+\item Opérateur GD local :
+\begin{align*}
+	\Ptl{t} \V = \mathcal{G}_l(\W) \ ;
+\end{align*}
+\item Schéma LRK2 :
+\begin{align*}
+	\V^{n+\frac{1}{2}} &= \W^n
+		+ \frac{\dt}{2} \mathcal{G}_l(\W^n) ,
+	\tag{Prédiction locale} \\
+	\W^{n+1} &= \W^n
+		+ \dt \mathcal{G}\left(\V^{n+\frac{1}{2}}\right) \;
+	\tag{Mise-à-jour}
+\end{align*}
+\item L'extrapolation à la prédiction n'est faite que dans la maille courante ;
+\item À pas de temps égal : plus efficace que RK2 de 12 \% pour $\Deg = 2$ ;
+\item Avec le pas de temps optimal : moins efficace que RK2 de 30 \% pour $\Deg = 2$.
+\end{itemize}
+\vfill
+\end{frame}
+

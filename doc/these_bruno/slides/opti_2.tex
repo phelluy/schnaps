@@ -1,0 +1,70 @@
+\begin{frame}
+\frametitle{Intégration temporelle / Stabilité}
+\vfill
+\scalebox{0.9}{\begin{minipage}{1.11\textwidth}
+\begin{block}{Proposition}
+	Un schéma d’ordre $k$ en temps est stable pour un pas de temps $\dt$ si toutes les
+	valeurs propres $\lambda \in \EnsC$ de $\A$ sont telles que $\dt \lambda$
+	appartienne à :
+	\begin{align*}
+		S_k = \left \{
+			\mu \in \EnsC : \Abs{\sum_{i=0}^{k} \frac{\mu^i}{i!}} \le 1
+		\right \} .
+	\end{align*}
+	On note $C_k$ le contour de $S_k$.
+\end{block}
+\end{minipage}}
+\vfill
+\begin{columns}[c]
+\column{0.5\textwidth}
+\scalebox{0.5}{\begin{minipage}{2\textwidth}
+\begin{figure}
+\centering
+\begin{tikzpicture}
+	\begin{axis}[
+		axis lines=middle,
+		xlabel=$\mathrm{Re}$, x label style={at={(axis cs:0.4,0)},anchor=north},
+		ylabel=$\mathrm{Im}$, y label style={at={(axis cs:0,2.7)},anchor=east},
+		xmin=-3.1,xmax=0.4,ymin=-2.7,ymax=2.7,
+		xtick={-3,-2,...,0},ytick={-2,-1,...,2},
+		x post scale=1.5,
+		y post scale=1.2,
+		legend style={at={(axis cs:-3,2.6)},anchor=north west}]
+		\addplot[
+			color=black,
+			%fill=black, 
+			%fill opacity=0.05
+		]
+		table[
+			mark=none] {../stab_rk1.plt};
+		\addlegendentry{$C_1$ (RK$1$)}
+		\addplot[
+			color=red,
+			%fill=red, 
+			%fill opacity=0.05
+			]
+			table[
+				mark=none] {../stab_rk2.plt};
+		\addlegendentry{$C_2$ (RK$2$)}
+		\addplot[
+			color=blue,
+			%fill=blue, 
+			%fill opacity=0.05
+			]
+			table[
+				mark=none] {../stab_rk3.plt};
+		\addlegendentry{$C_3$ (RK$3$)}
+	\end{axis}
+\end{tikzpicture}
+\end{figure}
+\end{minipage}}
+\column{0.5\textwidth}
+\begin{itemize}
+\item RK2 : la partie réelle des valeurs propres doit être négative ;
+\item La stabilité peut être obtenue en diminuant le pas de temps ;
+\item Le calcul des valeurs propres est très coûteux.
+\end{itemize}
+\end{columns}
+\vfill
+\end{frame}
+

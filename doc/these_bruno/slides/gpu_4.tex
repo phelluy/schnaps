@@ -1,0 +1,96 @@
+\begin{frame}
+\frametitle{Parallélisation SIMD / Graphe des tâches}
+\vfill
+\begin{columns}[c]
+\column{0.35\textwidth}
+\scalebox{0.9}{\begin{minipage}{1.11\textwidth}
+\begin{itemize}
+\item Soumission des programmes OpenCL selon un graphe des tâches ;
+\item Exécution asynchrone : les flèches indiquent la dépendance des données ;
+\item<1> Graphe des tâches de la prédiction RK2 (Euler) :
+\item<3> Graphe des tâches de la prédiction LRK2 (Euler local) :
+\item<3> Devant la complexité de certains graphes, des solutions existent telle que la bibliothèque StarPU.
+\end{itemize}
+\end{minipage}}
+\column{0.65\textwidth}
+\begin{figure}
+	\centering\tiny
+	\begin{tikzpicture}[scale=0.48]
+		\node[ellipse,draw,align=center] (debut)
+			at (0,0) {Début du demi\\pas de temps};
+
+		\node[ellipse,draw=blue,fill=blue!10,align=center] (volume1)
+			at (-4.5,-4) {Zone 1\\Terme de volume};
+\onslide<1,2>{
+		\node[ellipse,draw=red,fill=red!10,align=center] (flux1)
+			at (-4,-8) {Zone 1\\Terme de flux};
+}
+\onslide<3>{
+		\node[ellipse,draw=red,fill=red!10,align=center] (flux1)
+			at (-4,-8) {Zone 1\\Terme de flux \textbf{local}};
+}
+		\node[ellipse,draw=green,fill=green!10,align=center] (masse1)
+			at (-3,-10) {Zone 1\\Terme de masse};
+		\node[ellipse,draw=gray,fill=gray!10,align=center] (euler1)
+			at (-2.5,-12) {Zone 1\\Etape d'Euler};
+
+		\node[ellipse,draw=blue,fill=blue!10,align=center] (volume2)
+			at (4.5,-4) {Zone 2\\Terme de volume};
+\onslide<1,2>{
+		\node[ellipse,draw=red,fill=red!10,align=center] (flux2)
+			at (4,-8) {Zone 2\\Terme de flux};
+}
+\onslide<3>{
+		\node[ellipse,draw=red,fill=red!10,align=center] (flux2)
+			at (4,-8) {Zone 2\\Terme de flux \textbf{local}};
+}
+		\node[ellipse,draw=green,fill=green!10,align=center] (masse2)
+			at (3,-10) {Zone 2\\Terme de masse};
+		\node[ellipse,draw=gray,fill=gray!10,align=center] (euler2)
+			at (2.5,-12) {Zone 2\\Etape d'Euler};
+
+\onslide<1>{
+		\node[rectangle,draw=red,fill=red!10,align=center] (extract1)
+			at (-2,-2) {Interface\\Zone 1\\Extrapolation};
+		\node[rectangle,draw=red,fill=red!10,align=center] (apply1)
+			at (-2,-6) {Interface\\Zone 1\\Application du flux};
+			
+		\node[rectangle,draw=red,fill=red!10,align=center] (itfflux)
+			at (0,-4) {Interface\\Calcul du flux};
+		
+		\node[rectangle,draw=red,fill=red!10,align=center] (extract2)
+			at (2,-2) {Interface\\Zone 2\\Extrapolation};
+		\node[rectangle,draw=red,fill=red!10,align=center] (apply2)
+			at (2,-6) {Interface\\Zone 2\\Application du flux};
+}
+
+		\node[ellipse,draw,align=center] (fin)
+			at (0,-14) {Fin du demi\\pas de temps};
+			
+		\path[arrows={-latex},very thick] (debut) edge[out=180,in=90] (volume1);
+		\path[arrows={-latex},very thick] (debut) edge[out=0,in=90] (volume2);
+		\path[arrows={-latex},very thick] (volume1) edge (flux1);
+		\path[arrows={-latex},very thick] (volume2) edge (flux2);
+		\path[arrows={-latex},very thick] (flux1) edge (masse1);
+		\path[arrows={-latex},very thick] (flux2) edge (masse2);
+		\path[arrows={-latex},very thick] (masse1) edge (euler1);
+		\path[arrows={-latex},very thick] (masse2) edge (euler2);
+		\path[arrows={-latex},very thick] (euler1) edge (fin);
+		\path[arrows={-latex},very thick] (euler2) edge (fin);
+		
+\onslide<1>{
+		\path[arrows={-latex},very thick] (debut) edge[out=195,in=90] (extract1);
+		\path[arrows={-latex},very thick] (debut) edge[out=345,in=90] (extract2);
+		\path[arrows={-latex},very thick] (extract1) edge (itfflux);
+		\path[arrows={-latex},very thick] (extract2) edge (itfflux);
+		\path[arrows={-latex},very thick] (itfflux) edge (apply1);
+		\path[arrows={-latex},very thick] (itfflux) edge (apply2);
+		\path[arrows={-latex},very thick] (apply1) edge[out=290,in=40] (masse1);
+		\path[arrows={-latex},very thick] (apply2) edge[out=250,in=140] (masse2);
+}
+	\end{tikzpicture}
+\end{figure}
+\end{columns}
+\vfill
+\end{frame}
+

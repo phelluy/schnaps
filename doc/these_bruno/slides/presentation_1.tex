@@ -1,0 +1,334 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Beamer Presentation
+% LaTeX Template
+% Version 1.0 (10/11/12)
+%
+% This template has been downloaded from:
+% http://www.LaTeXTemplates.com
+%
+% License:
+% CC BY-NC-SA 3.0 (http://creativecommons.org/licenses/by-nc-sa/3.0/)
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%----------------------------------------------------------------------------------------
+%	PACKAGES AND THEMES
+%----------------------------------------------------------------------------------------
+
+\documentclass[
+	10pt,
+	%handout
+]{beamer}
+
+\mode<presentation> {
+
+% The Beamer class comes with a number of default slide themes
+% which change the colors and layouts of slides. Below this is a list
+% of all the themes, uncomment each in turn to see what they look like.
+
+%\usetheme{default}
+%\usetheme{AnnArbor}
+%\usetheme{Antibes}
+%\usetheme{Bergen}
+%\usetheme{Berkeley}
+%\usetheme{Berlin}
+%\usetheme{Boadilla}
+%\usetheme{CambridgeUS}
+%\usetheme{Copenhagen}
+%\usetheme{Darmstadt}
+%\usetheme{Dresden}
+%\usetheme{Frankfurt}
+%\usetheme{Goettingen}
+%\usetheme{Hannover}
+%\usetheme{Ilmenau}
+%\usetheme{JuanLesPins}
+%\usetheme{Luebeck}
+\usetheme{Madrid}
+%\usetheme{Malmoe}
+%\usetheme{Marburg}
+%\usetheme{Montpellier}
+%\usetheme{PaloAlto}
+%\usetheme{Pittsburgh}
+%\usetheme{Rochester}
+%\usetheme{Singapore}
+%\usetheme{Szeged}
+%\usetheme{Warsaw}
+
+% As well as themes, the Beamer class has a number of color themes
+% for any slide theme. Uncomment each of these in turn to see how it
+% changes the colors of your current slide theme.
+
+%\usecolortheme{albatross}
+%\usecolortheme{beaver}
+%\usecolortheme{beetle}
+%\usecolortheme{crane}
+%\usecolortheme{dolphin}
+%\usecolortheme{dove}
+%\usecolortheme{fly}
+%\usecolortheme{lily}
+%\usecolortheme{orchid}
+%\usecolortheme{rose}
+%\usecolortheme{seagull}
+%\usecolortheme{seahorse}
+%\usecolortheme{whale}
+%\usecolortheme{wolverine}
+
+%\setbeamertemplate{footline} % To remove the footer line in all slides uncomment this line
+%\setbeamertemplate{footline}[page number] % To replace the footer line in all slides with a simple slide count uncomment this line
+
+%\setbeamertemplate{navigation symbols}{} % To remove the navigation symbols from the bottom of all slides uncomment this line
+}
+
+% Remove shortcuts
+\beamertemplatenavigationsymbolsempty
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[frenchb]{babel}
+\usefonttheme[onlymath]{serif}
+\usepackage{graphicx} % Allows including images
+\usepackage{caption}
+%\usepackage{booktabs} % Allows the use of \toprule, \midrule and \bottomrule in tables
+
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{bm}
+\usepackage{tikz,tikz-3dplot,pgfplots,pgfplotstable}
+\usetikzlibrary{fit,decorations.pathreplacing,arrows,matrix,shapes,positioning}
+\usepackage[normalem]{ulem}
+
+\input{notations}
+
+%----------------------------------------------------------------------------------------
+%	TITLE PAGE
+%----------------------------------------------------------------------------------------
+
+\title[Soutenance de thèse]{Optimisation de code Galerkin Discontinu sur ordinateur hybride. Application à la simulation numérique en électromagnétisme.} % The short title appears at the bottom of every slide, the full title is only on the title page
+
+\author{Bruno Weber} % Your name
+\institute[IRMA] % Your institution as it will appear on the bottom of every slide, may be shorthand to save space
+{
+Université de Strasbourg \\ % Your institution for the title page
+\medskip
+\textit{bweber@math.unistra.fr\\bruno.weber@axessim.fr} % Your email address
+}
+\date{26 novembre 2018} % Date, can be changed to a custom date
+
+\titlegraphic{  % trim: <left> <lower> <right> <upper>
+$
+\begin{array}{l}
+\includegraphics[width=.2\textwidth]{./../img/uds}
+\end{array}
+$
+\hfill
+$
+\begin{array}{l}
+\includegraphics[width=.13\textwidth]{./../img/irma}
+\end{array}
+$
+\hfill
+$
+\begin{array}{l}
+\includegraphics[width=.22\textwidth]{./../img/axs}
+\end{array}
+$
+\hfill
+$
+\begin{array}{l}
+\includegraphics[width=.15\textwidth,trim={60 100 60 100},clip]{./../img/msii}
+\end{array}
+$
+\hfill
+$
+\begin{array}{l}
+\includegraphics[width=.1\textwidth]{./../img/cnrs}
+\end{array}
+$
+}
+
+\AtBeginSection[]{
+\begin{frame}
+\vfill
+\centering
+\begin{beamercolorbox}[sep=8pt,center,shadow=true,rounded=true]{title}
+  \usebeamerfont{title}\insertsectionhead\par%
+\end{beamercolorbox}
+\vfill
+\end{frame}
+}
+
+\begin{document}
+
+\include{titre}
+
+\section*{Introduction}
+
+\include{intro_1}
+\include{intro_2}
+
+%----------------------------------------------------------------------------------------
+%	TOC
+%----------------------------------------------------------------------------------------
+
+\begin{frame}
+\frametitle{Sommaire} % Table of contents slide, comment this block out to remove it
+\tableofcontents % Throughout your presentation, if you choose to use \section{} and \subsection{} commands, these will automatically be printed on this slide as an overview of your presentation
+\end{frame}
+
+%----------------------------------------------------------------------------------------
+%	PRESENTATION SLIDES
+%----------------------------------------------------------------------------------------
+
+\section{Galerkin Discontinu appliqué aux équations de Maxwell}
+\subsection*{Équations de Maxwell}
+
+%\include{maxwell_1} % maxwell
+%\include{maxwell_2} % divergence
+\include{maxwell_1_bis} % maxwell + div
+%\include{maxwell_3} % maxwell > friedrichs
+\include{maxwell_3_bis} % maxwell > friedrichs
+%\include{maxwell_4} % matrices friedrichs
+\include{maxwell_5} % pb evol
+\include{maxwell_6} % matrices M
+%\include{maxwell_7} % sauts
+\include{maxwell_7_bis} % sauts
+
+\subsection*{Formulation Galerkin Discontinue (GD)}
+
+%\include{gd_1} % maillage
+\include{gd_1_bis} % maillage
+\include{gd_2} % definitions A+ et A-
+\include{gd_3} % formulation
+\include{gd_4} % flux
+
+\include{bilan_1}
+
+
+\section{Optimisations}
+
+\subsection{Espace d'approximation et simplifications}
+
+\include{approx_1} % cube
+\include{approx_2} % pt volume
+\include{approx_3} % pt face
+\include{approx_4} % base ref
+\include{approx_5} % base phy (trans. geo)
+\include{approx_6} % pb semi discret
+
+\subsection*{Simplifications}
+
+\include{simpl_1} % masse
+\include{simpl_2} % volume
+\include{simpl_3} % gradient
+\include{simpl_4} % flux
+\include{simpl_5} % extrapolation
+\include{simpl_6} % bilan
+
+%TODO: supprimer formules volume et flux ?
+
+\subsection{Améliorations algorithmiques}
+
+\subsection*{Intégration temporelle}
+
+\include{opti_1} % integration t
+\include{opti_2} % zones stab
+\include{opti_3} % crit cfl
+\include{opti_4} % puiss iteree
+\include{opti_5} % max cfl
+
+%\subsection*{Ordre spatial adaptatif}
+
+%\include{opti_6} % ordre adapt
+
+\subsection*{Pas de temps local}
+
+\include{local_1} % lrk2
+\include{local_2} % rk2 vs lrk2
+\include{local_3} % lts2
+%\include{local_4} % classes
+\include{local_4_bis} % classes
+\include{local_4_ter} % résultats
+
+\subsection{Parallélisation} % SIMD, MIMD, MPI}
+
+\include{opencl_1} % OpenCL (justif perfs lts2)
+
+%\include{opti_7} % bilan
+
+%\subsection*{Parallélisation SIMD}
+
+%\include{gpu_1} % gpu
+%\include{gpu_2} % memoire
+%\include{gpu_3} % para
+%\include{gpu_4} % graphes
+
+%\subsection*{Parallélisation MIMD}
+
+%\include{cpu_1} % cpu
+%\include{cpu_2} % avant
+%\include{cpu_3} % memoire
+%\include{cpu_4} % para
+%\include{cpu_5} % bilan
+
+%\include{mpi_1} % mpi
+
+\include{bilan_2}
+
+
+\section{Résultats}
+
+\subsection{Tête humaine simplifiée}
+
+\include{tete_1} % descr
+\include{tete_2} % comp fd
+\include{tete_3} % resultats
+
+\subsection{Corps humain complet}
+
+\include{corps_1} % descr
+\include{corps_2} % resultat simu
+\include{corps_3} % scala MPI
+
+
+\section{Conclusion}
+
+
+
+
+
+
+\begin{frame}
+\frametitle{Conclusion}
+\vfill
+Points abordés :
+\begin{itemize}
+\item Description du solveur GD Teta-CLAC qui permet de résoudre efficacement les équations de Maxwell en se conformant aux contraintes géométriques ;
+\item Présentation d'une partie des améliorations apportées dans le cadre de cette thèse CIFRE qui ont permis de faire passer une simulation \textit{réaliste} sur un modèle de corps humain présentant un haut niveau de détail ;
+\item Preuve donnée de la possibilité de traiter ce type de problématique en un temps humain très raisonnable ;
+\item C'est l'amélioration constante du solveur GD Teta-CLAC qui a permis d'obtenir ces résultats encore hypothétiques il y a $3$ ans.
+\end{itemize}
+\vfill
+La suite :
+\begin{itemize}
+\item Simulation sur corps humain à l'aide du schéma à pas de temps local ;
+\item Utilisation de maillages hybrides (hexaèdres, tétraèdres) afin de réduire les contraintes induites par le découpage des tétraèdres tout en bénéficiant des simplifications apportées par les hexaèdres ;
+\item Consolider l'exécution hybride CPU/GPU pour plus de polyvalence au niveau des accélérateurs et tirer profit de toute la puissance de calcul disponible.
+\end{itemize}
+\end{frame}
+
+
+
+%TODO ccl et perspectives
+
+
+
+\begin{frame}
+\includegraphics[width=\textwidth]{../img/fin}
+
+\vfill
+ 
+\huge{\centerline{Merci pour votre attention.}}
+\end{frame}
+
+
+\end{document}

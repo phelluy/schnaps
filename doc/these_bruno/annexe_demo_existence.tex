@@ -1,0 +1,703 @@
+\chapter{Existence de la solution du problème d'évolution}
+\label{annexe:demo_existence}
+
+
+\section{Théorie des opérateurs linéaires}
+\label{sect:theorie_operateurs_lineaires}
+
+Le théorème de Hille-Yosida est un théorème abstrait de la théorie des
+opérateurs linéaires qui permet de démontrer l'existence et l'unicité
+de la solution d'un problème d'évolution. Nous donnons les notions
+minimales pour comprendre l'énoncé de ce théorème.
+Pour plus de détails, nous renvoyons au livre de Brézis
+\cite{brezis1983analyse}.
+\\
+
+Nous considérons un espace de Hilbert $H$
+muni du produit scalaire $\left\langle \cdot , \cdot \right\rangle$.
+En général, $\A$ désignera un opérateur non-borné de $H$
+à domaine dense, c'est à dire une application linéaire d'un sous-espace vectoriel $D(\A)$ de $H$ à valeurs dans $H$.
+Le sous-espace vectoriel $D(\A)$ est appelé domaine de $\A$.
+Si $H$ est un Hilbert de dimension infinie, $D(\A)$
+n'est généralement pas fermé. Nous supposons que le domaine de $\A$
+est dense, c'est à dire que $\Adh{D(\A)} = H$ pour la topologie forte de $H$.
+La topologie forte est la topologie associée à la norme du produit scalaire
+de $H$. Le graphe de $\A$, noté $G(\A)$ est l'ensemble :
+\begin{align}
+	G(\A) = \left\{ (\U,\A \U) : \U \in D(\A) \right\} \subset H^2 .
+\end{align}
+En général, $\Adh{G(\A)}$
+n'est pas le graphe d'un opérateur univoque, c'est à dire que
+$(\U,\Vec{f}) \in \Adh{G(\A)}$ et $(\U,\Vec{g}) \in \Adh{G(\A)}$
+n'implique pas forcément $\Vec{f} = \Vec{g}$.
+Si $\Adh{G(\A)}$ est le graphe d'un opérateur univoque, nous dirons que $\A$
+est un opérateur non-borné fermable. Nous appellerons fermeture de $\A$
+et nous noterons $\Adh{\A}$ l'opérateur tel que $G(\Adh{\A}) = \Adh{G(\A)}$.
+
+\begin{definition}
+	Soit $H$ un espace de Hilbert de produit scalaire
+	$\left\langle \cdot , \cdot\right\rangle$.
+	Soit $\A$ un opérateur linéaire de $D(\A)$, sous-espace vectoriel de $H$,
+	dans $H$. $\A$ est dit \textbf{monotone} si :
+	\begin{align}
+		\forall \U \in D(\A), \left\langle \A \U , \U \right\rangle \ge 0 .
+	\end{align}
+	L'opérateur $\A$ est dit \textbf{maximal monotone} si de plus
+	$\Mat{I} + \A$ est surjectif de $D(\A)$ sur $H$.
+\end{definition}
+
+Considérons le problème d'évolution abstrait d'inconnue
+$\U(t) \in D(\A)$ :
+\begin{subequations} \label{eq:pb_abstrait}
+	\begin{align}
+		\Ptl{t} \U + \A \U &= 0 , \\
+		\U(0) &= \U_{0} \in D(\A) .
+	\end{align}
+\end{subequations}
+Le théorème de Hille-Yosida donne une condition pour que ce problème soit
+bien posé. Dans le cas qui nous intéresse, l'opérateur $\A$
+sera formellement l'opérateur aux dérivées partielles en espace
+$\Aidi$ et son domaine $D(\A)$ sera l'ensemble des $\W$
+qui satisfont les conditions aux limites.
+
+\begin{theorem}[Hille-Yosida]
+	Si $\A$ est maximal monotone, alors le problème \eqref{eq:pb_abstrait}
+	admet une unique solution $\U$ dans
+	$\mathcal{C}^{1}(\PbTps,H) \cap \mathcal{C}(\PbTps,D(\A))$
+	et pour tout $t$ :
+	\begin{align}
+		\Norm{\U(t)} \le \Norm{\U_0}, \;
+		\Norm{\Ptl{t} \U(t)} =
+		\Norm{\A \U(t)} \le \Norm{\A \U_0} .
+	\end{align}
+\end{theorem}
+
+\begin{remark}
+	$D(\A)$ est muni de la norme dite du graphe :
+	\begin{align}
+		\Norm{\U}_{D(\A)} = \Norm{\U}_{H} + \Norm{\A \U}_{H} .
+	\end{align}
+\end{remark}
+
+\begin{remark}
+	L'application qui à $\U_0$ associe $\U(t)$
+	peut donc être prolongée par densité en un semi-groupe
+	de contrations de $H$ dans $H$.
+	Il est donc possible de définir des solutions du problème
+	d'évolution lorsque $\U_0 \in H$.
+\end{remark}
+
+Nous allons maintenant introduire quelques outils qui permettront de
+démontrer la surjectivité de $\Mat{I} + \A$. Les démonstrations seront basées
+sur des techniques d'intégration par parties et de passage à l'adjoint.
+
+\begin{definition}
+	Soit $\A$ un opérateur linéaire de $H$ dans $H$ de domaine $D(\A)$ dense.
+	$\A^{\#}$ est un \textbf{adjoint formel} de $\A$ si $\A^{\#}$
+	est à domaine dense et :
+	\begin{align}
+		\forall \U \in D(\A), \forall \V \in D(\A^{\#}), \;
+		\left\langle \A \U , \V \right\rangle
+		= \left\langle \U , \A^{\#} \V \right\rangle .
+	\end{align}
+\end{definition}
+
+\begin{proposition}
+	Si $\A$, un opérateur linéaire de $H$, admet un adjoint formel $\A^{\#}$,
+	alors $\A$ est fermable, c'est à dire que la fermeture du graphe de $\A$
+	dans $H^2$, $\Adh{G(\A)}$, définit un opérateur univoque.
+\end{proposition}
+
+%\tikzset{external/export=false}
+%\todo{A vérifier}
+%\tikzset{external/export=true}
+\begin{proof}
+	Soit $(\U_n)_{n \in \EnsN}$ une suite définie sur $D(\A)$
+	telle que $\U_n \rightarrow \U$.
+	Soient $(\Vec{f}_n)_{n \in \EnsN}$ et $(\Vec{g}_n)_{n \in \EnsN}$
+	des suites définies telles que, pour tout $n$ nous ayons
+	$(\U_n,\Vec{f}_n) , (\U_n,\Vec{g}_n) \in G(\A)$ et,
+	$\Vec{f}_n \rightarrow \Vec{f}$ et $\Vec{g}_n \rightarrow \Vec{g}$.
+	Ainsi, $(\U,\Vec{f})$  et $(\U,\Vec{g})$ appartiennent à $\Adh{G(\A)}$.
+	Puisque $\A$ admet un adjoint formel $\A^{\#}$, pour tout
+	$\V \in \A^{\#}$ et tout $n$, nous avons :
+	\begin{align}
+		\left\langle \Vec{f}_n , \V \right\rangle =
+		\left\langle \Vec{g}_n , \V \right\rangle =
+		\left\langle \U_n , \A^{\#} \V \right\rangle .
+	\end{align}
+	S'ensuit, par linéarité à gauche du produit scalaire :
+	\begin{align}
+		\left\langle \Vec{f}_n , \V \right\rangle -
+		\left\langle \Vec{g}_n , \V \right\rangle =
+		\left\langle \Vec{f}_n - \Vec{g}_n , \V \right\rangle = 0 ,
+	\end{align}
+	et donc $\Vec{f}_n = \Vec{g}_n$.
+	En passant à la limite nous obtenons le résultat souhaité.
+\end{proof}
+
+\begin{definition}
+	Soit $\A$ un opérateur de $H$ dans $H$ à domaine dense.
+	L'\textbf{adjoint} (non formel) de $\A$, noté $\A^\star$,
+	est un opérateur de $H$ dans $H$
+	défini tel que :
+	\begin{align}
+		D(\A^\star) = \left\{
+			v \in H : \exists C \ge 0 : \forall \U \in D(\A),
+			\Abs{\left\langle \A \U , \V \right\rangle}
+			\le C \Norm{\U}
+		\right\} .
+	\end{align}
+	En d'autres termes, $D(\A^\star)$ est l'ensemble des $\V \in H$
+	tel que la forme linéaire
+	$\varphi : \U \mapsto \left\langle \A \U, \V \right\rangle$
+	est continue sur $D(\A)$ pour la norme de $H$.
+	\\
+	De plus, si $\V \in D(\A^\star)$, alors $\varphi$
+	se prolonge (par densité de $D(\A)$ dans $H$) en une forme linéaire
+	continue sur $H$, c'est à dire un élément de l'espace dual de $H$.
+	Comme $H$ est un espace de Hilbert, par le théorème de représentation
+	de Riesz, il existe un unique $\Vec{f} \in H$ tel que
+	$\left\langle \A \U , \V \right\rangle =
+	\left\langle \Vec{f} , \U \right\rangle$.
+	Alors par définition $\Vec{f} = \A^\star \V$.
+\end{definition}
+
+\begin{remark}
+	En général, $\A^\star \neq \A^{\#}$. Cependant,
+	pour tout adjoint formel $\A^{\#}$, $G(\A^{\#}) \subset G(\A^\star)$
+	et ainsi $D(\A^{\#}) \subset D(\A^\star)$.
+\end{remark}
+
+\begin{definition}
+	Soit $\A$ un opérateur fermable. Soit $\U$ un élément de $H$.
+	$\U$ est \textbf{solution forte} de $\A \U = \Vec{f}$ si
+	$\Adh{\A} \U = \Vec{f}$.
+\end{definition}
+
+Une solution forte $\U$ de $\A \U = \Vec{f}$ est telle que
+$(\U,\Vec{f}) \in \Adh{G(\A)} = G(\Adh{\A})$.
+En d'autres termes, $\U$ est solution forte de $\A \U = \Vec{f}$
+si, et seulement si, il existe une suite
+$(\U_n)_{n \in \EnsN}$ d'éléments de $D(\A)$
+telle que $\U_n \rightarrow \U$ et $\A \U_n \rightarrow \Vec{f}$.
+
+\begin{definition}
+	Soit $\U$ un élément de $H$.
+	$\U$ est \textbf{solution faible} de $\A \U = \Vec{f}$
+	si $\A$ admet un adjoint formel $\A^{\#}$
+	et :
+	\begin{align}
+		\forall \V \in D(\A^{\#}),
+		\left\langle \Vec{f} , \V \right\rangle =
+		\left\langle \U , \A^{\#} \V \right\rangle .
+	\end{align}
+\end{definition}
+
+\begin{proposition}
+	Si $\A$ admet un adjoint formel, alors toute solution forte
+	de $\A \U = \Vec{f}$ est aussi solution faible.
+\end{proposition}
+
+%\tikzset{external/export=false}
+%\todo{A vérifier}
+%\tikzset{external/export=true}
+\begin{proof}
+	Soit $(\U_n)_{n \in \EnsN}$ une suite d'éléments de $D(\A)$
+	telle que $\U_n \rightarrow \U$ et $\A \U_n \rightarrow \Vec{f}$.
+	Puisque $\A$ admet un adjoint formel $\A^{\#}$, pour tout
+	$\V \in \A^{\#}$ et tout $n$, nous avons :
+	\begin{align}
+		\left\langle \A \U_n , \V \right\rangle =
+		\left\langle \U_n , \A^{\#} \V \right\rangle .
+	\end{align}
+	En passant à la limite nous obtenons le résultat souhaité.
+\end{proof}
+
+\begin{proposition}
+	Si $\A$ et $\A^{\#}$ sont deux opérateurs à domaines denses,
+	adjoints formels et si toute solution faible de $\A \U = \Vec{f}$
+	est aussi une solution forte, alors $\Adh{\A} = (\A^{\#})^\star$
+	et $\Adh{\A^{\#}} = (\Adh{\A})^\star$.
+\end{proposition}
+
+%\tikzset{external/export=false}
+%\todo{A vérifier}
+%\tikzset{external/export=true}
+\begin{proof}
+	\begin{sloppypar}
+	Montrer l'égalité d'opérateurs revient à démontrer l'égalité des graphes.
+	Montrons d'abord que $G(\Adh{\A}) \subset G((\A^{\#})^\star)$.
+	Soit $(\U , \Vec{f}) \in G(\Adh{\A})$,
+	alors $\U$ est solution forte de $\A \U = \Vec{f}$.
+	Il s'ensuit que $\U$ est aussi solution faible c'est à dire :
+	\begin{align}
+		\forall \V \in D(\A^{\#}),
+		\left\langle \U , \A^{\#} \V \right\rangle =
+		\left\langle \Vec{f} , \V \right\rangle .
+	\end{align}
+	La forme linéaire $\V \mapsto
+	\left\langle \U , \A^{\#} \V \right\rangle =
+	\left\langle \Vec{f} , \V \right\rangle$
+	est donc continue. Nous avons aussi $\U \in D((\A^{\#})^\star)$
+	et $(\A^{\#})^\star \U = \Vec{f}$
+	donc $(\U , \Vec{f}) \in G((\A^{\#})^\star)$.
+	\\
+	Montrons que $G((\A^{\#})^\star) \subset G(\Adh{\A})$.
+	En effet, soit $(\U , \Vec{f}) \in G((\A^{\#})^\star)$.
+	Alors la forme linéaire $\V \in D(\A^{\#}) \mapsto
+	\left\langle \U , \A^{\#} \V \right\rangle =
+	\left\langle \Vec{f} , \V \right\rangle$
+	est continue et :
+	\begin{align}
+		\left\langle (\A^{\#})^\star \U , \V \right\rangle =
+		\left\langle \Vec{f} , \V \right\rangle =
+		\left\langle \U , \A^{\#} \V \right\rangle .
+	\end{align}
+	Par conséquent, $\U$ est solution faible de $\A \U = \Vec{f}$.
+	Comme toute solution faible est forte, $\U$ est aussi solution forte
+	et donc $(\U , \Vec{f}) \in G(\Adh{\A})$.
+	\\
+	La seconde égalité découle de résultats généraux sur les adjoints
+	d'opérateurs dans les espaces de Hilbert. D'abord l'adjoint d'un
+	opérateur fermable est égal à l'adjoint de sa fermeture donc
+	$\Adh{\A} = (\A^{\#})^\star = (\Adh{\A^{\#}})^\star$.
+	D'autre part, l'adjoint de l'adjoint d'un opérateur fermé à domaine
+	dense est l'opérateur lui-même donc $(\Adh{\A})^\star = \Adh{\A^{\#}}$.
+	\end{sloppypar}
+\end{proof}
+
+\begin{proposition}
+	Si $\A$ est un opérateur à domaine dense fermable,
+	alors $\A^\star = (\Adh{\A})^\star$.
+\end{proposition}
+
+%\tikzset{external/export=false}
+%\todo{A vérifier}
+%\tikzset{external/export=true}
+\begin{proof}
+	\begin{sloppypar}
+	Nous procédons à nouveau sur les graphes.
+	D'une part, $G(\A^\star) \subset G((\Adh{\A})^\star)$.
+	En effet, soit $(\V , \A^\star \V) \in G(\A^\star)$.
+	Alors la forme linéaire $\U \mapsto
+	\left\langle \A \U , \V \right\rangle =
+	\left\langle \U , \A^\star \V \right\rangle$
+	est linéaire continue sur $D(\A)$ et donc aussi sur $D(\Adh{\A})$,
+	en prolongeant par continuité, et donc
+	$(\V , \A^\star \V) \in G((\Adh{\A})^\star)$.
+	De même, $G((\Adh{\A})^\star) \subset G(\A^\star)$
+	car $D(\A) \subset D(\Adh{\A})$.
+	\end{sloppypar}
+\end{proof}
+
+\begin{proposition} \label{prop:ope_eq_ope_star_star}
+	Soit $\A$ un opérateur fermé à domaine dense tel que $D(\A^\star)$
+	est dense. Alors $\A^{\star \star} = \A$.
+\end{proposition}
+
+Ce résultat repose sur des propriétés de la topologie faible des espaces
+de Hilbert. Une suite $(\U_n)_{n \in \EnsN}$ d'éléments de $H$
+converge faiblement vers $\U$ si, et seulement si, pour tout $\V \in H$,
+$\left\langle \U_n , \V \right\rangle \rightarrow
+\left\langle \U , \V \right\rangle$.
+La convergence forte implique la convergence faible,
+mais la réciproque est fausse.
+Nous avons donc à notre disposition deux topologies sur $H$ :
+la topologie forte associée à la convergence forte des suites,
+au sens de la norme de $H$,
+et la topologie faible associée à la convergence faible.
+
+Considérons maintenant un ensemble $K \subset H$.
+Si $K$ est fermé pour la topologie faible, alors $K$ est aussi fermé
+pour la topologie forte.
+En général, la réciproque est fausse, si $K$ est fermé pour la topologie
+forte il n'est pas forcément fermé pour la topologie faible.
+Un résultat fondamental de l'analyse fonctionnelle est le suivant :
+
+\begin{theorem}
+	Soit $K$ un convexe fermé de $H$ pour la topologie forte.
+	Alors $K$ est fermé pour la topologie faible.
+\end{theorem}
+
+Utilisons ce théorème pour démontrer la proposition
+\ref{prop:ope_eq_ope_star_star}.
+
+%\tikzset{external/export=false}
+%\todo{A vérifier}
+%\tikzset{external/export=true}
+\begin{proof}
+	Soit $(\U,\A\U) \in G(\A)$. Alors :
+	\begin{align}
+		\forall \V\in D(\A^\star),
+		\left\langle \A \U , \V \right\rangle =
+		\left\langle \U , \A^\star \V \right\rangle .
+	\end{align}
+	Par conséquent, la forme linéaire $\V \mapsto
+	\left\langle \U , \A^\star \V \right\rangle$
+	est continue et $\A \U = \A^{**} \U$
+	et donc $(\U , \A\ U) \in G(\A^{\star \star})$.
+	\\
+	Réciproquement, soit
+	$(\U , \A^{\star \star} \U) \in G(\A^{\star \star})$.
+	Pour tout $\V \in D(\A^\star)$
+	la forme linéaire $\V \mapsto
+	\left\langle \U , \A^\star \V \right\rangle =
+	\left\langle \A^{\star \star} \U , \V \right\rangle$
+	est continue. Or, $D(\A)$ est dense dans $H$,
+	il existe donc une suite $(\U_n)_{n \in \EnsN}$
+	d'éléments de $D(\A)$ telle que $\U_n \rightarrow \U$.
+	Nous avons alors d'après la définition de l'adjoint $\A^\star$
+	que $\left\langle \U_n , \A^\star \V \right\rangle =
+	\left\langle \A \U_n , \V \right\rangle$.
+	Il s'ensuit que $\left\langle \A \U_n , \V \right\rangle \rightarrow
+	\left\langle \A^{\star \star} \U , \V \right\rangle$.
+	Comme $D(\A^\star)$ est dense, nous en déduisons que $\A \U_n$
+	tend vers $\A^{\star \star} \U$ pour la topologie faible.
+\end{proof}
+
+
+\begin{lemma} \label{lem:cond_surj}
+	Soit $\A$ un opérateur de $H$ à domaine dense.
+	Les propriétés suivantes sont équivalentes :
+	\begin{enumerate}
+		\item $\A$	est surjectif ;
+		\item $\exists C \ge 0 : \forall \V \in D(\A^\star),
+			\Norm{\V} \le C \Norm{\A^\star \V}$ ;
+		\item $\ker (\A^\star) = \lbrace 0 \rbrace$
+			et l'image de $\A^\star$ est fermée.
+	\end{enumerate}
+\end{lemma}
+
+Ce lemme est une généralisation fondamentale d'un résultat bien connu
+d'algèbre linéaire en dimension finie : pour montrer l'existence de la
+solution d'un problème linéaire il suffit de démontrer l'unicité de la
+solution du problème adjoint.
+Pour la démonstration, nous renvoyons au livre de Brézis \cite{brezis1983analyse}.
+
+\begin{theorem}
+	Si $\A$ et $\A^{\#}$ sont adjoints formels, monotones
+	et si toute solution faible de $\A \U = \Vec{f}$ est forte,
+	alors $\Adh{\A}$ et $\Adh{\A^{\#}}$ sont maximaux monotones.
+\end{theorem}
+
+%\tikzset{external/export=false}
+%\todo{A vérifier}
+%\tikzset{external/export=true}
+\begin{proof}
+	Pour tout $\U \in D(\A)$,
+	$\left\langle (\Mat{I} + \A) \U , \U \right\rangle \ge
+	\left\langle \U , \U \right\rangle$ car $\A$ est monotone.
+	Par densité, nous montrons aussi que pour tout $\U \in D(\Adh{\A})$,
+	$\left\langle (\Mat{I} + \Adh{\A}) \U , \U \right\rangle \ge
+	\left\langle \U , \U \right\rangle$.
+	En appliquant l'inégalité de Cauchy-Schwarz nous obtenons :
+	\begin{align}
+		\forall \U \in D(\Adh{\A}),
+		\Norm{(\Mat{I} + \Adh{\A}) \U} \ge \Norm{\U} .
+	\end{align}
+	De même :
+	\begin{align}
+		\forall \V \in D(\Adh{\A^{\#}}),
+		\Norm{(\Mat{I} + \Adh{\A^{\#}}) \V} \ge \Norm{\V} .
+	\end{align}
+	Mais puisque $\Adh{\A^{\#}} = (\Adh{\A})^\star$,
+	il s'ensuit :
+	\begin{align}
+		\forall \V \in D((\Adh{\A})^\star),
+		\Norm{(\Mat{I} + (\Adh{\A})^\star) \V} \ge \Norm{\V} .
+	\end{align}
+	Donc, en appliquant le lemme \ref{lem:cond_surj},
+	$\Mat{I} + \Adh{\A}$ et $\Mat{I} + (\Adh{\A})^\star$
+	sont surjectifs.
+	Nous obtenons bien que $\Adh{\A}$ et $\Adh{\A^{\#}}$
+	sont maximaux monotones.
+\end{proof}
+
+
+
+\section{Application au problème d'évolution}
+\label{sect:application_pb_evol}
+
+
+Dans cette section nous supposons que $\PbEsp$ est un ouvert
+de bord $\Bord{\PbEsp}$ régulier.
+Pour $x$ un point du bord $\Bord{\PbEsp}$,
+nous définissons $\VectB(x)$
+un espace vectoriel de dimension $q \le \NC$.
+Les conditions aux limites en $x$
+seront de la forme $\W(x,t) \in \VectB(x)$.
+
+Nous considérons le problème d'évolution \eqref{eq:probleme_evolution}
+pour un système de Friedrichs \eqref{eq:friedrichs}.
+Afin de simplifier les écritures, nous considérons le problème
+sans sources ($\ACnd = 0$ et $\Src = 0$) et nous supposerons
+que la matrice $\At$ est égale à l’identité.
+
+Rappelons alors la formulation (simplifiée) du problème d'évolution :
+\begin{subequations}
+	\begin{align*}
+	\Ptl{t} \W + \Aidi \W = 0
+	&\quad \mathrm{sur} \; \PbEspTps ,
+	\\
+	\W (x, 0) = \Winit (x)
+	&\quad \mathrm{sur} \; \PbEsp ,
+	\\
+	\W \in \VectB
+	&\quad \mathrm{sur} \; \Bord{\PbEspTps} .
+	\end{align*}
+\end{subequations}
+Rappelons aussi que dans un tel système, les matrices $\Ai$
+sont symétriques et donc que le système est bien hyperbolique.
+Nous choisissons $H = \mathrm{L}^2(\PbEsp)$.
+Nous prenons :
+\begin{align}
+	D(\A) = \left\{ \U \in \mathcal{C}^1(\Adh{\PbEsp}) :
+	\forall x \in \Bord{\PbEsp}, \U(x) \in \VectB(x) \right\}
+	\label{eq:domain_ope} ,
+\end{align}
+et si $\U \in D(\A)$, alors $\A \U = \Aidi \U$.
+
+Pour le problème adjoint, nous commençons par définir une condition aux limites adjointe $\VectB^{\#}(x) = (\Aini \VectB(x))^\top$.
+Nous prenons :
+\begin{align}
+	D(\A^{\#}) = \left\{ \V \in \mathcal{C}^1(\Adh{\PbEsp}) :
+	\forall x \in \Bord{\PbEsp}, \V(x) \in \VectB^{\#}(x) \right\}
+	\label{eq:domain_ope_adj} ,
+\end{align}
+et si $\V \in D(\A^{\#})$, alors $\A^{\#} \V = - \Aidi \V$.
+
+\begin{proposition}
+	Les opérateurs $\A$ et $\A^{\#}$ ainsi définis
+	sont adjoints formels.
+\end{proposition}
+
+\begin{proof}
+	Il suffit de montrer que :
+	\begin{align}
+		\forall \U \in D(\A), \forall \V \in D(\A^{\#}),
+		\left\langle \A \U , \V \right\rangle =
+		\left\langle \U , \A^{\#} \V \right\rangle .
+	\end{align}
+	En écrivant le premier terme à l'aide du produit scalaire
+	défini sur $\mathrm{L}^2(\PbEsp)$, puis en intégrant
+	par parties, nous obtenons :
+	\begin{align}
+		\int_{\PbEsp} \Aidi \U \cdot \V dx =
+		- \int_{\PbEsp} \U \cdot \Aidi \V dx
+		+ \int_{\Bord{\PbEsp}} \Aini \U \cdot \V ds .
+	\end{align}
+	Or, par définition de $\VectB$ et $\VectB^{\#}$,
+	le terme de bord apparaissant dans le second membre est nul.
+	Nous avons donc bien l'égalité recherchée.
+\end{proof}
+
+Le théorème qui suit est issu des travaux de Lax-Phillips~\cite{existence_solution_lax_phillips} et Rauch~\cite{existence_solution_rauch}.
+Ce résultat est assez technique mais fondamental.
+
+\begin{theorem}[Lax-Phillips-Rauch] \label{thm:lax_phillips}
+	Soit $\PbEsp$ un domaine de $\EnsR^k$ de frontière
+	$\Bord{\PbEsp}$ de classe $\mathcal{C}^1$.
+	Pour $x \in \Bord{\PbEsp}$, notons $\n(x)$ le vecteur normal
+	à $\Bord{\PbEsp}$ en $x$.
+	Nous supposons que $x \mapsto \VectB(x)$
+	est une application Lipschitzienne par rapport à $x$.
+	Si $\dim \ker \Aini(x)$ est constant sur chaque composante connexe
+	de $\Bord{\PbEsp}$ et si pour tout $x \in \Bord{\PbEsp}$,
+	$\ker \Aini(x) \subset \VectB(x)$,
+	alors toute solution faible de $\A \U = \Vec{f}$
+	est aussi une solution forte.
+\end{theorem}
+
+Dans cet énoncé, remarquons que l'espace vectoriel $\VectB(x)$
+peut être défini par une base :
+\begin{align}
+	\VectB(x) = \mathrm{vect} \lbrace
+		\Vec{b}_1(x), \ldots, \Vec{b}_q(x)
+	\rbrace .
+\end{align}
+Dire que $\VectB(x)$ est Lipschitzien par rapport à $x$
+signifie que les applications $x \mapsto \Vec{b}_i(x)$ sont Lipschitziennes.
+L'espace $\VectB(x)$ peut aussi être défini au moyen du noyau
+d'une matrice $\MatB(x)$ telle que :
+\begin{align}
+	\W \in \VectB(x) \Leftrightarrow \MatB(x) \W = 0 .
+\end{align}
+Dans ce cas, c'est $x \mapsto \MatB(x)$ qui est Lipschitzienne.
+
+\begin{definition}
+	L'espace vectoriel des conditions aux limites $\VectB$
+	est dit \textbf{positif} par rapport à $\Aini$ si :
+	\begin{align}
+		\forall \U \in \VectB,
+		\left\langle \Aini \U , \U \right\rangle \ge 0 .
+	\end{align}
+	Il est dit \textbf{maximal positif} si de plus la dimension
+	de $\VectB$ est égale au nombre de valeurs propres
+	positives ou nulles de $\Aini$ en comptant leurs multiplicités.
+\end{definition}
+
+Nous allons vérifier que la positivité maximale exprime
+qu'il n'existe pas d'espace vectoriel positif contenant $\VectB$
+et strictement plus grand que $\VectB$.
+D'où la notion de maximalité.
+Nous allons aussi montrer que si $\VectB$
+est maximal positif, alors c'est aussi le cas pour $\VectB^{\#}$.
+
+Comme $\Aini$ est une matrice symétrique,
+elle admet une base orthonormée de vecteurs propres.
+Dans un premier temps, nous allons considérer le cas où $\Aini$
+est inversible.
+
+Si $\Aini$ n'est pas inversible, on peut se ramener
+au cas inversible avec un argument d'espace vectoriel quotienté par le noyau
+de $\Aini$ \cite{existence_solution_rauch}. Notons que dans le cas des équations de Maxwell, $\Aini$ n'est pas inversible...
+
+Nous supposons donc que les valeurs propres
+$(\lambda_i)_{i \in \Range{1}{\NC}}$ sont rangées de la façon suivante :
+\begin{align}
+	\lambda_1 \ge \ldots \ge \lambda_p > 0 >
+	\lambda_{p+1} \ge \ldots \ge \lambda_m .
+\end{align}
+Par conséquent, l'entier $p$ est le nombre de valeurs propres positives
+de $\Aini$ en tenant compte de leurs multiplicités.
+Nous notons $(\Vec{r}_i)_{i \in \Range{1}{\NC}}$ une base orthonormée
+de vecteurs propres correspondants.
+La matrice $\Mat{P} = (\Vec{r}_1 \; \ldots \; \Vec{r}_\NC)$ est orthogonale
+(\textit{i.e.} $\Mat{P}^{-1} = \Trp{\Mat{P}}$) et :
+\begin{align}
+	\Mat{D} = \Trp{\Mat{P}} \Aini \Mat{P} =
+	\mathrm{diag}(\lambda_1 , \ldots , \lambda_\NC) .
+\end{align}
+Remarquons alors que dans la nouvelle base, le produit scalaire
+$\left\langle \Aini \U , \V \right\rangle$
+devient $\left\langle \Mat{D} \U' , \V' \right\rangle$,
+avec $\U' = \Mat{P} \U$ et $\V' = \Mat{P} \V$.
+
+Nous notons $E_{+}$ l'espace vectoriel engendré par
+$\lbrace \Vec{r}_1 , \ldots , \Vec{r}_p \rbrace$ et $E_{-}$
+l'espace engendré par $\lbrace \Vec{r}_{p+1} , \ldots , \Vec{r}_\NC \rbrace$.
+Par conséquent, $\dim E_{+} = p$ et $\dim E_{-} = \NC - p$.
+De plus, $\EnsR^{\NC} = E_{+} \oplus E_{-}$
+et $\Aini E_{\pm} = E_{\pm}$.
+Nous notons $\Pi_{+}$, respectivement $\Pi_{-}$,
+la projection orthogonale sur l'espace vectoriel $E_{+}$,
+respectivement $E_{-}$.
+
+
+\begin{lemma} \label{lem:cnd_dim}
+	Si $\VectB$ est un espace positif par rapport à $\Aini$,
+	alors $\VectB \cap E_{-} = \lbrace 0 \rbrace$
+	et $q = \dim \VectB \le p$.
+\end{lemma}
+
+\begin{proof}
+	$\VectB \cap E_{-} = \lbrace 0 \rbrace$
+	découle du fait que :
+	\begin{align}
+		\forall \U \in E_{-} \setminus \lbrace 0 \rbrace ,
+		\left\langle \Aini \U , \U \right\rangle \le
+		\max_{k \in \Range{p+1}{\NC}} \lambda_{k} \Norm{\U}^2 < 0 .
+	\end{align}
+	\\
+	Raisonnons par l'absurde et supposons que $\dim \VectB = q > p$.
+	Considérons une base $(\Vec{b}_1 , \ldots , \Vec{b}_q)$ de $\VectB$.
+	Il existe des réels $\alpha_1 , \ldots , \alpha_q$
+	non tous nuls tels que :
+	\begin{align}
+		\sum_{i=1}^{q} \alpha_i \Pi_{+} \Vec{b}_i = 0 .
+	\end{align}
+	En effet, $\lbrace \Pi_{+} \Vec{b}_1 , \ldots , \Pi_{+} \Vec{b}_q \rbrace$
+	est un ensemble de $q$ vecteurs dans $E_{+}$,
+	espace de dimension $p < q$.
+	Considérons alors le vecteur $\U = \sum_{i=1}^{q} \alpha_i \Vec{b}_i$.
+	Par construction, $\U \in \VectB \cap E_{-}$, donc $\U = 0$.
+	Comme les $\Vec{b}_i$ sont des vecteurs linéairement indépendants,
+	les $\alpha_i$ sont tous nuls, ce qui conduit à une contradiction.
+\end{proof}
+
+
+La condition aux limites $\VectB$
+et la condition aux limites adjointe $\VectB^{\#}$
+jouent des rôles symétriques. Lorsque $\Aini$ est inversible,
+comme $\VectB^{\#} = \Trp{(\Aini \VectB)}$,
+nous avons $\dim \VectB^{\#} = \NC - \dim \VectB$.
+Nous en déduisons le lemme suivant.
+
+\begin{lemma} \label{lem:cnd_dim_adj}
+	Si $\VectB^{\#}$ est un espace positif par rapport à $-\Aini$,
+	alors $\VectB^{\#} \cap E_{+} = \lbrace 0 \rbrace$
+	et $\dim \VectB^{\#} \le \NC - p$.
+\end{lemma}
+
+Une conséquence intéressante des lemmes
+\ref{lem:cnd_dim} et \ref{lem:cnd_dim_adj} est que si les conditions
+aux limites $\VectB$ et $\VectB^{\#}$
+sont positives alors elles sont toutes les deux aussi maximales
+puisque $\dim \VectB + \dim \VectB^{\#} = \NC$.
+De ce qui précède nous pouvons déduire la suite.
+
+\begin{lemma}
+	Si $\VectB$ est un espace maximal positif par rapport à $\Aini$,
+	alors $\VectB^{\#}$ est aussi maximal positif par rapport à
+	$-\Aini$.
+\end{lemma}
+
+\begin{proof}
+	Supposons que $\VectB$ est maximal positif pour $\Aini$.
+	Montrons alors que $\VectB^{\#}$ est maximal positif
+	pour $-\Aini$.
+	Sinon, il existerait $\V \in \VectB^{\#}$
+	tel que $\left\langle \Aini \V , \V \right\rangle > 0$.
+	De plus, $\V$ ne peut pas aussi appartenir à $\VectB$
+	car sinon nous aurions $\left\langle \Aini \V , \V \right\rangle = 0$.
+	\\
+	Considérons l'espace vectoriel $U = \lbrace \U + t \V :
+	\U \in \VectB , t \in \EnsR \rbrace$.
+	$U$ contient $\VectB$ et, puisque $\V \notin \VectB$,
+	$\dim U = 1 + \dim \VectB = p + 1$.
+	Montrons que $U$ est un espace positif.
+	Soit $\W = \U + t \V \in U$
+	avec $t \in \EnsR$ et $\U \in \VectB$
+	alors :
+	\begin{equation}
+		\begin{aligned}
+			&\quad \left\langle \Aini (\U + t \V) , (\U + t \V) \right\rangle \\ &=
+			\left\langle \Aini \U , \U \right\rangle +
+			2 t \left\langle \Aini \U , \V \right\rangle +
+			t^2 \left\langle \Aini \V , \V \right\rangle \\ &=
+			\left\langle \Aini \U , \U \right\rangle +
+			t^2 \left\langle \Aini \V , \V \right\rangle \ge 0 ,
+		\end{aligned}
+	\end{equation}
+	donc $U$ est bien un espace positif.
+	D'après le lemme \ref{lem:cnd_dim}, nous devrions alors avoir
+	$\dim U \le p$. Or, $\dim U = p+1$, ce qui conduit à une contradiction.
+	Par conséquent, $\VectB^{\#}$ est bien positif pour $-\Aini$.
+	D'autre part, $\dim \VectB^{\#} = \NC - \dim \VectB = \NC - p$
+	et donc $\VectB^{\#}$ est aussi maximal positif.
+\end{proof}
+
+Nous pouvons maintenant regrouper les résultats de cette section dans le théorème suivant.
+
+\begin{theorem}
+	Supposons que $\VectB$ est un espace maximal positif par rapport à $\Aini$.
+	Supposons aussi que les hypothèses du théorème \ref{thm:lax_phillips} soient satisfaites.
+	Alors les opérateurs $\Adh{A}$ et $\Adh{A^{\#}}$ sont maximaux monotones.
+\end{theorem}
+
+Ce théorème assure que si les conditions aux limites sont maximales positives alors les problèmes d'évolution :
+\begin{subequations}
+	\begin{align}
+		\Ptl{t} \U + \A \U &= 0, \\
+		\U(\cdot,0) &= \U_0(\cdot)
+	\end{align}
+\end{subequations}
+et
+\begin{subequations}
+	\begin{align}
+		\Ptl{t} \V + \A^{\#} \V &= 0, \\
+		\V(\cdot,\Tmax) &= \V_0(\cdot)
+	\end{align}
+\end{subequations}
+sont bien posés.

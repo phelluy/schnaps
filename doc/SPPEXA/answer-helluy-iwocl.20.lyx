@@ -1,0 +1,522 @@
+#LyX 2.1 created this file. For more info see http://www.lyx.org/
+\lyxformat 474
+\begin_document
+\begin_header
+\textclass article
+\use_default_options true
+\maintain_unincluded_children false
+\language english
+\language_package default
+\inputencoding auto
+\fontencoding global
+\font_roman default
+\font_sans default
+\font_typewriter default
+\font_math auto
+\font_default_family default
+\use_non_tex_fonts false
+\font_sc false
+\font_osf false
+\font_sf_scale 100
+\font_tt_scale 100
+\graphics default
+\default_output_format default
+\output_sync 0
+\bibtex_command default
+\index_command default
+\paperfontsize default
+\use_hyperref false
+\papersize default
+\use_geometry false
+\use_package amsmath 1
+\use_package amssymb 1
+\use_package cancel 1
+\use_package esint 1
+\use_package mathdots 1
+\use_package mathtools 1
+\use_package mhchem 1
+\use_package stackrel 1
+\use_package stmaryrd 1
+\use_package undertilde 1
+\cite_engine basic
+\cite_engine_type default
+\biblio_style plain
+\use_bibtopic false
+\use_indices false
+\paperorientation portrait
+\suppress_date false
+\justification true
+\use_refstyle 1
+\index Index
+\shortcut idx
+\color #008000
+\end_index
+\secnumdepth 3
+\tocdepth 3
+\paragraph_separation indent
+\paragraph_indentation default
+\quotes_language english
+\papercolumns 1
+\papersides 1
+\paperpagestyle default
+\tracking_changes false
+\output_changes false
+\html_math_output 0
+\html_css_as_file 0
+\html_be_strict false
+\end_header
+
+\begin_body
+
+\begin_layout Subsection*
+ANSWERS TO REVIEW 1
+\end_layout
+
+\begin_layout Enumerate
+\begin_inset Quotes eld
+\end_inset
+
+Reference serial code should be compiled with optimizations turned on (...)
+ Table 1 needs to be updated to show this
+\begin_inset Quotes erd
+\end_inset
+
+: we have updated the table an changed the speedup scale accordingly.
+\end_layout
+
+\begin_layout Enumerate
+\begin_inset Quotes eld
+\end_inset
+
+In Section 2.3: (...) Are you saying you no longer do the transpose, or are
+ you running an unoptimized transpose?
+\begin_inset Quotes erd
+\end_inset
+
+: we have compared a computation made with the optimized transpose and with
+ an unoptimized transpose.
+ Removing the transpose would have modified our implementation too much
+ even if it would be a better comparison to do.
+\end_layout
+
+\begin_layout Enumerate
+\begin_inset Quotes eld
+\end_inset
+
+Did you investigate a square tiled approach in the OpenCL code based on
+ your OpenMP design as well as a row-based work-group decomposition?
+\begin_inset Quotes erd
+\end_inset
+
+: we have not investigated this point.
+ We are aware of works where the transposition is avoided (see http://gji.oxfordj
+ournals.org/content/182/1/389.short ).
+ But the approach cannot be applied efficiently here to the MHD system because
+ each cell has to contains 9 unknowns and we would run short of cache mesudo
+ apt-mory for the tiling.
+ We have made a few comments about this point.
+\end_layout
+
+\begin_layout Enumerate
+\begin_inset Quotes eld
+\end_inset
+
+In Figure 1: Please make the red lines bold to distinguish domains more.
+ What if your reader is red-green colourblind ?
+\begin_inset Quotes erd
+\end_inset
+
+: the figure has been modified.
+\end_layout
+
+\begin_layout Enumerate
+In Section 2.4, paragraph 3: The first sentence after the colon doesn’t make
+ sense: “we wait that the exchange is finished”.
+ This should be changed to something like “we wait for the exchange to be
+ finished”: we have fixed this.
+\end_layout
+
+\begin_layout Enumerate
+\begin_inset Quotes eld
+\end_inset
+
+You say the speedup is 3.5x, but don’t explicitly say you were expecting
+ 4x.
+\begin_inset Quotes erd
+\end_inset
+
+: we add this information.
+\end_layout
+
+\begin_layout Enumerate
+\begin_inset Quotes eld
+\end_inset
+
+Paragraph 5: This sentence before the bullet points has poor grammar
+\begin_inset Quotes erd
+\end_inset
+
+: the sentence has been rewritten.
+\end_layout
+
+\begin_layout Enumerate
+\begin_inset Quotes eld
+\end_inset
+
+Did you implement asynchronous MPI methods into your structured grid FV
+ solver? Did this give you a 4x speedup on 4 GPUs?
+\begin_inset Quotes erd
+\end_inset
+
+: we have not implemented an asynchronous strategy in our 2D solver.
+ We concentrated our efforts on the 3D general DG solver.
+\end_layout
+
+\begin_layout Enumerate
+\begin_inset Quotes eld
+\end_inset
+
+Your % peak flops of the structured FV solver would be interesting to see
+ in comparison to your 30% of peak flops with CLAC
+\begin_inset Quotes erd
+\end_inset
+
+: we provide now in the paper a brief roofline analysis of the FV solver.
+\end_layout
+
+\begin_layout Enumerate
+\begin_inset Quotes eld
+\end_inset
+
+Section 3.3: Why did you not use asynchronous MPI calls instead of using
+ an additional C++ thread you used here?
+\begin_inset Quotes erd
+\end_inset
+
+: initially, we intended to make asynchronous MPI calls.
+ The problem with this approach is that we have to insert 
+\begin_inset Quotes eld
+\end_inset
+
+mpi_wait
+\begin_inset Quotes erd
+\end_inset
+
+ instructions before submitting some kernels to the command queue.
+ This interrupts the main program flow and we wanted to avoid this.
+ With our approach, we submit all the tasks and we let the OpenCL task graph
+ decide when the task are actually launched.
+ We add a sentence to explain this.
+ We refer also to http://www.mpi-forum.org/docs/mpi-2.2/mpi22-report/node254.htm
+ where it is said 
+\begin_inset Quotes eld
+\end_inset
+
+It is tempting to also define an MPI standard mechanism for achieving concurrent
+ execution of user-defined nonblocking operations.
+ However, it is very difficult to define such a mechanism without consideration
+ of the specific mechanisms used in the operating system.
+ The Forum feels that concurrency mechanisms are a proper part of the underlying
+ operating system and should not be standardized by MPI; the MPI standard
+ should only deal with the interaction of such mechanisms with MPI.
+\begin_inset Quotes erd
+\end_inset
+
+ We are probably in accordance with the philosophy of the future MPI versions.
+ 
+\end_layout
+
+\begin_layout Enumerate
+\begin_inset Quotes eld
+\end_inset
+
+Section 3.4: Missing capital letter on section title
+\begin_inset Quotes erd
+\end_inset
+
+: corrected.
+\end_layout
+
+\begin_layout Enumerate
+\begin_inset Quotes eld
+\end_inset
+
+Figure 9: The axis-labels and the key are not in English.
+ y-axis is FLOPS not TFLOPS
+\begin_inset Quotes erd
+\end_inset
+
+: done.
+\end_layout
+
+\begin_layout Enumerate
+\begin_inset Quotes eld
+\end_inset
+
+State the memory usage of the 90^3 problem for the K20
+\begin_inset Quotes erd
+\end_inset
+
+: we have given this information.
+\end_layout
+
+\begin_layout Enumerate
+\begin_inset Quotes eld
+\end_inset
+
+Section 3.5: You say to finish off the “presentation”.
+ On page 1 you call it a “paper”.
+ You need to be consistent with usage (paper)
+\begin_inset Quotes erd
+\end_inset
+
+: done.
+\end_layout
+
+\begin_layout Enumerate
+\begin_inset Quotes eld
+\end_inset
+
+Also, include some timings for the computation of the PML model.
+\begin_inset Quotes erd
+\end_inset
+
+: we have given some additional information about the PML computations cost.
+\end_layout
+
+\begin_layout Enumerate
+\begin_inset Quotes eld
+\end_inset
+
+This could be a nice place to include a small scaling test from 1 to the
+ 8 GPUs you ran the problem on (...) You haven't given any speed ups for the
+ DG section of the paper at all.
+ You should include the 1-8 GPU scaling test at the very least.
+\begin_inset Quotes erd
+\end_inset
+
+: done.
+ See Tables 4 and 5 (in the initial version we made a mistake and wrote
+ 
+\begin_inset Quotes eld
+\end_inset
+
+1,2,3,4
+\begin_inset Quotes erd
+\end_inset
+
+ instead of 
+\begin_inset Quotes eld
+\end_inset
+
+1,2,4,8
+\begin_inset Quotes erd
+\end_inset
+
+).
+\end_layout
+
+\begin_layout Subsection*
+ANSWERS TO REVIEW 2
+\end_layout
+
+\begin_layout Enumerate
+\begin_inset Quotes eld
+\end_inset
+
+Organization: Quite some space is spent for Euler and Maxwell equations
+ not used further in the paper, on introducing OpenCL (not necessary for
+ IWOCL), discontinuous Galerkin, or the task graphs.
+\begin_inset Quotes erd
+\end_inset
+
+: we prefer to keep the chosen presentation because our work deals with
+ the use of OpenCL in a practical application.
+ We think that we have to explain clearly our approach to readers of several
+ origins: OpenCL specialists, but also engineers, computer scientists and
+ applied mathematicians.
+ In addition, we actually solve the MHD equations in Section 2 and Maxwell
+ equations in Section 3.
+\end_layout
+
+\begin_layout Enumerate
+\begin_inset Quotes erd
+\end_inset
+
+At many places the authors discussed several implementation options and
+ fail to present evidence why the chosen implementation is the best
+\begin_inset Quotes erd
+\end_inset
+
+: we have given more informations about the implementation options.
+ For instance, in Section 3.3.1 we compare the generic and specialized kernels
+ implementations.
+\end_layout
+
+\begin_layout Enumerate
+\begin_inset Quotes eld
+\end_inset
+
+Figure 1: The chosen decomposition of the domain has unfavorable properties
+ in the strong scaling regime, as the surface-to-volume ratio quickly grows
+ for the chosen decomposition
+\begin_inset Quotes erd
+\end_inset
+
+: the reviewer is right, but the decomposition has good properties in the
+ weak scaling regime in which we are more interested.
+ In addition, the chosen decomposition is well adapted to the transposition
+ algorithm that we apply between the 
+\begin_inset Formula $x$
+\end_inset
+
+ and 
+\begin_inset Formula $y$
+\end_inset
+
+ fluxes computations: it allows easy coalescent buffer transfers to the
+ host before MPI communications.
+\end_layout
+
+\begin_layout Enumerate
+\begin_inset Quotes eld
+\end_inset
+
+Table 1: Presenting speed-ups relative to a sequential code without optimization
+ flags is useless.
+ Then, it is not thoroughly discussed why the OpenMP version of the code
+ is three times (not just two times as claimed in the paper) slower than
+ the OpenCL version.
+ Clearly, a 3x performance difference does not make OpenCL a viable alternative
+ to OpenMP.
+\begin_inset Quotes erd
+\end_inset
+
+: we have corrected the table and changed the speedup scale.
+ In addition we have made additional experiments and found better OpenCL
+ compiler options that allows to obtain much better results with OpenCL
+ on CPU.
+\end_layout
+
+\begin_layout Enumerate
+\begin_inset Quotes eld
+\end_inset
+
+Table 3: Presenting super-linear speedup of 7.26 for four GPUs over one GPU
+ without even discussing this fairly surprising observation is not acceptable.
+\begin_inset Quotes erd
+\end_inset
+
+ The original version of the paper had an error: we wrote 
+\begin_inset Quotes eld
+\end_inset
+
+1,2,3,4
+\begin_inset Quotes erd
+\end_inset
+
+ instead of 
+\begin_inset Quotes eld
+\end_inset
+
+1,2,4,8
+\begin_inset Quotes erd
+\end_inset
+
+.
+ This is now corrected.
+\end_layout
+
+\begin_layout Enumerate
+\begin_inset Quotes eld
+\end_inset
+
+Section 3: Label 'd' is used both for the spatial dimension and for the
+ polynomial order
+\begin_inset Quotes erd
+\end_inset
+
+: we suppress this notation conflict.
+\end_layout
+
+\begin_layout Enumerate
+\begin_inset Quotes eld
+\end_inset
+
+Labels in Figure 9 are not in English.
+\begin_inset Quotes erd
+\end_inset
+
+: we have fixed this.
+\end_layout
+
+\begin_layout Enumerate
+\begin_inset Quotes eld
+\end_inset
+
+I would have preferred to see both the Finite Volume scheme and the Discontinuou
+s Galerkin scheme to be implemented for the *same* spatial dimension to
+ better compare the results against each other
+\begin_inset Quotes erd
+\end_inset
+
+: we are aware that transposition algorithms are a little bit less efficient
+ in 3D than in 2D (see https://hal.archives-ouvertes.fr/hal-00991150/ for
+ instance).
+ And yes, such comparison would be interesting.
+ We concentrated our efforts on the 3D general DG solver.
+\end_layout
+
+\begin_layout Subsection*
+ANSWERS TO REVIEW 3
+\end_layout
+
+\begin_layout Enumerate
+\begin_inset Quotes eld
+\end_inset
+
+The OpenCL CPU speedup was rather poor compared to the OpenMP implementation.
+ This tells me that the OpenCL implementation, while portable, is not performanc
+e portable.
+ Some additional clarity of these details would make the paper stronger.
+ For example, what sort of speedups are achievable with an OpenCL kernel
+ optimized for the CPU?
+\begin_inset Quotes erd
+\end_inset
+
+: we have made additional experiments and found better OpenCL compiler options
+ that allows to obtain much better results with OpenCL on CPU.
+ OpenMP version is still more efficient, but this certainly due to the transposi
+tion algorithm, which is useless on the CPU.
+ It is certainly possible to reach the same efficiency with the OpenCL and
+ OpenMP implementations by additional tuning.
+\end_layout
+
+\begin_layout Enumerate
+\begin_inset Quotes eld
+\end_inset
+
+Second, it would be useful to quantify the difference that the intra-workgroup
+ specialization achieved.
+ It is mentioned that two methods for performing the DG calculations on
+ the GPU were implemented, one single kernel version, and one two-kernel
+ version.
+ How much faster was the single kernel version?
+\begin_inset Quotes erd
+\end_inset
+
+: we now give some comparisons between the generic and specialized kernels
+ implementations.
+ The generic kernel implementation is very general and works for instance
+ in the case of non-conforming interfaces.
+ The fast implementation use kernels that are specialized to the zone properties.
+ We observe that at order 
+\begin_inset Formula $D=3$
+\end_inset
+
+ the specialized implementation is almost four times faster than the generic
+ one (see Table 2).
+\end_layout
+
+\end_body
+\end_document

@@ -1,0 +1,26 @@
+\begin{frame}
+\frametitle{Intégration temporelle / Puissance itérée améliorée}
+\vfill
+Algorithme permettant de déterminer le pas de temps maximal de stabilité :
+\begin{itemize}
+\item[] 
+\begin{itemize}
+\item [(0)] Initialisation des champs en bruit blanc Gaussien ;
+\item [($1$..$n$)] Normalisation des champs pour la norme $\mathrm{L}^2$ ;
+\item [($1$..$n$)] \textcolor{red}{Ajustement du pas de temps en fonction de la norme} ;
+\item [($1$..$n$)] Application du schéma couplé espace-temps ;
+\item [($1$..$n$)] \sout{Si la norme devient supérieure à 1, alors le schéma est instable} ;
+\item [($n+1$)] Arrêt lorsque le pas de temps est statistiquement assez précise.
+\end{itemize}
+\end{itemize}
+\vfill
+\begin{itemize}
+\item Assure un pas de temps de stabilité en temps long en peu de temps (démontré expérimentalement) ;
+\item Méthode plus efficace et simple d'implémentation qu'une approche dichotomique ;
+\item A permis de déterminer le pas de temps maximal des cas d'application présentés dans la dernière section.
+\end{itemize}
+\vfill
+Le pas de temps est tout de même identique sur chaque maille : introduction d'un schéma à pas de temps local par maille.
+\vfill
+\end{frame}
+

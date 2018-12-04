@@ -1,0 +1,216 @@
+% Ensembles de base
+\newcommand{\EnsN}{\mathbb{N}} % Naturels
+\newcommand{\EnsZ}{\mathbb{Z}} % Relatifs
+\newcommand{\EnsR}{\mathbb{R}} % Réels
+\newcommand{\EnsC}{\mathbb{C}} % Complexes
+
+
+% Styles
+\renewcommand{\Vec}[1]{\bm{#1}} % Vecteurs en gras
+\newcommand{\Mat}[1]{\bm{#1}} % Matrices en gras
+
+
+% Intervalles
+\newcommand{\llbrack}{\lbrack\!\lbrack} % [[
+\newcommand{\rrbrack}{\rbrack\!\rbrack} % ]]
+\newcommand{\Range}[2]{\llbrack#1\,;\,#2\rrbrack} % [[a ; b]]
+
+\newcommand{\ItvCC}[2]{\lbrack#1\,;#2\rbrack} % [x ; y]
+\newcommand{\ItvOO}[2]{\rbrack#1\,;#2\lbrack} % ]x ; y[
+
+
+% Opérateurs de base / décorateurs
+\newcommand{\Abs}[1]{\left\vert#1\right\vert} % Valeur absolue
+\newcommand{\Adh}[1]{\overline{#1}} % Adhérence
+\newcommand{\Adj}[1]{#1^{\#}} % Adjoint
+\newcommand{\Bord}[1]{\partial#1} % Bord
+\newcommand{\Crd}[1]{{\##1}} % Cardinal
+\newcommand{\Inv}[1]{#1^{-1}} % Inverse
+\newcommand{\Norm}[1]{\left\Vert#1\right\Vert} % Norme
+\newcommand{\Trp}[1]{#1^{\mathrm{T}}} % Transpose
+
+\newcommand{\Pos}[1]{#1^{+}} % Partie positive
+\newcommand{\Neg}[1]{#1^{-}} % Partie négative
+
+\newcommand{\CrtDst}[2]{\left\langle#1,#2\right\rangle} % Crochet distrib.
+
+
+% Dérivation
+\newcommand{\Ptl}[1]{\partial_{#1}} % Dérivée partielle
+\newcommand{\Rot}{\nabla\times} % Rotationnel
+\newcommand{\RotC}{\hat{\nabla}\times} % Rotationnel complexe
+\newcommand{\Div}{\nabla\cdot} % Divergence
+
+
+% Opérateurs matrices
+\newcommand{\Det}[1]{\det\left(#1\right)} % Determinant
+\newcommand{\Jac}[1]{\mathrm{jac}\left(#1\right)} % Jacobien
+\newcommand{\Com}[1]{\mathrm{com}\left(#1\right)} % Comatrice
+
+
+% Définitions d'objet
+\newcommand{\Node}[3]{\left(#1,#2,#3\right)} % Point
+\newcommand{\NodeDef}[1]{\Node{{#1}_1}{{#1}_2}{{#1}_3}} % Définition de point
+
+\newcommand{\Vect}[3]{\Trp{\Node{#1}{#2}{#3}}} % Vecteur inline
+\newcommand{\VectDef}[1]{\Vect{{#1}_1}{{#1}_2}{{#1}_3}} % Définition de vecteur inline
+
+\newcommand{\Fn}[3]{#1:#2\rightarrow#3} % Fonction inline (f : E -> F)
+
+
+% Notations
+\newcommand{\VL}{c} % Vitesse de la lumière
+\newcommand{\Tmax}{T} % Temps max d'étude du problème
+\newcommand{\freq}{f} % Fréquence
+\newcommand{\Deg}{d} % Ordre d'interpolation
+
+
+% Ensembles
+\newcommand{\Esp}{\EnsR^{3}} % Espace total
+\newcommand{\EspC}{\EnsC^{3}} % Espace complexe
+\newcommand{\Tps}{\Pos{\EnsR}} % Temps total
+\newcommand{\EspTps}{\Esp\times\Tps} % Domaine total
+
+\newcommand{\PbEsp}{\Omega} % Espace d'étude du problème
+\newcommand{\PbTps}{\ItvCC{0}{\Tmax}} % Temps d'étude du problème
+\newcommand{\PbEspTps}{Q} % Domaine d'étude \PbEsp x \PbTps
+\newcommand{\PbSrfTps}{S_\PbEspTps} % Surface du domaine d'étude
+
+
+% Généralités
+\newcommand{\x}{x} % Point quelconque
+\newcommand{\xDef}{\NodeDef{\x}} % Définition point quelconque
+
+\newcommand{\n}{\Vec{n}} % Vecteur normal
+\newcommand{\nDef}{\VectDef{n}} % Définition vecteur normal
+\newcommand{\nC}[1]{n_{#1}} % Composante de la normale
+
+\newcommand{\nablaDef}{\VectDef{\partial}} % Définition vecteur gradient
+
+
+% Maxwell
+\newcommand{\E}{\Vec{E}} % Champ électrique
+\renewcommand{\H}{\Vec{H}} % Champ magnétique
+\newcommand{\Ef}{\tilde{\E}} % Champ électrique en fréquences
+\newcommand{\Hf}{\tilde{\H}} % Champ magnétique en fréquences
+\newcommand{\J}{\Vec{J}} % Courant électrique
+\newcommand{\Dens}{\rho} % Densité de charge
+\newcommand{\EPrm}{\varepsilon} % Permittivité
+\newcommand{\HPrm}{\mu} % Perméabilité
+\newcommand{\ECnd}{\sigma} % Conductivité électrique
+\newcommand{\HCnd}{\sigma^\star} % Conductivité magnétique
+
+
+% Friedrichs
+\newcommand{\NC}{m} % Nombre de composantes de la solution
+\newcommand{\W}{\Vec{w}} % Solution
+\newcommand{\Wf}{\tilde{\W}} % Solution en fréquences
+\newcommand{\Wd}{\Vec{\mathrm{w}}} % Solution discrète
+\newcommand{\Winit}{\W_0} % Solution au temps initial
+\newcommand{\Wtmax}{\W_\Tmax} % Solution au temps final
+
+\newcommand{\A}{\Mat{A}} % Matrice de base
+\newcommand{\Ac}[1]{\A_{#1}} % Matrice A indicée
+\newcommand{\At}{\Ac{t}} % Matrice terme temporel
+\newcommand{\Ai}{\Ac{i}} % Matrice terme spatial
+\newcommand{\Aidi}{{\Ai\Ptl{i}}} % Matrice dérivées partielles
+\newcommand{\Aini}{{\Ai\nC{i}}} % Matrice terme normal
+
+\newcommand{\ACnd}{\Mat{C}} % Matrice terme conductivités
+\newcommand{\Src}{\Vec{S}} % Sources
+
+\renewcommand{\L}{L} % Maille courante
+\newcommand{\R}{R} % Maille voisine
+
+\newcommand{\VectB}{V_b} % ev des conditions aux limites
+\newcommand{\MatB}{\Mat{M}} % Matrice conditions aux limites
+
+\newcommand{\Energy}{\mathcal{E}} % Energie
+
+\newcommand{\U}{\Vec{u}}
+\newcommand{\V}{\Vec{v}}
+
+
+% Maillage
+\newcommand{\Mesh}{\mathcal{M}} % Maillage = ensemble des éléments
+\newcommand{\NE}{N} % Nombre d'éléments
+\newcommand{\UElt}{\tilde{\PbEsp}} % Union des éléments (ouverts)
+\newcommand{\UItf}{\Sigma} % Union des interfaces entre éléments
+
+
+% Galerkine
+\newcommand{\F}{F} % Flux
+\newcommand{\Flux}[3]{\F\left(#1,#2,#3\right)} % Flux num
+\newcommand{\FluxB}[2]{\F_b\left(#1,#2\right)} % Flux de bord
+
+
+% Modèles
+\newcommand{\MatPEC}{\MatB_{\mathrm{PEC}}}
+\newcommand{\MatPMC}{\MatB_{\mathrm{PMC}}}
+\newcommand{\MatSIBC}{\MatB_{\mathrm{SIBC}}}
+\newcommand{\MatSM}{\MatB_{\mathrm{SM}}}
+\newcommand{\MatBER}{\MatB_{\mathrm{BER}}}
+
+\newcommand{\FluxPEC}[2]{\F_\mathrm{PEC}\left(#1,#2\right)}
+\newcommand{\FluxSM}[2]{\F_\mathrm{SM}\left(#1,#2\right)}
+\newcommand{\FluxSMI}[2]{\F_\mathrm{SMI}\left(#1,#2\right)}
+\newcommand{\FluxBER}[3]{\F_\mathrm{BER}\left(#1,#2,#3\right)}
+\newcommand{\FluxSIBC}[2]{\F_\mathrm{SIBC}\left(#1,#2\right)}
+\newcommand{\FluxBIBC}[3]{\F_\mathrm{BIBC}\left(#1,#2,#3\right)}
+\newcommand{\FluxPWI}[3]{\F_\mathrm{interne}\left(#1,#2,#3\right)}
+\newcommand{\FluxPWE}[3]{\F_\mathrm{externe}\left(#1,#2,#3\right)}
+\newcommand{\FluxTHE}[3]{\F_\mathrm{THE}\left(#1,#2,#3\right)}
+
+\newcommand{\PbEspPML}{\PbEsp_{\mathrm{PML}}}
+
+
+% Implémentation
+\newcommand{\HexaRef}{\hat{H}} % Cube de référence
+\newcommand{\xref}{\hat{x}} % Point quelconque de Href
+
+\newcommand{\QuadPhy}{Q} % Face physique
+\newcommand{\QuadRef}{\hat{\QuadPhy}} % Face de l'élément de réfarence
+
+\newcommand{\RangeDeg}{\Range{0}{\Deg}} % Intervalle d'entiers [[0,d]]
+\newcommand{\GLn}{\xi} % Point de GL 1-d de [0;1]
+\newcommand{\GLw}{\lambda} % Poids de GL 1-d
+\newcommand{\GLN}[1]{\hat{g}_{#1}} % Point de GL 3-d de Href
+\newcommand{\GLW}[1]{\omega_{#1}} % Poids de GL 3-d
+\newcommand{\GLNPhy}[2]{g_{#1,#2}} % Point de GL 3-d
+
+\newcommand{\MId}[2]{{#1_{#2}}} % Notation multi-indice
+
+\newcommand{\VMId}[1]{\Node{\MId{#1}{0}}{\MId{#1}{1}}{\MId{#1}{2}}} % Multi-indice de volume
+\newcommand{\VMIdToId}[1]{\MId{#1}{0} + (\Deg + 1)(\MId{#1}{1} + (\Deg + 1)\MId{#1}{2})} % Formule multi-indice vers indice de volume
+\newcommand{\VNPG}{(\Deg + 1)^3} % Nombre de pg de volume
+\newcommand{\VSum}[1]{\sum_{#1=0}^{\VNPG - 1}} % Somme sur les VPG
+
+\newcommand{\SMIdToId}[1]{\MId{#1}{0} + (\Deg + 1)\MId{#1}{1}} % Formule multi-indice vers indice de surface
+\newcommand{\SNPG}{(\Deg + 1)^2} % Nombre de pg de surface
+\newcommand{\SSum}[1]{\sum_{#1=0}^{\SNPG - 1}} % Somme sur les SPG
+
+\newcommand{\TGeo}[1]{\tau_{#1}} % Transformation géométrique ref2phy
+\newcommand{\PsiRef}[1]{\hat{\psi}_{#1}}
+\newcommand{\PsiPhy}[2]{\psi_{#1,#2}}
+
+
+% Schémas temporels
+\newcommand{\dt}{\Delta t}
+\newcommand{\dx}{\Delta x}
+
+
+% OpenCL
+\newcommand{\WGId}{i_{\L}} % work group id
+\newcommand{\WIId}{i} % work item id
+
+
+% Dt local
+\newcommand{\Nd}[1]{\x_{#1}} % Noeuds du maillage 1-d
+
+
+% Demo CV
+\newcommand{\Bphi}{\Vec{\varphi}} % phi gras
+\newcommand{\Bpsi}{\Vec{\psi}} % phi gras
+\newcommand{\VDelta}{\Delta} % ecart projection
+
+

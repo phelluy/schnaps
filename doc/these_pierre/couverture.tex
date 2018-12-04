@@ -1,0 +1,56 @@
+%\documentclass{Couv}
+% REMARQUES :
+% compiler ce fichier avec le commande pdflatex.
+% il peut etre necessaire de compiler deux fois le fichier.
+
+
+% Si besoin ajouter ici 
+% - les packages necessaires
+% - les (re)definition de commandes TeX
+\def \T{{\bf T}}
+\def \R{{\bf R}}
+\def \Z{{\bf Z}}
+%\begin{document}
+% Prenom et Nom en miniscules
+\author{Pierre GERHARD}
+
+% Date au format suivant : jour (un ou deux chiffres) mois (en toutes lettres) et annee (sur quatre chiffres)
+\date{XX mois 201X}
+
+% Titre en minuscules
+\title{Réduction de modèles cinétiques et applications à l'acoustique du bâtiment} 
+
+% Liste des membres du jury (pour les theses et HDR uniquement)
+% Pour chaque membre : Prenom Nom (en minuscule) et fonction (rapporteur, examinateurs,... en minuscule aussi) 
+% Inserer \\ entre chaque membre pour les seprarer d'un retour a la ligne
+\jury{
+Philippe Helluy, directeur de th\`ese \\
+Cédric Foy, co-encadrant\\
+Laurent Navoret, co-encadrant\\
+Prénom NOM, rapporteur \\
+Prénom NOM, rapporteur \\
+Prénom NOM, examinatrice
+}
+
+% Resume en minuscules
+\resume{Résumé.}
+
+
+
+% Numero d'ordre atribue par le secretariat de l'IRMA (de la forme annee/numero)
+\issnordre{20XX/0X}
+
+% Adresse de depor sur le serveur TEL
+\telnum{http://tel.archives-ouvertes.fr/tel-XXXXXXXX}
+
+
+% commandes disponibles pour creer la premiere de couverture (decommenter la ligne necessaire) :
+ % \makethesemath % pour une these, specialite MATHEMATIQUES
+\makethesemathapp % pour une these, specialite MATHEMATIQUES APPLIQUEES
+% \makehdrmath % pour une HDR, specialite MATHEMATIQUES
+% \makehdrmathapp % pour une HDR, specialite MATHEMATIQUES APPLIQUEES
+% \makeprepubli % pour une prepublication
+
+% commande disponible pour creer la quatrieme de couverture :
+\makeresume
+%\end{document}

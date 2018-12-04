@@ -1,0 +1,2389 @@
+#LyX 2.1 created this file. For more info see http://www.lyx.org/
+\lyxformat 474
+\begin_document
+\begin_header
+\textclass article
+\begin_preamble
+\usepackage{bbold}
+\usepackage{tikz}
+\tikzstyle{every picture}+=[remember picture]
+\usetikzlibrary{decorations.pathmorphing}
+\tikzset { domaine/.style 2 args={domain=#1:#2} }
+\end_preamble
+\use_default_options true
+\maintain_unincluded_children false
+\language french
+\language_package default
+\inputencoding auto
+\fontencoding global
+\font_roman default
+\font_sans default
+\font_typewriter default
+\font_math auto
+\font_default_family default
+\use_non_tex_fonts false
+\font_sc false
+\font_osf false
+\font_sf_scale 100
+\font_tt_scale 100
+\graphics default
+\default_output_format default
+\output_sync 0
+\bibtex_command default
+\index_command default
+\paperfontsize 12
+\spacing onehalf
+\use_hyperref true
+\pdf_bookmarks true
+\pdf_bookmarksnumbered false
+\pdf_bookmarksopen false
+\pdf_bookmarksopenlevel 1
+\pdf_breaklinks false
+\pdf_pdfborder false
+\pdf_colorlinks false
+\pdf_backref false
+\pdf_pdfusetitle true
+\papersize a4paper
+\use_geometry true
+\use_package amsmath 1
+\use_package amssymb 1
+\use_package cancel 1
+\use_package esint 1
+\use_package mathdots 1
+\use_package mathtools 1
+\use_package mhchem 1
+\use_package stackrel 1
+\use_package stmaryrd 1
+\use_package undertilde 1
+\cite_engine basic
+\cite_engine_type default
+\biblio_style plain
+\use_bibtopic false
+\use_indices false
+\paperorientation portrait
+\suppress_date false
+\justification true
+\use_refstyle 1
+\index Index
+\shortcut idx
+\color #008000
+\end_index
+\leftmargin 3cm
+\topmargin 3cm
+\rightmargin 3cm
+\bottommargin 3cm
+\secnumdepth 3
+\tocdepth 3
+\paragraph_separation skip
+\defskip medskip
+\quotes_language english
+\papercolumns 1
+\papersides 1
+\paperpagestyle default
+\tracking_changes false
+\output_changes false
+\html_math_output 0
+\html_css_as_file 0
+\html_be_strict false
+\end_header
+
+\begin_body
+
+\begin_layout Title
+Tâche 1.2 : Parallélisation hybride
+\end_layout
+
+\begin_layout Section
+Principes du parallélisme par tâches
+\end_layout
+
+\begin_layout Subsection
+Généralités
+\end_layout
+
+\begin_layout Standard
+Actuellement, la plupart des codes de calculs intensifs exploitant les supercalc
+ulateurs reposent sur les technologies OpenMP et MPI.
+ OpenMP est utilisé pour attaquer le parallélisme à l'intérieur d'un nœud
+ de calcul, qui est généralement constitué de plusieurs CPU multicœur partageant
+ une mémoire commune.
+ MPI permet d'échanger des données entre les nœuds de calcul.
+\end_layout
+
+\begin_layout Standard
+Ce découpage repose sur l'hypothèse de calculs très uniformes dont il est
+ possible de connaître à l'avance le coût élémentaire.
+ Il faut aussi que les échanges de données soient relativement faibles comparés
+ au volume des calculs.
+ Par ailleurs, la stratégie est efficace pour une résolution qui n'utilise
+ pas de marche en temps locale, qui repose sur maillages relativement uniformes
+ et des calculs qui ne nécessitent pas trop de traitements particuliers
+ (comme par exemple des calculs ou des transferts de données auxiliaires).
+\end_layout
+
+\begin_layout Standard
+La conception actuelle de Teta repose sur cette hypothèse.
+ La seule différence avec l'approche OpenMP/MPI est que dans Teta, le parallélis
+me à l'intérieur du noeud est réalisé au moyen d'OpenCL afin de pouvoir
+ utiliser n'importe quel type d'accélérateurs, coeurs de CPU aussi bien
+ que des GPU.
+ 
+\end_layout
+
+\begin_layout Standard
+Actuellement, de nombreux outils ont été développés par les chercheurs en
+ informatiques pour rendre la parallélisation de codes plus facile.
+ Il existe des logiciels qui permettent par exemple de produire automatiquement
+ du code OpenMP à partir d'un code C séquentiel.
+ Il existe aussi des outils, appelés 
+\begin_inset Quotes eld
+\end_inset
+
+supports d’exécution
+\begin_inset Quotes erd
+\end_inset
+
+ ou 
+\begin_inset Quotes eld
+\end_inset
+
+runtime
+\begin_inset Quotes erd
+\end_inset
+
+ qui permettent de soumettre des tâches de calcul à une file d'attente.
+ C'est le runtime qui se charge alors de distribuer en parallèle les tâches
+ sur les accélérateurs en fonction des dépendances entre les tâches.
+ Dans les systèmes les mieux conçus, c'est le runtime qui calcule les dépendance
+s entre les tâches.
+\end_layout
+
+\begin_layout Standard
+Le but de cette partie du projet a été d'évaluer divers types outils automatique
+s afin de mettre en œuvre une parallélisation hybride.
+\end_layout
+
+\begin_layout Subsection
+Outils existants
+\end_layout
+
+\begin_layout Standard
+Dans ce paragraphe, on liste quelques outils automatiques.
+ Il est impossible d’être exhaustif car c'est un domaine où les développements
+ sont très actifs à la fois en terme de recherche et de développement technologi
+que.
+\end_layout
+
+\begin_layout Subsubsection
+OpenMP
+\end_layout
+
+\begin_layout Standard
+OpenMP est un standard qui est aujourd'hui très répandu dans le domaine
+ du HPC.
+ Il est intéressant pour le développeur car il permet d'introduire du parallélis
+me de manière incrémentale dans un code séquentiel déjà existant au moyen
+ de 
+\begin_inset Quotes eld
+\end_inset
+
+directives
+\begin_inset Quotes erd
+\end_inset
+
+: il suffit d'annoter le code là où il doit être parallélisé.
+ Si le compilateur n'est pas compatible avec OpenMP, les annotations sont
+ tout simplement ignorées car elles sont considérées comme des simples commentai
+res.
+ La méthode la plus classique consiste à vectoriser les boucles dont chaque
+ terme peut-être calculé indépendamment des autres.
+ Il existe aussi des directives pour calculer des réductions parallèles
+ (somme des termes d'un vecteur, par exemple).
+ Depuis les normes 3 et 4 d'OpenMP il est également possible de décrire
+ des tâches et leurs dépendances.
+ Depuis OpenMP 4 il est possible de planifier des tâches sur des accélérateurs
+ de type GPU.
+ HMPP et OpenACC sont d'autres outils basés sur des directives qui permettent
+ d'accéder à des GPU.
+\end_layout
+
+\begin_layout Standard
+Avec OpenMP il est en général assez facile d'accélérer un code d'un facteur
+ deux à dix.
+ Mais au delà de dix cœurs la gestion des accès mémoire devient très importante.
+ Il faut tenir compte de ces accès et une réorganisation du code devient
+ nécessaire.
+ Par ailleurs la coexistence de deux logiques différentes, séquentielle
+ et parallèle au sein d'un même programme rend rapidement le code source
+ difficile à lire.
+ Comme pour tout développement de code parallèle, le débogage est délicat,
+ car c'est au programmeur de gérer les conflits d'accès aux données.
+\end_layout
+
+\begin_layout Standard
+En conclusion, OpenMP semble offrir le standard le plus stable à moyenne
+ et longue échéance pour décrire du parallélisme.
+ Mais modifier incrémentalement un code séquentiel permet rarement une accélérat
+ion optimale.
+ De toute façon, le parallélisme doit être intégré à la conception initiale
+ du logiciel.
+ Selon la littérature que nous avons pu consulter, la parallélisation par
+ directive permet d'accélérer d'un facteur de l'ordre de 4 un code en déportant
+ une partie des calculs sur GPU.
+ Mais le facteur limitant est imposé par les transferts CPU/GPU et les accès
+ mémoire.
+\end_layout
+
+\begin_layout Standard
+Lorsque que l'on vise des performances très élevées, il n'est donc pas tellement
+ plus efficace d'utiliser OpenMP plutôt qu'un langage dédié comme OpenCL
+ ou StarPU.
+ 
+\end_layout
+
+\begin_layout Subsubsection
+pocc, pluto
+\end_layout
+
+\begin_layout Standard
+Il existe depuis quelques années des outils qui permettent de générer du
+ code OpenMP à partir d'un code C séquentiel.
+ Nous avons évalué deux de ces outils:
+\end_layout
+
+\begin_layout Itemize
+POCC 
+\begin_inset Quotes eld
+\end_inset
+
+Polyhedral Compiler Collection
+\begin_inset Quotes erd
+\end_inset
+
+
+\begin_inset Foot
+status open
+
+\begin_layout Plain Layout
+\begin_inset Flex URL
+status open
+
+\begin_layout Plain Layout
+
+http://web.cs.ucla.edu/~pouchet/software/pocc/
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Itemize
+PLUTO 
+\begin_inset Quotes eld
+\end_inset
+
+An automatic parallelizer and locality optimizer
+\begin_inset Quotes erd
+\end_inset
+
+
+\begin_inset Foot
+status open
+
+\begin_layout Plain Layout
+\begin_inset Flex URL
+status open
+
+\begin_layout Plain Layout
+
+http://pluto-compiler.sourceforge.net/
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Lors des tests (début 2015) il est apparu que ces deux outils ne sont pas
+ capables de générer du code OpenMP à partir du code source de Teta.
+ L'analyseur de PLUTO par exemple s'arrête ou ne détecte pas de parallélisme.
+ Nous sommes aller discuter avec un des développeur de PLUTO (V.
+ Loechner) qui est un collègue informaticien de l'Université de Strasbourg.
+ Sur un exemple que nous lui avons fourni, il a été capable de faire fonctionner
+ PLUTO.
+ Mais pour cela il a du restructurer notre exemple de code et modifier dans
+ un second temps le code OpenMP généré par PLUTO.
+ Et comme souvent, plus que le parallélisme des calculs, c'est la réorganisation
+ des données en mémoire (par une technique de 
+\begin_inset Quotes eld
+\end_inset
+
+tiling
+\begin_inset Quotes erd
+\end_inset
+
+ pour améliorer l'utilisation de la mémoire cache) qui a permis d'obtenir
+ les performances optimales.
+ L'intervention et l'expertise de l'utilisateur reste donc très importante.
+ Il faudrait cependant tester à nouveau PLUTO car c'est un logiciel qui
+ évolue rapidement.
+ Selon son développeur principal de PLUTO (xxx, rencontré en juin 2016)
+ la nouvelle version est beaucoup plus facile à utiliser.
+\end_layout
+
+\begin_layout Subsubsection
+Autres outils
+\end_layout
+
+\begin_layout Standard
+Il existe d'autres outils de parallélisation automatiques ou semi-automatiques
+ que nous n'avons pas eu le temps d'évaluer.
+ Il est important de suivre les développements dans ce domaine, qui sont
+ fréquents et rapides.
+ Cependant il faut aussi avoir à l'esprit que certains outils disparaissent
+ aussi vite qu'ils sont apparus.
+ Dans ce domaine, le manque de normes stables semble être la norme !
+\end_layout
+
+\begin_layout Itemize
+Intel TBB: c'est une bibliothèque C++ pour décrire des tâches parallèle.
+ Pour l'instant TBB n'adresse que les CPU multicoeurs.
+\end_layout
+
+\begin_layout Subsection
+Description de StarPU
+\end_layout
+
+\begin_layout Standard
+StarPU fait l'objet d'une description à part, car c'est l'outil actuel qui
+ nous a semblé le plus intéressant pour le développement d'applications
+ hybrides.
+\end_layout
+
+\begin_layout Standard
+Depuis quelques années, l'Inria développe le runtime StarPU xxx.
+ C'est une bibliothèque qui permet de décrire un calcul par tâche.
+ Pour décrire une tâche le programmeur fournit une ou plusieurs programmations
+ de cette tâche dans des morceaux de code source appelés 
+\begin_inset Quotes eld
+\end_inset
+
+codelettes
+\begin_inset Quotes erd
+\end_inset
+
+.
+ Certaines codelettes peuvent utiliser CUDA ou OpenCL pour s'exécuter sur
+ GPU.
+ Le programmeur doit aussi décrire quels sont les paramètres constants de
+ cette tâche ainsi que les données d'entrée et de sortie.
+ Les tâche sont soumises à StarPU dans un ordre séquentiel.
+ Le support d'exécution analyse en temps réel les dépendances entre les
+ tâches et détermine celles qui peuvent être réalisées en parallèle.
+ StarPU est aussi capable de choisir à l'exécution quelles sont les codelettes
+ les plus efficaces.
+ Plusieurs méthodes d'ordonnancement peuvent être testées.
+ StarPU gère également les copies temporaires et les transferts mémoire
+ afin d'améliorer les performances.
+\end_layout
+
+\begin_layout Standard
+L'approche proposée par StarPU est extrêmement intéressante pour plusieurs
+ raisons:
+\end_layout
+
+\begin_layout Itemize
+Elle permet au développeur de continuer à penser à son algorithme de façon
+ séquentielle;
+\end_layout
+
+\begin_layout Itemize
+mais l'incite aussi à découper ses données et ses calculs en pièces élémentaires
+ qui vont permettre le parallélisme.
+\end_layout
+
+\begin_layout Itemize
+L'amélioration incrémentale reste possible en ajoutant au fur et à mesure
+ des codelettes pour GPU ou des codelettes optimisées avec OpenMP.
+\end_layout
+
+\begin_layout Itemize
+StarPU propose de nombreux outils d'analyse et de 
+\begin_inset Quotes eld
+\end_inset
+
+profiling
+\begin_inset Quotes erd
+\end_inset
+
+ du code: diagrammes de Gantt, graphe des tâches local, activation ou non
+ des CPU, des GPU, etc.
+\end_layout
+
+\begin_layout Itemize
+Il est possible d'essayer plusieurs stratégies différentes d'ordonnancement
+ et même de décrire son propre ordonnanceur.
+\end_layout
+
+\begin_layout Itemize
+StarPU existe aussi en version MPI pour soumettre le graphe des tâches à
+ un supercalculateur ou à un gros cluster de CPU multicoeur.
+\end_layout
+
+\begin_layout Standard
+Actuellement, à notre connaissance, il n'existe pas d'outil de ce type possédant
+ toutes ses caractéristiques
+\begin_inset Foot
+status open
+
+\begin_layout Plain Layout
+cocorico !
+\end_layout
+
+\end_inset
+
+.
+ Aussi il nous a semblé important d'évaluer et d'exploiter cet outil.
+\end_layout
+
+\begin_layout Section
+Exemple d'application: schéma DG implicite
+\end_layout
+
+\begin_layout Standard
+Dans cette partie, nous décrivons les tests que nous avons réalisés avec
+ StarPU pour la parallélisation d'un algorithme DG implicite de l'équation
+ de transport.
+ Nous avons choisi ce schéma car sa parallélisation est très difficile en
+ utilisant uniquement MPI ou OpenMP.
+ En effet, à cause des dépendances, au début du calcul seule une tâche est
+ active.
+ Au fur et à mesure de la progression, le calcul devient de plus en plus
+ parallèle.
+ Le parallélisme se réduit à nouveau la fin du calcul.
+ Cet exemple permet de bien comprendre les mécanisme en jeu dans StarPU
+ et d'évaluer l'efficacité de l'outil.
+\end_layout
+
+\begin_layout Subsection
+Schéma DG implicite pour le transport
+\end_layout
+
+\begin_layout Standard
+Nous considérons le schéma implicite suivant pour résoudre une équation
+ de transport
+\begin_inset Formula 
+\[
+\partial_{t}f+v\cdot\nabla_{x}f=0,
+\]
+
+\end_inset
+
+où l'inconnue est une fonction 
+\begin_inset Formula $f(x,t)$
+\end_inset
+
+ qui dépend d'une variable spatiale tridimensionnelle 
+\begin_inset Formula $x$
+\end_inset
+
+ et du temps 
+\begin_inset Formula $t$
+\end_inset
+
+.
+ La vitesse 
+\begin_inset Formula $v$
+\end_inset
+
+ est supposée constante, pour simplifier.
+ Cette équation constitue le système hyperbolique le plus simple possible.
+ Teta et SCHNAPS peuvent résoudre n'importe quel système hyperbolique et
+ les équations de Maxwell sont un cas particulier.
+\end_layout
+
+\begin_layout Standard
+Nous considérons un maillage constitué de 
+\begin_inset Quotes eld
+\end_inset
+
+macrocellules
+\begin_inset Quotes erd
+\end_inset
+
+ hexagonales, chaque macrocellule étant elle-même découpée en sous-cellules
+ de taille plus petite.
+ Dans chaque sous-cellule, nous considérons une base de fonctions polynomiales
+ de Lagrange 
+\begin_inset Formula $\psi_{i}^{L}$
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Standard
+L'équation est approchée par le schéma suivant: pour toute sous-cellule
+ 
+\begin_inset Formula $L$
+\end_inset
+
+ et toute fonction de base 
+\begin_inset Formula $i$
+\end_inset
+
+,
+\begin_inset Formula 
+\begin{equation}
+\int_{L}\frac{f_{L}^{n}-f_{L}^{n-1}}{\Delta t}\psi_{i}^{L}-\int_{L}v\cdot\nabla\psi_{i}^{L}f_{L}^{n}+\int_{\partial L}\left(v\cdot n{}^{+}f_{L}^{n}+v\cdot n^{-}f_{R}^{n}\right)\psi_{i}^{L}=0,\label{eq:dg_imp}
+\end{equation}
+
+\end_inset
+
+où:
+\end_layout
+
+\begin_layout Itemize
+\begin_inset Formula $f^{n}$
+\end_inset
+
+ désigne la solution au temps 
+\begin_inset Formula $t_{n}=n\Delta t$
+\end_inset
+
+ et 
+\begin_inset Formula $f^{n-1}$
+\end_inset
+
+ la solution au temps précédent;
+\end_layout
+
+\begin_layout Itemize
+\begin_inset Formula $R$
+\end_inset
+
+ désigne la cellule voisine de 
+\begin_inset Formula $L$
+\end_inset
+
+ le long de sa frontière 
+\begin_inset Formula $\partial L$
+\end_inset
+
+;
+\end_layout
+
+\begin_layout Itemize
+\begin_inset Formula $v\cdot n^{+}=\max(v\cdot n,0),$
+\end_inset
+
+ 
+\begin_inset Formula $v\cdot n^{-}=\min(v\cdot n,0).$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Itemize
+\begin_inset Formula $n_{LR}$
+\end_inset
+
+ désigne le vecteur normal unitaire sur 
+\begin_inset Formula $\partial L$
+\end_inset
+
+ orienté de 
+\begin_inset Formula $L$
+\end_inset
+
+ vers 
+\begin_inset Formula $R$
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Standard
+\align block
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+begin{tikzpicture}[scale=1]
+\end_layout
+
+\begin_layout Plain Layout
+
+% intersection
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+draw[thick] (0,1) -- (0,0);
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+draw[->, thick, color=red] (0,0.5) -- (0.4,0.5);
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+node[below, color=red] at (0.4,0.5) {$n_{LR}$}; 
+\backslash
+node[above] (n1) at (-2,2) {$
+\backslash
+partial L
+\backslash
+cap
+\backslash
+partial R$}; 
+\backslash
+draw[->, thick] (n1) -- (0,0.8);
+\end_layout
+
+\begin_layout Plain Layout
+
+% left 
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+draw[thick] (-1,-0.5) -- (0,0); 
+\backslash
+draw[thick] (-1.2,1.4) -- (0,1); 
+\backslash
+draw[thick] (-1.2,1.4) -- (-1,-0.5); 
+\backslash
+node[above right] at (-1.05,-0.4) {$L$};
+\end_layout
+
+\begin_layout Plain Layout
+
+% right 
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+draw[thick] (1,-0.5) -- (0,0); 
+\backslash
+draw[thick] (1.1,0.8) -- (0,1); 
+\backslash
+draw[thick] (1.1,0.8) -- (1,-0.5); 
+\backslash
+node[below left] at (1.1,0.85) {$R$};
+\end_layout
+
+\begin_layout Plain Layout
+
+% other quadrangles
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+draw[thick] (0,0) -- (-0.1,-0.6); 
+\backslash
+draw[thick] (0,1) -- (0.1,1.6); 
+\backslash
+draw[thick] (-1,-0.5) -- (-1.5,-0.9); 
+\backslash
+draw[thick] (-1.2,1.4) -- (-1.6,1.5); 
+\backslash
+draw[thick] (1,-0.5) -- (1.3,-0.7); 
+\backslash
+draw[thick] (1.1,0.8) -- (1.5,1); 
+\backslash
+end{tikzpicture} 
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Théoriquement pour calculer 
+\begin_inset Formula $f^{n}$
+\end_inset
+
+ à partir de 
+\begin_inset Formula $f^{n-1}$
+\end_inset
+
+ en appliquant le schéma DG (
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "eq:dg_imp"
+
+\end_inset
+
+) il faudrait résoudre un système linéaire ce qui peut-être très coûteux
+ en 3D.
+ Heureusement en utilisant deux propriétés du schéma DG: discontinuité de
+ la solution numérique et décentrage du flux, nous constatons qu'il est
+ possible de résoudre le système linéaire de proche en proche en parcourant
+ le maillage dans le sens de la vitesse 
+\begin_inset Formula $v$
+\end_inset
+
+.
+ Plus nous avançons dans le maillage, plus le calcul devient parallèle.
+\end_layout
+
+\begin_layout Subsection
+Graphe de dépendance
+\end_layout
+
+\begin_layout Standard
+Afin d'expliquer ce fait, nous considérons le maillage décrit dans la figure
+ 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "fig:mesh-graph"
+
+\end_inset
+
+ où seules les macrocellules sont représentées.
+ Pour calculer 
+\begin_inset Formula $f^{n}$
+\end_inset
+
+ dans la macrocellule 0, il suffit d'appliquer les conditions aux limites.
+ Ensuite, nous pouvons calculer en parallèle les valeurs de 
+\begin_inset Formula $f^{n}$
+\end_inset
+
+ dans les cellules 1 et 3 à partir des résultats de la cellule 0, etc.
+ Les dépendances des calculs peuvent être schématisé par un graphe orienté
+ également indiqué sur la figure 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "fig:mesh-graph"
+
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Standard
+\align center
+\begin_inset Float figure
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+\align center
+\begin_inset Graphics
+	filename /home/helluy/IMPORTANT/Recherche/Kinetic/cubegros.png
+	lyxscale 50
+	width 8cm
+
+\end_inset
+
+
+\begin_inset Formula $\quad$
+\end_inset
+
+
+\begin_inset Graphics
+	filename /home/helluy/IMPORTANT/Recherche/Kinetic/upwindgraph.png
+	lyxscale 50
+	height 8cm
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+Parcourt d'un maillage dans le sens de la vitesse.
+ A gauche: un exemple de maillage et de vitesse.
+ A droite: graphe de dépendance correspondant.
+ Cette construction se généralise à des maillages déstructurés.
+\begin_inset CommandInset label
+LatexCommand label
+name "fig:mesh-graph"
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+L'organisation des calculs et le parallélisme qui en découle est très naturel.
+ Mais il est aussi délicat à programmer simplement et efficacement: comment
+ répartir les calculs sur les coeurs de calcul disponibles ?
+\end_layout
+
+\begin_layout Subsection
+Implémentation StarPU
+\end_layout
+
+\begin_layout Standard
+StarPU permet de décrire de façon simple et effnnousicace ce type d'algorithme.
+ L'algorithme consiste d'abord à construire le graphe de dépendance des
+ macrocellules.
+ Ensuite il faut effectuer un tri, dit topologique, des nœuds du graphe.
+ Ensuite, pour chaque macrocellule parcourue dans l'ordre topologique, il
+ faut:
+\end_layout
+
+\begin_layout Itemize
+calculer les termes volumiques du schéma DG (
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "eq:dg_imp"
+
+\end_inset
+
+);
+\end_layout
+
+\begin_layout Itemize
+calculer les flux amonts des macrocellules précédemment calculées ou venant
+ des conditions aux limites;
+\end_layout
+
+\begin_layout Itemize
+résoudre un petit système linéaire local à la macrocellule;
+\end_layout
+
+\begin_layout Itemize
+extraire les données vers les macrocellules aval.
+\end_layout
+
+\begin_layout Standard
+Chacune de ces étapes est décrite avec des tâches et des codelettes StarPU.
+ Ces tâches sont ensuite soumises dans un ordre correct au support d'exécution,
+ grâce à la numérotation topologique.
+ C'est StarPU qui se charge de la parallélisation et des transferts de données
+ en mémoire.
+\end_layout
+
+\begin_layout Subsection
+Résultats
+\end_layout
+
+\begin_layout Standard
+Nous compoarons le solveur linéaire direct du système complet avec le solveur
+ de proche en proche pour diverses tailles des macrocellules.
+ En effet, la gestion du graphe des tâches par StarPU a un coût.
+ Il faut donc soumettre des tâches suffisamment grosses pour que ce surcoût
+ soit amorti.
+ Nous constatons dans nos expériences qu'il existe un découpage optimal
+ entre les macro et les souscellules pour lequel le parallélisme de StarPU
+ est très efficace.
+ Les résultats sont alors très proches du parallélisme optimal auquel on
+ peut s'attendre pour ce type d'algorithme de progression par front (sur
+ un maillage 
+\begin_inset Formula $n\times n$
+\end_inset
+
+, au meilleur de la progression, il est possible de calculer en parallèle
+ 
+\begin_inset Formula $n$
+\end_inset
+
+ macrocellules).
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float table
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+\align center
+\begin_inset Tabular
+<lyxtabular version="3" rows="5" columns="7">
+<features rotate="0" tabularvalignment="middle">
+<column alignment="center" valignment="top">
+<column alignment="center" valignment="top">
+<column alignment="center" valignment="top">
+<column alignment="center" valignment="top">
+<column alignment="center" valignment="top">
+<column alignment="center" valignment="top">
+<column alignment="center" valignment="top">
+<row>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+nb cores
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+0
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+1
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+2
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+4
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+8
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+16
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+\begin_inset Formula $10\times10\times8\times8$
+\end_inset
+
+ direct
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+30
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+144
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+-
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+-
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+-
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+-
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+\begin_inset Formula $10\times10\times8\times8$
+\end_inset
+
+ upwind
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+-
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+32
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+19
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+12
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+7
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+6
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+\begin_inset Formula $20\times20\times4\times4$
+\end_inset
+
+ upwind
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+-
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+41
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+26
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+17
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+12
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+17
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+\begin_inset Formula $20\times20\times8\times8$
+\end_inset
+
+ upwind
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+-
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+120
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+72
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+40
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+28
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+20
+\end_layout
+
+\end_inset
+</cell>
+</row>
+</lyxtabular>
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+Etude d'accélération StarPU pour le solveur frontal.
+ AMD Opteron 16 cores, 2.8 Ghz.
+ Temps en secondes secondes pour 200 iterations de la méthode temporelle.
+ En fonction du découpage des macrocellules, le parallélisme est plus ou
+ moins efficace.
+\begin_inset CommandInset label
+LatexCommand label
+name "tab:scaling-upwind"
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+StarPU offre aussi la possibilité de visualiser le graphe des tâches.
+ Un exemple est donné figure 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "fig:zoom-dag"
+
+\end_inset
+
+.
+ Il est aussi possible de visualiser le diagramme de Gantt de l'ordonnancement
+ des tâches.
+ Un tel diagramme est représenté Figure 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "fig:gantt"
+
+\end_inset
+
+.
+ Nous y comparons deux stratégies d'ordonnancement.
+ Dans la première approche, nous imposons un point de synchronisation à
+ la fin de chaque pas de temps.
+ Nous voyons alors que la file d'attente se vide périodiquement.
+ Dans la seconde approche, nous n'imposons aucun point de synchronisation.
+ La file d'attente se remplit donc pendant une première phase, avant de
+ se vider dans la seconde partie du calcul.
+ Cette deuxième approche est légèrement plus efficace que la première (gain
+ de l'ordre de 10%).
+ Sans StarPU, tester la seconde approche n'aurait pas été aussi simple.
+\end_layout
+
+\begin_layout Standard
+\align center
+\begin_inset Float figure
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+\align center
+\begin_inset Graphics
+	filename /home/helluy/IMPORTANT/Recherche/Kinetic/zoom-dag.png
+	lyxscale 50
+	height 8cm
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+Zoom sur le graphe des taĉhes générés par StarPU
+\begin_inset CommandInset label
+LatexCommand label
+name "fig:zoom-dag"
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\align center
+\begin_inset Float figure
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+\align center
+\begin_inset Graphics
+	filename /home/helluy/IMPORTANT/Recherche/Kinetic/withsync.png
+	lyxscale 50
+	height 8cm
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+\align center
+\begin_inset Graphics
+	filename /home/helluy/IMPORTANT/Recherche/Kinetic/nosync.png
+	lyxscale 50
+	height 8cm
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+Deux stratégies d'ordonnancement.
+ Diagramme de Gantt généré par StarPU.
+ En haut: synchronisation à la fin de chaque pas de temps.
+ En bas: pas de synchronisation.
+ 
+\begin_inset CommandInset label
+LatexCommand label
+name "fig:gantt"
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Section
+Application à DG explicite
+\end_layout
+
+\begin_layout Subsection
+Implémentation OpenMP
+\end_layout
+
+\begin_layout Standard
+Nous avons programmé une version C/OpenMP d'un code DG explicite sur maillage
+ structuré.
+ Ce code a été optimisé à la fois en terme de parallélisme (vectorisation
+ des boucles) mais aussi en terme d'accès mémoire grâce à une technique
+ dite de tiling afin d'exploiter au mieux la mémoire cache du CPU.
+ Ces optimisations sont sans doute très proches du maximum de ce qu'on peut
+ obtenir avec un processeur multicore.
+ Nous avons été assisté dans ce travail par V.
+ Loechner, collègue informaticien à Strasbourg 
+\begin_inset CommandInset citation
+LatexCommand cite
+key "helluy2015asynchronous"
+
+\end_inset
+
+.
+ 
+\end_layout
+
+\begin_layout Subsection
+Implémentation StarPU
+\end_layout
+
+\begin_layout Standard
+Nous avons programmé dans SCHNAPS une version StarPU de l'algorithme DG
+ explicite.
+ Pour cela, comme dans Teta, nous avons découpé le calcul en tâches élémentaires
+ et programmé les codelettes correspondantes.
+\end_layout
+
+\begin_layout Standard
+Un gros avantage de la programmation StarPU par rapport à un code purement
+ OpenCLest que nous n'avons pas à expliciter à la main les dépendances entre
+ tâches.
+ Il suffit de préciser quelles sont les données en lecture (R), écriture
+ (W) ou lecture-écriture (RW) de chaque tâche.
+ Par ailleurs la possibilité de tracer le graphe des tâches de StarPU ainsi
+ que des diagrammes de Gantt de l'ordonnancement est très utile pour le
+ débogage ou l'amélioration des performances.
+\end_layout
+
+\begin_layout Standard
+Nous avons aussi pour chaque tâches programmé une codelette C pour CPU et
+ une codelette OpenCL pour GPU.
+ Ainsi StarPU peut choisir à l'exécution de lancer telle ou telle tâche
+ sur CPU ou GPU.
+ Nous avons aussi pour certaines codelettes C écrit plusieurs versions.
+ 
+\end_layout
+
+\begin_layout Section
+Résultatsnnous
+\end_layout
+
+\begin_layout Subsection
+Comparaison OpenMP/OpenCL
+\end_layout
+
+\begin_layout Standard
+Dans ce test, nous comparons le programme DG OpenMP avec une implémntation
+ OpenCL du même algorithme.
+ L'avantage de la version OpenCL est qu'elle peut être indifféremment être
+ exécutée sur CPU ou GPU .Voir tableau 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "tab:openmp-opencl"
+
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float table
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+  
+\backslash
+begin{tabular}{|c|c|c|}     
+\backslash
+hline     Implementation & Time & Speedup
+\backslash
+tabularnewline     
+\backslash
+hline     
+\backslash
+hline     OpenMP (Intel CPU 12 cores) & 717 s & 1
+\backslash
+tabularnewline     
+\backslash
+hline     OpenCL (Intel CPU 12 cores) & 996 s & 0.7
+\backslash
+tabularnewline     
+\backslash
+hline     OpenCL (NVIDIA K20) & 45 s & 16
+\backslash
+tabularnewline     
+\backslash
+hline     OpenCL (AMD HD7970) & 38 s & 19
+\backslash
+tabularnewline     
+\backslash
+hline     OpenCL + MPI (4 x NVIDIA K20) & 12 s & 58
+\backslash
+tabularnewline     
+\backslash
+hline   
+\backslash
+end{tabular} 
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+Comparaison des différentes implémentations de la méthode DG sur une grille
+ régulière.
+ Métériel : 2
+\begin_inset Formula $\times$
+\end_inset
+
+ Intel(R) Xeon(R) E5-2630 (6 cores, 2.3GHz), AMD Radeon HD 7970, NVidia K20m.
+ Sur les CPU Intel l'hyperthreading est désactivé.
+\begin_inset CommandInset label
+LatexCommand label
+name "tab:openmp-opencl"
+
+\end_inset
+
+ 
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+
+Dans ce tableau, nous constatons que l'implémentation OpenMP est la plus
+ efficace sur CPU.
+ Cependant la version OpenCL n'est pas loin derrière sur CPU avec une perte
+ de seulement 30%.
+ Cette perte s'explique par le fait que le code OpenCL a été optimisé pour
+ GPU.
+ Certains transferts en mémoire cache sont inutiles dans le cas du CPU et
+ ralentissent les calculs sur ce type d'architecture.
+\end_layout
+
+\begin_layout Standard
+Il est possible de spécialiser les kernels OpenCL et de choisir à l'exécution
+ la version la plus efficace selon que l'on est sur CPU et GPU.
+ Cette stratégie permettrait d'atteindre la même efficacité avec le code
+ OpenCL qu'avec le code OpenMP, y compris sur CPU.
+ Une étude en ce sens est proposée par exemple dans 
+\begin_inset CommandInset citation
+LatexCommand cite
+key "shen2012performance"
+
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Standard
+Sur GPU l'accélération du code OpenCL est bien sûr très efficace.
+ 
+\end_layout
+
+\begin_layout Subsection
+Comparaisons C/StarPU-C
+\end_layout
+
+\begin_layout Standard
+Afin d'évaluer les performances de l'implémentation StarPU pour le schéma
+ explicite, nous comparons un code C non-optimisé avec le code StarPU où
+ seules les codelettes C sont autorisées.
+ Ceci peut se faire en positionnant la variable d'environnement STARPU_NOPENCL
+ à 0.
+ 
+\end_layout
+
+\begin_layout Standard
+Le cas de calcul est celui d'une onde électromagnétique plane se propageant
+ dans un domaine de forme cylindrique.
+ Le maillage est constitué de xxx cellules DG de degré xxx.
+ Voir figure xxx.
+ Nous comparons les performances obtenues avec divers ordonanceur (
+\begin_inset Quotes eld
+\end_inset
+
+eager
+\begin_inset Quotes erd
+\end_inset
+
+ ou 
+\begin_inset Quotes eld
+\end_inset
+
+dmda
+\begin_inset Quotes erd
+\end_inset
+
+) et pour diverses tailles du maillages (xxx cellules ou yyy cellules) Nous
+ obtenons les résultats du tableau 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "tab:spu-c"
+
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float table
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+\begin_inset Tabular
+<lyxtabular version="3" rows="5" columns="7">
+<features rotate="0" tabularvalignment="middle">
+<column alignment="center" valignment="top">
+<column alignment="center" valignment="top">
+<column alignment="center" valignment="top">
+<column alignment="center" valignment="top">
+<column alignment="center" valignment="top">
+<column alignment="center" valignment="top">
+<column alignment="center" valignment="top">
+<row>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+1 core (c)
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+1 core (spu)
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+2 core (spu)
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+4 core (spu)
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+8 core (spu)
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+speedup (c/spu)
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+xxx, eager
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+xxx, dmda
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+yyy, eager
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+yyy, dmda
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+</row>
+</lyxtabular>
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+Comparaison des temps de calcul C/Starpu-C
+\begin_inset CommandInset label
+LatexCommand label
+name "tab:spu-c"
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+StarPU permet d'étudier l'efficacité de l'ordonnanceur.
+ On constate par exemple sur la figure xxx que tous les 
+\begin_inset Quotes eld
+\end_inset
+
+workers
+\begin_inset Quotes erd
+\end_inset
+
+ StarPU (c'est à dire les coeurs de CPU) sont bien exploités: peu d'attentes
+ (représentées en rouge).
+ Les transferts mémoires (flèches blanches) sont également limités.
+\end_layout
+
+\begin_layout Subsection
+Comparaisons StarPU-C/StarPU-OpenCL
+\end_layout
+
+\begin_layout Standard
+Dans ce test on cherche à évaluer l'apport de l'activation des GPU dans
+ le calcul StarPU.
+ Pour cela, on positionne la variable d'environnement STARPU_NOPENCL à une
+ valeur comprise entre 1 et 4.
+ Le maillage est fixé à une taille de xxx cellules DG.
+ Les résultats sont présentés dans le tableau 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "tab:spu-c-opencl"
+
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float table
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+\begin_inset Tabular
+<lyxtabular version="3" rows="3" columns="5">
+<features rotate="0" tabularvalignment="middle">
+<column alignment="center" valignment="top">
+<column alignment="center" valignment="top">
+<column alignment="center" valignment="top">
+<column alignment="center" valignment="top">
+<column alignment="center" valignment="top">
+<row>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+0 GPU
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+1 GPU
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+4 GPU
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+speedup (n GPU/0 GPU)
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+C+OpenCL (eager)
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+C+OpenCL (dmda)
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+</row>
+</lyxtabular>
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+Comparaison des temps de calcul C/Starpu-C
+\begin_inset CommandInset label
+LatexCommand label
+name "tab:spu-c-opencl"
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+On constate que l'activation des GPU apporte une légère accélération.
+ Cependant, celle-ci est limitée, quelle que soit l'ordonnanceur.
+ C'est assez surprenant et décevant car l'ordonnanceur 
+\begin_inset Quotes eld
+\end_inset
+
+dmda
+\begin_inset Quotes erd
+\end_inset
+
+ est sensé tenir compte des transferts mémoire pour la distribution des
+ tâches.
+ Notre découpage des données ne devrait impliquer des transferts qu'aux
+ interfaces entre les zones de calcul.
+ Nous allons prendre contact avec les développeurs StarPU pour mieux comprendre
+ ce défaut de performance.
+ Nous avons soumis un projet de recherche au CEMRACS 2016
+\begin_inset Flex URL
+status open
+
+\begin_layout Plain Layout
+
+http://smai.emath.fr/cemracs/cemracs16/
+\end_layout
+
+\end_inset
+
+.
+ Il est prévu que nous rencontrions des experts de StarPU lors de ce projet.
+\end_layout
+
+\begin_layout Section
+Conclusion et perspectives
+\end_layout
+
+\begin_layout Standard
+En conclusion de cette tâche 
+\begin_inset Quotes eld
+\end_inset
+
+Parallélisation hybride
+\begin_inset Quotes erd
+\end_inset
+
+ nous sommes arrivés aux conclusions suivantes:
+\end_layout
+
+\begin_layout Itemize
+Pour des architectures de codes complexes, OpenMP et son système de directives
+ n'est pas forcément très indiqué pour réaliser des conceptions parallèles
+ efficaces.
+\end_layout
+
+\begin_layout Itemize
+L'écriture d'un code OpenCL est un peu plus compliqué, mais apporte l'avantage
+ énorme de pouvoir tourner à la fois sur CPU et GPU.
+ Sur CPU il est possible d'atteindre les mêmes performance qu'avec OpenMP.
+ Même sans s'attaquer à l'écriture de kernels spécialisés pour CPU, un code
+ OpenCL optimisé sur GPU a en général de bonnes performances aussi sur CPU.
+\end_layout
+
+\begin_layout Itemize
+Les outils récents de génération automatique de code parallèles (pocc, PLUTO,
+ DSL, etc.) sont très prometteurs, mais en l'état actuel de la technologie,
+ ils sont encore en phase de recherche et développement.
+ En général ils fonctionnent sur des codes simples ou des exemples assez
+ académiques.
+ Il s'agit néanmoins d'un domaine en évolution très rapide et il faut maintenir
+ une veille technologique sur ces outils (ce à quoi nous nous employons).
+\end_layout
+
+\begin_layout Itemize
+StarPU est le système de parallélisation par tâches le plus avancé à l'heure
+ actuelle.
+ Il est d'emploi assez aisé, efficace.
+ Les outils annexes sont très utiles pour le débogage et l'optimisation.
+\end_layout
+
+\begin_layout Itemize
+Les performances de notre implémentation StarPU de l'alogirthme DG sont
+ cependant décevantes lorsque l'on mixe des CPU et des GPU.
+ Ces résultats, obtenus récemment, sont décevants et assez inexplicables
+ pour l'instant car StarPU a ajustement été développé pour le calcul hybride.
+ Nous allons prendre contact cet été (2016) avec des développeurs StarPU
+ pour comprendre d'où provient ce défaut de performances.
+\end_layout
+
+\begin_layout Standard
+\begin_inset CommandInset bibtex
+LatexCommand bibtex
+bibfiles "horoch_juin2016"
+options "plain"
+
+\end_inset
+
+
+\end_layout
+
+\end_body
+\end_document

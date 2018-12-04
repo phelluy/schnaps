@@ -1,0 +1,32 @@
+\begin{frame}
+\frametitle{Espace d'approximation / Fonctions de base physiques}
+\vfill
+\begin{itemize}
+\item Transformation géométrique de $\HexaRef$ vers une maille $\L$ :
+\begin{align*}
+	\TGeo{\L} : \HexaRef &\to \L \\
+	\xref &\mapsto \x \ ;
+\end{align*}
+\vfill
+\item Transformation devant être bijective (inverse calculé par la méthode de Newton) :
+\begin{align*}
+	\Jac{\TGeo{\L}} = \Det{\TGeo{\L}'} > 0 \ ;
+\end{align*}
+\vfill
+\item Fonctions de base dans la maille physique :
+\begin{align*}
+	\forall \xref \in \HexaRef, \
+	\PsiPhy{\L}{i} \circ \TGeo{\L}(\xref) =
+	\PsiRef{i}(\xref) ,
+\end{align*}
+\begin{align*}
+	\PsiPhy{\L}{i}(\x) =
+	\begin{cases}
+		\PsiRef{i} \circ \Inv{\TGeo{\L}}(\x) & \x \in \L , \\
+		0 & \x \notin \L .
+	\end{cases}
+\end{align*}
+\end{itemize}
+\vfill
+\end{frame}
+

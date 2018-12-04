@@ -1,0 +1,46 @@
+\begin{frame}
+\frametitle{Corps humain / Efficacité MPI}
+\vfill
+\begin{itemize}
+\item Scalabilités faible et forte évaluées sur le Mésocentre de Strasbourg :
+\begin{itemize}
+\item [=>] Très efficace (perte $< 10$ \%) à partir de 500 k mailles (1.3 Go) par nœud MPI ;
+\end{itemize}
+\vfill
+\item Scalabilité forte évaluée sur PizDaint sur le corps humain jusqu'à 256 GPU :
+\begin{itemize}
+\item 2000 heures de calcul obtenues par PRACE ;
+\item $3^{\mathrm{eme}}$ machine au TOP500 jusqu'en juin 2018 ($5^{\mathrm{eme}}$ depuis) ;
+\item Plus de 5000 GPU NVidia Tesla P100 (équivalent GTX 1080 Ti) ;
+\end{itemize}
+\end{itemize}
+\vfill
+\scalebox{0.8}{\begin{minipage}{1.25\textwidth}
+\begin{figure}
+	\centering
+Efficacités constatées :
+
+		\begin{tabular}{|c|c|c|c|}
+			\hline
+			$\#$GPU & GD1-RK2 & GD2-RK2 & GD3-RK2 \\ \hline\hline
+			$4$ & 1* & - & - \\	\hline
+			$8$ & $0.980$ & 1* & - \\	\hline
+			$16$ & $0.955$ & $0.980$ & 1* \\	\hline
+			$32$ & $0.909$ & $0.943$ & $0.970$ \\	\hline
+			$64$ & $0.844$ & $0.889$ & $0.919$ \\	\hline
+			$128$ & $0.749$ & - & - \\	\hline
+			$256$ & $0.612$ & - & - \\	\hline
+		\end{tabular}
+
+		* : Simulation prise comme référence pour l'ordre courant.
+\end{figure}
+\end{minipage}}
+\begin{itemize}
+\item [=>] Temps de calcul GD1-RK2 sur 256 GPU pour 10 ns estimé à :
+\begin{align*}
+2072 / 256 / 0.612 = 13.23 \ \mathrm{heures.}
+\end{align*}
+\end{itemize}
+\vfill
+\end{frame}
+

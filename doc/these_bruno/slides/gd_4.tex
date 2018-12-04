@@ -1,0 +1,39 @@
+\begin{frame}
+\frametitle{Formulation GD / Flux numérique}
+\vfill
+Nous introduisons alors le flux numérique :
+\begin{align}
+	\Flux{\W_\L}{\W_\R}{\n} = \Pos{\Aini} \W_\L + \Neg{\Aini} \W_\R
+	\tag{Flux numérique}
+\end{align}
+et le flux de bord :
+\begin{align}
+	\FluxB{\W}{\n} = (\Aini + \MatB) \W .
+	\tag{Flux de bord}
+\end{align}
+\vfill
+\begin{block}{Propriétés}
+Le flux numérique vérifie :
+\begin{subequations}
+\begin{align*}
+	\Flux{\W}{\W}{\n} &= \Aini \W ,
+	\tag{Consistance} \\
+	\Flux{\W_\L}{\W_\R}{-\n} &= - \Flux{\W_\R}{\W_\L}{\n} .
+	\tag{Conservation}
+\end{align*}
+\end{subequations}
+\end{block}
+\vfill
+Autres choix possibles :
+\begin{align*}
+	\F_\alpha =
+	\begin{pmatrix}
+		- \frac{1}{2} \n \times (\H_\L + \H_\R)
+		+ \alpha (\n \times)^2 (\E_\R - \E_\L) \\
+		\frac{1}{2} \n \times (\E_\L + \E_\R)
+		+ \alpha (\n \times)^2 (\H_\R - \H_\L)
+	\end{pmatrix} .
+\end{align*}
+\vfill
+\end{frame}
+

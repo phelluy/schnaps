@@ -1,0 +1,52 @@
+\begin{frame}
+\frametitle{Conditions aux limites}
+\begin{columns}[c]
+\column{0.5\textwidth}
+\begin{align*}
+	\n \times =
+	\begin{pmatrix}
+		0 & -\nC{3} & \nC{2} \\
+		\nC{3} & 0 & -\nC{1} \\
+		-\nC{2} & \nC{1} & 0
+	\end{pmatrix} ,
+\end{align*}
+\column{0.5\textwidth}
+\begin{align*}
+	(\n \times)^2 = (\n \times)(\n \times) .
+\end{align*}
+\end{columns}
+\vfill
+\begin{itemize}
+\item Condition de conducteur électrique parfait (PEC) :
+\begin{columns}[c]
+\column{0.5\textwidth}
+\begin{align*}
+	\n \times \E = 0 , 
+\end{align*}
+\column{0.5\textwidth}
+\begin{align*}
+	\MatB =
+	\begin{pmatrix}
+		a (\n \times)^2 + b \n \times & 0 \\
+		c (\n \times)^2 + d \n \times & 0
+	\end{pmatrix} .
+\end{align*}
+\end{columns}
+\vfill
+\item Condition d'impédance ($z$) de surface (SIBC) :
+\begin{align*}
+	\n \times \E + z \n \times (\n \times \H) = 0 , 
+\end{align*}
+\begin{align*}
+	\MatB =
+	\begin{pmatrix}
+		a (\n \times)^2 & - a z \n \times \\
+		- (1 + a z) \n \times & - (1 + a z) z (\n \times)^2
+	\end{pmatrix} , \ a \le 0 .
+\end{align*}
+\vfill
+\item Condition de Silver-Müller : SIBC avec l'impédance du vide.
+\end{itemize}
+\vfill
+\end{frame}
+

@@ -1,0 +1,138 @@
+\chapter{Exécution sur ordinateur hybride}
+\label{chap:runtimes}
+
+Dans les chapitres précédents, nous avons décrit la méthode
+Galerkin Discontinue (GD)
+de résolution des équations de Maxwell, puis nous avons développé
+l'implémentation parallèle de cette méthode que nous avons programmé,
+pouvant utiliser simultanément un grand nombre d'accélérateurs OpenCL
+identiques.
+
+Après avoir présenté une adaptation algorithmique permettant
+d'appliquer un pas de temps local à chaque maille et allégeant
+considérablement la quantité de calculs,
+nous allons montrer dans quelle mesure un solveur GD
+s'adapte à l'exécution sur ordinateur hybride.
+\\
+
+
+Les (super)calculateurs actuels sont généralement équipés
+de périphériques (de même nature) identiques.
+L'équilibrage de la charge de calcul est donc aisée
+entre périphériques de même nature.
+Cependant, bien que tous les
+CPU soient identiques et de même pour les GPU, les CPU sont très différents
+des GPU, tant au niveau de l'architecture que de leur puissance
+de calcul respective.
+Or, chaque nœud de calcul d'un (super)calculateur est généralement
+composé d'un CPU et d'un GPU.
+Ainsi, bien que le fait de savoir diviser efficacement un problème entre
+$2$ GPU hétérogènes ne soit pas une priorité, il est très intéressant
+de savoir équilibrer la charge ce calcul entre un CPU et un GPU.
+Nous pourrions alors exploiter toute la puissance de calcul disponible.
+
+A ces fins, nous avons utilisé la bibliothèque StarPU
+développée à l'INRIA de Bordeaux \cite{augonnet2011starpu,augonnet2012starpu}.
+Cette bibliothèque permet de se défaire de l'équilibrage manuel
+des tâches via un graphe des tâches. Ce dernier est automatiquement
+généré par StarPU selon une politique d'ordonnancement choisie
+par l'utilisateur (nous) et est basé sur la dépendance des données
+passées en entrée et en sortie des tâches.
+Les tâches sont codées sous forme de « \textit{codelets} » écrits en
+langage C et pouvant contenir des soumissions de kernels OpenCL.
+Chaque tâche peut être implémentée par plusieurs codelets
+(par exemple une version C pour CPU et une version C-OpenCL pour GPU)
+et StarPU choisit à l'exécution de chaque tâche quel codelet exécuter
+en fonction de ses performances passées et du périphérique de destination.
+Dans le code du solveur, toutes les tâches sont alors soumises
+dans un ordre séquentiel (dictant la dépendance des données) à StarPU.
+Les transferts de données sont eux aussi délégués à StarPU.
+
+Les expérimentations de l'utilisation de cette bibliothèque ont été
+effectuées sur le solveur universitaire \texttt{schnaps}
+\cite{helluy2016asynchronous} et
+sont présentées en anglais dans l'article qui suit
+(publication à venir).
+Les notations et numérotations sont donc globalement différentes
+du reste de ce mémoire.
+Le solveur \texttt{schnaps} implémente la méthode GD avec
+une interpolation spatiale utilisant les points de Gauss-Lobatto.
+L'autre grande différence avec le solveur \texttt{teta-clac} est que
+les mailles sont des subdivisions régulières de macro-mailles
+équivalentes à des zones homogènes structurées globalement déformées.
+
+
+
+
+\includepdf[
+	pagecommand={\thispagestyle{plain}},
+	pages=- % all pages
+]{../schnaps_opencl/schnaps_opencl2017.pdf}
+
+
+
+
+\section*{Conclusion}
+
+
+Dans ce chapitre (cet article), nous avons présenté les résultats
+de l'utilisation de la bibliothèque StarPU pour l'exécution
+et l'ordonnancement des tâches de calcul du solveur GD \texttt{schnaps}
+sur ordinateur hybride.
+Les tâches ainsi exécutées sont chacune codées en $2$ versions :
+sous forme de codelets écrits en langage C à destination des cœurs CPU
+(notons que StarPU se réserve un cœur pour l'effort d'ordonnancement)
+et sous forme de codelets C-OpenCL à destination des GPU.
+
+Les résultats sur CPU multi-cœurs se sont avérés excellents :
+une efficacité presque optimale quelque soit le nombre de cœurs
+sollicités et pour diverses tailles (divers raffinements) du problème étudié.
+Ces résultats ont été constatés pour $2$ CPU distincts,
+l'un produit par AMD, l'autre par Intel. Le second CPU
+est de plus composé de $2$ nœuds NUMA, ce qui ne semble pas
+impacter les performances et témoigne d'une bonne gestion des
+affinités entre cœurs.
+
+Les résultats en configuration hybride sont eux aussi
+de bonne qualité. Dans un premier temps, nous avons facilement
+pu comparer la différence de performance entre les codelets
+CPU et les codelets GPU testés.
+Nous avons aussi constaté que l'ajout des cœurs CPU au GPU
+a permis d'améliorer les performances du GPU seul.
+Dans le cas des plus petites tailles de problème,
+l'accélération constatée est au-delà de
+l'accélération théorique donnée par les temps sur CPU seul et GPU seul.
+Ce phénomène s'explique par le fait que le CPU soulage
+le GPU des petites tâches qui génèrent beaucoup de temps de latence OpenCL
+et le GPU peut ainsi se concentrer sur les grandes tâches de calcul.
+
+Remarquons que dans les expérimentations présentées
+nous utilisons un seul GPU NVidia.
+Rappelons alors qu'il est possible de proposer à StarPU plusieurs versions
+de codelet C ou C-OpenCL pour une même tâche.
+Cela permettrait de proposer une version optimisée AMD du codelet
+C-OpenCL au cas où les performances ne sont pas au rendez-vous
+avec les kernels optimisés sur NVidia.
+
+Cependant, l'utilisation de la bibliothèque StarPU n'a pas été
+implémentée dans le solveur \texttt{teta-clac}. Le nombre
+de kernels (GD, modèles) impliquerait un effort de développement
+très important alors que ce solveur permet déjà d'effectuer
+des simulations équilibrées sur un grand nombre de GPU.
+La stratégie de découpage en zones et les communications MPI
+telles qu'implémentées sont éprouvées et fonctionnent parfaitement
+dans le cadre d'une exploitation industrielle.
+\\
+
+Dans le dernier chapitre, nous allons revenir sur le solveur
+\texttt{teta-clac} et présenter un certain nombre de résultats
+de validation.
+Nous commencerons par un cas académique de propagation d'onde
+plane dans un cube afin de démontrer la convergence du schéma.
+Nous présenterons aussi un cas d'application représentatif
+d'une scène de télécommunication sur lequel nous confrontons
+notre solveur à une implémentation de la méthode des
+différences finies.
+Enfin, nous terminerons par le cas d'application du corps
+humain complet à proximité duquel nous faisons rayonner
+une antenne Bluetooth.

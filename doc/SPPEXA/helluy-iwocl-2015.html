@@ -1,0 +1,2387 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"  
+  "http://www.w3.org/TR/html4/loose.dtd">  
+<html > 
+<head><title>Asynchronous OpenCL/MPI numerical simulations of
+conservation laws</title> 
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1"> 
+<meta name="generator" content="TeX4ht (http://www.cse.ohio-state.edu/~gurari/TeX4ht/)"> 
+<meta name="originator" content="TeX4ht (http://www.cse.ohio-state.edu/~gurari/TeX4ht/)"> 
+<!-- html --> 
+<meta name="src" content="helluy-iwocl-2015.tex"> 
+<meta name="date" content="2015-04-16 08:30:00"> 
+<link rel="stylesheet" type="text/css" href="helluy-iwocl-2015.css"> 
+</head><body 
+>
+                                                
+                                                                                                
+                                                                                                
+<h3 class="titleHead"><span 
+class="phvb8t-x-x-180">Asynchronous OpenCL/MPI numerical simulations of</span>
+<span 
+class="phvb8t-x-x-180">conservation laws</span></h3>
+<div class="author">  </div>
+<div class="author"> <!--l. 163--><p class="noindent" ><span 
+class="phvr8t-x-x-120">Philippe Helluy</span><br />
+ <span 
+class="phvr8t-">IRMA, Universit</span><span 
+class="phvr8t-">é de</span>
+ <span 
+class="phvr8t-">Strasbourg</span><br />
+ <span 
+class="phvr8t-">and Inria TONUS</span><br />
+ <span 
+class="phvr8t-">7 rue Descartes</span><br />
+ <span 
+class="phvr8t-">Strasbourg, France</span><br />
+ <span class="email">
+ <span 
+class="phvr8t-x-x-120">philippe.helluy@unistra.fr</span></span> </div>
+
+<div class="author"> <!--l. 163--><p class="noindent" ><span 
+class="phvr8t-x-x-120">Thomas Strub</span><br />
+ <span 
+class="phvr8t-">AxesSim</span><br />
+ <span 
+class="phvr8t-">rue Jean Sapidus</span><br />
+ <span 
+class="phvr8t-">Illkirch, France</span><br />
+ <span class="email">
+ <span 
+class="phvr8t-x-x-120">thomas.strub@axessim.fr</span></span> </div>
+
+<div class="author"> <!--l. 163--><p class="noindent" ><span 
+class="phvr8t-x-x-120">Michel Massaro</span><br />
+ <span 
+class="phvr8t-">IRMA, Universit</span><span 
+class="phvr8t-">é de</span>
+ <span 
+class="phvr8t-">Strasbourg</span><br />
+ <span 
+class="phvr8t-">7 rue Descartes</span><br />
+ <span 
+class="phvr8t-">Strasbourg, France</span><br />
+ <span class="email">
+ <span 
+class="phvr8t-x-x-120">michel.massaro@unistra.fr</span></span></div>
+
+<div class="author">  </div>
+<div class="author"> <!--l. 163--><p class="noindent" ><span 
+class="phvr8t-x-x-120">Malcolm Roberts</span><br />
+ <span 
+class="phvr8t-">IRMA, Universit</span><span 
+class="phvr8t-">é de</span>
+ <span 
+class="phvr8t-">Strasbourg</span><br />
+ <span 
+class="phvr8t-">7 rue Descartes</span><br />
+ <span 
+class="phvr8t-">Strasbourg, France</span><br />
+ <span class="email">
+ <span 
+class="phvr8t-x-x-120">malcolm.roberts@unistra.fr</span></span></div>
+
+  <div class="toappear"><span 
+class="ptmr8t-x-x-80">This  work  has  benefited  from  several  supports:  from  the  french  defense</span>
+<span 
+class="ptmr8t-x-x-80">agency DGA, from the Labex ANR-11-LABX-0055-IRMIA and from the</span>
+<span 
+class="ptmr8t-x-x-80">AxesSim company.</span>                                                                                         </div>
+  <h3 class="likesectionHead"><a 
+ id="x1-1000"></a>ABSTRACT</h3>
+<!--l. 165--><p class="noindent" >Hyperbolic conservation laws are important mathematical models
+for describing many phenomena in physics or engineering. The
+Finite Volume (FV) method and the Discontinuous Galerkin
+(DG) methods are two popular methods for solving conservation
+laws on computers. Those two methods are good candidates for
+parallel computing:
+    <ul class="itemize1">
+    <li class="itemize">they  require  a  large  amount  of  uniform  and  simple             computations,
+           </li>
+           <li class="itemize">they rely on explicit time-integration,
+           </li>
+           <li class="itemize">they present regular and local data access pattern.</li></ul>
+ <!--l. 172--><p class="noindent" >In this paper, we present several FV and DG numerical
+    simulations that we have realized with the OpenCL
+    and MPI paradigms. First, we compare two optimized
+    implementations of the FV method on a regular grid: an
+    OpenCL implementation and a more traditional OpenMP
+    implementation. We compare the efficiency of the approach on
+    several CPU and GPU architectures of different brands. Then
+                                                                                                
+                                                                                                
+we give a short presentation of the DG method. Finally, we
+present how we have implemented this DG method in the
+OpenCL/MPI framework in order to achieve high efficiency. The
+implementation relies on a splitting of the DG mesh into
+sub-domains and sub-zones. Different kernels are compiled
+according to the zones properties. In addition, we rely on the
+OpenCL asynchronous task graph in order to overlap OpenCL
+computations, memory transfers and MPI communications.
+<!--l. 184--><p class="noindent" >
+  <h3 class="likesectionHead"><a 
+ id="x1-2000"></a>Keywords</h3>
+<!--l. 184--><p class="noindent" >OpenCL, MPI, task graph, conservation laws, discontinuous
+Galerkin approximation
+<!--l. 186--><p class="noindent" >.
+  <h3 class="sectionHead"><span class="titlemark">1   </span> <a 
+ id="x1-30001"></a>Introduction</h3>
+<!--l. 187--><p class="noindent" >Hyperbolic conservation laws are a particular class of Partial
+Differential Equations (PDE) models. They are present in many
+fields of physics or engineering. It is thus very important
+to have efficient software tools for solving such systems.
+The unknown of a system of conservation laws is a vector
+<span 
+class="cmmi-9">W</span><span 
+class="cmr-9">(</span><span 
+class="cmmi-9">x,t</span><span 
+class="cmr-9">) </span><span 
+class="cmsy-9">&isin; </span><span 
+class="msbm-10x-x-90">&#x211D;</span><sup><span 
+class="cmmi-6">m</span></sup> that depends on a space variable <span 
+class="cmmi-9">x </span><span 
+class="cmr-9">= (</span><span 
+class="cmmi-9">x</span><sup><span 
+class="cmr-6">1</span></sup><span 
+class="cmmi-9">&hellip;</span><span 
+class="cmmi-9">x</span><sup><span 
+class="cmmi-6">d</span></sup><span 
+class="cmr-9">) </span>and
+time <span 
+class="cmmi-9">t</span>. The vector <span 
+class="cmmi-9">W </span>is called the vector of conservative
+variables. In this work we shall consider a space dimension
+<span 
+class="cmmi-9">d </span><span 
+class="cmr-9">= 2 </span>or <span 
+class="cmmi-9">d </span><span 
+class="cmr-9">= 3</span>. Generally, the space variable <span 
+class="cmmi-9">x </span>belongs to
+a bounded domain <span 
+class="cmr-9">&Omega; </span><span 
+class="cmsy-9">&sub; </span><span 
+class="msbm-10x-x-90">&#x211D;</span><sup><span 
+class="cmmi-6">d</span></sup>. The system of conservation
+reads
+  <table 
+class="equation"><tr><td><a 
+ id="x1-3001r1"></a>
+  <center class="math-display" >
+<img 
+src="helluy-iwocl-20150x.png" alt="         k
+&part;tW + &part;kF (W )= 0.
+" class="math-display" ></center></td><td class="equation-label">(1)</td></tr></table>
+<!--l. 191--><p class="nopar" >
+In this formula, we use the following notations:
+    <ul class="itemize1">
+    <li class="itemize">The partial derivative operators are denoted by
+    <center class="math-display" >
+    <img 
+src="helluy-iwocl-20151x.png" alt="    &part;        &part;
+&part;t = &part;t, &part;k = &part;xk.
+    " class="math-display" ></center>                                                     </li>
+         <li class="itemize">We adopt the sum-on-repeated-indices convention
+           <center class="math-display" >
+           <img 
+src="helluy-iwocl-20152x.png" alt="          &sum;d
+&part;kFk(W )=    &part;kF k(W ).
+          k=1
+         " class="math-display" ></center>
+         </li>
+         <li class="itemize">The functions <span 
+class="cmmi-9">F</span><sup><span 
+class="cmmi-6">k</span></sup><span 
+class="cmr-9">(</span><span 
+class="cmmi-9">W</span><span 
+class="cmr-9">) </span><span 
+class="cmsy-9">&isin; </span><span 
+class="msbm-10x-x-90">&#x211D;</span><sup><span 
+class="cmmi-6">m</span></sup>, <span 
+class="cmmi-9">k </span><span 
+class="cmr-9">= 1</span><span 
+class="cmmi-9">&hellip;</span><span 
+class="cmmi-9">d</span>, characterize the
+           physical model that we wish to represent. It is classic
+           to consider a space vector <span 
+class="cmmi-9">n </span><span 
+class="cmr-9">= (</span><span 
+class="cmmi-9">n</span><sub><span 
+class="cmr-6">1</span></sub><span 
+class="cmmi-9">&hellip;</span><span 
+class="cmmi-9">n</span><sub><span 
+class="cmmi-6">d</span></sub><span 
+class="cmr-9">) </span><span 
+class="cmsy-9">&isin; </span><span 
+class="msbm-10x-x-90">&#x211D;</span><sup><span 
+class="cmmi-6">d</span></sup> and to
+           also define the <span 
+class="aeti9-">flux </span>of the system
+           <center class="math-display" >
+           <img 
+src="helluy-iwocl-20153x.png" alt="F(W,n) =F k(W )nk.
+         " class="math-display" ></center></li></ul>
+ <!--l. 198--><p class="noindent" >System (<a 
+href="#x1-3001r1">1<!--tex4ht:ref: eq:conslaw --></a>) is supplemented by an initial condition
+       <table 
+class="equation"><tr><td><a 
+ id="x1-3002r2"></a>
+       <center class="math-display" >
+    <img 
+src="helluy-iwocl-20154x.png" alt="W (x,0)= W0 (x),
+   " class="math-display" ></center></td><td class="equation-label">(2)</td></tr></table>
+    <!--l. 201--><p class="nopar" >
+    at time <span 
+class="cmmi-9">t </span><span 
+class="cmr-9">= 0</span>, and conditions on the boundary <span 
+class="cmmi-9">&part;</span><span 
+class="cmr-9">&Omega; </span>of <span 
+class="cmr-9">&Omega;</span>.
+    For example, one can prescribe the value of <span 
+class="cmmi-9">W </span>on the
+    boundary
+       <table 
+class="equation"><tr><td><a 
+ id="x1-3003r3"></a>
+       <center class="math-display" >
+                                                                                                
+                                                                                                
+<img 
+src="helluy-iwocl-20155x.png" alt="W (x,t)= Wb (x,t),  x&isin; &part;&Omega;.
+" class="math-display" ></center></td><td class="equation-label">(3)</td></tr></table>
+<!--l. 205--><p class="nopar" >
+Generally, the system (<a 
+href="#x1-3001r1">1<!--tex4ht:ref: eq:conslaw --></a>), (<a 
+href="#x1-3002r2">2<!--tex4ht:ref: eq:init_cond --></a>), (<a 
+href="#x1-3003r3">3<!--tex4ht:ref: eq:boundary_cond --></a>) admits a unique solution if it
+satisfies the hyperbolicity condition: the Jacobian matrix of the
+flux
+  <center class="math-display" >
+<img 
+src="helluy-iwocl-20156x.png" alt="&nabla;  F(W,n )
+ W  " class="math-display" ></center> is
+diagonalizable with real eigenvalues for all values of <span 
+class="cmmi-9">W </span>and
+<span 
+class="cmmi-9">n</span>.
+<!--l. 208--><p class="indent" >  The above mathematical framework is very general. It can be
+applied to electromagnetism, fluid mechanics, multiphase flows,
+magneto-hydro-dynamics (MHD), Vlasov plasmas, etc. Let us
+just give two examples:
+    <ul class="itemize1">
+    <li class="itemize">The Maxwell equations describe the evolution of the
+    electric  field  <span 
+class="cmmi-9">E</span><span 
+class="cmr-9">(</span><span 
+class="cmmi-9">x,t</span><span 
+class="cmr-9">)  </span><span 
+class="cmsy-9">&isin; </span><span 
+class="msbm-10x-x-90">&#x211D;</span><sup><span 
+class="cmr-6">3</span></sup>  and  the  magnetic  field
+    <span 
+class="cmmi-9">H</span><span 
+class="cmr-9">(</span><span 
+class="cmmi-9">x,t</span><span 
+class="cmr-9">)  </span><span 
+class="cmsy-9">&isin; </span><span 
+class="msbm-10x-x-90">&#x211D;</span><sup><span 
+class="cmr-6">3</span></sup>.  The  conservative  variables  are  the
+    superimposition of these two vectors <span 
+class="cmmi-9">W </span><span 
+class="cmr-9">= (</span><span 
+class="cmmi-9">E</span><sup><span 
+class="cmmi-6">T</span></sup><span 
+class="cmmi-9">,H</span><sup><span 
+class="cmmi-6">T</span></sup><span 
+class="cmr-9">)</span><sup><span 
+class="cmmi-6">T</span></sup>
+    (thus <span 
+class="cmmi-9">m </span><span 
+class="cmr-9">= 6</span>) and the Maxwell flux is given by
+    <center class="math-display" >
+    <img 
+src="helluy-iwocl-20157x.png" alt="        [          ]
+F(W,n)=    0  &minus; n&#x00D7;  W.
+          n&#x00D7;    0
+    " class="math-display" ></center> In Section 3 we present numerical results obtained
+    with the Maxwell equations.
+    </li>
+    <li class="itemize">In fluid mechanics, the Euler equations describe the
+    evolution of a compressible gas of density <span 
+class="cmmi-9">&rho;</span>, velocity
+    <span 
+class="cmmi-9">u  </span><span 
+class="cmr-9">=  (</span><span 
+class="cmmi-9">u</span><sup><span 
+class="cmr-6">1</span></sup><span 
+class="cmmi-9">,u</span><sup><span 
+class="cmr-6">2</span></sup><span 
+class="cmmi-9">,u</span><sup><span 
+class="cmr-6">3</span></sup><span 
+class="cmr-9">)  </span>and  pressure  <span 
+class="cmmi-9">p</span>.  The  conservative
+    variables are given here by
+    <center class="math-display" >
+    <img 
+src="helluy-iwocl-20158x.png" alt="         T                 T
+W = (&rho;,&rho;u  ,p&#x2215;(&gamma;&minus; 1)+ 1&#x2215;2&rho;u &sdot;u)
+           " class="math-display" ></center> and the flux by
+           <center class="math-display" >
+           <img 
+src="helluy-iwocl-20159x.png" alt="F (W, n)= (&rho;u &sdot;n,&rho;u &sdot;nuT+
+           " class="math-display" ></center>
+           <center class="math-display" >
+           <img 
+src="helluy-iwocl-201510x.png" alt="pnT,{&gamma;p&#x2215;(&gamma;&minus; 1)+ 1&#x2215;2&rho;u &sdot;u}u&sdot;n)T,
+         " class="math-display" ></center>where <span 
+class="cmmi-9">&gamma; &#x003E; </span><span 
+class="cmr-9">1 </span>is the polytropic exponent of the gas.
+           The MHD equations are a generalization of the Euler
+           equations for taking into account magnetic effects in
+           conductive compressible gas. The MHD system is a
+           complicated system of conservation laws, with <span 
+class="cmmi-9">m </span><span 
+class="cmr-9">= 9</span>.
+           It is not the objective of this work to detail the MHD
+           equations.  For  this  we  refer  for  instance  to  <span class="cite">[<a 
+href="#Xmassaro2014numerical">11</a>]</span>.  In
+           Section 2, we present numerical results obtained with
+           the MHD equations.</li></ul>
+    <!--l. 218--><p class="indent" >   Because of their numerous fields of application, many
+    numerical methods have been developed for the resolution of
+    hyperbolic conservation laws. For instance the finite volume
+    (FV) and discontinuous Galerkin (DG) method are very
+    popular. They are easy to program on a standard parallel
+    computer thanks to subdomain decomposition. However, on new
+    hybrid architectures, the efficient implementation of those
+    methods is more complex. It appears that there is possibility of
+    optimizations. In this paper, we explore several numerical
+    experiments that we have made for solving conservation laws
+    with the FV and DG methods on hybrid computers. OpenCL
+    and MPI libraries are today available on a wide range of
+    platform, making them a good choice for our optimizations.
+    It is classic to rely on OpenCL for local computations
+    and on MPI for communications between accelerators. In
+    addition, in our work we will see that it is interesting to
+    also use the OpenCL asynchronous task graph in order to
+    overlap OpenCL computations, memory transfers and MPI
+    communications.
+    <!--l. 221--><p class="indent" >   In the first part of this paper, we compare a classic OpenMP
+    optimization of a FV solver to an OpenCL implementation.
+    We show that on a standard multicore CPU, we obtain
+    comparable speedups between the OpenMP and the OpenCL
+    implementation. In addition, using several GPU accelerators
+    and MPI communications between them, we were able to make
+                                                                                                
+                                                                                                
+computations that would be unattainable with more classic
+architectures.
+<!--l. 223--><p class="indent" >  Our FV implementation is limited to regular grids. In the
+second part of the paper, we thus describe an efficient
+implementation of the DG algorithm on unstructured grids. Our
+implementation relies on several standard optimizations:
+local memory prefetching, exploitation of the sparse nature
+of the tensor basis, and MPI subdomain decomposition.
+Other optimizations are less common: idling work-item for
+minimizing cache prefetching and asynchronous MPI/OpenCL
+communication.
+.
+  <h3 class="sectionHead"><span class="titlemark">2   </span> <a 
+ id="x1-40002"></a>Comparison of an OpenCL and an OpenMP solver on a
+regular grid</h3>
+.
+  <h4 class="subsectionHead"><span class="titlemark">2.1   </span> <a 
+ id="x1-50002.1"></a>FV approximation of conservation laws</h4>
+<!--l. 229--><p class="noindent" >The FV and DG method construct a discontinuous approximation
+of the conservative variables <span 
+class="cmmi-9">W</span>. In the case of the FV method,
+the approximation is piecewise constant. In the case of the DG
+method, the approximation is piecewise polynomial. It is
+therefore necessary to extend the definition of the flux <span 
+class="cmmi-9">F</span><span 
+class="cmr-9">(</span><span 
+class="cmmi-9">W,n</span><span 
+class="cmr-9">)</span>
+at a discontinuity of the solution. We consider thus a spatial
+discontinuity <span 
+class="cmr-9">&Sigma; </span>of <span 
+class="cmmi-9">W</span>. The discontinuity is oriented by a normal
+vector <span 
+class="cmmi-9">n</span><sub><span 
+class="cmmi-6">LR</span></sub>. We use the following convention: the &#8220;left&#8221; (L) of <span 
+class="cmr-9">&Sigma;</span>
+is on the side of <span 
+class="cmsy-9">&minus;</span><span 
+class="cmmi-9">n</span><sub><span 
+class="cmmi-6">LR</span></sub> <span 
+class="cmr-9">= </span><span 
+class="cmmi-9">n</span><sub><span 
+class="cmmi-6">RL</span></sub> and the &#8220;right&#8221; (R) is on the
+side of <span 
+class="cmmi-9">n</span><sub><span 
+class="cmmi-6">LR</span></sub>. We denote by <span 
+class="cmmi-9">W</span><sub><span 
+class="cmmi-6">L</span></sub> and <span 
+class="cmmi-9">W</span><sub><span 
+class="cmmi-6">R</span></sub> the values of
+<span 
+class="cmmi-9">W </span>on the two sides of <span 
+class="cmr-9">&Sigma;</span>. The numerical flux is then a
+function
+  <center class="math-display" >
+<img 
+src="helluy-iwocl-201511x.png" alt="F(WL,WR, nLR).  " class="math-display" ></center> A
+common choice is to take
+  <table 
+class="equation-star"><tr><td>
+  <center class="math-display" >
+<img 
+src="helluy-iwocl-201512x.png" alt="             F(WL, n)+ F(WR,n)   s
+F(WL,WR, n)= --------2-------- &minus; 2(WR  &minus; WL ),
+" class="math-display" ></center></td></tr></table>
+<!--l. 233--><p class="nopar" >
+where <span 
+class="cmmi-9">s </span>is called the numerical viscosity. It is a majorant of all
+the wave speeds of the system. For more simplicity, in this
+section we consider the two-dimensional case <span 
+class="cmmi-9">d </span><span 
+class="cmr-9">= 2 </span>and a square
+domain <span 
+class="cmmi-9">x </span><span 
+class="cmr-9">= (</span><span 
+class="cmmi-9">x</span><sup><span 
+class="cmr-6">1</span></sup><span 
+class="cmmi-9">,x</span><sup><span 
+class="cmr-6">2</span></sup><span 
+class="cmr-9">) </span><span 
+class="cmsy-9">&isin; </span><span 
+class="cmr-9">&Omega; =]0</span><span 
+class="cmmi-9">,L</span><span 
+class="cmr-9">[</span><span 
+class="cmsy-9">&#x00D7;</span><span 
+class="cmr-9">]0</span><span 
+class="cmmi-9">,L</span><span 
+class="cmr-9">[</span>. The space step of
+the grid is <span 
+class="cmr-9">&Delta;</span><span 
+class="cmmi-9">x </span><span 
+class="cmr-9">= </span><span 
+class="cmmi-9">L&#x2215;N </span>where <span 
+class="cmmi-9">N </span>is a positive integer. The
+grid cells are squares of size <span 
+class="cmmi-9">h </span><span 
+class="cmsy-9">&#x00D7; </span><span 
+class="cmmi-9">h</span>. The cell centers are         defined by <span 
+class="cmmi-9">x</span><sub><span 
+class="cmmi-6">i,j</span></sub> <span 
+class="cmr-9">= ((</span><span 
+class="cmmi-9">i </span><span 
+class="cmr-9">+</span> <img 
+src="helluy-iwocl-201513x.png" alt="12"  class="frac" align="middle"><span 
+class="cmr-9">)&Delta;</span><span 
+class="cmmi-9">x, </span><span 
+class="cmr-9">(</span><span 
+class="cmmi-9">j </span><span 
+class="cmr-9">+</span> <img 
+src="helluy-iwocl-201514x.png" alt="12"  class="frac" align="middle"><span 
+class="cmr-9">)&Delta;</span><span 
+class="cmmi-9">x</span><span 
+class="cmr-9">)</span>. We also consider a
+    time step <span 
+class="cmr-9">&Delta;</span><span 
+class="cmmi-9">t </span>and the times <span 
+class="cmmi-9">t</span><sup><span 
+class="cmmi-6">n</span></sup> <span 
+class="cmr-9">= </span><span 
+class="cmmi-9">n</span><span 
+class="cmr-9">&Delta;</span><span 
+class="cmmi-9">t</span>. We look for an
+    approximation <span 
+class="cmmi-9">W</span><sub><span 
+class="cmmi-6">i,j</span></sub><sup><span 
+class="cmmi-6">n</span></sup> of <span 
+class="cmmi-9">W </span>at the cell centers <span 
+class="cmmi-9">x</span><sub>
+<span 
+class="cmmi-6">i,j</span></sub> and at time
+    <span 
+class="cmmi-9">t</span><sup><span 
+class="cmmi-6">n</span></sup>
+       <table 
+class="equation"><tr><td><a 
+ id="x1-5001r4"></a>
+       <center class="math-display" >
+    <img 
+src="helluy-iwocl-201515x.png" alt="  n         n
+Wi,j &#x2243; W (xi,j,t ).
+   " class="math-display" ></center></td><td class="equation-label">(4)</td></tr></table>
+    <!--l. 238--><p class="nopar" >
+    Let <span 
+class="cmmi-9">&nu;</span><sup><span 
+class="cmr-6">1</span></sup> and <span 
+class="cmmi-9">&nu;</span><sup><span 
+class="cmr-6">2</span></sup> be normal vectors pointing in the <span 
+class="cmmi-9">x</span><sup><span 
+class="cmr-6">1</span></sup> and <span 
+class="cmmi-9">x</span><sup><span 
+class="cmr-6">2</span></sup>
+     direction, respectively, so that
+       <center class="math-display" >
+    <img 
+src="helluy-iwocl-201516x.png" alt="&nu;1 = (1,0)T, &nu;2 = (0,1)T.  " class="math-display" ></center>
+   We adopt a Strang splitting strategy: for advancing the
+    numerical solution from time step <span 
+class="cmmi-9">t</span><sup><span 
+class="cmmi-6">n</span></sup> to time step <span 
+class="cmmi-9">t</span><sup><span 
+class="cmmi-6">n</span><span 
+class="cmr-6">+1</span></sup>, we
+    first solve the finite volume approximation in direction
+    <span 
+class="cmmi-9">x</span><sup><span 
+class="cmr-6">1</span></sup>
+        <table 
+class="equation"><tr><td><a 
+ id="x1-5002r5"></a>
+        <center class="math-display" >
+     <img 
+src="helluy-iwocl-201517x.png" alt="  &lowast;     n      n   n    1       n     n  1
+W-i,j &minus;-Wi,j+ F(W-i,j,W-i+1,j,&nu;-)&minus;-F(Wi&minus;1,j,Wi,j,&nu;-)= 0,
+    &Delta;t                   &Delta;x
+   " class="math-display" ></center></td><td class="equation-label">(5)</td></tr></table>
+    <!--l. 247--><p class="nopar" >
+    and then in direction <span 
+class="cmmi-9">x</span><sup><span 
+class="cmr-6">2</span></sup>
+        <table 
+class="equation"><tr><td><a 
+ id="x1-5003r6"></a>
+        <center class="math-display" >
+     <img 
+src="helluy-iwocl-201518x.png" alt="  n+1    &lowast;      n   n    2       n     n  2
+W-i,j-&minus;-Wi,j+ F(W-i,j,W-i,j+1,&nu;-)&minus;-F(Wi,j&minus;1,Wi,j,&nu;-)= 0.
+    &Delta;t                    &Delta;x
+" class="math-display" ></center></td><td class="equation-label">(6)</td></tr></table>
+<!--l. 252--><p class="nopar" >
+On the boundary cells, we simply replace, in the previous
+formulas, the missing values of <span 
+class="cmmi-9">W </span>by the boundary values&#x00A0;(<a 
+href="#x1-3003r3">3<!--tex4ht:ref: eq:boundary_cond --></a>).
+.
+  <h4 class="subsectionHead"><span class="titlemark">2.2   </span> <a 
+ id="x1-60002.2"></a>OpenMP implementation of the FV scheme</h4>
+<!--l. 256--><p class="noindent" >The chosen numerical scheme is very simple. We have first
+written a sequential C implementation of the algorithm. We
+only consider results with single precision. We have also decided
+to apply the FV scheme to the ideal MHD system with
+divergence correction. The MHD system models the coupling of
+a compressible fluid with a magnetic field. It contains <span 
+class="cmmi-9">m </span><span 
+class="cmr-9">= 9</span>
+conservative variables and the numerical flux can be a rather
+complex function. The numerical simulations thus require heavy
+computations and are well adapted to GPU hardware. For more
+details and bibliography on the MHD equations, we refer to
+<span class="cite">[<a 
+href="#Xmassaro2014numerical">11</a>]</span>.
+<!--l. 258--><p class="indent" >  In this first version we simply loop on all the rows <span 
+class="cmmi-9">i </span>of the
+grid and then on all the columns <span 
+class="cmmi-9">j </span>for scanning the grid points
+and applying the <span 
+class="cmmi-9">x</span><sup><span 
+class="cmr-6">1</span></sup>-step (<a 
+href="#x1-5002r5">5<!--tex4ht:ref: eq:x-step --></a>). We compile the code with a
+recent version of gcc without optimizations. If we activate
+optimizations (-O3 compilation option of gcc), we obtain
+an easy speedup of 5. In order to observe cache access
+effects, we consider only large grids with sizes bigger than
+<span 
+class="cmr-9">1024 </span><span 
+class="cmsy-9">&#x00D7; </span><span 
+class="cmr-9">1024</span>. It is clear that our first scanning strategy is not
+optimal, because it induces many cache misses. We have
+thus also implemented a tiling strategy, which consists in
+scanning smaller subgrids of the large grid. The subgrid size
+is chosen in such a way that cache misses are reduced.
+With this additional optimization we obtain a speedup of 8
+compared to the initial naive implementation. The next
+optimization step is then to parallelize the numerical scheme.
+We have thus also implemented an OpenMP version of
+the FV algorithm. It consists simply in adding parallel
+OpenMP directives before the most external loop when
+scanning each subgrid. With the tiling+OpenMP version
+of our code we are able to reach a speedup of 116 on a
+two-CPU SMP computer compared to the naive sequential
+code.
+<!--l. 265--><p class="indent" >  We use the optimized tiled OpenMP implementation as our
+reference for comparisons with OpenCL implementations (see
+Table <a 
+href="#x1-10002r1">1<!--tex4ht:ref: fv-speedup --></a> where the different implementations are compared).
+.
+  <h4 class="subsectionHead"><span class="titlemark">2.3   </span> <a 
+ id="x1-70002.3"></a>OpenCL implementation of the FV scheme</h4>
+.
+  <h5 class="subsubsectionHead"><span class="titlemark">2.3.1   </span> <a 
+ id="x1-80002.3.1"></a>OpenCL</h5>
+<!--l. 269--><p class="noindent" >It is necessary to adapt our code to new SIMD accelerators,
+such as GPUs, in order to decrease computation cost. For this,
+we have chosen OpenCL, which is a recent programming
+framework for driving such accelerators. A nice feature of
+OpenCL is that multicore CPUs are also considered as
+accelerators. The same program can thus be run without
+modification on a CPU or a GPU.
+<!--l. 271--><p class="indent" >  OpenCL means &#8220;Open Computing Language&#8221;. It consists in a
+library of C functions, called from the host, for driving one or
+several accelerators (GPU or multicore CPU). It contains also a
+C-like programming language for writing the programs (the
+&#8220;kernels&#8221;) that will run on the accelerators. In the OpenCL      paradigm, the accelerators are called &#8220;devices&#8221;. Each device
+    possesses its own memory (&#8220;global memory&#8221;). Each device is
+    made of compute units of several processors (&#8220;processing
+    elements&#8221;) that share a small fast-access cache memory (&#8220;local
+    memory&#8221;).
+    <!--l. 273--><p class="indent" >   For practical reasons OpenCL allows one to program the
+    accelerator as if it had an arbitrary number of compute units
+    and processing elements. The &#8220;virtual&#8221; compute units and
+    processing elements are respectively called &#8220;work-groups&#8221; and
+    &#8220;work-items&#8221; in the OpenCL terminology. The kernels
+    are launched on the actual devices, compute units and
+    processing elements through a mechanism of &#8220;command
+    queues&#8221;. Some rules have to be respected for efficient OpenCL
+    programming:
+           <ul class="itemize1">
+           <li class="itemize">The work-items can all access the global memory of
+           the device but can only access the scarce local memory
+           of their work-group.
+           </li>
+           <li class="itemize">If two or more work-items try to write at the same
+           memory location, only one succeeds.
+           </li>
+           <li class="itemize">The access to the local memory is much faster than
+           the  access  to  the  global  memory.  If  access  to  the
+           global memory is mandatory, it is advised for faster
+           access  that  neighboring  work-items  read/write  at
+           neighboring memory locations. Such optimal access is
+           called &#8220;coalescent access&#8221;. When an algorithm requires
+           non regular memory access, a classic strategy is thus to
+           prefetch in a coalescent way the data from the global
+           memory into the local memory, then work on the data
+           in local memory. When the work is finished, the data
+           are copied back into the global memory in a coalescent
+           fashion.
+           </li>
+           <li class="itemize">Finally, on a GPU, data transfers between the host
+           and the global memory are very slow, because they
+           are  generally  transported  through  the  PCIe  bus.
+           Consequently, they should be avoided.</li></ul>
+    <!--l. 281--><p class="indent" >   As explained above OpenCL exposes useful abstractions for
+    driving generic SIMD architectures. In this section, we exploit
+    these features. However OpenCL contains other useful
+    abstractions:
+           <ul class="itemize1">
+           <li class="itemize">It offers the possibility to launch different kernels or
+           memory transfer tasks on command queues attached
+           to  different  devices.  Another  level  of  parallelism  is
+           thus available. The tasks among different command
+           queues can be launched asynchronously. A mechanism
+           of events allows one to describe the task dependencies.
+           </li>
+           <li class="itemize">The kernel sources are compiled at runtime. It is thus
+           possible  to  customize  the  kernels  depending  on  the
+           accelerators detected by OpenCL during execution.</li></ul>
+ <!--l. 286--><p class="noindent" >These more advanced features are exploited in Section 3.
+                                                                                                
+                                                                                                
+.
+  <h5 class="subsubsectionHead"><span class="titlemark">2.3.2   </span> <a 
+ id="x1-90002.3.2"></a>Implementation</h5>
+<!--l. 289--><p class="noindent" >For the OpenCL version of our FV algorithm, we organize the
+data in a <span 
+class="cmr-9">(</span><span 
+class="cmmi-9">x</span><sub><span 
+class="cmr-6">1</span></sub><span 
+class="cmmi-9">,x</span><sub><span 
+class="cmr-6">2</span></sub><span 
+class="cmr-9">) </span>grid: each conservative variable is stored in a
+two-dimensional <span 
+class="cmr-9">(</span><span 
+class="cmmi-9">i,j</span><span 
+class="cmr-9">) </span>array. For advancing from time step <span 
+class="cmmi-9">t</span><sup><span 
+class="cmmi-6">n</span></sup> to
+time step <span 
+class="cmmi-9">t</span><sup><span 
+class="cmmi-6">n</span><span 
+class="cmr-6">+1</span></sup>:
+    <ul class="itemize1">
+    <li class="itemize">In principle, we associate a work-item to each cell of
+    the grid and a work-group to each row. But OpenCL
+    drivers generally impose a maximal work-group size.
+    Thus when the row is too long it is also necessary to
+    split the row and distribute it on several work-groups.
+    </li>
+    <li class="itemize">We compute the flux balance in the <span 
+class="cmmi-9">x</span><sub><span 
+class="cmr-6">1</span></sub>-direction for
+    each cell of each row of the grid (see formula (<a 
+href="#x1-5002r5">5<!--tex4ht:ref: eq:x-step --></a>)).
+    </li>
+    <li class="itemize">We      then      transpose      the      grid,      which
+    amounts  to  exchanging  the  <span 
+class="cmmi-9">x</span><sub><span 
+class="cmr-6">1</span></sub>  and  <span 
+class="cmmi-9">x</span><sub><span 
+class="cmr-6">2</span></sub>  coordinates.
+    The <span 
+class="cmr-9">(</span><span 
+class="cmmi-9">i,j</span><span 
+class="cmr-9">) </span><span 
+class="cmsy-9">&rarr; </span><span 
+class="cmr-9">(</span><span 
+class="cmmi-9">j,i</span><span 
+class="cmr-9">) </span>transposition is performed on the
+    two-dimensional array of each conservative variable.
+    For ensuring coalescent memory access we adopt an
+    optimized  memory  transfer  algorithm  <span class="cite">[<a 
+href="#Xruetsch2009optimizing">13</a>]</span>  (see  also
+    <span class="cite">[<a 
+href="#Xmichea2010accelerating">12</a>]</span>).
+    </li>
+    <li class="itemize">We  can  then  compute  the  fluxes  balance  in  the
+    <span 
+class="cmmi-9">x</span><sub><span 
+class="cmr-6">2</span></sub>-direction (<a 
+href="#x1-5003r6">6<!--tex4ht:ref: eq:y-step --></a>) for each row of the transposed grid.
+    Thanks to the previous transposition, memory access
+    is coalescent.
+    </li>
+    <li class="itemize">We again transpose the grid.</li></ul>
+<!--l. 303--><p class="indent" >  Let us mention that other strategies are possible. For
+instance in <span class="cite">[<a 
+href="#Xmichea2010accelerating">12</a>]</span> the authors describe GPU computations of
+scalar (<span 
+class="cmmi-9">m </span><span 
+class="cmr-9">= 1</span>) elastic waves. The algorithm is based on
+two-dimensional tiling of the mesh into cache memory and
+registers in order to ensure fast memory access. However the tile
+size is limited by the cache size and the number of unknowns <span 
+class="cmmi-9">m</span>
+in each grid cell. In our case for the MHD system we have
+<span 
+class="cmmi-9">m </span><span 
+class="cmr-9">= 9 </span>and the adaptation of the algorithm given in <span class="cite">[<a 
+href="#Xmichea2010accelerating">12</a>]</span> would
+probably be inefficient.
+<!--l. 305--><p class="indent" >  We have tested this OpenCL implementation in several
+configurations and we can make the following comments:
+    <ul class="itemize1">
+    <li class="itemize">We  can  run  the  OpenCL  code  on  a  two-CPU
+    SMP computer or GPUs of different brands, without
+    modification.   In   addition,   we   obtain   interesting
+    speedups on SMP architectures. The OpenCL speedup
+    for  CPU  accelerator  is  approximately  <span 
+class="cmr-9">70%  </span>of  the
+    OpenMP speedup. It remains very good considering
+    that the transposition algorithm probably deteriorates
+    the memory access efficiency on CPU architectures.
+    The  fact  that  OpenCL  is  a  possible  alternative  to
+    OpenMP on multicore CPU has already been discussed
+    in <span class="cite">[<a 
+href="#Xshen2012performance">14</a>]</span>.
+    </li>
+    <li class="itemize">On AMD or NVIDIA GPUs, the same version of our
+    code achieves excellent performance.                           </li>
+           <li class="itemize">If  we  replace  the  optimized  transposition  by  a
+           naive  unoptimized  transposition  algorithm  the  code
+           runs   approximately   10   times   slower   on   GPUs.
+           The  coalescent  memory  access  is  thus  an  essential
+           ingredient of the efficiency.</li></ul>
+    .
+       <h4 class="subsectionHead"><span class="titlemark">2.4   </span> <a 
+ id="x1-100002.4"></a>OpenCL/MPI FV solver</h4>
+    <!--l. 314--><p class="noindent" >We now modify the OpenCL implementation in order to address
+    several GPU accelerators at the same time. This could
+    theoretically be achieved by creating several command queues,
+    one for each GPU device. However, as of today, when GPUs are
+    plugged into different nodes of a supercomputers, the current
+    OpenCL drivers are not able to drive at the same time GPUs of
+    different nodes. Therefore, we have decided to rely on the MPI
+    framework for managing the communications between different
+    GPUs. This strategy is very common (see for instance <span class="cite">[<a 
+href="#Xaubert2010numerical">1</a> <a 
+href="#Xcabel2011multi">4</a> <a 
+href="#Xhelluy2014two">7</a>]</span>
+    and included references).
+    <!--l. 316--><p class="indent" >   We split the computational domain <span 
+class="cmr-9">&Omega; </span>into several subdomains
+    in the <span 
+class="cmmi-9">x</span><sup><span 
+class="cmr-6">1</span></sup> direction. An example of splitting with four subdomains
+    is presented on Figure <a 
+href="#x1-10001r1">1<!--tex4ht:ref: fig:mpi --></a>. Then, each subdomain is associated to
+    one MPI node and each MPI node drives one GPU. For
+    applying the finite volume algorithm on a subdomain, it
+    is necessary to exchange two layers of cells between the
+    neighboring subdomains at the beginning of each time step.
+    The layers are shaded in grey in Figure <a 
+href="#x1-10001r1">1<!--tex4ht:ref: fig:mpi --></a>. On each MPI
+    node, an exchange thus requires a GPU to CPU memory
+    transfer of the cell layers, a MPI send/recv communication
+    and a CPU to GPU transfer for retrieving the neighbor
+    layers. The exchanged cells represent a small amount of the
+    total grid cells, however, the transfer and communication
+    time represent a non-negligible amount of the computation
+    cost.
+    <!--l. 319--><p class="indent" >   In our first OpenCL/MPI implementation, the exchange task
+    is performed in a synchronous way: we wait for the exchange to
+    be finished before computing the fluxes balance in the
+    subdomains. This explains why the speedup between the
+    OpenCL code and the OpenCL/MPI code with four GPUs is
+    approximately 3.5 (the ideal speedup would be 4). See
+    Table&#x00A0;<a 
+href="#x1-10002r1">1<!--tex4ht:ref: fv-speedup --></a>).
+    <!--l. 321--><p class="indent" >   Despite the synchronous approach, the OpenCL/MPI FV
+    solver on structured grid is rather efficient. It has permitted us
+    to perform computations on very fine grids that would be
+    unreachable with standard parallel computers. For instance, we
+    have performed two-fluid computations of shock-bubble
+    interaction with grid size up to <span 
+class="cmr-9">40</span><span 
+class="cmmi-9">, </span><span 
+class="cmr-9">000 </span><span 
+class="cmsy-9">&#x00D7; </span><span 
+class="cmr-9">20</span><span 
+class="cmmi-9">, </span><span 
+class="cmr-9">000 </span>in <span class="cite">[<a 
+href="#Xhelluy2014interpolated">6</a>]</span>. An
+    animation (on a coarser grid) of this test case can be seen at
+    <a 
+href="https://www.youtube.com/watch?v=c8hcqihJzbw" ><a 
+href="www.youtube.com/watch?v=c8hcqihJzbw" class="url" ><span 
+class="aett9-">www.youtube.com/watch?v=c8hcqihJzbw</span></a></a>. This animation uses
+    the possibility to share GPU buffers between OpenGL and
+    OpenCL drivers (OpenGL/OpenCL interops). We have also
+    performed magneto-hydro-dynamics (MHD) simulation on very
+    fine grids in <span class="cite">[<a 
+href="#Xmassaro2014numerical">11</a>]</span>.
+    <!--l. 323--><p class="indent" >   Now we would like to address the following drawbacks of the
+    FV solver:
+           <ul class="itemize1">
+           <li class="itemize">The  FV  method  is  limited  to  first  or  second  order
+           approximation. In some applications, it is important
+           to have access to higher order schemes.
+           </li>
+           <li class="itemize">MPI and host/GPU communications take time, so it
+           is important to provide asynchronous implementations
+           for scalability with more MPI nodes .
+                                                                                                
+                                                                                                
+    </li>
+    <li class="itemize">The  previously  described  approach  is  limited  to
+    structured grids. We wish also to extend the method
+    to arbitrary geometries.</li></ul>
+<!--l. 330--><p class="indent" >  In the next section we describe our implementation of a
+Discontinuous Galerkin (DG) solver that allows to achieving
+higher order, addressing general geometries, and overlapping
+computations and communications. <hr class="figure"><div class="figure" 
+>
+                                                
+                                                                                                
+                                                                                                
+<a 
+ id="x1-10001r1"></a>
+                                                
+                                                                                                
+                                                                                                
+<!--l. 361--><p class="noindent" ><object data="helluy-iwocl-2015-1.svg" width="431.64253 " height="220.52396 " type="image/svg+xml"><p>SVG-Viewer needed.</p></object>
+<br /> <div class="caption" 
+><span class="id">Figure 1: </span><span  
+class="content">Subdomain MPI decomposition</span></div><!--tex4ht:label?: x1-10001r1 -->
+                                                
+                                                                                                
+                                                                                                
+<!--l. 363--><p class="indent" >  </div><hr class="endfigure">
+                                                
+                                                                                                
+                                                                                                
+<!--l. 438--><p class="indent" >  <a 
+ id="x1-10002r1"></a><hr class="float"><div class="float" 
+>
+                                                
+                                                                                                
+                                                                                                
+<div class="tabular"> <table id="TBL-7" class="tabular" 
+cellspacing="0" cellpadding="0" rules="groups" 
+><colgroup id="TBL-7-1g"><col 
+id="TBL-7-1"></colgroup><colgroup id="TBL-7-2g"><col 
+id="TBL-7-2"></colgroup><colgroup id="TBL-7-3g"><col 
+id="TBL-7-3"></colgroup><tr 
+class="hline"><td><hr></td><td><hr></td><td><hr></td></tr><tr  
+ style="vertical-align:baseline;" id="TBL-7-1-"><td  style="white-space:nowrap; text-align:center;" id="TBL-7-1-1"  
+class="td11">          Implementation               </td><td  style="white-space:nowrap; text-align:center;" id="TBL-7-1-2"  
+class="td11"> Time  </td><td  style="white-space:nowrap; text-align:center;" id="TBL-7-1-3"  
+class="td11"> Speedup  </td>
+</tr><tr 
+class="hline"><td><hr></td><td><hr></td><td><hr></td></tr><tr 
+class="hline"><td><hr></td><td><hr></td><td><hr></td></tr><tr  
+ style="vertical-align:baseline;" id="TBL-7-2-"><td  style="white-space:nowrap; text-align:center;" id="TBL-7-2-1"  
+class="td11">   OpenMP (Intel CPU 12 cores)     </td><td  style="white-space:nowrap; text-align:center;" id="TBL-7-2-2"  
+class="td11"> 717 s  </td><td  style="white-space:nowrap; text-align:center;" id="TBL-7-2-3"  
+class="td11">    1       </td>
+</tr><tr 
+class="hline"><td><hr></td><td><hr></td><td><hr></td></tr><tr  
+ style="vertical-align:baseline;" id="TBL-7-3-"><td  style="white-space:nowrap; text-align:center;" id="TBL-7-3-1"  
+class="td11">    OpenCL (Intel CPU 12 cores)      </td><td  style="white-space:nowrap; text-align:center;" id="TBL-7-3-2"  
+class="td11"> 996 s  </td><td  style="white-space:nowrap; text-align:center;" id="TBL-7-3-3"  
+class="td11">    0.7     </td>
+</tr><tr 
+class="hline"><td><hr></td><td><hr></td><td><hr></td></tr><tr  
+ style="vertical-align:baseline;" id="TBL-7-4-"><td  style="white-space:nowrap; text-align:center;" id="TBL-7-4-1"  
+class="td11">      OpenCL (NVIDIA K20)         </td><td  style="white-space:nowrap; text-align:center;" id="TBL-7-4-2"  
+class="td11">  45 s   </td><td  style="white-space:nowrap; text-align:center;" id="TBL-7-4-3"  
+class="td11">    16      </td>
+</tr><tr 
+class="hline"><td><hr></td><td><hr></td><td><hr></td></tr><tr  
+ style="vertical-align:baseline;" id="TBL-7-5-"><td  style="white-space:nowrap; text-align:center;" id="TBL-7-5-1"  
+class="td11">      OpenCL (AMD HD7970)         </td><td  style="white-space:nowrap; text-align:center;" id="TBL-7-5-2"  
+class="td11">  38 s   </td><td  style="white-space:nowrap; text-align:center;" id="TBL-7-5-3"  
+class="td11">    19      </td>
+</tr><tr 
+class="hline"><td><hr></td><td><hr></td><td><hr></td></tr><tr  
+ style="vertical-align:baseline;" id="TBL-7-6-"><td  style="white-space:nowrap; text-align:center;" id="TBL-7-6-1"  
+class="td11"> OpenCL + MPI (4 x NVIDIA K20)  </td><td  style="white-space:nowrap; text-align:center;" id="TBL-7-6-2"  
+class="td11">  12 s   </td><td  style="white-space:nowrap; text-align:center;" id="TBL-7-6-3"  
+class="td11">    58      </td>
+</tr><tr 
+class="hline"><td><hr></td><td><hr></td><td><hr></td></tr><tr  
+ style="vertical-align:baseline;" id="TBL-7-7-"><td  style="white-space:nowrap; text-align:center;" id="TBL-7-7-1"  
+class="td11">                                 </td></tr></table></div>
+<br /> <div class="caption" 
+><span class="id">Table 1: </span><span  
+class="content">Comparison of the different implementations of the
+FV scheme on a structured grid. Hardware : 2<tspan font-family="cmsy" font-size="9">&#x00D7; </tspan>Intel(R)
+Xeon(R)  E5-2630  (6  cores,  2.3GHz),  AMD  Radeon  HD
+7970,  NVidia  K20m.  On  Intel  CPUs  hyperthreading  was
+deactivated. </span></div><!--tex4ht:label?: x1-10002r1 -->
+                                                
+                                                                                                
+                                                                                                
+  </div><hr class="endfloat" />
+.
+  <h3 class="sectionHead"><span class="titlemark">3   </span> <a 
+ id="x1-110003"></a>Asynchronous OpenCL/MPI Discontinuous Galerkin
+solver</h3>
+<!--l. 462--><p class="noindent" >We now present the Discontinuous Galerkin Method and explain
+our software design for keeping high performance in the GPU
+implementation.
+.
+  <h4 class="subsectionHead"><span class="titlemark">3.1   </span> <a 
+ id="x1-120003.1"></a>The DG method</h4>
+.
+  <h5 class="subsubsectionHead"><span class="titlemark">3.1.1   </span> <a 
+ id="x1-130003.1.1"></a>Interpolation on unstructured hexahedral meshes</h5>
+<!--l. 467--><p class="noindent" >The DG method is a generalization of the FV method. We
+suppose that dimension <tspan font-family="cmmi" font-size="9">d </tspan><tspan font-family="cmr" font-size="9">= 3</tspan>. We consider a mesh of the
+computational domain <tspan font-family="cmr" font-size="9">&Omega; </tspan>made of cells <tspan font-family="cmmi" font-size="9">L</tspan><sub><tspan font-family="cmmi" font-size="6">i</tspan></sub>, <tspan font-family="cmmi" font-size="9">i </tspan><tspan font-family="cmr" font-size="9">= 1</tspan><tspan font-family="cmmi" font-size="9">&hellip;</tspan><tspan font-family="cmmi" font-size="9">N</tspan><sub><tspan font-family="cmmi" font-size="6">c</tspan></sub>. In a cell <tspan font-family="cmmi" font-size="9">L</tspan>
+of the mesh, the field is approximated by a linear combination
+of basis functions <tspan font-family="cmmi" font-size="9">&psi;</tspan><sub><tspan font-family="cmmi" font-size="6">j</tspan></sub><sup><tspan font-family="cmmi" font-size="6">L</tspan></sup>
+  <table 
+class="equation"><tr><td><a 
+ id="x1-13001r7"></a>
+  <center class="math-display" >
+<img 
+src="helluy-iwocl-201523x.png" alt="W (x,t)= W j(t)&psi;L(x), x &isin;L.
+          L   j
+" class="math-display" ></center></td><td class="equation-label">(7)</td></tr></table>
+<!--l. 473--><p class="nopar" >
+<!--l. 475--><p class="indent" >  Each cell <tspan font-family="cmmi" font-size="9">L </tspan>of the mesh is obtained by a geometrical
+mapping <tspan font-family="cmmi" font-size="9">&tau;</tspan><sub><tspan font-family="cmmi" font-size="6">L</tspan></sub> that transforms a reference element <img 
+src="helluy-iwocl-201524x.png" alt="&#x02C6;L"  class="circ" > into <tspan font-family="cmmi" font-size="9">L</tspan>.
+In theory the shape of the reference element <img 
+src="helluy-iwocl-201525x.png" alt="&#x02C6;L"  class="circ" > may be
+arbitrary. A classic choice is to consider tetrahedra <span class="cite">[<a 
+href="#Xhesthaven-2009">9</a>]</span>.
+In this work we prefer hexahedra, as in <span class="cite">[<a 
+href="#XCFP06">5</a>]</span>. Building a
+tetrahedral mesh of <tspan font-family="cmr" font-size="9">&Omega; </tspan>is generally easier. The basis functions of
+hexahedral cell are constructed from tensor products of
+one-dimensional functions. The tensor nature of the basis allows
+many optimizations of the algorithm that are not possible with
+tetrahedra.
+<!--l. 478--><p class="indent" >  We now give some details on the construction of the basis
+function. Let <tspan font-family="cmmi" font-size="9">D </tspan>be the interpolation degree. We consider the
+<tspan font-family="cmr" font-size="9">(</tspan><tspan font-family="cmmi" font-size="9">D </tspan><tspan font-family="cmr" font-size="9">+ 1) </tspan>Gauss-Legendre points in the interval <tspan font-family="cmr" font-size="9">]0</tspan><tspan font-family="cmmi" font-size="9">, </tspan><tspan font-family="cmr" font-size="9">1[</tspan>, <tspan font-family="cmmi" font-size="9">&xi;</tspan><sub><tspan font-family="cmmi" font-size="6">p</tspan></sub>,
+<tspan font-family="cmmi" font-size="9">p </tspan><tspan font-family="cmr" font-size="9">= 0</tspan><tspan font-family="cmmi" font-size="9">&hellip;</tspan><tspan font-family="cmmi" font-size="9">D</tspan>.
+<!--l. 480--><p class="indent" >  To these points, we can associate Lagrange polynomials of
+order <tspan font-family="cmmi" font-size="9">D</tspan>, <tspan font-family="cmmi" font-size="9">&#x2113;</tspan><sub><tspan font-family="cmmi" font-size="6">p</tspan></sub><tspan font-family="cmr" font-size="9">(</tspan><tspan font-family="cmmi" font-size="9">&xi;</tspan><tspan font-family="cmr" font-size="9">) </tspan>satisfying <tspan font-family="cmmi" font-size="9">&#x2113;</tspan><sub><tspan font-family="cmmi" font-size="6">p</tspan></sub><tspan font-family="cmr" font-size="9">(</tspan><tspan font-family="cmmi" font-size="9">&xi;</tspan><sub><tspan font-family="cmmi" font-size="6">q</tspan></sub><tspan font-family="cmr" font-size="9">) = </tspan><tspan font-family="cmmi" font-size="9">&delta;</tspan><sub><tspan font-family="cmmi" font-size="6">p,q</tspan></sub>, where <tspan font-family="cmmi" font-size="9">&delta; </tspan>is the Kronecker
+symbol (<tspan font-family="cmmi" font-size="9">&delta;</tspan><sub><tspan font-family="cmmi" font-size="6">p,q</tspan></sub> <tspan font-family="cmr" font-size="9">= 1 </tspan>if <tspan font-family="cmmi" font-size="9">p </tspan><tspan font-family="cmr" font-size="9">= </tspan><tspan font-family="cmmi" font-size="9">q </tspan>and <tspan font-family="cmmi" font-size="9">&delta;</tspan><sub><tspan font-family="cmmi" font-size="6">p,q</tspan></sub> <tspan font-family="cmr" font-size="9">= 0 </tspan>otherwise).
+<!--l. 482--><p class="indent" >  We can also associate to each Gauss point the integration
+  <center class="math-display" >
+<img 
+src="helluy-iwocl-201526x.png" alt="    &int; 1
+&omega;p =   &#x2113;p(&xi;)d&xi;
+     0  " class="math-display" ></center>
+   The <tspan font-family="cmr" font-size="9">(</tspan><tspan font-family="cmmi" font-size="9">D </tspan><tspan font-family="cmr" font-size="9">+ 1)</tspan><sup><tspan font-family="cmr" font-size="6">3</tspan></sup> three-dimensional Gauss-Legendre points on the
+    reference cube are obtained by tensor product. More precisely,
+    for an integer <tspan font-family="cmmi" font-size="9">i </tspan><tspan font-family="cmsy" font-size="9">&isin;{</tspan><tspan font-family="cmr" font-size="9">0</tspan><tspan font-family="cmmi" font-size="9">&hellip;</tspan><tspan font-family="cmr" font-size="9">(</tspan><tspan font-family="cmmi" font-size="9">D </tspan><tspan font-family="cmr" font-size="9">+ 1)</tspan><sup><tspan font-family="cmr" font-size="6">3</tspan></sup> <tspan font-family="cmsy" font-size="9">&minus; </tspan><tspan font-family="cmr" font-size="9">1</tspan><tspan font-family="cmsy" font-size="9">} </tspan>there is a unique triplet
+    <tspan font-family="cmr" font-size="9">(</tspan><tspan font-family="cmmi" font-size="9">p</tspan><sup><tspan font-family="cmr" font-size="6">1</tspan></sup><tspan font-family="cmmi" font-size="9">,p</tspan><sup><tspan font-family="cmr" font-size="6">2</tspan></sup><tspan font-family="cmmi" font-size="9">,p</tspan><sup><tspan font-family="cmr" font-size="6">3</tspan></sup><tspan font-family="cmr" font-size="9">) </tspan>in <tspan font-family="cmsy" font-size="9">{</tspan><tspan font-family="cmr" font-size="9">0</tspan><tspan font-family="cmmi" font-size="9">&hellip;</tspan><tspan font-family="cmmi" font-size="9">D</tspan><tspan font-family="cmsy" font-size="9">}</tspan><sup><tspan font-family="cmr" font-size="6">3</tspan></sup> such that <tspan font-family="cmmi" font-size="9">i </tspan><tspan font-family="cmr" font-size="9">= </tspan><tspan font-family="cmmi" font-size="9">p</tspan><sup><tspan font-family="cmr" font-size="6">1</tspan></sup> <tspan font-family="cmr" font-size="9">+ (</tspan><tspan font-family="cmmi" font-size="9">D </tspan><tspan font-family="cmr" font-size="9">+ 1)</tspan><tspan font-family="cmmi" font-size="9">p</tspan><sup><tspan font-family="cmr" font-size="6">2</tspan></sup> <tspan font-family="cmr" font-size="9">+ (</tspan><tspan font-family="cmmi" font-size="9">D </tspan><tspan font-family="cmr" font-size="9">+ 1)</tspan><sup><tspan font-family="cmr" font-size="6">2</tspan></sup><tspan font-family="cmmi" font-size="9">p</tspan><sup><tspan font-family="cmr" font-size="6">3</tspan></sup>.
+    The corresponding Gauss-Legendre point and weight are
+    then
+       <center class="math-display" >
+    <img 
+src="helluy-iwocl-201527x.png" alt="x&#x02C6;i =(&xi;p1,&xi;p2&xi;p3), &#x02C6;&omega;i = &omega;p1 &sdot;&omega;p2 &sdot;&omega;p3.  " class="math-display" ></center>
+   We use the same kind of definition for the Gauss-Legendre
+    points on the faces of the reference cube. In Figure <a 
+href="#x1-13002r2">2<!--tex4ht:ref: fig:cube-pg --></a> we have
+    represented the Gauss-Legendre points for an order <tspan font-family="cmmi" font-size="9">D </tspan><tspan font-family="cmr" font-size="9">= 2</tspan>. The
+    volume Gauss points are blue and the face Gauss points are
+    green.
+    <!--l. 489--><p class="indent" >   <hr class="figure"><div class="figure" 
+>
+                                                                                                
+                                                                                                
+<a 
+ id="x1-13002r2"></a>
+                                                
+                                                                                                
+                                                                                                
+<br /> <div class="caption" 
+><span class="id">Figure 2: </span><span  
+class="content">Volume and face Gauss-Legendre points in the
+reference cube.</span></div><!--tex4ht:label?: x1-13002r2 -->
+                                                
+                                                                                                
+                                                                                                
+<!--l. 493--><p class="indent" >  </div><hr class="endfigure">
+<!--l. 495--><p class="indent" >  Let <tspan font-family="cmmi" font-size="9">&#x0125;</tspan><tspan font-family="cmr" font-size="9">(</tspan><img 
+src="helluy-iwocl-201528x.png" alt="&#x02C6;x"  class="circ" ><tspan font-family="cmr" font-size="9">) </tspan>be a function defined on the reference cell <img 
+src="helluy-iwocl-201529x.png" alt="&#x02C6;L"  class="circ" >. We can
+then approximate the integral of this function by the integration
+rule
+  <table 
+class="equation"><tr><td><a 
+ id="x1-13003r8"></a>
+  <center class="math-display" >
+<img 
+src="helluy-iwocl-201530x.png" alt="&int;
+  &#x02C6;h(&#x02C6;x)&#x2243; &sum;  &#x02C6;&omega; &#x02C6;h(&#x02C6;x ).
+ &#x02C6;L       k  k  k
+" class="math-display" ></center></td><td class="equation-label">(8)</td></tr></table>
+<!--l. 498--><p class="nopar" >
+A similar formula holds for the integration on the faces of the
+reference cube.
+<!--l. 501--><p class="indent" >  To each Gauss point <img 
+src="helluy-iwocl-201531x.png" alt="&#x02C6;x"  class="circ" ><sub><tspan font-family="cmmi" font-size="6">i</tspan></sub> we associate a reference basis function
+that we define thanks to a tensor product of one-dimensional
+Lagrange polynomials
+  <center class="math-display" >
+<img 
+src="helluy-iwocl-201532x.png" alt="          1     2    3
+&#x02C6;&psi;i(&#x02C6;x) =&#x2113;p1(&#x02C6;x )&#x2113;p2(&#x02C6;x )&#x2113;p3(&#x02C6;x ).
+" class="math-display" ></center>With this choice, we have the interpolation property
+  <center class="math-display" >
+<img 
+src="helluy-iwocl-201533x.png" alt="&#x02C6;&psi;(&#x02C6;x )= &delta; .
+ j i    i,j
+" class="math-display" ></center>
+<!--l. 505--><p class="indent" >  For defining the transformation <tspan font-family="cmmi" font-size="9">&tau;</tspan><sub><tspan font-family="cmmi" font-size="6">L</tspan></sub> that maps the reference
+cell <img 
+src="helluy-iwocl-201534x.png" alt="L&#x02C6;"  class="circ" > to the current cell <tspan font-family="cmmi" font-size="9">L </tspan>we first define the eight nodes <img 
+src="helluy-iwocl-201535x.png" alt="&#x02C6;N"  class="circ" ><sup><tspan font-family="cmmi" font-size="6">k</tspan></sup> of
+the reference element
+  <center class="math-display" >
+<img 
+src="helluy-iwocl-201536x.png" alt=" &#x02C6;1 &#x02C6;2  &#x02C6;3 &#x02C6;4 &#x02C6;5 &#x02C6;6 &#x02C6;7 &#x02C6;8
+(N ,N ,N ,N  ,N  ,N ,N ,N )=
+    " class="math-display" ></center>
+       <center class="math-display" >
+    <img 
+src="helluy-iwocl-201537x.png" alt="( 0  1 0  1 0  1  0 1 )
+( 0  0 1  1 0  0  1 1 ) .
+  0  0 0  0 1  1  1 1  " class="math-display" ></center>
+   As in the finite element method, we define the shape functions
+    <div class="eqnarray">
+       <center class="math-display" >
+    <img 
+src="helluy-iwocl-201538x.png" alt="&#x03D5;1(&#x02C6;x)  =  (1 &minus;x&#x02C6;1)(1&minus; &#x02C6;x2)(1&minus; &#x02C6;x3),
+&#x03D5; (&#x02C6;x)  =  &#x02C6;x1(1&minus; &#x02C6;x2)(1 &minus;x&#x02C6;3),
+ 2           1  2    3
+&#x03D5;3(&#x02C6;x)  =  (11&minus;2x&#x02C6;)&#x02C6;x (13 &minus;x&#x02C6;),
+&#x03D5;4(&#x02C6;x)  =  &#x02C6;xx&#x02C6;(11&minus; &#x02C6;x ), 2 3
+&#x03D5;5(&#x02C6;x)  =  (1 &minus;x&#x02C6;)(1&minus; &#x02C6;x)&#x02C6;x ,
+&#x03D5;6(&#x02C6;x)  =  &#x02C6;x1(1&minus; &#x02C6;x2)&#x02C6;x3,
+&#x03D5;7(&#x02C6;x)  =  (1 &minus;x&#x02C6;1)&#x02C6;x2&#x02C6;x3,
+&#x03D5;8(&#x02C6;x)  =  &#x02C6;x1x&#x02C6;2&#x02C6;x3.
+   " class="math-display" ></center>
+   </div>The shape functions also satisfy a nodal property
+       <center class="math-display" >
+    <img 
+src="helluy-iwocl-201539x.png" alt="   j
+&#x03D5;i( &#x02C6;N )= &delta;i,j.  " class="math-display" ></center>
+   We now denote by <tspan font-family="cmmi" font-size="9">N</tspan><sub><tspan font-family="cmmi" font-size="6">L</tspan></sub><sup><tspan font-family="cmmi" font-size="6">k</tspan></sup> the nodes of the current cell <tspan font-family="cmmi" font-size="9">L </tspan>and the
+    mapping is defined by
+       <center class="math-display" >
+                                                                                                
+                                                                                                
+<img 
+src="helluy-iwocl-201540x.png" alt="            k
+&tau;L (&#x02C6;x)= &#x03D5;k(&#x02C6;x)NL.
+" class="math-display" ></center>The basis function of cell <tspan font-family="cmmi" font-size="9">L </tspan>are then defined by transporting the
+reference basis functions:
+  <center class="math-display" >
+<img 
+src="helluy-iwocl-201541x.png" alt=" L     &#x02C6;   &minus;1      L         &#x02C6;
+&psi;j (x)= &psi;j(&tau;L (x))&hArr; &psi;j (&tau;L(&#x02C6;x)) =&psi;j(&#x02C6;x).
+" class="math-display" ></center>
+<!--l. 531--><p class="indent" >  Let <tspan font-family="cmmi" font-size="9">h</tspan><tspan font-family="cmr" font-size="9">(</tspan><tspan font-family="cmmi" font-size="9">x</tspan><tspan font-family="cmr" font-size="9">) </tspan>be a function defined on the cell <tspan font-family="cmmi" font-size="9">L</tspan>. For computing
+the integral of <tspan font-family="cmmi" font-size="9">h </tspan>on <tspan font-family="cmmi" font-size="9">L</tspan>, we apply the formula
+  <center class="math-display" >
+<img 
+src="helluy-iwocl-201542x.png" alt="&int;       &int;
+  h(x)=   h(&tau;L(x&#x02C6;))det&tau;&prime;L(x)
+ L       &#x02C6;L  " class="math-display" ></center>
+and the quadrature rule (<a 
+href="#x1-13003r8">8<!--tex4ht:ref: eq:quadrule --></a>).
+<!--l. 537--><p class="indent" >  Let us remark that from the above definitions, we have
+simply
+  <center class="math-display" >
+<img 
+src="helluy-iwocl-201543x.png" alt="              i
+W (&tau;L(&#x02C6;xi),t)= W L(t),  " class="math-display" ></center> or
+in other words, the coefficients in the linear combination (<a 
+href="#x1-13001r7">7<!--tex4ht:ref: eq:expansion --></a>) are
+the values of the conservative variables <tspan font-family="cmmi" font-size="9">W </tspan>at the Gauss points
+of cell <tspan font-family="cmmi" font-size="9">L</tspan>. For this reason the chosen basis is often called a nodal
+basis <span class="cite">[<a 
+href="#Xhesthaven2007nodal">8</a>]</span>. <hr class="figure"><div class="figure" 
+>
+                                                
+                                                                                                
+                                                                                                
+<a 
+ id="x1-13005r3"></a>
+                                                
+                                                                                                
+                                                                                                
+<!--l. 571--><p class="noindent" ><object data="helluy-iwocl-2015-2.svg" width="161.38545 " height="128.36487 " type="image/svg+xml"><p>SVG-Viewer needed.</p></object>
+<br /> <div class="caption" 
+><span class="id">Figure 3: </span><span  
+class="content">Mesh: notation conventions.</span></div><!--tex4ht:label?: x1-13005r3 -->
+                                                
+                                                                                                
+                                                                                                
+<!--l. 573--><p class="indent" >  </div><hr class="endfigure">
+.
+  <h5 class="subsubsectionHead"><span class="titlemark">3.1.2   </span> <a 
+ id="x1-140003.1.2"></a>DG formulation</h5>
+<!--l. 583--><p class="noindent" >The numerical solution satisfies the DG approximation scheme
+<div class="eqnarray">
+  <center class="math-display" >
+<img 
+src="helluy-iwocl-201544x.png" alt="      &int;         &int;
+&forall;L,&forall;i    &part;tW &psi;Li &minus;   F(W,W, &nabla;&psi;Li )
+       L&int;        L
+      +    F(WL, WR,nLR)&psi;Li = 0.      (9)
+         &part;L
+" class="math-display" ><a 
+ id="x1-14001r9"></a></center>
+</div>In this formula,
+    <ul class="itemize1">
+    <li class="itemize"><tspan font-family="cmmi" font-size="9">R </tspan>denotes the neighbor cells along <tspan font-family="cmmi" font-size="9">&part;L</tspan>.
+    </li>
+    <li class="itemize"><tspan font-family="cmmi" font-size="9">n</tspan><sub><tspan font-family="cmmi" font-size="6">LR</tspan></sub> is the unit normal vector on <tspan font-family="cmmi" font-size="9">&part;L </tspan>oriented from <tspan font-family="cmmi" font-size="9">L</tspan>
+    to <tspan font-family="cmmi" font-size="9">R</tspan>. See Figure <a 
+href="#x1-13005r3">3<!--tex4ht:ref: fig:mesh-conv --></a>.
+    </li>
+    <li class="itemize"><tspan font-family="cmmi" font-size="9">F</tspan><tspan font-family="cmr" font-size="9">(</tspan><tspan font-family="cmmi" font-size="9">W</tspan><sub><tspan font-family="cmmi" font-size="6">L</tspan></sub><tspan font-family="cmmi" font-size="9">,W</tspan><sub><tspan font-family="cmmi" font-size="6">R</tspan></sub><tspan font-family="cmmi" font-size="9">,n</tspan><tspan font-family="cmr" font-size="9">) </tspan>is the numerical flux, which satisfies
+    <tspan font-family="cmmi" font-size="9">F</tspan><tspan font-family="cmr" font-size="9">(</tspan><tspan font-family="cmmi" font-size="9">W,W,n</tspan><tspan font-family="cmr" font-size="9">) = </tspan><tspan font-family="cmmi" font-size="9">F</tspan><sup><tspan font-family="cmmi" font-size="6">k</tspan></sup><tspan font-family="cmr" font-size="9">(</tspan><tspan font-family="cmmi" font-size="9">W</tspan><tspan font-family="cmr" font-size="9">)</tspan><tspan font-family="cmmi" font-size="9">n</tspan><sub>
+<tspan font-family="cmmi" font-size="6">k</tspan></sub>.</li></ul>
+<!--l. 597--><p class="indent" >  Inserting expansion (<a 
+href="#x1-13001r7">7<!--tex4ht:ref: eq:expansion --></a>) into (<a 
+href="#x1-14001r9">9<!--tex4ht:ref: eq:dg --></a>) we obtain a system of
+differential equations satisfied by the <tspan font-family="cmmi" font-size="9">W</tspan><sub><tspan font-family="cmmi" font-size="6">L</tspan></sub><sup><tspan font-family="cmmi" font-size="6">j</tspan></sup><tspan font-family="cmr" font-size="9">(</tspan><tspan font-family="cmmi" font-size="9">t</tspan><tspan font-family="cmr" font-size="9">)</tspan>. This system of
+differential equations can be solved numerically with a standard
+Runge-Kutta method.
+<!--l. 600--><p class="indent" >  The choice of interpolation we have described in the previous
+section is well adapted to the DG formulation.
+    <ul class="itemize1">
+    <li class="itemize">For instance, the nodal basis property ensures that we
+    have direct access to the values of <tspan font-family="cmmi" font-size="9">W  </tspan>at the Gauss
+    points. Consequently the mass matrix is diagonal.
+    </li>
+    <li class="itemize">In      the      computation      of      the      volume
+    term <tspan font-family="cmex" font-size="9">&int;</tspan>
+  <sub><tspan font-family="cmmi" font-size="6">L</tspan></sub><tspan font-family="cmmi" font-size="9">F</tspan><tspan font-family="cmr" font-size="9">(</tspan><tspan font-family="cmmi" font-size="9">W,W,</tspan><tspan font-family="cmsy" font-size="9">&nabla;</tspan><tspan font-family="cmmi" font-size="9">&psi;</tspan><sub><tspan font-family="cmmi" font-size="6">i</tspan></sub><sup><tspan font-family="cmmi" font-size="6">L</tspan></sup><tspan font-family="cmr" font-size="9">) </tspan>it is not necessary to loop on
+    all the volume Gauss points. Indeed, the gradient of
+    <tspan font-family="cmmi" font-size="9">&psi;</tspan><sub><tspan font-family="cmmi" font-size="6">i</tspan></sub> is nonzero only at the points that are aligned with
+    point <tspan font-family="cmmi" font-size="9">i </tspan>(see Figure <a 
+href="#x1-14002r4">4<!--tex4ht:ref: fig:cross --></a>).
+    </li>
+    <li class="itemize">Finally, for computing the face integrals
+    <center class="math-display" >
+    <img 
+src="helluy-iwocl-201545x.png" alt="&int;
+   F(WL, WR,nLR)&psi;Li
+ &part;L
+           " class="math-display" ></center> we have to extrapolate the values of <tspan font-family="cmmi" font-size="9">W</tspan>, which are
+           known on the volume Gauss points, to the interfacial
+           Gauss  points.  On  tetrahedra,  all  the  volume  Gauss
+           points would be involved in the interpolation. With
+           our  nodal  hexahedral  basis,  only  the  volume  Gauss
+           points aligned with the considered interfacial Gauss
+           point are needed (see Figure <a 
+href="#x1-13002r2">2<!--tex4ht:ref: fig:cube-pg --></a>: for computing <tspan font-family="cmmi" font-size="9">W </tspan>at
+           a green point, we only need to know <tspan font-family="cmmi" font-size="9">W </tspan>at the blue
+           points aligned with this green point).</li></ul>
+    <!--l. 611--><p class="indent" >   In the end, exploiting the tensor basis properties, the DG
+    formulation (<a 
+href="#x1-14001r9">9<!--tex4ht:ref: eq:dg --></a>) in a cell <tspan font-family="cmmi" font-size="9">L </tspan>requires computations of complexity
+    <tspan font-family="cmsy" font-size="9">&sim; </tspan><tspan font-family="cmmi" font-size="9">D</tspan><sup><tspan font-family="cmr" font-size="6">4</tspan></sup> instead of <tspan font-family="cmsy" font-size="9">&sim; </tspan><tspan font-family="cmmi" font-size="9">D</tspan><sup><tspan font-family="cmr" font-size="6">6</tspan></sup>. For high orders, this is a huge
+    improvement.
+    <!--l. 613--><p class="indent" >   <hr class="figure"><div class="figure" 
+>
+                                                                                                
+                                                                                                
+<a 
+ id="x1-14002r4"></a>
+                                                
+                                                                                                
+                                                                                                
+<br /> <div class="caption" 
+><span class="id">Figure  4:  </span><span  
+class="content">Non-zero  values  of  the  basis  functions.  The
+gradient of the basis function associated to the red point is
+nonzero only on the blue points</span></div><!--tex4ht:label?: x1-14002r4 -->
+                                                
+                                                                                                
+                                                                                                
+<!--l. 618--><p class="indent" >  </div><hr class="endfigure">
+<!--l. 620--><p class="indent" >  Beyond these useful optimizations that are also applied in
+sequential implementations, The DG method presents many
+advantages:
+    <ul class="itemize1">
+    <li class="itemize">It is possible to have different orders on different cells.
+    No conformity is required between the cell and mesh
+    refinement is thus simplified.
+    </li>
+    <li class="itemize">The  computations  inside  a  cell  only  depend  on  the
+    neighboring cells. The stencil is more compact than
+    for high order FV methods. Memory accesses are thus
+    adapted to GPU computations.
+    </li>
+    <li class="itemize">High order inside a cell implies a high amount of local
+    computations. This property is well adapted to GPU
+    computations.
+    </li>
+    <li class="itemize">Two  level  of  parallelism  can  be  easily  exploited:
+    a  coarse  grain  parallelism,  at  the  subdomain  level,
+    well  adapted  to  MPI  algorithms;  and  a  fine  grain
+    parallelism, at the level of a single cell, well adapted
+    to OpenCL or OpenMP.</li></ul>
+<!--l. 629--><p class="indent" >  But there are also possible issues that could make an
+implementation inefficient:
+    <ul class="itemize1">
+    <li class="itemize">We  have  first  to  take  care  of  memory  bandwidth,
+    because   unstructured   meshes   may   implies   non
+    coalescent memory access.
+    </li>
+    <li class="itemize">In  addition,  a  general  DG  solver  has  to  manage
+    many different physical models, boundary conditions,
+    interpolation basis, etc. If the implementation is not
+    realized with care it is possible to end up with poorly
+    coded  kernels  with  many  barely  used  variables  or
+    branch  tests.  Such  wastage  may  remain  unseen  on
+    standard CPUs with many registers and large cache
+    memory, but is often catastrophic on GPUs.
+    </li>
+    <li class="itemize">Finally, as we have already seen, MPI communications
+    imply  very  slow  GPU  to  Host  and  Host  to  GPU
+    memory   transfers.   If   possible,   it   is   advised   to
+    hide communication latency by an overlapping with
+    computations.</li></ul>
+.
+  <h4 class="subsectionHead"><span class="titlemark">3.2   </span> <a 
+ id="x1-150003.2"></a>OpenCL kernel for a single GPU</h4>
+<!--l. 637--><p class="noindent" >We first wrote optimized OpenCL kernels for computing, on a
+single cell <tspan font-family="cmmi" font-size="9">L</tspan>, the terms appearing in the DG formulation (<a 
+href="#x1-14001r9">9<!--tex4ht:ref: eq:dg --></a>).
+After several experiments, we have found that an efficient
+strategy is to write a single kernel for computing the <tspan font-family="cmmi" font-size="9">&part;L </tspan>and <tspan font-family="cmmi" font-size="9">L</tspan>
+integration steps.
+<!--l. 641--><p class="indent" >  More precisely we construct a kernel with two steps.
+<!--l. 643--><p class="indent" >  In the first step (&#8220;flux step&#8221;), we compute the fluxes at the
+faces Gauss points and store those fluxes in the cache memory
+of the work-group. The work-items are distributed on the
+faces Gauss points. In this stage, <tspan font-family="cmr" font-size="9">6(</tspan><tspan font-family="cmmi" font-size="9">D </tspan><tspan font-family="cmr" font-size="9">+ 1)</tspan><sup><tspan font-family="cmr" font-size="6">2</tspan></sup> work-items are
+activated.                                             <!--l. 645--><p class="indent" >   After a sync barrier, in the second stage (&#8220;collecting
+    step&#8221;), we associate a work-item to each volume Gauss point
+    <tspan font-family="cmmi" font-size="9">i </tspan>and we collect the contributions of the other volume
+    Gauss points <tspan font-family="cmmi" font-size="9">k </tspan>coming from the numerical integration. We
+    also collect the contribution from the faces fluxes stored
+    in the first step. In this stage, <tspan font-family="cmr" font-size="9">(</tspan><tspan font-family="cmmi" font-size="9">D </tspan><tspan font-family="cmr" font-size="9">+ 1)</tspan><sup><tspan font-family="cmr" font-size="6">3</tspan></sup> work-items are
+    activated.
+    <!--l. 648--><p class="indent" >   We observe that when the order <tspan font-family="cmmi" font-size="9">D &#x003C; </tspan><tspan font-family="cmr" font-size="9">5</tspan>, which is always the
+    case in our computations, <tspan font-family="cmr" font-size="9">(</tspan><tspan font-family="cmmi" font-size="9">D </tspan><tspan font-family="cmr" font-size="9">+ 1)</tspan><sup><tspan font-family="cmr" font-size="6">3</tspan></sup> <tspan font-family="cmmi" font-size="9">&#x003C; </tspan><tspan font-family="cmr" font-size="9">6(</tspan><tspan font-family="cmmi" font-size="9">D </tspan><tspan font-family="cmr" font-size="9">+ 1)</tspan><sup><tspan font-family="cmr" font-size="6">2</tspan></sup> and then some
+    work-items are idling in the collecting step.
+    <!--l. 650--><p class="indent" >   We have also tried to split the computation into two kernels,
+    one for the flux step and one for the collecting step, but it
+    requires saving the fluxes into global memory, and in the
+    end it appears that the idling work-items method is more
+    efficient.
+    .
+       <h4 class="subsectionHead"><span class="titlemark">3.3   </span> <a 
+ id="x1-160003.3"></a>Asynchronous MPI/OpenCL implementation for several
+    GPUs</h4>
+    .
+       <h5 class="subsubsectionHead"><span class="titlemark">3.3.1   </span> <a 
+ id="x1-170003.3.1"></a>Subdomains and zones</h5>
+    <!--l. 657--><p class="noindent" >We have written a generic C++ DG solver called CLAC
+    (&#8220;Conservation Laws Approximation on many Cores&#8221;) for
+    solving large problems on general hexahedral meshes. Practical
+    industrial applications require a lot of memory and computations.
+    It is thus necessary to address several accelerators in an efficient
+    way.
+    <!--l. 659--><p class="indent" >   We describe some features of the CLAC implementation.
+    <!--l. 661--><p class="indent" >   First, the physical models are localized in the code: in
+    practice, the user has to provide the numerical flux plus a few
+    functions for applying boundary conditions, source terms, etc.
+    With this approach it is possible to apply CLAC to very
+    different physics: Maxwell equations, compressible fluids, MHD,
+    etc. This approach is similar to the approach of A. Klöckner in
+    <span class="cite">[<a 
+href="#Xkloeckner2010hedge">10</a>]</span>.
+    <!--l. 663--><p class="indent" >   We also adopt a domain decomposition strategy. The mesh is
+    split into several domains, each of which is associated to a single
+    MPI node, and each MPI node is associated to an OpenCL
+    device (CPU or GPU).
+    <!--l. 667--><p class="indent" >   In addition to the domain decomposition, in each domain we
+    split the mesh into zones. We consider volume zones made of
+    hexahedral cells and also interface zones made of cells faces. The
+    role of a volume zone is to apply the source terms and the
+    fluxes balance between cells inside the zone. The interface
+    zones are devoted to computing the fluxes balance between
+    cells of different volume zones. When an interface zone is
+    at the boundary of the computational domain, it is used
+    for applying boundary conditions. When it is situated at
+    an interface between two domains, it is also in charge of
+    the MPI communications between the domains. Interface
+    zones also serves to manage mesh refinements between
+    two volume zones. A simple example of mesh with two
+    subdomains, three volume zones and five interface zones is
+    given in Figure <a 
+href="#x1-17002r5">5<!--tex4ht:ref: fig:simple-mesh --></a> and a schematic view of the same mesh is
+    represented in Figure <a 
+href="#x1-17003r6">6<!--tex4ht:ref: fig:scheme-view --></a>. We observe in this figure that simple
+    non-conformities are allowed between volume zones (for instance
+    neighboring volume zones 2 and 3 do not have the same
+    refinement).
+    <!--l. 669--><p class="indent" >   Finally, a zone possesses identical elements (same order, same
+    geometry, same physical model). Thus, different computation
+    kernels are compiled for each zone, in order to save registers and
+    branch tests. We have observed that this aspect is very
+    important for achieving high efficiency. For example, it is
+                                                                                                
+                                                                                                
+possible to simplify the kernel that compute the fluxes balance
+at an interface zone between two volume zones with conforming
+meshes. At an interface between volume zones with different
+refinements, the kernel is more complex, because the Gauss
+integration points are not aligned (see Interface zone 3 on
+Figure <a 
+href="#x1-17003r6">6<!--tex4ht:ref: fig:scheme-view --></a>). The specialized kernels take advantage of the Gauss
+points alignment and store interpolation and geometrical data
+in constant arrays or preprocessor macros. The speedup
+obtained using the specialized kernels as opposed to the generic
+kernels is reported in Table <a 
+href="#x1-17001r2">2<!--tex4ht:ref: tab:speedup_specialisation --></a> for different interpolation
+orders.
+                                                
+                                                                                                
+                                                                                                
+<!--l. 676--><p class="indent" >  <a 
+ id="x1-17001r2"></a><hr class="float"><div class="float" 
+>
+                                                
+                                                                                                
+                                                                                                
+<div class="tabular"> <table id="TBL-8" class="tabular" 
+cellspacing="0" cellpadding="0" rules="groups" 
+><colgroup id="TBL-8-1g"><col 
+id="TBL-8-1"></colgroup><colgroup id="TBL-8-2g"><col 
+id="TBL-8-2"></colgroup><colgroup id="TBL-8-3g"><col 
+id="TBL-8-3"></colgroup><colgroup id="TBL-8-4g"><col 
+id="TBL-8-4"></colgroup><colgroup id="TBL-8-5g"><col 
+id="TBL-8-5"></colgroup><colgroup id="TBL-8-6g"><col 
+id="TBL-8-6"></colgroup><tr 
+class="hline"><td><hr></td><td><hr></td><td><hr></td><td><hr></td><td><hr></td><td><hr></td></tr><tr  
+ style="vertical-align:baseline;" id="TBL-8-1-"><td  style="white-space:nowrap; text-align:center;" id="TBL-8-1-1"  
+class="td11">  Order   </td><td  style="white-space:nowrap; text-align:center;" id="TBL-8-1-2"  
+class="td11">  0   </td><td  style="white-space:nowrap; text-align:center;" id="TBL-8-1-3"  
+class="td11">  1   </td><td  style="white-space:nowrap; text-align:center;" id="TBL-8-1-4"  
+class="td11">  2   </td><td  style="white-space:nowrap; text-align:center;" id="TBL-8-1-5"  
+class="td11">  3   </td><td  style="white-space:nowrap; text-align:center;" id="TBL-8-1-6"  
+class="td11">  4   </td></tr><tr 
+class="hline"><td><hr></td><td><hr></td><td><hr></td><td><hr></td><td><hr></td><td><hr></td></tr><tr  
+ style="vertical-align:baseline;" id="TBL-8-2-"><td  style="white-space:nowrap; text-align:center;" id="TBL-8-2-1"  
+class="td11"> Speedup </td><td  style="white-space:nowrap; text-align:center;" id="TBL-8-2-2"  
+class="td11"> 1.6 </td><td  style="white-space:nowrap; text-align:center;" id="TBL-8-2-3"  
+class="td11"> 1.8 </td><td  style="white-space:nowrap; text-align:center;" id="TBL-8-2-4"  
+class="td11"> 2.8 </td><td  style="white-space:nowrap; text-align:center;" id="TBL-8-2-5"  
+class="td11"> 3.6 </td><td  style="white-space:nowrap; text-align:center;" id="TBL-8-2-6"  
+class="td11"> 5.5</td>
+</tr><tr 
+class="hline"><td><hr></td><td><hr></td><td><hr></td><td><hr></td><td><hr></td><td><hr></td></tr><tr  
+ style="vertical-align:baseline;" id="TBL-8-3-"><td  style="white-space:nowrap; text-align:center;" id="TBL-8-3-1"  
+class="td11">          </td></tr></table>
+</div>
+<br /> <div class="caption" 
+><span class="id">Table 2: </span><span  
+class="content">Speedup obtained with the specialized kernels</span></div><!--tex4ht:label?: x1-17001r2 -->
+                                                
+                                                                                                
+                                                                                                
+  </div><hr class="endfloat" />
+<!--l. 687--><p class="indent" >  <hr class="figure"><div class="figure" 
+>
+                                                
+                                                                                                
+                                                                                                
+<a 
+ id="x1-17002r5"></a>
+                                                
+                                                                                                
+                                                                                                
+<br /> <div class="caption" 
+><span class="id">Figure 5: </span><span  
+class="content">A simple non conforming mesh.</span></div><!--tex4ht:label?: x1-17002r5 -->
+                                                
+                                                                                                
+                                                                                                
+<!--l. 691--><p class="indent" >  </div><hr class="endfigure">
+<!--l. 694--><p class="indent" >  <hr class="figure"><div class="figure" 
+>
+                                                
+                                                                                                
+                                                                                                
+<a 
+ id="x1-17003r6"></a>
+                                                
+                                                                                                
+                                                                                                
+<!--l. 726--><p class="noindent" ><object data="helluy-iwocl-2015-3.svg" width="561.57689 " height="256.90594 " type="image/svg+xml"><p>SVG-Viewer needed.</p></object>
+<br /> <div class="caption" 
+><span class="id">Figure 6: </span><span  
+class="content">Schematic view of the simple mesh.</span></div><!--tex4ht:label?: x1-17003r6 -->
+                                                
+                                                                                                
+                                                                                                
+<!--l. 728--><p class="indent" >  </div><hr class="endfigure">
+                                                
+                                                                                                
+                                                                                                
+<!--l. 738--><p class="indent" >  <a 
+ id="x1-17004r7"></a><hr class="float"><div class="float" 
+>
+                                                
+                                                                                                
+                                                                                                
+ <div class="caption" 
+><span class="id">Figure 7: </span><span  
+class="content">Task graphs for the simple mesh. One task graph for each MPI node.</span></div><!--tex4ht:label?: x1-17004r7 -->
+                                                
+                                                                                                
+                                                                                                
+  </div><hr class="endfloat" />
+                                                
+                                                                                                
+                                                                                                
+<!--l. 745--><p class="indent" >  <a 
+ id="x1-17005r8"></a><hr class="float"><div class="float" 
+>
+                                                
+                                                                                                
+                                                                                                
+ <div class="caption" 
+><span class="id">Figure 8: </span><span  
+class="content">Task graph for subdomain 2</span></div><!--tex4ht:label?: x1-17005r8 -->
+                                                
+                                                                                                
+                                                                                                
+  </div><hr class="endfloat" />
+.
+  <h5 class="subsubsectionHead"><span class="titlemark">3.3.2   </span> <a 
+ id="x1-180003.3.2"></a>Task graph</h5>
+<!--l. 753--><p class="noindent" >The zone approach is very useful to express the dependency
+between the different tasks of the DG algorithm.
+<!--l. 755--><p class="indent" >  We have identified tasks attached to volume or interface zones
+that have to be executed for performing a Runge-Kutta substep
+with the DG formulation. Those tasks are detailed in Table
+<a 
+href="#x1-18001r3">3<!--tex4ht:ref: tab:tasks --></a>.
+                                                
+                                                                                                
+                                                                                                
+<!--l. 757--><p class="indent" >  <a 
+ id="x1-18001r3"></a><hr class="float"><div class="float" 
+>
+                                                
+                                                                                                
+                                                                                                
+<div class="tabular"> <table id="TBL-9" class="tabular" 
+cellspacing="0" cellpadding="0" rules="groups" 
+><colgroup id="TBL-9-1g"><col 
+id="TBL-9-1"></colgroup><colgroup id="TBL-9-2g"><col 
+id="TBL-9-2"></colgroup><colgroup id="TBL-9-3g"><col 
+id="TBL-9-3"></colgroup><tr 
+class="hline"><td><hr></td><td><hr></td><td><hr></td></tr><tr  
+ style="vertical-align:baseline;" id="TBL-9-1-"><td  style="white-space:nowrap; text-align:center;" id="TBL-9-1-1"  
+class="td11">   Name     </td><td  style="white-space:nowrap; text-align:center;" id="TBL-9-1-2"  
+class="td11"> Attached to  </td><td  style="white-space:nowrap; text-align:left; vertical-align:middle;" id="TBL-9-1-3"  
+class="td11"> <!--l. 761--><p class="noindent" >Description                        </td>
+</tr><tr 
+class="hline"><td><hr></td><td><hr></td><td><hr></td></tr><tr 
+class="hline"><td><hr></td><td><hr></td><td><hr></td></tr><tr  
+ style="vertical-align:baseline;" id="TBL-9-2-"><td  style="white-space:nowrap; text-align:center;" id="TBL-9-2-1"  
+class="td11"> Extraction  </td><td  style="white-space:nowrap; text-align:center;" id="TBL-9-2-2"  
+class="td11">   Interface    </td><td  style="white-space:nowrap; text-align:left; vertical-align:middle;" id="TBL-9-2-3"  
+class="td11"> <!--l. 764--><p class="noindent" >Copy                           or
+  extrapolate the values of <tspan font-family="cmmi" font-size="9">W</tspan>
+ from  a  neighboring  volume
+  zone                                 </td>
+</tr><tr 
+class="hline"><td><hr></td><td><hr></td><td><hr></td></tr><tr  
+ style="vertical-align:baseline;" id="TBL-9-3-"><td  style="white-space:nowrap; text-align:center;" id="TBL-9-3-1"  
+class="td11">  Exchange   </td><td  style="white-space:nowrap; text-align:center;" id="TBL-9-3-2"  
+class="td11">   Interface    </td><td  style="white-space:nowrap; text-align:left; vertical-align:middle;" id="TBL-9-3-3"  
+class="td11"> <!--l. 767--><p class="noindent" >GPU/Host   transfers   and
+  MPI communication with an
+  interface of another domain  </td>
+</tr><tr 
+class="hline"><td><hr></td><td><hr></td><td><hr></td></tr><tr  
+ style="vertical-align:baseline;" id="TBL-9-4-"><td  style="white-space:nowrap; text-align:center;" id="TBL-9-4-1"  
+class="td11">   Fluxes     </td><td  style="white-space:nowrap; text-align:center;" id="TBL-9-4-2"  
+class="td11">   Interface    </td><td  style="white-space:nowrap; text-align:left; vertical-align:middle;" id="TBL-9-4-3"  
+class="td11"> <!--l. 769--><p class="noindent" >Compute  the  fluxes  at  the
+  Gauss points of the interface  </td>
+</tr><tr 
+class="hline"><td><hr></td><td><hr></td><td><hr></td></tr><tr  
+ style="vertical-align:baseline;" id="TBL-9-5-"><td  style="white-space:nowrap; text-align:center;" id="TBL-9-5-1"  
+class="td11">   Sources    </td><td  style="white-space:nowrap; text-align:center;" id="TBL-9-5-2"  
+class="td11">   Volume     </td><td  style="white-space:nowrap; text-align:left; vertical-align:middle;" id="TBL-9-5-3"  
+class="td11"> <!--l. 771--><p class="noindent" >Compute the internal fluxes
+  and  source  terms  inside  a
+  volume zone                       </td>
+</tr><tr 
+class="hline"><td><hr></td><td><hr></td><td><hr></td></tr><tr  
+ style="vertical-align:baseline;" id="TBL-9-6-"><td  style="white-space:nowrap; text-align:center;" id="TBL-9-6-1"  
+class="td11"> Boundaries  </td><td  style="white-space:nowrap; text-align:center;" id="TBL-9-6-2"  
+class="td11">   Interface    </td><td  style="white-space:nowrap; text-align:left; vertical-align:middle;" id="TBL-9-6-3"  
+class="td11"> <!--l. 773--><p class="noindent" >Apply   the   fluxes   of   an
+  interface to a volume zone    </td>
+</tr><tr 
+class="hline"><td><hr></td><td><hr></td><td><hr></td></tr><tr  
+ style="vertical-align:baseline;" id="TBL-9-7-"><td  style="white-space:nowrap; text-align:center;" id="TBL-9-7-1"  
+class="td11">    Time      </td><td  style="white-space:nowrap; text-align:center;" id="TBL-9-7-2"  
+class="td11">   Volume     </td><td  style="white-space:nowrap; text-align:left; vertical-align:middle;" id="TBL-9-7-3"  
+class="td11"> <!--l. 775--><p class="noindent" >Apply
+  a  step  of  the  Runge-Kutta
+  time integration to a volume
+  zone                                 </td>
+</tr><tr 
+class="hline"><td><hr></td><td><hr></td><td><hr></td></tr><tr  
+ style="vertical-align:baseline;" id="TBL-9-8-"><td  style="white-space:nowrap; text-align:center;" id="TBL-9-8-1"  
+class="td11">    Start      </td><td  style="white-space:nowrap; text-align:center;" id="TBL-9-8-2"  
+class="td11">   Volume     </td><td  style="white-space:nowrap; text-align:left; vertical-align:middle;" id="TBL-9-8-3"  
+class="td11"> <!--l. 777--><p class="noindent" >Fictitious task: beginning of
+  the Runge-Kutta substep     </td>
+</tr><tr 
+class="hline"><td><hr></td><td><hr></td><td><hr></td></tr><tr  
+ style="vertical-align:baseline;" id="TBL-9-9-"><td  style="white-space:nowrap; text-align:center;" id="TBL-9-9-1"  
+class="td11">    End      </td><td  style="white-space:nowrap; text-align:center;" id="TBL-9-9-2"  
+class="td11">   Volume     </td><td  style="white-space:nowrap; text-align:left; vertical-align:middle;" id="TBL-9-9-3"  
+class="td11"> <!--l. 779--><p class="noindent" >Fictitious  task:  end  of  the
+  Runge-Kutta substep           </td>
+</tr><tr 
+class="hline"><td><hr></td><td><hr></td><td><hr></td></tr><tr  
+ style="vertical-align:baseline;" id="TBL-9-10-"><td  style="white-space:nowrap; text-align:center;" id="TBL-9-10-1"  
+class="td11">            </td></tr></table></div>
+<br /> <div class="caption" 
+><span class="id">Table 3: </span><span  
+class="content">Tasks description</span></div><!--tex4ht:label?: x1-18001r3 -->
+                                                
+                                                                                                
+                                                                                                
+  </div><hr class="endfloat" />
+<!--l. 786--><p class="indent" >  We express the dependencies between the tasks in a
+graph, and construct a task graph per subdomain. For
+instance, we have represented the graphs associated to
+the simple mesh of Figure <a 
+href="#x1-17003r6">6<!--tex4ht:ref: fig:scheme-view --></a> on Figure <a 
+href="#x1-17004r7">7<!--tex4ht:ref: fig:mpi-task-graph --></a>. For a better
+readability, we have also represented the task graph associated
+to subdomain 2 on Figure <a 
+href="#x1-17005r8">8<!--tex4ht:ref: fig:sub2-task-graph --></a>. The volume tasks are represented
+in blue rectangles, the interface tasks in red ellipses. The
+interface tasks that require MPI communication are in red
+rhombuses.
+<!--l. 788--><p class="indent" >  We observe in these figures that it is possible to perform the
+exchange tasks and the internal computations at the same time.
+It is thus possible to overlap communications and GPU/Host
+transfers by computations.
+<!--l. 790--><p class="indent" >  OpenCL contains events objects for describing task
+dependencies between the operations sent to command
+queues. It is also possible to create user events for describing
+interactions between the OpenCL command queues and tasks
+that are executed outside of a call to the OpenCL library. We
+have decided to rely only on the OpenCL event management for
+constructing the task dependencies.
+<!--l. 792--><p class="indent" >  An asynchronous MPI communication imply <tspan font-family="aett9" font-size="">MPI_Wait</tspan>
+instructions before tasks that depend on that communication.
+We thus face a practical problem, which is to express the
+dependency between MPI and OpenCL operations in a
+non-blocking way. A possibility would have been to use an
+OpenCL &#8220;Native Kernel&#8221; containing MPI calls. A native
+kernel is a standard function compiled and executed on
+the host side, but that can be inserted into the OpenCL
+task graph. As of today, the native kernel feature is not
+implemented properly in all the OpenCL drivers. We thus had
+to adopt another approach in order to circumvent this
+difficulty.
+<!--l. 794--><p class="indent" >  Our solution uses the C++ standard thread class. It is also
+necessary to use an MPI implementation that provides the
+<tspan font-family="aett9" font-size="">MPI_THREAD_MULTIPLE </tspan>option. For programming the &#8220;Exchange&#8221;
+task, we first create an OpenCL user event. Then we launch a
+thread and return from the task. The main program flow is not
+interrupted and other operations can be enqueued. Meanwhile,
+in the thread, we start a blocking send/recv MPI operation for
+exchanging data between the boundary interface zones. Because
+the communication is launched in a thread, its blocking
+or non-blocking nature is not very important. When the
+communication is finished, we mark the OpenCL event as
+completed and exit the thread. The completion of the user event
+triggers the beginning of the enqueued tasks that depend on the
+exchange.
+<!--l. 804--><p class="indent" >  As we will see in the next section, this simple solution offers
+very good efficiency.
+.
+  <h4 class="subsectionHead"><span class="titlemark">3.4   </span> <a 
+ id="x1-190003.4"></a>Efficiency analysis</h4>
+<!--l. 806--><p class="noindent" >In this section we measure the efficiency of the CLAC
+implementation. Recently the so-called roofline model has
+been introduced for analyzing the efficiency of algorithm
+implementation on a single accelerator <span class="cite">[<a 
+href="#Xwilliams2009roofline">15</a>]</span>. This model is based
+on several hardware parameters:
+    <ul class="itemize1">
+    <li class="itemize">First,   we   need   to   know   the   peak   computation
+    performances of the accelerator. This peak is measured
+    with an algorithm with high computational intensity
+    and  very  little  memory  access.  It  can  be  measured
+    with a program that only requires register access. For             instance,  for  a  NVIDIA  K20  accelerator,  the  peak
+           performance is <tspan font-family="cmmi" font-size="9">P </tspan><tspan font-family="cmr" font-size="9">= 3</tspan><tspan font-family="cmmi" font-size="9">.</tspan><tspan font-family="cmr" font-size="9">5</tspan>TFLOP/s<tspan font-family="cmmi" font-size="9">.</tspan>
+         </li>
+         <li class="itemize">Another parameter is the memory bandwidth <tspan font-family="cmmi" font-size="9">B </tspan>that
+           measures the transfer speed of the global memory. For
+           a NVIDIA K20 <tspan font-family="cmmi" font-size="9">B </tspan><tspan font-family="cmr" font-size="9">= 208</tspan>GB/s<tspan font-family="cmmi" font-size="9">.</tspan></li></ul>
+   <!--l. 812--><p class="indent" >  Not all algorithms are well adapted to GPU computing.
+    Consider an algorithm (A) in which we count <tspan font-family="cmmi" font-size="9">N</tspan><sub>ops</sub> operations
+    (add, multiply, etc.) and <tspan font-family="cmmi" font-size="9">N</tspan><sub>mem</sub> global memory operations
+    (read or write). In <span class="cite">[<a 
+href="#Xwilliams2009roofline">15</a>]</span>, the computational intensity of the
+    algorithm is defined by
+       <center class="math-display" >
+    <img 
+src="helluy-iwocl-201554x.png" alt="I = Nops-.
+    Nmem  " class="math-display" ></center>
+   The maximal attainable performance of one GPU for this
+    algorithm is then given by the roofline formula:
+       <center class="math-display" >
+    <img 
+src="helluy-iwocl-201555x.png" alt="PA =max (P,B &#x00D7; I).
+   " class="math-display" ></center>
+   <!--l. 817--><p class="nopar" >
+   <!--l. 819--><p class="indent" >  We have counted the computational and memory operations
+    of our DG implementation. The results are plotted in Figure <a 
+href="#x1-19001r9">9<!--tex4ht:ref: fig:roofline --></a>.
+    We observe that for order 1, the DG method is limited by the
+    memory bandwidth. For higher orders, the method is limited by
+    the peak performance of the GPU. The figure confirms that the
+    DG method is well adapted to GPU architectures. We have also
+    performed this analysis for the FV method described in
+    Section 2. For large grids, the efficiency of the FV scheme is
+    approximately <tspan font-family="cmr" font-size="9">20 </tspan>FLOP/B. The FV algorithm is thus
+    also limited by the peak performance of the GPU. Our
+    implementation of the FV scheme reaches approximately <tspan font-family="cmr" font-size="9">800</tspan>
+    GFLOP/s on a single K20 GPU.
+    <!--l. 822--><p class="indent" >   <hr class="figure"><div class="figure" 
+>
+                                                                                                
+                                                                                                
+<a 
+ id="x1-19001r9"></a>
+                                                
+                                                                                                
+                                                                                                
+<br /> <div class="caption" 
+><span class="id">Figure  9:  </span><span  
+class="content">Roofline  model  and  DG  method.  Abscissa:
+computational intensity <tspan font-family="cmmi" font-size="9">I </tspan>(FLOP/B). Ordinate: Algorithm
+performance (TFLOP/s). </span></div><!--tex4ht:label?: x1-19001r9 -->
+                                                
+                                                                                                
+                                                                                                
+<!--l. 826--><p class="indent" >  </div><hr class="endfigure">
+<!--l. 828--><p class="indent" >  In Table <a 
+href="#x1-19003r5">5<!--tex4ht:ref: tab:async-perfs --></a>, we present the results that we have measured with
+the asynchronous MPI/OpenCL implementation with 1, 2, 4
+and 8 GPUs. For comparison, we also give in Table <a 
+href="#x1-19002r4">4<!--tex4ht:ref: tab:sync-perfs --></a> the results
+of the synchronous execution (we wait that each task is
+completed before launching the next one). The computational
+domain <tspan font-family="cmr" font-size="9">&Omega; </tspan>is a cube. The chosen model is the Maxwell system
+(<tspan font-family="cmmi" font-size="9">m </tspan><tspan font-family="cmr" font-size="9">= 6</tspan>). The mesh is made of several subdomains of <tspan font-family="cmr" font-size="9">90</tspan><sup><tspan font-family="cmr" font-size="6">3</tspan></sup> cells.
+We perform single precision computations. The interpolation is
+of order <tspan font-family="cmmi" font-size="9">D </tspan><tspan font-family="cmr" font-size="9">= 3</tspan>. The algorithm requires storing three time steps
+of the numerical solution. With these parameters the memory of
+each K20 board is almost entirely filled. Indeed the storage
+of the electromagnetic field on one subdomain requires
+approximately <tspan font-family="cmr" font-size="9">3</tspan><tspan font-family="cmmi" font-size="9">.</tspan><tspan font-family="cmr" font-size="9">4 </tspan>GB.
+                                                
+                                                                                                
+                                                                                                
+<!--l. 830--><p class="indent" >  <a 
+ id="x1-19002r4"></a><hr class="float"><div class="float" 
+>
+                                                
+                                                                                                
+                                                                                                
+<div class="center" 
+>
+<!--l. 831--><p class="noindent" >
+<div class="tabular"> <table id="TBL-10" class="tabular" 
+cellspacing="0" cellpadding="0" rules="groups" 
+><colgroup id="TBL-10-1g"><col 
+id="TBL-10-1"></colgroup><colgroup id="TBL-10-2g"><col 
+id="TBL-10-2"></colgroup><colgroup id="TBL-10-3g"><col 
+id="TBL-10-3"></colgroup><colgroup id="TBL-10-4g"><col 
+id="TBL-10-4"></colgroup><colgroup id="TBL-10-5g"><col 
+id="TBL-10-5"></colgroup><tr 
+class="hline"><td><hr></td><td><hr></td><td><hr></td><td><hr></td><td><hr></td></tr><tr  
+ style="vertical-align:baseline;" id="TBL-10-1-"><td  style="white-space:nowrap; text-align:center;" id="TBL-10-1-1"  
+class="td11">          </td><td  style="white-space:nowrap; text-align:center;" id="TBL-10-1-2"  
+class="td11"> 1 GPU  </td><td  style="white-space:nowrap; text-align:center;" id="TBL-10-1-3"  
+class="td11"> 2 GPUs  </td><td  style="white-space:nowrap; text-align:center;" id="TBL-10-1-4"  
+class="td11"> 4 GPUs  </td><td  style="white-space:nowrap; text-align:center;" id="TBL-10-1-5"  
+class="td11"> 8 GPUs  </td>
+</tr><tr 
+class="hline"><td><hr></td><td><hr></td><td><hr></td><td><hr></td><td><hr></td></tr><tr 
+class="hline"><td><hr></td><td><hr></td><td><hr></td><td><hr></td><td><hr></td></tr><tr  
+ style="vertical-align:baseline;" id="TBL-10-2-"><td  style="white-space:nowrap; text-align:center;" id="TBL-10-2-1"  
+class="td11"> TFLOP/s  </td><td  style="white-space:nowrap; text-align:center;" id="TBL-10-2-2"  
+class="td11">  1.01    </td><td  style="white-space:nowrap; text-align:center;" id="TBL-10-2-3"  
+class="td11">   1.84    </td><td  style="white-space:nowrap; text-align:center;" id="TBL-10-2-4"  
+class="td11">   3.53    </td><td  style="white-space:nowrap; text-align:center;" id="TBL-10-2-5"  
+class="td11">   5.07    </td>
+</tr><tr 
+class="hline"><td><hr></td><td><hr></td><td><hr></td><td><hr></td><td><hr></td></tr><tr  
+ style="vertical-align:baseline;" id="TBL-10-3-"><td  style="white-space:nowrap; text-align:center;" id="TBL-10-3-1"  
+class="td11">  Speedup   </td><td  style="white-space:nowrap; text-align:center;" id="TBL-10-3-2"  
+class="td11">    1      </td><td  style="white-space:nowrap; text-align:center;" id="TBL-10-3-3"  
+class="td11">   1.83    </td><td  style="white-space:nowrap; text-align:center;" id="TBL-10-3-4"  
+class="td11">   3.53    </td><td  style="white-space:nowrap; text-align:center;" id="TBL-10-3-5"  
+class="td11">   5.01    </td>
+</tr><tr 
+class="hline"><td><hr></td><td><hr></td><td><hr></td><td><hr></td><td><hr></td></tr><tr  
+ style="vertical-align:baseline;" id="TBL-10-4-"><td  style="white-space:nowrap; text-align:center;" id="TBL-10-4-1"  
+class="td11">           </td></tr></table></div></div>
+<br /> <div class="caption" 
+><span class="id">Table 4: </span><span  
+class="content">Weak scaling of the synchronous MPI/OpenCL
+implementation </span></div><!--tex4ht:label?: x1-19002r4 -->
+                                                
+                                                                                                
+                                                                                                
+  </div><hr class="endfloat" />
+                                                
+                                                                                                
+                                                                                                
+<!--l. 846--><p class="indent" >  <a 
+ id="x1-19003r5"></a><hr class="float"><div class="float" 
+>
+                                                
+                                                                                                
+                                                                                                
+<div class="center" 
+>
+<!--l. 847--><p class="noindent" >
+<div class="tabular"> <table id="TBL-11" class="tabular" 
+cellspacing="0" cellpadding="0" rules="groups" 
+><colgroup id="TBL-11-1g"><col 
+id="TBL-11-1"></colgroup><colgroup id="TBL-11-2g"><col 
+id="TBL-11-2"></colgroup><colgroup id="TBL-11-3g"><col 
+id="TBL-11-3"></colgroup><colgroup id="TBL-11-4g"><col 
+id="TBL-11-4"></colgroup><colgroup id="TBL-11-5g"><col 
+id="TBL-11-5"></colgroup><tr 
+class="hline"><td><hr></td><td><hr></td><td><hr></td><td><hr></td><td><hr></td></tr><tr  
+ style="vertical-align:baseline;" id="TBL-11-1-"><td  style="white-space:nowrap; text-align:center;" id="TBL-11-1-1"  
+class="td11">          </td><td  style="white-space:nowrap; text-align:center;" id="TBL-11-1-2"  
+class="td11"> 1 GPU  </td><td  style="white-space:nowrap; text-align:center;" id="TBL-11-1-3"  
+class="td11"> 2 GPUs  </td><td  style="white-space:nowrap; text-align:center;" id="TBL-11-1-4"  
+class="td11"> 4 GPUs  </td><td  style="white-space:nowrap; text-align:center;" id="TBL-11-1-5"  
+class="td11"> 8 GPUs  </td>
+</tr><tr 
+class="hline"><td><hr></td><td><hr></td><td><hr></td><td><hr></td><td><hr></td></tr><tr 
+class="hline"><td><hr></td><td><hr></td><td><hr></td><td><hr></td><td><hr></td></tr><tr  
+ style="vertical-align:baseline;" id="TBL-11-2-"><td  style="white-space:nowrap; text-align:center;" id="TBL-11-2-1"  
+class="td11"> TFLOP/s  </td><td  style="white-space:nowrap; text-align:center;" id="TBL-11-2-2"  
+class="td11">  1.01    </td><td  style="white-space:nowrap; text-align:center;" id="TBL-11-2-3"  
+class="td11">   1.96    </td><td  style="white-space:nowrap; text-align:center;" id="TBL-11-2-4"  
+class="td11">   3.78    </td><td  style="white-space:nowrap; text-align:center;" id="TBL-11-2-5"  
+class="td11">   7.34    </td>
+</tr><tr 
+class="hline"><td><hr></td><td><hr></td><td><hr></td><td><hr></td><td><hr></td></tr><tr  
+ style="vertical-align:baseline;" id="TBL-11-3-"><td  style="white-space:nowrap; text-align:center;" id="TBL-11-3-1"  
+class="td11">  Speedup   </td><td  style="white-space:nowrap; text-align:center;" id="TBL-11-3-2"  
+class="td11">    1      </td><td  style="white-space:nowrap; text-align:center;" id="TBL-11-3-3"  
+class="td11">   1.94    </td><td  style="white-space:nowrap; text-align:center;" id="TBL-11-3-4"  
+class="td11">   3.74    </td><td  style="white-space:nowrap; text-align:center;" id="TBL-11-3-5"  
+class="td11">   7.26    </td>
+</tr><tr 
+class="hline"><td><hr></td><td><hr></td><td><hr></td><td><hr></td><td><hr></td></tr><tr  
+ style="vertical-align:baseline;" id="TBL-11-4-"><td  style="white-space:nowrap; text-align:center;" id="TBL-11-4-1"  
+class="td11">           </td></tr></table></div></div>
+<br /> <div class="caption" 
+><span class="id">Table 5: </span><span  
+class="content">Weak scaling of the asynchronous MPI/OpenCL
+implementation </span></div><!--tex4ht:label?: x1-19003r5 -->
+                                                
+                                                                                                
+                                                                                                
+  </div><hr class="endfloat" />
+<!--l. 863--><p class="indent" >  We observe in Table <a 
+href="#x1-19003r5">5<!--tex4ht:ref: tab:async-perfs --></a> that the asynchronous implementation
+is rather efficient and that the communications are well
+overlapped by the GPU computations. In addition, we observe
+that with CLAC we attain approximately <tspan font-family="cmr" font-size="9">30% </tspan>of the roofline
+limit. This result is not too bad, because CLAC handles
+unstructured meshes and some non coalescent memory access
+are unavoidable.
+.
+  <h4 class="subsectionHead"><span class="titlemark">3.5   </span> <a 
+ id="x1-200003.5"></a>Numerical results</h4>
+<!--l. 869--><p class="noindent" >For finishing this paper, we would like to present numerical
+results that we have obtained from a real-world application. The
+objective is to compute the reflection of an electromagnetic
+plane wave with Gaussian profile over an entire aircraft. The
+aircraft geometry is displayed in Figure <a 
+href="#x1-20002r10">10<!--tex4ht:ref: fig:ntc1 --></a>. The mesh is made of
+<tspan font-family="cmr" font-size="9">3</tspan><tspan font-family="cmmi" font-size="9">, </tspan><tspan font-family="cmr" font-size="9">337</tspan><tspan font-family="cmmi" font-size="9">, </tspan><tspan font-family="cmr" font-size="9">875 </tspan>hexahedrons. We used an order <tspan font-family="cmmi" font-size="9">D </tspan><tspan font-family="cmr" font-size="9">= 2 </tspan>approximation
+and 8 GPUs (NVIDIA K20). The interior and the exterior of
+the aircraft are meshed. In order to approximate the infinite
+exterior model, we use a perfectly-matched-layers (PML) model
+<span class="cite">[<a 
+href="#Xberenger">3</a>]</span>. The PML model is an extension of the Maxwell model. The
+possibility to use different models in different zones is here
+exploited for applying the PML model. In a PML zone, the
+Maxwell equations are coupled with a system of six ordinary
+differential equations. This coupling induces an additional cost
+reported in Table <a 
+href="#x1-20001r6">6<!--tex4ht:ref: tab:cost_pml --></a>.
+                                                
+                                                                                                
+                                                                                                
+<!--l. 875--><p class="indent" >  <a 
+ id="x1-20001r6"></a><hr class="float"><div class="float" 
+>
+                                                
+                                                                                                
+                                                                                                
+<div class="tabular"> <table id="TBL-12" class="tabular" 
+cellspacing="0" cellpadding="0" rules="groups" 
+><colgroup id="TBL-12-1g"><col 
+id="TBL-12-1"></colgroup><colgroup id="TBL-12-2g"><col 
+id="TBL-12-2"></colgroup><colgroup id="TBL-12-3g"><col 
+id="TBL-12-3"></colgroup><colgroup id="TBL-12-4g"><col 
+id="TBL-12-4"></colgroup><colgroup id="TBL-12-5g"><col 
+id="TBL-12-5"></colgroup><colgroup id="TBL-12-6g"><col 
+id="TBL-12-6"></colgroup><tr 
+class="hline"><td><hr></td><td><hr></td><td><hr></td><td><hr></td><td><hr></td><td><hr></td></tr><tr  
+ style="vertical-align:baseline;" id="TBL-12-1-"><td  style="white-space:nowrap; text-align:center;" id="TBL-12-1-1"  
+class="td11">    Order      </td><td  style="white-space:nowrap; text-align:center;" id="TBL-12-1-2"  
+class="td11">  0    </td><td  style="white-space:nowrap; text-align:center;" id="TBL-12-1-3"  
+class="td11">  1    </td><td  style="white-space:nowrap; text-align:center;" id="TBL-12-1-4"  
+class="td11">  2    </td><td  style="white-space:nowrap; text-align:center;" id="TBL-12-1-5"  
+class="td11">  3    </td><td  style="white-space:nowrap; text-align:center;" id="TBL-12-1-6"  
+class="td11">  4    </td>
+</tr><tr 
+class="hline"><td><hr></td><td><hr></td><td><hr></td><td><hr></td><td><hr></td><td><hr></td></tr><tr  
+ style="vertical-align:baseline;" id="TBL-12-2-"><td  style="white-space:nowrap; text-align:center;" id="TBL-12-2-1"  
+class="td11">  5 layers (%)   </td><td  style="white-space:nowrap; text-align:center;" id="TBL-12-2-2"  
+class="td11"> 7.14  </td><td  style="white-space:nowrap; text-align:center;" id="TBL-12-2-3"  
+class="td11"> 4.29  </td><td  style="white-space:nowrap; text-align:center;" id="TBL-12-2-4"  
+class="td11"> 15.9  </td><td  style="white-space:nowrap; text-align:center;" id="TBL-12-2-5"  
+class="td11"> 16.5  </td><td  style="white-space:nowrap; text-align:center;" id="TBL-12-2-6"  
+class="td11"> 15.0  </td>
+</tr><tr 
+class="hline"><td><hr></td><td><hr></td><td><hr></td><td><hr></td><td><hr></td><td><hr></td></tr><tr  
+ style="vertical-align:baseline;" id="TBL-12-3-"><td  style="white-space:nowrap; text-align:center;" id="TBL-12-3-1"  
+class="td11"> 10 layers (%)  </td><td  style="white-space:nowrap; text-align:center;" id="TBL-12-3-2"  
+class="td11"> 7.95  </td><td  style="white-space:nowrap; text-align:center;" id="TBL-12-3-3"  
+class="td11"> 6.49  </td><td  style="white-space:nowrap; text-align:center;" id="TBL-12-3-4"  
+class="td11"> 19.0  </td><td  style="white-space:nowrap; text-align:center;" id="TBL-12-3-5"  
+class="td11"> 20.6  </td><td  style="white-space:nowrap; text-align:center;" id="TBL-12-3-6"  
+class="td11"> 18.1  </td>
+</tr><tr 
+class="hline"><td><hr></td><td><hr></td><td><hr></td><td><hr></td><td><hr></td><td><hr></td></tr><tr  
+ style="vertical-align:baseline;" id="TBL-12-4-"><td  style="white-space:nowrap; text-align:center;" id="TBL-12-4-1"  
+class="td11">              </td></tr></table></div>
+<br /> <div class="caption" 
+><span class="id">Table 6: </span><span  
+class="content">Additional cost for 5 and 10 PML expressed in
+percentage of the total computation time.</span></div><!--tex4ht:label?: x1-20001r6 -->
+                                                
+                                                                                                
+                                                                                                
+  </div><hr class="endfloat" />
+<!--l. 888--><p class="indent" >  The current density on the aircraft is given in Figure <a 
+href="#x1-20003r11">11<!--tex4ht:ref: fig:current --></a> at a
+chosen time.
+<!--l. 890--><p class="indent" >  <hr class="figure"><div class="figure" 
+>
+                                                
+                                                                                                
+                                                                                                
+<a 
+ id="x1-20002r10"></a>
+                                                
+                                                                                                
+                                                                                                
+<div class="center" 
+>
+<!--l. 891--><p class="noindent" >
+</div>
+<br /> <div class="caption" 
+><span class="id">Figure 10: </span><span  
+class="content">Aircraft. Only the mesh skin is represented.</span></div><!--tex4ht:label?: x1-20002r10 -->
+                                                
+                                                                                                
+                                                                                                
+<!--l. 895--><p class="indent" >  </div><hr class="endfigure">
+<!--l. 899--><p class="indent" >  <hr class="figure"><div class="figure" 
+>
+                                                
+                                                                                                
+                                                                                                
+<a 
+ id="x1-20003r11"></a>
+                                                
+                                                                                                
+                                                                                                
+<div class="center" 
+>
+<!--l. 900--><p class="noindent" >
+</div>
+<br /> <div class="caption" 
+><span class="id">Figure 11: </span><span  
+class="content">Current density on the aircraft skin.</span></div><!--tex4ht:label?: x1-20003r11 -->
+                                                
+                                                                                                
+                                                                                                
+<!--l. 904--><p class="indent" >  </div><hr class="endfigure">
+.
+  <h3 class="sectionHead"><span class="titlemark">4   </span> <a 
+ id="x1-210004"></a>Conclusions</h3>
+<!--l. 911--><p class="noindent" >In this work we have reviewed several methods for solving
+hyperbolic conservation laws. Such models are very useful in
+many fields of physics or engineering. We have presented a finite
+volume OpenCL/MPI implementation. We have seen that
+coalescent memory access is essential for obtaining good
+efficiency. The synchronous MPI communication does not allow
+an optimal scaling with several GPUs. However the MPI
+extension allows addressing computations that would not fit into
+a single accelerator.
+<!--l. 914--><p class="indent" >  We have then presented a more sophisticated approach: the
+Discontinuous Galerkin method on unstructured hexahedral
+meshes. We have also written an OpenCL/MPI implementation
+of the method. Despite the unstructured mesh and some
+non-coalescent memory accesses, we reach 30% of the peak
+performance.
+<!--l. 916--><p class="indent" >  In future works we intend to change the description
+of the mesh geometry in order to minimize the memory
+access: we can for instance share a higher order geometrical
+transformation <tspan font-family="cmmi" font-size="9">&tau; </tspan>between several cells. We also plan to
+implement a local-time stepping algorithm in order to be able to
+deal with locally refined meshes. Finally, we would like
+to describe the task graph in a more abstract manner in
+order to distribute the computation more effectively on the
+available resources. An interesting tool for performing such
+distribution could be for instance the Starpu environment
+<span class="cite">[<a 
+href="#Xaugonnet2011starpu">2</a>]</span>.
+.
+  <h3 class="sectionHead"><span class="titlemark">5   </span> <a 
+ id="x1-220005"></a>Acknowledgments</h3>
+<!--l. 921--><p class="noindent" >This work has benefited from several supports: from the french
+defense agency DGA, from the Labex ANR-11-LABX-0055-IRMIA
+and from the AxesSim company.  <div class="thebibliography">
+.
+  <h3 class="sectionHead"><span class="titlemark">6   </span> <a 
+ id="x1-230006"></a>References</h3>
+    <p class="bibitem" ><span class="biblabel">
+ [1] <span class="bibsp">&#x00A0;&#x00A0;&#x00A0;</span></span>
+    <a 
+ id="Xaubert2010numerical"></a>D.&#x00A0;Aubert.
+    Numerical
+    cosmology
+    powered
+    by
+    gpus.
+    <tspan font-family="aeti9" font-size="">Proceedings</tspan>
+    <tspan font-family="aeti9" font-size="">of</tspan>
+    <tspan font-family="aeti9" font-size="">the</tspan>
+    <tspan font-family="aeti9" font-size="">International</tspan>
+    <tspan font-family="aeti9" font-size="">Astronomical</tspan>
+    <tspan font-family="aeti9" font-size="">Union</tspan>,
+    6(S270):397&#8211;400,
+    2010.
+    </p>
+    <p class="bibitem" ><span class="biblabel">
+ [2] <span class="bibsp">&#x00A0;&#x00A0;&#x00A0;</span></span>                                                    <a 
+ id="Xaugonnet2011starpu"></a>C.&#x00A0;Augonnet,
+          S.&#x00A0;Thibault,
+          R.&#x00A0;Namyst,
+          and
+          P.-A.
+          Wacrenier.
+          Starpu:
+          a
+          unified
+          platform
+          for
+          task
+          scheduling
+          on
+          heterogeneous
+          multicore
+          architectures.
+          <tspan font-family="aeti9" font-size="">Concurrency</tspan>
+         <tspan font-family="aeti9" font-size="">and</tspan>
+         <tspan font-family="aeti9" font-size="">Computation:</tspan>
+         <tspan font-family="aeti9" font-size="">Practice</tspan>
+         <tspan font-family="aeti9" font-size="">and</tspan>
+         <tspan font-family="aeti9" font-size="">Experience</tspan>,
+          23(2):187&#8211;198,
+          2011.
+          </p>
+          <p class="bibitem" ><span class="biblabel">
+     [3] <span class="bibsp">&#x00A0;&#x00A0;&#x00A0;</span></span>
+          <a 
+ id="Xberenger"></a>J.-P.
+          Berenger.
+          A
+          perfectly
+          matched
+          layer
+          for
+          the
+          absorption
+          of
+          electromagnetic
+          waves.
+          <tspan font-family="aeti9" font-size="">Journal</tspan>
+         <tspan font-family="aeti9" font-size="">of</tspan>
+         <tspan font-family="aeti9" font-size="">computational</tspan>
+         <tspan font-family="aeti9" font-size="">physics</tspan>,
+          114(2):185&#8211;200,
+          1994.
+          </p>
+          <p class="bibitem" ><span class="biblabel">
+     [4] <span class="bibsp">&#x00A0;&#x00A0;&#x00A0;</span></span>
+          <a 
+ id="Xcabel2011multi"></a>T.&#x00A0;Cabel,
+          J.&#x00A0;Charles,
+          and
+          S.&#x00A0;Lanteri.
+          Multi-gpu
+          acceleration
+          of
+          a
+          dgtd
+          method
+          for
+          modeling
+                                                                                                
+                                                                                                
+    human
+    exposure
+    to
+    electromagnetic
+    waves,
+    2011.
+    </p>
+    <p class="bibitem" ><span class="biblabel">
+ [5] <span class="bibsp">&#x00A0;&#x00A0;&#x00A0;</span></span>
+    <a 
+ id="XCFP06"></a>G.&#x00A0;Cohen,
+    X.&#x00A0;Ferrieres,
+    and
+    S.&#x00A0;Pernet.
+    A
+    spatial
+    high-order
+    hexahedral
+    discontinuous
+    galerkin
+    method
+    to
+    solve
+    maxwell&#8217;s
+    equations
+    in
+    time
+    domain.
+    <tspan font-family="aeti9" font-size="">Journal</tspan>
+    <tspan font-family="aeti9" font-size="">of</tspan>
+    <tspan font-family="aeti9" font-size="">Computational</tspan>
+    <tspan font-family="aeti9" font-size="">Physics</tspan>,
+    217(2):340&#8211;363,
+    2006.
+    </p>
+    <p class="bibitem" ><span class="biblabel">
+ [6] <span class="bibsp">&#x00A0;&#x00A0;&#x00A0;</span></span>
+    <a 
+ id="Xhelluy2014interpolated"></a>P.&#x00A0;Helluy
+    and
+    J.&#x00A0;Jung.
+    Interpolated
+    pressure
+    laws
+    in
+    two-fluid
+    simulations
+    and
+    hyperbolicity.
+    In
+    <tspan font-family="aeti9" font-size="">Finite</tspan>
+    <tspan font-family="aeti9" font-size="">Volumes</tspan>
+    <tspan font-family="aeti9" font-size="">for</tspan>
+    <tspan font-family="aeti9" font-size="">Complex</tspan>
+    <tspan font-family="aeti9" font-size="">Applications</tspan>
+    <tspan font-family="aeti9" font-size="">VII-Methods</tspan>
+    <tspan font-family="aeti9" font-size="">and</tspan>
+    <tspan font-family="aeti9" font-size="">Theoretical</tspan>
+    <tspan font-family="aeti9" font-size="">Aspects</tspan>,
+    pages
+    37&#8211;53.
+    Springer
+    International
+                                                          Publishing,
+          2014.
+          </p>
+          <p class="bibitem" ><span class="biblabel">
+     [7] <span class="bibsp">&#x00A0;&#x00A0;&#x00A0;</span></span>
+          <a 
+ id="Xhelluy2014two"></a>P.&#x00A0;Helluy
+          and
+          J.&#x00A0;Jung.
+          Two-fluid
+          compressible
+          simulations
+          on
+          gpu
+          cluster.
+          <tspan font-family="aeti9" font-size="">ESAIM:</tspan>
+         <tspan font-family="aeti9" font-size="">Proceedings</tspan>
+         <tspan font-family="aeti9" font-size="">and</tspan>
+         <tspan font-family="aeti9" font-size="">Surveys</tspan>,
+          45:349&#8211;358,
+          2014.
+          </p>
+          <p class="bibitem" ><span class="biblabel">
+     [8] <span class="bibsp">&#x00A0;&#x00A0;&#x00A0;</span></span>
+          <a 
+ id="Xhesthaven2007nodal"></a>J.&#x00A0;S.
+          Hesthaven
+          and
+          T.&#x00A0;Warburton.
+          <tspan font-family="aeti9" font-size="">Nodal</tspan>
+         <tspan font-family="aeti9" font-size="">discontinuous</tspan>
+         <tspan font-family="aeti9" font-size="">Galerkin</tspan>
+         <tspan font-family="aeti9" font-size="">methods:</tspan>
+         <tspan font-family="aeti9" font-size="">algorithms,</tspan>
+         <tspan font-family="aeti9" font-size="">analysis,</tspan>
+         <tspan font-family="aeti9" font-size="">and</tspan>
+         <tspan font-family="aeti9" font-size="">applications</tspan>,
+          volume&#x00A0;54.
+          Springer
+          Science
+          &amp;
+          Business
+          Media,
+          2007.
+          </p>
+          <p class="bibitem" ><span class="biblabel">
+     [9] <span class="bibsp">&#x00A0;&#x00A0;&#x00A0;</span></span>
+          <a 
+ id="Xhesthaven-2009"></a>A.&#x00A0;Klöckner,
+          T.&#x00A0;Warburton,
+          J.&#x00A0;Bridge,
+          and
+          J.&#x00A0;S.
+          Hesthaven.
+          Nodal
+          discontinuous
+          Galerkin
+          methods
+          on
+          graphics
+          processors.
+          <tspan font-family="aeti9" font-size="">J.</tspan>
+         <tspan font-family="aeti9" font-size="">Comput.</tspan>
+                                                                                                
+                                                                                                
+    <tspan font-family="aeti9" font-size="">Phys.</tspan>,
+    228(21):7863&#8211;7882,
+    2009.
+    </p>
+    <p class="bibitem" ><span class="biblabel">
+[10] <span class="bibsp">&#x00A0;&#x00A0;&#x00A0;</span></span>
+    <a 
+ id="Xkloeckner2010hedge"></a>A.&#x00A0;Kloeckner.
+    Hedge:
+    Hybrid
+    and
+    easy
+    discontinuous
+    galerkin
+    environment
+    <tspan font-family="aett9" font-size="">http://mathema.tician.de/software/hedge/</tspan>,
+    2010.
+    </p>
+    <p class="bibitem" ><span class="biblabel">
+[11] <span class="bibsp">&#x00A0;&#x00A0;&#x00A0;</span></span>
+    <a 
+ id="Xmassaro2014numerical"></a>M.&#x00A0;Massaro,
+    P.&#x00A0;Helluy,
+    and
+    V.&#x00A0;Loechner.
+    Numerical
+    simulation
+    for
+    the
+    mhd
+    system
+    in
+    2d
+    using
+    opencl.
+    <tspan font-family="aeti9" font-size="">ESAIM:</tspan>
+    <tspan font-family="aeti9" font-size="">PROCEEDINGS</tspan>
+    <tspan font-family="aeti9" font-size="">AND</tspan>
+    <tspan font-family="aeti9" font-size="">SURVEYS</tspan>,
+    45:485&#8211;492,
+    2014.
+    </p>
+    <p class="bibitem" ><span class="biblabel">
+[12] <span class="bibsp">&#x00A0;&#x00A0;&#x00A0;</span></span>
+    <a 
+ id="Xmichea2010accelerating"></a>D.&#x00A0;Michéa
+    and
+    D.&#x00A0;Komatitsch.
+    Accelerating
+    a
+    three-dimensional
+    finite-difference
+    wave
+    propagation
+    code
+    using
+    gpu
+    graphics
+    cards.
+    <tspan font-family="aeti9" font-size="">Geophysical</tspan>
+    <tspan font-family="aeti9" font-size="">Journal</tspan>
+    <tspan font-family="aeti9" font-size="">International</tspan>,
+    182(1):389&#8211;402,                                          2010.
+          </p>
+          <p class="bibitem" ><span class="biblabel">
+    [13] <span class="bibsp">&#x00A0;&#x00A0;&#x00A0;</span></span>
+          <a 
+ id="Xruetsch2009optimizing"></a>G.&#x00A0;Ruetsch
+          and
+          P.&#x00A0;Micikevicius.
+          Optimizing
+          matrix
+          transpose
+          in
+          cuda.
+          <tspan font-family="aeti9" font-size="">Nvidia</tspan>
+         <tspan font-family="aeti9" font-size="">CUDA</tspan>
+         <tspan font-family="aeti9" font-size="">SDK</tspan>
+         <tspan font-family="aeti9" font-size="">Application</tspan>
+         <tspan font-family="aeti9" font-size="">Note</tspan>,
+          2009.
+          </p>
+          <p class="bibitem" ><span class="biblabel">
+    [14] <span class="bibsp">&#x00A0;&#x00A0;&#x00A0;</span></span>
+          <a 
+ id="Xshen2012performance"></a>J.&#x00A0;Shen,
+          J.&#x00A0;Fang,
+          H.&#x00A0;Sips,
+          and
+          A.&#x00A0;L.
+          Varbanescu.
+          Performance
+          gaps
+          between
+          openmp
+          and
+          opencl
+          for
+          multi-core
+          cpus.
+          In
+          <tspan font-family="aeti9" font-size="">Parallel</tspan>
+         <tspan font-family="aeti9" font-size="">Processing</tspan>
+         <tspan font-family="aeti9" font-size="">Workshops</tspan>
+         <tspan font-family="aeti9" font-size="">(ICPPW),</tspan>
+         <tspan font-family="aeti9" font-size="">2012</tspan>
+         <tspan font-family="aeti9" font-size="">41st</tspan>
+         <tspan font-family="aeti9" font-size="">International</tspan>
+         <tspan font-family="aeti9" font-size="">Conference</tspan>
+         <tspan font-family="aeti9" font-size="">on</tspan>,
+          pages
+          116&#8211;125.
+          IEEE,
+          2012.
+          </p>
+          <p class="bibitem" ><span class="biblabel">
+    [15] <span class="bibsp">&#x00A0;&#x00A0;&#x00A0;</span></span>
+          <a 
+ id="Xwilliams2009roofline"></a>S.&#x00A0;Williams,
+          A.&#x00A0;Waterman,
+          and
+          D.&#x00A0;Patterson.
+          Roofline:
+          an
+          insightful
+                                                                                                
+                                                                                                
+    visual
+    performance
+    model
+    for
+    multicore
+    architectures.
+    <tspan font-family="aeti9" font-size="">Communications</tspan>
+    <tspan font-family="aeti9" font-size="">of</tspan>
+    <tspan font-family="aeti9" font-size="">the</tspan>
+    <tspan font-family="aeti9" font-size="">ACM</tspan>,
+    52(4):65&#8211;76,
+    2009.
+</p>
+</div>  
+</body></html> 
+
+                                                
+                                                                                                
+
+

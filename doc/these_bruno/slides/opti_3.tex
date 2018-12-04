@@ -1,0 +1,30 @@
+\begin{frame}
+\frametitle{Intégration temporelle / Critères CFL}
+\vfill
+\begin{itemize}
+\item Critère de stabilité empirique lorsque $\Deg = k$ :
+\begin{align*}
+	\dt = \beta C_1 \frac{\min l_H}{v} \frac{1}{2 \Deg + 1} ,
+	\tag{Hesthaven}
+\end{align*}
+\begin{itemize}
+\item [$\beta$] : coefficient CFL (généralement $\beta < 1$) ;
+\item [$\min l_H$] : plus petite arête du maillage hexaédrique ;
+\item [$v$] : vitesse de propagation dans le milieu considéré ;
+\item [$C_1$] : rapport volume / surface, soit $1/6$.
+\end{itemize}
+\vfill
+\item Critère pour le schéma couplé GD-RK$2$ :
+\begin{align*}
+	\dt = \beta C_2 \left(\frac{\min \dx}{v}\right)^{\alpha}
+	\tag{Schneider, Burman} ,
+\end{align*}
+\begin{itemize}
+\item [$\min \dx$] : plus petite distance entre deux points d'intégration ;
+\item [$\alpha$] $= \begin{cases} 4/3 & k = 2 \\ 1 & k \ne 2\end{cases}$ ;
+\item [$C_2$] : constante.
+\end{itemize}
+\end{itemize}
+\vfill
+\end{frame}
+

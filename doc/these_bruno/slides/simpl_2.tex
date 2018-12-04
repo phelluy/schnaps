@@ -1,0 +1,36 @@
+\begin{frame}
+\frametitle{Simplifications / Terme de rigidité (volume)}
+\vfill
+Pour une fonction de base $\PsiPhy{\L}{i}$ fixée :
+\scalebox{0.9}{\begin{minipage}{1.11\textwidth}
+\begin{align*}
+	\int_{\L} &\Flux{\W}{\W}{\nabla \PsiPhy{\L}{i}} d\x \\
+	&= \int_{\HexaRef}
+		\Flux{\W \circ \TGeo{\L}}{\W \circ \TGeo{\L}}{\nabla \PsiPhy{\L}{i} \circ \TGeo{\L}}
+		\Jac{\TGeo{\L}} d\xref
+		\tag{Chgt. var.} \\
+	&\approx \int_{\HexaRef}
+		\Flux{\sum_{k}
+		\W_{\L,k} \PsiRef{k}}{\sum_{k}
+		\W_{\L,k} \PsiRef{k}}{\Com{\TGeo{\L}'} \hat{\nabla} \PsiRef{i}}
+		d\xref
+		\tag{Base} \\
+	&\approx \sum_{j} \GLW{j}
+		\Flux{\sum_{k}
+		\W_{\L,k} \PsiRef{k}(\GLN{j})}{\sum_{k}
+		\W_{\L,k} \PsiRef{k}(\GLN{j})}{\Com{\TGeo{\L}'} \hat{\nabla} \PsiRef{i}(\GLN{j})}
+		\tag{Quadrature} \\
+	&= \sum_{j} \GLW{j}
+		\Flux{\W_{\L,j}}{\W_{\L,j}}{\Com{\TGeo{\L}'} \hat{\nabla} \PsiRef{i}(\GLN{j})}
+		\tag{Termes nuls} .
+\end{align*}
+\end{minipage}}
+\vfill
+\begin{itemize}
+\item Changement de variable : linéarité du flux et $\Com{\TGeo{\L}'} \TGeo{\L}' = \det (\TGeo{\L}') \Mat{I}$ ;
+\item Flux : évaluation du gradient de la fonction de base sur tous les points de volume ;
+\item Des simplifications apparaissent sur le gradient de la fonction de base.
+\end{itemize}
+\vfill
+\end{frame}
+

@@ -1,0 +1,272 @@
+\chapter{Modèle cinétique à 3D}
+\label{chap:ch5}
+\begin{quotation}
+\textit{Résumé}
+\end{quotation}
+\minitoc
+\newpage
+ 
+ 
+ 
+ 
+\chapter{Résolution du modèle cinétique $\mathcal{S}_N$}
+\label{chap:Ch1}
+\begin{quotation}
+\textit{Résumé}
+\end{quotation}
+\minitoc
+\newpage
+
+
+\section{Discrétisation en vitesse}
+\subsection{Introduction}
+Le problème (\ref{}) est posé dans un espace à 6 dimensions. Afin d'en diminuer la complexité ainsi que son coût calculatoire, nous allons chercher à réduire le nombres de dimensions du problème. Nous employons ici la méthode $\mathcal{S}_N$ dite \og des ordonnées discrètes\fg. La méthode consiste à restreindre l'ensemble $\Omega$ en un nombre discret $N_{\Omega}$ de directions $\v_k$  sur la sphère unité. Une fois cet ensemble donné, on cherchera à résoudre un ensemble d'équations de transport selon chaque direction $\v_i \in N_{\Omega}$. \\
+
+On considère également la règle de quadrature suivante sur la sphère unité,
+
+\begin{equation}
+\label{eq:quadraS}
+Q[f] = \int_{\mathcal{S}^2} f(\v) d \sigma_{\v} \approx Q_{N_{\Omega}}[f] = 4\pi \sum_{k=0}^{N_{\Omega}} \omega_k f(\v_k),
+\end{equation}
+
+où $f$ est une fonction continue sur $\mathcal{S}^2$, $d\sigma_{\v}$ un élement de surface, $\v_k$ un noeud sur $\mathcal{S}^2$ et $\omega_k$ les poids d'intégration associés. Nous avons également les propriétés suivantes, 
+
+\begin{equation}
+\label{eq:poids}
+\sum_{k=0}^{N_{\Omega}} \omega_k = 1, \quad \sum_{k=0}^{N_{\Omega}} = \omega_k \v_k = 0.
+\end{equation}
+
+Cette règle de quadrature, nous permettra de remplacer les termes intégraux de l'équation (\ref{eq:Cerci}) par des sommes finies sur $N_{\Omega}$.\\
+
+Dans toute la suite du document on considèrera la règle de quadrature de Lebedev $\left\{ (\v_k, \omega_k), k=0,\dots,N_{\Omega} \right\}$  (inserer biblio Lebedev). 
+ Le choix de cette règle de quadrature est motivée par les propriétés de symétries du groupe octahédrale.
+
+
+\subsection{Formulation discrète en vitesse}
+
+La méthode des ordonnées discrètes consiste à remplacer la fonction de distribution $f(\x,\v,t)$ par une fonction de distribution discrète sur $\Omega_k$, telle que 
+
+\begin{equation}
+\label{eq:ch125}
+f(\x,t) = \left[ f_0(\x,t),\, f_1(\x,t),\,\dots,\, f_{N_{\Omega}}(\x,t) \right]
+\end{equation}
+
+avec  $f_k(\x,t) =  f_k(\x,,\v_k,t),\, k = 1,\dots, N_{\Omega}$.\\
+\\
+L'équation \ref{eq:cin0} devient alors le système d'équations de transport suivant,
+
+\begin{equation}
+\label{eq:cin0}
+\partial_t f_k(\mathbf{x},t) + \mathbf{v_k} \cdot \nabla_{\mathbf{x}}  f_k(\mathbf{x},t) = 0  \quad \mbox{dans} \quad  X \times \mathbb{R}^+
+\end{equation}
+
+avec pour conditions aux bords sur $\partial X \times \mathbb{R}^+$,
+
+\begin{equation}
+\label{eq:cin0}
+\begin{aligned}
+f_k^+(\x,t) \, |\v_k \cdot \n |_{ \v_k \cdot \n < 0}  =  &\,(1-\alpha) f_k^-(\x,- 2(\v_k \cdot \n)\n , t) \, |\v_k \cdot \n | \\
+&+ \alpha\  f_{M,k}(\x,t) \left( \sum_{\v_j \cdot \n > 0} \omega_j f^-_j(\x,t)\, |\v_j \cdot \n | \right)
+\end{aligned}
+\end{equation}
+
+On remarquera que le couplage du système d'effectue au travers des conditions aux bords du domaine.\\
+
+                                                                                                                                                            
+Au travers de notre méthode de quadrature nous pouvons également introduire les grandeurs fluides $(\rho,\mathbf{I})$ suivantes,
+
+\begin{equation}
+\label{eq:rho}
+\rho ( \x,t) = 4 \pi \sum_{k=0}^{N_{\Omega}} \omega_k f_k(\x,t), \quad \mbox{et} \quad \mathbf{I}(\x,t) =  4 \pi \sum_{k=0}^{N_{\Omega}} \omega_k f_k(\x,t) \v_k
+\end{equation}
+
+\subsection{Discrètisation en espace par méthode Galerkin Discontinue}
+La résolution spatiale du système (\ref{eq:cin0}) est effectuée par méthode élements finis Galerkin discontinue (DG).\\
+\newline
+On considère tout d'abord un maillage $\mathcal{M}$ comme une union d'ouverts disjoints (cellules) $\LL$, tel que $$\bar{X} = \cup_{\LL_k \in \mathcal{M}} \bar{\LL}_k,\quad \mbox{avec} \quad \LL_i \cap_k \LL_j = \emptyset, \mbox{ si } i \neq j.$$ On note par $$h_k=\mbox{diam}( \LL_k), \quad \mbox{et} \quad  h=\max_k h_k,$$ respectivement, taille de la maille locale et la finesse du maillage.
+On définit également l'espace d'approximation $V_h$ suivant
+\begin{equation}
+\label{eq:DGspace}
+V_h = \left\{ \phi \in L^2(X) | \forall \LL \in \mathcal{M}, \phi_{\LL} \in \mathbb{P}^d_{\LL} \right\},
+\end{equation}
+où $\mathbb{P}^d$ désigne l'ensemble des polynômes de degré au plus égale à $d$.
+\newline
+
+On se donne à présent une base modale $\left( \phi_{\LL,i}(\x) \right)_{i=0,\dots,N_{d-1}}$ de $\mathbb{P}^d_{\LL}$. On considère alors l'approximation de $f_k$ suivante,
+
+\begin{equation}
+\label{eq:DGapprox}
+f_k(\x,t) = \sum_{j=0}^{N_d-1} f_k^{\mathbb{L},j}(t) \phi^{\mathbb{L},j}(\x), \quad \x \in \mathbb{L}
+\end{equation}
+
+La méthode DG consiste alors à trouver les coefficients $f_k^{\mathbb{L},j}$ associés à chaque direction $\v_k \in \left\{0,\dots,N_{\Omega}\right\}$  tel que l'égalité suivante soit vérifiée, pour toute cellule $\LL \in \mathcal{M}$ et toute fonction teste $\phi_{\LL,j} \in V_h$ à support dans $\LL$, 
+
+\begin{equation}
+\label{eq:DGapproxFull}
+\int_{\LL} \partial_t f_k^{\mathbb{L},j} \phi^{\mathbb{L},j} - \int_{\LL} f_k^{\mathbb{L},j} \, \v_k \cdot \nabla
+ \phi^{\mathbb{L},j} + \int_{\partial \LL} F^*_k(f_{k|_{L}},f_{k|_{R}},\n(\x)) \phi^{\mathbb{L},j} = 0
+\end{equation}
+
+où $F^*_k(f_{k|_{L}},f_{k|_{R}},\n)$ désigne le flux numérique cherchant à approcher la quantité non définie $f_k\ \v_k \cdot \n(\x)$ sur les bords $\partial \LL$.
+On considère ici le flux standard \og upwind \fg, tel que
+ 
+\begin{equation}
+\label{eq:DGapprox}
+F^*_k(f_{k|_{L}},f_{k|_{R}},\n(\x)) = 
+\left\{
+\begin{aligned}
+&f_{k|_{L}} \quad \mbox{si} \quad \n(\x) \cdot \v_k \geq 0\\
+&f_{k|_{R}}  \quad \mbox{si} \quad \n(\x) \cdot \v_k < 0\\
+\end{aligned}
+\right.
+\end{equation} 
+ 
+ \subsection{Schéma d'intégration en temps}
+ 
+On remarque que l'expression semi-discrète (\ref{eq:DGapproxFull}) peut se réécrire sur tout le domaine de calcul sous la forme
+
+\begin{equation}
+\frac{d\mathbf{W}_{h}(t)}{dt} = Q\left(\mathbf{W}_{h}(t),t\right)
+\end{equation}
+
+ce qui correspond à un système d'équations différentielles ordinaires (EDO). Pour résoudre ce système nous utiliserons une méthode de Runge-Kutta d'odre 2. Le vecteur $\mathbf{W}_{h}(t)$ est alors donnée par,
+
+\begin{equation}
+\begin{aligned}
+\mathbf{K}_1 &= Q\left(\mathbf{W}_{h}^j(t),t\right)\\
+\mathbf{K}_2 &= Q\left(\mathbf{W}_{h}^j(t)\ + 0.5\Delta_t\mathbf{K}_1 ,t + 0.5\Delta_t \right)\\
+\mathbf{W}_{h}(t+\Delta_t) &= \mathbf{W}_{h}(t+\Delta_t) + \Delta_t\mathbf{K}_2
+\end{aligned}
+\end{equation}
+avec $\Delta_t$ le pas du temps du système.
+
+\begin{remark} Le schéma RK2 est stable sous la condition de CFL $0 < \mathrm{CFL} \leq 1$ suivante,
+
+\begin{equation}
+\Delta_t \leq \mathrm{CFL} \frac{\max\limits_k(\lambda_k) \min\limits_\Omega (h)}{2d+1}
+\end{equation}
+
+où $d$ désigne l'ordre polynomial employé, $h$ la taille de la maille, et $\lambda_k$ les vitesses de propagations des ondes (ici toutes égale à $c$). 
+ 
+ \end{remark}
+ \section{Résultats Numérique}
+ 
+ \subsection{Cas Test : Transport linéaire de Gausiennes avec sortie libre}
+ 
+ 
+ \subsubsection{Problème}
+ Afin de tester notre solveur de transport en considère le problème suivant,
+  
+\begin{equation}
+\label{eq:cin0}
+\left\{
+\begin{aligned}
+&\partial_t f_k(\mathbf{x},t) + \mathbf{v_k} \cdot \nabla_{\mathbf{x}}  f_k(\mathbf{x},t) = 0  \quad \mbox{dans} \quad  X \times \mathbb{R}^+\\
+&f_k(\mathbf{x},0) = \frac{1}{\sigma^3(2\pi)^{\frac{3}{2}}} \exp \left( \frac{(x-x_0)^2 - (y-y_0)^2 - (z-z_0)^2 }{2\sigma^2}\right)
+\end{aligned}
+\right.
+\end{equation}
+ 
+avec $x_0=0.5$, $y_0=0.5$, $z_0=0.5$ et $\sigma=0.20$ et $N_{\Omega} = 6$. Le domaine $X = [0,1]^3$  est le cube unité, la durée de la simulation est fixée à $T_f=0.3\,s$, et les bords du domaine sont considérés comme des sorties libres. \\
+
+ 
+ \subsubsection{Résultats}
+ 
+Dans le cas d'un transport linéaire la solution exacte du problème précédent est donnée par la méthode des caractéristiques telle que $\forall \ (\x,t) \in  X \times \mathbb{R}^+$,
+
+\begin{equation}
+\label{eq:testexact}
+f_k(\x,t) = f_k(\x-\mathbf{v}_kt,0) = \frac{1}{\sigma^3(2\pi)^{\frac{3}{2}}} \exp \left( \frac{(x-x_0-vx_kt)^2 - (y-y_0-vy_kt)^2 - (z-z_0-vz_kt)^2 }{2\sigma^2}\right) 
+\end{equation}
+ 
+  
+Ci-dessous l'étude de l'erreur en norme $L_2$ obtenue entre la solution numérique DG-RK2 et la solution exacte \ref{eq:testexact}.
+ \begin{table}[h]
+	% \tiny
+    \centering
+    \pgfplotstableread{./tab/chap5/errorSS.dat}\loadedtable
+    \pgfplotstabletypeset[columns={h,Ordre1,Ordre2,Ordre3},
+    columns/{h}/.style={column name=$\Delta_x$,
+    column type=c,sci, sci zerofill,precision=3
+    },
+    columns/{Ordre1}/.style={
+    column name={Ordre $p=1$},column type=c,
+    sci,sci zerofill,
+    precision=3},
+	columns/{Ordre2}/.style={
+    column name={Ordre $p=2$},column type=c,
+    sci,sci zerofill,
+    precision=3},
+	columns/{Ordre3}/.style={
+    column name={Ordre $p=3$},column type=c,
+    sci,sci zerofill,
+    precision=3},
+    every head row/.style={before row=\toprule,after row=\midrule},
+    every last row/.style={after row=\bottomrule}
+    ]\loadedtable
+    \caption{Erreur en norme $L_2$ entre la solution numérique et exacte}
+    \label{tab:1}
+  \end{table}
+
+Le tableau ci-dessous présente les temps de calculs obtenus sur une machine mono-coeur.  
+    \begin{table}[h]
+	% \tiny
+    \centering
+    \pgfplotstableread{./tab/chap5/temps.dat}\loadedtable
+    \pgfplotstabletypeset[columns={h,Ordre1,Ordre2,Ordre3},
+    columns/{h}/.style={column name=$\Delta_x$,
+    column type=c,sci, sci zerofill,precision=3
+    },
+    columns/{Ordre1}/.style={
+    column name={Ordre $p=1$},column type=c,
+    precision=3},
+    columns/{Ordre2}/.style={
+    column name={Ordre $p=2$},column type=c,
+    precision=3},
+    columns/{Ordre3}/.style={
+    column name={Ordre $p=3$},column type=c,
+    precision=4},
+    every head row/.style={before row=\toprule,after row=\midrule},
+    every last row/.style={after row=\bottomrule}
+    ]\loadedtable
+    \caption{Temps de calcul en $s$}
+    \label{tab:1}
+  \end{table}
+ 
+    
+  \begin{figure}[h]
+    \centering
+    \begin{tikzpicture}
+      \begin{loglogaxis}[height=0.40\linewidth,xlabel style={yshift=0.15cm},ylabel style={yshift=-0.15cm},grid=both,x=3cm,
+        xlabel=$\Delta_x$,ylabel=$\|u_{ex}-u_{aprx}\|_{L_{2}}$,
+        % title={ error curves },
+       legend pos=outer north east]
+		
+		\addplot table[x=h,y={create col/linear regression={y=Ordre1}}]{./tab/chap5/errorSS.dat};
+		\xdef\slopeKLL{\pgfplotstableregressiona}
+		\addlegendentry{Ordre $p=1$, pente = $\pgfmathprintnumber{\slopeKLL}$}
+
+		\addplot table[x=h,y={create col/linear regression={y=Ordre2}}]{./tab/chap5/errorSS.dat};
+		\xdef\slopeKL{\pgfplotstableregressiona}
+		\addlegendentry{Ordre $p=2$, pente = $\pgfmathprintnumber{\slopeKL}$}
+
+		\addplot table[unbounded coords=jump,x=h,y={create col/linear regression={y=Ordre3}}]{./tab/chap5/errorSS.dat};
+		\xdef\slopeRLL{\pgfplotstableregressiona}
+		\addlegendentry{Ordre $p=3$, pente = $\pgfmathprintnumber{\slopeRLL}$}
+
+		\end{loglogaxis}
+    \end{tikzpicture}
+    \caption{Erreur en norme L2 entre la solution numérique et exacte. Echelle $\log\log$}
+    \label{fig:res}
+  \end{figure}
+
+  
+   \subsection{Cas Test : Transport linéaire de Gausiennes avec condition de rebond spéculaire}
+
+  
+\section{Quadrature de Lebedev}
+\section{Méthode Galerkin Discontinue}
+\section{Résultats}
+\subsection{Validation académique}
+\section{Conclusion}
+

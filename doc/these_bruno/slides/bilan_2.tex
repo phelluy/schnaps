@@ -1,0 +1,30 @@
+\begin{frame}
+\frametitle{Optimisations / Conclusion}
+\vfill
+Nous avons vu :
+\begin{itemize}
+\item L'utilisation de tétraèdres découpés qui facilitent la phase de maillage ;
+\item Les simplifications induites par la base d'approximation hexaédrique ;
+\item Une méthode d'évaluation du pas de temps de stabilité optimal ;
+\item Un schéma à pas de temps local par maille.
+\end{itemize}
+\vfill
+\pause
+Points non abordés :
+\begin{itemize}
+\item Détails de la parallélisation SIMD (GPU) ;
+\item Optimisations pour architecture MIMD (CPU) ;
+\item La parallélisation du code sur plusieurs accélérateurs via MPI ;
+\item La soumission des tâches via la bibliothèque StarPU (architecture hybride).
+\end{itemize}
+\vfill
+\pause
+Nous allons voir :
+\begin{itemize}
+\item Résultats : tête humaine simplifiée, corps humain ;
+\item Comparaison à la méthode des différences finies ;
+\item Efficacité de l'algorithme MPI-GPU (multi-GPU).
+\end{itemize}
+\vfill
+\end{frame}
+

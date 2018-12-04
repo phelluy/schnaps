@@ -1,0 +1,943 @@
+\chapter{Modèle $M_1$ à 3D}
+\label{chap:ch6}
+\begin{quotation}
+\textit{Résumé}
+\end{quotation}
+\minitoc
+\newpage
+ 
+  
+\section{Réduction du modèle}
+La résolution du modèle cinétique vu au chapitre précédent peut s'effectuer  au travers de différentes méthodes numériques. Dans l'optique de simuler le  transport acoustique à l'échelle du bâtiment, nous nous intéresserons  essentiellement aux grandeurs macroscopiques obtenues en intégrant sur l'ensemble des directions de propagation.
+
+\subsection{Réduction du modèle cinétique}
+
+L'équation cinétique (\ref{}) est posée dans un espace à sept dimensions,  rendant ainsi sa résolution numérique très coûteuse. La littérature regorge de beaucoup de méthodes permettant de réduire le nombre de dimensions du problème  TODO REF. Une de ces méthodes, appelée méthode des moments, consiste à réécrire le système en considérant les deux premiers moments de la fonction de  distribution et de lui joindre une équation de fermeture. Le modèle $M_1$ que  nous allons étudier ici, est basé sur une fermeture dite entropique. \\
+
+Pour des raisons de clarté, nous supposerons que toutes les fonctions employées  dans ce chapitre sont mesurables au sens de Lebesgue. Nous introduisons alors la définition suivante,
+
+
+\begin{definition}
+
+  Pour toute fonction mesurable scalaire ou vectorielle $f=f(v)$, l'intégrale 
+  pour la mesure de Lebesgue $D$-dimensionelle $dv^D$ est notée comme
+
+  \begin{equation}
+    \langle f \rangle : = \int_\Omega \ f(v)  \ dv^D
+  \end{equation} 
+
+\end{definition}
+
+\begin{remark}
+  Dans toute la suite nous considérons la vitesse du son $c$ comme égale à 1
+\end{remark}
+
+Afin d'obtenir le modèle macroscopique $M_1$, nous considérons tout d'abord le  vecteur  $\m = (1, c\v)^T$ que nous multiplions avec l'équation (\ref{}) puis que nous intégrons suivant toutes les directions de propagations. Nous obtenons  alors le système de lois de conversation suivant,
+
+
+\begin{equation}
+  \left\{
+  \begin{aligned}
+  &\partial_t \langle f      \rangle& + & &&c\nabla_{x} \cdot 
+  \langle \v f \rangle& &= 0 \\
+  &\partial_t \langle c\v f \rangle& + & &&c^2\nabla_{x} \cdot 
+  \langle \v \otimes \v f \rangle& &= 0.
+  \end{aligned}
+  \right.
+\end{equation}
+
+où $\mathbf{v} \otimes \mathbf{v}$ désigne le produit dyadique tel que, 
+
+\begin{equation}
+  \mathbf{v} \otimes \mathbf{v} = 
+  \begin{bmatrix}
+  v_x v_x & v_x v_y & v_x v_z \\
+  v_y v_x & v_y v_y & v_y v_z \\
+  v_z v_x & v_z v_y & v_z v_z \\
+  \end{bmatrix}.
+\end{equation}
+
+ce qui nous donne en utilisant les définitions (\ref{}), 
+
+\begin{equation}
+  \label{eq:sysh}
+  \left\{
+  \begin{aligned}
+  & \partial_t w(\x,t)& &+& &\nabla_x \cdot \I(\x,t) &= 0 
+  \quad \mbox{dans} \quad \mathcal{D}_x \times \mathbb{R}^+,\\
+  &\partial_t \I(\x,t)& &+& &\nabla_x \cdot \PP(\x,t) &=0 
+  \quad \mbox{dans} \quad \mathcal{D}_x \times \mathbb{R}^+,\\
+  &+ \mbox{CL}.
+  \end{aligned}
+  \right.
+\end{equation}
+
+
+Ce modèle intermédiaire n'est pas fermé. En effet, les opérations de moyenne, permettant le passage micro/macro, engendrent une perte d'information  nécessitant l'ajout d'une équation de fermeture. Cette fermeture peut revêtir différentes formes TODO CITE. Dans le présent chapitre, nous fermerons le  système en utilisant le principe de minimum d'entropie. Ce principe a été  introduit par Levermore TODO CITE dans le cadre de la mécanique des fluides. 
+Pour se faire nous introduisons tout d'abord les définitions suivantes,
+
+
+\begin{definition}
+
+  Le domaine de réalisabilité physique $\mathcal{M}$ pour les moments $(\w,\I)$ 
+  est donné par,
+
+  \begin{equation}
+    \mathcal{M} = \left\{ (\w,\I)\ \ \forall f > 0 \ / \ \frac{\norm{ \I }}{\w } 
+    < 1 \mbox{ et } w \ > 0 \right\}.
+  \end{equation}
+
+\end{definition}
+
+La définition précédente, impose aux phonons de se déplacer toujours moins vite que la vitesse du son dans le milieu et assure la positivité de la densité d'énergie.
+
+\begin{definition}
+
+  L'entropie cinétique $H$ de Boltzmann associée à la fonction de distribution 
+  $f$ est définie par
+
+  \begin{equation}
+  \label{def:entropie}
+    H(f) = \langle f \ln(f) \rangle.
+  \end{equation}
+ 
+\end{definition}
+
+\begin{proposition}
+L'entropie $H$ définie en (\ref{def:entropie}) est strictement convexe.
+\end{proposition}
+
+\begin{proof}
+La fonction $h(t) = t\ln(t)$ est strictement convexe sur 
+$\mathbb{R}^{+}/ \{0\}$, du fait de $h(t)'' = 1/t > 0$. Nous en déduisons alors
+ $\forall (f,g) \in (\mathbb{R}^{+}/ \{0\})^2$, 
+  
+  \begin{equation}
+  \begin{aligned}
+  H(\theta f + (1-\theta)g) &= \langle h(\theta f + (1-\theta)g) \rangle\\
+  & \leq  \langle \theta h(f) + (1-\theta)h(g) \rangle\\
+  & = \theta H(f) + (1-\theta)H(g).
+  \end{aligned}
+  \end{equation}
+
+Ainsi, H est convexe. De plus cette égalité tient si et seulement si 
+
+$$ h(\theta f + (1-\theta)g) =  \theta h(f) + (1-\theta)h(g)$$
+
+presque partout. Nous pouvons alors en déduire que si $\theta$ est différent de
+$0$ et de $1$, alors $f=g$ presque partout. En identifiant les fonctions $f$ 
+et $g$ égales presque partout, il en résulte que $H$ est  strictement convexe.
+
+\end{proof}
+
+
+En suivant l'idée de Levermore nous cherchons alors la fonction de distribution
+$f_m$ telle que
+
+\begin{equation}
+  \label{mincontinu}
+  H(f_m) = \min_f \left\{ H(f) \ \forall f \ / \ \langle f \rangle = w(\x,t)
+  \mbox{ et } \langle c\v f \rangle =  \I(\x,t) \right\}.
+\end{equation}
+
+\begin{proposition}
+  Pour un couple $(\w,\I) \in \mathcal{M}$ alors la solution du problème 
+  (\ref{mincontinu}) à la forme suivante,
+
+  \begin{equation}
+    f_m(\bm{\alpha}) =  \exp(- 1 -  \m \cdot \bm{\alpha} )
+  \end{equation}
+  où $\bm{\alpha}$ désigne le multiplicateur de Lagrange associé au problème.
+\end{proposition}
+
+\begin{proof}
+  Nous introduisons le Lagrangien $\Lagr$ associé au problème d'optimisation 
+  sous contraintes (\ref{mincontinu}),
+
+  \begin{equation}
+    \Lagr(f, \bm{\Lambda}) = H(f) - \left[\lambda_0 (w - \langle f \rangle) 
+    + \bm{\lambda}_1 (\I - \langle c\v f \rangle) \right]
+  \end{equation}
+
+  avec $\bm{\Lambda} = (\lambda_0, \bm{\lambda}_1) \in 
+  (\mathbb{R} \times \mathbb{R}^3$).
+
+  Or, si $f_m$ est solution de (\ref{mincontinu}) alors il existe
+  $\bm{\alpha} = (\alpha_0, \bm{\alpha}_1) \in  (\mathbb{R} \times 
+  \mathbb{R}^3)$   
+  tel que $(f_m,\bm{\alpha})$ soit un point critique du Lagrangien.  
+  La réciprocité de la proposition précédente est assurée par la stricte 
+  convexité de $H$ (\ref{}). \\
+    
+  Nous définissons à présent la dérivée de Gâteaux de $\Lagr$ dans la direction 
+  $\delta f$ par,
+
+  $$ 
+    \lim\limits_{\delta f \to 0} \frac{ \Lagr(f_m + \delta f,\bm{\alpha})
+     - \Lagr(f_m,\bm{\alpha})}{\delta f} =  \partial_f \Lagr(f_m,\bm{\alpha})
+     + O(|\delta f|^2).
+  $$
+
+  D'après la condition d'optimalité du premier ordre, si $\Lagr$ est 
+  dérivable au point $f_m$ nous avons alors,  
+
+  \begin{equation}
+   \label{lag:opt1}
+    \partial_f \Lagr(f_m,\bm{\alpha}) = \langle \partial_f H(f_m) \rangle 
+    + \langle \m \cdot \bm{\alpha} \rangle = 0.
+  \end{equation}
+
+  Or pour tout $g$, 
+  
+  $$
+  \langle \partial_f H(f), g \rangle = \langle (\ln(f) + 1),g \rangle,
+  $$
+  
+  D'après (\ref{lag:opt1}) nous avons alors presque partout,
+  \begin{equation}
+  \label{derH}
+    \partial_f H(f_m)  = 1 + \ln(f_m) =  - \m \cdot \bm{\alpha},
+  \end{equation}
+
+  ainsi,
+
+  $$
+    f_m(\bm{\alpha}) = \exp( - 1 - \m \cdot \bm{\alpha} )
+  $$
+  
+\end{proof}
+
+
+\begin{theorem}
+  Le système (\ref{}) est hyperbolique et dissipe l'entropie convexe suivante,
+
+  $$
+    \tilde{H}(f) = fln(f) - f
+  $$
+\end{theorem}
+
+\begin{proof} 
+  \textit{(Hyperbolicité)}
+  Soit le système (\ref{}) mis sous la forme condensée,
+
+  \begin{equation}
+    \partial_t \langle \m f \rangle + \nabla_x \cdot \langle \m c \v f \rangle = 0
+  \end{equation}
+
+  en utilisant la forme de $f_m(\bm{\alpha})$ et en dérivant par rapport à 
+  $\bm{\alpha}$ nous avons,
+
+
+  \begin{equation}
+    \langle \m \m^T \partial_{\bm{\alpha}} f_m(\bm{\alpha}) \rangle \partial_t 
+    \bm{\alpha} +  \langle \m \m^T c \v f_m(\bm{\alpha}) \rangle  \cdot \nabla_x  
+    \bm{\alpha}  = 0.
+  \end{equation}
+
+
+
+  En notant par
+
+  $$
+    A(\bm{\alpha}) = \langle \m \m^T f_m(\bm{\alpha}) \rangle, 
+  $$
+
+
+  nous remarquons alors que que pour tout vecteur
+  $\mathbf{u} \in \mathbb{R}^2 \neq 0$
+
+  $$ 
+    \mathbf{u}^T A(\bm{\alpha}) \mathbf{u} = \langle (\mathbf{u}^T \m)^2 
+    f_m(\bm{\alpha}) \rangle \geq 0 
+  $$
+
+  ainsi, $A$ est une matrice symétrique définie positive. De plus, en notant par,
+
+  $$
+    K(\bm{\alpha}) =  \langle \m \m^T c \v f_m(\bm{\alpha}) \rangle
+  $$
+
+  nous avons
+
+  $$
+    K(\bm{\alpha})^T = K(\bm{\alpha}).
+  $$
+
+  Ainsi la forme 
+
+  $$ 
+    \partial_t \bm{\alpha} + A^{-1}K \cdot \nabla_x  \bm{\alpha}  = 0 
+  $$
+
+  est un système hyperbolique de lois de convervations pour 
+  $\bm{\bm{\alpha}}$.\\
+
+  \textit{(Dissipation de l'entropie)} En multipliant (\ref{}) par 
+  $\bm{\alpha}^T$ nous obtenons alors
+
+
+  $$ 
+    \partial_t \langle \bm{\alpha}\cdot\m f_m \rangle + 
+    \nabla_x \cdot \langle \bm\alpha \cdot \m c \v  f_m \rangle = 0
+  $$
+
+  en remarquerant également que d'après (\ref{derH}), 
+
+  $$
+    \partial_{f} H(f_m) = 1 + \ln(f_m) = - \m \cdot \bm{\alpha}.
+  $$
+
+  Ainsi,
+
+  $$ 
+    \partial_t \langle (1 + \ln(f_m)) f_m \rangle + 
+    \nabla_x \cdot \langle ( 1 + \ln(f_m)) c \v  f_m \rangle = 0.
+  $$
+
+  En posant
+  
+  $$
+    \tilde{H}(f) = f \ln(f) + f,
+  $$
+  
+  avec $\tilde{H}$ clairement convexe, nous pouvons écrire,
+  
+  $$ 
+    \partial_t \langle (\tilde{H}(f_m) \rangle + 
+    \nabla_x \cdot \langle \tilde{H}(f_m)) c \v   \rangle = 0.
+  $$
+
+\end{proof}
+
+
+\subsection{Inversion du problème}
+
+Dans cette section nous allons chercher à exprimer les multiplicateurs de 
+Lagrange $\bm{\alpha}$ en fonction des variables $\w$ et $\I$. Dans un souci de simplification nous notons par
+
+$$
+  a := \exp(-1-\alpha_1), \quad \b := -\bm{\alpha_1}
+  \quad \mbox{et} \quad b:=\norm{\b},
+$$
+
+l'expression \ref{} devient alors
+
+\begin{equation}
+  f_m = a\exp(\b\cdot c\v).
+\end{equation}
+
+\begin{proposition}
+  Pour tout couple physiquement réalisable $(\w,\I)$, le scalaire $a$ est 
+  donné par
+
+  \begin{equation}
+    a = \frac{\w(\x,t) b}{4 \pi c \sinh(cb)}
+  \end{equation}
+
+  et le vecteur $\b$ est solution de l'équation,
+
+  \begin{equation}
+    \frac{\b c}{b} \left( \coth(bc)  - \frac{1}{bc} \right) 
+    - \frac{\I(\x,t)}{\w(\x,t)} = 0.
+  \end{equation}
+
+\end{proposition}
+
+\begin{proof}
+
+  Le scalaire $a$ se détermine à partir du moment d'ordre $0$
+
+  $$
+    w(\x,t) := \langle f_m \rangle = \langle a \exp( \b \cdot c\v) \rangle.
+  $$
+
+  Nous nous plaçons dans un repère $\mathcal{R}(O,\mathbf{x},\mathbf{y},\mathbf{z})$ 
+  tel que $\b$ et $\mathbf{z}$ soient colinéaires. En posant $u = \cos(\theta)$ 
+  nous avons alors en coordonnées sphériques $(r,\phi,\theta)$,
+
+  \begin{equation}
+    \begin{aligned}
+    w(\x,t) &= \int_0^\pi c^2\exp(b c\cos(\theta)) 
+    \sin(\theta) d\theta \int_0^{2\pi} d\phi \\ 
+    &= a 2\pi c^2  \int_{-1}^1 \exp(bcu)du\\
+    &=  \frac{a c 4\pi \sinh(bc)}{b},
+    \end{aligned}
+  \end{equation}
+
+  ainsi,
+
+  \begin{equation}
+    \label{eq:a}
+    a = \frac{w(\x,t) b}{4 \pi c \sinh(cb)}.
+  \end{equation}
+
+
+  Nous considérons à présent le moment d'ordre $1$
+
+  $$
+  \I(\x,t) :=  \langle   (c \v) a\exp(\b \cdot c\v)  \rangle.
+  $$
+
+  Dans le repère $\mathcal{R}$, avec $\b_{\perp}^1$ le vecteur unitaire
+  (resp. $\b_{\perp}^2$) collinaire à $\x$ (resp. $\mathbf{y}$) nous avons,
+  
+  \begin{equation}
+    \begin{aligned}
+    \I(\x,t) &=a c^3\int_0^{2 \pi} \int_0^\pi  \left[  \frac{\b}{b} \cos(\theta) 
+    + \b_{\perp}^1 \sin(\theta) \sin(\phi) 
+    + \b_{\perp}^2 \sin(\phi) \cos(\theta)\right]\exp(bc\cos(\theta)) 
+    \sin(\theta) d \theta d \phi \\
+    & = \frac{a c^3 2\pi \b}{b}  \int_0^\pi \cos(\theta)\sin(\theta) 
+    \exp(bc\cos(\theta)) d \theta.
+    \end{aligned}
+  \end{equation}
+
+  Enfin d'après (\ref{eq:a}) et par le changement de variable $u = \cos(\theta)$ 
+  il vient,
+
+  \begin{equation}
+  \label{eq:ifuncb}
+    \I(\x,t) = \frac{\b c w(\x,t)}{b}  \left(\coth(bc)  - \frac{1}{bc} \right)
+  \end{equation}
+
+\end{proof}
+
+\begin{proposition}
+\label{prop:collineaire}
+Le vecteur intensité $\I$ est collinaire au vecteur $\b$ et $\I \cdot \b \geq 0$.
+\end{proposition}
+
+\begin{proof}
+ La colinéarité est directe de par l'expression 
+(\ref{eq:ifuncb}). De plus d'après (\ref{eq:ifuncb}) nous avons, 
+
+\begin{equation}
+\begin{aligned}
+    \I \cdot \b &= w(\x,t)\left(bc\coth(bc) - 1\right)\\
+\end{aligned}
+\end{equation}
+
+En posant $s(t) = t\coth(t) - 1$ (continue sur $\mathbb{R}^+$), il nous reste 
+alors à montrer que,
+$s(t) \geq 0$ pour tout $t\geq0$.\\
+Nous avons les propriétés suivantes,
+ 
+$$  
+\lim_{t\to 0} s(t) = 0, \quad \lim_{t\to +\infty} s(t) = +\infty  \quad \mbox{et} \quad 
+s'(t) = \frac{ \cosh(t)\sinh(t) - t }{\sinh(t)^2}.
+$$
+
+De la même manière en posant $y(t) = \cosh(t)\sinh(t) - t$ 
+((continue sur $\mathbb{R}^+$) nous avons,
+
+$$  
+\lim_{t\to 0} y(t) = 0,\quad \lim_{t\to +\infty} y(t) = +\infty  \quad \mbox{et} \quad 
+y'(t) = \sinh(t)^2 + \cosh(t)^2  - 1 \geq 1 \quad \forall t.
+$$
+Nous pouvons alors conclure que pour tout $t\geq0$ 
+
+$$
+t\coth(t) - 1 \geq 0,
+$$
+
+et ainsi,
+$$
+\I \cdot \b \geq 0.
+$$
+\end{proof}
+
+Dans la suite nous poserons par
+
+\begin{equation}
+  \label{eq:chi}
+  \chi = \frac{\norm{\I}}{c w} = \coth(bc)  
+  - \frac{1}{bc}
+\end{equation}
+le facteur d'anisotropie.
+
+\begin{remark}
+On remarquera que le facteur d'anisotropie $0 \leq \chi \leq 1$.
+\end{remark}
+
+\begin{proposition}
+L'équation 
+\begin{equation}
+\label{eq:chi2}
+   \coth(t) - \frac{1}{t} - \chi   = 0
+\end{equation}
+admet une unique solution $t^* \in \mathbb{R}^+$ pour tout $0 \leq \chi < 1$.
+\end{proposition}
+
+\begin{proof}
+En notant par $y(t) = \coth(t) - \frac{1}{t} - \chi$ (continue sur $\mathbb{R}^{+}/ \{0\}$) avec $\chi \geq 0$ fixé, nous avons alors les propriétés suivantes
+
+$$\lim_{t\to 0} y(t) = -\chi, \quad \lim_{t\to +\infty} y(t) = 1 - \chi \quad \mbox{et} \quad   y'(t) = 1 - \coth(t)^2  + \frac{1}{t^2}. $$
+
+
+Nous pouvons constater que pour tout $0 < \chi < 1$
+
+\begin{equation}
+\label{eq:chisign}
+-\chi(1-\chi) \leq 0,
+\end{equation}
+
+ce qui prouve l'existence d'au moins un zero $t^* > 0$.
+
+L'unicité de $t^*$ provient de la stricte monotonie de $y$ pour $t > 0$.\\
+ 
+En réécrivant $y'$ de la manière suivante,
+
+$$
+y'(t) = -\frac{(t\csch(t) - 1)(t\csch(t) + 1)}{t^2},
+$$
+
+nous ramenons l'étude du signe de $y'$ à celui du numérateur.\\
+
+En remarquant que,
+
+
+$$
+t\csch(t) = \frac{t}{\sinh(t)}
+$$
+
+et utilisant le fait que, 
+
+\begin{equation}
+\sinh(t) = t\prod_{k=1}^{\infty} ( 1 + \frac{t^2}{k^2\pi^2}),
+\end{equation}
+
+nous avons pour tout $t>0$,
+
+
+\begin{equation}
+\begin{aligned}
+\frac{t}{\sinh(t)} &= \frac{t}{t\prod_{k=1}^{\infty} 
+( 1 + \frac{t^2}{k^2\pi^2})}\\
+&= \frac{1}{\prod_{k=1}^{\infty}( 1 + \frac{t^2}{k^2\pi^2})} < 1,
+\end{aligned}
+\end{equation}
+impliquant $y'(t) > 0$ pour tout $t>0$.\\
+
+
+
+Ainsi, $y$ est strictement croissante et d'après (\ref{eq:chisign}), l'équation (\ref{eq:chi2}) admet alors une unique solution $t^*>0$.\\
+
+Nous pouvons à présent étudier les cas où $\chi$ est égale à $0$ et $1$. Dans le cas $\chi=0$, nous avons au voisinage de $t=0$,
+
+$$
+y(t) = \coth(t) - \frac{1}{t} = \frac{t}{3} - \frac{t^3}{45} + \frac{2t^5}{945} + O(x^6).$$
+
+L'unique solution de $y(t) = 0$ est alors $t^*=0$.\\
+
+
+Enfin, lorsque $\chi=1$, nous constatons que, 
+
+\begin{equation}
+\label{eq:chiless1}
+\lim_{t\to +\infty} \coth(t) - \frac{1}{t}  - 1 = 0.
+\end{equation}
+\end{proof}
+
+
+\begin{remark}
+Nous remarquerons que pour déterminer $\b$ il nous suffira de résoudre
+l'équation (\ref{eq:chi2}). Les composantes se déduisant par colinéarité 
+avec $\I$. De plus d'après (\ref{eq:chiless1}), nous devrons nous assurer 
+que le facteur d'anisotropie $\chi$ soit toujours strictement inférieur à 1. 
+\end{remark}
+
+
+
+% \todo[inline]{Parler de la résolution de ce problème. Etude de l'existence et 
+ % l'unicité. Résolution du 1D permet de remonter au 3D par colinéarité}.
+ 
+\subsection{Fermeture du système}
+
+Afin de fermer le système d'équations (\ref{eq:sysh}) nous allons chercher 
+à exprimer la quantité $\PP$ en fonction de $\I$ et $w$
+
+
+\begin{proposition}
+Après fermeture entropique, le tenseur de contraintes $\PP$ prend la forme 
+suivante :
+
+\begin{equation}
+  \PP(\x,t) =  c^2 w(\x,t) \left[\frac{\chi}{bc} \mathbf{I_d} + 
+  ( 1 - 3\frac{\chi}{bc}) \frac{\b \otimes \b}{b^2} \right].
+\end{equation}
+
+\end{proposition}
+
+\begin{proof}
+
+  Par définition, nous avons
+
+  \begin{equation}
+    \PP(\x,t) := a \langle (c\v \otimes c\v) e^{\b \cdot \v} \rangle
+  \end{equation}
+
+  Or en coordonnées sphériques $(r,\phi,\theta)$, le tenseur $\v \otimes \v$
+  prend la forme suivante,
+
+
+  \begin{equation}
+    \v \otimes \v  =
+    \begin{pmatrix}
+      \sin^2{\theta}\cos^2(\phi) & \sin^2{\theta}\cos(\phi)\sin(\phi) & 
+      \sin(\theta)\cos(\phi)\cos(\theta)\\
+      \sin^2{\theta}\cos(\phi)\sin(\phi) & \sin^2{\theta}\sin^2(\phi) 
+      & \sin(\theta)\sin(\phi)\cos(\theta)\\
+      \sin{\theta}\cos(\phi)\cos(\theta) & \sin{\theta}\sin(\phi)\cos(\theta) 
+      & \cos^2(\theta)\\
+    \end{pmatrix}.
+  \end{equation}
+
+Nous remarquons directement que les termes extradiagonaux sont nuls du fait de
+l'intégration sur la variable $\phi$ de fonctions périodiques de période 
+$2\pi$.\\
+
+En posant $u = \cos(\theta)$ il vient alors dans le repère $\mathcal{R}$\\
+\begin{equation}
+  \PP(\x,t) = a c^4 \pi \int_{-1}^1 \exp(cbu)
+  \left( (1-u^2)  \left( \frac{\b_{\perp}^1
+  \otimes \b_{\perp}^1}{ (b_{\perp})^2} 
+  +\frac{\b_{\perp}^2 \otimes \b_{\perp}^2}{ (b_{\perp}^2)^2}\right)
+  + (2u^2) \frac{\b \otimes \b}{ (b)^2} \right) du.
+\end{equation}
+
+
+
+Les intéragles $T_1$ et $T_2$ ci-dessous se calculent analytiquement,
+
+\begin{equation}
+\begin{aligned}
+T_1(u) = \int_{-1}^{1} u^2 \exp(bcu) du &= \left[  u^2 \frac{ \exp(bcu)}{bc} \right]^1_{-1} - 2\int_{-1}^1 u \frac{\exp(bcu)}{bc}du\\
+& = \frac{2}{bc}\sinh(bc) - \frac{2}{bc} \left(  \left[  u \frac{\exp(bcu)}{bc} \right]^1_{-1} -\int_{-1}^1 \frac{\exp(bcu)}{bc} du   \right)\\
+&= \frac{2}{bc}\sinh(bc) - \frac{2}{bc} \left(   \frac{2 \cosh(bc)}{bc} - \frac{2\sinh(bc)}{(bc)^2}   \right)\\
+&= \frac{2}{bc}\sinh(bc) \left( 1 - \frac{2}{bc}\left(\coth(bc) - \frac{1}{bc} \right) \right)
+\end{aligned}
+\end{equation}
+
+et
+\begin{equation}
+\begin{aligned}
+T_2(u) &= \int_{-1}^{1} (1-u^2) \exp(bcu) du = \frac{2}{bc}\sinh(bc)  - T_1(u)\\
+&= \frac{4}{(bc)^2}\sinh(bc) \left(\coth(bc) - \frac{1}{bc} \right).
+\end{aligned}
+\end{equation}
+
+
+Dès lors, en utilisant la notation introduite en (\ref{eq:chi}) nous avons 
+alors comme éléments du tenseur $\PP$
+\begin{equation}
+P_{11} = P_{22} = ac^4\pi T_2(u)  =  \frac{c^2w(\x,t)\chi}{bc}
+\end{equation}
+et
+\begin{equation}
+P_{33} = 2ac^4\pi T_1(u) = c^2 w(\x,t) \left( 1 - \frac{2\chi}{bc}\right).
+\end{equation}
+
+d'où
+
+\begin{equation}
+  \label{eq:PP1}
+  \PP(\x,t) = c^2 w(\x,t)  \left[  \frac{\chi}{bc}  \left( 
+  \frac{\b_{\perp}^1 \otimes \b_{\perp}^1}{ (b_{\perp}^1)^2} 
+  +\frac{\b_{\perp}^2 \otimes \b_{\perp}^2}{ (b_{\perp}^2)^2}\right)
+  + ( 1 - \frac{2\chi}{bc} ) \frac{\b \otimes \b}{ (b^2)} \right]
+\end{equation}
+
+Enfin en utilisant le fait que,
+
+\begin{equation}
+  \mathbf{I_d}  = \frac{\b_{\perp}^1 \otimes \b_{\perp}^1}{ (b_{\perp}^1)^2} 
+  + \frac{\b_{\perp}^2 \otimes \b_{\perp}^1}{ (b_{\perp}^2)^2} 
+  +  \frac{\b \otimes \b}{ (b)^2},
+\end{equation}
+
+nous pouvons réécrire le tenseur  $\PP$ comme la somme d'un tenseur isotrope et
+ anisotrope. Cela nous donne,
+\begin{equation}
+  \PP(\x,t) =  c^2 w(\x,t) \left[\frac{\chi}{bc} \mathbf{I_d} 
+  + ( 1 - 3\frac{\chi}{bc}) \frac{\b \otimes \b}{b^2} \right]
+\end{equation}
+
+\end{proof}
+ 
+ 
+Dans la suite on posera,
+
+\begin{equation}
+\bm{\psi} := \frac{\PP}{c^2w} =  \frac{\chi}{bc} \mathbf{I_d} + ( 1 - 3\frac{\chi}{bc}) \frac{\b \otimes \b}{b^2}
+\end{equation}
+
+\begin{remark}Equivalence sur le facteur d'Eddington
+\end{remark}
+
+\begin{proposition}
+Le vecteur intensité $\I$ est un vecteur propre du tenseur des contraintes $\PP$.
+\end{proposition}
+
+
+\begin{proof}
+En utilisant la propriété (\ref{prop:collineaire}) et multipliant l'équation (\ref{eq:PP1}) par $\I$ nous obtenons, 
+
+\begin{equation}
+\begin{aligned}
+\PP\I &= c^2 w(\x,t)  \left[  \frac{\chi}{bc}  \left( 
+  \frac{\b_{\perp}^1 (\b_{\perp}^1 \cdot \I)}{ (b_{\perp}^1)^2} 
+  +\frac{\b_{\perp}^2 (\b_{\perp}^2 \cdot \I) }{ (b_{\perp}^2)^2}\right)
+  + ( 1 - \frac{2\chi}{bc} ) \frac{\b (\b \cdot \I)}{ (b^2)} \right] \\
+  &=  c^2 w(\x,t)  \left[( 1 - \frac{2\chi}{bc} ) \frac{\b (\b \cdot \I)}{(b^2)}
+  \right] \\
+  &=\gamma\I.
+\end{aligned}
+\end{equation}
+ avec $\gamma$ une constante telle que $\gamma = c^2 w(\x,t) \left[( 1 - \frac{2\chi}{bc} ) \frac{\b (\b \cdot \I)}{(b^2)} \right]$.
+\end{proof}
+
+
+En conclusion, grâce à la méthode des moments et à la fermeture entropique de Levermore nous avons réduit notre modèle cinétique initial pour en obtenir un modèle, dit M1, portant sur des grandeurs purement macroscopiques. 
+
+\subsection{Aspect qualitatif et propriété du modèle}
+
+Un premier test fut d'étudier la "faisabilité"  de l'emploi de la méthode de Newton pour l'obtention du multiplicateur de Lagrange $\mathbf{b}$. Ci-dessous le tracé,  d'une composante $i$ de $g(\mathbf{b})$ issue de (\ref{eq:zero}, 
+
+\begin{center}
+\hspace{4cm}
+\Image[width=0.8\linewidth]{./fig/chap6/gg.png}{}
+% \captionof{figure}{Tracé de la fonction $\coth(x) - \frac{1}{x}$ et de sa dérivée, cas où  $R_{1,i}= 0$ avec $i$ la composante $\mathbf{R_1}$  }
+\end{center}
+
+
+
+On remarque très clairement que lorsque  $R_{1,i} \rightarrow 1$, le zéro de la fonction se trouve dans une zone où $g'(\b) \rightarrow 0$. Il en sera de même, lorsque  $R_{1,i} \rightarrow 0$. De ce fait l'emploi de la méthode de Newton pourra s'avérer "périlleuse" dans certains cas limites.\\
+\newline
+La figure ci-dessous montre l'évolution d'une composante $i$ du multiplicateur de Lagrange $\mathbf{b}$ en fonction du rapport $R_{1,i} \geq 0$ (les cas $R_{1,i} \leq 0$ s'obtiennent par symétrie).
+
+\begin{center}
+\Image[width=0.6\linewidth]{./fig/chap6/biw.png}{}
+% \captionof{figure}{Variation d'une composante $i$ du multiplicateur de Lagrange $\b$ en fonction du rapport $R_{1,i}$}
+\end{center}
+ 
+On remarque donc un comportement relativement linéaire pour des valeurs $R_{1,i} \leq 0.9$. Au-delà, la valeur de $b_i$ monte très brutalement vers l'infini.
+
+
+\subsubsection{Reconstruction de la fonction de distribution}
+
+Nous allons à présent représenter la fonction $f_m$ en fonction d'un rapport $\mathbf{R}_1$ donné. Le tracé de la fonction $f_M$ est effectué sur l'ensemble des directions $\Omega$. Cette dernière est obtenue par calcul des multiplicateurs de Lagrange $\mathbf{b}$ et $a$ pour un rapport $\mathbf{R}_1$ donné.
+\newline
+
+\begin{itemize}
+
+\item Cas  où ,$\mathbf{R}_1 = [ 0.01, 0.01, 0.01]^T$. Il représente une situation dite "diffuse" où l'intensité $\I$ est très faible par rapport à la densité $w$. Ci-dessous le graphique de la fonction de distribution reconstruite, on y remarque bien, au vu des valeurs quasi uniformes de $f_M$ sur $\Omega$, qu'aucune direction ne semble privilégiée. \\
+
+\begin{center}
+\Image[width=0.4\linewidth]{./fig/chap6/000.png}{}
+% \captionof{figure}{Tracé de la fonction de distribution $f_M$ pour un rapport $\mathbf{R}_1$ donné. Ici  $\mathbf{R}_1 = [ 0.01, 0.01, 0.01]^T$ }
+\end{center}
+
+
+\item Cas  où ,$\mathbf{R}_1 = [ 0.33, 0.33, 0.33]^T$. Il représente une situation intermédiaire et permet de comprendre l'évolution de la fonction $f_M$ lorsque le rapport $\mathbf{R}_1$ augmente. Ci-dessous le graphique de la fonction de distribution reconstruite, on y remarque que la fonction $f_m$ commence à croître dans la direction unitaire $[1,1,1]^T$.\\
+
+\begin{center}
+\Image[width=0.4\linewidth]{./fig/chap6/333.png}{}
+% \captionof{figure}{Tracé de la fonction de distribution $f_M$ pour un rapport $\mathbf{R}_1$ donné. Ici  $\mathbf{R}_1 = [ 0.33, 0.33, 0.33]^T$}
+\end{center}
+
+
+\item Cas  où , $\mathbf{R}_1 = [ 0.98, 0.98, 0.98]^T$. Il représente la situation limite où une direction est fortement privilégiée.  Ci-dessous le graphique de la fonction de distribution reconstruite,  on y remarque très nettement que $f_M$ est très piquée sur la direction privilégiée $[1,1,1]^T$. \\
+
+
+\begin{center}
+\Image[width=0.4\linewidth]{./fig/chap6/999.png}{}
+% \captionof{figure}{Tracé de la fonction de distribution $f_M$ pour un rapport $\mathbf{R}_1$ donné. Ici  $\mathbf{R}_1 = [ 0.98, 0.98, 0.98]^T$}
+\end{center}
+
+\end{itemize}
+
+
+\subsubsection{Évolution de $\mathbf{R}_2$ en fonction de $\mathbf{R}_1$}
+
+On se place dans le cas à une dimension. On a alors d'après (\ref{eq:G1}),
+
+\begin{equation}
+ R_2 = \frac{G}{w} = 1 - \frac{2R_1}{b}
+ \end{equation}
+
+Nous allons à présent tracer le comportement de la grandeur $R_2$ en fonction du rapport $R_1$.
+ 
+\begin{center}
+\hspace{4cm}
+\Image[width=0.8\linewidth]{./fig/chap6/R2.png}{}
+% \captionof{figure}{Tracé de $R_2$ en fonction de $R_1$. Cas 1D.}
+\end{center}
+
+On remarque, ainsi que le terme $R_2$ varie de 0 (cas diffus) à 1 cas très piqué. Au regard de l'expression du $R_2$ et au vu du graphique précédent cela monte que le flux ne dépasse jamais la vitesse du son dans le milieu. 
+
+
+
+
+
+
+
+
+
+\subsection{Propriété du modèle $M_1$}
+On s'intéresse ici au problème à une dimension suivant, 
+
+
+\begin{figure}
+\def\svgwidth{\linewidth}
+\import{./fig/chap6/}{boundary.pdf_tex}
+% \input{./fig/chap6/boundary.pdf_tex}
+\caption{}
+\end{figure}
+
+
+
+
+
+
+\begin{equation}
+\label{eq:sysh1D}
+\left\{
+\begin{aligned}
+&\partial_t w + \partial_x I = 0,\\
+&\partial_t I + \partial_x ( w\psi(\rone)) = 0,
+\end{aligned}
+\right.
+\end{equation}
+
+que l'on réécrira sous la forme condensée suivante,
+
+\begin{equation}
+\label{eq:SHcond1}
+\partial_t W + \partial_x F(W) = 0\\
+\end{equation}
+
+avec 
+\begin{equation}
+W = 
+\begin{pmatrix}
+w\\
+I\\
+\end{pmatrix}
+\quad
+\mbox{et}
+\quad
+F(W) =
+\begin{pmatrix}
+I\\
+\psi(\rone)\\
+\end{pmatrix}
+\end{equation}
+
+
+\begin{proposition} 
+Le système \ref{} est strictement hyperbolique dans l'ensemble ouvert convexe $\left\{(w,I)\, |\, w > 0, |I|/w < 1\right\}$. Ces caractéristiques $\lambda_1(\rone)$, $\lambda_2(\rone)$ sont données par,
+
+\begin{equation}
+\label{eq:SHvp}
+\begin{aligned}
+\lambda_1 &:= \psi(\rone) - \frac{\sqrt{\psi'(\rone)^2 - 4\rone\psi'(\rone) + 4\psi(\rone)}}{2},\\
+\lambda_2 &:= \psi(\rone) + \frac{\sqrt{\psi'(\rone)^2 - 4\rone\psi'(\rone) + 4\psi(\rone)}}{2}
+\end{aligned}
+\end{equation}
+
+de plus on a,
+\begin{equation}
+\forall \rone \in [-1,1],\quad \lambda_i'(R1) > 0, \quad i=1,2,
+\end{equation}
+et les deux champs caractéristiques sont vraiment non linéaires.
+\end{proposition}
+
+pour la preuve on renverra à REF COULOMBEL.
+
+
+% \begin{proof}
+% En calculant la matrice Jacobienne du flux  dans REF on obtient, 
+
+% \begin{equation}
+% \label{eq:SHcond2}
+% \partial_t W + A(W)\partial_x W = 0\\
+% \end{equation}
+% \begin{equation}
+% A(W) = 
+% \begin{pmatrix}
+% 0 & 1\\
+% \psi(\rone) - \rone \psi'(\rone) & \psi'(\rone)\\
+% \end{pmatrix}.
+% \end{equation}
+
+% En résolvant l'équation suivante,
+
+% \begin{equation}
+% \label{eq:SHcond2}
+% \det ( A(W) - \lambda \mathbb{I}) = 0\\
+% \end{equation}
+
+% on obtient alors comme valeur propre de A $\lambda_1(\rone), \lambda_2(\rone)$ définit en REF.
+
+% Enfin, en calculant discriminant du polynôme caractéristique de A il vient,
+
+% \begin{equation}
+% \psi'(\rone)^2 - 4\rone\psi'(\rone) + 4\psi(\rone) = (\psi'(\rone) - 2\rone) + 4(\psi(\rone) - \rone^2)
+% \geq 4(\psi(\rone) - \rone^2)
+% \end{equation}
+
+% ainsi $\lambda_1 \neq \lambda_2$.
+
+% \end{proof}
+
+Ci-dessous le graphique représentant les valeurs propres $\lambda_1(R1), \lambda_2(R1)$.
+
+TODO INSERT FIG.
+
+\subsection{Etude du problème de Riemann 1D}
+On s'intéresse ici à l'étude du problème de Riemann à une 
+dimension pour le modèle $M_1$ obtenu par fermeture entropique. 
+L'étude théorique de ce problème, faite par "ref Coulombel et Goudon", 
+nous a permis d'implémenter un solveur exact du problème de Riemann et ainsi
+valider nos méthodes numériques.
+
+\subsubsection*{Aspects théoriques}
+
+Dans ce paragraphe on résume les résultats théoriques obtenus par Colombel
+Goudon, pour une preuve détaillée on renverra le lecteur à ref 
+
+L'existence et l'unicité de la solution sont assurées par le théorème suivant,
+
+\begin{theorem}
+Soit $w_L,w_R >0$ et $I_L, I_R\in \mathbb{R}$ tel que, $|I_L| < w_L$ et 
+$|J_R| < w_R$. Alors le problème de Riemann homogène,  
+
+\begin{equation}
+\label{eq:sysh}
+\left\{
+\begin{aligned}
+&\partial_t w + \partial_x I &= 0,\\
+&\partial_t I + \partial_x ( w\psi(\rone)) &= 0,
+\end{aligned}
+\right.
+\end{equation}
+
+avec la condition initiale,
+
+\begin{equation}
+\label{eq:sysh}
+\left\{
+\begin{aligned}
+&(w_L, I_L) & \mbox{ si } x<0,\\
+&(w_R, I_R) & \mbox{ si } x>0,
+\end{aligned}
+\right.
+\end{equation}
+admet une unique solution, et cette solution ne contient pas le vide.
+\end{theorem}
+
+\subsection{Implémentation}
+\section{Résultats}
+\subsection{Validation académique}
+\section{Conclusion}
+

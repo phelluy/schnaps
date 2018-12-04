@@ -1,0 +1,46 @@
+#!/bin/bash
+
+echo "I am here lets see whats up"
+# Lines with SBATCH starting with ## are comments and starting with # are actual commands for sbatch
+
+#SBATCH -p K80
+##number of cores
+##SBATCH -n 48
+# Machine where to work
+#SBATCH -w irma-atlas4
+#SBATCH --exclusive
+# max time of exec (will be killed afterwards)
+#SBATCH -t 24:00:00
+# number of tasks per node
+##SBATCH --tasks-per-node 1
+# specify execution constraitns
+##SBATCH --constraint \"intel\"
+# min mem size
+##SBATCH --mem=16684
+# display info about cpu binding
+##SBATCH --cpu_bind=verbose
+# send a mail at the end of the exec
+#SBATCH --mail-type=END
+#SBATCH --mail-user=mendoza@unistra.fr
+
+
+#################### MODULES:
+source /etc/profile.d/modules.sh
+
+# Source the configuration for Feel++ or your custom configuration
+PREVPATH=`pwd`
+cd /data/software/config/etc
+source feelpprc.sh
+cd ${PREVPATH}
+
+# Load modules here
+# This is an example of module to load
+module load schnaps.profile
+
+
+#################### MAIN CODE:
+# Finally launch the job
+# mpirun of openmpi is natively interfaced with Slurm
+# No need to precise the number of processors to use
+cd ~/schnaps/old_schnaps/build
+./run_hybrid

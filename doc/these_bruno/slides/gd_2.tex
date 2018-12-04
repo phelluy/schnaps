@@ -1,0 +1,28 @@
+\begin{frame}
+\frametitle{Formulation GD / Définitions}
+\vfill
+Pour exprimer la formulation GD localement sur chaque maille :
+\vfill
+\begin{block}{Définition}
+	Soit $\Mat{D} = (d_{i,j})_{i,j \in \EnsN^\star}$ une matrice réelle
+	\textbf{diagonale}.\\ La \textbf{valeur absolue} de $\Mat{D}$ est définie par
+	$\Abs{\Mat{D}} = (\Abs{d_{i,j}})$.
+\end{block}
+\vfill
+\pause
+\begin{block}{Définition}
+	Soit $\Mat{A}$ une matrice carrée réelle et diagonalisable sur $\EnsR$. Soient
+	$\Mat{P}$ une matrice inversible et $\Mat{D}$ une matrice diagonale telles que
+	$\Mat{A} = \Mat{P} \Mat{D} \Inv{\Mat{P}}$.\\
+	La \textbf{partie positive} de $\Mat{A}$, notée $\Pos{\Mat{A}}$, est définie par :
+	\begin{align*}
+		\Pos{\Mat{A}} = \frac{1}{2} \Mat{P} \left( \Mat{D} + \Abs{\Mat{D}} \right) \Inv{\Mat{P}} .
+	\end{align*}
+	La \textbf{partie négative} de $\Mat{A}$, notée $\Neg{\Mat{A}}$, est définie par :
+	\begin{align*}
+		\Neg{\Mat{A}} = \frac{1}{2} \Mat{P} \left( \Mat{D} - \Abs{\Mat{D}} \right) \Inv{\Mat{P}} .
+	\end{align*}
+\end{block}
+\vfill
+\end{frame}
+

@@ -1,0 +1,21 @@
+\begin{frame}
+\frametitle{Parallélisation MIMD / Gestion de la mémoire}
+\vfill
+Pour la plupart des CPU, la mémoire cache OpenCL est stockée en mémoire vive :
+\begin{itemize}
+\item Suppression de l'utilisation de cette mémoire cache dans les programmes OpenCL ;
+\item Suppression du regroupement des processeurs ;
+\item Facteur d'accélération de 2.39 pour le terme de volume !
+\end{itemize}
+\vfill
+La quantité de mémoire permet de stocker plus de données et réduire les calculs :
+\begin{itemize}
+\item Stockage du gradient des fonctions de base ;
+\item Stockage de la normale aux faces ;
+\item Facteur d'accélération de 4.45 pour le terme de volume !
+\item Facteur d'accélération de 1.3 pour le terme de flux ;
+\item Augmentation de la taille mémoire d'environ 50 \%.
+\end{itemize}
+\vfill
+\end{frame}
+

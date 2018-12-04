@@ -1,0 +1,40 @@
+\begin{frame}
+\frametitle{Condition de saut}
+La solution doit savoir prendre en compte les discontinuités fixes entre diélectriques : phénomène de réfraction.
+\vfill
+\scalebox{0.9}{\begin{minipage}{1.11\textwidth}
+\begin{block}{Définition}
+	Soit $\tilde{\n} = \Trp{(\Trp{\n},\nC{t})}$, avec $\n$
+	un vecteur unitaire, la normale
+	au support $\PbSrfTps$ d'une discontinuité spatio-temporelle de la solution du système
+	de Friedrichs.
+	La \textbf{relation de Rankine-Hugoniot} satisfaite sur cette discontinuité
+	est donnée par l'équation :
+	\begin{align*}
+	\nC{t} \left( (\At)_\L \W_\L - (\At)_\R \W_\R \right) =
+	\left( (\Aini)_\L \W_\L - (\Aini)_\R \W_\R \right) ,
+	\end{align*}
+	avec $\nC{t}$ la vitesse de propagation de la discontinuité.
+\end{block}
+\end{minipage}}
+\vskip+1em
+Application aux équations de Maxwell avec $\nC{t} = 0$ :
+\begin{columns}
+\column{0.5\textwidth}
+\begin{align*}
+\n \times (\H_\L - \H_\R) &= 0 , \\
+\n \times (\E_\L - \E_\R) &= 0 .
+\end{align*}
+\column{0.5\textwidth}
+\begin{align*}
+\n \cdot (\EPrm_\L \E_\L - \EPrm_\R \E_\R) &= 0 , \\
+\n \cdot (\HPrm_\L \H_\L - \HPrm_\R \H_\R) &= 0 .
+\end{align*}
+\end{columns}
+\vfill
+\begin{itemize}
+\item Continuité des champs électromagnétiques tangents à $\PbSrfTps$ ;
+\item Discontinuité des champs électromagnétiques normaux à $\PbSrfTps$.
+\end{itemize}
+\end{frame}
+

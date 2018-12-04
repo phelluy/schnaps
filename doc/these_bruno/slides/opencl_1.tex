@@ -1,0 +1,19 @@
+\begin{frame}
+\frametitle{Parallélisation}
+\vfill
+Dimension 3 : les mailles tampon sont très nombreuses et coûtent cher.
+\vfill
+Solveur OpenCL-GPU (architecture SIMD) :
+\begin{itemize}
+\item La soumission de tâches OpenCL nécessite de définir des bornes pour paralléliser les boucles : traitement simultané des mailles similaires (par zone) ;
+\item Les classes de pas de temps sont des zones du maillage : multiplication des tâches ;
+\item Les mailles tampon sont aussi des zones de maillage : tâches supplémentaires ;
+\item Les interfaces entre les classes et les mailles tampon sont très grandes (maillage en \textit{peau d'oignon}) : tâches supplémentaires ;
+\vfill
+\item Contrôle du GPU :
+\item [=>] La grande quantité de tâches augmente les temps de lattence ;
+\item [=>] L'efficacité d'une tâche est liée à la quantité de données qu'elle traite en parallèle.
+\end{itemize}
+\vfill
+\end{frame}
+

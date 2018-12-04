@@ -1,0 +1,116 @@
+\begin{frame}
+\frametitle{Intégration temporelle / Puissance itérée}
+\vfill
+Application du diagnostic :
+\begin{itemize}
+\item[] 
+\begin{itemize}
+\item [(0)] Initialisation des champs en bruit blanc Gaussien ;
+\item [($1$..$n$)] Normalisation des champs pour la norme $\mathrm{L}^2$ ;
+\item [($1$..$n$)] Application du schéma couplé espace-temps ;
+\item [($1$..$n$)] Si la norme devient supérieure à 1, alors le schéma est instable ;
+\item [($n+1$)] Le schéma est assuré stable sur au moins $n$ itérations.
+\end{itemize}
+\end{itemize}
+\vfill
+\begin{columns}[c]
+\column{0.6\textwidth}
+\scalebox{0.7}{\begin{minipage}{1.42\textwidth}
+\begin{figure}
+\centering
+		\begin{tikzpicture}[scale=1]
+		\begin{semilogxaxis}[
+		axis lines=middle,
+		xlabel=Itérations, %x label style={anchor=north},
+		ylabel=$\Norm{\A \W^n}$,% y label style={at={(axis cs:0,-0.05)},anchor=east},
+		xmin=1,%xmax=2500,%ymin=-0.1,
+		ymax=1.002,
+		%xtick={0,0.1,...,0.5},
+		ytick={0.999,1,1.001},
+		yticklabel style={/pgf/number format/.cd,fixed,precision=3},
+		x post scale=1,
+		y post scale=0.75,
+		legend style={at={(axis cs:1000,1.002)},anchor=north west}
+		]
+		
+%\onslide<4>{
+%		\addplot[
+%		thick,
+%		mark=none,
+%		color=red,
+%		] table {../puissance_iteree/norms_cfl9.plt};
+%		\addlegendentry{$0.9$}
+%		
+%		\addplot[
+%		thick,
+%		mark=none,
+%		color=blue,
+%		] table {../puissance_iteree/norms_cfl15.plt};
+%		\addlegendentry{$1.5$}
+%		
+%		\addplot[
+%		thick,
+%		mark=none,
+%		color=green,
+%		] table {../puissance_iteree/norms_cfl20.plt};
+%		\addlegendentry{$2.0$}
+%		
+%		\addplot[
+%		thick,
+%		mark=none,
+%		color=orange,
+%		] table {../puissance_iteree/norms_cfl25.plt};
+%		\addlegendentry{$2.5$}
+%		
+%		\addplot[
+%		thick,
+%		mark=none,
+%		color=purple,
+%		] table {../puissance_iteree/norms_cfl30.plt};
+%		\addlegendentry{$3.0$}
+%}		
+%\onslide<4,5>{
+		\addplot[
+		thick,
+		mark=none,
+		color=green,
+		] table {../puissance_iteree/norms_cfl31.plt};
+		\addlegendentry{$\beta=3.1$}
+		
+		\addplot[
+		thick,
+		mark=none,
+		color=red, densely dashed,
+		] table {../puissance_iteree/norms_cfl32.plt};
+		\addlegendentry{$\beta=3.2$}
+		
+		\addplot[
+		thick,
+		mark=none,
+		color=blue, densely dashed,
+		] table {../puissance_iteree/norms_cfl33.plt};
+		\addlegendentry{$\beta=3.3$}
+%}
+		
+
+		\addplot+[
+		mark=none,
+		color=gray, dotted,
+		] plot coordinates {
+			(1,	1)
+			(2500,	1)
+		};
+		
+		\end{semilogxaxis}
+		\end{tikzpicture}
+\end{figure}
+\end{minipage}}
+\column{0.4\textwidth}
+\begin{itemize}
+\item La méthode s'applique pour un pas de temps (ou $\beta$) fixé ;
+\item La convergence est lente et le résultat est binaire.
+\end{itemize}
+\end{columns}
+\vfill
+\end{frame}
+

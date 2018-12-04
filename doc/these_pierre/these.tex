@@ -1,0 +1,260 @@
+\documentclass{couverture}
+% \usepackage[T1]{fontenc}
+\usepackage{etex}
+\usepackage{chngpage} %%%%%
+\usepackage{graphicx}
+\usepackage{longtable}
+\usepackage{amsmath,amssymb,amsfonts,textcomp,amsthm}
+\usepackage{minitoc}
+\usepackage{bm}
+\usepackage{paralist}
+\usepackage{xspace}
+\usepackage{multicol}
+\usepackage{multirow}
+\usepackage{subfigure}
+\usepackage{wrapfig}
+\usepackage{float}
+\usepackage{setspace}
+\usepackage{algorithm, algorithmic}
+\usepackage[algo2e]{algorithm2e} 
+\usepackage{eqparbox}
+\usepackage{booktabs}
+\usepackage{filecontents,listings}
+\usepackage[colorlinks=true,citecolor=blue,pdfpagelabels]{hyperref}
+\usepackage{fancybox}
+\usepackage{pifont}
+\usepackage{pdfpages}
+\usepackage{siunitx}
+\usepackage[colorinlistoftodos]{todonotes}
+\usetikzlibrary{external} 
+\usepackage{pgfplotstable}
+\usepackage{pgfplots}
+\usepackage{import}
+% \mtcselectlanguage{french}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%                                 SI Units                                     %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\sisetup{
+  inter-unit-product = \ensuremath { { } \cdot { } },
+  list-units = brackets,
+  range-units = brackets,
+  open-bracket = \{,
+  close-bracket = \},
+  list-final-separator = {, },
+  output-product = \cdot
+  }
+\DeclareSIUnit[number-unit-product = {}]\petaflop{\peta\textrm{flop}}
+\DeclareSIUnit[number-unit-product = {}]\teraflop{\tera\textrm{flop}}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\hypersetup{
+	colorlinks=true, %colorise les liens
+	breaklinks=true, %permet le retour à la ligne dans les liens trop longs
+	urlcolor= blue,  %couleur des hyperliens
+	linkcolor= black, %couleur des liens internes
+  plainpages=false %pour palier à "Bookmark problems can occurwhen you have
+  % duplicate page numbers, for example, if you have a page i and a page 1."
+}
+\hypersetup{pageanchor=false}
+
+\pagestyle{fancy}
+
+\definecolor{lbcolor}{rgb}{0.95,0.95,0.95}
+\definecolor{cblue}{rgb}{0.,0.0,0.6}
+\definecolor{cgreen}{rgb}{0.,0.6,0.0}
+\definecolor{violet}{rgb}{0.5,0,0.5}
+\definecolor{vertfonce}{rgb}{0.,0.5,0.}
+\definecolor{rouge}{rgb}{0.5,0.,0.}
+\definecolor{bleu}{rgb}{0,0,1}
+\definecolor{orange}{rgb}{1,0.5,0}
+
+\DeclareGraphicsExtensions{.jpg,.png,.pdf}
+\DeclareGraphicsRule{*}{mps}{*}{}
+
+\pgfplotsset{compat=newest} 
+\pgfplotsset{grid style={dashed,gray}}
+\pgfplotsset{minor grid style={dashed,gray}}
+\pgfplotsset{major grid style={dotted,lightgray}}
+\usepgfplotslibrary{fillbetween}
+\tikzset{every pin edge/.style={thick}}
+\usetikzlibrary{calc,arrows,patterns,plotmarks,shapes,decorations,er,3d,
+automata,backgrounds,topaths,trees,petri,mindmap}
+
+ 
+ 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\newtheorem{definition}{Définition}
+\newtheorem{lemma}{Lemme}
+\newtheorem{proposition}{Proposition}
+\newtheorem{theorem}{Théorème}
+\newtheorem{corollary}{Corollaire}
+\newtheorem{remark}{Remarque}
+\renewcommand*{\proofname}{Preuve}
+\addto\captionsfrench{\renewcommand\proofname{Preuve}}
+
+
+\DeclareMathOperator{\Lagr}{\mathcal{L}}
+\DeclareMathOperator{\csch}{csch}
+\newcommand{\norm}[1]{\left\lvert#1\right\rvert}
+\newcommand{\Rone}{\mathbf{R}_1}
+\newcommand{\rone}{\xi}
+\newcommand{\rtwo}{R_2}
+\newcommand{\Rtwo}{\mathbf{R}_2}
+\newcommand{\x}{\mathbf{x}}
+\newcommand{\n}{\mathbf{n}}
+\renewcommand{\v}{\mathbf{v}}
+\renewcommand{\b}{\mathbf{b}}
+\newcommand{\I}{\mathbf{I}}
+\newcommand{\PP}{\mathbf{P}}
+\newcommand{\G}{\mathbf{G}}
+\newcommand{\W}{\mathbf{W}}
+\newcommand{\FW}{\mathbf{F}(\mathbf{W})}
+\newcommand{\f}{f(\x,\v,t)}
+\newcommand{\LL}{\mathbb{L}}
+\newcommand{\m}{\mathbf{m}}
+\newcommand{\w}{w}
+
+
+\def\restriction#1#2{\mathchoice
+              {\setbox1\hbox{${\displaystyle #1}_{\scriptstyle #2}$}
+              \restrictionaux{#1}{#2}}
+              {\setbox1\hbox{${\textstyle #1}_{\scriptstyle #2}$}
+              \restrictionaux{#1}{#2}}
+              {\setbox1\hbox{${\scriptstyle #1}_{\scriptscriptstyle #2}$}
+              \restrictionaux{#1}{#2}}
+              {\setbox1\hbox{${\scriptscriptstyle #1}_{\scriptscriptstyle #2}$}
+              \restrictionaux{#1}{#2}}}
+\def\restrictionaux#1#2{{#1\,\smash{\vrule height .8\ht1 depth .85\dp1}}_{\,#2}}
+
+\newcommand\Image[3][]{%
+  \tabular[b]{@{}c@{}}\includegraphics[#1]{#2}\\
+    #3
+  \endtabular}
+ 
+\setlength{\parindent}{0cm}
+ 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%                                              %%
+%%						            			%%
+%%					                        	%%
+%%		        Begin Document                  %%
+%%					    						%%
+%%												%%
+%%						    					%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{document}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%                Préambule                       %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\frontmatter
+\include{couverture}
+\cleardoublepage
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%                Citation                        %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% \vspace*{5cm}
+% \begin{flushright}
+% \textit{Citation.}\\
+% \end{flushright}
+% \begin{flushright}
+% \textsc{Author}
+% \end{flushright}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%                Page blanche                    %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\newpage
+\ \\
+\newpage
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%                Dedicace                        %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% \vspace*{5cm}
+% \begin{flushright}
+% \textit{A toi,}  \\
+% \end{flushright}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%                Remerciements                   %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\include{remerciements}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%                    ToC                         %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\setcounter{secnumdepth}{3}
+\setcounter{tocdepth}{3}
+\dominitoc 
+\tableofcontents
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%                Notations                       %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% \include{notations}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%                Introduction                    %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\mainmatter
+\include{introduction}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%                Corps de la thèse               %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+\include{chap0}
+\include{chap1}
+\include{chap2}
+\include{chap3}
+\include{chap4}
+\include{chap5}
+\include{chap6}
+\include{chap7}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%                Conclusion                      %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\include{chap8}
+
+% \part*{Conclusions et perspectives}
+% \markboth{CONCLUSIONS ET PERSPECTIVES}{CONCLUSIONS ET PERSPECTIVES}
+% \addcontentsline{toc}{part}{Conclusions et perspectives}
+% \include{Conclusion}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%                Fin de document                 %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\backmatter 
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%                Bibliographie                   %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\bibliographystyle{plain}
+\bibliography{Thesis}
+
+\makeatletter
+\newcommand{\clearevenpage}{\clearpage\if@twoside \ifodd\c@page
+\hbox{}\newpage\if@twocolumn\hbox{}\newpage\fi\fi\fi}
+\makeatother
+\cleardoublepage
+\pagestyle{empty}
+\clearevenpage\thispagestyle{empty}
+\end{document}

@@ -1,0 +1,18 @@
+\begin{frame}
+\frametitle{Parallélisation MIMD / Niveau de parallélisme}
+\vfill
+Les processuss d'un CPU sont indépendants et nous souhaitons bénéficier des effets de cache
+naturellement présents dans ces architectures :
+\begin{itemize}
+\item \textbf{Volume} : 1 processus par maille ;
+\item \textbf{Flux} :
+\begin{itemize}
+\item \textbf{Extrapolation} et \textbf{Flux} (regroupés) : 1 processus par face ;
+\item \textbf{Application} : 1 processus par maille ;
+\end{itemize}
+\item Facteur d'accélération de 1.40 pour le terme de volume ;
+\item Facteur d'accélération de 2.24 pour le terme de flux (avec gestion de la mémoire améliorée) !
+\end{itemize}
+\vfill
+\end{frame}
+

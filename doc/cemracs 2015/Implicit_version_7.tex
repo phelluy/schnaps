@@ -1,0 +1,945 @@
+\documentclass[a4paper, 11pt]{article}
+\usepackage[latin1]{inputenc}
+\usepackage[T1]{fontenc}      
+\usepackage[english]{babel}  
+\usepackage{amsmath}
+\usepackage{amsthm}
+\usepackage{amssymb}
+\usepackage{amsfonts}
+\usepackage{mathrsfs}
+\usepackage{stmaryrd}
+\usepackage{color}
+\usepackage{cases}
+\usepackage{dsfont}
+\usepackage{lscape}
+\usepackage{graphicx}
+\usepackage{subfigure}
+\newtheorem{Lemma}{Lemma}
+\newtheorem{Proposition}{Proposition}
+\newtheorem{Remark}{Remark}
+\newtheorem{Theorem}{Theorem}
+\newtheorem{Corollary}{Corollary}
+\newtheorem{Definition}{Definition}
+\usepackage{lettrine}
+\bibliographystyle{alpha}
+\usepackage{hyperref}
+\hypersetup{
+    colorlinks=true,                         
+    linkcolor=red, % Couleur des liens internes
+    citecolor=blue, % Couleur des numéros de la biblio dans le corps
+    urlcolor=green  } % Couleur des url
+\renewcommand{\thefootnote}{\arabic{footnote}}
+
+\begin{document}
+
+
+\title{Shallow Water : $\theta$-implicit scheme \\ WITHOUT DIVIDED BY H}
+\date{August 14, 2015}
+\author{}
+\maketitle
+\section{Time discretization}
+Let us consider the following system (Shallow Water without the source term).
+\begin{equation*}
+\left\{
+\begin{split}
+&\partial_t h+\text{div}\left(\boldsymbol{u}h\right)=S_h,\\
+&\partial_t \left(h\boldsymbol{u}\right)+\text{div}\left(h\boldsymbol{u}\otimes \boldsymbol{u}\right)+\nabla p=S_{\boldsymbol{u}},
+\end{split}
+\right.
+\end{equation*}
+where $p=\frac{gh^2}{2}.$\\
+We use the non conservative variables : $h$ and $\boldsymbol{u}$, and the relations
+\begin{equation*}
+\text{div}\left(h\boldsymbol{u}\right)=\nabla h\cdot\boldsymbol{u}+h\text{div}\left(\boldsymbol{u}\right),
+\end{equation*}
+and
+\begin{equation*}
+\text{div}\left(h\boldsymbol{u}\otimes\boldsymbol{u}\right)=\boldsymbol{u}\text{div}\left(h\boldsymbol{u}\right)+h\left(\boldsymbol{u}\cdot\nabla\right)\boldsymbol{u},
+\end{equation*}
+where
+\begin{equation*}
+\left(\boldsymbol{u}\cdot\nabla\right)\boldsymbol{v}=\begin{pmatrix}u_1\partial_xv_1+u_2\partial_yv_1\\u_1\partial_xv_2+u_2\partial_yv_2\end{pmatrix}
+\end{equation*}
+to obtain 
+\begin{equation*}
+\left\{\begin{split}
+&\partial_t h+h\text{div}(\boldsymbol{u})+\nabla h\cdot \boldsymbol{u}=S_h,\\
+&h\partial_t \boldsymbol{u}+h\left(\boldsymbol{u}\cdot \nabla\right)\boldsymbol{u}+\nabla p=S_{\boldsymbol{u}}.
+\end{split}\right.
+\end{equation*}
+
+Due to the expression of the pressure $p$ one has 
+\begin{equation*}
+\left\{\begin{split}
+&\partial_t h+\text{div}\left(h\boldsymbol{u}\right)=S_h,\\
+&h\partial_t \boldsymbol{u}+h\left(\boldsymbol{u}\cdot \nabla\right)\boldsymbol{u}+gh\nabla h=S_{\boldsymbol{u}}.
+\end{split}\right.
+\end{equation*}
+
+The semi-discrete scheme ($\theta$-scheme in time and continuous in space) of this system is
+\begin{equation*}
+\left\{\begin{split}
+&\frac{h^{n+1}-h^n}{\Delta t}+\theta\text{div}\left(h^{n+1}\boldsymbol{u}^{n+1}\right)+(1-\theta)\text{div}\left(h^{n}\boldsymbol{u}^{n}\right)=\theta S_h^{n+1}+(1-\theta)S_h^n,\\
+&\frac{\textcolor{red}{h^{n+1}}\boldsymbol{u}^{n+1}-\textcolor{red}{h^n}\boldsymbol{u}^{n}}{\Delta t}+\theta h^{n+1}\left(\boldsymbol{u}^{n+1}\cdot \nabla\right)\boldsymbol{u}^{n+1}+(1-\theta) h^{n}\left(\boldsymbol{u}^{n}\cdot \nabla\right)\boldsymbol{u}^{n}+\theta gh^{n+1}\nabla h^{n+1}\\
+&\hspace*{7cm}+(1-\theta)gh^n\nabla h^n=\theta S_{\boldsymbol{u}}^{n+1}+(1-\theta)S_{\boldsymbol{u}}^n.
+\end{split}\right.
+\end{equation*}
+Hence, one has
+\begin{equation*}
+\left\{
+\begin{split}
+&h^{n+1}+\theta\Delta t\text{div}\left(h^{n+1}\boldsymbol{u}^{n+1}\right)=h^n-\Delta t(1-\theta)\text{div}\left(h^n\boldsymbol{u}^n\right)+\theta \Delta tS_h^{n+1}+(1-\theta)\Delta tS_h^n,\\
+&h^{n+1}\boldsymbol{u}^{n+1}+\theta\Delta th^{n+1}\left(\boldsymbol{u}^{n+1}\cdot\nabla\right)\boldsymbol{u}^{n+1}+\theta\Delta th^{n+1}g\nabla h^{n+1}\\
+&\hspace*{1cm}=h^n\boldsymbol{u}^n-\Delta t(1-\theta)h^n\left(\boldsymbol{u}^n\cdot \nabla\right)\boldsymbol{u}^n-\Delta t(1-\theta)gh^n\nabla h^n+\theta \Delta tS_{\boldsymbol{u}}^{n+1}+(1-\theta)\Delta tS_{\boldsymbol{u}}^n.
+\end{split}
+\right.
+\end{equation*}
+This system can be rewritten in the form
+\begin{equation*}
+G\begin{pmatrix}h^{n+1}\\u_1^{n+1}\\u_2^{n+1}\end{pmatrix}=B\begin{pmatrix}h^n\\u_1^n\\u_2^n\end{pmatrix}+\begin{pmatrix}\theta \Delta tS_h^{n+1}+(1-\theta)\Delta tS_h^{n}\\ \theta \Delta t\left(S_{\boldsymbol{u}}^{n+1}\right)_1+(1-\theta)\Delta t\left(S_{\boldsymbol{u}}^n\right)_1\\ \theta \Delta t\left(S_{\boldsymbol{u}}^{n+1}\right)_2+(1-\theta)\Delta t\left(S_{\boldsymbol{u}}^n\right)_2\end{pmatrix},
+\end{equation*}
+with 
+\begin{equation*}
+G:\begin{pmatrix}h\\u\\v\end{pmatrix}\mapsto\begin{pmatrix}h+\theta\Delta t\text{div}\left(h(u,v)\right)\\
+hu+\theta\Delta t h\left(u\partial_xu+v\partial_yu\right)+\theta \Delta thg\partial_x h\\
+hv+\theta\Delta t h\left(u\partial_xv+v\partial_yv\right)+\theta \Delta thg\partial_y h
+\end{pmatrix}
+\end{equation*}
+and
+\begin{equation*}
+B:
+\begin{pmatrix}
+h\\u\\v
+\end{pmatrix}\mapsto\begin{pmatrix}h-\Delta t(1-\theta)\text{div}(h(u,v))\\
+hu-\Delta t(1-\theta)h\left(u\partial_xu+v\partial_yu\right)-\Delta t(1-\theta)hg\partial_x h\\
+hv-\Delta t(1-\theta)h\left(u\partial_xv+v\partial_yv\right)-\Delta t(1-\theta)hg\partial_y h
+\end{pmatrix}
+\end{equation*}
+
+
+However, 
+a linearization of $G$ gives
+\begin{equation*}
+G\begin{pmatrix}h^{n+1}\\u_1^{n+1}\\u_2^{n+1}\end{pmatrix}=G\begin{pmatrix}h^{n}\\u_1^{n}\\u_2^{n}\end{pmatrix}+J_{ac_G}\begin{pmatrix}h^n\\u_1^n\\u_2^n\end{pmatrix}\underbrace{\left(\begin{pmatrix}h^{n+1}\\u_1^{n+1}\\u_2^{n+1}\end{pmatrix}-\begin{pmatrix}h^n\\u_1^n\\u_2^n\end{pmatrix}\right)}_{\begin{pmatrix}\delta h^n\\\delta u_1^n\\\delta u_2^n\end{pmatrix}}+\mathcal{O}\left(\begin{pmatrix}(\delta h^n)^2\\(\delta u_1^n)^2\\(\delta u_2^n)^2\end{pmatrix}\right),
+\end{equation*}
+where $J_{ac_G}$ is the Jacobian matrix of $G$.
+Neglecting the second order terms yields to the linearised system
+\begin{equation*}
+G\begin{pmatrix}h^{n}\\u_1^{n}\\u_2^{n}\end{pmatrix}+J_{ac_G}\begin{pmatrix}h^n\\u_1^n\\u_2^n\end{pmatrix}\left(\begin{pmatrix}\delta h^n\\\delta u_1^n\\\delta u_2^n\end{pmatrix}\right)=B\begin{pmatrix}h^n\\u_1^n\\u_2^n\end{pmatrix}
+\end{equation*}
+Thus
+\begin{equation*}
+J_{ac_G}\begin{pmatrix}h^n\\u_1^n\\u_2^n\end{pmatrix}\left(\begin{pmatrix}\delta h^n\\\delta u_1^n\\\delta u_2^n\end{pmatrix}\right)=B\begin{pmatrix}h^n\\u_1^n\\u_2^n\end{pmatrix}-G\begin{pmatrix}h^{n}\\u_1^{n}\\u_2^{n}\end{pmatrix}+\begin{pmatrix}\theta \Delta tS_h^{n+1}+(1-\theta)\Delta tS_h^{n}\\ \theta \Delta t\left(S_{\boldsymbol{u}}^{n+1}\right)_1+(1-\theta)\Delta t\left(S_{\boldsymbol{u}}^n\right)_1\\ \theta \Delta t\left(S_{\boldsymbol{u}}^{n+1}\right)_2+(1-\theta)\Delta t\left(S_{\boldsymbol{u}}^n\right)_2\end{pmatrix}.
+\end{equation*}
+
+\section{Calculus of the Jacobian}
+We eventually find
+\begin{equation*}
+\begin{split}
+&\hspace*{-3cm}J_{ac_G}\left(\begin{pmatrix}h\\u\\v\end{pmatrix}\right)\\&\hspace*{-3cm}=
+\begin{pmatrix}
+J_{11} & J_{12} & J_{13} \\
+J_{21}& J_{22}& J_{23}\\
+J_{31}& J_{32}& J_{33}
+\end{pmatrix}
+\end{split}
+\end{equation*}
+with 
+\begin{align*}
+J_{11} &= I_1+\theta\Delta t\boldsymbol{u}\cdot\left(\nabla I_1\right)+\theta\Delta t\text{div}\left(\boldsymbol{u}\right)I_1 \\
+J_{12} & =\theta\Delta t(\partial_xh)I_1+h\theta\Delta t(\partial_xI_1) \\
+J_{13} & =\theta\Delta t(\partial_yh)I_1+h\theta\Delta t(\partial_yI_1)\\
+J_{21} &= \theta\Delta tgh(\partial_xI_1)+\theta\Delta tg\left(\partial_xh\right)I_1+\theta\Delta t\left(u\partial_xu+v\partial_yu\right)I_1+uI_1 \\
+J_{22} &= hI_1+\theta\Delta thu(\partial_xI_1)+\theta\Delta thI_1(\partial_xu)+\theta\Delta thv(\partial_yI_1)\\
+J_{23} &= h\theta\Delta tI_1\partial_y u\\
+J_{31} &= \theta\Delta thg(\partial_yI_1)+\theta\Delta tg\left(\partial_yh\right)I_1+\theta\Delta tI_1(u\partial_xv+v\partial_yv)+vI_1\\
+J_{32} &= h\theta\Delta tI_1\partial_x v \\
+J_{33} &= hI_1+\theta\Delta thu(\partial_xI_1)+\theta\Delta thv(\partial_yI_1)+\theta\Delta thI_1\partial_yv
+\end{align*}
+when $I_d$ is the $d\times d$-Identity matrix.
+The RHS term becomes
+\begin{equation*}
+\begin{split}
+&B\begin{pmatrix}h^n\\u_1^n\\u_2^n\end{pmatrix}-G\begin{pmatrix}h^{n}\\u_1^{n}\\u_2^{n}\end{pmatrix}\\
+&=\begin{pmatrix} R_{1}\\
+ R_{2}\\
+ R_{3}\end{pmatrix}
+ +\begin{pmatrix}\theta \Delta tS_h^{n+1}+(1-\theta)\Delta tS_h^{n}\\ \theta \Delta t\left(S_{\boldsymbol{u}}^{n+1}\right)_1+(1-\theta)\Delta t\left(S_{\boldsymbol{u}}^n\right)_1\\ \theta \Delta t\left(S_{\boldsymbol{u}}^{n+1}\right)_2+(1-\theta)\Delta t\left(S_{\boldsymbol{u}}^n\right)_2\end{pmatrix}
+\end{split}
+\end{equation*}
+with
+\begin{align*}
+B_{1} &= h^n-\Delta t(1-\theta)\text{div}(h^n\boldsymbol{u}^n)\\
+B_{1} & = h^nu_1^n-\Delta th^n(1-\theta)(u_1^n\partial_xu_1^n+u_2^n\partial_yu_1^n)-\Delta t(1-\theta)gh^n\partial_xh^n\\
+B_{3} & = h^nu_2^n-\Delta t(1-\theta)h^n(u_1^n\partial_xu_2^n+u_2^n\partial_yu_2^n)-\Delta t(1-\theta)h^ng\partial_yh^n
+\end{align*}
+and
+\begin{align*}
+G_{1} &= h^n+\theta\Delta t\text{div}(h^n\boldsymbol{u}^n) \\
+G_{1} & = h^nu_1^n+\theta h^n\Delta t(u_1^n\partial_xu_1^n+u_2^n\partial_yu_1^n)+\theta\Delta th^ng\partial_xh^n\\
+G_{3} & = h^nu_2^n+\Delta t\theta h^n(u_1^n\partial_xu_2^n+u_2^n\partial_yu_2^n)+\theta g\Delta th^n\partial_yh^n
+\end{align*}
+The linearized system becomes
+\begin{equation*}
+\begin{split}
+\hspace*{-2cm}\begin{pmatrix}
+J_{11} & J_{12} & J_{13} \\
+J_{21}& J_{22}& J_{23}\\
+J_{31}& J_{32}& J_{33}
+\end{pmatrix}\begin{pmatrix}
+\delta h^n\\\delta u_1^n\\\delta u_2^n\end{pmatrix}
+=\begin{pmatrix}-\Delta t\text{div}(h^n\boldsymbol{u}^n)+\theta \Delta tS_h^{n+1}+(1-\theta)\Delta tS_h^{n}\\-\Delta th^n\left(\boldsymbol{u}^n\cdot\nabla\right)u_1^n-\Delta tgh^n\partial_xh^n+\theta \Delta t\left(S_{\boldsymbol{u}}^{n+1}\right)_1+(1-\theta)\Delta t\left(S_{\boldsymbol{u}}^n\right)_1\\-\Delta th^n\left(\boldsymbol{u}^n\cdot\nabla\right)u_2^n-\Delta tgh^n\partial_y h^n+\theta \Delta t\left(S_{\boldsymbol{u}}^{n+1}\right)_2+(1-\theta)\Delta t\left(S_{\boldsymbol{u}}^n\right)_2\end{pmatrix}
+\end{split}
+\end{equation*}
+with
+\begin{align*}
+J_{11} &=  I_1+\theta\Delta t\text{div}\left(\boldsymbol{u}^nI_1\right)\\
+J_{12} & = \theta\Delta t\partial_x\left(h^nI_1\right)\\
+J_{13} & =\theta\Delta t\partial_y\left(h^nI_1\right)\\\
+J_{21} &= u^n_1I_1+\theta\Delta t g\partial_x\left(h^nI_1\right)+\theta\Delta tI_1\left(\boldsymbol{u}^n\cdot\nabla\right)u_1^n\\
+J_{22} &= h^nI_1+\theta\Delta th^n\left(\boldsymbol{u}^n\cdot \nabla\right)I_1+\theta\Delta th^n(\partial_xu_1^n)I_1\\
+J_{23} &= \theta\Delta th^n(\partial_yu_1^n)I_1\\
+J_{31} &= u_2^nI_1+\theta\Delta tg\partial_y\left(h^nI_1\right)+\theta\Delta tI_1\left(\boldsymbol{u}^n\cdot\nabla\right)u_2^n\\
+J_{32} &= \theta\Delta tI_1h^n\partial_xu_2^n \\
+J_{33} &= h^nI_1+\theta\Delta th^n\left(\boldsymbol{u}^n\cdot\nabla\right)I_1+\theta\Delta th^n(\partial_yu_2^n)I_1
+\end{align*}
+
+\section{Solving  by Schur decomposition and splitting}
+We denote 
+\begin{equation*}
+J_{ac_G}=\begin{pmatrix}D_1&U\\L&D_2\end{pmatrix}
+\end{equation*}
+with
+\begin{equation*}
+D_1=I_1+\theta\Delta t\text{div}(\boldsymbol{u}^nI_1),
+\end{equation*}
+\begin{equation*}
+U=\begin{pmatrix}\theta\Delta t\partial_x\left(h^nI_1\right)&\theta\Delta t\partial_y\left(h^nI_1\right)\end{pmatrix}=\theta\Delta t\nabla\left(h^nI_1\right)^t
+\end{equation*}
+\begin{equation*}
+L=\begin{pmatrix}
+u_1^nI_1+\theta\Delta t (g \partial_x (h^n I_1) )+\theta\Delta tI_1\left(\boldsymbol{u}^n\cdot\nabla\right)u_1^n\\
+u_2^nI_1+\theta\Delta t (g \partial_y (h^n I_1) )+\theta\Delta tI_1\left(\boldsymbol{u}^n\cdot\nabla\right)u_2^n
+\end{pmatrix}
+\end{equation*}
+and
+\begin{equation*}
+D_2=\begin{pmatrix}h^nI_1+\theta\Delta th^n\left(\boldsymbol{u}^n\cdot \nabla\right)I_1+\theta\Delta th^n(\partial_xu_1^n)I_1&\theta\Delta th^n(\partial_yu_1^n)I_1\\
+\theta\Delta tI_1h^n\partial_xu_2^n&h^nI_1+\theta\Delta th^n\left(\boldsymbol{u}^n\cdot\nabla\right)I_1+\theta\Delta th^n(\partial_yu_2^n)I_1
+\end{pmatrix}
+\end{equation*}
+The Schur decomposition gives the following algorithm
+
+\begin{equation*}
+(Syst_1)\left\{\begin{split}
+&\overline{\delta h}^*=-\Delta t\text{div}(h^n\boldsymbol{u}^n)+\theta\Delta tS_h^{n+1}+(1-\theta)\Delta tS_h^{n},\\
+&LD_1^{-1}\overline{\delta h}^*+\delta \boldsymbol{u}^*=-\Delta th^n\left(\boldsymbol{u}^n\cdot\nabla\right)\boldsymbol{u}^n-\Delta tg\nabla h^n+\theta\Delta tS_{\boldsymbol{u}}^{n+1}+(1-\theta)\Delta tS_{\boldsymbol{u}}^n,
+\end{split}\right.
+\end{equation*}
+\begin{equation*}
+(Syst_2)\left\{\begin{split}
+&D_1\delta h^{**}=\overline{\delta h}^*,\\
+&P_{schur}\delta \boldsymbol{u}^{**}=\delta \boldsymbol{u}^{*},
+\end{split}
+\right.
+\end{equation*}
+with  $P_{schur}=D_2-LD_1^{-1}U$
+and
+
+\begin{equation*}
+(Syst_3)\left\{\begin{split}
+&\delta h^{n+1}+D_1^{-1}U\delta \boldsymbol{u}^{n+1}=\delta h^{**},\\
+&\delta \boldsymbol{u}^{n+1}=\delta \boldsymbol{u}^{**}.
+\end{split}\right.
+\end{equation*}
+Hence it yields (we define $\delta h^*$ such as $\overline{\delta h}^*=D_1\delta h^*$.)
+\begin{equation*}
+\left\{
+\begin{split}
+&D_1\delta h^{*}=-\Delta t\text{div}(h^n\boldsymbol{u}^n)+\theta \Delta tS_h^{n+1}+(1-\theta)\Delta t S_{h}^n,\\
+&(D_2-LD_1^{-1}U)\delta \boldsymbol{u}^{n+1}=-L\delta h^*-\Delta th^n(\boldsymbol{u}^n\cdot\nabla)\boldsymbol{u}^n-\Delta tg\nabla h^n+\theta\Delta tS_{\boldsymbol{u}}^{n+1}+\theta\Delta tS_{\boldsymbol{u}}^n,\\
+&D_1\delta h^{n+1}=D_1\delta h^*-U\delta \boldsymbol{u}^{n+1}.
+\end{split}\right.
+\end{equation*}
+
+
+\section{Computation and study of the Schur for small flow approximation}
+In this section we propose to compute the Schur complement. After this computation we propose to study this operator.
+
+\subsection{Computation of the Schur}
+To begin we propose to use an assumption on the flow we assuma that the flow are small consequently $\Delta t \mid \boldsymbol{u}^n\mid <<1$ Consequently we obtain that $D_1\approx I_1$ is this regime. Using this we can compute the operator $LU$.
+
+The operator $L \delta h$ is given by
+$$
+L \delta h =(\boldsymbol{u}^n+\theta \Delta t \boldsymbol{u}^n\cdot \nabla \boldsymbol{u}^n )\delta h+\theta \Delta t g \nabla( h^n\delta h)
+$$
+To compute the $LU$ operator we take $\delta h=U\delta \boldsymbol{u}$ in $L \delta h$. The operator $U\delta \boldsymbol{u}=\theta \Delta t \operatorname{div}(h^n \delta \boldsymbol{u})$.
+
+\begin{equation*}
+LU(\delta \boldsymbol{u})=\left(\boldsymbol{u}^n+\theta \Delta t \boldsymbol{u}^n\cdot \nabla \boldsymbol{u}^n \right)\left(\theta \Delta t \operatorname{div}(h^n \delta \boldsymbol{u})\right)
++\theta^2 \Delta t^2 g\nabla\left( h^n\left(\operatorname{div}(h^n\delta  \boldsymbol{u})\right)\right)\end{equation*}
+which is equal to
+\begin{equation*}
+LU(\delta \boldsymbol{u})=\left(\boldsymbol{u}^n+\theta \Delta t \boldsymbol{u}^n\cdot \nabla \boldsymbol{u}^n \right)\left(\theta \Delta t \operatorname{div}(h^n \delta \boldsymbol{u})\right)
++\theta^2 \Delta t^2 g\nabla\left[ h^n \delta \boldsymbol{u}\cdot \nabla h^n + h^n \operatorname{div}(\delta \boldsymbol{u})h^n \right]\end{equation*}
+At the end we obtain
+\begin{equation*}
+LU(\delta \boldsymbol{u})=\left(\boldsymbol{u}^n+\theta \Delta t \boldsymbol{u}^n\cdot \nabla \boldsymbol{u}^n \right)\left(\theta \Delta t \operatorname{div}(h^n \delta \boldsymbol{u})\right)
++\theta^2 \Delta t^2 \nabla\left[ \delta \boldsymbol{u}\cdot \nabla p^n + 2p^n \operatorname{div}(\delta \boldsymbol{u}) \right]
+\end{equation*}
+
+To conclude, one has the Schur matrix 
+\begin{small}
+\begin{equation*}
+P_{schur}\delta \boldsymbol{u}=h^n \delta \boldsymbol{u}+\theta\Delta th^n\left(\boldsymbol{u}^n\cdot\nabla\right)\delta \boldsymbol{u}+\theta\Delta th^n\left(\delta \boldsymbol{u} \cdot\nabla\right)\boldsymbol{u}^n-(LU)\delta \boldsymbol{u}.
+\end{equation*}
+\end{small}
+
+
+\subsection{Writing of the wave operator associated to the schur}
+Now we propose to show that the Schur operator is a discretization to a wave operator apply at the perturbation of the position $\boldsymbol{\xi} $.
+For this we rewrite the operator we obtain
+$$
+P_{schur}\delta \boldsymbol{u}= h^n\frac{\delta \boldsymbol{u}}{\Delta t}+\theta h^n\left(\boldsymbol{u}^n\cdot\nabla\right)\delta \boldsymbol{u}+\theta h^n\left(\delta \boldsymbol{u} \cdot\nabla\right)\boldsymbol{u}^n-\Delta t \overline{LU}\delta \boldsymbol{u}
+$$
+with
+$$
+\overline{LU}\delta \boldsymbol{u}=\boldsymbol{u}^n\left(\theta \operatorname{div}(h^n\frac{ \delta \boldsymbol{u}}{\Delta t})\right)+\theta \left(\boldsymbol{u}^n\cdot \nabla \right)\boldsymbol{u}^n \left(\theta \operatorname{div}(h^n \delta \boldsymbol{u})\right)
++\theta^2 \nabla\left[ \delta \boldsymbol{u}\cdot \nabla p^n + 2p^n \operatorname{div}(\delta \boldsymbol{u}) \right]
+$$
+Firstly $\Delta t I_1 \delta  \boldsymbol{u}=(\frac{I_1}{\Delta t})^{-1} \delta \boldsymbol{u}$.  This is the discretization of the $(\partial_t )^{-1} \boldsymbol{u}$ since $\delta u=u^{n+1}-u^n$. At the end the operator $P_{schur}$ is the time discretization of the operator
+$$
+h^n\partial_t \boldsymbol{u}+\theta h^n\left(\boldsymbol{u}^n\cdot\nabla\right) \boldsymbol{u}+\theta h^n\left( \boldsymbol{u} \cdot\nabla\right)\boldsymbol{u}^n- \overline{LU} (\partial_t )^{-1}  \boldsymbol{u}
+$$
+To finish we consider the position $\boldsymbol{\xi} $ and $\partial_t \boldsymbol{\xi} = \boldsymbol{u}$ we obtain at the end
+$$
+h^n\partial_{tt} \boldsymbol{\xi}+\theta h^n\left(\boldsymbol{u}^n\cdot\nabla\right) \partial_t\boldsymbol{\xi}+\theta h^n\left( \partial_t \boldsymbol{\xi} \cdot\nabla\right)\boldsymbol{u}^n- \overline{LU}  \boldsymbol{\xi}
+$$
+with
+$$
+\overline{LU} \boldsymbol{\xi}=\boldsymbol{u}^n\left(\theta \operatorname{div}(h^n \partial_t\boldsymbol{\xi})\right)+\theta \left(\boldsymbol{u}^n\cdot \nabla\right) \boldsymbol{u}^n \left(\theta \operatorname{div}(h^n \boldsymbol{\xi})\right)
++\theta^2 \nabla\left[ \boldsymbol{\xi}\cdot \nabla p^n + 2p^n \operatorname{div}( \boldsymbol{\xi}) \right]
+$$
+
+\subsection{Wave study of the wave operator }
+\subsection{Case $\boldsymbol{u}=\boldsymbol{0}$}
+In this subsection, we study the dispersive relation for plane waves \begin{equation}
+\boldsymbol{\xi}=\boldsymbol{\xi}_0e^{i(\omega t-\boldsymbol{k}\cdot \boldsymbol{x})}
+\label{EQ_FORME_ONDE}
+\end{equation}
+associated to a velocities field corresponding to a compressible ($\text{div}(\partial_t\boldsymbol{\xi})\neq 0$) and irrotationnel ($\text{\textbf{rot}}(\partial_t\boldsymbol{\xi})=0$) flow. \\
+The motion equation associated to $P_{schur}$ matrix becomes
+\begin{equation*}
+h^n\partial_{tt} \boldsymbol{\xi}-\theta^2 \nabla\left[ \boldsymbol{\xi}\cdot \nabla p^n + 2p^n \operatorname{div}( \boldsymbol{\xi}) \right]=0.
+\end{equation*}
+However, thanks to the second equation of the initial system one has $\nabla p=0$ when $\boldsymbol{u}=0$, so pressure is constant in space.
+The previous relation becomes
+\begin{equation*}
+h^n\partial_{tt} \boldsymbol{\xi}-2\theta^2 p^n \nabla\left[\operatorname{div}( \boldsymbol{\xi}) \right]=0.
+\end{equation*}
+Let us push the form \eqref{EQ_FORME_ONDE} in the previous equation to obtain
+\begin{equation*}
+\begin{split}
+h^n(i\omega)^2\boldsymbol{\xi}&=2\theta^2 p^n \nabla \left[(-ik_1)(\xi_0)_1e^{i(\omega t-\boldsymbol{k}\cdot \boldsymbol{x})}+(-ik_2)(\xi_0)_2e^{i(\omega t-\boldsymbol{k}\cdot \boldsymbol{x})}\right]\\
+&=2\theta^2p^n\begin{pmatrix}(\xi_0)_1(-ik_1)(-ik_1)+(\xi_0)_2(-ik_2)(-ik_1)\\(\xi_0)_1(-ik_1)(-ik_2)+(\xi_0)_2(-ik_2)(-ik_1)\end{pmatrix}e^{i(\omega t-\boldsymbol{k}\cdot \boldsymbol{x})}.
+\end{split}
+\end{equation*}
+
+Thus
+\begin{equation*}
+\omega^2\boldsymbol{\xi}=\theta^2 g h^n\begin{pmatrix}k_1^2&k_1k_2\\ k_1k_2 &k_2^2\end{pmatrix}\boldsymbol{\xi}.
+\end{equation*}
+We diagonalise the matrix $\begin{pmatrix}k_1^2&k_1k_2\\ k_1k_2 &k_2^2\end{pmatrix}$ to get
+\begin{equation*}
+\begin{pmatrix}k_1^2&k_1k_2\\ k_1k_2 &k_2^2\end{pmatrix}=\underbrace{\begin{pmatrix}\frac{k_1}{||\boldsymbol{k}||^2}&-\frac{k_2}{||\boldsymbol{k}||^2}\\ \frac{k_2}{||\boldsymbol{k}||^2} &\frac{k_1}{||\boldsymbol{k}||^2}\end{pmatrix}}_{=P}
+\begin{pmatrix}||\boldsymbol{k}||^2&0\\ 0 &0\end{pmatrix}
+\underbrace{\begin{pmatrix}\frac{k_1}{||\boldsymbol{k}||^2}&\frac{k_2}{||\boldsymbol{k}||^2}\\ -\frac{k_2}{||\boldsymbol{k}||^2} &\frac{k_1}{||\boldsymbol{k}||^2}\end{pmatrix}}_{=P^{-1}}
+\end{equation*}
+
+Hence, one has
+\begin{equation*}
+\omega^2P^{-1}\boldsymbol{\xi}=\theta^2 gh^n\begin{pmatrix}||\boldsymbol{k}||^2&0\\ 0 &0\end{pmatrix}P^{-1}\boldsymbol{\xi}.
+\end{equation*}
+In the new coordinates 
+\begin{equation*}
+\boldsymbol{\eta}=P^{-1}\boldsymbol{\xi},
+\end{equation*}
+we obtain the two relations
+\begin{equation*}
+\left\{\begin{split}
+&\omega^2\eta_1=\theta^2 gh^n||\boldsymbol{k}||^2\eta_1,\\
+&\omega^2\eta_2=0.
+\end{split}\right.
+\end{equation*}
+However, \begin{equation*}
+\eta_2=(P^{-1}\boldsymbol{\xi})_2=\frac{\xi_2k_1-k_2\xi_1}{||\boldsymbol{k}||}e^{i(\omega t-\boldsymbol{k}\cdot \boldsymbol{x})}=\boldsymbol{k}\wedge\boldsymbol{\xi}.
+\end{equation*}
+On the other hand, the hypothesis on the irrotationnel of the flow rewrites
+\begin{equation*}
+\begin{split}
+\partial_t\left(\text{\textbf{rot}}\boldsymbol{\xi}\right)&=\partial_t\left((\xi_0)_2(-ik_1)e^{i(\omega t-\boldsymbol{k}\cdot \boldsymbol{x})}-(\xi_0)_1(-ik_2)e^{i(\omega t-\boldsymbol{k}\cdot \boldsymbol{x})}\right)\\
+&=\left(k_1(\xi_0)_2\omega-(\xi_0)_1k_2\omega\right)e^{i(\omega t-\boldsymbol{k}\cdot \boldsymbol{x})}\\
+&=0.
+\end{split}
+\end{equation*}
+Then
+\begin{equation*}
+\boldsymbol{k}\wedge\boldsymbol{\xi}=0, 
+\end{equation*}
+thus the second equation is automatically respected. The dispersion relation holds
+\begin{equation*}
+\omega=\pm \theta||\boldsymbol{k}||\sqrt{gh^n}.
+\end{equation*}
+
+\subsection{Case $\boldsymbol{u}=\boldsymbol{cst}$}
+\textbf{With the total $P_{schur}$}\\
+In this subsection we consider a constant velocity. Thanks to the second equation of the initial system, the pressure is still constant in space.
+The motion equation becomes here
+\begin{equation*}
+h^n\partial_{tt} \boldsymbol{\xi}+\theta h^n\left(\boldsymbol{u}^n\cdot\nabla\right) \partial_t\boldsymbol{\xi}- \boldsymbol{u}^n\theta h^n\text{div}\left(\partial_t \boldsymbol{\xi}\right)
+-2p^n \theta^2 \nabla\left[\operatorname{div}( \boldsymbol{\xi}) \right]=0.
+\end{equation*}
+We follow the same guidelines and push an plane wave
+\begin{equation*}
+\boldsymbol{\xi}=\boldsymbol{\xi}e^{i(\omega t-\boldsymbol{k}\cdot \boldsymbol{x})}
+\end{equation*}
+in the previous equation to obtain
+\begin{equation*}
+\begin{split}
+&h^n(i\omega)^2\boldsymbol{\xi}+\theta h^n (u_1^n\partial_x+u_2^n\partial_y)(i\omega)\boldsymbol{\xi}-\boldsymbol{u}^n\theta h^n\text{div}\left(i\omega\boldsymbol{\xi}\right)\\
+&-\theta^2 2p^n\nabla \left[(\xi_0)_1(-ik_1)e^{i(\omega t-\boldsymbol{k}\cdot \boldsymbol{x})}+(\xi_0)_2(-ik_2)e^{i(\omega t-\boldsymbol{k}\cdot \boldsymbol{x})}\right]=0.
+\end{split}
+\end{equation*}
+Hence
+\begin{equation*}
+\begin{split}
+&-h^n\omega^2\boldsymbol{\xi}+\theta h^n i\omega\left(u_1^n(-ik_1)\boldsymbol{\xi}+u_2^n(-ik_2)\boldsymbol{\xi}\right)\\
+&-\boldsymbol{u}^n\theta h^n\left(i\omega (-i k_1)(\xi_0)_1e^{i(\omega t-\boldsymbol{k}\cdot \boldsymbol{x})}+i\omega (-ik_2)(\xi_0)_2e^{i(\omega t-\boldsymbol{k}\cdot \boldsymbol{x})}\right)\\
+&-\theta^2 2p^n\begin{pmatrix}(-ik_1)(-ik_1)(\xi_0)_1+(-ik_2)(-ik_1)(\xi_0)_2\\(-ik_1)(-ik_2)(\xi_0)_1+(-ik_2)(-ik_2)(\xi_0)_2\end{pmatrix}e^{i(\omega t-\boldsymbol{k}\cdot \boldsymbol{x})}=0
+\end{split}
+\end{equation*}
+Thus
+\begin{equation*}
+-h^n\omega^2\boldsymbol{\xi}+\theta h^n\omega \boldsymbol{u}\cdot \boldsymbol{k}\boldsymbol{\xi}-\theta h^n\left[\omega k_1(\xi_0)_1+\omega k_2(\xi_0)_2\right]e^{i(\omega t-\boldsymbol{k}\cdot \boldsymbol{x})}\boldsymbol{u}^n+h^ng\theta^2\begin{pmatrix}k_1^2&k_1k_2\\k_1k_2&k_2^2\end{pmatrix} \boldsymbol{\xi}=0.
+\end{equation*}
+Then
+\begin{equation*}
+-h^n\omega^2\boldsymbol{\xi}+\theta h^n\omega \boldsymbol{u}\cdot \boldsymbol{k}\boldsymbol{\xi}-\theta h^n\omega \begin{pmatrix}k_1u_1^n&k_2u_1^n\\ k_1u_2^n&k_2u_2^n\end{pmatrix}\boldsymbol{\xi}+h^ng\theta^2\begin{pmatrix}k_1^2&k_1k_2\\k_1k_2&k_2^2\end{pmatrix} \boldsymbol{\xi}=0.
+\end{equation*}
+Let us define 
+\begin{equation*}
+\left\{\begin{split}
+&V_1=-\omega u_1^n+gh^nk_1\theta,\\
+&V_2=-\omega u_2^n+gh^nk_2\theta.
+\end{split}\right.
+\end{equation*}
+We diagonalize the matrix which appears in the previous equation thanks to the relation
+\begin{equation*}
+\underbrace{\frac{1}{\sqrt{\boldsymbol{k}\cdot \boldsymbol{V}}}\begin{pmatrix}
+k_1&k_2\\
+-V_2&V_1
+\end{pmatrix}}_{=P}
+\begin{pmatrix}
+k_1V_1&k_2V_1\\
+k_1V_2&k_2V_2
+\end{pmatrix}
+\underbrace{\frac{1}{\sqrt{\boldsymbol{k}\cdot \boldsymbol{V}}}\begin{pmatrix}
+V_1&-k_2\\
+V_2&k_1
+\end{pmatrix}}_{=P^{-1}}
+=\begin{pmatrix}
+\boldsymbol{k}\cdot \boldsymbol{V}&0\\0&0
+\end{pmatrix}
+\end{equation*}
+Hence one has
+\begin{equation*}
+-\omega^2P\boldsymbol{\xi}+\theta\omega \boldsymbol{u}\cdot \boldsymbol{k}P\boldsymbol{\xi}+\theta\begin{pmatrix}\boldsymbol{k}\cdot \boldsymbol{V}&0\\0&0\end{pmatrix}P\boldsymbol{\xi}=0.
+\end{equation*}
+Consequently
+\begin{equation*}
+\left\{\begin{split}
+&-\omega^2+\theta\omega \boldsymbol{u}^n\cdot \boldsymbol{k}+\theta k_1(-\omega u_1^n+gh^nk_1\theta)+\theta k_2(-\omega u_2^n+gh^nk_2\theta)=0,\\
+&-(-\omega u_2^n+gh^nk_2\theta)(\xi_0)_1+(-\omega u_1^n+gh^nk_1\theta)(\xi_0)_2=0.
+\end{split}
+\right.
+\end{equation*}
+Eventually one has
+\begin{equation*}
+\omega=\pm\theta||\boldsymbol{k}||\sqrt{gh^n}.
+\end{equation*}
+On the condition to take a plane wave such that 
+\begin{equation*}
+\omega \boldsymbol{\xi}\wedge\boldsymbol{u}^n+gh^n\theta\boldsymbol{k}\wedge\boldsymbol{\xi}=0,
+\end{equation*}
+that is to say
+\begin{equation*}
+\left\{\begin{split}
+&\text{\textbf{rot}}(\partial_t \boldsymbol{\xi})=0,\\
+&\boldsymbol{\xi}\text{\ collinear\ to\ }\boldsymbol{u}^n.
+\end{split}\right.
+\end{equation*}
+\textcolor{red}{il faudrait r\'eussir \`a trouver une interpr\'etation \`a cette d\'erni\`ere condition.}\\
+
+\textbf{Neglecting some terms in $P_{schur}$}\\
+The equation of motion becomes in that case
+\begin{equation*}
+h^n\partial_{tt}\boldsymbol{\xi}+\theta h^n\left(\boldsymbol{u}^n\cdot \nabla \right)\partial_t\boldsymbol{\xi}-2p^n\theta^2\nabla(\text{div}\boldsymbol{\xi})=0.
+\end{equation*}
+A plane irrotationnel wave gives the relation
+\begin{equation*}
+h^n(-\omega^2)\boldsymbol{\xi}+\theta h^n\omega (\boldsymbol{u}^n\cdot \boldsymbol{k})\boldsymbol{\xi}-2p^n\theta^2\begin{pmatrix}k_1^2&k_1k_2\\
+k_1k_2&k_2^2\end{pmatrix}\boldsymbol{\xi}=0.
+\end{equation*}
+So, by a diagonalization of the matrix (exactly the same that the diagonalization of the case $\boldsymbol{u}=\boldsymbol{0}$) one has
+\begin{equation*}
+\left\{
+\begin{split}
+&-\omega^2+\theta \omega \boldsymbol{u}^n\cdot \boldsymbol{k}-h^n\theta^2g||\boldsymbol{k}||^2=0,\\
+&\boldsymbol{k}\wedge\boldsymbol{\xi}=0.
+\end{split}
+\right.
+\end{equation*}
+Since the wave is irrotationnel the second equation is true and we recognize the dispersive relation
+\begin{equation*}
+\omega =\theta\frac{\boldsymbol{u}\cdot \boldsymbol{k}}{2}\pm\theta\sqrt{h^ng||\boldsymbol{k}||^2-\frac{(\boldsymbol{u}\cdot \boldsymbol{k})^2}{4}}.
+\end{equation*}
+\textcolor{red}{Nous ne retrouvons pas tout \`a fait $\theta\boldsymbol{u}\cdot \boldsymbol{k}\pm\theta\sqrt{h^ng}||\boldsymbol{k}||$.}
+\begin{Remark}
+By neglecting some terms in $P_{schur}$ we recognize the speed wave $\boldsymbol{u}\cdot \boldsymbol{k}\pm\sqrt{h^ng}||\boldsymbol{k}||$ because those term compensate the $D_1$, neglected in $LD_1^{-1}U$. Whereas, in total $P_{schur}$, we have neglected $D_1$ but not the advection term (so, which do not compensate together) so the speed waves are propagated only with $\pm\sqrt{h^ng}||\boldsymbol{k}||$.
+\end{Remark}
+
+\section{Computation and study of the Schur for arbitrary  flow approximation}
+In this section we propose to compute the Schur complement. After this computation we propose to study this operator.
+
+\subsection{Computation of the Schur}
+We consider the schur complement
+$$
+P_{schur}=D_2-LD_1^{-1}U
+$$
+We propose to construct an operator $M$ such that $U M\approx D_1 U$ consequently we obtain that 
+$$
+(D_2 M-LU)M^{-1} 
+$$
+The solution of the equation $P_{schur}\delta u=0$ is given by
+\begin{align*}
+(D_2M-LU)\delta \boldsymbol{u}^* & =0\\
+\delta \boldsymbol{u} = M \delta \boldsymbol{u}^*
+\end{align*}
+with the new where we have negletec the term dependent of $u^n$
+\begin{equation*}
+LU(\delta \boldsymbol{u})=\theta^2 \Delta t^2 \nabla\left[ \delta \boldsymbol{u}\cdot \nabla p^n + 2p^n \operatorname{div}(\delta \boldsymbol{u}) \right]
+\end{equation*}
+To finish we need to compute $DM$ operator. One has 
+\begin{equation*}
+U\delta \boldsymbol{u}=\theta\Delta t\text{div}(h^n\delta \boldsymbol{u}),
+\end{equation*}
+and 
+\begin{equation*}
+D_1\delta h=\delta h+\theta\Delta t\text{div}(\delta h\boldsymbol{u}^n).
+\end{equation*}
+By pushing $\delta h=U\delta \boldsymbol{u}$ in the second equation one has
+\begin{equation*}
+\begin{split}
+D_1U\delta \boldsymbol{u}&=\theta\Delta t\text{div}(h^n\delta \boldsymbol{u})+\theta\Delta t\text{div}(\boldsymbol{u}^n\theta\Delta t\text{div}(h^n\delta \boldsymbol{u}))\\
+&=\theta\Delta t\text{div}(h^n\delta \boldsymbol{u})+\theta^2\Delta t^2\text{div}(\boldsymbol{u}^n\text{div}(h^n\delta\boldsymbol{u}))\\
+&=\theta\Delta t\text{div}\left(h^n\left[\delta \boldsymbol{u}+\theta\Delta t\boldsymbol{u}^n(\nabla\cdot \delta \boldsymbol{u})\right]\right)+\theta\Delta t\text{div}(\theta\Delta t\left(\nabla h^n\cdot \delta \boldsymbol{u}\right)\boldsymbol{u}^n).
+\end{split}
+\end{equation*}
+Let us define 
+\begin{equation*}
+M=I_2+\theta\Delta t\boldsymbol{u}^n(\nabla\cdot I_2),
+\end{equation*}
+to obtain
+\begin{equation*}
+D_1U\delta \boldsymbol{u}=UM\delta \boldsymbol{u}+\theta\Delta t\text{div}(\theta\Delta t\left(\nabla h^n\cdot \delta \boldsymbol{u}\right)\boldsymbol{u}^n).
+\end{equation*}
+
+We consider first that $\boldsymbol{u}^n=\boldsymbol{cst}$ then $h^n=cst$, and one has $D_1U=UM$.
+
+Let us calculate $D_2M$ to find $D_2M-LU$.
+\begin{equation*}
+\begin{split}
+D_2M\delta \boldsymbol{u}=h^n\left[\delta \boldsymbol{u}+\theta\Delta t\boldsymbol{u}^n\nabla\cdot \delta \boldsymbol{u}\right]+\theta\Delta th^n\left(\boldsymbol{u}^n\cdot\nabla\right)\left[\delta \boldsymbol{u}+\theta\Delta t\boldsymbol{u}^n\nabla \cdot \delta \boldsymbol{u}\right]\\
++\theta\Delta th^n\left(\left[\delta \boldsymbol{u}+\theta\Delta t\boldsymbol{u}^n\nabla \cdot \delta \boldsymbol{u}\right]\right)\textcolor{red}{\cdot \nabla }\boldsymbol{u}^n.
+\end{split}
+\end{equation*}
+Then
+\begin{equation*}
+\begin{split}
+D_2M\delta \boldsymbol{u}=h^n\delta \boldsymbol{u}+h^n\theta\Delta t\boldsymbol{u}^n\nabla \cdot \delta \boldsymbol{u}+\theta\Delta th^n\left(\boldsymbol{u}^n\cdot \nabla \right)\delta \boldsymbol{u}+\theta^2\Delta t^2h^n\left(\boldsymbol{u}^n\cdot \nabla \right)\left[\boldsymbol{u}^n\nabla \cdot \delta \boldsymbol{u}\right]\\+\theta\Delta th^n\left(\delta \boldsymbol{u}\cdot \nabla \right)\boldsymbol{u}^n+\theta^2\Delta t^2h^n\left(\text{div}(\delta \boldsymbol{u})\boldsymbol{u}^n\cdot \nabla \right)\boldsymbol{u}^n.
+\end{split}
+\end{equation*}
+By denoting $\tilde{P}_{schur}=D_2M-LU$ (ie $\tilde{P}_{schur}=P_{schur}M^{-1}$) one has (by neglecting some terms in $LU$)
+\begin{equation*}
+\begin{split}
+&\tilde{P}_{schur}\delta \boldsymbol{u}^*=h^n\delta \boldsymbol{u}^*+h^n\theta\Delta t\boldsymbol{u}^n\nabla \cdot \delta \boldsymbol{u}^*+\theta\Delta th^n\left(\boldsymbol{u}^n\cdot \nabla \right)\delta \boldsymbol{u}^*+\theta^2\Delta t^2h^n\left(\boldsymbol{u}^n\cdot \nabla\right)\left[\boldsymbol{u}^n\nabla \cdot \delta \boldsymbol{u}^*\right]\\
+&+\theta\Delta th^n\left(\delta \boldsymbol{u}^*\cdot \nabla\right)\boldsymbol{u}^n+\theta^2\Delta t^2h^n\left(\text{div}(\delta \boldsymbol{u}^*)\boldsymbol{u}^n\cdot \nabla\right)\boldsymbol{u}^n-\theta^2\Delta t^2g\nabla\left[h^n\delta \boldsymbol{u}^*\cdot \nabla h^n+(h^n)^2\nabla \cdot \delta \boldsymbol{u}^*\right].
+\end{split}
+\end{equation*}
+The equation of the motion is so
+\begin{equation*}
+\begin{split}
+&h^n\partial_{tt}\boldsymbol{\xi}^*+h^n\theta(\nabla \cdot \partial_t \boldsymbol{\xi}^*)\boldsymbol{u}^n+\theta h^n\left(\boldsymbol{u}^n\cdot \nabla \right)\partial_t \boldsymbol{\xi}^*+\theta^2h^n\left(\boldsymbol{u}^n\cdot \nabla \right)\left[\text{div}(\boldsymbol{\xi}^*)\boldsymbol{u}^n\right]\\
+&+\theta h^n\left(\partial_t \boldsymbol{\xi}^*\cdot \nabla\right)\boldsymbol{u}^n+\theta^2h^n\left(\text{div}( \boldsymbol{\xi}^*)\boldsymbol{u}^n\cdot \nabla \right)\boldsymbol{u}^n-\theta^2g\nabla \left[h^n\boldsymbol{\xi}^*\cdot \nabla h^n+(h^n)^2\nabla \cdot \boldsymbol{\xi}^*\right]=0
+\end{split}
+\end{equation*}
+We assume that $\boldsymbol{u}^n=\boldsymbol{cst}$ so is $h^n$. We obtain
+\textcolor{red}{
+\begin{equation*}
+\begin{split}
+&h^n\partial_{tt}\boldsymbol{\xi}^*+h^n\theta(\nabla \cdot \partial_t \boldsymbol{\xi}^*)\boldsymbol{u}^n+\theta h^n\left(\boldsymbol{u}^n\cdot \nabla \right)\partial_t \boldsymbol{\xi}^*+\theta^2h^n\boldsymbol{u}^n \left(\boldsymbol{u}^n\cdot \nabla \text{div}(\boldsymbol{\xi}^*)\right) \\
+&-\theta^2g\nabla \left[h^n\boldsymbol{\xi}^*\cdot \nabla h^n+(h^n)^2\nabla \cdot \boldsymbol{\xi}^*\right]=0
+\end{split}
+\end{equation*}
+}
+Now we pushing a plane wave 
+\begin{equation*}
+\boldsymbol{\xi}^*=\boldsymbol{\xi}_0^*e^{i(\omega t-\boldsymbol{k}\cdot \boldsymbol{x})}
+\end{equation*}
+in the motion equation, one get
+\begin{equation*}
+\begin{split}
+&h^n(-\omega^2)\boldsymbol{\xi}^*+h^n\theta\boldsymbol{u}^ni\omega\left[-ik_1(\xi_0^*)_1-ik_2(\xi_0^*)_2\right]e^{i(\omega t-\boldsymbol{k}\cdot \boldsymbol{x})}+h^n\theta i\omega (\boldsymbol{u}^n\cdot \nabla)\boldsymbol{\xi}^*+\\
+&\theta^2 h^n\boldsymbol{u}^n\left(u_1^n\left(-k_1^2(\xi_0^*)_1-k_1k_2(\xi_0^*)_2\right)e^{i(\omega t-\boldsymbol{k}\cdot \boldsymbol{x})}+u_2^n\left(-k_1k_2(\xi_0^*)_1-k_2^2(\xi_0^*)_2\right)e^{i(\omega t-\boldsymbol{k}\cdot \boldsymbol{x})}\right)\\
+&-\theta^2g(h^n)^2\begin{pmatrix}-k_1^2(\xi_0^*)_1-k_1k_2(\xi_0^*)_2\\ -k_1k_2(\xi_0^*)_1-k_2^2(\xi_0^*)_2\end{pmatrix}e^{i(\omega t-\boldsymbol{k}\cdot \boldsymbol{x})}=0.
+\end{split}
+\end{equation*}
+
+
+
+
+Hence,
+
+\begin{equation*}
+\begin{split}
+&h^n(i\omega)^2\boldsymbol{\xi}^*+h^n\theta i\omega\left[(-ik_1)(\xi_0^*)_1-ik_2(\xi_0^*)_2\right]e^{i(\omega t-\boldsymbol{k}\cdot \boldsymbol{x})}\boldsymbol{u}^n+\omega\theta h^n\boldsymbol{u}^n\cdot \boldsymbol{k}\boldsymbol{\xi}^*\\
+&+\theta^2 h^n\boldsymbol{u}^n\left(u_1^n\left(-k_1^2(\xi_0^*)_1-k_1k_2(\xi_0^*)_2\right)e^{i(\omega t-\boldsymbol{k}\cdot \boldsymbol{x})}+u_2^n\left(-k_1k_2(\xi_0^*)_1-k_2^2(\xi_0^*)_2\right)e^{i(\omega t-\boldsymbol{k}\cdot \boldsymbol{x})}\right)\\
+&-\theta^2g(h^n)^2\nabla\left[(-ik_1(\xi_0^*)_1-ik_2(\xi_0^*)_2)e^{i(\omega t-\boldsymbol{k}\cdot \boldsymbol{x})}\right]=0.
+\end{split}
+\end{equation*}
+That is to say, 
+\begin{equation*}
+\begin{split}
+&-\omega^2h^n\boldsymbol{\xi}^*+h^n\omega \theta\boldsymbol{u}^n\cdot \boldsymbol{k}\boldsymbol{\xi}^*+h^n\theta\omega \begin{pmatrix}k_1u_1^n&k_2u_1^n\\k_1u_2^n&k_2u_2^n\end{pmatrix}\boldsymbol{\xi}^*+\\
+&\theta^2 h^n\begin{pmatrix}-(u_1^n)^2k_1^2-u_1^nu_2^nk_1k_2&-(u_1^n)^2k_1k_2-u_1^nu_2^n(k_2)^2\\
+-u_1^nu_2^nk_1^2-(u_2^n)^2k_1k_2&-u_1^nu_2^nk_1k_2-(u_2^n)^2k_2^2\end{pmatrix}\boldsymbol{\xi}^*+\theta^2g(h^n)^2\begin{pmatrix}k_1^2&k_1k_2\\k_2k_1&k_2^2\end{pmatrix}\boldsymbol{\xi}^*=0
+\end{split}
+\end{equation*}
+However
+\begin{equation*}
+\begin{pmatrix}-(u_1^n)^2k_1^2-u_1^nu_2^nk_1k_2&-(u_1^n)^2k_1k_2-u_1^nu_2^n(k_2)^2\\
+-u_1^nu_2^nk_1^2-(u_2^n)^2k_1k_2&-u_1^nu_2^nk_1k_2-(u_2^n)^2k_2^2\end{pmatrix}
+=-\boldsymbol{u}^n\cdot \boldsymbol{k}\begin{pmatrix}u_1^nk_1&u_1^nk_2\\u_2^nk_1&u_2^nk_2\end{pmatrix}
+\end{equation*}
+Thus the previous equation becomes
+\begin{equation*}
+\begin{split}
+&-\omega^2h^n\boldsymbol{\xi}^*+h^n\omega \theta\boldsymbol{u}^n\cdot \boldsymbol{k}\boldsymbol{\xi}^*+h^n\theta\omega \begin{pmatrix}k_1u_1^n&k_2u_1^n\\k_1u_2^n&k_2u_2^n\end{pmatrix}\boldsymbol{\xi}^*+\\
+&-\theta^2 h^n\boldsymbol{u}^n\cdot \boldsymbol{k}\begin{pmatrix}u_1^nk_1&u_1^nk_2\\u_2^nk_1&u_2^nk_2\end{pmatrix}
+\boldsymbol{\xi}^*+\theta^2g(h^n)^2\begin{pmatrix}k_1^2&k_1k_2\\k_2k_1&k_2^2\end{pmatrix}\boldsymbol{\xi}^*=0
+\end{split}
+\end{equation*}
+Eventually, one has
+
+\begin{equation*}
+\begin{split}
+&-\omega^2h^n\boldsymbol{\xi}^*+h^n\theta\omega \boldsymbol{u}^n\cdot \boldsymbol{k}\boldsymbol{\xi}^*+\\
+&h^n\theta\begin{pmatrix}k_1(\theta gh^nk_1-\theta \boldsymbol{u}^n\cdot \boldsymbol{k}u_1^n+\omega u_1^n)&k_2(\theta gh^nk_1-\theta \boldsymbol{u}^n\cdot \boldsymbol{k}u_1^n+\omega u_1^n)\\
+k_1(\theta gh^nk_2-\theta \boldsymbol{u}^n\cdot \boldsymbol{k}u_2^n+\omega u_2^n)&k_2(\theta gh^nk_2-\theta \boldsymbol{u}^n\cdot \boldsymbol{k}u_2^n+\omega u_2^n)\end{pmatrix}\boldsymbol{\xi}^*=0.
+\end{split}
+\end{equation*}
+We diagonalize the sum of these two matrices, by denoting \begin{equation*}
+\left\{\begin{split}
+&V_1=\theta gh^nk_1-\theta \boldsymbol{u}^n\cdot \boldsymbol{k}u_1^n+\omega u_1^n,\\
+&V_2=\theta gh^nk_2-\theta \boldsymbol{u}^n\cdot \boldsymbol{k}u_2^n+\omega u_2^n.
+\end{split}\right.
+\end{equation*}
+\begin{equation*}
+\begin{split}
+\underbrace{\frac{1}{\sqrt{\boldsymbol{k}\cdot \boldsymbol{V}}}
+\begin{pmatrix}
+k_1&k_2\\-V_2&V_1
+\end{pmatrix}}_{=P}\begin{pmatrix}k_1V_1&k_2V_1\\k_1V_2&k_2V_2\end{pmatrix}\underbrace{\begin{pmatrix}V_1&-k_2\\V_2&k_1\end{pmatrix}\frac{1}{\sqrt{\boldsymbol{k}\cdot \boldsymbol{V}}}}_{=P^{-1}}=\begin{pmatrix}\boldsymbol{k}\cdot \boldsymbol{V}&0\\0&0\end{pmatrix}
+\end{split}
+\end{equation*}
+Thus, we obtain
+\begin{equation*}
+-\omega^2P\boldsymbol{\xi}^*+\omega\theta \boldsymbol{u}^n\cdot \boldsymbol{k}P\boldsymbol{\xi}^*+\theta\begin{pmatrix}\boldsymbol{k}\cdot \boldsymbol{V}&0\\0&0\end{pmatrix}P\boldsymbol{\xi}^*=0.
+\end{equation*}
+Then
+\begin{equation*}
+\left\{
+\begin{split}
+&\left(-\omega^2+\omega \theta\boldsymbol{u}^n\cdot \boldsymbol{k}+\theta\boldsymbol{k}\cdot \left[\theta gh^n\boldsymbol{k}-\theta \boldsymbol{u}^n\cdot \boldsymbol{k}\boldsymbol{u}^n+\omega \boldsymbol{u}^n
+\right]\right)\eta_1^*=0,\\
+&\theta \eta_2^*=0,
+\end{split}\right.
+\end{equation*}
+with $\boldsymbol{\eta}^*=P\boldsymbol{\xi}^*$.
+We obtain the dispersion relation
+\begin{equation*}
+\omega=\theta\boldsymbol{u}^n\cdot \boldsymbol{k}\pm\theta\sqrt{gh^n}||\boldsymbol{k}||,
+\end{equation*} 
+with the condition
+\begin{equation*}
+\omega \boldsymbol{u}^n\wedge \boldsymbol{\xi}^*+\theta h^ng\boldsymbol{k}\wedge \boldsymbol{\xi}^*+\theta\boldsymbol{u}^n\cdot \boldsymbol{k}\boldsymbol{\xi}^*\wedge \boldsymbol{u}^n=0.
+\end{equation*}
+Thanks to the dispersive relation the previous condition becomes
+\begin{equation*}
+\left(\theta h^ng\pm \theta||\boldsymbol{k}||\sqrt{gh^n}\right)\boldsymbol{k}\wedge \boldsymbol{\xi}^*=0.
+\end{equation*}
+\textit{i.e}
+\begin{equation*}
+\text{\textbf{rot}}(\partial_t\boldsymbol{\xi}^*)=0.
+\end{equation*}
+Eventually one has
+\begin{equation*}
+\delta \boldsymbol{u}=M\delta \boldsymbol{u}^*,
+\end{equation*}
+so \begin{equation*}
+\partial_t \boldsymbol{\xi}=\partial_t\boldsymbol{\xi}^*+\theta\boldsymbol{u}^n\text{div}(\boldsymbol{\xi}^*). 
+\end{equation*}
+This equation rewrite
+\begin{equation*}
+\partial_t \boldsymbol{\xi}=i\omega\boldsymbol{\xi}^*-i\theta\begin{pmatrix}k_1u_1^n&k_2u_1^n\\k_1u_2^n&k_2u_2^n\end{pmatrix}\boldsymbol{\xi}^*.
+\end{equation*}
+By diagonalizing we get
+\begin{equation*}
+\begin{split}
+\underbrace{\frac{1}{\sqrt{\boldsymbol{k}\cdot \boldsymbol{u}^n}}
+\begin{pmatrix}
+k_1&k_2\\-u_2^n&u_1^n
+\end{pmatrix}}_{=Q}\begin{pmatrix}k_1u_1^n&k_2u_1^n\\k_1u_2^n&k_2u_2^n\end{pmatrix}\underbrace{\begin{pmatrix}u_1^n&-k_2\\u_2^n&k_1\end{pmatrix}\frac{1}{\sqrt{\boldsymbol{k}\cdot \boldsymbol{u}^n}}}_{=Q^{-1}}=\begin{pmatrix}\boldsymbol{k}\cdot \boldsymbol{u}^n&0\\0&0\end{pmatrix}
+\end{split}
+\end{equation*}
+So \begin{equation*}
+\partial_t Q\boldsymbol{\xi}=i\omega Q\boldsymbol{\xi}^*-i\theta\begin{pmatrix}\boldsymbol{k}\cdot \boldsymbol{u}^n&0\\0&0\end{pmatrix}Q\boldsymbol{\xi}^*.
+\end{equation*}
+Now we define $\boldsymbol{\eta}=Q\boldsymbol{\xi}$  and we take the equation for $\boldsymbol{\xi}=\boldsymbol{\xi}_0e^{i(\overline{\omega} t-\boldsymbol{k}\cdot \boldsymbol{x})}$ where we change the frequency $\overline{\omega}$. We obtain that
+\begin{equation*}
+- \overline{\omega} \boldsymbol{\eta}=- \omega\boldsymbol{\eta}^*+\theta(\boldsymbol{k}\cdot \boldsymbol{u}^n) \omega \boldsymbol{\eta}^*\end{equation*}
+Multiplying by  $-\boldsymbol{\eta}$ and divise by  $\parallel\boldsymbol{\eta}\parallel^2$ we obtain
+$$
+\overline{\omega}=\omega -\theta(\boldsymbol{k}\cdot \boldsymbol{u}^n)
+$$
+At the end we obtain
+\begin{align*}
+\bar{\omega} &=\pm\theta\sqrt{gh^n}||\boldsymbol{k}||.
+\end{align*}
+
+\subsection{With the whole $LU$}
+
+If we take all terms of $LU$ into account, one has
+\begin{equation*}
+\begin{split}
+&(D_2 M-LU) \delta \boldsymbol{u}^*=h^n \delta \boldsymbol{u}^*+\theta\Delta th^n\boldsymbol{u}^n\nabla \cdot \delta \boldsymbol{u}^*+\theta\Delta th^n\left(\boldsymbol{u}^n\cdot \nabla \right)\delta \boldsymbol{u}^*\\
+&+\theta^2h^n\Delta t^2\left(\boldsymbol{u}^n\cdot \nabla\right)\left(\boldsymbol{u}^n\nabla \cdot \delta \boldsymbol{u}^*\right)\\
+&-\left[\boldsymbol{u}^n\theta\Delta t\text{div}(h^n\delta \boldsymbol{u}^*)+\theta^2\Delta t^2g\nabla \left(h^n\text{div}(h^n\delta \boldsymbol{u}^*)\right)\right]
+\end{split}
+\end{equation*}
+The equation of the motion becomes 
+\begin{equation*}
+\begin{split}
+&h^n\partial_{tt}\boldsymbol{\xi}^*+\theta h^n\boldsymbol{u}^n\nabla \cdot \left(\partial_t \boldsymbol{\xi}^*\right)+\theta h^n\left(\boldsymbol{u}^n\cdot \nabla\right)\partial_t \boldsymbol{\xi}^*+\theta^2h^n\left(\boldsymbol{u}^n\cdot \nabla\right)\left(\boldsymbol{u}^n\nabla \cdot \boldsymbol{\xi}^*\right)\\
+&-\boldsymbol{u}^n\theta\text{div}(h^n\partial_t\boldsymbol{\xi}^*)-\theta^2g\nabla \left(h^n\text{div}(h^n\boldsymbol{\xi}^*)\right)=0
+\end{split}
+\end{equation*}
+Then
+\begin{equation*}
+\begin{split}
+&\hspace*{-1.5cm}\left(-h^n\omega^2+\theta h^n\omega \boldsymbol{u}^n\cdot \boldsymbol{k}\right)\boldsymbol{\xi}^*+\theta h^n \begin{pmatrix}\left(\omega u_1^n-\theta\boldsymbol{k}\cdot \boldsymbol{u}^n u_1^n+\theta g h^nk_1\right)k_1+\left(\omega u_1^n-\theta\boldsymbol{k}\cdot \boldsymbol{u}^n u_1^n+\theta g h^nk_1\right)k_2 \\
+\left(\omega u_2^n-\theta\boldsymbol{k}\cdot \boldsymbol{u}^n u_2^n+\theta g h^nk_2\right)k_1+\left(\omega u_2^n-\theta\boldsymbol{k}\cdot \boldsymbol{u}^n u_2^n+\theta g h^nk_2\right)k_2\end{pmatrix}\boldsymbol{\xi}^*\\
+&\hspace*{-1.5cm}-\boldsymbol{u}^n\theta h^n \text{div}(i\omega \boldsymbol{\xi}^*)=0.
+\end{split}
+\end{equation*}
+Hence
+\begin{equation*}
+\begin{split}
+&\hspace*{-1.5cm}\left(-h^n\omega^2+\theta h^n\omega \boldsymbol{u}^n\cdot \boldsymbol{k}\right)\boldsymbol{\xi}^*+\theta h^n \begin{pmatrix}\left(\omega u_1^n-\theta\boldsymbol{k}\cdot \boldsymbol{u}^n u_1^n+\theta g h^nk_1\right)k_1+\left(\omega u_1^n-\theta\boldsymbol{k}\cdot \boldsymbol{u}^n u_1^n+\theta g h^nk_1\right)k_2 \\
+\left(\omega u_2^n-\theta\boldsymbol{k}\cdot \boldsymbol{u}^n u_2^n+\theta g h^nk_2\right)k_1+\left(\omega u_2^n-\theta\boldsymbol{k}\cdot \boldsymbol{u}^n u_2^n+\theta g h^nk_2\right)k_2\end{pmatrix}\boldsymbol{\xi}^*\\
+&\hspace*{-1.5cm}-\theta h^n \omega \begin{pmatrix}u_1^nk_1&u_1^nk_2\\u_2^nk_1 &u_2^nk_2\end{pmatrix}\boldsymbol{\xi}^*=0.
+\end{split}
+\end{equation*}
+The previous equation rewrites
+\begin{equation*}
+\begin{split}
+&\hspace*{-1.5cm}\left(-h^n\omega^2+\theta h^n\omega \boldsymbol{u}^n\cdot \boldsymbol{k}\right)\boldsymbol{\xi}^*+\theta h^n \begin{pmatrix}\left(-\theta\boldsymbol{k}\cdot \boldsymbol{u}^n u_1^n+\theta g h^nk_1\right)k_1+\left(-\theta\boldsymbol{k}\cdot \boldsymbol{u}^n u_1^n+\theta g h^nk_1\right)k_2 \\
+\left(-\theta\boldsymbol{k}\cdot \boldsymbol{u}^n u_2^n+\theta g h^nk_2\right)k_1+\left(-\theta\boldsymbol{k}\cdot \boldsymbol{u}^n u_2^n+\theta g h^nk_2\right)k_2\end{pmatrix}\boldsymbol{\xi}^*=0.
+\end{split}
+\end{equation*}
+We define 
+\begin{equation*}
+\left\{
+\begin{split}
+&W_1=-\theta\boldsymbol{k}\cdot \boldsymbol{u}^n u_1^n+\theta g h^nk_1,\\
+&W_2=-\theta\boldsymbol{k}\cdot \boldsymbol{u}^n u_2^n+\theta g h^nk_2,
+\end{split}
+\right.
+\end{equation*}
+and diagonalize the matrix to obtain
+\begin{equation*}
+\hspace*{-1.5cm}\left(-h^n\omega^2+\theta h^n\omega \boldsymbol{u}^n\cdot \boldsymbol{k}\right)T\boldsymbol{\xi}^*+\theta h^n \begin{pmatrix}\boldsymbol{W}\cdot \boldsymbol{k}&0\\0&0\end{pmatrix}T\boldsymbol{\xi}^*=0,
+\end{equation*}
+with the matrix
+\begin{equation*}
+T=\frac{1}{\sqrt{\boldsymbol{k}\cdot \boldsymbol{W}}}
+\begin{pmatrix}
+k_1&k_2\\-W_2&W_1
+\end{pmatrix}.
+\end{equation*}
+We get
+\begin{equation*}
+\left\{
+\begin{split}
+&-h^n\omega^2+\theta h^n\omega \boldsymbol{u}^n\cdot \boldsymbol{k}+\theta h^n\boldsymbol{k}\cdot \left(\theta gh^n\boldsymbol{k}-\theta(\boldsymbol{k}\cdot \boldsymbol{u}^n)\boldsymbol{u}^n\right)=0,\\
+&-W_2(\xi_0^*)_1+W_1(\xi_0^*)_2=0.
+\end{split}
+\right.
+\end{equation*}
+We compute the discriminant of this polynomial
+\begin{equation*}
+\Delta =-3\theta^2(\boldsymbol{u}^n\cdot \boldsymbol{k})^2+4\theta^2h^n g||\boldsymbol{k}||^2.
+\end{equation*}
+One has so
+\begin{equation*}
+\left\{
+\begin{split}
+&\omega =\theta\frac{\boldsymbol{u}^n\cdot \boldsymbol{k}}{2}\pm \theta\sqrt{h^ng||\boldsymbol{k}||^2-\frac{3}{4}(\boldsymbol{u}^n\cdot \boldsymbol{k})^2},\\
+&\boldsymbol{\xi}^*\wedge\boldsymbol{k}=0 \text{\ and\ } (\boldsymbol{k}\cdot \boldsymbol{u}^n)\boldsymbol{\xi}^*\wedge\boldsymbol{u}^n=0.
+\end{split}
+\right.
+\end{equation*}
+Once applying the multiplication by $M$, one get
+\begin{equation*}
+\overline{\omega}=\omega-\theta\boldsymbol{k}\cdot \boldsymbol{u}^n=-\theta\frac{\boldsymbol{u}^n\cdot \boldsymbol{k}}{2}\pm\theta\sqrt{h^n g ||\boldsymbol{k}||^2-\frac{3}{4}(\boldsymbol{u}^n\cdot\boldsymbol{k})^2}.
+\end{equation*}
+
+\section{Schur complement : good choice}
+To finish this work, we propose to resume the discussion on the Schur complement.
+We cam write the Schur complement on the following form
+\begin{align*}
+&\left(h^n I_2 + T(\boldsymbol{u}^n) I_2 - A(h^n\boldsymbol{u}^n)I_2\right)\delta \boldsymbol{u}^* =0\\
+&\delta \boldsymbol{u} = M \delta \boldsymbol{u}^*
+\end{align*}
+with $T$ the transport part and $A$ the acoustic part. We call $S_{ref}=\theta(\boldsymbol{u},\boldsymbol{n})\pm \theta c$ with $c=\sqrt{h^n g}$ the reference speed waves. To finish we define the Mach number $M= \frac{\parallel \boldsymbol{u}^n \parallel }{c}$
+\begin{table}
+\begin{tabular}{|l|l|}
+  \hline
+  Schur SFE &  \\
+  \hline
+  ~ & ~\\
+  T &  $\theta\Delta th^n\left(\boldsymbol{u}^n\cdot\nabla\right)\delta \boldsymbol{u}+\theta\Delta th^n\left(\delta \boldsymbol{u} \cdot\nabla\right)\boldsymbol{u}^n$ \\ 
+  ~ & ~\\
+    \hline
+   ~& ~\\ 
+  A= &$\left(\boldsymbol{u}^n+\theta \Delta t \boldsymbol{u}^n\cdot \nabla \boldsymbol{u}^n \right)\left(\theta \Delta t \operatorname{div}(h^n \delta \boldsymbol{u})\right) $\\
+  ~&$+\theta^2 \Delta t^2 \nabla\left[ \delta \boldsymbol{u}\cdot \nabla p^n + 2p^n \operatorname{div}(\delta \boldsymbol{u}) \right] $\\
+  ~ & ~\\
+    \hline
+     ~ &~ \\
+   Correction &  $M=I_2$ \\ 
+   ~ & ~\\
+    \hline
+     ~ &~ \\
+  speed & $\omega=\left(\pm\theta\sqrt{gh^n}\right)||\boldsymbol{k}||$ \\ 
+   ~ & ~\\
+    \hline
+    ~& ~\\
+  regime & $\omega=S_{ref}+O(cM)$ consequently the regime is $M<< 1$\\
+   ~& ~\\
+    \hline
+\end{tabular}
+\end{table}
+
+\begin{table}
+\begin{tabular}{|l|l|}
+  \hline
+  Schur SFA &  \\
+  \hline
+  ~ & ~\\
+  T &  $\theta\Delta th^n\left(\boldsymbol{u}^n\cdot\nabla\right)\delta \boldsymbol{u}+\theta\Delta th^n\left(\delta \boldsymbol{u} \cdot\nabla\right)\boldsymbol{u}^n$ \\ 
+  ~ & ~\\
+    \hline
+   ~& ~\\ 
+  A= & $\theta^2 \Delta t^2 \nabla\left[ \delta \boldsymbol{u}\cdot \nabla p^n + 2p^n \operatorname{div}(\delta \boldsymbol{u}) \right] $\\
+  ~ & ~\\
+      \hline
+     ~ &~ \\
+   Correction &  $M=I_2$ \\ 
+   ~ & ~\\
+    \hline
+     ~ &~ \\
+  speed & $\omega =\left(\theta\frac{\boldsymbol{u}\cdot \boldsymbol{n}}{2}\pm\theta\sqrt{h^ng-\frac{(\boldsymbol{u}\cdot \boldsymbol{n})^2}{4}}\right) \parallel \boldsymbol{k} \parallel$ \\ 
+   ~ & ~\\
+    \hline
+    ~& ~\\
+  regime & $\omega=S_{ref}+O(cM)$ consequently the regime is $M<< 1$\\
+   ~& ~\\
+    \hline
+\end{tabular}
+\end{table}
+
+\begin{table}
+\begin{tabular}{|l|l|}
+  \hline
+  Schur AFA &  \\
+  \hline
+  ~ & ~\\
+  T &  $h^n\theta\Delta t\boldsymbol{u}^n\nabla \cdot \delta \boldsymbol{u}+\theta\Delta th^n\left(\boldsymbol{u}^n\cdot \nabla \right)\delta \boldsymbol{u}+\theta\Delta th^n\left(\delta \boldsymbol{u}\cdot \nabla\right)\boldsymbol{u}^n$\\
+&$+\theta^2\Delta t^2 \left( h^n\left(\text{div}(\delta \boldsymbol{u})\boldsymbol{u}^n\cdot \nabla\right)\boldsymbol{u}^n+\textcolor{red}{\theta^2\Delta t^2}h^n\left(\boldsymbol{u}^n\cdot \nabla\right)\left[\boldsymbol{u}^n\nabla \cdot \delta \boldsymbol{u}\right]\right)$ \\ 
+  ~ & ~\\
+    \hline
+   ~& ~\\ 
+  A= & $\theta^2 \Delta t^2 \nabla\left[ \delta \boldsymbol{u}\cdot \nabla p^n + 2p^n \operatorname{div}(\delta \boldsymbol{u}) \right] $\\
+  ~ & ~\\
+      \hline
+     ~ &~ \\
+   Correction &  $M=I_2+\theta\Delta t\boldsymbol{u}^n(\nabla\cdot I_2)$ \\ 
+   ~ & ~\\
+    \hline
+     ~ &~ \\
+  speed & $\omega=\left(\pm\theta\sqrt{gh^n}\right)||\boldsymbol{k}||.$ \\ 
+   ~ & ~\\
+    \hline
+    ~& ~\\
+  regime & $\omega=S_{ref}+O(cM)$ consequently the regime is $M<< 1$\\
+   ~& ~\\
+    \hline
+\end{tabular}
+\end{table}
+
+\begin{table}
+\begin{tabular}{|l|l|}
+  \hline
+  Schur AFE &  \\
+  \hline
+  ~ & ~\\
+  T &  $h^n\theta\Delta t\boldsymbol{u}^n\nabla \cdot \delta \boldsymbol{u}+\theta\Delta th^n\left(\boldsymbol{u}^n\cdot \nabla \right)\delta \boldsymbol{u}+\theta\Delta th^n\left(\delta \boldsymbol{u}\cdot \nabla\right)\boldsymbol{u}^n$\\
+&$+\theta^2\Delta t^2 \left( h^n\left(\text{div}(\delta \boldsymbol{u})\boldsymbol{u}^n\cdot \nabla\right)\boldsymbol{u}^n+\textcolor{red}{\theta^2\Delta t^2}h^n\left(\boldsymbol{u}^n\cdot \nabla\right)\left[\boldsymbol{u}^n\nabla \cdot \delta \boldsymbol{u}\right]\right)$ \\ 
+  ~ & ~\\
+    \hline
+      ~& ~\\ 
+  A= &$\left(\boldsymbol{u}^n+\theta \Delta t \boldsymbol{u}^n\cdot \nabla \boldsymbol{u}^n \right)\left(\theta \Delta t \operatorname{div}(h^n \delta \boldsymbol{u})\right) $\\
+  ~&$+\theta^2 \Delta t^2 \nabla\left[ \delta \boldsymbol{u}\cdot \nabla p^n + 2p^n \operatorname{div}(\delta \boldsymbol{u}) \right] $\\
+  ~ & ~\\
+      \hline
+     ~ &~ \\
+   Correction &  $M=I_2+\theta\Delta t\boldsymbol{u}^n(\nabla\cdot I_2)$ \\ 
+   ~ & ~\\
+    \hline
+     ~ &~ \\
+  speed & $\omega=\left(-\theta\frac{\boldsymbol{u}^n\cdot \boldsymbol{n}}{2}\pm\theta\sqrt{h^n g-\frac{3}{4}(\boldsymbol{u}^n\cdot\boldsymbol{n})^2}\right)||\boldsymbol{k}||$  \\ 
+   ~ & ~\\
+    \hline
+    ~& ~\\
+  regime & $\omega=S_{ref}+O(cM)$ consequently the regime is $M<< 1$\\
+   ~& ~\\
+    \hline
+\end{tabular}
+\end{table}
+
+The SFE operator is the Exact Slow Flow operator and SFA the Approximate Slow Flow. This is the same for Arbitrary Flow. \textcolor{We assume that we can modify the AFA operator to obtain good wave}. First possibility to obtain the good wave is to neglect the second correction step with the operator. The second possibility is to neglect the term which depend go $\Delta 2 t$ in the operator $D_2 M$. Using this we must obtain $\pm \left((\boldsymbol{u}^n,\boldsymbol{k})+c\right)$. Second work we propose to write approximate operator with the same wave and symmetric and positive. 
+
+
+
+\end{document}

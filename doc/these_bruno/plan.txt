@@ -1,0 +1,94 @@
+Optimisation de code Galerkin Discontinu sur ordinateur hybride. Application à la simulation numérique en électromagnétisme.
+
+
+à mettre dans la branche newschnaps
+
+calendrier:
+http://ed.math-spi.unistra.fr/doctorat/soutenance/
+
+26 janvier 2018: envoi de la proposition de jury à l'ED
+16 février 2018: envoi du manuscrit au jury
+13 mars 2018: dépôts thèse à l'ED
+20 mars 2018: date limite (extrême) de réception des rapports. Demander pour le 16 mars.
+3 avril 2018: soutenance
+
+0. Introduction
+
+1. Galerkin Discontinu (Teta, schnaps)
+
+1.1. Mathématique
+EDP, dissipation d'énergie, PML (rapide)
+
+Numérique:
+Formulation mathématique du GD sur hexas
+
+1.2. Algorithmique (legendre, la croix)
+
+stabilité numérique: énergie sur maillages "affines" en GLeg et Glob
+difficultés sur maillages tordus
+biblio et exemples
+
+
+1.3. Pas de temps local 
+
+5.3. cas facile, pas de temps local
+     WR75, instabilité en dt local
+
+
+Formulation algorithmique des kernels GD
+
+2. Optimisations
+2.1. OpenCL
+2.2. GPU
+2.3. CPU
+
+3. Runtime environment (avant les optims.)
+3.1. SOCL  ?
+3.2. StarPU
+3.3. Hybride 
+
+4. Scalabilité HPC
+4.0. Graph2
+4.1. Mésocentre
+4.2. PRACE     !!!!!!
+
+5. Electromagnétisme (validation)
+5.2. Tete + ELPOSD vs temsi
+5.1. Cas tests HOROCH
+
+
+6. Conclusions
+
+à aborder: integration num. et stabilité WR75.
+pas de temps local et stabilité.
+
+
+histoire (muscle): on veut calculer un corps humain (smartphone, objets connectés, médecine, etc.)
+-géométrie
+-multiéchelle, inhomogène, multiplicité des modèles
+-taille des calculs
+
+comparaison FDTD/DG
+
+--> méthode num: DG, croix, intégration numérique, dt local ("théorique")
+
+-> optimiser (informatique): 
+
+optim. locales au noeud: simd, gpu, cache, mémoire, kernels spécialisés
+
+optim. globales: graphe des tâches, hétérogénéités. Test avec socl, starpu. Version industrielle:
+graphe des tâches à la main.
+
+passage à l'échelle: supercalculateurs (mésocentre, prace)
+
+
+--> applications (physique, ingénierie)
+
+
+rédaction: commencer par le squelette
+poser les notations
+ne pas hésiter à énoncer des propositions avec démo: stabilité et c.l.
+
+
+
+Présentation des modèles utilisés cdans les cas de tests de validation ?

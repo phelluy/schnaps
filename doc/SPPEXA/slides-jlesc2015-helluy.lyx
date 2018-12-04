@@ -1,0 +1,1892 @@
+#LyX 2.1 created this file. For more info see http://www.lyx.org/
+\lyxformat 474
+\begin_document
+\begin_header
+\textclass beamer
+\begin_preamble
+
+\usepackage{multicol} 
+\usepackage{tikz}
+\setbeamertemplate{bibliography item}[text]
+\beamertemplatenavigationsymbolsempty
+\addtobeamertemplate{navigation symbols}{}{%
+    \usebeamerfont{footline}%
+    \usebeamercolor[fg]{footline}%
+    \hspace{1em}%
+    \insertframenumber/\inserttotalframenumber
+}
+\end_preamble
+\use_default_options true
+\maintain_unincluded_children false
+\language english
+\language_package default
+\inputencoding auto
+\fontencoding global
+\font_roman default
+\font_sans default
+\font_typewriter default
+\font_math auto
+\font_default_family default
+\use_non_tex_fonts false
+\font_sc false
+\font_osf false
+\font_sf_scale 100
+\font_tt_scale 100
+\graphics default
+\default_output_format default
+\output_sync 0
+\bibtex_command default
+\index_command default
+\paperfontsize default
+\spacing single
+\use_hyperref false
+\papersize default
+\use_geometry true
+\use_package amsmath 1
+\use_package amssymb 1
+\use_package cancel 1
+\use_package esint 1
+\use_package mathdots 1
+\use_package mathtools 1
+\use_package mhchem 1
+\use_package stackrel 1
+\use_package stmaryrd 1
+\use_package undertilde 1
+\cite_engine basic
+\cite_engine_type default
+\biblio_style plain
+\use_bibtopic false
+\use_indices false
+\paperorientation portrait
+\suppress_date false
+\justification true
+\use_refstyle 1
+\index Index
+\shortcut idx
+\color #008000
+\end_index
+\secnumdepth 3
+\tocdepth 3
+\paragraph_separation indent
+\paragraph_indentation default
+\quotes_language english
+\papercolumns 1
+\papersides 1
+\paperpagestyle default
+\tracking_changes false
+\output_changes false
+\html_math_output 0
+\html_css_as_file 0
+\html_be_strict false
+\end_header
+
+\begin_body
+
+\begin_layout TitleGraphic
+\begin_inset Graphics
+	filename logos/logo-inria.png
+	height 1.2cm
+
+\end_inset
+
+
+\begin_inset space \quad{}
+\end_inset
+
+
+\begin_inset Graphics
+	filename logos/logo-uds-blanc.pdf
+	lyxscale 20
+	height 1.2cm
+
+\end_inset
+
+
+\begin_inset space \quad{}
+\end_inset
+
+
+\begin_inset Graphics
+	filename logos/logo-axessim.png
+	lyxscale 50
+	height 1.2cm
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Title
+A generic Discontinuous Galerkin solver based on OpenCL task graph.
+ Application to electromagnetic compatibility.
+ 
+\end_layout
+
+\begin_layout Author
+Philippe HELLUY 
+\begin_inset Formula $^{1,2}$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Institute
+\begin_inset Formula $^{1}$
+\end_inset
+
+IRMA, Université de Strasbourg, 
+\begin_inset Formula $^{2}$
+\end_inset
+
+Inria Tonus, France
+\end_layout
+
+\begin_layout Date
+JLESC workshop, June 2015, Barcelona
+\end_layout
+
+\begin_layout Frame
+
+\lang american
+\begin_inset Argument 4
+status open
+
+\begin_layout Plain Layout
+
+\lang american
+Inria TONUS team
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_deeper
+\begin_layout Standard
+
+\lang american
+Context: International Thermonuclear Experimental Reactor (ITER project).
+ Thermonuclear fusion in a hot hydrogen plasma (more than 100 million degrees
+ °C).
+ Clean energy of the future.
+ Tokamak: magnetic plasma confinement in a torus.
+\end_layout
+
+\begin_layout Standard
+\align center
+
+\lang american
+\begin_inset Graphics
+	filename ../../../../../IMPORTANT/Admin/INRIA/tonus-big/tore-2.jpg
+	height 3cm
+
+\end_inset
+
+ 
+\begin_inset Graphics
+	filename chantier_iter_juin_2015_01.jpg
+	height 3cm
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Itemize
+
+\lang american
+TONUS: 
+\begin_inset Quotes eld
+\end_inset
+
+TOkamak NUmerical Simulations
+\begin_inset Quotes erd
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Itemize
+
+\lang american
+Inria Nancy.
+ Strasbourg University.
+ 12 scientists.
+\end_layout
+
+\begin_layout Itemize
+
+\lang american
+Collaborations with CEA (GYSELA, JOREK) and AxesSim software company.
+ 
+\end_layout
+
+\begin_layout Itemize
+
+\lang american
+Part of two Inria Project Labs: C2S@exa (S.
+ Lanteri) and FRATRES (H.
+ Guillard)
+\end_layout
+
+\end_deeper
+\begin_layout Separator
+
+\end_layout
+
+\begin_layout Frame
+
+\lang american
+\begin_inset Argument 4
+status open
+
+\begin_layout Plain Layout
+
+\lang american
+Plasma physics modeling: Vlasov-Maxwell
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_deeper
+\begin_layout Itemize
+
+\lang american
+Unknowns: distribution function 
+\begin_inset Formula $f(x,v,t)=$
+\end_inset
+
+number of ions at point 
+\begin_inset Formula $x$
+\end_inset
+
+ and time 
+\begin_inset Formula $t$
+\end_inset
+
+ having velocity 
+\begin_inset Formula $v$
+\end_inset
+
+; electromagnetic field 
+\begin_inset Formula $(E,B).$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Itemize
+
+\lang american
+Vlasov equation (6D 
+\begin_inset Formula $(x,v)$
+\end_inset
+
+ phase space) 
+\begin_inset Formula 
+\[
+\partial_{t}f+v\cdot\nabla_{x}f+(E+v\times B)\cdot\nabla_{v}f=0.
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Itemize
+
+\lang american
+Maxwell equations (3D 
+\begin_inset Formula $x$
+\end_inset
+
+ space)
+\begin_inset Formula 
+\[
+\partial_{t}E-\nabla\times B=j,\quad\partial_{t}B+\nabla\times E=0.
+\]
+
+\end_inset
+
+The current 
+\begin_inset Formula $j$
+\end_inset
+
+ couples Vlasov and Maxwell
+\begin_inset Formula 
+\[
+j(x,t)=\int_{v}f(x,v,t)v\, dv.
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Itemize
+General framework: 
+\series bold
+conservation laws
+\series default
+.
+\end_layout
+
+\end_deeper
+\begin_layout Separator
+
+\end_layout
+
+\begin_layout Frame
+\begin_inset Argument 4
+status open
+
+\begin_layout Plain Layout
+Conservation laws
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_deeper
+\begin_layout Standard
+Many equations in physics are systems of conservation laws:
+\begin_inset Formula 
+\[
+\partial_{t}W+\sum_{i=1}^{d}\partial_{i}F^{i}(W)=0.
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Itemize
+\begin_inset Formula $W=W(x,t)\in\mathbb{R}^{m}$
+\end_inset
+
+: vector of conserved quantities;
+\end_layout
+
+\begin_layout Itemize
+\begin_inset Formula $x=(x^{1}\ldots x^{d})$
+\end_inset
+
+: space variable, 
+\begin_inset Formula $d$
+\end_inset
+
+: space dimension, 
+\begin_inset Formula $t$
+\end_inset
+
+: time;
+\end_layout
+
+\begin_layout Itemize
+\begin_inset Formula $\partial_{t}=\frac{\text{\partial}}{\partial t}$
+\end_inset
+
+, 
+\begin_inset Formula $\partial_{i}=\frac{\text{\partial}}{\partial x_{i}}$
+\end_inset
+
+;
+\end_layout
+
+\begin_layout Itemize
+\begin_inset Formula $W=\left[\begin{array}{c}
+E\\
+B
+\end{array}\right]$
+\end_inset
+
+ (Maxwell) or 
+\begin_inset Formula $W=\left[\begin{array}{c}
+\vdots\\
+\int_{v}fv^{k}dv\\
+\vdots
+\end{array}\right]$
+\end_inset
+
+ (Vlasov);
+\end_layout
+
+\begin_layout Itemize
+\begin_inset Formula $F^{i}(W)$
+\end_inset
+
+: flux vector (contains the physics).
+\end_layout
+
+\end_deeper
+\begin_layout Separator
+
+\end_layout
+
+\begin_layout Frame
+\begin_inset Argument 4
+status open
+
+\begin_layout Plain Layout
+SCHNAPS
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_deeper
+\begin_layout Itemize
+Factorize software developments: design of a generic, non-linear conservation
+ laws solver.
+\end_layout
+
+\begin_layout Itemize
+Optimizations for addressing hybrid CPU/GPU clusters.
+\end_layout
+
+\begin_layout Itemize
+Fundamental and industrial applications.
+\end_layout
+
+\begin_layout Standard
+SCHNAPS: 
+\begin_inset Quotes eld
+\end_inset
+
+Solveur Conservatif Hyperbolique Non-linéaire Appliqué aux PlasmaS
+\begin_inset Quotes erd
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Itemize
+OpenCL: SIMD fine grain parallelism.
+\end_layout
+
+\begin_layout Itemize
+MPI for dealing with MIMD coarse grain parallelism.
+\end_layout
+
+\begin_layout Itemize
+Task graph programming model.
+ 
+\end_layout
+
+\end_deeper
+\begin_layout Separator
+
+\end_layout
+
+\begin_layout Frame
+
+\lang american
+\begin_inset Argument 4
+status open
+
+\begin_layout Plain Layout
+OpenCL specificities
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_deeper
+\begin_layout Itemize
+Similar to CUDA: handmade cache management (but more user-friendly cache
+ systems are coming...); branching may be costly (SIMD parallelism).
+\end_layout
+
+\begin_layout Itemize
+Industry standard: the very same program can really run on different accelerator
+s.
+ Drivers exist for: NVIDIA GPUs, AMD CPUs and GPUs, Intel CPUs and GPUs,
+ MIC, ARM (CPU+GPU), IBM, etc.
+\end_layout
+
+\begin_layout Itemize
+Kernel compilation at runtime: very interesting for metaprogramming and
+ performance portability.
+\end_layout
+
+\begin_layout Itemize
+OpenCL manages events and a task graph for asynchronous kernel launching.
+\end_layout
+
+\end_deeper
+\begin_layout Separator
+
+\end_layout
+
+\begin_layout Frame
+\begin_inset Argument 4
+status open
+
+\begin_layout Plain Layout
+Unstructured grids
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_deeper
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+begin{multicols}{2}
+\end_layout
+
+\end_inset
+
+
+\begin_inset Graphics
+	filename avion-small.jpg
+	height 2.5cm
+
+\end_inset
+
+
+\begin_inset VSpace smallskip
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Graphics
+	filename shirt.jpg
+	height 3cm
+
+\end_inset
+
+
+\begin_inset Graphics
+	filename belly.jpg
+	height 3cm
+
+\end_inset
+
+
+\end_layout
+
+\end_deeper
+\begin_layout Frame
+(Project with Thales, AxesSim, Body Cap, Citizens Sciences)
+\end_layout
+
+\begin_deeper
+\begin_layout Itemize
+Unstructured hexahedra mesh for representing complex geometries.
+\end_layout
+
+\begin_layout Itemize
+Subdomain decomposition.
+ 1 domain = 1 MPI node = 1 OpenCL device.
+\end_layout
+
+\begin_layout Itemize
+Zone decomposition.
+ Each subdomain is split into volume zones and interface zones.
+\end_layout
+
+\begin_layout Itemize
+Non-conformity between zones is allowed.
+\end_layout
+
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+end{multicols}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_deeper
+\begin_layout Separator
+
+\end_layout
+
+\begin_layout Frame
+\begin_inset Argument 4
+status open
+
+\begin_layout Plain Layout
+Mesh example
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_deeper
+\begin_layout Standard
+A non-conforming mesh with two subdomains, three volume zones and three
+ interface zones.
+\end_layout
+
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+begin{multicols}{2}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Itemize
+Subdomain 1: only one big refined volume zone.
+ Two interface zones.
+\end_layout
+
+\begin_layout Itemize
+Subdomain 2: two small volume zones (coarse and refined).
+ Three interface zones.
+\end_layout
+
+\begin_layout Standard
+\align center
+\begin_inset Graphics
+	filename ../../../../../IMPORTANT/Recherche/Vlasov/Canton/talk-piers2014/3zones-gmsh.png
+	lyxscale 50
+	width 6cm
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+end{multicols}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_deeper
+\begin_layout Separator
+
+\end_layout
+
+\begin_layout Frame
+\begin_inset Argument 4
+status open
+
+\begin_layout Plain Layout
+Mesh structure
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_deeper
+\begin_layout Standard
+\align center
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+begin{tikzpicture}[scale=1.75] 
+\backslash
+draw[densely dotted] (0,0) grid[step=0.5] (1,1); 
+\backslash
+draw (0,0) rectangle (1,1);
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+draw[densely dotted] (1.5,0) grid[step=0.25] (2.5,1); 
+\backslash
+draw (1.5,0) rectangle (2.5,1);
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+draw[densely dotted] (0.25,2) grid[step=0.25] (2.25,3); 
+\backslash
+draw (0.25,2) rectangle (2.25,3);
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+draw[dash pattern=on 3mm off 3mm on 1mm off 3mm] (-1,1.5) --(3.5,1.5); 
+\backslash
+draw (1.25,0) -- (1.25,1); 
+\backslash
+draw (0,1.25) -- (1,1.25); 
+\backslash
+draw (1.5,1.25) -- (2.5,1.25); 
+\backslash
+draw (0.25,1.75) -- (1.24,1.75); 
+\backslash
+draw (1.29,1.75) -- (2.25,1.75);
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+node at (-0.5,3.25) {Subdomain 1}; 
+\backslash
+node at (-0.5,-0.25) {Subdomain 2};
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+node[align=center] at (3,2.5) {Volume
+\backslash
+
+\backslash
+zone 1}; 
+\backslash
+node[align=center] at (-0.5,0.5) {Volume
+\backslash
+
+\backslash
+zone 2}; 
+\backslash
+node[align=center] at (3,0.5) {Volume
+\backslash
+
+\backslash
+zone 3};
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+node[align=center] at (-0.5,1.25) {Interface
+\backslash
+
+\backslash
+[-0.4em]zone $1'$}; 
+\backslash
+node[align=center] at (3,1.25) {Interface
+\backslash
+
+\backslash
+[-0.4em]zone $2'$}; 
+\backslash
+node[align=center] at (1.25,-0.25) {Interface
+\backslash
+
+\backslash
+zone 3}; 
+\backslash
+node[align=center] at (-0.25,1.75) {Interface
+\backslash
+
+\backslash
+[-0.4em]zone 1}; 
+\backslash
+node[align=center] at (2.75,1.75) {Interface
+\backslash
+
+\backslash
+[-0.4em]zone 2};
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+end{tikzpicture}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_deeper
+\begin_layout Separator
+
+\end_layout
+
+\begin_layout Frame
+\begin_inset Argument 4
+status open
+
+\begin_layout Plain Layout
+Discontinuous Galerkin (DG) approximation 
+\begin_inset CommandInset citation
+LatexCommand cite
+key "CFP06"
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_deeper
+\begin_layout Standard
+\align block
+In each cell 
+\begin_inset Formula $L$
+\end_inset
+
+ of the mesh, the conserved quantities are expanded on Lagrange polynomial
+ basis functions
+\begin_inset Formula 
+\[
+W(x,t)=\sum_{j}W_{L}^{j}(t)\psi_{j}^{L}(x),\quad x\in L.
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+begin{multicols}{2}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Itemize
+\begin_inset Formula $L$
+\end_inset
+
+ is a (possibly stretched) hexahedron
+\end_layout
+
+\begin_layout Itemize
+\begin_inset Formula $W$
+\end_inset
+
+ is determined by its values at blue (volume) Gauss points
+\end_layout
+
+\begin_layout Itemize
+\begin_inset Formula $W$
+\end_inset
+
+ is discontinuous at green (faces) Gauss points.
+\end_layout
+
+\begin_layout Standard
+\begin_inset Graphics
+	filename ref_element_pg.png
+	lyxscale 50
+	width 50text%
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+end{multicols}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_deeper
+\begin_layout Separator
+
+\end_layout
+
+\begin_layout Frame
+\begin_inset Argument 4
+status open
+
+\begin_layout Plain Layout
+DG formulation 
+\begin_inset CommandInset citation
+LatexCommand cite
+key "hesthaven-2009,kloeckner2010hedge"
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_deeper
+\begin_layout Standard
+The numerical solution satisfies the DG approximation scheme
+\begin_inset Formula 
+\[
+\forall L,\forall i\quad\int_{L}\partial_{t}W_{L}\psi_{i}^{L}-\int_{L}F(W_{L},W_{L},\nabla\psi_{i}^{L})+\int_{\partial L}F(W_{L},W_{R},n_{LR})\psi_{i}^{L}=0.
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+begin{multicols}{2}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Itemize
+\begin_inset Formula $R$
+\end_inset
+
+ denotes the neighbor cells along 
+\begin_inset Formula $\partial L$
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Itemize
+\begin_inset Formula $n_{LR}$
+\end_inset
+
+ is the unit normal vector on 
+\begin_inset Formula $\partial L$
+\end_inset
+
+ oriented from 
+\begin_inset Formula $L$
+\end_inset
+
+ to 
+\begin_inset Formula $R$
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Itemize
+\begin_inset Formula $F(W_{L},W_{R},\! n)$
+\end_inset
+
+: numerical flux.
+\end_layout
+
+\begin_layout Itemize
+\begin_inset Formula $F(W\!,\! W\!,\! n)=\sum_{k}\! F^{k}(W)n_{k}$
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Standard
+\align block
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+begin{tikzpicture}[scale=1]
+\end_layout
+
+\begin_layout Plain Layout
+
+% intersection
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+draw[thick] (0,1) -- (0,0);
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+draw[->, thick, color=red] (0,0.5) -- (0.4,0.5);
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+node[below, color=red] at (0.4,0.5) {$n_{LR}$}; 
+\backslash
+node[above] (n1) at (-2,2) {$
+\backslash
+partial L
+\backslash
+cap
+\backslash
+partial R$}; 
+\backslash
+draw[->, thick] (n1) -- (0,0.8);
+\end_layout
+
+\begin_layout Plain Layout
+
+% left 
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+draw[thick] (-1,-0.5) -- (0,0); 
+\backslash
+draw[thick] (-1.2,1.4) -- (0,1); 
+\backslash
+draw[thick] (-1.2,1.4) -- (-1,-0.5); 
+\backslash
+node[above right] at (-1.05,-0.4) {$L$};
+\end_layout
+
+\begin_layout Plain Layout
+
+% right 
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+draw[thick] (1,-0.5) -- (0,0); 
+\backslash
+draw[thick] (1.1,0.8) -- (0,1); 
+\backslash
+draw[thick] (1.1,0.8) -- (1,-0.5); 
+\backslash
+node[below left] at (1.1,0.85) {$R$};
+\end_layout
+
+\begin_layout Plain Layout
+
+% other quadrangles
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+draw[thick] (0,0) -- (-0.1,-0.6); 
+\backslash
+draw[thick] (0,1) -- (0.1,1.6); 
+\backslash
+draw[thick] (-1,-0.5) -- (-1.5,-0.9); 
+\backslash
+draw[thick] (-1.2,1.4) -- (-1.6,1.5); 
+\backslash
+draw[thick] (1,-0.5) -- (1.3,-0.7); 
+\backslash
+draw[thick] (1.1,0.8) -- (1.5,1); 
+\backslash
+end{tikzpicture} 
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+end{multicols}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Time integration of a system of ordinary differential equations.
+\end_layout
+
+\end_deeper
+\begin_layout Separator
+
+\end_layout
+
+\begin_layout Frame
+\begin_inset Argument 4
+status open
+
+\begin_layout Plain Layout
+Tasks
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_deeper
+\begin_layout Itemize
+Elementary tasks attached to volume or interface zones
+\end_layout
+
+\begin_layout Itemize
+A task is associated to a computational OpenCL kernel or to memory operations
+ (GPU
+\begin_inset Formula $\leftrightarrow$
+\end_inset
+
+CPU and MPI transfers).
+\end_layout
+
+\begin_layout Itemize
+The optimized design of the computational kernels is tricky...
+\end_layout
+
+\begin_deeper
+\begin_layout Itemize
+Hexahedra mesh optimizations (
+\begin_inset Formula $(D+1)^{3}\rightarrow3(D+1)$
+\end_inset
+
+ complexity).
+\end_layout
+
+\begin_layout Itemize
+Idling work-item strategy for avoiding cache misses.
+\end_layout
+
+\begin_layout Itemize
+Our FLOPs are good FLOPs !
+\end_layout
+
+\end_deeper
+\begin_layout Itemize
+See 
+\begin_inset Flex URL
+status open
+
+\begin_layout Plain Layout
+
+https://hal.archives-ouvertes.fr/hal-01134222v2
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_deeper
+\begin_layout Separator
+
+\end_layout
+
+\begin_layout Frame
+\begin_inset Argument 4
+status open
+
+\begin_layout Plain Layout
+Tasks
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_deeper
+\begin_layout Standard
+\align center
+\begin_inset Graphics
+	filename task-list.png
+	lyxscale 50
+	width 8cm
+
+\end_inset
+
+
+\end_layout
+
+\end_deeper
+\begin_layout Separator
+
+\end_layout
+
+\begin_layout Frame
+\begin_inset Argument 4
+status open
+
+\begin_layout Plain Layout
+Tasks graph: two domains
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_deeper
+\begin_layout Standard
+\align center
+\begin_inset Graphics
+	filename graph_exemple.png
+	lyxscale 20
+	width 11cm
+
+\end_inset
+
+
+\end_layout
+
+\end_deeper
+\begin_layout Separator
+
+\end_layout
+
+\begin_layout Frame
+\begin_inset Argument 4
+status open
+
+\begin_layout Plain Layout
+Tasks graph: one domain
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_deeper
+\begin_layout Standard
+\align center
+\begin_inset Graphics
+	filename graph_exemple_2.png
+	lyxscale 20
+	width 11.5cm
+
+\end_inset
+
+
+\end_layout
+
+\end_deeper
+\begin_layout Separator
+
+\end_layout
+
+\begin_layout Frame
+\begin_inset Argument 4
+status open
+
+\begin_layout Plain Layout
+MPI/OpenCL events management 
+\begin_inset CommandInset citation
+LatexCommand cite
+key "helluyasynchronous"
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_deeper
+\begin_layout Standard
+Problem: how to express the dependency between MPI and OpenCL operations
+ ?
+\end_layout
+
+\begin_layout Itemize
+We decided to rely only on the OpenCL events management.
+\end_layout
+
+\begin_layout Itemize
+The beginning of a task depends on the completions of a list of OpenCL events.
+ The task is itself associated to an OpenCL event.
+\end_layout
+
+\begin_layout Itemize
+At an interface zone between two subdomains, an extraction task contains
+ a GPU to host memory transfer, a MPI send/receive communication and a host
+ to GPU transfer.
+\end_layout
+
+\begin_layout Itemize
+we create an OpenCL user event, and launch a MPI blocking sendrecv in a
+ thread.
+ At the end of the communication, in the thread, the OpenCL event is marked
+ as completed.
+ Using threads avoids blocking the main program flow.
+\end_layout
+
+\begin_layout Standard
+Simple runtime tasks management based only on well-established standards...
+\end_layout
+
+\end_deeper
+\begin_layout Separator
+
+\end_layout
+
+\begin_layout Frame
+\begin_inset Argument 4
+status open
+
+\begin_layout Plain Layout
+Sync./Async.
+ comparison
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_deeper
+\begin_layout Standard
+\align block
+Big mesh, polynomial order 
+\begin_inset Formula $D=3$
+\end_inset
+
+, NVIDIA K20 GPUs, infiniband network, single-precision floats.
+\end_layout
+
+\begin_layout Standard
+\align center
+\begin_inset Tabular
+<lyxtabular version="3" rows="3" columns="6">
+<features rotate="0" tabularvalignment="middle">
+<column alignment="center" valignment="top">
+<column alignment="center" valignment="top">
+<column alignment="center" valignment="top">
+<column alignment="center" valignment="top">
+<column alignment="center" valignment="top">
+<column alignment="center" valignment="top">
+<row>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+1 GPU
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+2 GPUs
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+4 GPUs
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+8 GPUs
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Sync.
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+TFLOPS/s
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+1.01
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+1.84
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+3.53
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+5.07
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+ASync.
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+TFLOPS/s
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+1.01
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+1.94
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+3.74
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+7.26
+\end_layout
+
+\end_inset
+</cell>
+</row>
+</lyxtabular>
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+We achieve 
+\begin_inset Formula $\simeq30\%$
+\end_inset
+
+ of the peak performance.s
+\end_layout
+
+\end_deeper
+\begin_layout Separator
+
+\end_layout
+
+\begin_layout Frame
+\begin_inset Argument 4
+status open
+
+\begin_layout Plain Layout
+Electromagnetic compatibility application 
+\begin_inset CommandInset citation
+LatexCommand cite
+key "cabel2011multi"
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_deeper
+\begin_layout Itemize
+Electromagnetic wave interaction with an aircraft.
+\end_layout
+
+\begin_layout Itemize
+\noindent
+Aircraft geometry described with up to 
+\begin_inset Formula $3.5$
+\end_inset
+
+M hexaedrons (
+\begin_inset Formula $\simeq$
+\end_inset
+
+1 billion unknowns per time step): mesh of the interior and exterior of
+ the aircraft.
+ PML transparent boundary conditions.
+\end_layout
+
+\begin_layout Itemize
+We use 8 GPUs to perform the computation.
+ The biggest simulation does not fit into a single GPU memory.
+\end_layout
+
+\begin_layout Standard
+\noindent
+\align center
+\begin_inset Graphics
+	filename avion.jpg
+	lyxscale 30
+	width 9cm
+
+\end_inset
+
+
+\end_layout
+
+\end_deeper
+\begin_layout Separator
+
+\end_layout
+
+\begin_layout Frame
+\begin_inset Argument 4
+status open
+
+\begin_layout Plain Layout
+Other applications 
+\begin_inset CommandInset citation
+LatexCommand cite
+key "massaro2014numerical,helluy2014reduced"
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_deeper
+\begin_layout Itemize
+MHD
+\end_layout
+
+\begin_layout Itemize
+4D Vlasov Landau damping
+\end_layout
+
+\begin_layout Standard
+\noindent
+\align center
+\begin_inset Graphics
+	filename orszagtang.png
+	lyxscale 50
+	height 5cm
+
+\end_inset
+
+
+\begin_inset Graphics
+	filename landau.png
+	lyxscale 70
+	height 4cm
+
+\end_inset
+
+
+\end_layout
+
+\end_deeper
+\begin_layout Frame
+
+\end_layout
+
+\begin_layout Separator
+
+\end_layout
+
+\begin_layout Frame
+\begin_inset Argument 4
+status open
+
+\begin_layout Plain Layout
+Wishlist
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_deeper
+\begin_layout Standard
+We need a stable API for parallel task-based parallel computing.
+ Possible features:
+\end_layout
+
+\begin_layout Itemize
+C99-based with C++, FORTRAN extensions.
+\end_layout
+
+\begin_layout Itemize
+task-graph paradigm, static or dynamic, dynamic compilation, codelets, load
+ balancing, data driven.
+\end_layout
+
+\begin_layout Itemize
+find a common API for existing software: StarPU 
+\begin_inset CommandInset citation
+LatexCommand cite
+key "augonnet2011starpu,agullo2012task"
+
+\end_inset
+
+, PaRSEC, OmpSs, etc.
+\end_layout
+
+\begin_layout Itemize
+Data: automatic choice between saving or recomputing data, compression,
+ coherency check, restart after failure.
+\end_layout
+
+\begin_layout Standard
+Two final remarks:
+\end_layout
+
+\begin_layout Itemize
+PDE solvers can often be adapted to computer architectures.
+ Teach the mathematicians that 
+\begin_inset Quotes eld
+\end_inset
+
+
+\begin_inset Formula $=$
+\end_inset
+
+
+\begin_inset Quotes erd
+\end_inset
+
+ is more expensive than 
+\begin_inset Quotes eld
+\end_inset
+
+
+\begin_inset Formula $+$
+\end_inset
+
+
+\begin_inset Quotes erd
+\end_inset
+
+ or 
+\begin_inset Quotes eld
+\end_inset
+
+
+\begin_inset Formula $\times$
+\end_inset
+
+
+\begin_inset Quotes erd
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Itemize
+Colleagues are often ready to rewrite their codes, but in a stable environment.
+\end_layout
+
+\end_deeper
+\begin_layout Separator
+
+\end_layout
+
+\begin_layout Frame
+\begin_inset Argument 4
+status open
+
+\begin_layout Plain Layout
+Bibliography
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_deeper
+\begin_layout Standard
+
+\size tiny
+\begin_inset CommandInset bibtex
+LatexCommand bibtex
+bibfiles "helluy-iwocl-2015"
+options "plain"
+
+\end_inset
+
+
+\end_layout
+
+\end_deeper
+\end_body
+\end_document

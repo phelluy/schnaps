@@ -1,0 +1,18 @@
+\begin{frame}
+\frametitle{Parallélisation SIMD / Niveau de parallélisme}
+\vfill
+Niveau de mise à plat des boucles :
+\begin{itemize}
+\item \textbf{Euler} : 1 processus par point de Gauss, indépendants ;
+\item \textbf{Masse} : 1 processus par point de Gauss, indépendants ;
+\item \textbf{Volume} : 1 processus par point de Gauss, groupés par maille (mémoire cache) ;
+\item \textbf{Flux} : scindé en 3 parties :
+\begin{itemize}
+\item \textbf{Extrapolation} : 1 processus par point de face, groupés par maille (mémoire cache) ;
+\item \textbf{Flux} : 1 processus par point de face, indépendants ;
+\item \textbf{Application} : 1 processus par point de Gauss, groupés par maille (mémoire cache) ;
+\end{itemize}
+\end{itemize}
+\vfill
+\end{frame}
+

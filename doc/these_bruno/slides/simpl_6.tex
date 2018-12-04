@@ -1,0 +1,27 @@
+\begin{frame}
+\frametitle{Simplifications / Bilan}
+\vfill
+Pour $N_p$ fonctions de base (ou points d'interpolation), par maille :
+\vfill
+\begin{itemize}
+\item Interpolation de Gauss-Legendre sur hexaèdre :
+\begin{itemize}
+\item Gradient du terme de volume : $O({N_p}^{4/3})$ opérations \textbf{scalaires} ;
+\item Extrapolation du terme de flux : utilisation de $O(N_p)$ fonctions de base ;
+\item Application du terme de flux : utilisation de $O(N_p)$ points de face.
+\end{itemize}
+\vfill
+\item Interpolation sur tétraèdre :
+\begin{itemize}
+\item Gradient du terme de volume : $O({N_p}^{2})$ opérations \textbf{vectorielles} ;
+\item Extrapolation du terme de flux : utilisation de $O({N_p}^{2})$ fonctions de base ;
+\item Application du terme de flux : utilisation de $O({N_p}^{2})$ points de face.
+\end{itemize}
+\vfill
+\item [=>] La complexité des calculs sur hexaèdre est inférieure à celle sur tétraèdre pour un ordre d'interpolation assez grand.
+\end{itemize}
+\vfill
+Autre axe d'amélioration : l'intégration temporelle.
+\vfill
+\end{frame}
+

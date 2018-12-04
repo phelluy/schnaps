@@ -1,0 +1,31 @@
+\begin{frame}
+\frametitle{Tête simplifiée / Performances}
+\vfill
+%\scalebox{0.9}{\begin{minipage}{1.11\textwidth}
+Temps de calcul pour un pas de temps optimal :
+\begin{figure}
+\centering
+\begin{tabular}{|l|c|c|c|}
+	\hline
+	Méthode & Temps de calcul (h) & Accélérateur & Accélération \\ \hline\hline
+	FD & 2.24 & CPU & 0.53 \\	\hline\hline
+	GD2-RK2 & 1.19 & GPU & 1 \\	\hline
+	GD2-LRK2 & 1.71 & GPU & 0.70* \\	\hline
+	GD2-LTS2 & 0.84 & GPU & 1.42* \\	\hline\hline
+	GD1-RK2 & 0.31 & GPU & 3.84 \\	\hline
+	GD1-LTS2 & 0.18 & GPU & 6.61* \\	\hline
+\end{tabular}
+\vfill
+* : Le pas de temps optimal RK2 est 2 fois plus grand que le plus petit pas de temps LRK2/LTS2.
+\end{figure}
+\vfill
+\begin{itemize}
+\item []
+\begin{itemize}
+\item [CPU] : Intel Dual Xeon E5-2650 v4 (48 c.)
+\item [GPU] : NVidia GeForce GTX 1080 Ti
+\end{itemize}
+\end{itemize}
+\vfill
+\end{frame}
+

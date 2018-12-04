@@ -1,0 +1,41 @@
+\begin{frame}
+\frametitle{Espace d'approximation / Fonctions de base}
+\vfill
+\begin{itemize}
+\item Polynômes de Lagrange $(l_p)_{p \in \RangeDeg}$
+associés aux points de Gauss-Legendre $(\GLn_p)_{p \in \RangeDeg}$ en dimension 1 :
+\begin{columns}[c]
+\column{.5\textwidth}
+\begin{align*}
+	l_p(\GLn) = \prod_{\substack{q=0 \\ q \ne p}}^{\Deg}
+	\frac{\GLn - \GLn_q}{\GLn_p - \GLn_q} ,
+\end{align*}
+\column{.5\textwidth}
+\begin{align*}
+l_p(\GLn_q) = \delta_{p,q} \ ;
+\end{align*}
+\end{columns}
+\item Produits tensoriels des polynômes $(l_p)$ en dimension 3 :
+\begin{align*}
+	\PsiRef{i} : \HexaRef &\to \EnsR
+	\tag{Base approx.} \\
+	\xref &\mapsto
+	l_p(\xref_1)
+	l_q(\xref_2)
+	l_r(\xref_3) , \\
+	i &= p + (\Deg + 1)(q + (\Deg + 1) r) \ ;
+\end{align*}
+\item Vérifient, par définition (numérotation identique aux points) :
+\begin{enumerate}[(i)]
+\item Volume : $\PsiRef{i}(\GLN{j}) = \delta_{i,j}$ ;
+\item Faces : $\PsiRef{i}(\GLN{f,j})
+	\begin{cases}
+	\ne 0 & \mathrm{si} \ \pi(f,i) = j , \\ 
+	= 0 & \mathrm{sinon} .
+	\end{cases}$\\
+	\textit{i.e.} non nulle uniquement sur les projetés orthogonaux.
+\end{enumerate}
+\end{itemize}
+\vfill
+\end{frame}
+

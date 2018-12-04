@@ -1,0 +1,282 @@
+\begin{frame}
+\frametitle{Pas de temps local / Schéma LTS2}
+\newcommand{\AderBigShemeScales}{0.95}
+\vfill
+\begin{columns}
+\column{0.45\textwidth}
+\begin{itemize}
+\item Pas de temps local par maille ;
+\item Regroupement en fonction du pas de temps (classes) ;
+\item Étape LTS2 pour 2 tailles (ou classes) de mailles :
+\begin{enumerate}[(i)]
+\item La petite maille $\L$ effectue 2 étapes LRK2 avec les prédictions locales nécessaires sur la maille tampon $\L + 1$ ; 
+\item Les grandes mailles $\L + 1$ et $\L + 2$ effectuent une étape LRK2 ;
+\item Le flux à gauche de la maille tampon est calculé sur 2 points d'intégration temporels.
+\end{enumerate}
+\vfill
+\item Généralisation à un nombre quelconque de classes.
+\end{itemize}
+\column{0.55\textwidth}
+\scalebox{0.5}{\begin{minipage}{2\textwidth}
+\begin{figure}
+	\centering
+		\tikzstyle{fluxarrow}=[-,blue,arrows={-latex},thick,shorten <=5pt,shorten >=2pt]
+		
+		\tikzstyle{fluxcircle}=[blue,thick]
+		
+		\tikzstyle{lfluxarrow}=[-,green,arrows={-latex},thick,shorten <=5pt,shorten >=2pt]
+		
+		\tikzstyle{lfluxcircle}=[green,thick]
+
+		\begin{tikzpicture}[scale=\AderBigShemeScales]
+		% rectangles gris
+		\draw[fill=gray!10] (0,0) rectangle (2,2);
+		\draw[fill=gray!10] (2,0) rectangle (6,4);
+		%\draw[fill=gray!10] (6,0) rectangle (10,4);
+		
+		% axe x
+		\draw[-,arrows={-latex}] (0,0) -- (11,0) node[below right] {$\PbEsp$};
+		
+		% axe t
+		\draw[-,arrows={-latex}] (0,0) -- (0,4.5) node[left] {$t$};
+		
+		% noeuds
+		\draw[-] (0,-0.1) -- (0,2) -- (2,2);
+		\draw[-] (2,-0.1) -- (2,4) -- (6,4);
+		\draw[-] (6,-0.1) -- (6,4) -- (10,4);
+		\draw[-] (10,-0.1) -- (10,4);
+		
+		% mailles
+		\draw (1,-0.2) node[below] {$\L$};
+		\draw (4,-0.2) node[below] {$\L+1$};
+		\draw (8,-0.2) node[below] {$\L+2$};
+		
+		% dt
+		\draw[-] (-0.1,2) node[left] {$\dt_\L$} -- (0.1,2);
+		\draw[-] (-0.1,4) node[left] {$2 \dt_\L$} -- (0.1,4);
+		\draw[dotted] (0.1,4) -- (2,4);
+		
+		% solutions
+		\draw[dashed,red,very thick] (0,0) node[left] {$\W^n$} -- (10,0);
+		\draw[dashed,red,very thick] (0,1) node[left] {$\V^{n+\frac{1}{2}}$} -- (6,1);
+		\draw[dashed,red,very thick] (0,2) -- node[midway, above] {$\W^{n+1}$} (2,2);
+		
+		% flux
+		\begin{scope}
+			\clip (0.025,-0.2) rectangle (0.2,0.2);
+			\draw[lfluxcircle,fill=green] (0,0) circle (0.15);
+		\end{scope}
+		\draw[lfluxcircle] (0.025,-0.15) -- (0.025,0.15);
+		\begin{scope}
+			\clip (1.975,-0.2) rectangle (1.8,0.2);
+			\draw[lfluxcircle,fill=green] (2,0) circle (0.15);
+		\end{scope}
+		\draw[lfluxcircle] (1.975,-0.15) -- (1.975,0.15);
+		\begin{scope}
+			\clip (2.025,-0.2) rectangle (2.2,0.2);
+			\draw[lfluxcircle,fill=green] (2,0) circle (0.15);
+		\end{scope}
+		\draw[lfluxcircle] (2.025,-0.15) -- (2.025,0.15);
+		\begin{scope}
+			\clip (5.975,-0.2) rectangle (5.8,0.2);
+			\draw[lfluxcircle,fill=green] (6,0) circle (0.15);
+		\end{scope}
+		\draw[lfluxcircle] (5.975,-0.15) -- (5.975,0.15);
+		
+		\draw[fluxcircle] (0,1) circle (0.15);
+		\draw[fluxcircle] (2,1) circle (0.15);
+		
+		% application
+		\draw[lfluxarrow] (0,0) -- (1,1);
+		\draw[lfluxarrow] (2,0) -- (1,1);
+		\draw[lfluxarrow] (2,0) -- (3,1);
+		\draw[lfluxarrow] (6,0) -- (5,1);
+		
+		\draw[fluxarrow] (0,1) -- (1,2);
+		\draw[fluxarrow] (2,1) -- (1,2);
+		
+		\end{tikzpicture}
+\end{figure}
+\vskip-1.5em
+\begin{figure}
+	\centering
+		\tikzstyle{fluxarrow}=[-,blue,arrows={-latex},thick,shorten <=5pt,shorten >=2pt]
+		
+		\tikzstyle{fluxcircle}=[blue,thick]
+		
+		\tikzstyle{lfluxarrow}=[-,green,arrows={-latex},thick,shorten <=5pt,shorten >=2pt]
+		
+		\tikzstyle{lfluxcircle}=[green,thick]
+
+		\begin{tikzpicture}[scale=\AderBigShemeScales]
+		% rectangles gris
+		\draw[fill=gray!10] (0,2) rectangle (2,4);
+		\draw[fill=gray!10] (2,0) rectangle (6,4);
+		%\draw[fill=gray!10] (6,0) rectangle (10,4);
+		
+		% axe x
+		\draw[-,arrows={-latex}] (0,0) -- (11,0) node[below right] {$\PbEsp$};
+		
+		% axe t
+		\draw[-,arrows={-latex}] (0,0) -- (0,4.5) node[left] {$t$};
+		
+		% noeuds
+		\draw[-] (0,-0.1) -- (0,2) -- (2,2);
+		\draw[-] (2,-0.1) -- (2,4) -- (6,4);
+		\draw[-] (6,-0.1) -- (6,4) -- (10,4);
+		\draw[-] (10,-0.1) -- (10,4);
+		
+		% mailles
+		\draw (1,-0.2) node[below] {$\L$};
+		\draw (4,-0.2) node[below] {$\L+1$};
+		\draw (8,-0.2) node[below] {$\L+2$};
+		
+		% dt
+		\draw[-] (-0.1,2) node[left] {$\dt_\L$} -- (0.1,2);
+		\draw[-] (-0.1,4) node[left] {$2 \dt_\L$} -- (0.1,4);
+		\draw[-] (0.1,4) -- (2,4);
+		
+		% solutions
+		\draw[dashed,red,very thick] (2,0) -- (10,0) node[above right,red] {$\W^n$};
+		\draw[dashed,red,very thick] (0,2) -- node[midway, below] {$\W^{n+1}$} (2,2);
+		\draw[dashed,red,very thick] (0,3) node[left] {$\V^{n+\frac{3}{2}}$} -- (6,3);
+		\draw[dashed,red,very thick] (0,4) -- node[midway, above] {$\W^{n+2}$} (2,4);
+		
+		% flux
+		\begin{scope}
+			\clip (0.025,1.8) rectangle (0.2,2.2);
+			\draw[lfluxcircle,fill=green] (0,2) circle (0.15);
+		\end{scope}
+		\draw[lfluxcircle] (0.025,1.85) -- (0.025,2.15);
+		\begin{scope}
+			\clip (1.975,1.8) rectangle (1.8,2.2);
+			\draw[lfluxcircle,fill=green] (2,2) circle (0.15);
+		\end{scope}
+		\draw[lfluxcircle] (1.975,1.85) -- (1.975,2.15);
+		\begin{scope}
+			\clip (2.025,-0.2) rectangle (2.2,0.2);
+			\draw[lfluxcircle,fill=green] (2,0) circle (0.15);
+		\end{scope}
+		\draw[lfluxcircle] (2.025,-0.15) -- (2.025,0.15);
+		\begin{scope}
+			\clip (5.975,-0.2) rectangle (5.8,0.2);
+			\draw[lfluxcircle,fill=green] (6,0) circle (0.15);
+		\end{scope}
+		\draw[lfluxcircle] (5.975,-0.15) -- (5.975,0.15);
+		
+		\draw[fluxcircle] (0,3) circle (0.15);
+		\draw[fluxcircle] (2,3) circle (0.15);
+
+		\begin{scope}
+			\clip (2.025,0.8) rectangle (2.2,1.2);
+			\draw[fluxcircle] (2,1) circle (0.15);
+		\end{scope}
+		
+		% application
+		\draw[lfluxarrow] (0,2) -- (1,3);
+		\draw[lfluxarrow] (2,2) -- (1,3);
+		\draw[lfluxarrow] (2,0) -- (3,3);
+		\draw[lfluxarrow] (6,0) -- (5,3);
+		
+		\draw[fluxarrow] (0,3) -- (1,4);
+		\draw[fluxarrow] (2,3) -- (1,4);
+		
+		\end{tikzpicture}
+\end{figure}
+\vskip-1.5em
+\begin{figure}
+	\centering
+		\tikzstyle{fluxarrow}=[-,blue,arrows={-latex},thick,shorten <=5pt,shorten >=2pt]
+		
+		\tikzstyle{fluxcircle}=[blue,thick]
+		
+		\tikzstyle{lfluxarrow}=[-,green,arrows={-latex},thick,shorten <=5pt,shorten >=2pt]
+		
+		\tikzstyle{lfluxcircle}=[green,thick]
+
+		\begin{tikzpicture}[scale=\AderBigShemeScales]
+		% rectangles gris
+		%\draw[fill=gray!10] (0,0) rectangle (2,4);
+		\draw[fill=gray!10] (2,0) rectangle (6,4);
+		\draw[fill=gray!10] (6,0) rectangle (10,4);
+		
+		% axe x
+		\draw[-,arrows={-latex}] (0,0) -- (11,0) node[below right] {$\PbEsp$};
+		
+		% axe t
+		\draw[-,arrows={-latex}] (0,0) -- (0,4.5) node[left] {$t$};
+		
+		% noeuds
+		\draw[-] (0,-0.1) -- (0,2) -- (2,2);
+		\draw[-] (2,-0.1) -- (2,4) -- (6,4);
+		\draw[-] (6,-0.1) -- (6,4) -- (10,4);
+		\draw[-] (10,-0.1) -- (10,4);
+		
+		% mailles
+		\draw (1,-0.2) node[below] {$\L$};
+		\draw (4,-0.2) node[below] {$\L+1$};
+		\draw (8,-0.2) node[below] {$\L+2$};
+		
+		% dt
+		\draw[-] (-0.1,2) node[left] {$\dt_\L$} -- (0.1,2);
+		\draw[-] (-0.1,4) node[left] {$2 \dt_\L$} -- (0.1,4);
+		\draw[-] (0.1,4) -- (2,4);
+		
+		% solutions
+		\draw[dashed,red,very thick] (2,0) -- (10,0) node[above right] {$\W^n$};
+		\draw[dashed,red,very thick] (2,2) -- (10,2) node[right] {$\V^{n+1}$};
+		\draw[dashed,red,very thick] (0,4) -- (10,4) node[right] {$\W^{n+2}$};
+		
+		% flux
+		\begin{scope}
+			\clip (2.025,-0.2) rectangle (2.2,0.2);
+			\draw[lfluxcircle,fill=green] (2,0) circle (0.15);
+		\end{scope}
+		\draw[lfluxcircle] (2.025,-0.15) -- (2.025,0.15);
+		\begin{scope}
+			\clip (5.975,-0.2) rectangle (5.8,0.2);
+			\draw[lfluxcircle,fill=green] (6,0) circle (0.15);
+		\end{scope}
+		\draw[lfluxcircle] (5.975,-0.15) -- (5.975,0.15);
+		\begin{scope}
+			\clip (6.025,-0.2) rectangle (6.2,0.2);
+			\draw[lfluxcircle,fill=green] (6,0) circle (0.15);
+		\end{scope}
+		\draw[lfluxcircle] (6.025,-0.15) -- (6.025,0.15);
+		\begin{scope}
+			\clip (9.975,-0.2) rectangle (9.8,0.2);
+			\draw[lfluxcircle,fill=green] (10,0) circle (0.15);
+		\end{scope}
+		\draw[lfluxcircle] (9.975,-0.15) -- (9.975,0.15);
+		
+		\begin{scope}
+			\clip (2.025,0.8) rectangle (2.2,1.2);
+			\draw[fluxcircle] (2,1) circle (0.15);
+		\end{scope}
+		\begin{scope}
+			\clip (2.025,2.8) rectangle (2.2,3.2);
+			\draw[fluxcircle] (2,3) circle (0.15);
+		\end{scope}
+		\draw[fluxcircle] (6,2) circle (0.15);
+		\draw[fluxcircle] (10,2) circle (0.15);
+		
+
+		% application
+		\draw[lfluxarrow] (2,0) -- (3,2);
+		\draw[lfluxarrow] (6,0) -- (5,2);
+		\draw[lfluxarrow] (6,0) -- (7,2);
+		\draw[lfluxarrow] (10,0) -- (9,2);
+		
+		\draw[fluxarrow] (2,1) -- (3,4);
+		\draw[fluxarrow] (2,3) -- (2.7,4);
+		\draw[fluxarrow] (6,2) -- (5,4);
+		\draw[fluxarrow] (6,2) -- (7,4);
+		\draw[fluxarrow] (10,2) -- (9,4);
+		
+		\end{tikzpicture}
+\end{figure}
+\end{minipage}}
+\end{columns}
+\vfill
+\end{frame}
+

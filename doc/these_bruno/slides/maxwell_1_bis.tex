@@ -1,0 +1,47 @@
+\begin{frame}
+\frametitle{Équations de Maxwell}
+\vfill
+\begin{align*}
+	\Ptl{t} \EPrm \E + \ECnd \E - \Rot \H &= 0 ,
+	\tag{Maxwell-Ampère}
+	\\
+	\Ptl{t} \HPrm \H + \HCnd \H + \Rot \E &= 0 ,
+	\tag{Maxwell-Faraday}
+	\\
+	\Div \EPrm \E &= 0 ,
+	\tag{Maxwell-Gauss}
+	\\
+	\Div \HPrm \H &= 0 .
+	\tag{Maxwell-Thomson}
+\end{align*}
+\vfill
+Paramètres :
+\begin{itemize}
+\item[]
+\begin{itemize}
+\item [$\E$] : champ électrique ($\in \Esp$) ;
+\item [$\H$] : champ magnétique ($\in \Esp$) ;
+\item [$\EPrm$] : permittivité électrique ;
+\item [$\HPrm$] : perméabilité magnétique ;
+\item [$\ECnd,\HCnd$] : conductivités électrique et magnétique ;
+\end{itemize}
+\end{itemize}
+\vfill
+\begin{columns}
+\column{0.33\textwidth}
+\begin{align*}
+\Ptl{t} := \frac{\partial}{\partial t} ,
+\end{align*}
+\column{0.34\textwidth}
+\begin{align*}
+\x &= \NodeDef{\x} \in \Esp, \\
+\nabla &= \Trp{(\Ptl{\x_1}, \Ptl{\x_2}, \Ptl{\x_3})} ,
+\end{align*}
+\column{0.33\textwidth}
+\begin{align*}
+\Ptl{i} := \Ptl{\x_i} .
+\end{align*}
+\end{columns}
+\vfill
+\end{frame}
+

@@ -1,0 +1,35 @@
+\begin{frame}
+\frametitle{Problème d'évolution}
+\vfill
+Soit $\PbEsp \in \Esp$ un ouvert et $t \in \PbTps$,
+\begin{align*}
+	\Ptl{t} \At \W + \Aidi \W = 0
+	&\quad \mathrm{sur} \; \PbEspTps = \PbEsp \times \PbTps
+	\tag{Système de Friedrichs} , \\
+	\W (\x, 0) = \Winit (\x)
+	&\quad \mathrm{sur} \; \PbEsp
+	\tag{Condition initiale} , \\
+	 \MatB \W = 0
+	&\quad \mathrm{sur} \; \Bord{\PbEspTps}
+	\tag{Condition limite} .
+\end{align*}
+\vfill
+La matrice $\MatB(\x)$ dépend du type de la condition limite.
+\vfill
+\begin{block}{Théorème (Lax, Phillips, Rauch)}
+	Si en tout point du bord :
+	\begin{align*}
+		\forall \W \in \ker(\MatB), \; (\Aini \W) \cdot \W \ge 0
+		\tag{Unicité}
+	\end{align*}
+	et
+	\begin{align*}
+		\dim(\ker(\MatB)) = 4
+		\tag{Existence} .
+	\end{align*}
+	alors le problème d'évolution \textbf{admet une
+		unique solution}.
+\end{block}
+\vfill
+\end{frame}
+

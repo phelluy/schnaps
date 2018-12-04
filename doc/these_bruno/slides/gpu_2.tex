@@ -1,0 +1,186 @@
+\begin{frame}
+\frametitle{Parallélisation SIMD / Gestion de la mémoire}
+\vfill
+Calcul des intégrales sur les zones homogènes via des programmes OpenCL :
+\begin{itemize}
+\item Stockage uniquement des sommets (réels), des mailles (entiers) et de la connectivité entre les mailles (entiers) ;
+\item \textcolor{green}{Accès groupés aux données stockées en mémoire globale} : nécessaire pour obtenir de bonnes performances ;
+\item \textcolor{red}{Il faut veiller à ne pas avoir d'écritures concurrentes}.
+\end{itemize}
+\vfill
+\begin{figure}
+\centering
+		\tikzstyle{tb}=[
+			matrix of nodes,
+			row sep = -\pgflinewidth,
+			column sep = -\pgflinewidth,
+			nodes = {
+				rectangle,
+				draw = black,
+				align = center,
+				inner sep = 0.1em
+			},
+			text depth = 0.5em,
+			text height = 1em,
+			nodes in empty cells,
+			outer sep = -0.3em
+		]
+		
+		\tikzstyle{bracei}=[
+			decoration={brace, raise = 1.5em}, decorate
+		]
+		
+		\tikzstyle{braceitxt}=[
+			above = 1.7em, midway
+		]
+		
+		\tikzstyle{bracej}=[
+			decoration={brace, raise = 0.1em}, decorate
+		]
+		
+		\tikzstyle{bracejtxt}=[
+			above = 0.3em, midway
+		]
+		
+		\tikzstyle{bracek}=[
+			decoration={brace, raise = 1.3em}, decorate
+		]
+		
+		\tikzstyle{bracektxt}=[
+			right = 3em, midway, rotate = 270, anchor=north
+		]
+		
+		\begin{tikzpicture}
+			% w(iel,ipg,iv)
+			% wi = pg ; wg = elt
+			
+			% Tableaux
+			\def \i {0}
+			\def \k {0}
+			\matrix[tb] (m\i\k) {
+				\tiny $\E_\k^{\i,0}$ \pgfmatrixnextcell
+				\tiny $\E_\k^{\i,1}$ \pgfmatrixnextcell
+				\tiny $\E_\k^{\i,2}$ \pgfmatrixnextcell
+				\tiny $\;\dots$ \\
+			};
+			\def \kpv {0}
+			\def \k {1}
+			\matrix[tb, right = 1em of m\i\kpv] (m\i\k) {
+				\tiny $\E_\k^{\i,0}$ \pgfmatrixnextcell
+				\tiny $\E_\k^{\i,1}$ \pgfmatrixnextcell
+				\tiny $\E_\k^{\i,2}$ \pgfmatrixnextcell
+				\tiny $\;\dots$ \\
+			};
+			\def \kpv {1}
+			\def \k {2}
+			\matrix[tb, right = 1em of m\i\kpv] (m\i\k) {
+				\tiny $\E_\k^{\i,0}$ \pgfmatrixnextcell
+				\tiny $\E_\k^{\i,1}$ \pgfmatrixnextcell
+				\tiny $\E_\k^{\i,2}$ \pgfmatrixnextcell
+				\tiny $\;\dots$ \\
+			};
+			\def \kpv {2}
+			\def \k {3}
+			\matrix[tb, right = 1em of m\i\kpv] (m\i\k) {
+				\tiny $\;\dots$ \\
+			};
+			
+			\def \ipv {0}
+			\def \i {1}
+			\def \k {0}
+			\matrix[tb, below = 1em of m\ipv\k] (m\i\k) {
+				\tiny $\E_\k^{\i,0}$ \pgfmatrixnextcell
+				\tiny $\E_\k^{\i,1}$ \pgfmatrixnextcell
+				\tiny $\E_\k^{\i,2}$ \pgfmatrixnextcell
+				\tiny $\;\dots$ \\
+			};
+			\def \kpv {0}
+			\def \k {1}
+			\matrix[tb, right = 1em of m\i\kpv] (m\i\k) {
+				\tiny $\E_\k^{\i,0}$ \pgfmatrixnextcell
+				\tiny $\E_\k^{\i,1}$ \pgfmatrixnextcell
+				\tiny $\E_\k^{\i,2}$ \pgfmatrixnextcell
+				\tiny $\;\dots$ \\
+			};
+			\def \kpv {1}
+			\def \k {2}
+			\matrix[tb, right = 1em of m\i\kpv] (m\i\k) {
+				\tiny $\E_\k^{\i,0}$ \pgfmatrixnextcell
+				\tiny $\E_\k^{\i,1}$ \pgfmatrixnextcell
+				\tiny $\E_\k^{\i,2}$ \pgfmatrixnextcell
+				\tiny $\;\dots$ \\
+			};
+			\def \kpv {2}
+			\def \k {3}
+			\matrix[tb, right = 1em of m\i\kpv] (m\i\k) {
+				\tiny $\;\dots$ \\
+			};
+			
+			\def \ipv {1}
+			\def \i {2}
+			\def \k {0}
+			\matrix[tb, below = 1em of m\ipv\k] (m\i\k) {
+				\tiny $\E_\k^{\i,0}$ \pgfmatrixnextcell
+				\tiny $\E_\k^{\i,1}$ \pgfmatrixnextcell
+				\tiny $\E_\k^{\i,2}$ \pgfmatrixnextcell
+				\tiny $\;\dots$ \\
+			};
+			\def \kpv {0}
+			\def \k {1}
+			\matrix[tb, right = 1em of m\i\kpv] (m\i\k) {
+				\tiny $\E_\k^{\i,0}$ \pgfmatrixnextcell
+				\tiny $\E_\k^{\i,1}$ \pgfmatrixnextcell
+				\tiny $\E_\k^{\i,2}$ \pgfmatrixnextcell
+				\tiny $\;\dots$ \\
+			};
+			\def \kpv {1}
+			\def \k {2}
+			\matrix[tb, right = 1em of m\i\kpv] (m\i\k) {
+				\tiny $\E_\k^{\i,0}$ \pgfmatrixnextcell
+				\tiny $\E_\k^{\i,1}$ \pgfmatrixnextcell
+				\tiny $\E_\k^{\i,2}$ \pgfmatrixnextcell
+				\tiny $\;\dots$ \\
+			};
+			\def \kpv {2}
+			\def \k {3}
+			\matrix[tb, right = 1em of m\i\kpv] (m\i\k) {
+				\tiny $\;\dots$ \\
+			};
+			
+			% Fleches des lignes
+			\def \is {0,1,2}
+			\foreach \i in \is {
+				\draw[arrows={-latex},thick] (m\i0.east) -- (m\i1.west);
+				\draw[arrows={-latex},thick] (m\i1.east) -- (m\i2.west);
+				\draw[arrows={-latex},thick] (m\i2.east) -- (m\i3.west);
+			}
+			
+			% Fleches entre lignes
+			\draw[arrows={-latex},thick]
+				(m03) to [out=0,in=90]
+				($(m03.south east)+(0.4,0.1)$) to [out=-90,in=0]
+				($(m03.south east)+(0,-0.15)$) to [out=180,in=0]
+				($(m10.north west)+(0,0.15)$) to [out=180,in=90]
+				($(m10.north west)+(-0.4,-0.1)$) to [out=-90,in=180]
+				(m10);
+			
+			\draw[arrows={-latex},thick]
+				(m13) to [out=0,in=90]
+				($(m13.south east)+(0.4,0.1)$) to [out=-90,in=0]
+				($(m13.south east)+(0,-0.15)$) to [out=180,in=0]
+				($(m20.north west)+(0,0.15)$) to [out=180,in=90]
+				($(m20.north west)+(-0.4,-0.1)$) to [out=-90,in=180]
+				(m20);
+
+			% Accolades
+			\draw[bracei] (m00.north west) -- (m03.north east)
+				node[braceitxt]{\small $6$ composantes};
+			\draw[bracej] (m00.north west) -- (m00.north east)
+				node[bracejtxt]{\tiny $\VNPG$ points};
+			\draw[bracek] (m03.north east) -- (m23.south east)
+				node[bracektxt]{\small $\NE$ mailles};
+		\end{tikzpicture}
+\end{figure}
+\vfill
+\end{frame}
+

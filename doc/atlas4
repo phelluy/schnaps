@@ -1,0 +1,27 @@
+Demander l'accès à atlas 4 pendant 12h
+---> salloc -t 12:00:00 -p K80
+
+Se connecter à atlas4
+---> ssh irma-atlas4
+
+Visualiser l'activité des GPU (comme htop)
+---> watch -n 1 nvidia-smi
+bash
+module load tools/CMake/3.5.2
+rm CMakeCache.txt
+cmake ..
+make -j8
+cd ../geo
+gmsh grid.geo -3
+module av
+module load science/gmsh/2.13.1_patched
+module load libs/slepc/3.7.2_gcc610_ompi200
+gmsh grid.geo -3
+cd ../build/
+./example/testorszagtang_spu
+vi ../example/testorszagtang_spu.c  
+ 46  putenv("STARPU_NOPENCL=1");
+ 47   putenv("STARPU_NCPU=8");
+ 115 starpu_c_use = false; // ou true
+
+ ~/StarPU/bin/starpu_fxt_tool -i prof_file_*

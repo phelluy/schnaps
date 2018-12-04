@@ -1,0 +1,73 @@
+\begin{frame}
+\frametitle{Simplifications / Terme de flux (faces) conforme}
+%\vfill
+\vskip-1em
+\begin{columns}%[c]
+\column{.25\textwidth}
+\begin{align*}
+\QuadPhy_f \subset \Adh{\L},
+\end{align*}
+\column{.25\textwidth}
+\begin{align*}
+\QuadPhy_{f'} \subset \Adh{\R},
+\end{align*}
+\column{.25\textwidth}
+\begin{align*}
+\QuadPhy_f = \QuadPhy_{f'},
+\end{align*}
+\column{.25\textwidth}
+\begin{align*}
+\Deg_\L = \Deg_\R = \Deg,
+\end{align*}
+\end{columns}
+\vskip+0.5em
+Il existe une permutation d'indices qui fait correspondre les points de face :
+\vskip-2em
+\begin{align*}
+	\sigma : \EnsN \rightarrow \EnsN :
+	\GLNPhy{\L}{f,i} = \GLNPhy{\R}{f',\sigma(i)} , \
+	\TGeo{\L}(\GLN{f,i}) = \TGeo{\R}(\GLN{f',\sigma(i)}) ,
+\end{align*}
+\vfill
+Pour une fonction de base $\PsiPhy{\L}{i}$ fixée :
+\scalebox{0.7}{\begin{minipage}{1.42\textwidth}
+\begin{align*}
+	&\int_{\QuadPhy_f} \Flux{\W_\L}{\W_\R}{\n} \PsiPhy{\L}{i} ds \\
+	&= \int_{\QuadRef_f}
+		\Flux{\W_\L \circ \TGeo{\L}}{\W_\R \circ \TGeo{\L}}{
+			\Com{\TGeo{\L}'} \hat{\n}}
+		\PsiPhy{\L}{i} \circ \TGeo{\L} d\hat{s}
+		\tag{Chgt. var.} \\
+	&\approx \int_{\QuadRef_f}
+		\Flux{\sum_{k}
+		\W_{\L,k} \PsiRef{k}}{\sum_{k}
+		\W_{\R,k} \PsiRef{k} \circ \Inv{\TGeo{\R}} \circ \TGeo{\L}}{
+			\Com{\TGeo{\L}'} \hat{\n}}
+		\PsiRef{i} d\hat{s}
+		\tag{Base} \\
+	&\approx \sum_{j} \GLW{f,j}
+		\Flux{\sum_{k}
+		\W_{\L,k} \PsiRef{k}(\GLN{f,j})}{\sum_{k}
+		\W_{\R,k} \PsiRef{k}(\GLN{f',\sigma(j)})}{
+			\Com{\TGeo{\L}'} \hat{\n}}
+		\PsiRef{i}(\GLN{f,j})
+		\tag{Quadrature} \\
+	&= \GLW{f,\pi(f,i)}
+		\Flux{\sum_{k}
+		\W_{\L,k} \PsiRef{k}(\GLN{f,\pi(f,i)})}{\sum_{k}
+		\W_{\R,k} \PsiRef{k}(\GLN{f',\sigma(\pi(f,i))})}{
+			\Com{\TGeo{\L}'} \hat{\n}}
+		\PsiRef{i}(\GLN{f,\pi(f,i)})
+		\tag{Termes nuls}
+\end{align*}
+\end{minipage}}
+\vfill
+\vfill
+\begin{itemize}
+\item Flux : extrapolation des champs sur les points de face ;
+\item Application des flux issus uniquement des projetés orthogonaux ;
+\item Des simplifications apparaissent à l'extrapolation des champs sur la face.
+\end{itemize}
+\vfill
+\end{frame}
+

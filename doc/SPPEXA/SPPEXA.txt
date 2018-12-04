@@ -1,0 +1,260 @@
+Sujet : SPPEXA Proceedings: Your manuscript
+Date : Tue, 2 Feb 2016 12:53:35 +0100
+De : Philipp Neumann <neumanph@in.tum.de>
+Pour : helluy@math.unistra.fr <helluy@math.unistra.fr>
+
+Dear Prof. Helluy,
+I'd like to inform you that your manuscript "Asynchronous OpenCL/MPI
+numerical simulations of conservation laws" is to be accepted for
+publication in the SPPEXA Symposium proceedings right after the comments
+of the reviewers have been taken into account and have been sufficiently
+addressed in the revised version of the manuscript (minor revision);
+this holds in particular for the comments that suggest to shift the
+focus of discussion towards the DG (and away from the FV) solver.
+
+Please take the feedback of the reviewers (review.txt) into
+consideration and -- if not already done so -- use the Springer
+templates when preparing the final version. Please further highlight any
+changes in the manuscript clearly.
+To accelerate the publication process, we further attached some comments
+on Springer formatting that you may take into account.
+
+Please send me the final version of the manuscript including all
+tex-sources, plots and other graphics until Feb 29 2016; also include
+brief answers to the reviewer's comments in the submission.
+
+Best regards,
+Philipp Neumann
+
+
+From formatting.txt:
+1. Page 1, university and name style: please use
+
+\institute{Name of Author \at Name, Address of Institute,
+\email{name@email.address}
+
+as pointed out in the author instructions.
+
+2. Please remove "Chapter 1" at the beginning.
+3. All words in heading should be capitalized.
+4. Page 18: graphics are too big
+5. Not all formulas are numbered; please use the equation-environment.
+6. End punctuation to the first formula on page 11 is missing.
+7. Please use \vec{...} for vector variables.
+8. Table captions should be placed before the table
+9. According to author instructions, captions should not have end punctuations
+10. Page 7, “These more advanced features are exploited in Section 3”
+should be changed to “..... Sect.3”
+11. Page 21, “ … FV method described in Section 2.” should be changed
+to “... Sect.2”
+12. Word “Figure” should be shorted to Fig.  in the text
+
+
+From review.txt:
+
+Reviewer 1:
+********************************************************************
+1 Major contribution/novelty of this article (2-3 Sentences)
+********************************************************************
+
+This paper is on evaluating the parallelization models OpenCL/MPI with
+well-known FV/DG solvers on hybrid architectures.
+
+I see 4 main contributions of the presented work:
+
+1) The authors present a method to optimize
+   dimensional-splitting-based implementations by using transpose
+   operations to improve coalesced memory access.
+
+2) The main contribution is in the DG part of this work: They present
+   a DAG formulation of the different computation steps of the DG
+   solver.  This formulation can indeed have wider impact in
+   task-based parallelization models for Exascale computing.
+
+3) Benefits of their approach compared to a straight-forward blocking
+   MPI send/recv was presented.
+
+4) The applicability to a realistic scenario was presented in the end.
+
+
+
+********************************************************************
+2 Does the manuscript contain aspects of a review article?
+********************************************************************
+
+The authors review FV/DG methods based on Riemann solvers.  They put
+their focus on the Lax-Friedrichs solver.
+
+A section summarizing related work and how this work differs to the
+existing work would have been helpful to see the novelty of this work.
+
+
+********************************************************************
+3 General remarks/corrections to improve the quality of the article 
+********************************************************************
+
+I'm generally writing rather more remarks than only a few.
+Please see these remarks as suggestions rather than criticism.
+
+* The writing style sounds more like a report on a project rather than
+  a scientific publication.
+
+The introduction (1.1) itself is very well readable and required to
+understand the next sections.
+If this is published as part of proceedings, I recommend cutting down
+several well-known parts (e.g. OpenCL introduction, DG Gauss points)
+by using appropriate references.
+
+* I'd recommend using \vec{} for vectors and commas to separate vector
+  elements (x_1, ..., x_n) which would improve readability.
+
+* The meaning of \vec{n} is unclear. Is this a space coordinate or the
+  normal vector? n is used later on for the normal on the flux
+  interface.
+
+* sum-on-repeated-indices is known as the Einstein notation
+
+* "They are easy to program on a standard parallel computer thanks to
+  subdomain decomposition."
+ 
+From my point of view they are easy to parallelize since the
+stencils only access directly adjacent cells.  This is a huge drawback
+of higher-order FV methods in particular on unstructured meshes.
+
+"However, on new hybrid architectures, the efficient implementation of
+those methods is more complex."
+
+Efficiency is a very generic term. Providing more details on this
+would be helpful to understand this issue.
+
+* Flux-based FV has similar communication patterns compared to DG
+  formulation.  What is the difference/challenge to have a unified
+  parallelization system for both formulations?  After reading the
+  paper to the end, I had the impression that the FV part is obsolete.
+
+* References: -> 1.2.1 The used flux is called Lax-Friedrich, see e.g. [A]
+
+* Strang splitting in x1/x2 direction is (in my area) more commonly
+  known as dimensional splitting, see [A] (Sec. 19.5)
+
+* Discussion of higher-order time stepping method is missing.
+  This is typically required for higher-order space discretization.
+  Otherwise the errors in time can dominate the solution.
+
+* The section describing the speedup of 116 is rather straightforward
+  and well known.  Therefore, I suggest to shorten this section into
+  "As a runtime baseline we used results computed with '-O3' gcc
+  flags, cache blocking and OpenMP parallelization" without mentioning
+  this speedup.
+
+* two-CPU SMP -> Details of this architecture are missing (Intel?
+  Which generation? How many cores per CPU? AVX?)  Introducing all
+  architectures used in the system e.g. in the introduction can be
+  very beneficial.
+
+* "This animation uses the possibility to share GPU buffers between
+  OpenGL and OpenCL drivers (OpenGL/OpenCL interops).  We have also
+  performed magneto-hydro-dynamics (MHD) simulation on very fine grids
+  in [11]."
+  Both sentences seem to be obsolete since they don't contribute to
+  this paper.
+
+* OpenMP also supports SIMD annotations. Was this used for the OpenMP
+  implementation? Only then a comparison to OpenCL is reasonable.
+
+* 1.2) I would have been interested in speedup results depending on
+  the problem size.
+
+* "thanks to" -> "by"
+
+* 1.3.1.1: Can this entire section be cut down by referencing to [8]
+  and stating that Gauss quadrature points are used for quadrature and
+  nodal representation on volumes and faces?
+
+* "..., The DG method presents many advantages:" T -> t, The DG Method
+  also has well-known disadvantages and one should not only mention
+  advantages.
+
+* Fig. 1.7: A sideways figure would make this more readable.
+
+* Roofline model: I recommend to use streaming benchmarks as a
+  baseline for the available bandwidth.
+
+* Fig. 1.9: "We have counted..." How was this counted? Providing more
+  details on this issue would be highly beneficial.  In general, more
+  details in the results section would help to improve the
+  contribution of this work.
+
+* "coalescent" should be probably "coalesced"
+
+* The result section compares synchronous with asynchronous
+  implementation and many pages are dedicated to the asynchronous
+  implementation.  I'm missing an implementation with a non-blocking
+  isend/irecv which is state-of-the-art since decades. This would
+  allow a fair comparison of the novelty of the presented
+  async. approach.
+
+* Results on realistic scenario: Here, performance results
+  (e.g. regular resolved domain vs. real application) would have been
+  interesting as well, since the focus of this paper is on HPC.
+
+[A] "Finite Volume Methods for Hyperbolic Problems, LeVeque"
+
+
+================================================================
+================================================================
+================================================================
+
+Reviewer 2:
+
+1 Major contribution/novelty of this article (2-3 Sentences)
+
+The article discusses essentially two different codes, namely a finite
+volume scheme, and a Discontinous Galerkin approach. The first one is
+quite OK, but has been published before by the authors. The second one
+is new. I like the idea of providing a general framework for general
+conservation laws. From a GPU Computing perspective, novelty is
+marginal.
+
+
+2 Does the manuscript contain aspects of a review article?
+
+The first half of the paper is a recollection of previously published
+work. The second part is new.
+
+
+3 General remarks/corrections to improve the quality of the article
+
+The authors must not write the entire paper using the itemize
+environment. This makes the paper look like an informal report. Also,
+I think that the paper has the wrong focus. My suggestion is to
+rewrite it as follows: a) remove the first half, b) add more
+information on how the CLAC framework actually works, and how the
+reader can benefit from it, c) add some actual GPU-specific content
+instead of just prose describing the ideas.
+
+Some detailed comments: Figures 1.7 and 1.8 are much too small. I
+cannot read them. The "numerical results" at the end are not numerical
+results, but just a colourful picture. Is the result correct? Which
+speedup factors have been obtained? Also, why is single precision
+sufficient throughout the paper?
+
+
+================================================================
+================================================================
+================================================================
+
+Reviewer 3:
+
+The authors of the paper implemented a hybrid OpenCL/MPI DG solver
+with asynchronous communication between GPU/CPU and CPU/CPU. The
+patched-based task scheduler has potential of further optimizations,
+such as clustered local time-stepping. Besides, the equation that is
+solved can be exchanged easily.
+
+Section 1.2 describes finite volume solver with standard
+optimizations. These optimizations are necessary to achieve acceptable
+performance and do not have any novelty.
+I suggest to only focus on the DG solver in the paper and show
+scalability beyond 8 GPUs. There is also comparison (in terms of
+features, usability and performance) to existing codes missing.
