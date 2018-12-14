@@ -77,8 +77,8 @@ int TestLaura_SPU(int argc, char *argv[]) {
   printf("\n\n---------------------------------------------------------\n");
   printf("2/ Building connectivity \n");
   BuildConnectivity(&mesh);
-  int thedeg = 3;
-  int theraf = 4;
+  int thedeg = 4;
+  int theraf = 5;
   int deg[] = {thedeg, thedeg, thedeg};
   int raf[] = {theraf, theraf, theraf};
 
@@ -171,6 +171,7 @@ int TestLaura_SPU(int argc, char *argv[]) {
     assert(ret != -ENODEV) ;
     starpu_is_init = true;
   }
+  init_global_arbiter();
 
   
   // Workers
@@ -214,6 +215,7 @@ int TestLaura_SPU(int argc, char *argv[]) {
 
   //PlotFields(0, false, &simu, NULL, "fin_dgvisu.msh");
 
+  destroy_global_arbiter();
   starpu_shutdown(); /* Necessary to ensure perfmodels are written to disk */
 
   return test;

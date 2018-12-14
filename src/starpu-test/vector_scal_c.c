@@ -61,6 +61,7 @@ int compute_(int *F_NX, float *vector)
 	if (ret == -ENODEV) return 77;
 	STARPU_CHECK_RETURN_VALUE(ret, "starpu_init");
 
+    init_global_arbiter();
 	/* Tell StaPU to associate the "vector" vector with the "vector_handle"
 	 * identifier. When a task needs to access a piece of data, it should
 	 * refer to the handle that is associated to it.
@@ -76,6 +77,8 @@ int compute_(int *F_NX, float *vector)
 	 */
 	starpu_data_handle_t vector_handle;
 	starpu_vector_data_register(&vector_handle, 0, (uintptr_t)vector, NX, sizeof(vector[0]));
+    register_data_arbiter(vector_handle);
+	
 
 	float factor = 3.14;
 
@@ -102,6 +105,8 @@ int compute_(int *F_NX, float *vector)
 	/* StarPU does not need to manipulate the array anymore so we can stop
  	 * monitoring it */
 	starpu_data_unregister(vector_handle);
+
+    destroy_global_arbiter();
 
 	/* terminate StarPU, no task can be submitted after */
 	starpu_shutdown();

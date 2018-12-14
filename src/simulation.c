@@ -265,6 +265,7 @@ void InitSimulation(Simulation *simu, MacroMesh *mesh,
   /*   printf("StarPU registration...\n"); */
   /*   int ret; */
   /*   ret = starpu_init(NULL); */
+  /*   init_global_arbiter(); */
   /*   assert(ret != -ENODEV) ; */
   /*   starpu_is_init = true; */
 

@@ -15,6 +15,7 @@ void RegisterInterface_SPU(Interface* inter){
   if (!starpu_is_init && starpu_use){
     assert(starpu_init(NULL) != -ENODEV);
     starpu_is_init = true;
+    init_global_arbiter();
   }
 
   if (starpu_use && !inter->starpu_registered) {
@@ -24,6 +25,7 @@ void RegisterInterface_SPU(Interface* inter){
         			(uintptr_t)(inter->vol_indexL), // vector location
         			inter->npgL,  // size
         			sizeof(int));  // type
+	register_data_arbiter(inter->vol_indexL_handle);
     
     if (inter->vol_indexR != NULL) {
       starpu_vector_data_register(&(inter->vol_indexR_handle), // mem handle
@@ -31,6 +33,7 @@ void RegisterInterface_SPU(Interface* inter){
         			  (uintptr_t)(inter->vol_indexR), // vector location
         			  inter->npgR,  // size
         			  sizeof(int));  // type
+	register_data_arbiter(inter->vol_indexR_handle);
     }
 
     starpu_vector_data_register(&(inter->wL_handle), // mem handle
@@ -38,6 +41,7 @@ void RegisterInterface_SPU(Interface* inter){
         			(uintptr_t)(inter->wL), // vector location
         			inter->wsizeL,  // size
     				sizeof(schnaps_real));  // type
+	register_data_arbiter(inter->wL_handle);
 
     if (inter->wR != NULL) {
       starpu_vector_data_register(&(inter->wR_handle), // mem handle
@@ -45,6 +49,7 @@ void RegisterInterface_SPU(Interface* inter){
         			  (uintptr_t)(inter->wR), // vector location
         			  inter->wsizeR,  // size
         			  sizeof(schnaps_real));  // type
+	register_data_arbiter(inter->wR_handle);
     }
 
     starpu_vector_data_register(&(inter->vnds_handle), // mem handle
@@ -52,18 +57,21 @@ void RegisterInterface_SPU(Interface* inter){
         			(uintptr_t)(inter->vnds), // vector location
         			inter->npgL * 3,  // size  !!!!!!!!!!! same for left and right ????
         			sizeof(schnaps_real));  // type
+	register_data_arbiter(inter->vnds_handle);
 
     starpu_vector_data_register(&(inter->xpg_handle), // mem handle
         			0, // location: CPU
         			(uintptr_t)(inter->xpg), // vector location
         			inter->npgL * 3,  // size  !!!!!!!!!!! same for left and right ????
         			sizeof(schnaps_real));  // type
+	register_data_arbiter(inter->xpg_handle);
 
     starpu_vector_data_register(&(inter->wpg_handle), // mem handle
         			0, // location: CPU
         			(uintptr_t)(inter->wpg), // vector location
         			inter->npgL,  // size  !!!!!!!!!!! same for left and right ????
         			sizeof(schnaps_real));  // type
+	register_data_arbiter(inter->wpg_handle);
 
     inter->starpu_registered = true;
   }

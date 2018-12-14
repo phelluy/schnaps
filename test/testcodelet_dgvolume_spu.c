@@ -97,6 +97,7 @@ int TestCodelet_DGVolume_SPU() {
   assert(test);
   test &= (starpu_init(&conf) != -ENODEV);
   assert(test);
+  init_global_arbiter();
 
   // Interesting environment variables
   printf("Environment variables...\n");
@@ -253,6 +254,7 @@ int TestCodelet_DGVolume_SPU() {
     STARPU_CHECK_RETURN_VALUE(ret, "starpu_opencl_unload_opencl");
   }
 
+  destroy_global_arbiter();
   starpu_shutdown();
 
   free(buffer);

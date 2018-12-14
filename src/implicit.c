@@ -335,7 +335,7 @@ void LocalThetaTimeScheme_SPU(Simulation *simu, schnaps_real tmax, schnaps_real 
     UnRegisterSkyline_SPU(sky_spu);
   }
 
-
+  destroy_global_arbiter();
   starpu_shutdown();
 
 
@@ -480,6 +480,7 @@ void GraphThetaTimeScheme_SPU(Simulation *simu, schnaps_real tmax, schnaps_real 
   }
 
 
+  destroy_global_arbiter();
   starpu_shutdown();
 
 
@@ -592,6 +593,7 @@ void GraphThetaTimeSchemeSubCell_SPU(Simulation *simu, schnaps_real tmax, schnap
   printf("Elapsed time=%f\n", (double) (time(NULL) -start));
 
 
+  //destroy_global_arbiter();
   //starpu_shutdown();
 
 
@@ -2135,6 +2137,7 @@ void SourceLocalAssembly_SPU(field *f, schnaps_real theta, schnaps_real dt){
   /* 				(uintptr_t)(f->solver->rhs), // vector location */
   /* 				f->wsize,  // size */
   /* 				sizeof(real));  // type */
+  /* register_data_arbiter(f->rhs_handle); */
   /*   printf("end register...\n"); */
   /* } */
 

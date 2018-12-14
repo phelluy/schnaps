@@ -3081,6 +3081,7 @@ void SmartPrefetch_SPU(Simulation *simu){
     ret = starpu_init(NULL);
     assert(ret != -ENODEV) ;
     starpu_is_init = true;
+    init_global_arbiter();
   }
 
   for(int ie = 0; ie < simu->macromesh.nbelems; ie++) {
@@ -3091,18 +3092,21 @@ void SmartPrefetch_SPU(Simulation *simu){
 				  (uintptr_t)(simu->fd[ie].wn), // vector location
 				  simu->fd[ie].wsize,  // size
 				  sizeof(schnaps_real));  // type
+	register_data_arbiter(simu->fd[ie].wn_handle);
       
       starpu_vector_data_register(&(simu->fd[ie].dtwn_handle), // mem handle
 				  0, // location: CPU
 				  (uintptr_t)(simu->fd[ie].dtwn), // vector location
 				  simu->fd[ie].wsize,  // size
 				  sizeof(schnaps_real));  // type
+	register_data_arbiter(simu->fd[ie].dtwn_handle);
 
       starpu_vector_data_register(&(simu->fd[ie].res_handle), // mem handle
 				  0, // location: CPU
 				  (uintptr_t)(simu->fd[ie].res), // vector location
 				  simu->fd[ie].wsize,  // size
 				  sizeof(schnaps_real));  // type
+	register_data_arbiter(simu->fd[ie].res_handle);
             
     
       simu->fd[ie].starpu_registered = true;
@@ -3134,6 +3138,7 @@ void SmartPrefetch_SPU(Simulation *simu){
 				  (uintptr_t)(simu->interface[ifa].vol_indexL), // vector location
 				  simu->interface[ifa].npgL,  // size
 				  sizeof(int));  // type
+	register_data_arbiter(simu->interface[ifa].vol_indexL_handle);
       
       if (simu->interface[ifa].vol_indexR != NULL) {
 	starpu_vector_data_register(&(simu->interface[ifa].vol_indexR_handle), // mem handle
@@ -3141,6 +3146,7 @@ void SmartPrefetch_SPU(Simulation *simu){
 				    (uintptr_t)(simu->interface[ifa].vol_indexR), // vector location
 				    simu->interface[ifa].npgR,  // size
 				    sizeof(int));  // type
+	register_data_arbiter(simu->interface[ifa].vol_indexR_handle);
       
       }
       
@@ -3149,6 +3155,7 @@ void SmartPrefetch_SPU(Simulation *simu){
 				  (uintptr_t)(simu->interface[ifa].wL), // vector location
 				  simu->interface[ifa].wsizeL,  // size
 				  sizeof(schnaps_real));  // type
+	register_data_arbiter(simu->interface[ifa].wL_handle);
       
       if (simu->interface[ifa].wR != NULL) {
 	starpu_vector_data_register(&(simu->interface[ifa].wR_handle), // mem handle
@@ -3156,6 +3163,7 @@ void SmartPrefetch_SPU(Simulation *simu){
 				    (uintptr_t)(simu->interface[ifa].wR), // vector location
 				    simu->interface[ifa].wsizeR,  // size
 				    sizeof(schnaps_real));  // type
+	register_data_arbiter(simu->interface[ifa].wR_handle);
       
       }
       
@@ -3164,18 +3172,21 @@ void SmartPrefetch_SPU(Simulation *simu){
 				  (uintptr_t)(simu->interface[ifa].vnds), // vector location
 				  simu->interface[ifa].npgL * 3,  // size
 				  sizeof(schnaps_real));  // type
+	register_data_arbiter(simu->interface[ifa].vnds_handle);
       
       starpu_vector_data_register(&(simu->interface[ifa].xpg_handle), // mem handle
 				  0, // location: CPU
 				  (uintptr_t)(simu->interface[ifa].xpg), // vector location
 				  simu->interface[ifa].npgL * 3,  // size
 				  sizeof(schnaps_real));  // type
+	register_data_arbiter(simu->interface[ifa].xpg_handle);
       
       starpu_vector_data_register(&(simu->interface[ifa].wpg_handle), // mem handle
 				  0, // location: CPU
 				  (uintptr_t)(simu->interface[ifa].wpg), // vector location
 				  simu->interface[ifa].npgL,  // size
 				  sizeof(schnaps_real));  // type
+	register_data_arbiter(simu->interface[ifa].wpg_handle);
       
       
       

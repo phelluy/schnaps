@@ -163,6 +163,7 @@ int TestRiemann3D_SPU(int argc, char *argv[]) {
   //show_cl_timing(&simu);
   PlotFields(0, false, &simu, NULL, "dgvisu.msh");
 
+  destroy_global_arbiter();
   starpu_shutdown(); /* Necessary to ensure perfmodels are written to disk */
   
   return test;

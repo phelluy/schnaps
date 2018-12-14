@@ -187,6 +187,7 @@ int test_sn_spec_gaussian_cube_spu(void){
     schnaps_real rec_rho=0;
     schnaps_real rcp[1];
     printf("rcp = %f\n",rcp[0]);
+    destroy_global_arbiter();
     starpu_shutdown();
     return test;
 

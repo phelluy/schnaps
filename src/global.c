@@ -150,3 +150,33 @@ void InitLatticeBoltzmannSimData(LatticeBoltzmannSimData *lsd){
   lsd->lb_model=NULL;
   
 };
+
+#if defined(_WITH_STARPU)
+
+#if defined(STARPU_SUPPORT_ARBITER)
+static starpu_arbiter_t arbiterGlobal;
+#endif // defined(STARPU_SUPPORT_ARBITER)
+static int arbiterGlobalIsInit = 0;
+
+void init_global_arbiter(){
+    assert(arbiterGlobalIsInit == 0);
+#if defined(STARPU_SUPPORT_ARBITER)
+    arbiterGlobal = starpu_arbiter_create();
+#endif // defined(STARPU_SUPPORT_ARBITER)
+    arbiterGlobalIsInit = 1;
+}
+void register_data_arbiter(starpu_data_handle_t handle){
+    assert(arbiterGlobalIsInit != 0);
+#if defined(STARPU_SUPPORT_ARBITER)
+    starpu_data_assign_arbiter(handle, arbiterGlobal);
+#endif // defined(STARPU_SUPPORT_ARBITER)
+}
+void destroy_global_arbiter(){
+    assert(arbiterGlobalIsInit != 0);
+#if defined(STARPU_SUPPORT_ARBITER)
+    starpu_arbiter_destroy(arbiterGlobal);
+#endif // defined(STARPU_SUPPORT_ARBITER)
+    arbiterGlobalIsInit = 0;
+}
+#endif // defined(_WITH_STARPU)
+

@@ -113,6 +113,7 @@ int test_sn_transport(){
     // char xdmf_data_filename[xdmf_filename_size];
     // sprintf(xdmf_data_filename,xdmf_filename_fmt,simu.iter_time_rk);
     // schnaps_simulation_xdmf_plot_fields_xml_structured_glops(&simu, xdmf_data_filename);
+    destroy_global_arbiter();
     starpu_shutdown(); 
     
 

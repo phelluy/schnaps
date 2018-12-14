@@ -362,6 +362,7 @@ void Registerfield_SPU(field *f){
     ret = starpu_init(NULL);
     assert(ret != -ENODEV) ;
     starpu_is_init = true;
+    init_global_arbiter();
   }
 
   if (starpu_use && !f->starpu_registered){
@@ -372,6 +373,7 @@ void Registerfield_SPU(field *f){
 				(uintptr_t)(f->wn), // vector location
 				f->wsize,  // size
 				sizeof(schnaps_real));  // type
+	register_data_arbiter(f->wn_handle);
 
     
     starpu_vector_data_register(&(f->dtwn_handle), // mem handle
@@ -379,12 +381,14 @@ void Registerfield_SPU(field *f){
 				(uintptr_t)(f->dtwn), // vector location
 				f->wsize,  // size
 				sizeof(schnaps_real));  // type
+	register_data_arbiter(f->dtwn_handle);
 
     starpu_vector_data_register(&(f->res_handle), // mem handle
 				0, // location: CPU
 				(uintptr_t)(f->res), // vector location
 				f->wsize,  // size
 				sizeof(schnaps_real));  // type
+	register_data_arbiter(f->res_handle);
     f->starpu_registered = true;
   }
     
@@ -412,6 +416,7 @@ void Initfield_SPU(field *f){
     ret = starpu_init(NULL);
     assert(ret != -ENODEV) ;
     starpu_is_init = true;
+    init_global_arbiter();
   }
 
   /* if (starpu_use){ */
@@ -421,6 +426,7 @@ void Initfield_SPU(field *f){
   /* 				(uintptr_t)(f->wn), // vector location */
   /* 				f->wsize,  // size */
   /* 				sizeof(real));  // type */
+  /* register_data_arbiter(f->wn_handle); */
 
   /*   for(int ii=0; ii < f->wsize; ii++) f->res[ii] = 0; */
 
@@ -430,6 +436,7 @@ void Initfield_SPU(field *f){
   /* 				(uintptr_t)(f->res), // vector location */
   /* 				f->wsize,  // size */
   /* 				sizeof(real));  // type */
+  /*	register_data_arbiter(f->res_handle); */
   /*   assert(f->res != NULL); */
   /*   assert(f->res == f->dtwn); */
   /* } */

@@ -5,6 +5,16 @@
 #include <stdbool.h>
 #ifdef _WITH_STARPU
 #include <starpu.h>
+
+#if (STARPU_MAJOR_VERSION >= 1) && (STARPU_MINOR_VERSION >= 2)
+#define STARPU_SUPPORT_ARBITER
+#else
+#warning StarPU Arbiter is not supported
+#endif
+void init_global_arbiter();
+void register_data_arbiter(starpu_data_handle_t handle);
+void destroy_global_arbiter();
+
 #endif //_WITH_STARPU
 
 #ifndef _OPENMP

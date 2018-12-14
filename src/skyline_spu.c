@@ -24,6 +24,7 @@ void InitSkyline_SPU(Skyline_SPU* sky, int n){
     int ret = starpu_init(NULL);
     assert(ret != -ENODEV) ;
     starpu_is_init = true;
+    init_global_arbiter();
   }
 
   sky->is_alloc=false;
@@ -250,32 +251,43 @@ void RegisterSkyline_SPU(Skyline_SPU* sky){
 				(uintptr_t)(sky->rhs), // vector location
 				sky->neq,  // size
 				sizeof(schnaps_real));  // type
+	register_data_arbiter(sky->rhs_handle);
 
     starpu_vector_data_register(&(sky->sol_handle), // mem handle
 				0, // location: CPU
 				(uintptr_t)(sky->sol), // vector location
 				sky->neq,  // size
 				sizeof(schnaps_real));  // type
+	register_data_arbiter(sky->sol_handle);
+	
     starpu_vector_data_register(&(sky->vkgs_handle), // mem handle
 				0, // location: CPU
 				(uintptr_t)(sky->vkgs), // vector location
 				sky->nmem,  // size
 				sizeof(schnaps_real));  // type
+	register_data_arbiter(sky->vkgs_handle);
+	
     starpu_vector_data_register(&(sky->vkgd_handle), // mem handle
 				0, // location: CPU
 				(uintptr_t)(sky->vkgd), // vector location
 				sky->neq,  // size
 				sizeof(schnaps_real));  // type
+	register_data_arbiter(sky->vkgd_handle);
+	
     starpu_vector_data_register(&(sky->vkgi_handle), // mem handle
 				0, // location: CPU
 				(uintptr_t)(sky->vkgi), // vector location
 				sky->nmem,  // size
 				sizeof(schnaps_real));  // type
+	register_data_arbiter(sky->vkgi_handle);
+	
     starpu_vector_data_register(&(sky->kld_handle), // mem handle
 				0, // location: CPU
 				(uintptr_t)(sky->kld), // vector location
 				sky->neq + 1,  // size
 				sizeof(int));  // type
+	register_data_arbiter(sky->kld_handle);
+	
     sky->is_registered = true;
   
   }

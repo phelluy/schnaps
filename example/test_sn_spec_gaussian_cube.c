@@ -743,6 +743,7 @@ int test_sn_spec_gaussian_cube_spu(void){
   // printf("erreur L2=%f\n", dd);
   // PlotFields(50, false, &simu, NULL, "dgvisu.msh");
    /* Necessary to ensure perfmodels are written to disk */
+  destroy_global_arbiter();
   starpu_shutdown();
   return test;
   

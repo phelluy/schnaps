@@ -117,6 +117,7 @@ int main(int argc, char **argv)
 	/* Initialize StarPU with default configuration */
 	int ret = starpu_init(NULL);
 	if (ret == -ENODEV) goto enodev;
+    init_global_arbiter();
 
 	FPRINTF(stderr, "[BEFORE] 1-th element    : %3.2f\n", vector[1]);
 	FPRINTF(stderr, "[BEFORE] (NX-1)th element: %3.2f\n", vector[NX-1]);
@@ -127,6 +128,7 @@ int main(int argc, char **argv)
 	STARPU_CHECK_RETURN_VALUE(ret, "starpu_opencl_load_opencl_from_file");
 	
 #endif
+
 
 	/* Tell StarPU to associate the "vector" vector with the "vector_handle"
 	 * identifier. When a task needs to access a piece of data, it should
@@ -143,6 +145,7 @@ int main(int argc, char **argv)
 	 */
 	starpu_data_handle_t vector_handle;
 	starpu_vector_data_register(&vector_handle, 0, (uintptr_t)vector, NX, sizeof(vector[0]));
+    register_data_arbiter(vector_handle);
 
 	float factor = 3.14;
 
@@ -174,6 +177,8 @@ int main(int argc, char **argv)
         ret = starpu_opencl_unload_opencl(&opencl_program);
         STARPU_CHECK_RETURN_VALUE(ret, "starpu_opencl_unload_opencl");
 #endif
+
+    destroy_global_arbiter();
 
 	/* terminate StarPU, no task can be submitted after */
 	starpu_shutdown();
