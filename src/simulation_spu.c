@@ -3046,10 +3046,10 @@ void RK2_SPU(Simulation *simu, schnaps_real tmax){
     iter++;
     simu->iter_time_rk = iter;
 
-    starpu_task_wait_for_all() ;
+    //starpu_task_wait_for_all() ;
 
   }
-
+starpu_task_wait_for_all() ;
   printf("t=%f iter=%d/%d dt=%f\n", simu->tnow, iter, simu->itermax_rk, dt);
 
 
