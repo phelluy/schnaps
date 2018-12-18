@@ -113,6 +113,11 @@ IF(USE_STARPU)
       MESSAGE(STATUS "StarPU not found ----------")
     ENDIF(STARPU_FOUND)
   ENDIF(STARPU_INCDIR)
+  
+  OPTION(USE_LAHETEROPRIO "Activate LAHeteroprio" OFF)
+  if(USE_LAHETEROPRIO)
+    add_definitions("-DUSE_LAHETEROPRIO")
+  endif()
 ENDIF(USE_STARPU)
 # .......................................................
 
