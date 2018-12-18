@@ -47,6 +47,7 @@ void ZeroBuffer_SPU(starpu_data_handle_t handle) {
   task->cl_arg = NULL;
   task->cl_arg_size = 0;
   task->handles[0] = handle;
+  task->priority = ZeroBuffer_SPU_PRIO;
 
   STARPU_CHECK_RETURN_VALUE(
 			    starpu_task_submit(task),
@@ -180,6 +181,7 @@ void AddBuffer_SPU(schnaps_real alpha,
   task->cl_arg_size = arg_size;
   task->handles[0] = handle_in;
   task->handles[1] = handle_out;
+  task->priority = AddBuffer_SPU_PRIO;
 
   STARPU_CHECK_RETURN_VALUE(
 			    starpu_task_submit(task),
@@ -479,6 +481,8 @@ void DGSubCellInterface_SPU(field *f) {
   task->cl_arg_size = arg_size;
   task->handles[0] = f->wn_handle;
   task->handles[1] = f->res_handle;
+
+  task->priority = DGSubCellInterface_SPU_PRIO;
 
   STARPU_CHECK_RETURN_VALUE(
 			    starpu_task_submit(task),
@@ -933,6 +937,8 @@ void DGVolume_SPU(field* f) {
   task->cl_arg_size = arg_size;
   task->handles[0] = f->wn_handle;
   task->handles[1] = f->res_handle;
+
+  task->priority = DGVolume_SPU_PRIO;
 
   STARPU_CHECK_RETURN_VALUE(
 			    starpu_task_submit(task),
@@ -1630,6 +1636,8 @@ void DGSource_SPU(field* f) {
   task->handles[0] = f->wn_handle;
   task->handles[1] = f->res_handle;
 
+  task->priority = DGSource_SPU_PRIO;
+
   STARPU_CHECK_RETURN_VALUE(
 			    starpu_task_submit(task),
 			    "starpu_task_submit");
@@ -1872,6 +1880,8 @@ void DGMass_SPU(field* f) {
   task->cl_arg_size = arg_size;
   task->handles[0] = f->res_handle;
   task->handles[1] = f->dtwn_handle;
+
+  task->priority = DGMass_SPU_PRIO;
 
   STARPU_CHECK_RETURN_VALUE(
 			    starpu_task_submit(task),
@@ -2133,6 +2143,8 @@ void DGMacroCellInterface_SPU(Interface* inter, int side) {
   } else {
     task->handles[nhandle++] = f->res_handle;
   }
+
+  task->priority = DGMacroCellInterface_SPU_PRIO;
 
   STARPU_CHECK_RETURN_VALUE(
 			    starpu_task_submit(task),
@@ -2440,6 +2452,8 @@ void DGMacroCellBoundaryFlux_SPU(Interface* inter) {
   else {
     task->handles[nhandle++] = f->res_handle;
   }
+
+  task->priority = DGMacroCellBoundaryFlux_SPU_PRIO;
 
   STARPU_CHECK_RETURN_VALUE(
 			    starpu_task_submit(task),
@@ -2904,8 +2918,8 @@ void DtFields_SPU(Simulation *simu,
   for(int ifa = 0; ifa < simu->macromesh.nbfaces; ifa++){
     Interface* inter = simu->interface + ifa;
     // left = 0  right = 1
-    ExtractInterface_SPU(inter, 0);
-    ExtractInterface_SPU(inter, 1);
+    ExtractInterface_SPU_with_prio(inter, 0, ExtractInterface_SPU_PRIO);
+    ExtractInterface_SPU_with_prio(inter, 1, ExtractInterface_SPU_PRIO);
 
     if (inter->fR != NULL) {
       DGMacroCellInterface_SPU(inter, 0);

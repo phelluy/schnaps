@@ -4,6 +4,19 @@
 #include "simulation.h"
 #include <starpu.h>
 
+enum simulation_spu_task_prio{
+    ZeroBuffer_SPU_PRIO,
+    ExtractInterface_SPU_PRIO,
+    DGMacroCellInterface_SPU_PRIO,
+    DGMacroCellBoundaryFlux_SPU_PRIO,
+    AddBuffer_SPU_PRIO,
+    DGSubCellInterface_SPU_PRIO,
+    DGSource_SPU_PRIO,
+    DGVolume_SPU_PRIO,
+    DGMass_SPU_PRIO,
+    SSPU_NB_PRIO // Should be always last
+};
+
 schnaps_real seconds();
 
 //! \brief Display a starpu data handle on runtime

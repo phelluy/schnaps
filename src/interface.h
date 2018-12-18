@@ -100,6 +100,7 @@ struct starpu_codelet* ExtractInterface_codelet();
 //! \param[in,out] inter interface
 //! \param[in] side side: left if == 0 right if == 1
 void ExtractInterface_SPU(Interface* inter, int side);
+void ExtractInterface_SPU_with_prio(Interface* inter, int side, int prio);
 
 void ExtractInterface_SPU2(Interface* inter, int side);
 

@@ -18,6 +18,40 @@
 int TestLaura_SPU(int argc, char *argv[]) ;
 // =============================================================================
 
+#include <starpu.h>
+#include <starpu_heteroprio.h>
+
+void init_heteroprio(unsigned sched_ctx) {
+    printf("[HETEROPRIO] Init\n");
+   // Create queues for CPU tasks
+   starpu_heteroprio_set_nb_prios(sched_ctx, STARPU_CPU_IDX, SSPU_NB_PRIO);
+
+   // Set lookup order for CPU workers
+   // 0 => 3
+   // 1 => 2
+   // ..
+   // 3 => 0
+   // Use simple mapping
+   for (int bucketid=0; bucketid<SSPU_NB_PRIO; bucketid++) {
+      starpu_heteroprio_set_mapping(sched_ctx, STARPU_CPU_IDX, bucketid, bucketid);
+      starpu_heteroprio_set_faster_arch(sched_ctx, STARPU_CPU_IDX, bucketid);
+   }
+
+   // Create queues for CUDA tasks
+   starpu_heteroprio_set_nb_prios(sched_ctx, STARPU_OPENCL_IDX, SSPU_NB_PRIO);
+   for (int bucketid=0; bucketid<SSPU_NB_PRIO; bucketid++) {
+      starpu_heteroprio_set_mapping(sched_ctx, STARPU_OPENCL_IDX, bucketid, SSPU_NB_PRIO-bucketid-1);
+   }
+
+   starpu_heteroprio_set_faster_arch(sched_ctx, STARPU_OPENCL_IDX, DGMass_SPU_PRIO);
+   starpu_heteroprio_set_arch_slow_factor(sched_ctx, STARPU_OPENCL_IDX, DGMass_SPU_PRIO, 10.0f);
+
+   starpu_heteroprio_set_faster_arch(sched_ctx, STARPU_OPENCL_IDX, DGSource_SPU_PRIO);
+   starpu_heteroprio_set_arch_slow_factor(sched_ctx, STARPU_OPENCL_IDX, DGSource_SPU_PRIO, 10.0f);
+
+   starpu_heteroprio_set_faster_arch(sched_ctx, STARPU_OPENCL_IDX, DGVolume_SPU_PRIO);
+   starpu_heteroprio_set_arch_slow_factor(sched_ctx, STARPU_OPENCL_IDX, DGVolume_SPU_PRIO, 10.0f);
+}
 
 
 // Main function ===============================================================
@@ -165,9 +199,21 @@ int TestLaura_SPU(int argc, char *argv[]) {
   printf("STARPU_OPENCL_ONLY_ON_CPUS : %s\n",
 	 getenv("STARPU_OPENCL_ONLY_ON_CPUS"));
 
+  if(starpu_is_init){
+      destroy_global_arbiter();
+      starpu_shutdown();
+      starpu_is_init = false;
+  }
+
   if (!starpu_is_init && starpu_use){
+      struct starpu_conf conf;
+      starpu_conf_init(&conf);
+
+      conf.sched_policy_name = "heteroprio";
+      conf.sched_policy_init = &init_heteroprio;
+
     int ret;
-    ret = starpu_init(NULL);
+    ret = starpu_init(&conf);
     assert(ret != -ENODEV) ;
     starpu_is_init = true;
   }

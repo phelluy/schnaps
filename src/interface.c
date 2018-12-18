@@ -96,61 +96,66 @@ void UnregisterInterface_SPU(Interface* inter) {
 }
 
 
+void ExtractInterface_SPU_with_prio(Interface* inter, int side, int prio) {
+    assert(side == 1 || side == 0);
+
+    field *f;
+    int locfa, npgf;
+    starpu_data_handle_t w_handle;
+    starpu_data_handle_t vol_index_handle;
+
+    if (side == 0) {
+      if (inter->fL == NULL) return;
+      f = inter->fL;
+      locfa = inter->locfaL;
+      npgf = inter->npgL;
+      w_handle = inter->wL_handle;
+      vol_index_handle = inter->vol_indexL_handle;
+    } else  {
+      if (inter->fR == NULL) return;
+      f = inter->fR;
+      locfa = inter->locfaR;
+      npgf = inter->npgR;
+      w_handle = inter->wR_handle;
+      vol_index_handle = inter->vol_indexR_handle;
+    }
+
+    void* args;
+    size_t arg_size;
+
+    starpu_codelet_pack_args(&args, &arg_size,
+                             STARPU_VALUE, &f->model.m, sizeof(int),
+                             STARPU_VALUE, f->deg, 3 * sizeof(int),
+                             STARPU_VALUE, f->raf, 3 * sizeof(int),
+                             STARPU_VALUE, &npgf, sizeof(int),
+                             STARPU_VALUE, &f->varindex, sizeof(varindexptr),
+                             NULL);
+
+    struct starpu_task *task;
+
+    task = starpu_task_create();
+    task->cl = ExtractInterface_codelet();
+    task->cl_arg = args;
+    task->cl_arg_size = arg_size;
+    int nhandle = 0;
+    task->handles[nhandle++] = w_handle;
+    if (f->solver != NULL){
+      Skyline_SPU* sky_spu = f->solver->matrix;
+      task->handles[nhandle++] = sky_spu->sol_handle;
+    } else {
+      task->handles[nhandle++] = f->wn_handle;
+    }
+    task->handles[nhandle++] = vol_index_handle;
+
+    task->priority = prio;
+
+    STARPU_CHECK_RETURN_VALUE(
+        starpu_task_submit(task),
+        "starpu_task_submit");
+}
 
 void ExtractInterface_SPU(Interface* inter, int side) {
-  assert(side == 1 || side == 0);
-
-  field *f;
-  int locfa, npgf;
-  starpu_data_handle_t w_handle;
-  starpu_data_handle_t vol_index_handle;
-
-  if (side == 0) {
-    if (inter->fL == NULL) return;
-    f = inter->fL;
-    locfa = inter->locfaL;
-    npgf = inter->npgL;
-    w_handle = inter->wL_handle;
-    vol_index_handle = inter->vol_indexL_handle;
-  } else  {
-    if (inter->fR == NULL) return;
-    f = inter->fR;
-    locfa = inter->locfaR;
-    npgf = inter->npgR;
-    w_handle = inter->wR_handle;
-    vol_index_handle = inter->vol_indexR_handle;
-  }
-
-  void* args;
-  size_t arg_size;
-
-  starpu_codelet_pack_args(&args, &arg_size,
-                           STARPU_VALUE, &f->model.m, sizeof(int),
-                           STARPU_VALUE, f->deg, 3 * sizeof(int),
-                           STARPU_VALUE, f->raf, 3 * sizeof(int),
-                           STARPU_VALUE, &npgf, sizeof(int),
-                           STARPU_VALUE, &f->varindex, sizeof(varindexptr),
-                           NULL);
-
-  struct starpu_task *task;
-
-  task = starpu_task_create();
-  task->cl = ExtractInterface_codelet();
-  task->cl_arg = args;
-  task->cl_arg_size = arg_size;
-  int nhandle = 0;
-  task->handles[nhandle++] = w_handle;
-  if (f->solver != NULL){
-    Skyline_SPU* sky_spu = f->solver->matrix;
-    task->handles[nhandle++] = sky_spu->sol_handle;
-  } else {
-    task->handles[nhandle++] = f->wn_handle;
-  }
-  task->handles[nhandle++] = vol_index_handle;
-
-  STARPU_CHECK_RETURN_VALUE(
-      starpu_task_submit(task),
-      "starpu_task_submit");
+  ExtractInterface_SPU_with_prio(inter, side, 0);
 }
 
 void ExtractInterface_SPU2(Interface* inter, int side) {
