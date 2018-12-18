@@ -3000,6 +3000,16 @@ void RK2_SPU(Simulation *simu, schnaps_real tmax){
   /* } */
   /* printf("\n"); */
 
+  printf("Init codelet...\n");
+  DGVolume_codelet();
+  DGSource_codelet();
+  DGMass_codelet();
+  DGMacroCellInterface_codelet();
+  DGMacroCellBoundaryFlux_codelet();
+  ZeroBuffer_codelet();
+  AddBuffer_codelet();
+  DGSubCellInterface_codelet();
+
   /* starpu_task_wait_for_all() ; */
   printf("Start time steps...\n");
   
