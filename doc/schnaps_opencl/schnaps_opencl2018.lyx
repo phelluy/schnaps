@@ -1,0 +1,4126 @@
+#LyX 2.3 created this file. For more info see http://www.lyx.org/
+\lyxformat 544
+\begin_document
+\begin_header
+\save_transient_properties true
+\origin unavailable
+\textclass amsart
+\begin_preamble
+\usepackage{tikz}
+\usepackage{tikz-3dplot}
+\usetikzlibrary{patterns}
+\usetikzlibrary{matrix}
+\usetikzlibrary{decorations.pathmorphing}
+\usetikzlibrary{decorations.pathreplacing}
+\usetikzlibrary{decorations.markings}
+\usetikzlibrary{decorations.shapes}
+\usetikzlibrary{arrows}
+\usepackage{pgfplots}
+\pgfplotsset{compat=newest}
+
+
+
+\usepackage{babel}
+\end_preamble
+\use_default_options false
+\begin_modules
+theorems-ams
+eqs-within-sections
+figs-within-sections
+\end_modules
+\maintain_unincluded_children false
+\language english
+\language_package default
+\inputencoding utf8
+\fontencoding T1
+\font_roman "default" "default"
+\font_sans "default" "default"
+\font_typewriter "default" "default"
+\font_math "auto" "auto"
+\font_default_family default
+\use_non_tex_fonts false
+\font_sc false
+\font_osf false
+\font_sf_scale 100 100
+\font_tt_scale 100 100
+\use_microtype false
+\use_dash_ligatures true
+\graphics default
+\default_output_format default
+\output_sync 1
+\output_sync_macro "\synctex=-1"
+\bibtex_command default
+\index_command default
+\paperfontsize default
+\spacing single
+\use_hyperref false
+\papersize default
+\use_geometry true
+\use_package amsmath 1
+\use_package amssymb 2
+\use_package cancel 0
+\use_package esint 1
+\use_package mathdots 0
+\use_package mathtools 0
+\use_package mhchem 0
+\use_package stackrel 0
+\use_package stmaryrd 0
+\use_package undertilde 0
+\cite_engine natbib
+\cite_engine_type authoryear
+\biblio_style plainnat
+\use_bibtopic false
+\use_indices false
+\paperorientation portrait
+\suppress_date false
+\justification true
+\use_refstyle 0
+\use_minted 0
+\index Index
+\shortcut idx
+\color #008000
+\end_index
+\secnumdepth 3
+\tocdepth 3
+\paragraph_separation skip
+\defskip smallskip
+\is_math_indent 0
+\math_numbering_side default
+\quotes_style english
+\dynamic_quotes 0
+\papercolumns 1
+\papersides 1
+\paperpagestyle default
+\tracking_changes false
+\output_changes false
+\html_math_output 0
+\html_css_as_file 0
+\html_be_strict false
+\end_header
+
+\begin_body
+
+\begin_layout Title
+Optimization of a discontinuous finite element solver with OpenCL and StarPU
+\end_layout
+
+\begin_layout Author
+Philippe Helluy, Laura Mendoza, Bruno Weber
+\end_layout
+
+\begin_layout Address
+Université de Strasbourg, Inria Tonus, AxesSim.
+ 
+\family typewriter
+philippe.helluy@unistra.fr
+\end_layout
+
+\begin_layout Abstract
+
+\family typewriter
+schnaps
+\family default
+ is a finite element solver designed to simulate various physical phenomena.
+ It is designed to run on hybrid computers made of several CPUs and GPUs.
+ In order to address the hybrid architectures we rely on the StarPU runtime.
+ StarPU allows to optimize in an incremental way a sequential algorithm
+ in order to migrate to multicore parallelism and then to hybrid computing
+ with OpenCL accelerators.
+ StarPU proposes several task scheduling strategies in order to efficiently
+ exploit the available computing power.
+ We present the design of 
+\family typewriter
+schnaps
+\family default
+ and the performance gain that we have obtained in electromagnetic simulations
+ thanks to OpenCL codelets.
+ 
+\end_layout
+
+\begin_layout Thanks
+This work has obtained support from the ANR EXAMAG project and the BPI France
+ HOROCH project.
+\end_layout
+
+\begin_layout Section
+Introduction
+\end_layout
+
+\begin_layout Standard
+The development of engineering simulation software is difficult.
+ On the one hand, the user is interested in handling more and more complex
+ physical phenomena, in devices with arbitrary geometries.
+ These constraints require to adopt a generic and abstract software engineering
+ approach in order to ensure the generality of the code.
+ On the other hand, the user also wants to harness the full computational
+ power of his hybrid computer.
+ This requirement generally imposes to use low level hardware optimization
+ hacks that are not always compatible with a generic and elegant approach.
+ In addition, as the hardware evolves, optimizations of yesterday are not
+ necessarily relevant for the devices of tomorrow...
+\end_layout
+
+\begin_layout Standard
+OpenCL is a nice software environment for optimization purposes.
+ It presents the good balance between an abstract view of the computing
+ devices and some important hardware aspects, such as local memory for accelerat
+ing data transfers or subgroups for minimizing synchronization barriers.
+ However depending on architecture, optimizations written for one accelerator
+ may be completely irrelevant for another one.
+ This is especially true with local memory optimizations.
+ For instance, cache prefetching is generally efficient for discrete GPUs
+ while inefficient for IGPs.
+\end_layout
+
+\begin_layout Standard
+In this paper, we present our practical approach to this issue, with the
+ help of the StarPU runtime system.
+ StarPU is developed at Inria Bordeaux since 2006
+\begin_inset Foot
+status collapsed
+
+\begin_layout Plain Layout
+We are not involved in the creation and development of StarPU, but only
+ users.
+\end_layout
+
+\end_inset
+
+.
+ StarPU is a runtime C library based on the dataflow paradigm.
+ The programmer has to split the computation workload into abstract computationa
+l tasks.
+ Each task processes data buffers that can be in 
+\family typewriter
+read
+\family default
+ (R), 
+\family typewriter
+write
+\family default
+ (W) or 
+\family typewriter
+read/write
+\family default
+ (RW) mode.
+\end_layout
+
+\begin_layout Standard
+The tasks are then conveniently implemented into C 
+\emph on
+codelets
+\emph default
+.
+ It is possible (and recommended) to write several implementations of the
+ same task into several codelets.
+ For instance, one can imagine to write an unoptimized codelet for validation
+ purposes and one or several optimized OpenCL codelets.
+ The user then submits his tasks in a sequential way to StarPU.
+ At runtime, StarPU is able to construct a task graph based on buffer dependenci
+es.
+ The tasks are submitted to the available accelerators, in parallel if the
+ dependencies allow it.
+ In addition, StarPU automatically handles data transfers between the accelerato
+rs.
+ It is also able to measure the efficiency of the different codelets' implementa
+tions in order to choose the best, according to the scheduling strategy.
+\end_layout
+
+\begin_layout Standard
+With StarPU, implementing a complex dataflow of OpenCL kernels becomes easier.
+ Indeed, the programmer does not have to handle the kernel dependencies
+ with OpenCL events.
+ In addition, it is possible to first write a well validated pure C version
+ of the software, with only C codelets.
+ Then, one can enrich the tasks with OpenCL codelets, which allows an incrementa
+l optimization of the code.
+ At each stage, StarPU should be able to use the available codelets in an
+ efficient way.
+\end_layout
+
+\begin_layout Standard
+In this paper, we describe how we applied the StarPU philosophy in order
+ to optimize a discontinuous finite element solver for conservation laws.
+ The outlines are as follows: first we will present in its main lines the
+ Discontinuous Galerkin (DG) scheme that is used in the solver.
+ Then, after a short presentation of StarPU, we will explain how we have
+ integrated the OpenCL optimizations into the DG solver.
+ Finally, we will present some numerical experiments.
+\end_layout
+
+\begin_layout Section
+Discontinuous Galerkin method
+\end_layout
+
+\begin_layout Standard
+\begin_inset FormulaMacro
+\newcommand{\vf}{\mathbf{{f}}}
+\end_inset
+
+ 
+\begin_inset FormulaMacro
+\newcommand{\vg}{\mathbf{{g}}}
+\end_inset
+
+ 
+\begin_inset FormulaMacro
+\newcommand{\vh}{\mathbf{{h}}}
+\end_inset
+
+ 
+\begin_inset FormulaMacro
+\newcommand{\vs}{\mathbf{{s}}}
+\end_inset
+
+ 
+\begin_inset FormulaMacro
+\newcommand{\vV}{\mathbf{V}}
+\end_inset
+
+ 
+\begin_inset FormulaMacro
+\newcommand{\vx}{\mathbf{x}}
+\end_inset
+
+ 
+\begin_inset FormulaMacro
+\newcommand{\v}[1]{\mathbf{#1}}
+\end_inset
+
+ 
+\begin_inset FormulaMacro
+\newcommand{\vq}{\mathbf{q}}
+\end_inset
+
+ 
+\begin_inset FormulaMacro
+\newcommand{\vw}{\mathbf{w}}
+\end_inset
+
+ 
+\begin_inset FormulaMacro
+\newcommand{\ddim}{D}
+\end_inset
+
+ 
+\begin_inset FormulaMacro
+\newcommand{\dorder}{d}
+\end_inset
+
+ 
+\begin_inset FormulaMacro
+\newcommand{\normal}{\mathbf{n}}
+\end_inset
+
+ 
+\begin_inset FormulaMacro
+\newcommand{\flux}{\mathbf{q}}
+\end_inset
+
+ 
+\begin_inset FormulaMacro
+\newcommand{\Vu}{\mathbf{u}}
+\end_inset
+
+ 
+\begin_inset FormulaMacro
+\newcommand{\Vvi}{\mathbf{v}_{i}}
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+The Discontinuous Galerkin (DG) method is a general finite element method
+ for approximating systems of conservation laws of the form 
+\begin_inset Formula 
+\[
+\partial_{t}\v w+\sum_{k=1}^{\ddim}\partial_{k}\v f^{k}(\v w)=0.
+\]
+
+\end_inset
+
+The unknown is the vector of conservative variables 
+\begin_inset Formula $\v w(\v x,t)\in\mathbb{R}^{m}$
+\end_inset
+
+ depending on the space variable 
+\begin_inset Formula $\v x=(x^{1},\ldots,x^{\ddim})\in\mathbb{R}^{\ddim}$
+\end_inset
+
+ and on time 
+\begin_inset Formula $t$
+\end_inset
+
+.
+ In this paper, the space dimension is 
+\begin_inset Formula $\ddim=3$
+\end_inset
+
+.
+ We adopt the notations 
+\begin_inset Formula $\partial_{t}$
+\end_inset
+
+ for the partial derivative with respect to 
+\begin_inset Formula $t$
+\end_inset
+
+ and 
+\begin_inset Formula $\partial_{k}$
+\end_inset
+
+ for the partial derivative with respect to 
+\begin_inset Formula $x^{k}$
+\end_inset
+
+.
+ Let 
+\begin_inset Formula $\v n=(n_{1},\ldots,n_{\ddim})\in\mathbb{R}^{\ddim}$
+\end_inset
+
+ be a spatial direction, the flux in direction 
+\begin_inset Formula $\v n$
+\end_inset
+
+ is defined by 
+\begin_inset Formula 
+\[
+\v f(\v w,\v n)=\sum_{k=1}^{\ddim}n_{k}\v f^{k}(\v w).
+\]
+
+\end_inset
+
+For instance, in this work we consider the numerical simulation of an electromag
+netic wave.
+ In this particular case, the conservative variables are 
+\begin_inset Formula 
+\[
+\v w=(\v E^{\mathrm{T}},\v H^{\mathrm{T}},\lambda,\mu)^{\mathrm{T}}\in\mathbb{R}^{m},\quad m=8.
+\]
+
+\end_inset
+
+where 
+\begin_inset Formula $\v E\in\mathbb{R}^{3}$
+\end_inset
+
+ is the electric field, 
+\begin_inset Formula $\v H\in\mathbb{R}^{3}$
+\end_inset
+
+ is the magnetic field and 
+\begin_inset Formula $\lambda$
+\end_inset
+
+, 
+\begin_inset Formula $\mu$
+\end_inset
+
+ are divergence cleaning potentials (
+\begin_inset CommandInset citation
+LatexCommand citet
+key "munz2000divergence"
+literal "true"
+
+\end_inset
+
+).
+ The flux is given by 
+\begin_inset Formula 
+\[
+\v f(\v w,\v n)=\left(\begin{array}{c}
+-\v n\times\v H+\lambda\v n\\
+\v n\times\v E+\mu\v n\\
+c\v n\cdot\v E\\
+c\v{n\cdot H}
+\end{array}\right)
+\]
+
+\end_inset
+
+and 
+\begin_inset Formula $c>1$
+\end_inset
+
+ is the divergence cleaning parameter.
+\end_layout
+
+\begin_layout Standard
+We consider a mesh 
+\begin_inset Formula $\mathcal{M}$
+\end_inset
+
+ of 
+\begin_inset Formula $\Omega$
+\end_inset
+
+ made of open sets, called 
+\emph on
+cells
+\emph default
+, 
+\begin_inset Formula $\mathcal{M}=\left\{ L_{i},\,i=1\ldots N_{c}\right\} $
+\end_inset
+
+.
+ In the most general setting, the cells satisfy 
+\end_layout
+
+\begin_layout Enumerate
+\begin_inset Formula $L_{i}\cap L_{j}=\emptyset$
+\end_inset
+
+, if 
+\begin_inset Formula $i\neq j$
+\end_inset
+
+; 
+\end_layout
+
+\begin_layout Enumerate
+\begin_inset Formula $\overline{\cup_{i}L_{i}}=\overline{\Omega}.$
+\end_inset
+
+ 
+\end_layout
+
+\begin_layout Standard
+In each cell 
+\begin_inset Formula $L\in\mathcal{M}$
+\end_inset
+
+, we consider a basis of functions 
+\begin_inset Formula $(\varphi_{L,i}(\vx))_{i=0\ldots N_{\dorder}-1}$
+\end_inset
+
+ constructed from polynomials of order 
+\begin_inset Formula $\dorder$
+\end_inset
+
+.
+ We denote by 
+\begin_inset Formula $h$
+\end_inset
+
+ the maximal diameter of the cells.
+ With an abuse of notation we still denote by 
+\begin_inset Formula $\vw$
+\end_inset
+
+ the approximation of 
+\begin_inset Formula $\vw$
+\end_inset
+
+, defined by 
+\begin_inset Formula 
+\[
+\vw(\vx,t)=\sum_{j=0}^{N_{\dorder}-1}\vw_{L,j}(t)\varphi_{L,j}(\vx),\quad\vx\in L.
+\]
+
+\end_inset
+
+The DG formulation then reads: find 
+\begin_inset Formula $\vw_{L,j}$
+\end_inset
+
+ such that for all cell 
+\begin_inset Formula $L$
+\end_inset
+
+ and all test function 
+\begin_inset Formula $\varphi_{L,i}$
+\end_inset
+
+ 
+\begin_inset Formula 
+\begin{equation}
+\int_{L}\partial_{t}\vw_{L}\varphi_{L,i}-\int_{L}\vf(\vw_{L},\boldsymbol{\nabla}\varphi_{L,i})+\int_{\partial L}\vf(\vw_{L},\vw_{R},\v n)\varphi_{L,i}=0.\label{eq:dg_var}
+\end{equation}
+
+\end_inset
+
+In this formula (see Figure 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "fig:cell_convention"
+plural "false"
+caps "false"
+noprefix "false"
+
+\end_inset
+
+): 
+\end_layout
+
+\begin_layout Itemize
+\begin_inset Formula $R$
+\end_inset
+
+ denotes the neighboring cell to 
+\begin_inset Formula $L$
+\end_inset
+
+ along its boundary 
+\begin_inset Formula $\partial L\cap\partial R$
+\end_inset
+
+, or the exterior of 
+\begin_inset Formula $\Omega$
+\end_inset
+
+ on 
+\begin_inset Formula $\partial L\cap\partial\Omega$
+\end_inset
+
+.
+ 
+\end_layout
+
+\begin_layout Itemize
+\begin_inset Formula $\normal=\normal_{LR}$
+\end_inset
+
+ is the unit normal vector on 
+\begin_inset Formula $\partial L$
+\end_inset
+
+ oriented from 
+\begin_inset Formula $L$
+\end_inset
+
+ to 
+\begin_inset Formula $R$
+\end_inset
+
+.
+ 
+\end_layout
+
+\begin_layout Itemize
+\begin_inset Formula $\vw_{R}$
+\end_inset
+
+ denotes the value of 
+\begin_inset Formula $\vw$
+\end_inset
+
+ in the neighboring cell 
+\begin_inset Formula $R$
+\end_inset
+
+ on 
+\begin_inset Formula $\partial L\cap\partial R$
+\end_inset
+
+.
+ 
+\end_layout
+
+\begin_layout Itemize
+If 
+\begin_inset Formula $L$
+\end_inset
+
+ is a boundary cell, one may have to use the boundary values instead: 
+\begin_inset Formula $\vw_{R}=\vw_{b}$
+\end_inset
+
+ on 
+\begin_inset Formula $\partial L\cap\partial\Omega$
+\end_inset
+
+.
+ 
+\end_layout
+
+\begin_layout Itemize
+\begin_inset Formula $\vf(\vw_{L},\vw_{R},\v n)$
+\end_inset
+
+ is the standard upwind numerical flux encountered in many finite volume
+ or DG methods.
+ 
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float figure
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+\align center
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+
+\backslash
+begin{tikzpicture}[scale=1]
+\end_layout
+
+\end_inset
+
+
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+% intersection 
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+draw[thick] (0,1) -- (0,0); 
+\backslash
+draw[->, thick, color=red] (0,0.5) -- (0.4,0.5); 
+\backslash
+node[below, color=red] at (0.4,0.5) {$n_{LR}$}; 
+\backslash
+node[above] (n1) at (-2,2) {$
+\backslash
+partial L
+\backslash
+cap
+\backslash
+partial R$}; 
+\backslash
+draw[->, thick] (n1) -- (0,0.8);
+\end_layout
+
+\begin_layout Plain Layout
+
+% left  
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+draw[thick] (-1,-0.5) -- (0,0); 
+\backslash
+draw[thick] (-1.2,1.4) -- (0,1); 
+\backslash
+draw[thick] (-1.2,1.4) -- (-1,-0.5); 
+\backslash
+node[above right] at (-1.05,-0.4) {$L$}; 
+\end_layout
+
+\begin_layout Plain Layout
+
+% right  
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+draw[thick] (1,-0.5) -- (0,0); 
+\backslash
+draw[thick] (1.1,0.8) -- (0,1); 
+\backslash
+draw[thick] (1.1,0.8) -- (1,-0.5); 
+\backslash
+node[below left] at (1.1,0.85) {$R$};
+\end_layout
+
+\begin_layout Plain Layout
+
+% other quadrangles
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+draw[thick] (0,0) -- (-0.1,-0.6); 
+\backslash
+draw[thick] (0,1) -- (0.1,1.6); 
+\backslash
+draw[thick] (-1,-0.5) -- (-1.5,-0.9); 
+\backslash
+draw[thick] (-1.2,1.4) -- (-1.6,1.5); 
+\backslash
+draw[thick] (1,-0.5) -- (1.3,-0.7); 
+\backslash
+draw[thick] (1.1,0.8) -- (1.5,1);  
+\end_layout
+
+\end_inset
+
+
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+
+\backslash
+end{tikzpicture}
+\end_layout
+
+\end_inset
+
+ 
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+\begin_inset CommandInset label
+LatexCommand label
+name "fig:cell_convention"
+
+\end_inset
+
+Convention for the 
+\begin_inset Formula $L$
+\end_inset
+
+ and 
+\begin_inset Formula $R$
+\end_inset
+
+ cells orientation.
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+In our application, we consider hexahedral cells.
+ We have a reference cell 
+\begin_inset Formula 
+\[
+\hat{L}=]-1,1[^{\ddim}
+\]
+
+\end_inset
+
+
+\begin_inset FormulaMacro
+\newcommand{\jacob}{\boldsymbol{\tau}}
+\end_inset
+
+ and a smooth transformation 
+\begin_inset Formula $\vx=\jacob_{L}(\hat{\vx})$
+\end_inset
+
+, 
+\begin_inset Formula $\hat{\vx}\in\hat{L}$
+\end_inset
+
+, that maps 
+\begin_inset Formula $\hat{L}$
+\end_inset
+
+ on 
+\begin_inset Formula $L$
+\end_inset
+
+ 
+\begin_inset Formula 
+\[
+\jacob_{L}(\hat{L})=L.
+\]
+
+\end_inset
+
+We assume that 
+\begin_inset Formula $\jacob_{L}$
+\end_inset
+
+ is invertible and we denote by 
+\begin_inset Formula $\jacob_{L}'$
+\end_inset
+
+ its (invertible) Jacobian matrix.
+ We also assume that 
+\begin_inset Formula $\jacob_{L}$
+\end_inset
+
+ is a direct transformation 
+\begin_inset Formula 
+\[
+\det\jacob_{L}'>0.
+\]
+
+\end_inset
+
+In our implementation, 
+\begin_inset Formula $\jacob_{L}$
+\end_inset
+
+ is a quadratic map based on hexahedral curved 
+\begin_inset Quotes eld
+\end_inset
+
+H20
+\begin_inset Quotes erd
+\end_inset
+
+ finite elements with 20 nodes.
+ The mesh of H20 finite elements is generated by 
+\family typewriter
+gmsh
+\family default
+ (
+\begin_inset CommandInset citation
+LatexCommand citet
+key "geuzaine2009gmsh"
+literal "true"
+
+\end_inset
+
+).
+\end_layout
+
+\begin_layout Standard
+On the reference cell, we consider the Gauss-Lobatto points 
+\begin_inset Formula $(\hat{\vx}_{i})_{i=0\ldots N_{\dorder}-1}$
+\end_inset
+
+, 
+\begin_inset Formula $N_{\dorder}=(\dorder+1)^{\ddim}$
+\end_inset
+
+ and associated weights 
+\begin_inset Formula $(\omega_{i})_{i=0\ldots N_{\dorder}-1}$
+\end_inset
+
+.
+ They are obtained by tensor products of the 
+\begin_inset Formula $(\dorder+1)$
+\end_inset
+
+ one-dimensional Gauss-Lobatto (GL) points on 
+\begin_inset Formula $]-1,1[$
+\end_inset
+
+.
+ The reference GL points and weights are then mapped to the physical GL
+ points of cell 
+\begin_inset Formula $L$
+\end_inset
+
+ by 
+\begin_inset Formula 
+\begin{equation}
+\vx_{L,i}=\jacob_{L}(\hat{\vx}_{i}),\quad\omega_{L,i}=\omega_{i}\det\jacob_{L}'(\hat{\vx}_{i})>0.\label{eq:map_GL}
+\end{equation}
+
+\end_inset
+
+In addition, the six faces of the reference hexahedral cell are denoted
+ by 
+\begin_inset Formula $F_{\epsilon}$
+\end_inset
+
+, 
+\begin_inset Formula $\epsilon=1\ldots6$
+\end_inset
+
+ and the corresponding outward normal vectors are denoted by 
+\begin_inset Formula $\hat{\normal}_{\epsilon}$
+\end_inset
+
+.
+ One advantage of choosing the GL points is that the cells and the faces
+ share the same quadrature points.
+ We use the following notations to define the face quadrature weights: 
+\end_layout
+
+\begin_layout Itemize
+if a GL point 
+\begin_inset Formula $\hat{\vx}_{i}\in F_{\epsilon}$
+\end_inset
+
+, we denote by 
+\begin_inset Formula $\mu_{i}^{\epsilon}$
+\end_inset
+
+ the corresponding quadrature weight on face 
+\begin_inset Formula $\vw_{\epsilon}$
+\end_inset
+
+; 
+\end_layout
+
+\begin_layout Itemize
+we also use the convention that 
+\begin_inset Formula $\mu_{i}^{\epsilon}=0$
+\end_inset
+
+ if 
+\begin_inset Formula $\hat{\vx}_{i}$
+\end_inset
+
+ does not belong to face 
+\begin_inset Formula $F_{\epsilon}$
+\end_inset
+
+.
+ 
+\end_layout
+
+\begin_layout Standard
+Let us remark that a given GL point 
+\begin_inset Formula $\hat{\vx}_{i}$
+\end_inset
+
+ can belong to several faces when it is on an edge or in a corner of 
+\begin_inset Formula $\hat{L}$
+\end_inset
+
+.
+ Because of symmetry, we observe that if 
+\begin_inset Formula $\mu_{i}^{\epsilon}\neq0$
+\end_inset
+
+, then the weight 
+\begin_inset Formula $\mu_{i}^{\epsilon}$
+\end_inset
+
+ does not depend on 
+\begin_inset Formula $\epsilon$
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Standard
+We then consider basis functions 
+\begin_inset Formula $\hat{\varphi_{i}}$
+\end_inset
+
+ on the reference cell: they are the Lagrange polynomials associated to
+ the Gauss-Lobatto points and thus satisfy the interpolation property 
+\begin_inset Formula 
+\[
+\hat{\varphi}_{i}(\hat{\vx}_{j})=\delta_{ij}.
+\]
+
+\end_inset
+
+The basis functions on cell 
+\begin_inset Formula $L$
+\end_inset
+
+ are then defined according to the formula 
+\begin_inset Formula 
+\[
+\varphi_{L,i}(\vx)=\hat{\varphi}_{i}(\jacob_{L}^{-1}(\vx)).
+\]
+
+\end_inset
+
+In this way, they also satisfy the interpolation property 
+\begin_inset Formula 
+\begin{equation}
+\varphi_{L,i}(\vx_{L,j})=\delta_{ij}.\label{eq:interp_property}
+\end{equation}
+
+\end_inset
+
+In this paper, we only consider conformal meshes: the GL points on cell
+ 
+\begin_inset Formula $L$
+\end_inset
+
+ are supposed to match the GL points of cell 
+\begin_inset Formula $R$
+\end_inset
+
+ on their common face.
+ Dealing with non-matching cells is the object of a forthcoming work.
+ Let 
+\begin_inset Formula $L$
+\end_inset
+
+ and 
+\begin_inset Formula $R$
+\end_inset
+
+ be two neighboring cells.
+ Let 
+\begin_inset Formula $\vx_{L,j}$
+\end_inset
+
+ be a GL point in cell 
+\begin_inset Formula $L$
+\end_inset
+
+ that is also on the common face between 
+\begin_inset Formula $L$
+\end_inset
+
+ and 
+\begin_inset Formula $R$
+\end_inset
+
+.
+ In the case of conformal meshes, it is possible to define the index 
+\begin_inset Formula $j'$
+\end_inset
+
+ such that 
+\begin_inset Formula 
+\[
+\vx_{L,j}=\vx_{R,j'}.
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Applying a numerical integration to (
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "eq:dg_var"
+plural "false"
+caps "false"
+noprefix "false"
+
+\end_inset
+
+), using (
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "eq:map_GL"
+plural "false"
+caps "false"
+noprefix "false"
+
+\end_inset
+
+) and the interpolation property (
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "eq:interp_property"
+plural "false"
+caps "false"
+noprefix "false"
+
+\end_inset
+
+), we finally obtain 
+\begin_inset Formula 
+\begin{equation}
+\partial_{t}\vw_{L,i}\omega_{L,i}-\sum_{j=0}^{N_{\dorder}-1}\vf(\vw_{L,j},\boldsymbol{\nabla}\varphi_{L,i}(\vx_{L,j}))\omega_{L,j}+\sum_{\epsilon=1}^{6}\mu_{i}^{\epsilon}\vf(\vw_{L,i},\vw_{R,i'},\normal_{\epsilon}(\vx_{L,i}))=0.\label{eq:dg_lobatto}
+\end{equation}
+
+\end_inset
+
+We have to detail how the gradients and normal vectors are computed in the
+ above formula.
+ Let 
+\begin_inset Formula $\v A$
+\end_inset
+
+ be a square matrix.
+ We recall that the cofactor matrix of 
+\begin_inset Formula $\v A$
+\end_inset
+
+ is defined by 
+\begin_inset Formula 
+\begin{equation}
+\text{co}(\v A)=\det(\v A)\left(\v A^{-1}\right)^{\mathrm{T}}.\label{eq:co_mat}
+\end{equation}
+
+\end_inset
+
+The gradient of the basis function is computed from the gradients on the
+ reference cell using (
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "eq:co_mat"
+plural "false"
+caps "false"
+noprefix "false"
+
+\end_inset
+
+) 
+\begin_inset Formula 
+\[
+\boldsymbol{\nabla}\varphi_{L,i}(\vx_{L,j})=\frac{1}{\det\jacob_{L}'(\hat{\vx}_{j})}\text{co}(\jacob_{L}'(\hat{\vx}_{j}))\hat{\nabla}\hat{\varphi}_{i}(\hat{\vx}_{j}).
+\]
+
+\end_inset
+
+In the same way, the scaled normal vectors 
+\begin_inset Formula $\v n_{\epsilon}$
+\end_inset
+
+ on the faces are computed by the formula 
+\begin_inset Formula 
+\[
+\normal_{\epsilon}(\vx_{L,i})=\text{co}(\jacob_{L}'(\hat{\vx}_{i}))\hat{\normal}_{\epsilon}.
+\]
+
+\end_inset
+
+We introduce the following notation for the cofactor matrix
+\begin_inset FormulaMacro
+\newcommand{\comat}{\mathbf{c}}
+\end_inset
+
+ 
+\begin_inset Formula 
+\[
+\comat_{L,i}=\text{co}(\jacob_{L}'(\hat{\vx}_{i})).
+\]
+
+\end_inset
+
+The DG scheme then reads 
+\begin_inset Formula 
+\begin{equation}
+\partial_{t}\vw_{L,i}-\frac{1}{\omega_{L,i}}\sum_{j=0}^{N_{\dorder}-1}\vf(\vw_{L,j},\comat_{L,j}\hat{\nabla}\hat{\varphi}_{i}(\hat{\vx}_{j}))\omega_{j}+\frac{1}{\omega_{L,i}}\sum_{\epsilon=1}^{6}\mu_{i}^{\epsilon}\vf\left(\vw_{L,i},\vw_{R,i'},\comat_{L,i}\hat{\normal}_{\epsilon}\right)=0.\label{eq:DG_reduit}
+\end{equation}
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+In formula (
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "eq:DG_reduit"
+plural "false"
+caps "false"
+noprefix "false"
+
+\end_inset
+
+) we identify volume terms that are associated to Gauss-Lobatto points in
+ the volume 
+\begin_inset Formula 
+\begin{equation}
+V_{i,j}=\vf(\vw_{L,j},\comat_{L,j}\hat{\nabla}\hat{\varphi}_{i}(\hat{\vx}_{j}))\omega_{j}\label{eq:volume_terms}
+\end{equation}
+
+\end_inset
+
+and surface terms that are associated to cell boundaries 
+\begin_inset Formula 
+\begin{equation}
+S_{i,i'}=\mu_{i}^{\epsilon}\vf\left(\vw_{L,i},\vw_{R,i'},\comat_{L,i}\hat{\normal}_{\epsilon}\right).\label{eq:surface_terms}
+\end{equation}
+
+\end_inset
+
+Then, once these terms have been accumulated, one has to apply the inverse
+ of the mass matrix.
+ Here, this matrix is diagonal and it corresponds to a simple multiplication
+ of 
+\begin_inset Formula $\partial_{t}\v w_{L,i}$
+\end_inset
+
+ by 
+\begin_inset Formula 
+\begin{equation}
+\frac{1}{\omega_{L,i}}.\label{eq:mass_matrix}
+\end{equation}
+
+\end_inset
+
+Generally, 
+\begin_inset Formula $i$
+\end_inset
+
+ and 
+\begin_inset Formula $i'$
+\end_inset
+
+ are associated to unknowns of internal cells, 
+\emph on
+i.e.
+
+\emph default
+ cells that do not touch the boundaries.
+ On boundary GL points, the value of 
+\begin_inset Formula $\vw_{R,i'}$
+\end_inset
+
+ is given by the boundary condition 
+\begin_inset Formula 
+\[
+\vw_{R,i'}=\vw_{b}(\vx_{L,i},t),\quad\vx_{L,i}=\vx_{R,i'}.
+\]
+
+\end_inset
+
+For practical reasons, it can be interesting to also consider 
+\begin_inset Formula $\vw_{R,i'}$
+\end_inset
+
+ as an artificial unknown in a fictitious cell.
+ The fictitious unknown is then a solution of the differential equation
+ 
+\begin_inset Formula 
+\begin{equation}
+\partial_{t}\vw_{R,i'}=\partial_{t}\v w_{b}(\vx_{L,i},\cdot).\label{eq:fictitious_ODE}
+\end{equation}
+
+\end_inset
+
+In the end, if we put all the unknowns in a large vector 
+\begin_inset Formula $\v W(t)$
+\end_inset
+
+, (
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "eq:DG_reduit"
+plural "false"
+caps "false"
+noprefix "false"
+
+\end_inset
+
+) and (
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "eq:fictitious_ODE"
+plural "false"
+caps "false"
+noprefix "false"
+
+\end_inset
+
+) read as a large system of coupled differential equations 
+\begin_inset Formula 
+\begin{equation}
+\partial_{t}\v W=\v F(\v W).\label{eq:linear_ODE}
+\end{equation}
+
+\end_inset
+
+This set of differential equations is then numerically solved by a Runge-Kutta
+ numerical method.
+ In practice, we use a second order Runge-Kutta method (RK2).
+\end_layout
+
+\begin_layout Section
+Data-based parallelism and StarPU
+\end_layout
+
+\begin_layout Standard
+StarPU is a runtime system library developed at Inria Bordeaux (
+\begin_inset CommandInset citation
+LatexCommand citet
+key "augonnet2011starpu,augonnet2012starpu"
+literal "true"
+
+\end_inset
+
+).
+ It relies on the data-based parallelism paradigm.
+ The user has first to split its whole problem into elementary computational
+ tasks.
+ The elementary tasks are then implemented into 
+\emph on
+codelets
+\emph default
+, which are simple C functions.
+ The same task can be implemented differently into several codelets.
+ This allows the user to harness special accelerators, such as vectorial
+ CPU cores or OpenCL devices, for example.
+ In the StarPU terminology these devices are called 
+\emph on
+workers
+\emph default
+.
+ If a codelet contains OpenCL kernel submissions, special utilities are
+ available in order to map the StarPU buffers to OpenCL buffers.
+\end_layout
+
+\begin_layout Standard
+For each task, the user also has to describe precisely what are the input
+ data, in 
+\family typewriter
+read
+\family default
+ mode, and the output data, in 
+\family typewriter
+write
+\family default
+ or 
+\family typewriter
+read/write
+\family default
+ mode.
+ The user then submits the task in a sequential way to the StarPU system.
+ StarPU is able to construct at runtime a task graph from the data dependencies.
+ The task graph is analyzed and the tasks are scheduled automatically to
+ the available workers (CPU cores, GPUs, 
+\emph on
+etc
+\emph default
+.).
+ If possible, they are executed in parallel into concurrent threads.
+ The data transfer tasks between the threads are automatically generated
+ and managed by StarPU.
+ OpenCL data transfers are also managed by StarPU.
+\end_layout
+
+\begin_layout Standard
+When a StarPU program is executed, it is possible to choose among several
+ schedulers.
+ The simplest 
+\family typewriter
+eager
+\family default
+ scheduler adopts a very simple strategy: the tasks are executed in the
+ order of submission by the free workers, without optimization.
+ More sophisticated schedulers, such as the 
+\family typewriter
+dmda
+\family default
+ or 
+\family typewriter
+dmdar
+\family default
+ scheduler, are able to measure the efficiency of the different codelets
+ and the data transfer times, in order to apply a more efficient allocation
+ of tasks.
+\end_layout
+
+\begin_layout Standard
+Recently a new data access mode has been added to StarPU: the 
+\family typewriter
+commute
+\family default
+ mode.
+ In a task, a buffer of data can now be accessed in 
+\family typewriter
+commute
+\family default
+ mode, in addition to the 
+\family typewriter
+write
+\family default
+ or 
+\family typewriter
+read/write
+\family default
+ modes.
+ A 
+\family typewriter
+commute
+\family default
+ access tells to StarPU that the execution of the corresponding task may
+ be executed before or after other tasks containing commutative access.
+ This allows StarPU to perform additional optimizations.
+\end_layout
+
+\begin_layout Standard
+There also exists a MPI version of StarPU.
+ In the MPI version, the user has to decide an initial distribution of data
+ among the MPI nodes.
+ Then the tasks are submitted as usual (using the function starpu_mpi_insert_tas
+k instead of starpu_insert_task).
+ Required MPI communications are automatically generated by StarPU.
+ For the moment, this approach does not guarantee a good load balancing.
+ It is the responsibility of the user to migrate data from one MPI node
+ to another to improve the load balancing, if necessary.
+ The MPI version of StarPU is not tested in this work.
+\end_layout
+
+\begin_layout Subsection
+\begin_inset CommandInset label
+LatexCommand label
+name "subsec:Macrocell-approach"
+
+\end_inset
+
+Macrocell approach
+\end_layout
+
+\begin_layout Standard
+StarPU is quite efficient, but there is an unavoidable overhead due to the
+ task submissions and to the on-the-fly construction and analysis of the
+ task graph.
+ Therefore it is important to ensure that the computational tasks are not
+ too small, in which case the overhead would not be amortized, or not too
+ big, in which case some workers would be idle.
+ To achieve the right balance, we decided not to apply the DG algorithm
+ at the cell level but to groups of cells instead.
+\end_layout
+
+\begin_layout Standard
+The implementation of the DG scheme has been made into the 
+\family typewriter
+schnaps
+\family default
+ software
+\begin_inset Foot
+status collapsed
+
+\begin_layout Plain Layout
+\begin_inset Flex URL
+status collapsed
+
+\begin_layout Plain Layout
+
+http://schnaps.gforge.inria.fr/
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+ which is a C99 software dedicated to the numerical simulation of conservation
+ laws.
+ In 
+\family typewriter
+schnaps
+\family default
+, we first construct a 
+\emph on
+macromesh
+\emph default
+ of the computational domain.
+ Then each 
+\emph on
+macrocell
+\emph default
+ of the macromesh is split into 
+\emph on
+subcells
+\emph default
+.
+ See Figure 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "fig:macrocell_mesh"
+plural "false"
+caps "false"
+noprefix "false"
+
+\end_inset
+
+.
+ We also arrange the subcells into a regular sub-mesh of the macrocells.
+ In this way, it is possible to apply additional optimizations.
+ For instance, the subcells 
+\begin_inset Formula $L$
+\end_inset
+
+ of a same macrocell 
+\begin_inset Formula $\mathcal{L}$
+\end_inset
+
+ share the same geometrical transformation 
+\begin_inset Formula $\jacob_{L}$
+\end_inset
+
+, which saves memory access.
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float figure
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+\align center
+\begin_inset Graphics
+	filename figs/lackdisque.png
+	height 6cm
+
+\end_inset
+
+ 
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+\begin_inset CommandInset label
+LatexCommand label
+name "fig:macrocell_mesh"
+
+\end_inset
+
+Macrocell approach: an example of a mesh made of five macrocells.
+ Each macrocell is then split into several subcells.
+ Only the subcells of the top macrocell are represented here (in green).
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+In 
+\family typewriter
+schnaps
+\family default
+ we also defined an 
+\emph on
+interface
+\emph default
+ structure in order to manage data communications between the macrocells.
+ An interface contains a copy of the data at the Gauss-Lobatto points that
+ are common to the two neighboring macrocells.
+\end_layout
+
+\begin_layout Standard
+To solve one time step of the DG method, here are the most important tasks:
+ 
+\end_layout
+
+\begin_layout Enumerate
+Interface extraction: this task simply extracts the values of 
+\begin_inset Formula $\vw$
+\end_inset
+
+ coming from the neighboring macrocells to the interface.
+ In this task, the macrocell buffers are accessed in 
+\family typewriter
+read
+\family default
+ mode and the interface data in 
+\family typewriter
+write
+\family default
+ mode.
+ 
+\end_layout
+
+\begin_layout Enumerate
+Interface fluxes: this task only computes the numerical fluxes (
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "eq:surface_terms"
+plural "false"
+caps "false"
+noprefix "false"
+
+\end_inset
+
+) that are located at the Gauss-Lobatto points on the interface.
+ The fluxes are then applied to the neighboring macrocells.
+ In this task, the interface data are accessed in 
+\family typewriter
+read
+\family default
+ mode and the macrocell data in 
+\family typewriter
+read/write
+\family default
+ mode.
+ For a better efficiency, we also assume a 
+\family typewriter
+commute
+\family default
+ access to the macrocell data.
+ In this way the interface fluxes can be assembled in any order, which can
+ help the StarPU scheduling.
+ 
+\end_layout
+
+\begin_layout Enumerate
+Interface boundary fluxes: this task computes the boundary data and only
+ numerical fluxes (
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "eq:surface_terms"
+plural "false"
+caps "false"
+noprefix "false"
+
+\end_inset
+
+) that are located at the boundary interface.
+ The fluxes are applied to the neighboring macrocell.
+ In this task, the interface data are accessed in 
+\family typewriter
+read
+\family default
+ mode and the macrocell data in 
+\family typewriter
+read/write
+\family default
+ and 
+\family typewriter
+commute
+\family default
+ mode.
+ 
+\end_layout
+
+\begin_layout Enumerate
+Volume terms: this task applies the volumic terms (
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "eq:volume_terms"
+plural "false"
+caps "false"
+noprefix "false"
+
+\end_inset
+
+) in a given macrocell.
+ The macrocell data are accessed in 
+\family typewriter
+read/write/commute
+\family default
+ mode.
+ 
+\end_layout
+
+\begin_layout Enumerate
+Subcell fluxes: this task applies the numerical subcell fluxes (
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "eq:surface_terms"
+plural "false"
+caps "false"
+noprefix "false"
+
+\end_inset
+
+) that are internal to a given macrocell.
+ The macrocell data are accessed in 
+\family typewriter
+read/write/commute
+\family default
+ mode.
+ 
+\end_layout
+
+\begin_layout Standard
+Additional simple tasks are needed to apply the Runge-Kutta algorithm.
+ We do not describe them.
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float algorithm
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+for all interface:
+\end_layout
+
+\begin_layout Plain Layout
+Extract interface (copy the data from the neighboring macrocells to the
+ interface)
+\end_layout
+
+\begin_layout Plain Layout
+If the interface is a boundary interface, compute the boundary fluxes (
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "eq:surface_terms"
+plural "false"
+caps "false"
+noprefix "false"
+
+\end_inset
+
+) and apply them to the neighboring macrocell
+\end_layout
+
+\begin_layout Plain Layout
+Else the interface is an internal one.
+ Compute the numerical fluxes (
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "eq:surface_terms"
+plural "false"
+caps "false"
+noprefix "false"
+
+\end_inset
+
+) and apply them to the two neighboring macrocells
+\end_layout
+
+\begin_layout Plain Layout
+End for
+\end_layout
+
+\begin_layout Plain Layout
+Then, for each macrocell:
+\end_layout
+
+\begin_layout Plain Layout
+Compute and apply the numerical fluxes (
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "eq:surface_terms"
+plural "false"
+caps "false"
+noprefix "false"
+
+\end_inset
+
+) between the subcells
+\end_layout
+
+\begin_layout Plain Layout
+Compute the volume terms (
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "eq:volume_terms"
+plural "false"
+caps "false"
+noprefix "false"
+
+\end_inset
+
+) inside the subcells
+\end_layout
+
+\begin_layout Plain Layout
+Apply the inverse of the mass matrix (
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "eq:mass_matrix"
+plural "false"
+caps "false"
+noprefix "false"
+
+\end_inset
+
+) inside the subcells
+\end_layout
+
+\begin_layout Plain Layout
+End for
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+\begin_inset CommandInset label
+LatexCommand label
+name "alg:DG-algorithm"
+
+\end_inset
+
+DG algorithm
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+The general sequential DG algorithm is then given in Algorithm 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "alg:DG-algorithm"
+plural "false"
+caps "false"
+noprefix "false"
+
+\end_inset
+
+.
+ Thanks to StarPU, this algorithm can be submitted in a sequential way.
+ StarPU then uses the data dependency in order to distribute the tasks in
+ parallel on the available workers.
+\end_layout
+
+\begin_layout Standard
+In the next section we give more details about the implementation of the
+ OpenCL codelets.
+\end_layout
+
+\begin_layout Section
+\begin_inset CommandInset label
+LatexCommand label
+name "sec:Hybrid-C/OpenCL-codelets"
+
+\end_inset
+
+Hybrid C/OpenCL codelets
+\end_layout
+
+\begin_layout Standard
+In order to attain better performance, we programmed an OpenCL version of
+ the previously described codelets.
+ As it is often the case, special care has to be given in order to improve
+ the coalescence of memory access.
+ The values of 
+\begin_inset Formula $\v w$
+\end_inset
+
+ at the Gauss-Lobatto points are stored into what we call a 
+\emph on
+field
+\emph default
+ structure.
+ A field is attached to a macrocell.
+ A given component of 
+\begin_inset Formula $\v w$
+\end_inset
+
+ in a field is located thanks to its subcell index 
+\family typewriter
+ic
+\family default
+, a Gauss-Lobatto index 
+\family typewriter
+ig
+\family default
+ in the cell, and a component index 
+\family typewriter
+iw
+\family default
+.
+ If the macrocell is cut into 
+\begin_inset Formula $n_{r}$
+\end_inset
+
+ subcells in each direction, if the polynomial order is 
+\begin_inset Formula $d$
+\end_inset
+
+ and for a system of 
+\begin_inset Formula $m$
+\end_inset
+
+ conservation laws, these indices have the following bounds 
+\begin_inset Formula 
+\[
+0\leq\mathtt{ic}<n_{r}^{3},\quad0\leq\mathtt{ig}<(d+1)^{3},\quad0\leq\mathtt{iw}<m.
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+The values of 
+\begin_inset Formula $\v w$
+\end_inset
+
+ in a given field are stored into a memory buffer 
+\family typewriter
+wbuf
+\family default
+.
+ In order to test several memory arrangements, the index in the buffer is
+ computed by a function 
+\family typewriter
+varindex(ic,ig,iw)
+\family default
+ that we can easily change.
+ For instance, we can consider the following formula, in which the electromagnet
+ic components at a given Gauss-Lobatto point are grouped in memory 
+\begin_inset Formula 
+\begin{equation}
+\mathtt{varindex(ic,ig,iw)=iw+}m\mathtt{*(ig+}(d+1)^{3}\mathtt{*ic)},\label{eq:by_comp}
+\end{equation}
+
+\end_inset
+
+or this formula 
+\begin_inset Formula 
+\begin{equation}
+\mathtt{varindex(ic,ig,iw)=ig+}(d+1)^{3}\mathtt{*(iw+}m\mathtt{*ic)},\label{eq:by_gauss_point}
+\end{equation}
+
+\end_inset
+
+in which the electromagnetic components are separated in memory.
+ We have programmed an OpenCL codelet for each task described in Section
+ 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "subsec:Macrocell-approach"
+plural "false"
+caps "false"
+noprefix "false"
+
+\end_inset
+
+.
+ The most time consuming kernels are: (i) the kernel associated to the computati
+ons of the volume terms (
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "eq:volume_terms"
+plural "false"
+caps "false"
+noprefix "false"
+
+\end_inset
+
+) inside the macrocells, 
+\emph on
+volume
+\emph default
+ kernel, and (ii) the kernel that computes the subcell fluxes, the 
+\emph on
+surface
+\emph default
+ kernel.
+ Boundary and interface terms generally involve less computations.
+\end_layout
+
+\begin_layout Standard
+A natural distribution of the workload is to associate one subcell to each
+ OpenCL work-group and the computations at a Gauss point to a work-item.
+ With this natural distribution, formula (
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "eq:by_gauss_point"
+plural "false"
+caps "false"
+noprefix "false"
+
+\end_inset
+
+) ensures optimal coalescent memory access in the volume kernel, but the
+ access is no more optimal in the surface kernel, because neighboring Gauss
+ points on the subcell interfaces are not necessarily close in memory.
+ Therefore, we prefer considering formula (
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "eq:by_comp"
+plural "false"
+caps "false"
+noprefix "false"
+
+\end_inset
+
+).
+\end_layout
+
+\begin_layout Section
+Numerical results
+\end_layout
+
+\begin_layout Standard
+In this section, we present some practical experiments that we realized
+ with 
+\family typewriter
+schnaps
+\family default
+.
+ The first experiment deals with the efficiency of the StarPU C99 codelets
+ on a multicore CPU.
+ The second experiment deals with the efficiency of the OpenCL codelets.
+ Then we test the code in a CPU/GPU configuration.
+\end_layout
+
+\begin_layout Standard
+We approximate by the DG algorithm an exact plane wave solution of the Maxwell
+ equations 
+\begin_inset Formula 
+\[
+\v E=\frac{c}{r}\left(\begin{array}{c}
+-v\\
+u\\
+0
+\end{array}\right),\quad\v H=\frac{c}{r}\left(\begin{array}{c}
+0\\
+0\\
+1
+\end{array}\right),\quad\lambda=0,\quad\mu=0.
+\]
+
+\end_inset
+
+with 
+\begin_inset Formula $c=-\cos(\pi/2(ux^{1}+vx^{2}-t))$
+\end_inset
+
+ and 
+\begin_inset Formula $(u,v)=(\cos(\pi/4),\sin(\pi/4)).$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+We consider the propagation of the previous electromagnetic plane wave into
+ a torus-shaped domain 
+\begin_inset Formula $\Omega$
+\end_inset
+
+ represented on Figure 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "fig:Computational-domain"
+plural "false"
+caps "false"
+noprefix "false"
+
+\end_inset
+
+.
+ In the DG solver, we consider only third order polynomials: 
+\begin_inset Formula $d=3$
+\end_inset
+
+.
+ The domain is split into 
+\begin_inset Formula $M=400$
+\end_inset
+
+ macrocells.
+ The macrocells are split into 
+\begin_inset Formula $n_{r}$
+\end_inset
+
+ subcells in each direction.
+ The number of degrees of freedom is thus 
+\begin_inset Formula 
+\[
+n_{\text{d.o.f.}}=Mm(d+1)^{3}n_{r}^{3},\quad M=400,\quad m=8,\quad d=3.
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+StarPU will have to take decisions on how to distribute efficiently the
+ tasks on the available accelerators.
+ We have performed our experiments on two different computers.
+ The first configuration 
+\begin_inset Quotes eld
+\end_inset
+
+PC
+\begin_inset Quotes erd
+\end_inset
+
+ correspond to a standard desktop personal computer.
+ The second configuration 
+\begin_inset Quotes eld
+\end_inset
+
+WS
+\begin_inset Quotes erd
+\end_inset
+
+ is made of a more powerful two-CPU workstation The technical details are
+ listed in Table 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "tab:config_specs"
+plural "false"
+caps "false"
+noprefix "false"
+
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float table
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+\align center
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+
+\backslash
+resizebox{0.9
+\backslash
+linewidth}{!}{
+\end_layout
+
+\end_inset
+
+
+\begin_inset Tabular
+<lyxtabular version="3" rows="3" columns="6">
+<features tabularvalignment="middle">
+<column alignment="center" valignment="top">
+<column alignment="center" valignment="top">
+<column alignment="center" valignment="top">
+<column alignment="center" valignment="top">
+<column alignment="center" valignment="top">
+<column alignment="center" valignment="top">
+<row>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+config.
+ 
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+CPU 
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+# cores 
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+mem.
+ CPU 
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+GPU 
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+mem.
+ GPU
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+\begin_inset Quotes eld
+\end_inset
+
+PC
+\begin_inset Quotes erd
+\end_inset
+
+ 
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\size small
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+{}
+\end_layout
+
+\end_inset
+
+AMD FX-8320E 3.2 GHz
+\size default
+ 
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+8 
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+8 GB 
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\size small
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+{}
+\end_layout
+
+\end_inset
+
+NVIDIA GTX 1050 Ti
+\size default
+ 
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+4 GB
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+\begin_inset Quotes eld
+\end_inset
+
+WS
+\begin_inset Quotes erd
+\end_inset
+
+ 
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\size small
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+{}
+\end_layout
+
+\end_inset
+
+Intel Xeon E5-2609 1.7 GHz
+\size default
+ 
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+2
+\begin_inset Formula $\times$
+\end_inset
+
+8 
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+64 GB 
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\size small
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+{}
+\end_layout
+
+\end_inset
+
+NVIDIA QUADRO P6000
+\size default
+ 
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+24 GB
+\end_layout
+
+\end_inset
+</cell>
+</row>
+</lyxtabular>
+
+\end_inset
+
+
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+}
+\end_layout
+
+\end_inset
+
+
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+\begin_inset CommandInset label
+LatexCommand label
+name "tab:config_specs"
+
+\end_inset
+
+Configurations of the computers used for the tests.
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsection
+Multicore CPU tests
+\end_layout
+
+\begin_layout Standard
+In the first test, we only activate the C99 codelets, and thus the GPU is
+ not activated.
+ We also vary the number of computing CPU cores from 2 to 7 for the 
+\begin_inset Quotes eld
+\end_inset
+
+PC
+\begin_inset Quotes erd
+\end_inset
+
+ configuration and from 2 to 15 for the 
+\begin_inset Quotes eld
+\end_inset
+
+WS
+\begin_inset Quotes erd
+\end_inset
+
+ configuration.
+ One CPU core is anyway reserved for the main StarPU thread.
+\end_layout
+
+\begin_layout Standard
+We perform a fixed number of 
+\begin_inset Formula $n_{t}$
+\end_inset
+
+ iterations of the RK2 algorithm.
+ We assume that the number of elementary computing operations increases
+ as 
+\begin_inset Formula $O(n_{r}^{3}).$
+\end_inset
+
+ Ideally, with infinitely fast operations at interfaces, and with 
+\begin_inset Formula $n_{a}$
+\end_inset
+
+ identical CPU cores, the computations time would behave like 
+\begin_inset Formula 
+\begin{equation}
+T\sim Cn_{t}\frac{n_{r}^{3}}{n_{a}}\label{eq:ideal_time}
+\end{equation}
+
+\end_inset
+
+where 
+\begin_inset Formula $C$
+\end_inset
+
+ is fixed constant, depending on the hardware.
+ In our benchmark the 
+\emph on
+efficiency
+\emph default
+ is the ratio of the measured execution time over this ideal time.
+ Normally it should be smaller than one (because of communications).
+ If it is close to one, the algorithm is very efficient.
+ In Table 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "tab:bench_pc_cpu"
+plural "false"
+caps "false"
+noprefix "false"
+
+\end_inset
+
+ and 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "tab:bench_ws_cpu"
+plural "false"
+caps "false"
+noprefix "false"
+
+\end_inset
+
+, we observe an excellent efficiency of the StarPU task distribution on
+ the CPU cores even on a machine with two NUMA nodes.
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float table
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+\align center
+\begin_inset Tabular
+<lyxtabular version="3" rows="7" columns="5">
+<features tabularvalignment="middle">
+<column alignment="center" valignment="top">
+<column alignment="center" valignment="top">
+<column alignment="center" valignment="top">
+<column alignment="center" valignment="top">
+<column alignment="center" valignment="top">
+<row>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+\begin_inset Formula $n_{r}$
+\end_inset
+
+ 
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+\begin_inset Formula $n_{\text{cpu}}$
+\end_inset
+
+ 
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Time (s) 
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Ideal time 
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Efficiency
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+4 
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+2 
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+704 
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+704 
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+1
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+4 
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+4 
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+365 
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+352 
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+0.96
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+4 
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+7 
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+209 
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+201 
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+0.96
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+6 
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+7 
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+689 
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+679 
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+0.99
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+8 
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+4 
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+2902 
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+2816 
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+0.97
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+8 
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+7 
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+1650 
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+1609 
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+0.98
+\end_layout
+
+\end_inset
+</cell>
+</row>
+</lyxtabular>
+
+\end_inset
+
+
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+\begin_inset CommandInset label
+LatexCommand label
+name "tab:bench_pc_cpu"
+
+\end_inset
+
+Efficiency of the CPU codelets for the 
+\begin_inset Quotes eld
+\end_inset
+
+PC
+\begin_inset Quotes erd
+\end_inset
+
+ configuration with the 
+\family typewriter
+dmdar
+\family default
+ scheduler.
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float table
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+
+\backslash
+centering
+\end_layout
+
+\end_inset
+
+
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+{}
+\end_layout
+
+\end_inset
+
+
+\begin_inset Tabular
+<lyxtabular version="3" rows="7" columns="5">
+<features tabularvalignment="middle">
+<column alignment="center" valignment="top">
+<column alignment="center" valignment="top">
+<column alignment="center" valignment="top">
+<column alignment="center" valignment="top">
+<column alignment="center" valignment="top">
+<row>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+\begin_inset Formula $n_{r}$
+\end_inset
+
+ 
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+\begin_inset Formula $n_{\text{cpu}}$
+\end_inset
+
+ 
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Time (s) 
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Ideal time 
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Efficiency
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+4 
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+2 
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+763 
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+763 
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+1
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+4 
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+4 
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+382 
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+381 
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+0.99
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+4 
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+8 
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+196 
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+191 
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+0.97
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+4 
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+15 
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+110 
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+102 
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+0.92
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+8 
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+8 
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+1586 
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+1526 
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+0.96
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+8 
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+15 
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+828 
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+814 
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+0.98
+\end_layout
+
+\end_inset
+</cell>
+</row>
+</lyxtabular>
+
+\end_inset
+
+
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+\begin_inset CommandInset label
+LatexCommand label
+name "tab:bench_ws_cpu"
+
+\end_inset
+
+Efficiency of the CPU codelets for the 
+\begin_inset Quotes eld
+\end_inset
+
+WS
+\begin_inset Quotes erd
+\end_inset
+
+ configuration with the 
+\family typewriter
+dmdar
+\family default
+ scheduler.
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsection
+OpenCL codelets
+\end_layout
+
+\begin_layout Standard
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+
+\backslash
+begin{sloppypar}
+\end_layout
+
+\end_inset
+
+ In this section, we compare the efficiency of the CPU/C99 and GPU/OpenCL
+ codelets on the two configurations 
+\begin_inset Quotes eld
+\end_inset
+
+PC
+\begin_inset Quotes erd
+\end_inset
+
+ and 
+\begin_inset Quotes eld
+\end_inset
+
+WS
+\begin_inset Quotes erd
+\end_inset
+
+.
+ We first perform a CPU-only computation with all the cores activated (7
+ for the 
+\begin_inset Quotes eld
+\end_inset
+
+PC
+\begin_inset Quotes erd
+\end_inset
+
+ platform and 15 for the 
+\begin_inset Quotes eld
+\end_inset
+
+WS
+\begin_inset Quotes erd
+\end_inset
+
+ platform) and a GPU-only computation.
+ The results are given in Table 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "tab:bench_cpu_gpu"
+plural "false"
+caps "false"
+noprefix "false"
+
+\end_inset
+
+.
+ We observe that the OpenCL codelets are faster than the CPU codelets.
+ The highest efficiency is achieved for the finer meshes (
+\begin_inset Formula $n_{r}=8$
+\end_inset
+
+).
+ 
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+
+\backslash
+end{sloppypar}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float table
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+
+\backslash
+centering
+\end_layout
+
+\end_inset
+
+
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+{}
+\end_layout
+
+\end_inset
+
+
+\begin_inset Tabular
+<lyxtabular version="3" rows="6" columns="7">
+<features tabularvalignment="middle">
+<column alignment="center" valignment="top">
+<column alignment="center" valignment="top">
+<column alignment="center" valignment="top">
+<column alignment="center" valignment="top">
+<column alignment="center" valignment="top">
+<column alignment="center" valignment="top">
+<column alignment="center" valignment="top">
+<row>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+\begin_inset Formula $n_{r}$
+\end_inset
+
+ 
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+config.
+ 
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+\begin_inset Formula $t_{\text{CPU}}$
+\end_inset
+
+ (s) 
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+\begin_inset Formula $t_{\text{GPU}}$
+\end_inset
+
+(s) 
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+\begin_inset Formula $t_{\text{CPU}}/t_{\text{GPU}}$
+\end_inset
+
+ 
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+\begin_inset Formula $t_{\text{CPU+GPU}}$
+\end_inset
+
+ (s) 
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+\begin_inset Formula $t_{\text{CPU}}/t_{\text{CPU+GPU}}$
+\end_inset
+
+
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+4 
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+PC 
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+209 
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+73 
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+2.86 
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+32 
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+6.53
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+6 
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+PC 
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+689 
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+86 
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+8.01 
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+64 
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+10.77
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+8 
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+PC 
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+1650 
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+171 
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+9.65 
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+130 
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+12.69
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+4 
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+WS 
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+110 
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+86 
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+1.28 
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+36 
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+3.05
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+8 
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+WS 
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+828 
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+88 
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+9.41 
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+77 
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+10.75
+\end_layout
+
+\end_inset
+</cell>
+</row>
+</lyxtabular>
+
+\end_inset
+
+
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+\begin_inset CommandInset label
+LatexCommand label
+name "tab:bench_cpu_gpu"
+
+\end_inset
+
+Efficiency of the CPU/GPU implementation.
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float figure
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+\align center
+\begin_inset Graphics
+	filename figs/test_torus.png
+	width 6cm
+	clip
+
+\end_inset
+
+ 
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+\begin_inset CommandInset label
+LatexCommand label
+name "fig:Computational-domain"
+
+\end_inset
+
+Computational domain 
+\begin_inset Formula $\Omega$
+\end_inset
+
+.
+ Only the macrocells of the mesh are visible.
+ The represented mesh contains 240 macrocells (poloidal refinement set to
+ 
+\begin_inset Formula $n_{pol}=3$
+\end_inset
+
+ and toroidal refinement set to 
+\begin_inset Formula $n_{tor}=3$
+\end_inset
+
+.
+ In the numerical experiments, we take 
+\begin_inset Formula $n_{pol}=3$
+\end_inset
+
+ and 
+\begin_inset Formula $n_{tor}=5$
+\end_inset
+
+, which leads to a mesh of 400 macrocells).
+ Each macrocell is then cut regularly into the three directions.
+ 
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsection
+Hybrid CPU/GPU computations
+\end_layout
+
+\begin_layout Standard
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+
+\backslash
+begin{sloppypar}
+\end_layout
+
+\end_inset
+
+ Now that we are equipped with verified OpenCL codelets we can try to run
+ the code with StarPU in order to see if it is able to distribute the tasks
+ efficiently on the available accelerators.
+ 
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+
+\backslash
+end{sloppypar}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+One difficulty is to manage the data transfers efficiently between the accelerat
+ors.
+ Several scheduling strategies are available in StarPU.
+ With the 
+\family typewriter
+eager
+\family default
+ scheduler, the tasks are distributed in the order of submission to the
+ inactive device, without taking into account the cost of memory transfers.
+ This strategy is obviously not optimal.
+\end_layout
+
+\begin_layout Standard
+It is better to choose another scheduler, such as the 
+\family typewriter
+dmdar
+\family default
+ scheduler.
+ With the 
+\family typewriter
+dmdar
+\family default
+ scheduler, the computational and memory transfer costs are evaluated in
+ a preliminary benchmarking phase.
+ Then an optimized scheduling is activated in order to better overlap computatio
+ns and communications.
+\end_layout
+
+\begin_layout Standard
+We perform computations by letting StarPU decide how to distribute the computati
+ons on the available CPU cores and GPU.
+\end_layout
+
+\begin_layout Standard
+The results are given in the last two columns of Table 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "tab:bench_cpu_gpu"
+plural "false"
+caps "false"
+noprefix "false"
+
+\end_inset
+
+.
+ We observe that in all the situations, StarPU is able to get an additional
+ gain from the CPU cores, even if the GPU codelets are faster.
+\end_layout
+
+\begin_layout Section
+Conclusion
+\end_layout
+
+\begin_layout Standard
+We have proposed an optimized implementation of the Discontinuous Galerkin
+ method on hybrid computer made of several GPUs and multicore CPUs.
+ In order to manage the heterogeneous architecture easily and efficiently,
+ we rely on OpenCL for the GPU computations and on the StarPU runtime for
+ distributing the computational tasks on the available devices.
+\end_layout
+
+\begin_layout Standard
+OpenCL programming becomes much easier because the task dependency is computed
+ by StarPU.
+ We only had to concentrate on the optimization of the individual OpenCL
+ kernels and not on data distribution or memory transfers.
+ We first tested the efficiency of our OpenCL kernels.
+ We verified that the macrocell approach and cache prefetching strategy,
+ while not optimal, give good results.
+\end_layout
+
+\begin_layout Standard
+In addition, with a good choice of scheduler, and for heavy computations,
+ we have shown that StarPU is able to overlap computations and memory transfer
+ in a quite efficient way.
+ It is also able to use the available CPU codelets to achieve even higher
+ acceleration.
+\end_layout
+
+\begin_layout Standard
+ 
+\begin_inset CommandInset bibtex
+LatexCommand bibtex
+bibfiles "schnaps_opencl2017"
+options "plainnat"
+
+\end_inset
+
+
+\end_layout
+
+\end_body
+\end_document
