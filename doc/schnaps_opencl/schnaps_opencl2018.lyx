@@ -105,7 +105,7 @@ Optimization of a discontinuous finite element solver with OpenCL and StarPU
 \end_layout
 
 \begin_layout Author
-Philippe Helluy, Laura Mendoza, Bruno Weber
+Philippe Helluy, Laura Mendoza, Bruno Weber, Bérenger Bramas
 \end_layout
 
 \begin_layout Address
@@ -1434,7 +1434,13 @@ commute
 \family default
  access tells to StarPU that the execution of the corresponding task may
  be executed before or after other tasks containing commutative access.
- This allows StarPU to perform additional optimizations.
+ This can drastically increase the degree of parallelism as StarPU is able
+ to change the order of computation of the tasks that access the same data
+ in 
+\family typewriter
+commute
+\family default
+.
 \end_layout
 
 \begin_layout Standard
@@ -1866,6 +1872,8 @@ noprefix "false"
  Thanks to StarPU, this algorithm can be submitted in a sequential way.
  StarPU then uses the data dependency in order to distribute the tasks in
  parallel on the available workers.
+ The wait for task completion is done at the end of the algorithm and not
+ inside each iteration.
 \end_layout
 
 \begin_layout Standard
@@ -2375,7 +2383,7 @@ status collapsed
 
 \end_inset
 
-Intel Xeon E5-2609 1.7 GHz
+Intel Xeon E5-2683 v4 2.1GHz
 \size default
  
 \end_layout
@@ -2390,7 +2398,7 @@ Intel Xeon E5-2609 1.7 GHz
 \begin_inset Formula $\times$
 \end_inset
 
-8 
+16
 \end_layout
 
 \end_inset
@@ -2399,7 +2407,7 @@ Intel Xeon E5-2609 1.7 GHz
 \begin_inset Text
 
 \begin_layout Plain Layout
-64 GB 
+256 GB 
 \end_layout
 
 \end_inset
@@ -2420,7 +2428,7 @@ status collapsed
 
 \end_inset
 
-NVIDIA QUADRO P6000
+NVIDIA P100
 \size default
  
 \end_layout
@@ -2431,7 +2439,7 @@ NVIDIA QUADRO P6000
 \begin_inset Text
 
 \begin_layout Plain Layout
-24 GB
+16 GB
 \end_layout
 
 \end_inset
@@ -2490,7 +2498,7 @@ PC
 \begin_inset Quotes erd
 \end_inset
 
- configuration and from 2 to 15 for the 
+ configuration and from 2 to 31 for the 
 \begin_inset Quotes eld
 \end_inset
 
@@ -3349,7 +3357,7 @@ WS
 
  configuration with the 
 \family typewriter
-dmdar
+laheteroprio
 \family default
  scheduler.
 \end_layout
@@ -3408,7 +3416,7 @@ PC
 \begin_inset Quotes erd
 \end_inset
 
- platform and 15 for the 
+ platform and 31 for the 
 \begin_inset Quotes eld
 \end_inset
 
@@ -3482,8 +3490,12 @@ status collapsed
 
 
 \begin_inset Tabular
-<lyxtabular version="3" rows="6" columns="7">
+<lyxtabular version="3" rows="7" columns="11">
 <features tabularvalignment="middle">
+<column alignment="center" valignment="top">
+<column alignment="center" valignment="top">
+<column alignment="center" valignment="top">
+<column alignment="center" valignment="top">
 <column alignment="center" valignment="top">
 <column alignment="center" valignment="top">
 <column alignment="center" valignment="top">
@@ -3533,7 +3545,19 @@ config.
 \begin_inset Formula $t_{\text{GPU}}$
 \end_inset
 
-(s) 
+(s)
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+\begin_inset Formula $t_{\text{2×GPU}}$
+\end_inset
+
+(s)
 \end_layout
 
 \end_inset
@@ -3545,7 +3569,19 @@ config.
 \begin_inset Formula $t_{\text{CPU}}/t_{\text{GPU}}$
 \end_inset
 
- 
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+\begin_inset Formula $t_{\text{CPU}}/t_{\text{2×GPU}}$
+\end_inset
+
+
 \end_layout
 
 \end_inset
@@ -3557,7 +3593,31 @@ config.
 \begin_inset Formula $t_{\text{CPU+GPU}}$
 \end_inset
 
- (s) 
+ (s)
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+\begin_inset Formula $t_{\text{CPU+2×GPU}}$
+\end_inset
+
+ (s)
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+\begin_inset Formula $t_{\text{CPU}}/t_{\text{CPU+GPU}}$
+\end_inset
+
+
 \end_layout
 
 \end_inset
@@ -3616,7 +3676,25 @@ PC
 \begin_inset Text
 
 \begin_layout Plain Layout
+-
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
 2.86 
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+-
 \end_layout
 
 \end_inset
@@ -3634,7 +3712,25 @@ PC
 \begin_inset Text
 
 \begin_layout Plain Layout
+-
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
 6.53
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+-
 \end_layout
 
 \end_inset
@@ -3672,7 +3768,16 @@ PC
 \begin_inset Text
 
 \begin_layout Plain Layout
-86 
+86
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+-
 \end_layout
 
 \end_inset
@@ -3690,7 +3795,25 @@ PC
 \begin_inset Text
 
 \begin_layout Plain Layout
-64 
+-
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+64
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+-
 \end_layout
 
 \end_inset
@@ -3700,6 +3823,15 @@ PC
 
 \begin_layout Plain Layout
 10.77
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+-
 \end_layout
 
 \end_inset
@@ -3746,7 +3878,25 @@ PC
 \begin_inset Text
 
 \begin_layout Plain Layout
-9.65 
+-
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+9.65
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+-
 \end_layout
 
 \end_inset
@@ -3764,7 +3914,25 @@ PC
 \begin_inset Text
 
 \begin_layout Plain Layout
+-
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
 12.69
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+-
 \end_layout
 
 \end_inset
@@ -3775,7 +3943,7 @@ PC
 \begin_inset Text
 
 \begin_layout Plain Layout
-4 
+4
 \end_layout
 
 \end_inset
@@ -3793,7 +3961,7 @@ WS
 \begin_inset Text
 
 \begin_layout Plain Layout
-110 
+35.5 
 \end_layout
 
 \end_inset
@@ -3802,7 +3970,7 @@ WS
 \begin_inset Text
 
 \begin_layout Plain Layout
-86 
+23.2
 \end_layout
 
 \end_inset
@@ -3811,7 +3979,7 @@ WS
 \begin_inset Text
 
 \begin_layout Plain Layout
-1.28 
+18.1
 \end_layout
 
 \end_inset
@@ -3820,7 +3988,7 @@ WS
 \begin_inset Text
 
 \begin_layout Plain Layout
-36 
+1.5
 \end_layout
 
 \end_inset
@@ -3829,7 +3997,144 @@ WS
 \begin_inset Text
 
 \begin_layout Plain Layout
-3.05
+2
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+10.7
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+8.9
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+3.3
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+4
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+6
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+WS
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+117.3
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+26.1
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+20.3
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+4.5
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+5.8
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+16.7
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+11
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+7
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+10.7
 \end_layout
 
 \end_inset
@@ -3858,7 +4163,7 @@ WS
 \begin_inset Text
 
 \begin_layout Plain Layout
-828 
+277.6 
 \end_layout
 
 \end_inset
@@ -3867,7 +4172,7 @@ WS
 \begin_inset Text
 
 \begin_layout Plain Layout
-88 
+29.8
 \end_layout
 
 \end_inset
@@ -3876,7 +4181,7 @@ WS
 \begin_inset Text
 
 \begin_layout Plain Layout
-9.41 
+24.3
 \end_layout
 
 \end_inset
@@ -3885,7 +4190,7 @@ WS
 \begin_inset Text
 
 \begin_layout Plain Layout
-77 
+9.3
 \end_layout
 
 \end_inset
@@ -3894,7 +4199,43 @@ WS
 \begin_inset Text
 
 \begin_layout Plain Layout
-10.75
+11.4
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+29.8
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+18.1
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+9.3
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+15.3
 \end_layout
 
 \end_inset
@@ -4046,17 +4387,26 @@ eager
 \begin_layout Standard
 It is better to choose another scheduler, such as the 
 \family typewriter
-dmdar
+LAHeteroprio
 \family default
- scheduler.
+ scheduler (
+\begin_inset CommandInset citation
+LatexCommand citet
+key "10.7717/peerj-cs.190"
+literal "false"
+
+\end_inset
+
+).
  With the 
 \family typewriter
-dmdar
+LAHeteroprio
 \family default
- scheduler, the computational and memory transfer costs are evaluated in
- a preliminary benchmarking phase.
- Then an optimized scheduling is activated in order to better overlap computatio
-ns and communications.
+ scheduler, the different types of tasks are grouped into buckets, and the
+ processing unit peak tasks in them following an order based on their type
+ (CPU/GPU) and the location of the data.
+ The idea is to reduce the memory transfer and to promote the commomation
+ of the tasks by the processing unit that are the more efficient.
 \end_layout
 
 \begin_layout Standard
