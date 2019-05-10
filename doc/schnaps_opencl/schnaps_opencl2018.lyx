@@ -3626,7 +3626,7 @@ config.
 \begin_inset Text
 
 \begin_layout Plain Layout
-\begin_inset Formula $t_{\text{CPU}}/t_{\text{CPU+GPU}}$
+\begin_inset Formula $t_{\text{CPU}}/t_{\text{CPU+2×GPU}}$
 \end_inset
 
 
@@ -4385,7 +4385,20 @@ eager
 \end_layout
 
 \begin_layout Standard
-It is better to choose another scheduler, such as the 
+It is better to choose another scheduler.
+ For the 
+\begin_inset Quotes eld
+\end_inset
+
+PC
+\begin_inset Quotes erd
+\end_inset
+
+ configuration, we use the 
+\family typewriter
+dmda
+\family default
+ scheduler provided by StarPU and we use the 
 \family typewriter
 LAHeteroprio
 \family default
@@ -4397,21 +4410,35 @@ literal "false"
 
 \end_inset
 
-).
+) for the 
+\begin_inset Quotes eld
+\end_inset
+
+WS
+\begin_inset Quotes erd
+\end_inset
+
+ configuration.
  With the 
 \family typewriter
 LAHeteroprio
 \family default
- scheduler, the different types of tasks are grouped into buckets, and the
- processing unit peak tasks in them following an order based on their type
- (CPU/GPU) and the location of the data.
- The idea is to reduce the memory transfer and to promote the commomation
- of the tasks by the processing unit that are the more efficient.
-\end_layout
-
-\begin_layout Standard
-We perform computations by letting StarPU decide how to distribute the computati
-ons on the available CPU cores and GPU.
+ scheduler, the different types of tasks are grouped into buckets and the
+ processing unit peak tasks following an order based on their type, which
+ is CPU or GPU in our case, and the location of the data.
+ The idea is to reduce the memory transfer and to promote the consumption
+ of the tasks by the processing units that are more efficient.
+ Therefore, we configure 
+\family typewriter
+LAHeteroprio
+\family default
+ by sorting the different operations by arithmetic cost and we specify that
+ the CPU workers should follow this order, while the GPU workers do the
+ opposite: the GPU workers first try to peek tasks with high workload.
+ Additionaly, we ensure that GPU workers privilegiate data locality over
+ priorities.
+ Therefore, the distribution of the tasks on the available CPU cores and
+ GPU is done dynamically by the scheduler.
 \end_layout
 
 \begin_layout Standard
