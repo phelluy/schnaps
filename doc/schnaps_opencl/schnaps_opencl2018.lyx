@@ -21,6 +21,9 @@
 
 
 \usepackage{babel}
+
+\newcommand{\inmod}{\color{red}}
+\newcommand{\outmod}{\color{black}}
 \end_preamble
 \use_default_options false
 \begin_modules
@@ -105,18 +108,56 @@ Optimization of a discontinuous finite element solver with OpenCL and StarPU
 \end_layout
 
 \begin_layout Author
-Philippe Helluy, Laura Mendoza, Bruno Weber, Bérenger Bramas
+Bérenger Bramas, Philippe Helluy, Laura Mendoza, Bruno Weber
 \end_layout
 
 \begin_layout Address
-Université de Strasbourg, Inria Tonus, AxesSim.
+Université de Strasbourg, Inria Tonus, Inria Camus, AxesSim.
  
 \family typewriter
 philippe.helluy@unistra.fr
 \end_layout
 
 \begin_layout Abstract
+\begin_inset ERT
+status open
 
+\begin_layout Plain Layout
+
+
+\backslash
+inmod 
+\end_layout
+
+\end_inset
+
+Since the recent advance in microprocessor design, the optimization of computing
+ software becomes more and more technical.
+ One of the difficulties is to transform sequential algorithms into parallel
+ ones.
+ A possible solution is the task-based design.
+ In this approach the computations are split into elementary tasks with
+ clearly identified input and output data.
+ With this description, it is then possible to describe the parallelization
+ possibilities of the algorithm automatically.
+ The task-based design is also a good strategy to optimize software in an
+ incremental way.
+ The objective of this paper is to describe a practical experience of a
+ task-based parallelization of a Discontinuous Galerkin method in the context
+ of electromagnetic simulations.
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+outmod 
+\end_layout
+
+\end_inset
+
+ 
 \family typewriter
 schnaps
 \family default
@@ -241,6 +282,41 @@ l optimization of the code.
 \begin_layout Standard
 In this paper, we describe how we applied the StarPU philosophy in order
  to optimize a discontinuous finite element solver for conservation laws.
+ 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+inmod 
+\end_layout
+
+\end_inset
+
+ Similar optimizations are also presented for instance in 
+\begin_inset CommandInset citation
+LatexCommand citet
+key "essadki2018task"
+literal "false"
+
+\end_inset
+
+
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+outmod 
+\end_layout
+
+\end_inset
+
+.
  The outlines are as follows: first we will present in its main lines the
  Discontinuous Galerkin (DG) scheme that is used in the solver.
  Then, after a short presentation of StarPU, we will explain how we have
@@ -2967,6 +3043,19 @@ status open
 
 \begin_layout Plain Layout
 \begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+inmod 
+\end_layout
+
+\end_inset
+
+
+\begin_inset ERT
 status collapsed
 
 \begin_layout Plain Layout
@@ -3365,6 +3454,19 @@ laheteroprio
 \end_inset
 
 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+outmod 
+\end_layout
+
+\end_inset
+
+
 \end_layout
 
 \end_inset
@@ -3456,6 +3558,10 @@ end{sloppypar}
 \end_inset
 
 
+\begin_inset Formula $t_{\text{CPU+GPU}}$
+\end_inset
+
+
 \end_layout
 
 \begin_layout Standard
@@ -3465,6 +3571,19 @@ sideways false
 status open
 
 \begin_layout Plain Layout
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+inmod 
+\end_layout
+
+\end_inset
+
+
 \begin_inset ERT
 status collapsed
 
@@ -3492,17 +3611,17 @@ status collapsed
 \begin_inset Tabular
 <lyxtabular version="3" rows="7" columns="11">
 <features tabularvalignment="middle">
-<column alignment="center" valignment="top">
-<column alignment="center" valignment="top">
-<column alignment="center" valignment="top">
-<column alignment="center" valignment="top">
-<column alignment="center" valignment="top">
-<column alignment="center" valignment="top">
-<column alignment="center" valignment="top">
-<column alignment="center" valignment="top">
-<column alignment="center" valignment="top">
-<column alignment="center" valignment="top">
-<column alignment="center" valignment="top">
+<column alignment="center" valignment="top" width="0.4cm">
+<column alignment="center" valignment="top" width="1cm">
+<column alignment="center" valignment="top" width="1.1cm">
+<column alignment="center" valignment="top" width="1cm">
+<column alignment="center" valignment="top" width="1cm">
+<column alignment="center" valignment="top" width="1cm">
+<column alignment="center" valignment="top" width="1cm">
+<column alignment="center" valignment="top" width="1cm">
+<column alignment="center" valignment="top" width="1cm">
+<column alignment="center" valignment="top" width="1.15cm">
+<column alignment="center" valignment="top" width="1.5cm">
 <row>
 <cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
 \begin_inset Text
@@ -3530,10 +3649,7 @@ config.
 \begin_inset Text
 
 \begin_layout Plain Layout
-\begin_inset Formula $t_{\text{CPU}}$
-\end_inset
-
- (s) 
+CPU
 \end_layout
 
 \end_inset
@@ -3542,10 +3658,7 @@ config.
 \begin_inset Text
 
 \begin_layout Plain Layout
-\begin_inset Formula $t_{\text{GPU}}$
-\end_inset
-
-(s)
+GPU
 \end_layout
 
 \end_inset
@@ -3554,10 +3667,7 @@ config.
 \begin_inset Text
 
 \begin_layout Plain Layout
-\begin_inset Formula $t_{\text{2×GPU}}$
-\end_inset
-
-(s)
+2xGPU
 \end_layout
 
 \end_inset
@@ -3566,10 +3676,7 @@ config.
 \begin_inset Text
 
 \begin_layout Plain Layout
-\begin_inset Formula $t_{\text{CPU}}/t_{\text{GPU}}$
-\end_inset
-
-
+CPU/ GPU
 \end_layout
 
 \end_inset
@@ -3578,10 +3685,7 @@ config.
 \begin_inset Text
 
 \begin_layout Plain Layout
-\begin_inset Formula $t_{\text{CPU}}/t_{\text{2×GPU}}$
-\end_inset
-
-
+CPU/ 2xGPU
 \end_layout
 
 \end_inset
@@ -3590,10 +3694,7 @@ config.
 \begin_inset Text
 
 \begin_layout Plain Layout
-\begin_inset Formula $t_{\text{CPU+GPU}}$
-\end_inset
-
- (s)
+CPU+ GPU
 \end_layout
 
 \end_inset
@@ -3602,10 +3703,7 @@ config.
 \begin_inset Text
 
 \begin_layout Plain Layout
-\begin_inset Formula $t_{\text{CPU+2×GPU}}$
-\end_inset
-
- (s)
+CPU+ 2xGPU
 \end_layout
 
 \end_inset
@@ -3614,10 +3712,9 @@ config.
 \begin_inset Text
 
 \begin_layout Plain Layout
-\begin_inset Formula $t_{\text{CPU}}/t_{\text{CPU+GPU}}$
-\end_inset
-
-
+CPU/ 
+\size tiny
+CPU+GPU
 \end_layout
 
 \end_inset
@@ -3626,10 +3723,9 @@ config.
 \begin_inset Text
 
 \begin_layout Plain Layout
-\begin_inset Formula $t_{\text{CPU}}/t_{\text{CPU+2×GPU}}$
-\end_inset
-
-
+CPU/ 
+\size tiny
+CPU+2xGPU
 \end_layout
 
 \end_inset
@@ -3658,7 +3754,7 @@ PC
 \begin_inset Text
 
 \begin_layout Plain Layout
-209 
+209 s 
 \end_layout
 
 \end_inset
@@ -3667,7 +3763,7 @@ PC
 \begin_inset Text
 
 \begin_layout Plain Layout
-73 
+73 s 
 \end_layout
 
 \end_inset
@@ -3703,7 +3799,7 @@ PC
 \begin_inset Text
 
 \begin_layout Plain Layout
-32 
+32 s
 \end_layout
 
 \end_inset
@@ -3759,7 +3855,7 @@ PC
 \begin_inset Text
 
 \begin_layout Plain Layout
-689 
+689 s
 \end_layout
 
 \end_inset
@@ -3768,7 +3864,7 @@ PC
 \begin_inset Text
 
 \begin_layout Plain Layout
-86
+86 s
 \end_layout
 
 \end_inset
@@ -3804,7 +3900,7 @@ PC
 \begin_inset Text
 
 \begin_layout Plain Layout
-64
+64 s
 \end_layout
 
 \end_inset
@@ -3860,7 +3956,7 @@ PC
 \begin_inset Text
 
 \begin_layout Plain Layout
-1650 
+1650 s
 \end_layout
 
 \end_inset
@@ -3869,7 +3965,7 @@ PC
 \begin_inset Text
 
 \begin_layout Plain Layout
-171 
+171 s 
 \end_layout
 
 \end_inset
@@ -3905,7 +4001,7 @@ PC
 \begin_inset Text
 
 \begin_layout Plain Layout
-130 
+130 s
 \end_layout
 
 \end_inset
@@ -3961,7 +4057,7 @@ WS
 \begin_inset Text
 
 \begin_layout Plain Layout
-35.5 
+35.5 s 
 \end_layout
 
 \end_inset
@@ -3970,7 +4066,7 @@ WS
 \begin_inset Text
 
 \begin_layout Plain Layout
-23.2
+23.2 s
 \end_layout
 
 \end_inset
@@ -3979,7 +4075,7 @@ WS
 \begin_inset Text
 
 \begin_layout Plain Layout
-18.1
+18.1 s
 \end_layout
 
 \end_inset
@@ -4006,7 +4102,7 @@ WS
 \begin_inset Text
 
 \begin_layout Plain Layout
-10.7
+10.7 s
 \end_layout
 
 \end_inset
@@ -4015,7 +4111,7 @@ WS
 \begin_inset Text
 
 \begin_layout Plain Layout
-8.9
+8.9 s
 \end_layout
 
 \end_inset
@@ -4062,7 +4158,7 @@ WS
 \begin_inset Text
 
 \begin_layout Plain Layout
-117.3
+117.3 s
 \end_layout
 
 \end_inset
@@ -4071,7 +4167,7 @@ WS
 \begin_inset Text
 
 \begin_layout Plain Layout
-26.1
+26.1 s
 \end_layout
 
 \end_inset
@@ -4080,7 +4176,7 @@ WS
 \begin_inset Text
 
 \begin_layout Plain Layout
-20.3
+20.3 s
 \end_layout
 
 \end_inset
@@ -4107,7 +4203,7 @@ WS
 \begin_inset Text
 
 \begin_layout Plain Layout
-16.7
+16.7 s
 \end_layout
 
 \end_inset
@@ -4116,7 +4212,7 @@ WS
 \begin_inset Text
 
 \begin_layout Plain Layout
-11
+11 s
 \end_layout
 
 \end_inset
@@ -4163,7 +4259,7 @@ WS
 \begin_inset Text
 
 \begin_layout Plain Layout
-277.6 
+277.6 s
 \end_layout
 
 \end_inset
@@ -4172,7 +4268,7 @@ WS
 \begin_inset Text
 
 \begin_layout Plain Layout
-29.8
+29.8 s
 \end_layout
 
 \end_inset
@@ -4181,7 +4277,7 @@ WS
 \begin_inset Text
 
 \begin_layout Plain Layout
-24.3
+24.3 s
 \end_layout
 
 \end_inset
@@ -4208,7 +4304,7 @@ WS
 \begin_inset Text
 
 \begin_layout Plain Layout
-29.8
+29.8 s
 \end_layout
 
 \end_inset
@@ -4217,7 +4313,7 @@ WS
 \begin_inset Text
 
 \begin_layout Plain Layout
-18.1
+18.1 s
 \end_layout
 
 \end_inset
@@ -4256,6 +4352,23 @@ name "tab:bench_cpu_gpu"
 \end_inset
 
 Efficiency of the CPU/GPU implementation.
+ All timings are given in seconds.
+ All ratio are dimensionless.
+ This table shows that StarPU is allways able to harness an increase of
+ hybrid computing capacities.
+\end_layout
+
+\end_inset
+
+
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+outmod 
 \end_layout
 
 \end_inset
@@ -4488,7 +4601,6 @@ In addition, with a good choice of scheduler, and for heavy computations,
 \end_layout
 
 \begin_layout Standard
- 
 \begin_inset CommandInset bibtex
 LatexCommand bibtex
 bibfiles "schnaps_opencl2017"
