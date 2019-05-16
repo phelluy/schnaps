@@ -69,9 +69,9 @@ figs-within-sections
 \use_package stackrel 0
 \use_package stmaryrd 0
 \use_package undertilde 0
-\cite_engine natbib
-\cite_engine_type authoryear
-\biblio_style plainnat
+\cite_engine basic
+\cite_engine_type default
+\biblio_style plain
 \use_bibtopic false
 \use_indices false
 \paperorientation portrait
@@ -162,7 +162,8 @@ outmod
 schnaps
 \family default
  is a finite element solver designed to simulate various physical phenomena.
- It is designed to run on hybrid computers made of several CPUs and GPUs.
+ It is designed to run on hybrid computers made of different types of accelerato
+rs.
  In order to address the hybrid architectures we rely on the StarPU runtime.
  StarPU allows to optimize in an incremental way a sequential algorithm
  in order to migrate to multicore parallelism and then to hybrid computing
@@ -202,13 +203,75 @@ The development of engineering simulation software is difficult.
 \end_layout
 
 \begin_layout Standard
-OpenCL is a nice software environment for optimization purposes.
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+inmod 
+\end_layout
+
+\end_inset
+
+OpenCL (Open Computing Language) is a nice software environment for optimization
+ purposes.
+ OpenCL specifies programming languages (based on C99 and C++11) for programming
+ these devices and application programming interfaces (APIs) to control
+ the platform and execute programs on the compute devices.
+ OpenCL provides a standard interface for parallel computing using task-
+ and data-based parallelism
+\begin_inset Foot
+status open
+
+\begin_layout Plain Layout
+\begin_inset CommandInset href
+LatexCommand href
+name "https://en.wikipedia.org/wiki/OpenCL"
+target "https://en.wikipedia.org/wiki/OpenCL"
+literal "false"
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+.
+ OpenCL has been used succesfully in several works for accelerating Finite
+ Volume (FV) or Discontinuous Galerkin (DG) programs.
+ See for instance 
+\begin_inset CommandInset citation
+LatexCommand citet
+key "crestetto2012resolution,klockner2013high,helluy2014multi,strub:tel-01651258,helluy2016asynchronous,essadki2018task"
+literal "false"
+
+\end_inset
+
+
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+outmod 
+\end_layout
+
+\end_inset
+
+.
  It presents the good balance between an abstract view of the computing
  devices and some important hardware aspects, such as local memory for accelerat
 ing data transfers or subgroups for minimizing synchronization barriers.
  However depending on architecture, optimizations written for one accelerator
  may be completely irrelevant for another one.
- This is especially true with local memory optimizations.
+ A CPU (Central Processing Unit), a discrete GPU (Graphic Processing Unit)
+ or an IGP (Integrated Graphic Processor) have completely different behavior
+ concerning local cache memory optimizations.
  For instance, cache prefetching is generally efficient for discrete GPUs
  while inefficient for IGPs.
 \end_layout
@@ -4603,8 +4666,9 @@ In addition, with a good choice of scheduler, and for heavy computations,
 \begin_layout Standard
 \begin_inset CommandInset bibtex
 LatexCommand bibtex
+btprint "btPrintCited"
 bibfiles "schnaps_opencl2017"
-options "plainnat"
+options "alpha"
 
 \end_inset
 

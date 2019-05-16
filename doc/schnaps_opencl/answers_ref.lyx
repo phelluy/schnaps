@@ -120,11 +120,21 @@ Some references are missing: for OpenCL, for StarPU.
 \begin_inset Newline newline
 \end_inset
 
-We have added new references.
+We have added new references on OpenCL and StarpU computations made in the
+ context of Finite Volumes or Discontinuous Galerkin methods.
 \end_layout
 
 \begin_layout Enumerate
-ff
+
+\emph on
+Even if this paper will particularly interest the community of High Performance
+ Computing, it seems useful to detail the acronyms: GPU, IGP.
+\emph default
+
+\begin_inset Newline newline
+\end_inset
+
+This has been done.
 \end_layout
 
 \end_deeper
