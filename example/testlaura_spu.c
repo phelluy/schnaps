@@ -59,35 +59,52 @@ void init_heteroprio(unsigned sched_ctx) {
 #ifdef USE_LAHETEROPRIO
 void init_laheteroprio(unsigned sched_ctx) {
     printf("[LAHETEROPRIO] Init\n");
-   // Create queues for CPU tasks
-   starpu_laheteroprio_set_nb_prios(sched_ctx, STARPU_CPU_IDX, SSPU_NB_PRIO);
+   if(starpu_cpu_worker_get_count() && starpu_opencl_worker_get_count()){
+       // Create queues for CPU tasks
+       starpu_laheteroprio_set_nb_prios(sched_ctx, STARPU_CPU_IDX, SSPU_NB_PRIO);
 
-   // Set lookup order for CPU workers
-   // 0 => 3
-   // 1 => 2
-   // ..
-   // 3 => 0
-   // Use simple mapping
-   for (int bucketid=0; bucketid<SSPU_NB_PRIO; bucketid++) {
-      starpu_laheteroprio_set_mapping(sched_ctx, STARPU_CPU_IDX, bucketid, bucketid);
-      starpu_laheteroprio_set_faster_arch(sched_ctx, STARPU_CPU_IDX, bucketid);
+       // Set lookup order for CPU workers
+       // 0 => 3
+       // 1 => 2
+       // ..
+       // 3 => 0
+       // Use simple mapping
+       for (int bucketid=0; bucketid<SSPU_NB_PRIO; bucketid++) {
+          starpu_laheteroprio_set_mapping(sched_ctx, STARPU_CPU_IDX, bucketid, bucketid);
+          starpu_laheteroprio_set_faster_arch(sched_ctx, STARPU_CPU_IDX, bucketid);
+       }
+
+       // Create queues for CUDA tasks
+       starpu_laheteroprio_set_nb_prios(sched_ctx, STARPU_OPENCL_IDX, SSPU_NB_PRIO);
+       for (int bucketid=0; bucketid<SSPU_NB_PRIO; bucketid++) {
+          starpu_laheteroprio_set_mapping(sched_ctx, STARPU_OPENCL_IDX, bucketid, SSPU_NB_PRIO-bucketid-1);
+       }
+
+       starpu_laheteroprio_set_faster_arch(sched_ctx, STARPU_OPENCL_IDX, DGMass_SPU_PRIO);
+       starpu_laheteroprio_set_arch_slow_factor(sched_ctx, STARPU_OPENCL_IDX, DGMass_SPU_PRIO, 10.0f);
+
+       starpu_laheteroprio_set_faster_arch(sched_ctx, STARPU_OPENCL_IDX, DGSource_SPU_PRIO);
+       starpu_laheteroprio_set_arch_slow_factor(sched_ctx, STARPU_OPENCL_IDX, DGSource_SPU_PRIO, 10.0f);
+
+       starpu_laheteroprio_set_faster_arch(sched_ctx, STARPU_OPENCL_IDX, DGVolume_SPU_PRIO);
+       starpu_laheteroprio_set_arch_slow_factor(sched_ctx, STARPU_OPENCL_IDX, DGVolume_SPU_PRIO, 10.0f);
    }
+   else{
+      printf("[LAHETEROPRIO] Only CPU or OpenCL\n");
+      
+       // Create queues for CPU tasks
+       starpu_laheteroprio_set_nb_prios(sched_ctx, STARPU_CPU_IDX, SSPU_NB_PRIO);
+      for (int bucketid=0; bucketid<SSPU_NB_PRIO; bucketid++) {
+          starpu_laheteroprio_set_mapping(sched_ctx, STARPU_CPU_IDX, bucketid, SSPU_NB_PRIO-bucketid-1);
+          starpu_laheteroprio_set_faster_arch(sched_ctx, STARPU_CPU_IDX, SSPU_NB_PRIO-bucketid-1);
+       }
 
-   // Create queues for CUDA tasks
-   starpu_laheteroprio_set_nb_prios(sched_ctx, STARPU_OPENCL_IDX, SSPU_NB_PRIO);
-   for (int bucketid=0; bucketid<SSPU_NB_PRIO; bucketid++) {
-      starpu_laheteroprio_set_mapping(sched_ctx, STARPU_OPENCL_IDX, bucketid, SSPU_NB_PRIO-bucketid-1);
+       // Create queues for CUDA tasks
+       starpu_laheteroprio_set_nb_prios(sched_ctx, STARPU_OPENCL_IDX, SSPU_NB_PRIO);
+       for (int bucketid=0; bucketid<SSPU_NB_PRIO; bucketid++) {
+          starpu_laheteroprio_set_mapping(sched_ctx, STARPU_OPENCL_IDX, bucketid, SSPU_NB_PRIO-bucketid-1);
+       }
    }
-
-   starpu_laheteroprio_set_faster_arch(sched_ctx, STARPU_OPENCL_IDX, DGMass_SPU_PRIO);
-   starpu_laheteroprio_set_arch_slow_factor(sched_ctx, STARPU_OPENCL_IDX, DGMass_SPU_PRIO, 10.0f);
-
-   starpu_laheteroprio_set_faster_arch(sched_ctx, STARPU_OPENCL_IDX, DGSource_SPU_PRIO);
-   starpu_laheteroprio_set_arch_slow_factor(sched_ctx, STARPU_OPENCL_IDX, DGSource_SPU_PRIO, 10.0f);
-
-   starpu_laheteroprio_set_faster_arch(sched_ctx, STARPU_OPENCL_IDX, DGVolume_SPU_PRIO);
-   starpu_laheteroprio_set_arch_slow_factor(sched_ctx, STARPU_OPENCL_IDX, DGVolume_SPU_PRIO, 10.0f);
-
    // Init specific to la
    starpu_laheteroprio_map_wgroup_memory_nodes(sched_ctx);
    // Can be print out for debug :
@@ -152,8 +169,8 @@ int TestLaura_SPU(int argc, char *argv[]) {
   printf("\n\n---------------------------------------------------------\n");
   printf("2/ Building connectivity \n");
   BuildConnectivity(&mesh);
-  int thedeg = 4;
-  int theraf = 5;
+  int thedeg = (getenv("THEDEG")?atoi(getenv("THEDEG")):4);
+  int theraf = (getenv("THERAF")?atoi(getenv("THERAF")):4);
   int deg[] = {thedeg, thedeg, thedeg};
   int raf[] = {theraf, theraf, theraf};
 
@@ -250,8 +267,14 @@ int TestLaura_SPU(int argc, char *argv[]) {
       struct starpu_conf conf;
       starpu_conf_init(&conf);
 #ifdef USE_LAHETEROPRIO
-      conf.sched_policy_name = "laheteroprio";
-      conf.sched_policy_init = &init_laheteroprio;
+      if(getenv("USE_LAHETEROPRIO") == NULL || strcmp(getenv("USE_LAHETEROPRIO"), "FALSE") != 0){
+          conf.sched_policy_name = "laheteroprio";
+          conf.sched_policy_init = &init_laheteroprio;
+      }
+      else{
+          conf.sched_policy_name = "heteroprio";
+          conf.sched_policy_init = &init_heteroprio;
+      }
 #else
       conf.sched_policy_name = "heteroprio";
       conf.sched_policy_init = &init_heteroprio;
