@@ -3073,7 +3073,7 @@ name "tab:bench_pc_cpu"
 
 \end_inset
 
-Efficiency of the CPU codelets for the 
+Efficiency (with two threads as reference) of the CPU codelets for the 
 \begin_inset Quotes eld
 \end_inset
 
@@ -3143,7 +3143,7 @@ status collapsed
 
 
 \begin_inset Tabular
-<lyxtabular version="3" rows="7" columns="5">
+<lyxtabular version="3" rows="19" columns="5">
 <features tabularvalignment="middle">
 <column alignment="center" valignment="top">
 <column alignment="center" valignment="top">
@@ -3217,7 +3217,7 @@ Efficiency
 \begin_inset Text
 
 \begin_layout Plain Layout
-2 
+1
 \end_layout
 
 \end_inset
@@ -3226,7 +3226,7 @@ Efficiency
 \begin_inset Text
 
 \begin_layout Plain Layout
-763 
+646
 \end_layout
 
 \end_inset
@@ -3235,7 +3235,7 @@ Efficiency
 \begin_inset Text
 
 \begin_layout Plain Layout
-763 
+646 
 \end_layout
 
 \end_inset
@@ -3255,7 +3255,7 @@ Efficiency
 \begin_inset Text
 
 \begin_layout Plain Layout
-4 
+4
 \end_layout
 
 \end_inset
@@ -3264,7 +3264,7 @@ Efficiency
 \begin_inset Text
 
 \begin_layout Plain Layout
-4 
+2
 \end_layout
 
 \end_inset
@@ -3273,7 +3273,7 @@ Efficiency
 \begin_inset Text
 
 \begin_layout Plain Layout
-382 
+331
 \end_layout
 
 \end_inset
@@ -3282,54 +3282,7 @@ Efficiency
 \begin_inset Text
 
 \begin_layout Plain Layout
-381 
-\end_layout
-
-\end_inset
-</cell>
-<cell alignment="center" valignment="top" topline="true" rightline="true" usebox="none">
-\begin_inset Text
-
-\begin_layout Plain Layout
-0.99
-\end_layout
-
-\end_inset
-</cell>
-</row>
-<row>
-<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
-\begin_inset Text
-
-\begin_layout Plain Layout
-4 
-\end_layout
-
-\end_inset
-</cell>
-<cell alignment="center" valignment="top" topline="true" rightline="true" usebox="none">
-\begin_inset Text
-
-\begin_layout Plain Layout
-8 
-\end_layout
-
-\end_inset
-</cell>
-<cell alignment="center" valignment="top" topline="true" rightline="true" usebox="none">
-\begin_inset Text
-
-\begin_layout Plain Layout
-196 
-\end_layout
-
-\end_inset
-</cell>
-<cell alignment="center" valignment="top" topline="true" rightline="true" usebox="none">
-\begin_inset Text
-
-\begin_layout Plain Layout
-191 
+323
 \end_layout
 
 \end_inset
@@ -3349,7 +3302,7 @@ Efficiency
 \begin_inset Text
 
 \begin_layout Plain Layout
-4 
+4
 \end_layout
 
 \end_inset
@@ -3358,7 +3311,7 @@ Efficiency
 \begin_inset Text
 
 \begin_layout Plain Layout
-15 
+4
 \end_layout
 
 \end_inset
@@ -3367,7 +3320,7 @@ Efficiency
 \begin_inset Text
 
 \begin_layout Plain Layout
-110 
+183.4
 \end_layout
 
 \end_inset
@@ -3376,7 +3329,7 @@ Efficiency
 \begin_inset Text
 
 \begin_layout Plain Layout
-102 
+161.5
 \end_layout
 
 \end_inset
@@ -3385,7 +3338,430 @@ Efficiency
 \begin_inset Text
 
 \begin_layout Plain Layout
-0.92
+0.88
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+4
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+8
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+95.1
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+80.7
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+0.85
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+4
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+16
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+48
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+40.3
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+0.84
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+4
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+30
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+26 
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+21.5
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+0.82
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+6
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+1 
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+2172.1
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+2172.1
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+1
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+6
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+2
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+1106.7
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+1086
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+0.98
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+6
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+4
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+612.2
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+543
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+0.88
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+6
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+8
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+317
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+271.5
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+0.85
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+6
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+16
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+159
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+135.8
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+0.85
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+6
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+30
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+85.2
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+72.4
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+0.84
 \end_layout
 
 \end_inset
@@ -3405,7 +3781,7 @@ Efficiency
 \begin_inset Text
 
 \begin_layout Plain Layout
-8 
+1
 \end_layout
 
 \end_inset
@@ -3414,7 +3790,7 @@ Efficiency
 \begin_inset Text
 
 \begin_layout Plain Layout
-1586 
+5139.4 
 \end_layout
 
 \end_inset
@@ -3423,7 +3799,7 @@ Efficiency
 \begin_inset Text
 
 \begin_layout Plain Layout
-1526 
+5139.4
 \end_layout
 
 \end_inset
@@ -3432,7 +3808,195 @@ Efficiency
 \begin_inset Text
 
 \begin_layout Plain Layout
-0.96
+1
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+8
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+2
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+2613
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+2569.7
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+0.98
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+8
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+4
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+1446.6
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+1284.9
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+0.88
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+8
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+8
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+749.1
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+642.4
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+0.85
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+8
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+16
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+375.2
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+321.2
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+0.85
 \end_layout
 
 \end_inset
@@ -3452,7 +4016,7 @@ Efficiency
 \begin_inset Text
 
 \begin_layout Plain Layout
-15 
+30 
 \end_layout
 
 \end_inset
@@ -3461,7 +4025,7 @@ Efficiency
 \begin_inset Text
 
 \begin_layout Plain Layout
-828 
+200.6
 \end_layout
 
 \end_inset
@@ -3470,7 +4034,7 @@ Efficiency
 \begin_inset Text
 
 \begin_layout Plain Layout
-814 
+171.3 
 \end_layout
 
 \end_inset
@@ -3479,7 +4043,7 @@ Efficiency
 \begin_inset Text
 
 \begin_layout Plain Layout
-0.98
+0.85
 \end_layout
 
 \end_inset
@@ -4120,7 +4684,7 @@ WS
 \begin_inset Text
 
 \begin_layout Plain Layout
-35.5 s 
+26 s 
 \end_layout
 
 \end_inset
@@ -4147,7 +4711,7 @@ WS
 \begin_inset Text
 
 \begin_layout Plain Layout
-1.5
+1.12
 \end_layout
 
 \end_inset
@@ -4156,7 +4720,7 @@ WS
 \begin_inset Text
 
 \begin_layout Plain Layout
-2
+1.43
 \end_layout
 
 \end_inset
@@ -4183,7 +4747,7 @@ WS
 \begin_inset Text
 
 \begin_layout Plain Layout
-3.3
+2.4
 \end_layout
 
 \end_inset
@@ -4192,7 +4756,7 @@ WS
 \begin_inset Text
 
 \begin_layout Plain Layout
-4
+2.9
 \end_layout
 
 \end_inset
@@ -4221,7 +4785,7 @@ WS
 \begin_inset Text
 
 \begin_layout Plain Layout
-117.3 s
+85.2 s
 \end_layout
 
 \end_inset
@@ -4248,7 +4812,7 @@ WS
 \begin_inset Text
 
 \begin_layout Plain Layout
-4.5
+3.2
 \end_layout
 
 \end_inset
@@ -4257,7 +4821,7 @@ WS
 \begin_inset Text
 
 \begin_layout Plain Layout
-5.8
+4.19
 \end_layout
 
 \end_inset
@@ -4284,7 +4848,7 @@ WS
 \begin_inset Text
 
 \begin_layout Plain Layout
-7
+5.1
 \end_layout
 
 \end_inset
@@ -4293,7 +4857,7 @@ WS
 \begin_inset Text
 
 \begin_layout Plain Layout
-10.7
+7.8
 \end_layout
 
 \end_inset
@@ -4322,7 +4886,7 @@ WS
 \begin_inset Text
 
 \begin_layout Plain Layout
-277.6 s
+200.6 s
 \end_layout
 
 \end_inset
@@ -4349,7 +4913,7 @@ WS
 \begin_inset Text
 
 \begin_layout Plain Layout
-9.3
+6.7
 \end_layout
 
 \end_inset
@@ -4358,7 +4922,7 @@ WS
 \begin_inset Text
 
 \begin_layout Plain Layout
-11.4
+8.23
 \end_layout
 
 \end_inset
@@ -4385,7 +4949,7 @@ WS
 \begin_inset Text
 
 \begin_layout Plain Layout
-9.3
+6.7
 \end_layout
 
 \end_inset
@@ -4394,7 +4958,7 @@ WS
 \begin_inset Text
 
 \begin_layout Plain Layout
-15.3
+11
 \end_layout
 
 \end_inset
