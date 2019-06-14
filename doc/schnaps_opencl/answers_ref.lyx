@@ -137,6 +137,79 @@ Even if this paper will particularly interest the community of High Performance
 This has been done.
 \end_layout
 
+\begin_layout Enumerate
+
+\emph on
+As in the abstract, the aim of this paper has to be highlighted and expanded.
+\emph default
+
+\begin_inset Newline newline
+\end_inset
+
+We add a paragraph explaining that the objective is to optimize a DG solver,
+ with the task-based paradigm.
+ The advantage is that the approach separates the logic of the algorithm
+ and the optimizations.
+\end_layout
+
+\end_deeper
+\begin_layout Enumerate
+Section 2
+\end_layout
+
+\begin_deeper
+\begin_layout Enumerate
+
+\emph on
+Page 2.
+ You could precise some points: f^k : ? -> ?, f : ? -> ?, "
+\backslash
+Omega
+\backslash
+in R^3 made of N_c
+\backslash
+in N open sets".
+\emph default
+
+\begin_inset Newline newline
+\end_inset
+
+Done.
+\end_layout
+
+\begin_layout Enumerate
+
+\emph on
+3.2.
+ Page 3.
+ You precise N_d at the end of this page but use it at the beginning.
+\emph default
+
+\begin_inset Newline newline
+\end_inset
+
+We have repeated the definition of N_d at the beginning.
+\end_layout
+
+\begin_layout Enumerate
+
+\emph on
+3.3.
+ Page 3.
+ I am lost with the notations (of course we can find them, but you could
+ clarify this).
+ You define w(x,t) in the basis of polynomial functions, coordinates are
+ denoted by w_{L,j}(t).
+ Then the formulation consist in finding w_{L,j} respecting (2.1).
+ But in (2.1) only w_L appears, which is not defined...
+\emph default
+
+\begin_inset Newline newline
+\end_inset
+
+
+\end_layout
+
 \end_deeper
 \end_body
 \end_document

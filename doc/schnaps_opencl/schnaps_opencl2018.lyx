@@ -215,6 +215,35 @@ inmod
 
 \end_inset
 
+As in the abstract, the aim of this paper has to be highlighted and expanded
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+outmod 
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+inmod 
+\end_layout
+
+\end_inset
+
 OpenCL (Open Computing Language) is a nice software environment for optimization
  purposes.
  OpenCL specifies programming languages (based on C99 and C++11) for programming
@@ -497,6 +526,48 @@ The unknown is the vector of conservative variables
 \end_inset
 
 .
+ 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+inmod 
+\end_layout
+
+\end_inset
+
+The flux components 
+\begin_inset Formula $\v f^{k}$
+\end_inset
+
+, 
+\begin_inset Formula $k=1\ldots D$
+\end_inset
+
+, are smooth functions from 
+\begin_inset Formula $\mathbb{R}^{m}$
+\end_inset
+
+ to 
+\begin_inset Formula $\mathbb{R}^{m}$
+\end_inset
+
+.
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+outmod 
+\end_layout
+
+\end_inset
+
  We adopt the notations 
 \begin_inset Formula $\partial_{t}$
 \end_inset
@@ -518,11 +589,46 @@ The unknown is the vector of conservative variables
 \begin_inset Formula $\v n=(n_{1},\ldots,n_{\ddim})\in\mathbb{R}^{\ddim}$
 \end_inset
 
- be a spatial direction, the flux in direction 
-\begin_inset Formula $\v n$
+ be a spatial direction.
+ 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+inmod 
+\end_layout
+
 \end_inset
 
- is defined by 
+The flux 
+\begin_inset Formula $\v f$
+\end_inset
+
+ is a smooth function from 
+\begin_inset Formula $\mathbb{R}^{m}\times\mathbb{R}^{D}$
+\end_inset
+
+ to 
+\begin_inset Formula $\mathbb{R}^{m}$
+\end_inset
+
+,
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+outmod 
+\end_layout
+
+\end_inset
+
+ defined by 
 \begin_inset Formula 
 \[
 \v f(\v w,\v n)=\sum_{k=1}^{\ddim}n_{k}\v f^{k}(\v w).
@@ -586,7 +692,40 @@ and
 \end_layout
 
 \begin_layout Standard
-We consider a mesh 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+inmod 
+\end_layout
+
+\end_inset
+
+The computational domain 
+\begin_inset Formula $\Omega$
+\end_inset
+
+ is an open set of 
+\begin_inset Formula $\mathbb{R}^{D}$
+\end_inset
+
+.
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+outmod 
+\end_layout
+
+\end_inset
+
+ We consider a mesh 
 \begin_inset Formula $\mathcal{M}$
 \end_inset
 
@@ -594,7 +733,11 @@ We consider a mesh
 \begin_inset Formula $\Omega$
 \end_inset
 
- made of open sets, called 
+ made of 
+\begin_inset Formula $N_{c}$
+\end_inset
+
+ open sets, called 
 \emph on
 cells
 \emph default
@@ -629,12 +772,49 @@ In each cell
 \begin_inset Formula $L\in\mathcal{M}$
 \end_inset
 
-, we consider a basis of functions 
+, we consider a basis of 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+inmod 
+\end_layout
+
+\end_inset
+
+
+\begin_inset Formula $N_{d}$
+\end_inset
+
+ functions 
 \begin_inset Formula $(\varphi_{L,i}(\vx))_{i=0\ldots N_{\dorder}-1}$
 \end_inset
 
- constructed from polynomials of order 
+.
+ The basis functions are constructed by tensor products of polynomials of
+ order 
 \begin_inset Formula $\dorder$
+\end_inset
+
+.
+ Therefore 
+\begin_inset Formula $N_{d}=(d+1)^{D}$
+\end_inset
+
+
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+outmod 
+\end_layout
+
 \end_inset
 
 .
