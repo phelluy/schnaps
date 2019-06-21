@@ -3084,8 +3084,8 @@ noprefix "false"
 \end_inset
 
 , we observe an excellent efficiency of the StarPU task distribution on
- the CPU cores even on a machine with two NUMA nodes.
- TODO ????????????????????
+ the CPU cores even on a NUMA (Non Uniform Memory Access) computer with
+ two CPUs connected to different memory zones.
 \end_layout
 
 \begin_layout Standard
