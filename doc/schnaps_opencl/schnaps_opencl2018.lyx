@@ -159,9 +159,10 @@ outmod
 
  
 \family typewriter
-schnaps
+The schnaps
 \family default
- is a finite element solver designed to simulate various physical phenomena.
+ software is a finite element solver designed to simulate various physical
+ phenomena.
  It is designed to run on hybrid computers made of different types of accelerato
 rs.
  In order to address the hybrid architectures we rely on the StarPU runtime.
@@ -199,7 +200,7 @@ The development of engineering simulation software is difficult.
  This requirement generally imposes to use low level hardware optimization
  hacks that are not always compatible with a generic and elegant approach.
  In addition, as the hardware evolves, optimizations of yesterday are not
- necessarily relevant for the devices of tomorrow...
+ necessarily relevant for the devices of tomorrow.
 \end_layout
 
 \begin_layout Standard
@@ -215,7 +216,34 @@ inmod
 
 \end_inset
 
-As in the abstract, the aim of this paper has to be highlighted and expanded
+The Discontinuous Galerkin algorithm is a general method for approximating
+ system of conservation laws coming from physics.
+ For a recent exposition of this method, we refer to 
+\begin_inset CommandInset citation
+LatexCommand cite
+key "hesthaven2007nodal"
+literal "false"
+
+\end_inset
+
+.
+ This method is well adapted to parallel computing, GPU computing and various
+ software optimization.
+ See for instance 
+\begin_inset CommandInset citation
+LatexCommand cite
+key "klockner2013high,helluy2016asynchronous"
+literal "false"
+
+\end_inset
+
+.
+ However these optimizations are complicated to program with low-level librairie
+s.
+ The task is even more complex when the software is run on a hybrid computer
+ made of different computing accelerators.
+ The aim of this work is to describe a practical optimization of the Discontinuo
+us Galerkin method that tries to keep the software design as simple as possible.
 \begin_inset ERT
 status open
 
@@ -308,18 +336,7 @@ ing data transfers or subgroups for minimizing synchronization barriers.
 \begin_layout Standard
 In this paper, we present our practical approach to this issue, with the
  help of the StarPU runtime system.
- StarPU is developed at Inria Bordeaux since 2006
-\begin_inset Foot
-status collapsed
-
-\begin_layout Plain Layout
-We are not involved in the creation and development of StarPU, but only
- users.
-\end_layout
-
-\end_inset
-
-.
+ StarPU is developed at Inria Bordeaux since 2006.
  StarPU is a runtime C library based on the dataflow paradigm.
  The programmer has to split the computation workload into abstract computationa
 l tasks.
@@ -356,7 +373,7 @@ es.
  In addition, StarPU automatically handles data transfers between the accelerato
 rs.
  It is also able to measure the efficiency of the different codelets' implementa
-tions in order to choose the best, according to the scheduling strategy.
+tions in order to choose the best one, according to the scheduling strategy.
 \end_layout
 
 \begin_layout Standard
@@ -387,7 +404,7 @@ inmod
 
 \end_inset
 
- Similar optimizations are also presented for instance in 
+ A similar experience is also presented for instance in 
 \begin_inset CommandInset citation
 LatexCommand citet
 key "essadki2018task"
@@ -641,7 +658,7 @@ netic wave.
  In this particular case, the conservative variables are 
 \begin_inset Formula 
 \[
-\v w=(\v E^{\mathrm{T}},\v H^{\mathrm{T}},\lambda,\mu)^{\mathrm{T}}\in\mathbb{R}^{m},\quad m=8.
+\v w=(\v E^{\mathrm{T}},\v H^{\mathrm{T}},\lambda,\mu)^{\mathrm{T}}\in\mathbb{R}^{m},\quad m=8,
 \]
 
 \end_inset
@@ -823,19 +840,49 @@ outmod
 \end_inset
 
  the maximal diameter of the cells.
- With an abuse of notation we still denote by 
+ 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+inmod 
+\end_layout
+
+\end_inset
+
+We assume that the local approximation 
+\begin_inset Formula $\vw_{L}$
+\end_inset
+
+ of 
 \begin_inset Formula $\vw$
 \end_inset
 
- the approximation of 
-\begin_inset Formula $\vw$
+ in cell 
+\begin_inset Formula $L$
 \end_inset
 
-, defined by 
+ is given by 
 \begin_inset Formula 
 \[
-\vw(\vx,t)=\sum_{j=0}^{N_{\dorder}-1}\vw_{L,j}(t)\varphi_{L,j}(\vx),\quad\vx\in L.
+\vw_{L}(\vx,t)=\sum_{j=0}^{N_{\dorder}-1}\vw_{L,j}(t)\varphi_{L,j}(\vx),\quad\vx\in L.
 \]
+
+\end_inset
+
+
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+outmod 
+\end_layout
 
 \end_inset
 
@@ -1276,10 +1323,10 @@ if a GL point
 \end_inset
 
  the corresponding quadrature weight on face 
-\begin_inset Formula $\vw_{\epsilon}$
+\begin_inset Formula $F_{\epsilon}$
 \end_inset
 
-; 
+;
 \end_layout
 
 \begin_layout Itemize
@@ -1543,10 +1590,23 @@ V_{i,j}=\vf(\vw_{L,j},\comat_{L,j}\hat{\nabla}\hat{\varphi}_{i}(\hat{\vx}_{j}))\
 
 \end_inset
 
-and surface terms that are associated to cell boundaries 
+and surface terms that are associated to cell boundaries
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+inmod 
+\end_layout
+
+\end_inset
+
+ 
 \begin_inset Formula 
 \begin{equation}
-S_{i,i'}=\mu_{i}^{\epsilon}\vf\left(\vw_{L,i},\vw_{R,i'},\comat_{L,i}\hat{\normal}_{\epsilon}\right).\label{eq:surface_terms}
+S_{i,i'}^{\epsilon}=\mu_{i}^{\epsilon}\vf\left(\vw_{L,i},\vw_{R,i'},\comat_{L,i}\hat{\normal}_{\epsilon}\right).\label{eq:surface_terms}
 \end{equation}
 
 \end_inset
@@ -1555,10 +1615,23 @@ Then, once these terms have been accumulated, one has to apply the inverse
  of the mass matrix.
  Here, this matrix is diagonal and it corresponds to a simple multiplication
  of 
-\begin_inset Formula $\partial_{t}\v w_{L,i}$
+\begin_inset Formula $\sum_{\epsilon}S_{i,i'}^{\epsilon}+\sum_{j}V_{i,j}$
 \end_inset
 
  by 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+outmod 
+\end_layout
+
+\end_inset
+
+
 \begin_inset Formula 
 \begin{equation}
 \frac{1}{\omega_{L,i}}.\label{eq:mass_matrix}
@@ -1645,6 +1718,35 @@ This set of differential equations is then numerically solved by a Runge-Kutta
 
 \begin_layout Section
 Data-based parallelism and StarPU
+\end_layout
+
+\begin_layout Subsection
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+inmod 
+\end_layout
+
+\end_inset
+
+StarPU
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+outmod 
+\end_layout
+
+\end_inset
+
+
 \end_layout
 
 \begin_layout Standard
@@ -1763,6 +1865,10 @@ commute
 \end_layout
 
 \begin_layout Standard
+\begin_inset Note Note
+status open
+
+\begin_layout Plain Layout
 There also exists a MPI version of StarPU.
  In the MPI version, the user has to decide an initial distribution of data
  among the MPI nodes.
@@ -1773,6 +1879,11 @@ k instead of starpu_insert_task).
  It is the responsibility of the user to migrate data from one MPI node
  to another to improve the load balancing, if necessary.
  The MPI version of StarPU is not tested in this work.
+\end_layout
+
+\end_inset
+
+
 \end_layout
 
 \begin_layout Subsection
@@ -1803,9 +1914,10 @@ schnaps
 \family default
  software
 \begin_inset Foot
-status collapsed
+status open
 
 \begin_layout Plain Layout
+Solveur Conservatif Hyperbolique Non-linéaire Appliqué aux PlaSmas: 
 \begin_inset Flex URL
 status collapsed
 
@@ -1821,7 +1933,7 @@ http://schnaps.gforge.inria.fr/
 
 \end_inset
 
- which is a C99 software dedicated to the numerical simulation of conservation
+, which is a C99 software dedicated to the numerical simulation of conservation
  laws.
  In 
 \family typewriter
@@ -1946,6 +2058,32 @@ write
 \family default
  mode.
  
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+inmod 
+\end_layout
+
+\end_inset
+
+Of course, if the interface is a boundary interface, only one side is extracted.
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+outmod 
+\end_layout
+
+\end_inset
+
+
 \end_layout
 
 \begin_layout Enumerate
@@ -2047,7 +2185,40 @@ noprefix "false"
 read/write/commute
 \family default
  mode.
- 
+\end_layout
+
+\begin_layout Enumerate
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+inmod 
+\end_layout
+
+\end_inset
+
+Mass matrix: this task apply the inverse of the diagonal mass matrix.
+ The macrocell data are accessed in 
+\family typewriter
+read/write
+\family default
+ mode.
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+outmod 
+\end_layout
+
+\end_inset
+
+
 \end_layout
 
 \begin_layout Standard
@@ -2056,10 +2227,30 @@ Additional simple tasks are needed to apply the Runge-Kutta algorithm.
 \end_layout
 
 \begin_layout Standard
+The general sequential DG algorithm is then given in Algorithm 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "alg:DG-algorithm"
+plural "false"
+caps "false"
+noprefix "false"
+
+\end_inset
+
+.
+ Thanks to StarPU, this algorithm can be submitted in a sequential way.
+ StarPU then uses the data dependency in order to distribute the tasks in
+ parallel on the available workers.
+ The wait for task completion is done at the end of the algorithm and not
+ inside each iteration.
+\end_layout
+
+\begin_layout Standard
 \begin_inset Float algorithm
+placement H
 wide false
 sideways false
-status open
+status collapsed
 
 \begin_layout Plain Layout
 for all interface:
@@ -2067,7 +2258,8 @@ for all interface:
 
 \begin_layout Plain Layout
 Extract interface (copy the data from the neighboring macrocells to the
- interface)
+ interface).
+ This is task (1).
 \end_layout
 
 \begin_layout Plain Layout
@@ -2081,7 +2273,7 @@ noprefix "false"
 
 \end_inset
 
-) and apply them to the neighboring macrocell
+) and apply them to the neighboring macrocell (task (3));
 \end_layout
 
 \begin_layout Plain Layout
@@ -2096,7 +2288,7 @@ noprefix "false"
 
 \end_inset
 
-) and apply them to the two neighboring macrocells
+) and apply them to the two neighboring macrocells (task (2)).
 \end_layout
 
 \begin_layout Plain Layout
@@ -2118,7 +2310,7 @@ noprefix "false"
 
 \end_inset
 
-) between the subcells
+) between the subcells (task (5)).
 \end_layout
 
 \begin_layout Plain Layout
@@ -2132,7 +2324,7 @@ noprefix "false"
 
 \end_inset
 
-) inside the subcells
+) inside the subcells (task (4)).
 \end_layout
 
 \begin_layout Plain Layout
@@ -2146,7 +2338,7 @@ noprefix "false"
 
 \end_inset
 
-) inside the subcells
+) inside the subcells (task(6)).
 \end_layout
 
 \begin_layout Plain Layout
@@ -2174,25 +2366,6 @@ DG algorithm
 \end_inset
 
 
-\end_layout
-
-\begin_layout Standard
-The general sequential DG algorithm is then given in Algorithm 
-\begin_inset CommandInset ref
-LatexCommand ref
-reference "alg:DG-algorithm"
-plural "false"
-caps "false"
-noprefix "false"
-
-\end_inset
-
-.
- Thanks to StarPU, this algorithm can be submitted in a sequential way.
- StarPU then uses the data dependency in order to distribute the tasks in
- parallel on the available workers.
- The wait for task completion is done at the end of the algorithm and not
- inside each iteration.
 \end_layout
 
 \begin_layout Standard
@@ -2385,11 +2558,11 @@ We approximate by the DG algorithm an exact plane wave solution of the Maxwell
  equations 
 \begin_inset Formula 
 \[
-\v E=\frac{c}{r}\left(\begin{array}{c}
+\v E=c\left(\begin{array}{c}
 -v\\
 u\\
 0
-\end{array}\right),\quad\v H=\frac{c}{r}\left(\begin{array}{c}
+\end{array}\right),\quad\v H=c\left(\begin{array}{c}
 0\\
 0\\
 1
@@ -2473,8 +2646,8 @@ WS
 \begin_inset Quotes erd
 \end_inset
 
- is made of a more powerful two-CPU workstation The technical details are
- listed in Table 
+ is made of a more powerful two-CPU workstation.
+ The technical details are listed in Table 
 \begin_inset CommandInset ref
 LatexCommand ref
 reference "tab:config_specs"
@@ -2841,13 +3014,39 @@ We perform a fixed number of
 \end_inset
 
  Ideally, with infinitely fast operations at interfaces, and with 
-\begin_inset Formula $n_{a}$
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+inmod 
+\end_layout
+
+\end_inset
+
+
+\begin_inset Formula $n_{\text{cpu}}$
+\end_inset
+
+
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+outmod 
+\end_layout
+
 \end_inset
 
  identical CPU cores, the computations time would behave like 
 \begin_inset Formula 
 \begin{equation}
-T\sim Cn_{t}\frac{n_{r}^{3}}{n_{a}}\label{eq:ideal_time}
+T\sim Cn_{t}\frac{n_{r}^{3}}{n_{\text{cpu}}}\label{eq:ideal_time}
 \end{equation}
 
 \end_inset
@@ -2886,6 +3085,7 @@ noprefix "false"
 
 , we observe an excellent efficiency of the StarPU task distribution on
  the CPU cores even on a machine with two NUMA nodes.
+ TODO ????????????????????
 \end_layout
 
 \begin_layout Standard
@@ -5412,7 +5612,7 @@ In addition, with a good choice of scheduler, and for heavy computations,
 LatexCommand bibtex
 btprint "btPrintCited"
 bibfiles "schnaps_opencl2017"
-options "alpha"
+options "plain"
 
 \end_inset
 

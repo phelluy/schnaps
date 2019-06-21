@@ -207,6 +207,206 @@ We have repeated the definition of N_d at the beginning.
 \begin_inset Newline newline
 \end_inset
 
+We have corrected the wrong notation.
+\end_layout
+
+\begin_layout Enumerate
+
+\emph on
+Page 5.
+ The sentences between equations (2.8) and (2.9) are not clear.
+ When you have accumulated 
+\begin_inset Formula $V$
+\end_inset
+
+ and 
+\begin_inset Formula $S$
+\end_inset
+
+, you want to multiply this accumulation by 
+\begin_inset Formula $1/(\omega_{L,i})$
+\end_inset
+
+, not 
+\begin_inset Formula $d_{t}w_{L,i}$
+\end_inset
+
+, did I misunderstand something
+\emph default
+?
+\begin_inset Newline newline
+\end_inset
+
+Of course, you are right.
+ Thanks...
+\end_layout
+
+\end_deeper
+\begin_layout Enumerate
+Section 3
+\end_layout
+
+\begin_deeper
+\begin_layout Enumerate
+
+\emph on
+Page 6.
+ You introduced a subsection 3.1 but there is no subsection 3.2.
+ Could it be Section 4 (by changing the name of Section 3)?
+\emph default
+
+\begin_inset Newline newline
+\end_inset
+
+We add a section 3.1 for the description of StarPU.
+\end_layout
+
+\begin_layout Enumerate
+
+\emph on
+Pages 6 and 7.
+ On the one hand, you listed the more important tasks.
+ On the other hand, you present the DG algorithm.
+ Some things are repeated, other are more detailed in the list of tasks.
+ Is it possible to merge the list and the algorithm? Or at least to refer
+ in the algorithm to the numbering (1) to (5) used in the list of task?
+\emph default
+
+\begin_inset Newline newline
+\end_inset
+
+We have referred to the task in the algorithm.
+ We have also improved its placement for an easier reading.
+\end_layout
+
+\end_deeper
+\begin_layout Enumerate
+Section 5.
+\end_layout
+
+\begin_deeper
+\begin_layout Enumerate
+
+\emph on
+Page 8.
+ Could you define "r" in the exact plane wave solution?
+\emph default
+
+\begin_inset Newline newline
+\end_inset
+
+It is equal to one.
+ We simply removed it.
+\end_layout
+
+\begin_layout Enumerate
+
+\emph on
+Page 9.
+ Could you introduce the notation n_CPU in the second line of subsection
+ 5.1? And detail the acronym NUMA?
+\emph default
+
+\begin_inset Newline newline
+\end_inset
+
+Done.TODO: define NUMA
+\end_layout
+
+\end_deeper
+\begin_layout Enumerate
+
+\emph on
+There are some misprints listed below.
+\end_layout
+
+\begin_deeper
+\begin_layout Enumerate
+
+\emph on
+Introduction, p.2: "the best one" instead of "the best".
+\emph default
+
+\begin_inset Newline newline
+\end_inset
+
+OK.
+\end_layout
+
+\begin_layout Enumerate
+
+\emph on
+Section 2, p.
+ 2: a comma instead of a dot at the end of equation "w=(...), m=8".
+\emph default
+
+\begin_inset Newline newline
+\end_inset
+
+OK.
+\end_layout
+
+\begin_layout Enumerate
+
+\emph on
+Section 2, p.
+ 3: I think "misuse of notation" is better than "abuse of notation".
+\emph default
+
+\begin_inset Newline newline
+\end_inset
+
+OK.
+\end_layout
+
+\begin_layout Enumerate
+
+\emph on
+Section 2, p.
+ 4: "if a GL point ...
+ quadrature weight on face F_e", instead of "w_e".
+\emph default
+
+\begin_inset Newline newline
+\end_inset
+
+Thanks.
+\end_layout
+
+\begin_layout Enumerate
+
+\emph on
+Section 5, p.
+ 9: in the line before subsection 5.1, a dot is missing.
+\emph default
+
+\begin_inset Newline newline
+\end_inset
+
+OK.
+\end_layout
+
+\begin_layout Enumerate
+
+\emph on
+Conclusion: "optimal" instead of "optiaml".
+\emph default
+
+\begin_inset Newline newline
+\end_inset
+
+OK.
+\end_layout
+
+\begin_layout Enumerate
+
+\emph on
+References: write the firstname of Munz (since you did it for coauthors).
+\emph default
+
+\begin_inset Newline newline
+\end_inset
+
 
 \end_layout
 
