@@ -1,0 +1,669 @@
+#LyX 2.3 created this file. For more info see http://www.lyx.org/
+\lyxformat 544
+\begin_document
+\begin_header
+\save_transient_properties true
+\origin unavailable
+\textclass article
+\begin_preamble
+\usepackage{enumitem}
+\renewcommand{\labelenumii}{\theenumii}
+\renewcommand{\theenumii}{\theenumi.\arabic{enumii}.}
+\end_preamble
+\use_default_options true
+\maintain_unincluded_children false
+\language english
+\language_package default
+\inputencoding auto
+\fontencoding global
+\font_roman "default" "default"
+\font_sans "default" "default"
+\font_typewriter "default" "default"
+\font_math "auto" "auto"
+\font_default_family default
+\use_non_tex_fonts false
+\font_sc false
+\font_osf false
+\font_sf_scale 100 100
+\font_tt_scale 100 100
+\use_microtype false
+\use_dash_ligatures true
+\graphics default
+\default_output_format default
+\output_sync 0
+\bibtex_command default
+\index_command default
+\paperfontsize default
+\spacing single
+\use_hyperref false
+\papersize default
+\use_geometry false
+\use_package amsmath 1
+\use_package amssymb 1
+\use_package cancel 1
+\use_package esint 1
+\use_package mathdots 1
+\use_package mathtools 1
+\use_package mhchem 1
+\use_package stackrel 1
+\use_package stmaryrd 1
+\use_package undertilde 1
+\cite_engine basic
+\cite_engine_type default
+\biblio_style plain
+\use_bibtopic false
+\use_indices false
+\paperorientation portrait
+\suppress_date false
+\justification true
+\use_refstyle 1
+\use_minted 0
+\index Index
+\shortcut idx
+\color #008000
+\end_index
+\secnumdepth 3
+\tocdepth 3
+\paragraph_separation indent
+\paragraph_indentation default
+\is_math_indent 0
+\math_numbering_side default
+\quotes_style english
+\dynamic_quotes 0
+\papercolumns 1
+\papersides 1
+\paperpagestyle default
+\tracking_changes false
+\output_changes false
+\html_math_output 0
+\html_css_as_file 0
+\html_be_strict false
+\end_header
+
+\begin_body
+
+\begin_layout Standard
+We thank the referees on our paper for the fruitful remarks/questions.
+ The modification in the paper are in red.
+ We give also below some explanations.
+\end_layout
+
+\begin_layout Section
+Reviewer 1
+\end_layout
+
+\begin_layout Enumerate
+
+\shape italic
+\begin_inset Quotes eld
+\end_inset
+
+The introduction deserves some improvements, for example...
+\shape default
+
+\begin_inset Quotes erd
+\end_inset
+
+
+\begin_inset Newline newline
+\end_inset
+
+Answer
+\end_layout
+
+\begin_layout Enumerate
+\begin_inset Quotes eld
+\end_inset
+
+
+\shape italic
+Section 2 is quite pedagogic and provides a good overview about the DG method.
+\shape default
+
+\begin_inset Quotes erd
+\end_inset
+
+
+\begin_inset Newline newline
+\end_inset
+
+Answer
+\end_layout
+
+\begin_layout Enumerate
+\begin_inset Quotes eld
+\end_inset
+
+
+\shape italic
+p.8, Algorithm.
+ I suggest to use a left justification with indentation in place of the
+ centered format.
+ Indeed, it is important to easily identify the functional blocks: if, then,
+ else,....
+\shape default
+
+\begin_inset Quotes erd
+\end_inset
+
+
+\begin_inset Newline newline
+\end_inset
+
+Answer
+\end_layout
+
+\begin_layout Enumerate
+\begin_inset Quotes eld
+\end_inset
+
+
+\shape italic
+Data storage and memory management is an important issue for efficient computa-
+ tion.
+ Contiguous location of the data in ”for loop” greatly takes advantage of
+ the pre-fetch and cache technique whereas unstructured meshes unfortunately
+ reduce the data compactness.
+ The authors present no information about the cache missed that is a good
+ indicator about the memory transfer bottlenecks, especially the L3-cache
+ read/write faults.
+ Locality of the data is also an important parameter to guarantee efficient
+ use of the computational resource (some tilling techniques for instance).
+ Indeed, even reading a single byte, the cache mechanism makes the CPU from
+ loading a full line of 16 bytes hence it is of crucial importance that
+ the other 15 bytes were used in the computational process or else we dramatical
+ly cut the bandwidth of the data flow.
+ Do you have a compute bound or a memory bound process?
+\shape default
+
+\begin_inset Quotes erd
+\end_inset
+
+
+\begin_inset Newline newline
+\end_inset
+
+Answer
+\end_layout
+
+\begin_layout Enumerate
+\begin_inset Quotes eld
+\end_inset
+
+
+\shape italic
+In GPU computation, memory transfer between host and client takes time and
+ may represent a noticeable amount of the the total working time.
+ Many computational processes attempt to avoid such transfer (or at least
+ just transfer some part of the data).
+ I hardly see how the StarPU manages the data transfer.
+\shape default
+
+\begin_inset Quotes erd
+\end_inset
+
+
+\begin_inset Newline newline
+\end_inset
+
+Answer
+\end_layout
+
+\begin_layout Enumerate
+\begin_inset Quotes eld
+\end_inset
+
+
+\shape italic
+Many-core cases.
+ Numerical simulations reported in table 2 indicate a perfect speed- up
+ which seems to me impossible due to the overhead and memory bottlenecks.
+ How do you justify such nice speed-up.
+ The authors do just mention the number of DOF while the point is the amount
+ of memory: do the data entirely fit in the L3-cache or not? Table 3 seems
+ to me more realistic.
+ Usually we represent the speed-up with respect to the single-thread process
+ (2:1.8, 4:3.6, 8:6.9, 16:13.5) or with a curve.
+ I have understood that you represent the speed-up from a n-core to a 2n-core
+ configuration.
+\shape default
+
+\begin_inset Quotes erd
+\end_inset
+
+
+\begin_inset Newline newline
+\end_inset
+
+Answer
+\end_layout
+
+\begin_layout Enumerate
+\begin_inset Quotes eld
+\end_inset
+
+
+\shape italic
+Do you take advantage of the vectorization (AVX2 SIMD instructions provide
+ 4 double or 8 single arithmetic operations at the same time.)
+\shape default
+
+\begin_inset Quotes erd
+\end_inset
+
+
+\begin_inset Newline newline
+\end_inset
+
+Answer
+\end_layout
+
+\begin_layout Enumerate
+\begin_inset Quotes eld
+\end_inset
+
+
+\shape italic
+The OpenMP pragma enables several kind of scheduling (variable chunk size:
+ statict, dynamic, guided, runtime) and has a deep impact in the computational
+ efficiency (basically we reduce the wait barrier constraint).
+ What kind of scheduling you are using in the many-core benchmark?
+\shape default
+
+\begin_inset Quotes erd
+\end_inset
+
+
+\begin_inset Newline newline
+\end_inset
+
+Answer
+\end_layout
+
+\begin_layout Enumerate
+\begin_inset Quotes eld
+\end_inset
+
+
+\shape italic
+GPU cases.
+ Have you experiment different number of GPU-cores in the GPU bench- mark
+ to provide the speed-up of the method.
+ You only provide the final result with (I suppose) all cores running but
+ we have no idea about the scalability of the code.
+ Comparing running time between two definitively different hardware is quite
+ lim- ited since we deal with very different configurations even with mono-threa
+d process (memory and cache velocity, clock, NUMA in the case of the workstation
+).
+\shape default
+
+\begin_inset Quotes erd
+\end_inset
+
+
+\begin_inset Newline newline
+\end_inset
+
+Answer
+\end_layout
+
+\begin_layout Section
+Reviewer 2
+\end_layout
+
+\begin_layout Enumerate
+\begin_inset Quotes eld
+\end_inset
+
+
+\shape italic
+For me, it is not fully clear why you finally aim at writing all the codelets
+ in OpenCL.
+ I don’t find your introductory paragraph on OpenCL at the top of page 2
+ very clear and I suggest you should rewrite it to this purpose.
+ Since you can write as many codelets in as many languages you wish, why
+ sticking with OpenCL?
+\shape default
+
+\begin_inset Quotes erd
+\end_inset
+
+
+\begin_inset Newline newline
+\end_inset
+
+Answer
+\end_layout
+
+\begin_layout Enumerate
+\begin_inset Quotes eld
+\end_inset
+
+
+\shape italic
+Also, if you run a simulation on CPUs only, with both C99 and OpenCL kernels,
+ are the OpenCL kernels always choosen for all the tasks?
+\shape default
+
+\begin_inset Quotes erd
+\end_inset
+
+
+\begin_inset Newline newline
+\end_inset
+
+Answer
+\end_layout
+
+\begin_layout Enumerate
+\begin_inset Quotes eld
+\end_inset
+
+
+\shape italic
+You can claim the discontinuous Galerkin method as a finite element method,
+ but you can claim it as an enriched finite volume method as well.
+ In the context of the "International Journal of Finite Volume", I suggest
+ you rather refer to a finite volume method or just to a discontinuous Galerkin
+ method, especially in the title.
+\shape default
+
+\begin_inset Quotes erd
+\end_inset
+
+
+\begin_inset Newline newline
+\end_inset
+
+Answer
+\end_layout
+
+\begin_layout Enumerate
+\begin_inset Quotes eld
+\end_inset
+
+
+\shape italic
+The model used is fully linear and this is written nowhere.
+ However, I believe this is helping your discretization and its numerical
+ implementation a lot.
+ Frankly, given the complexity of the overall implementation, I fully understand
+ your choice of solving such a linear model, but by honesty I would underline
+ it somewhere.
+ For example, your conserved variables can freely move within R m , which
+ is seldom the case in non-linear systems: you would then need some form
+ of limiter to prevent unphysical states.
+ Also, the linearity of the flux is implicitely used when going from equation
+ (2.4) to equation (2.6).
+ See also, the remark on time-stepping below.
+\shape default
+
+\begin_inset Quotes erd
+\end_inset
+
+
+\begin_inset Newline newline
+\end_inset
+
+Answer
+\end_layout
+
+\begin_layout Enumerate
+\begin_inset Quotes eld
+\end_inset
+
+
+\shape italic
+When going from equation (2.1) to (2.4), you make two simplifications, one
+ of them being very important: you integrate numerically volume and surface
+ integrals by pd ` 1q Gauss- Lobatto quadrature points in each direction
+ (2D or 3D.
+ From now on I will only speak of number of quadrature points ş and order
+ of approximation per space direction).
+ This is exact for the dG volume term L f pw L , ∇φ i q, because the integrand
+ is a polynomial of order 2d ́ 1, for which ş the pd ` 1q GL quadrature
+ is exact.
+ This is no more true for the nodal numerical fluxes BL f pw L , w R , nq
+ φ i , but this simplification is not too bad, because the numerical order
+ is kept in the mean: the update of the mean value per cell involves only
+ the integration of a polynomial of order d per faces.
+ However, stricly speaking you are not solving equation (2.1) exactly.
+ But the biggest simplification comes when approximating the integral with
+ the time- derivative.
+ Here, you integrate a 2d polynomial with a 2d ́ 1 exact quadrature.
+ It is well known that the basis made of Lagrange polynomials at Gauss-Lobatto
+ quadrature points is not orthogonal and you should have a mass matrix per
+ subcell to invert.
+ Here you have clearly performed a mass-lumping and the accuracy of the
+ method should be reduced compared to the expected h pd`1q .
+ Could you comment on that?
+\shape default
+
+\begin_inset Quotes erd
+\end_inset
+
+
+\begin_inset Newline newline
+\end_inset
+
+Answer
+\end_layout
+
+\begin_layout Enumerate
+\begin_inset Quotes eld
+\end_inset
+
+
+\shape italic
+Speaking of accuracy, the paper does never show that the method has been
+ correctly implemented and that the accelerated results are physically relevant.
+ For me the best way to do that is to provide convergence curves which show
+ that the theoretical convergence rates have been attained, particularly
+ in this purely linear context where the exact solution is obvious.
+\shape default
+
+\begin_inset Quotes erd
+\end_inset
+
+
+\begin_inset Newline newline
+\end_inset
+
+Answer
+\end_layout
+
+\begin_layout Enumerate
+\begin_inset Quotes eld
+\end_inset
+
+
+\shape italic
+For the sake of consistency, even though one can not mix up ω L,i with ω
+ i , I would write the quadrature weights on the reference element with
+ a hat.
+\shape default
+
+\begin_inset Quotes erd
+\end_inset
+
+
+\begin_inset Newline newline
+\end_inset
+
+Answer
+\end_layout
+
+\begin_layout Enumerate
+\begin_inset Quotes eld
+\end_inset
+
+
+\shape italic
+What do the macrocell and the interface data contain? Frow what I have understoo
+d, the macrocell data contain three "fields" (the conserved variables at
+ the degrees of freedom, the numerical fluxes and the volume fluxes) and
+ the interface data two (the conserved variables on both sides of the interface,
+ one being possibly external to the domain Ω).
+ If I am correct, then I don’t understand the necessity of considering tasks
+ (2) and (3) as separate.
+ Boundary states could be filled in tasks (1) and (2) solves for the interface
+ numerical fluxes, whatever the nature of the neighbor.
+ Could you make your data structure clearer to enlight your choices in the
+ tasks separation?
+\shape default
+
+\begin_inset Quotes erd
+\end_inset
+
+
+\begin_inset Newline newline
+\end_inset
+
+Answer
+\end_layout
+
+\begin_layout Enumerate
+\begin_inset Quotes eld
+\end_inset
+
+
+\shape italic
+Page 8, you claim that "the wait for task completion is done at the end
+ of the algorithm and not inside each iteration".
+ This implies that the time-step is kept constant during the entire simulation
+ and that you know the number of time-steps to be performed in advance.
+ This is once more closely related to the fact that the considered model
+ is linear.
+ Otherwise, by the stability constraint of the explicit Runge-Kutta procedure,
+ you would have to compute this time-step specifically during each time
+ step, and ask for a global synchronization of the data before updating
+ them.
+ Also, checking if the final time has been reached is a major bottleneck
+ in the graph of tasks.
+ Could you comment on that and make adequate modification in the paper to
+ make this clearer for the reader?
+\shape default
+
+\begin_inset Quotes erd
+\end_inset
+
+
+\begin_inset Newline newline
+\end_inset
+
+Answer
+\end_layout
+
+\begin_layout Enumerate
+\begin_inset Quotes eld
+\end_inset
+
+
+\shape italic
+If you generate the graph of tasks all at once, how many time steps do you
+ perform? How many tasks does it represent? What is the size of the graph?
+\shape default
+
+\begin_inset Quotes erd
+\end_inset
+
+
+\begin_inset Newline newline
+\end_inset
+
+Answer
+\end_layout
+
+\begin_layout Enumerate
+\begin_inset Quotes eld
+\end_inset
+
+
+\shape italic
+Section 4 is a bit confusing.
+ The two solutions (4.1) and (4.2) you propose for the memory storage are
+ interesting but your choice of using (4.1) comes with no argumentative data.
+ When you claim that the volume kernels and surface kernels are the most
+ time consuming, what are the CPU-time percentage of each task? Have you
+ run simulations with storage solution (4.2)? If not, I am not sure mentionning
+ it is helping your speech.
+\shape default
+
+\begin_inset Quotes erd
+\end_inset
+
+
+\begin_inset Newline newline
+\end_inset
+
+Answer
+\end_layout
+
+\begin_layout Enumerate
+\begin_inset Quotes eld
+\end_inset
+
+
+\shape italic
+There is a t CPU+GPU at the bottom of page 10.
+ Is this a mistake?
+\shape default
+
+\begin_inset Quotes erd
+\end_inset
+
+
+\begin_inset Newline newline
+\end_inset
+
+Answer
+\end_layout
+
+\begin_layout Enumerate
+\begin_inset Quotes eld
+\end_inset
+
+
+\shape italic
+Pages 11 and 12 are two occurences of peak and peek, which, I guess, are
+ both mispelling of the word pick.
+\shape default
+
+\begin_inset Quotes erd
+\end_inset
+
+
+\begin_inset Newline newline
+\end_inset
+
+Answer
+\end_layout
+
+\begin_layout Enumerate
+\begin_inset Quotes eld
+\end_inset
+
+
+\shape italic
+I don’t completely agree with your final statement that "in all the situations,
+ StarPU is able te get an additional gain from the CPU cores".
+ When looking at WS8, adding CPUs to a GPU does not speed up the computation
+ at all (29.8s), when adding a GPU helps (24.3s) and adding CPUs to the two
+ GPUs still helps (18.1s).
+ What is happening in your simulation with 1GPU and the CPU cores? How are
+ the tasks distributed? Is this related to you LAHeteroprio scheduler? Does
+ dmda helps?
+\shape default
+
+\begin_inset Quotes erd
+\end_inset
+
+
+\begin_inset Newline newline
+\end_inset
+
+Answer
+\end_layout
+
+\end_body
+\end_document
