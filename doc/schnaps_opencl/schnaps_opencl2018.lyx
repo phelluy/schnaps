@@ -19,17 +19,20 @@
 \pgfplotsset{compat=newest}
 
 
-
 \usepackage{babel}
 
 \newcommand{\inmod}{\color{red}}
 \newcommand{\outmod}{\color{black}}
+
+\RestyleAlgo{ruled}
+\LinesNumbered
 \end_preamble
 \use_default_options false
 \begin_modules
 theorems-ams
 eqs-within-sections
 figs-within-sections
+algorithm2e
 \end_modules
 \maintain_unincluded_children false
 \language english
@@ -365,15 +368,32 @@ codelets
  same task into several codelets.
  For instance, one can imagine to write an unoptimized codelet for validation
  purposes and one or several optimized OpenCL codelets.
- The user then submits his tasks in a sequential way to StarPU.
+ The user then submits the tasks in a sequential way to StarPU.
  At runtime, StarPU is able to construct a task graph based on buffer dependenci
 es.
  The tasks are submitted to the available accelerators, in parallel if the
  dependencies allow it.
+ 
+\color green
+The scheduler is in charge of the distribution of the tasks over the processing
+ units.
+ Dozens of schedulers are provided by StarPU and it is possible to create
+ a custom scheduler to plug it inside StarPU.
+ Some schedulers take into account data locality or use performance models
+ 
+\color inherit
+by measuring the efficiency of the different codelets' implementations in
+ order to choose the best one
+\color green
+.
+
+\color inherit
  In addition, StarPU automatically handles data transfers between the accelerato
-rs.
- It is also able to measure the efficiency of the different codelets' implementa
-tions in order to choose the best one, according to the scheduling strategy.
+rs
+\color green
+: when a task is assigned to a processing unit, StarPU moves the data that
+ are not already on the processing unit's memory and it can also evicted
+ old data if the available space is not enough.
 \end_layout
 
 \begin_layout Standard
@@ -1797,11 +1817,15 @@ read/write
  The user then submits the task in a sequential way to the StarPU system.
  StarPU is able to construct at runtime a task graph from the data dependencies.
  The task graph is analyzed and the tasks are scheduled automatically to
- the available workers (CPU cores, GPUs, 
+ the available workers (
+\color green
+a worker could be a single CPU core, a GPUs, 
 \emph on
 etc
 \emph default
-.).
+.
+\color inherit
+).
  If possible, they are executed in parallel into concurrent threads.
  The data transfer tasks between the threads are automatically generated
  and managed by StarPU.
@@ -2250,99 +2274,197 @@ noprefix "false"
 placement H
 wide false
 sideways false
-status collapsed
+status open
 
 \begin_layout Plain Layout
-for all interface:
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+ForAll{interfaces}{
 \end_layout
 
 \begin_layout Plain Layout
+
+
+\backslash
+tcp{task (1)}
+\end_layout
+
+\begin_layout Plain Layout
+
 Extract interface (copy the data from the neighboring macrocells to the
+ interface)
+\backslash
+;
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+eIf{the interface is a boundary interface}
+\end_layout
+
+\begin_layout Plain Layout
+
+{
+\backslash
+tcp{task (3)}
+\end_layout
+
+\begin_layout Plain Layout
+
+compute the boundary fluxes (Equation~
+\backslash
+ref{eq:surface_terms}) and apply them to the neighboring macrocell
+\backslash
+;}
+\end_layout
+
+\begin_layout Plain Layout
+
+{
+\backslash
+tcp{task (2)}
+\end_layout
+
+\begin_layout Plain Layout
+
+the interface is an internal one.
+ Compute the numerical fluxes (Equation~
+\backslash
+ref{eq:surface_terms}) and apply them to the two neighboring macrocells
+\backslash
+;}
+\end_layout
+
+\begin_layout Plain Layout
+
+}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ForEach{macrocell}{
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+tcp{task (5)}
+\end_layout
+
+\begin_layout Plain Layout
+
+Compute and apply the numerical fluxes (Equation~
+\backslash
+ref{eq:surface_terms}) between the subcells 
+\backslash
+;
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+tcp{task (4)}
+\end_layout
+
+\begin_layout Plain Layout
+
+Compute the volume terms (Equation~
+\backslash
+ref{eq:volume_terms}) inside the subcells
+\backslash
+;
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+tcp{task(6)}
+\end_layout
+
+\begin_layout Plain Layout
+
+Apply the inverse of the mass matrix (Equation~
+\backslash
+ref{eq:mass_matrix}) inside the subcells 
+\backslash
+;
+\end_layout
+
+\begin_layout Plain Layout
+
+}
+\end_layout
+
+\begin_layout Plain Layout
+
+% for all interface:
+\end_layout
+
+\begin_layout Plain Layout
+
+% Extract interface (copy the data from the neighboring macrocells to the
  interface).
  This is task (1).
 \end_layout
 
 \begin_layout Plain Layout
-If the interface is a boundary interface, compute the boundary fluxes (
-\begin_inset CommandInset ref
-LatexCommand ref
-reference "eq:surface_terms"
-plural "false"
-caps "false"
-noprefix "false"
+
+% If the interface is a boundary interface, compute the boundary fluxes
+ () and apply them to the neighboring macrocell (task (3));
+\end_layout
+
+\begin_layout Plain Layout
+
+% Else the interface is an internal one.
+ Compute the numerical fluxes () and apply them to the two neighboring macrocell
+s (task (2)).
+\end_layout
+
+\begin_layout Plain Layout
+
+% End for
+\end_layout
+
+\begin_layout Plain Layout
+
+% Then, for each macrocell:
+\end_layout
+
+\begin_layout Plain Layout
+
+% Compute and apply the numerical fluxes () between the subcells (task (5)).
+\end_layout
+
+\begin_layout Plain Layout
+
+% Compute the volume terms () inside the subcells (task (4)).
+\end_layout
+
+\begin_layout Plain Layout
+
+% Apply the inverse of the mass matrix () inside the subcells (task(6)).
+\end_layout
+
+\begin_layout Plain Layout
+
+% End for
+\end_layout
 
 \end_inset
 
-) and apply them to the neighboring macrocell (task (3));
-\end_layout
 
-\begin_layout Plain Layout
-Else the interface is an internal one.
- Compute the numerical fluxes (
-\begin_inset CommandInset ref
-LatexCommand ref
-reference "eq:surface_terms"
-plural "false"
-caps "false"
-noprefix "false"
-
-\end_inset
-
-) and apply them to the two neighboring macrocells (task (2)).
-\end_layout
-
-\begin_layout Plain Layout
-End for
-\end_layout
-
-\begin_layout Plain Layout
-Then, for each macrocell:
-\end_layout
-
-\begin_layout Plain Layout
-Compute and apply the numerical fluxes (
-\begin_inset CommandInset ref
-LatexCommand ref
-reference "eq:surface_terms"
-plural "false"
-caps "false"
-noprefix "false"
-
-\end_inset
-
-) between the subcells (task (5)).
-\end_layout
-
-\begin_layout Plain Layout
-Compute the volume terms (
-\begin_inset CommandInset ref
-LatexCommand ref
-reference "eq:volume_terms"
-plural "false"
-caps "false"
-noprefix "false"
-
-\end_inset
-
-) inside the subcells (task (4)).
-\end_layout
-
-\begin_layout Plain Layout
-Apply the inverse of the mass matrix (
-\begin_inset CommandInset ref
-LatexCommand ref
-reference "eq:mass_matrix"
-plural "false"
-caps "false"
-noprefix "false"
-
-\end_inset
-
-) inside the subcells (task(6)).
-\end_layout
-
-\begin_layout Plain Layout
-End for
 \end_layout
 
 \begin_layout Plain Layout
@@ -2386,6 +2508,12 @@ Hybrid C/OpenCL codelets
 \begin_layout Standard
 In order to attain better performance, we programmed an OpenCL version of
  the previously described codelets.
+ 
+\color green
+The CPU workers will continue to use the kernels implemented in C, while
+ the GPU workers will use the ones in OpenCL.
+
+\color inherit
  As it is often the case, special care has to be given in order to improve
  the coalescence of memory access.
  The values of 
@@ -4550,6 +4678,14 @@ noprefix "false"
 \begin_inset Formula $n_{r}=8$
 \end_inset
 
+ 
+\color green
+
+\begin_inset Formula $t_{\text{CPU+2xGPU}}$
+\end_inset
+
+
+\color inherit
 ).
  
 \begin_inset ERT
@@ -4562,10 +4698,6 @@ status collapsed
 end{sloppypar}
 \end_layout
 
-\end_inset
-
-
-\begin_inset Formula $t_{\text{CPU+GPU}}$
 \end_inset
 
 
@@ -5544,7 +5676,7 @@ WS
 LAHeteroprio
 \family default
  scheduler, the different types of tasks are grouped into buckets and the
- processing unit peak tasks following an order based on their type, which
+ processing unit pick tasks following an order based on their type, which
  is CPU or GPU in our case, and the location of the data.
  The idea is to reduce the memory transfer and to promote the consumption
  of the tasks by the processing units that are more efficient.
@@ -5554,8 +5686,8 @@ LAHeteroprio
 \family default
  by sorting the different operations by arithmetic cost and we specify that
  the CPU workers should follow this order, while the GPU workers do the
- opposite: the GPU workers first try to peek tasks with high workload.
- Additionaly, we ensure that GPU workers privilegiate data locality over
+ opposite: the GPU workers first try to pick tasks with high workloads.
+ Additionally, we ensure that GPU workers privilegiate data locality over
  priorities.
  Therefore, the distribution of the tasks on the available CPU cores and
  GPU is done dynamically by the scheduler.
@@ -5573,8 +5705,30 @@ noprefix "false"
 \end_inset
 
 .
- We observe that in all the situations, StarPU is able to get an additional
- gain from the CPU cores, even if the GPU codelets are faster.
+ We observe that in 
+\color green
+most 
+\color inherit
+situations, StarPU is able to get an additional gain from the CPU cores,
+ even if the GPU codelets are faster.
+ 
+\color green
+The fact that for 
+\begin_inset Formula $n_{r}=8$
+\end_inset
+
+ we have the same execution time with one CPU and one GPU(
+\begin_inset Formula $t_{\text{CPU+GPU}}$
+\end_inset
+
+), or with only one GPU (
+\begin_inset Formula $t_{\text{GPU}}$
+\end_inset
+
+) is an illustration of the cost of moving data.
+ More precisely, consider an execution where all the tasks are on the GPU.
+ Using the CPU would mean moving data on it, way and back, and thus can
+ imply an overhead, even if the CPU could be faster for some tasks.
 \end_layout
 
 \begin_layout Section
