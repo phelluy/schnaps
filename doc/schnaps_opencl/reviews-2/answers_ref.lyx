@@ -302,7 +302,7 @@ The task-based parallelization is used at all levels, and so there is no
  More precisely, we create tasks independently of the processing units.
  Then, each worker (a worker could be a single CPU core or a GPU) gets tasks
  from the scheduler.
- Therefore, there are no barrier (global synchronization) since we execute
+ Therefore, there is no barrier (global synchronization) since we execute
  a graph of tasks.
  We updated Section 3.1 to make it clearer.
 \end_layout
@@ -337,7 +337,7 @@ We did not study the scalability of our kernel on one GPU.
  (CPU only, GPU only, CPU+GPU).
  And this is fully managed by the runtime system (and the scheduler).
  In addition, with this organization we could improve the performance of
- one of the kernels on one of the processing units and directly benefit
+ one of the kernels for only one type of processing units and directly benefit
  from it as the distribution of the tasks is dynamic and managed by the
  scheduler.
 \end_layout
