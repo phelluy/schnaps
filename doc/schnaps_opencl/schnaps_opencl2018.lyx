@@ -1753,7 +1753,7 @@ inmod
 
 \end_inset
 
-StarPU
+StarPU philosophy
 \begin_inset ERT
 status open
 
@@ -1886,6 +1886,37 @@ commute
 commute
 \family default
 .
+\end_layout
+
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+inmod 
+\end_layout
+
+\end_inset
+
+There also exists a MPI version of StarPU, which allows to address clusters
+ of hybrid nodes.
+ The MPI version of StarPU is not used in this work.
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+outmod 
+\end_layout
+
+\end_inset
+
+
 \end_layout
 
 \begin_layout Standard
@@ -2067,7 +2098,11 @@ To solve one time step of the DG method, here are the most important tasks:
 \end_layout
 
 \begin_layout Enumerate
-Interface extraction: this task simply extracts the values of 
+
+\family typewriter
+Interface_extraction
+\family default
+: this task simply extracts the values of 
 \begin_inset Formula $\vw$
 \end_inset
 
@@ -2111,7 +2146,11 @@ outmod
 \end_layout
 
 \begin_layout Enumerate
-Interface fluxes: this task only computes the numerical fluxes (
+
+\family typewriter
+Interface_fluxes
+\family default
+: this task only computes the numerical fluxes (
 \begin_inset CommandInset ref
 LatexCommand ref
 reference "eq:surface_terms"
@@ -2143,8 +2182,11 @@ commute
 \end_layout
 
 \begin_layout Enumerate
-Interface boundary fluxes: this task computes the boundary data and only
- numerical fluxes (
+
+\family typewriter
+Interface_boundary_fluxes
+\family default
+: this task computes the boundary data and only numerical fluxes (
 \begin_inset CommandInset ref
 LatexCommand ref
 reference "eq:surface_terms"
@@ -2173,7 +2215,11 @@ commute
 \end_layout
 
 \begin_layout Enumerate
-Volume terms: this task applies the volumic terms (
+
+\family typewriter
+Volume_terms
+\family default
+: this task applies the volumic terms (
 \begin_inset CommandInset ref
 LatexCommand ref
 reference "eq:volume_terms"
@@ -2193,7 +2239,11 @@ read/write/commute
 \end_layout
 
 \begin_layout Enumerate
-Subcell fluxes: this task applies the numerical subcell fluxes (
+
+\family typewriter
+Subcell_fluxes
+\family default
+: this task applies the numerical subcell fluxes (
 \begin_inset CommandInset ref
 LatexCommand ref
 reference "eq:surface_terms"
@@ -2224,7 +2274,11 @@ inmod
 
 \end_inset
 
-Mass matrix: this task apply the inverse of the diagonal mass matrix.
+
+\family typewriter
+Mass_matrix
+\family default
+: this task apply the inverse of the diagonal mass matrix.
  The macrocell data are accessed in 
 \family typewriter
 read/write
@@ -2477,7 +2531,35 @@ name "alg:DG-algorithm"
 
 \end_inset
 
-DG algorithm
+
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+inmod 
+\end_layout
+
+\end_inset
+
+Sequential DG algorithm.
+ The parallelism is automatically detected by StarPU, thanks to the data
+ dependency.
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+outmod 
+\end_layout
+
+\end_inset
+
+
 \end_layout
 
 \end_inset
