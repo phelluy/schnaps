@@ -450,7 +450,7 @@ The model used is fully linear and this is written nowhere.
 Actually our method does not rely on the linearity of the Maxwell flux.
  Beside, we use schnaps also for solving MHD equations.
  But the reviewer is right that in this case we have to use a limiter for
- preventing unphysical states.
+ preventing nonphysical states.
  We have made an additional remark about this point.
  
 \end_layout
@@ -467,22 +467,21 @@ When going from equation (2.1) to (2.4), you make two simplifications, one
  (2D or 3D.
  From now on I will only speak of number of quadrature points ş and order
  of approximation per space direction).
- This is exact for the dG volume term L f pw L , ∇φ i q, because the integrand
- is a polynomial of order 2d ́ 1, for which ş the pd ` 1q GL quadrature
- is exact.
- This is no more true for the nodal numerical fluxes BL f pw L , w R , nq
- φ i , but this simplification is not too bad, because the numerical order
- is kept in the mean: the update of the mean value per cell involves only
- the integration of a polynomial of order d per faces.
+ This is exact for the DG volume term, because the integrand is a polynomial
+ of order 2d-1, for which the GL quadrature is exact.
+ This is no more true for the nodal numerical fluxes, but this simplification
+ is not too bad, because the numerical order is kept in the mean: the update
+ of the mean value per cell involves only the integration of a polynomial
+ of order d per faces.
  However, stricly speaking you are not solving equation (2.1) exactly.
  But the biggest simplification comes when approximating the integral with
- the time- derivative.
- Here, you integrate a 2d polynomial with a 2d ́ 1 exact quadrature.
+ the time-derivative.
+ Here, you integrate a 2d polynomial with a 2d-1 exact quadrature.
  It is well known that the basis made of Lagrange polynomials at Gauss-Lobatto
  quadrature points is not orthogonal and you should have a mass matrix per
  subcell to invert.
  Here you have clearly performed a mass-lumping and the accuracy of the
- method should be reduced compared to the expected h pd`1q .
+ method should be reduced.
  Could you comment on that?
 \shape default
 
@@ -535,7 +534,7 @@ Speaking of accuracy, the paper does never show that the method has been
 \begin_inset Newline newline
 \end_inset
 
-TODO
+We have included an additional convergence curve of the method.
 \end_layout
 
 \begin_layout Enumerate

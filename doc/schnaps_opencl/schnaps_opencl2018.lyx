@@ -2943,6 +2943,129 @@ with
 \end_layout
 
 \begin_layout Standard
+For validation purpose, we have first checked the numerical order of the
+ method.
+ For this, we consider a cubic domain
+\begin_inset Formula 
+\[
+\Omega=]0,1[^{3}.
+\]
+
+\end_inset
+
+We apply the exact solution at the boundary 
+\begin_inset Formula $\partial\Omega$
+\end_inset
+
+ and in 
+\begin_inset Formula $\Omega$
+\end_inset
+
+ at the initial time 
+\begin_inset Formula $t=0$
+\end_inset
+
+.
+ We perform numerical simulations for a given final time 
+\begin_inset Formula $T$
+\end_inset
+
+.
+ We vary the order 
+\begin_inset Formula $d$
+\end_inset
+
+ of the polynomial in the DG method and the mesh refinement.
+ We compare the error of the method in the discrete 
+\begin_inset Formula $L^{2}$
+\end_inset
+
+ norm (computed with Gauss-Lobato numerical integration) at that final time
+ 
+\begin_inset Formula $t=T.$
+\end_inset
+
+ In a log scale, we obtain the curves of Figure 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "fig:num_conv"
+plural "false"
+caps "false"
+noprefix "false"
+
+\end_inset
+
+.
+ As observed by other authors (for instance , we observe that the order
+ of convergence is between 
+\begin_inset Formula $d$
+\end_inset
+
+ and 
+\begin_inset Formula $d+1$
+\end_inset
+
+.
+ With Gauss-Legendre numerical integration we would obtain a convergence
+ rate of 
+\begin_inset Formula $d+1$
+\end_inset
+
+.
+ 
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float figure
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+\noindent
+\align center
+\begin_inset Graphics
+	filename figs/conv_rate.png
+	lyxscale 50
+	width 80text%
+
+\end_inset
+
+
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+Numerical convergence rates for the DG method with Gauss-Lobato numerical
+ integration.
+ Plane wave case in a cube.
+\begin_inset CommandInset label
+LatexCommand label
+name "fig:num_conv"
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
 We consider the propagation of the previous electromagnetic plane wave into
  a torus-shaped domain 
 \begin_inset Formula $\Omega$
