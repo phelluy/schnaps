@@ -107,7 +107,7 @@ algorithm2e
 \begin_body
 
 \begin_layout Title
-Optimization of a discontinuous finite element solver with OpenCL and StarPU
+Optimization of a discontinuous Galerkin solver with OpenCL and StarPU
 \end_layout
 
 \begin_layout Author
@@ -170,8 +170,8 @@ The schnaps
 rs.
  In order to address the hybrid architectures we rely on the StarPU runtime.
  StarPU allows to optimize in an incremental way a sequential algorithm
- in order to migrate to multicore parallelism and then to hybrid computing
- with OpenCL accelerators.
+ in order to migrate to multicore CPU parallelism and then to hybrid computing
+ with GPUs (Graphics Processing Units).
  StarPU proposes several task scheduling strategies in order to efficiently
  exploit the available computing power.
  We present the design of 
@@ -179,7 +179,7 @@ rs.
 schnaps
 \family default
  and the performance gain that we have obtained in electromagnetic simulations
- thanks to OpenCL codelets.
+ thanks to hybrid C and OpenCL StarPU codelets.
  
 \end_layout
 
@@ -375,13 +375,15 @@ codelets
 .
  It is possible (and recommended) to write several implementations of the
  same task into several codelets.
- For instance, one can imagine to write an unoptimized codelet for validation
+ For instance, one can imagine to write a standard codelet in C for validation
  purposes and one or several optimized OpenCL codelets.
  The user then submits the tasks in a sequential way to StarPU.
  At runtime, StarPU is able to construct a task graph based on buffer dependenci
 es.
  The tasks are submitted to the available accelerators, in parallel if the
  dependencies allow it.
+ StarPU decides at runtime which version of the codelet (C or OpenCL) is
+ executed.
  
 \color green
 The scheduler is in charge of the distribution of the tasks over the processing
@@ -1597,6 +1599,145 @@ The DG scheme then reads
 \end_inset
 
 
+\end_layout
+
+\begin_layout Remark
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+inmod 
+\end_layout
+
+\end_inset
+
+ We observe that in our presentation, we have not used at any time the linearity
+ of the Maxwell flux.
+ This means that the same method could be used for non-linear conservation
+ laws.
+ However, for non-linear equations it is necessary to supplement (
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "eq:DG_reduit"
+plural "false"
+caps "false"
+noprefix "false"
+
+\end_inset
+
+) with a limiting strategy in order to avoid nonphysical oscillations (see
+ for instance 
+\begin_inset CommandInset citation
+LatexCommand cite
+key "guermond2011entropy"
+literal "false"
+
+\end_inset
+
+ and included references).
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+outmod 
+\end_layout
+
+\end_inset
+
+ 
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $\quad$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Remark
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+inmod 
+\end_layout
+
+\end_inset
+
+Formulation (
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "eq:DG_reduit"
+plural "false"
+caps "false"
+noprefix "false"
+
+\end_inset
+
+) is an approximation of (
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "eq:dg_var"
+plural "false"
+caps "false"
+noprefix "false"
+
+\end_inset
+
+) because of numerical integration by the Gauss-Lobato method.
+ Gauss-Lobato integration can generate inaccuracies, known in the literature
+ as 
+\begin_inset Quotes eld
+\end_inset
+
+aliasing
+\begin_inset Quotes erd
+\end_inset
+
+ effects 
+\begin_inset CommandInset citation
+LatexCommand cite
+key "hesthaven2007nodal,winters2018comparative"
+literal "false"
+
+\end_inset
+
+.
+ It is possible to improve precision with a slight modification of the DG
+ method 
+\begin_inset CommandInset citation
+LatexCommand cite
+key "winters2018comparative"
+literal "false"
+
+\end_inset
+
+.
+ In this paper we have not yet implemented this modification, because we
+ mainly address performance issues.
+ But it is an objective for us in the future.
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+outmod 
+\end_layout
+
+\end_inset
+
+ 
 \end_layout
 
 \begin_layout Standard
