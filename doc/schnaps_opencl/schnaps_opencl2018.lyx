@@ -193,7 +193,8 @@ Introduction
 \end_layout
 
 \begin_layout Standard
-The development of engineering simulation software is difficult.
+The development of engineering simulation software faces two major antagonist
+ issues.
  On the one hand, the user is interested in handling more and more complex
  physical phenomena, in devices with arbitrary geometries.
  These constraints require to adopt a generic and abstract software engineering
@@ -201,7 +202,7 @@ The development of engineering simulation software is difficult.
  On the other hand, the user also wants to harness the full computational
  power of his hybrid computer.
  This requirement generally imposes to use low level hardware optimization
- hacks that are not always compatible with a generic and elegant approach.
+ hacks that are not always compatible with a generic and universal approach.
  In addition, as the hardware evolves, optimizations of yesterday are not
  necessarily relevant for the devices of tomorrow.
 \end_layout
@@ -221,7 +222,7 @@ inmod
 
 The Discontinuous Galerkin algorithm is a general method for approximating
  system of conservation laws coming from physics.
- For a recent exposition of this method, we refer to 
+ For a recent review of this method, we refer to 
 \begin_inset CommandInset citation
 LatexCommand cite
 key "hesthaven2007nodal"
@@ -275,13 +276,21 @@ inmod
 
 \end_inset
 
-OpenCL (Open Computing Language) is a nice software environment for optimization
- purposes.
+Several software environments have been developed recently for addressing
+ massively multicore accelerators, such as Graphic Processing Units (GPUs).
+ CUDA is one of these tools, it is devoted to NVIDIA GPUs.
+ OpenCL (Open Computing Language) is another tool.
+ Its main advantage over CUDA is that it can be used with hardware of different
+ brands (NVIDIA, AMD, Intel, ARM, 
+\shape italic
+etc.
+\shape default
+).
+ OpenCL is a nice software environment for optimization purposes.
  OpenCL specifies programming languages (based on C99 and C++11) for programming
  these devices and application programming interfaces (APIs) to control
  the platform and execute programs on the compute devices.
- OpenCL provides a standard interface for parallel computing using task-
- and data-based parallelism
+ OpenCL provides a standard interface for parallel computing
 \begin_inset Foot
 status open
 
@@ -359,7 +368,7 @@ read/write
 \end_layout
 
 \begin_layout Standard
-The tasks are then conveniently implemented into C 
+The tasks are then conveniently implemented into  
 \emph on
 codelets
 \emph default

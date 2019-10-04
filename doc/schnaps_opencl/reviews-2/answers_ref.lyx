@@ -108,7 +108,7 @@ The introduction deserves some improvements, for example...
 \begin_inset Newline newline
 \end_inset
 
-TODO
+We have made the recommended improvements.
 \end_layout
 
 \begin_layout Enumerate
@@ -124,10 +124,6 @@ Section 2 is quite pedagogic and provides a good overview about the DG method.
 \end_inset
 
 
-\begin_inset Newline newline
-\end_inset
-
-TODO
 \end_layout
 
 \begin_layout Enumerate
@@ -159,10 +155,10 @@ Updated.
 
 
 \shape italic
-Data storage and memory management is an important issue for efficient computa-
- tion.
+Data storage and memory management is an important issue for efficient computati
+on.
  Contiguous location of the data in ”for loop” greatly takes advantage of
- the pre-fetch and cache technique whereas unstructured meshes unfortunately
+ the prefetch and cache technique whereas unstructured meshes unfortunately
  reduce the data compactness.
  The authors present no information about the cache missed that is a good
  indicator about the memory transfer bottlenecks, especially the L3-cache
@@ -611,7 +607,7 @@ If you generate the graph of tasks all at once, how many time steps do you
 \begin_inset Newline newline
 \end_inset
 
-We execute 23 time steps with approximatly 200.000 tasks.
+We execute 23 time steps with approximately 200.000 tasks.
 \end_layout
 
 \begin_layout Enumerate
@@ -665,7 +661,7 @@ It is, it should have been in the brackets, and it is been moved.
 
 
 \shape italic
-Pages 11 and 12 are two occurences of peak and peek, which, I guess, are
+Pages 11 and 12 are two occurrences of peak and peek, which, I guess, are
  both mispelling of the word pick.
 \shape default
 
