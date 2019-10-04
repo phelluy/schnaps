@@ -369,9 +369,12 @@ For me, it is not fully clear why you finally aim at writing all the codelets
 
 The main advantage of OpenCL is that it can be executed on GPU of any vendor
  (if they have OpenCL compiler).
- 
-\color red
-TODO say more and update the text.
+ Therefore AMD, NVIDIA or Intel accelerators can be accessed.
+ In addition, we provide also a C version of the codelet that can be executed
+ on classical multicore CPU.
+ The two versions (C and OpenCL) are provided and StarPU decides at runtime
+ which version to run.
+ We have try to explain this point better.
 \end_layout
 
 \begin_layout Enumerate
@@ -415,7 +418,7 @@ You can claim the discontinuous Galerkin method as a finite element method,
 \begin_inset Newline newline
 \end_inset
 
-TODO
+We change the title.
 \end_layout
 
 \begin_layout Enumerate
@@ -430,9 +433,12 @@ The model used is fully linear and this is written nowhere.
  Frankly, given the complexity of the overall implementation, I fully understand
  your choice of solving such a linear model, but by honesty I would underline
  it somewhere.
- For example, your conserved variables can freely move within R m , which
- is seldom the case in non-linear systems: you would then need some form
- of limiter to prevent unphysical states.
+ For example, your conserved variables can freely move within 
+\begin_inset Formula $R^{m}$
+\end_inset
+
+ , which is seldom the case in non-linear systems: you would then need some
+ form of limiter to prevent unphysical states.
  Also, the linearity of the flux is implicitely used when going from equation
  (2.4) to equation (2.6).
  See also, the remark on time-stepping below.
@@ -445,7 +451,12 @@ The model used is fully linear and this is written nowhere.
 \begin_inset Newline newline
 \end_inset
 
-TODO
+Actually our method does not rely on the linearity of the Maxwell flux.
+ Beside, we use schnaps also for solving MHD equations.
+ But the reviewer is right that in this case we have to use a limiter for
+ preventing unphysical states.
+ We have made an additional remark about this point.
+ 
 \end_layout
 
 \begin_layout Enumerate
@@ -486,7 +497,26 @@ When going from equation (2.1) to (2.4), you make two simplifications, one
 \begin_inset Newline newline
 \end_inset
 
-TODO
+We agree with the reviewer.
+ GL integration may generate inaccuracies, known as 
+\begin_inset Quotes eld
+\end_inset
+
+aliasing
+\begin_inset Quotes erd
+\end_inset
+
+ effects.
+ Gassner and coauthors have proposed a modification of the DG method (
+\begin_inset Quotes eld
+\end_inset
+
+split form DG
+\begin_inset Quotes erd
+\end_inset
+
+) for reducing aliasing.
+ We have done some comments about this point in the text.
 \end_layout
 
 \begin_layout Enumerate
