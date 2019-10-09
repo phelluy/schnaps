@@ -3042,6 +3042,18 @@ with
 \end_layout
 
 \begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+inmod 
+\end_layout
+
+\end_inset
+
 For validation purpose, we have first checked the numerical order of the
  method.
  For this, we consider a cubic domain
@@ -3095,8 +3107,15 @@ noprefix "false"
 \end_inset
 
 .
- As observed by other authors (for instance , we observe that the order
- of convergence is between 
+ As other authors (see, for instance, 
+\begin_inset CommandInset citation
+LatexCommand cite
+key "hesthaven2004discontinuous,hindenlang2012explicit"
+literal "false"
+
+\end_inset
+
+), we observe that the order of convergence is between 
 \begin_inset Formula $d$
 \end_inset
 
@@ -3105,13 +3124,16 @@ noprefix "false"
 \end_inset
 
 .
- With Gauss-Legendre numerical integration we would obtain a convergence
- rate of 
-\begin_inset Formula $d+1$
+ With Gauss-Legendre numerical integration we would have obtained more precise
+ results 
+\begin_inset CommandInset citation
+LatexCommand cite
+key "kopriva2010quadrature"
+literal "false"
+
 \end_inset
 
 .
- 
 \end_layout
 
 \begin_layout Standard
@@ -3165,6 +3187,18 @@ name "fig:num_conv"
 \end_layout
 
 \begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+outmod 
+\end_layout
+
+\end_inset
+
 We consider the propagation of the previous electromagnetic plane wave into
  a torus-shaped domain 
 \begin_inset Formula $\Omega$
