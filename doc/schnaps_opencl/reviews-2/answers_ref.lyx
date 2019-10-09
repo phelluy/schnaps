@@ -555,7 +555,8 @@ For the sake of consistency, even though one can not mix up ω L,i with ω
 \begin_inset Newline newline
 \end_inset
 
-TODO
+It's a good idea.
+ Done.
 \end_layout
 
 \begin_layout Enumerate
@@ -564,7 +565,7 @@ TODO
 
 
 \shape italic
-What do the macrocell and the interface data contain? Frow what I have understoo
+What do the macrocell and the interface data contain? From what I have understoo
 d, the macrocell data contain three "fields" (the conserved variables at
  the degrees of freedom, the numerical fluxes and the volume fluxes) and
  the interface data two (the conserved variables on both sides of the interface,
@@ -584,7 +585,11 @@ d, the macrocell data contain three "fields" (the conserved variables at
 \begin_inset Newline newline
 \end_inset
 
-TODO
+We have separated boundary flux computations and internal flux computations
+ because, in this way, we avoid a memory access at the boundary: we do not
+ copy the boundary data in an intermediate buffer, but compute them directly
+ on the fly, when needed.
+ It is probably not very important for the performance...
 \end_layout
 
 \begin_layout Enumerate
@@ -616,7 +621,12 @@ Page 8, you claim that "the wait for task completion is done at the end
 \begin_inset Newline newline
 \end_inset
 
-TODO
+The reviewer is right.
+ Actually, when solving non-linear hyperbolic system we use the same approach,
+ with a test for ensuring that the time step is small enough.
+ If it is not, the result are saved and the computation is stopped.
+ We have done some comments about this.
+ 
 \end_layout
 
 \begin_layout Enumerate
@@ -637,6 +647,8 @@ If you generate the graph of tasks all at once, how many time steps do you
 \end_inset
 
 We execute 23 time steps with approximately 200.000 tasks.
+ StarPU is able to flush the queue when there are too many tasks.
+ 
 \end_layout
 
 \begin_layout Enumerate
@@ -661,7 +673,11 @@ Section 4 is a bit confusing.
 \begin_inset Newline newline
 \end_inset
 
-TODO
+The reviewer is right.
+ Actually, the shape of the memory storage was really important on older
+ hardware.
+ Today, this is less important.
+ We have discussed this point.
 \end_layout
 
 \begin_layout Enumerate

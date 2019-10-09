@@ -201,7 +201,7 @@ The development of engineering simulation software faces two major antagonist
  approach in order to ensure the generality of the code.
  On the other hand, the user also wants to harness the full computational
  power of his hybrid computer.
- This requirement generally imposes to use low level hardware optimization
+ This requirement generally imposes to use low-level hardware optimization
  hacks that are not always compatible with a generic and universal approach.
  In addition, as the hardware evolves, optimizations of yesterday are not
  necessarily relevant for the devices of tomorrow.
@@ -309,7 +309,7 @@ literal "false"
 \end_inset
 
 .
- OpenCL has been used succesfully in several works for accelerating Finite
+ OpenCL has been used successfully in several works for accelerating Finite
  Volume (FV) or Discontinuous Galerkin (DG) programs.
  See for instance 
 \begin_inset CommandInset citation
@@ -375,7 +375,7 @@ codelets
 .
  It is possible (and recommended) to write several implementations of the
  same task into several codelets.
- For instance, one can imagine to write a standard codelet in C for validation
+ For instance, one can imagine writing a standard codelet in C for validation
  purposes and one or several optimized OpenCL codelets.
  The user then submits the tasks in a sequential way to StarPU.
  At runtime, StarPU is able to construct a task graph based on buffer dependenci
@@ -403,8 +403,8 @@ by measuring the efficiency of the different codelets' implementations in
 rs
 \color green
 : when a task is assigned to a processing unit, StarPU moves the data that
- are not already on the processing unit's memory and it can also evicted
- old data if the available space is not enough.
+ are not already on the processing unit's memory and it can also evict old
+ data if the available space is not enough.
 \end_layout
 
 \begin_layout Standard
@@ -1299,7 +1299,7 @@ On the reference cell, we consider the Gauss-Lobatto points
 \end_inset
 
  and associated weights 
-\begin_inset Formula $(\omega_{i})_{i=0\ldots N_{\dorder}-1}$
+\begin_inset Formula $(\hat{\omega}_{i})_{i=0\ldots N_{\dorder}-1}$
 \end_inset
 
 .
@@ -1320,7 +1320,7 @@ On the reference cell, we consider the Gauss-Lobatto points
  by 
 \begin_inset Formula 
 \begin{equation}
-\vx_{L,i}=\jacob_{L}(\hat{\vx}_{i}),\quad\omega_{L,i}=\omega_{i}\det\jacob_{L}'(\hat{\vx}_{i})>0.\label{eq:map_GL}
+\vx_{L,i}=\jacob_{L}(\hat{\vx}_{i}),\quad\omega_{L,i}=\hat{\omega}_{i}\det\jacob_{L}'(\hat{\vx}_{i})>0.\label{eq:map_GL}
 \end{equation}
 
 \end_inset
@@ -1593,7 +1593,7 @@ We introduce the following notation for the cofactor matrix
 The DG scheme then reads 
 \begin_inset Formula 
 \begin{equation}
-\partial_{t}\vw_{L,i}-\frac{1}{\omega_{L,i}}\sum_{j=0}^{N_{\dorder}-1}\vf(\vw_{L,j},\comat_{L,j}\hat{\nabla}\hat{\varphi}_{i}(\hat{\vx}_{j}))\omega_{j}+\frac{1}{\omega_{L,i}}\sum_{\epsilon=1}^{6}\mu_{i}^{\epsilon}\vf\left(\vw_{L,i},\vw_{R,i'},\comat_{L,i}\hat{\normal}_{\epsilon}\right)=0.\label{eq:DG_reduit}
+\partial_{t}\vw_{L,i}-\frac{1}{\omega_{L,i}}\sum_{j=0}^{N_{\dorder}-1}\vf(\vw_{L,j},\comat_{L,j}\hat{\nabla}\hat{\varphi}_{i}(\hat{\vx}_{j}))\hat{\omega}_{j}+\frac{1}{\omega_{L,i}}\sum_{\epsilon=1}^{6}\mu_{i}^{\epsilon}\vf\left(\vw_{L,i},\vw_{R,i'},\comat_{L,i}\hat{\normal}_{\epsilon}\right)=0.\label{eq:DG_reduit}
 \end{equation}
 
 \end_inset
@@ -1755,7 +1755,7 @@ noprefix "false"
  the volume 
 \begin_inset Formula 
 \begin{equation}
-V_{i,j}=\vf(\vw_{L,j},\comat_{L,j}\hat{\nabla}\hat{\varphi}_{i}(\hat{\vx}_{j}))\omega_{j}\label{eq:volume_terms}
+V_{i,j}=\vf(\vw_{L,j},\comat_{L,j}\hat{\nabla}\hat{\varphi}_{i}(\hat{\vx}_{j}))\hat{\omega}_{j}\label{eq:volume_terms}
 \end{equation}
 
 \end_inset
@@ -2030,12 +2030,11 @@ commute
  access tells to StarPU that the execution of the corresponding task may
  be executed before or after other tasks containing commutative access.
  This can drastically increase the degree of parallelism as StarPU is able
- to change the order of computation of the tasks that access the same data
- in 
+ to change the order of the tasks that access the same data in 
 \family typewriter
 commute
 \family default
-.
+ mode.
 \end_layout
 
 \begin_layout Standard
@@ -2471,6 +2470,38 @@ noprefix "false"
  parallel on the available workers.
  The wait for task completion is done at the end of the algorithm and not
  inside each iteration.
+ 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+inmod 
+\end_layout
+
+\end_inset
+
+This is not an essential point for performance but we have observed in some
+ cases a 15% gain compared to an algorithm with a synchronization point
+ at the end of each time iteration.
+ Let us also observe that this synchronization strategy assumes that the
+ time step is known at the beginning of the computations.
+ This is not always possible especially when solving non-linear systems.
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+outmod 
+\end_layout
+
+\end_inset
+
+
 \end_layout
 
 \begin_layout Standard
@@ -2746,9 +2777,43 @@ The CPU workers will continue to use the kernels implemented in C, while
  the GPU workers will use the ones in OpenCL.
 
 \color inherit
- As it is often the case, special care has to be given in order to improve
- the coalescence of memory access.
- The values of 
+ 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+inmod 
+\end_layout
+
+\end_inset
+
+When computing on GPUs, it is generally advised to care about memory access
+ in order to improve coalescence 
+\begin_inset CommandInset citation
+LatexCommand cite
+key "helluy:hal-00759135"
+literal "false"
+
+\end_inset
+
+.
+ 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+outmod 
+\end_layout
+
+\end_inset
+
+The values of 
 \begin_inset Formula $\v w$
 \end_inset
 
@@ -2832,7 +2897,41 @@ or this formula
 \end_inset
 
 in which the electromagnetic components are separated in memory.
- We have programmed an OpenCL codelet for each task described in Section
+ 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+inmod 
+\end_layout
+
+\end_inset
+
+A few years ago, we could observe large differences in performance between
+ the two strategies.
+ Here, we have not observed significant differences, maybe because the cache
+ memory of the GPUs used in this work (NVIDIA GTX 1050 or NVIDIA P100) is
+ now larger.
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+outmod 
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+We have programmed an OpenCL codelet for each task described in Section
  
 \begin_inset CommandInset ref
 LatexCommand ref
@@ -2844,7 +2943,7 @@ noprefix "false"
 \end_inset
 
 .
- The most time consuming kernels are: (i) the kernel associated to the computati
+ The most time-consuming kernels are: (i) the kernel associated to the computati
 ons of the volume terms (
 \begin_inset CommandInset ref
 LatexCommand ref
@@ -2864,7 +2963,7 @@ volume
 surface
 \emph default
  kernel.
- Boundary and interface terms generally involve less computations.
+ Boundary and interface terms generally involve fewer computations.
 \end_layout
 
 \begin_layout Standard
@@ -5848,8 +5947,8 @@ name "tab:bench_cpu_gpu"
 Efficiency of the CPU/GPU implementation.
  All timings are given in seconds.
  All ratio are dimensionless.
- This table shows that StarPU is allways able to harness an increase of
- hybrid computing capacities.
+ This table shows that StarPU is always able to harness an increase of hybrid
+ computing capacities.
 \end_layout
 
 \end_inset
