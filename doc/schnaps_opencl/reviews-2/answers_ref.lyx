@@ -179,7 +179,19 @@ ly cut the bandwidth of the data flow.
 \begin_inset Newline newline
 \end_inset
 
-TODO
+The data is decomposed into handles, where one “handle” represents a single
+ block of contiguous data that can be used by a task as input or output.
+ Said differently, a task accesses only a few blocks of contiguously allocated
+ data, hence the spacial data locality should be fine.
+ Inside our kernels, we also try to have nice data access by taking into
+ account spatial and temporal data localities.
+ Moreover, the data used by a single task is usually much less than the
+ size of L3.
+ As a remark (and as explained in the next answers) the temporal locality
+ between tasks, ie.
+ taking into account the fact that it would interesting if a given CPU core
+ is computing tasks that use partially the same data, is managed by the
+ scheduler.
 \end_layout
 
 \begin_layout Enumerate
@@ -204,8 +216,8 @@ In GPU computation, memory transfer between host and client takes time and
 
 StarPU is in charge of the memory transfers.
  How the data are moved depends on the distribution of the tasks (the scheduling
-) and the size of the memory on the devices (unused data might be evicted
- from a device to get more space for the next tasks).
+) and the size of the available memory on the devices (unused data might
+ be evicted from a device to get more space for the next tasks).
  Therefore, the scheduler is really critical to distribute the tasks while
  taking into account the data movement, but also the efficiency of the different
  processing units to compute the different kernels.
