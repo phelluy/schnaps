@@ -429,7 +429,7 @@ with a limiting strategy in order to avoid nonphysical oscillations
 $\quad$
 \begin{rem}
 \inmod Formulation (\ref{eq:DG_reduit}) is an approximation of (\ref{eq:dg_var})
-because of numerical integration by the Gauss-Lobato method. Gauss-Lobato
+because of numerical integration by the Gauss-Lobatto method. Gauss-Lobatto
 integration can generate inaccuracies, known in the literature as
 ``aliasing'' effects \cite{hesthaven2007nodal,winters2018comparative}.
 It is possible to improve precision with a slight modification of
@@ -729,7 +729,7 @@ We apply the exact solution at the boundary $\partial\Omega$ and
 in $\Omega$ at the initial time $t=0$. We perform numerical simulations
 for a given final time $T$. We vary the order $d$ of the polynomial
 in the DG method and the mesh refinement. We compare the error of
-the method in the discrete $L^{2}$ norm (computed with Gauss-Lobato
+the method in the discrete $L^{2}$ norm (computed with Gauss-Lobatto
 numerical integration) at that final time $t=T.$ In a log scale,
 we obtain the curves of Figure \ref{fig:num_conv}. As other authors
 (see, for instance, \cite{hesthaven2004discontinuous,hindenlang2012explicit}),
@@ -740,7 +740,7 @@ precise results \cite{kopriva2010quadrature}.
 \begin{figure}
 
 \begin{centering}
-\includegraphics[width=0.8\textwidth]{figs/conv_rate}\caption{Numerical convergence rates for the DG method with Gauss-Lobato numerical
+\includegraphics[width=0.8\textwidth]{figs/conv_rate}\caption{Numerical convergence rates for the DG method with Gauss-Lobatto numerical
 integration. Plane wave case in a cube.\label{fig:num_conv}}
 \par\end{centering}
 \end{figure}
@@ -990,6 +990,6 @@ transfer in a quite efficient way. It is also able to use the available
 CPU codelets to achieve even higher acceleration.
 
 \bibliographystyle{plain}
-\bibliography{schnaps_opencl2017}
+\bibliography{schnaps_opencl2017.bib}
 
 \end{document}
